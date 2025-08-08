@@ -18,8 +18,10 @@
 package org.keycloak.timer.basic;
 
 import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
+import org.keycloak.services.scheduled.TaskCancellationEvent;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
 
@@ -37,12 +39,14 @@ public class BasicTimerProvider implements TimerProvider {
     private final Timer timer;
     private final int transactionTimeout;
     private final BasicTimerProviderFactory factory;
+    private final ClusterProvider clusterProvider;
 
     public BasicTimerProvider(KeycloakSession session, Timer timer, int transactionTimeout, BasicTimerProviderFactory factory) {
         this.session = session;
         this.timer = timer;
         this.transactionTimeout = transactionTimeout;
         this.factory = factory;
+        this.clusterProvider = session.getProvider(ClusterProvider.class);
     }
 
     @Override
@@ -66,6 +70,18 @@ public class BasicTimerProvider implements TimerProvider {
     }
 
     @Override
+    public void scheduleOnce(final Runnable runnable, final long delay, String taskName) {
+
+        logger.debugf("Task '%s' will be executed with delay '%d'", taskName, delay);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runnable.run();
+            }
+        }, delay);
+    }
+
+    @Override
     public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName) {
         ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
         this.schedule(scheduledTaskRunner, intervalMillis, taskName);
@@ -79,6 +95,18 @@ public class BasicTimerProvider implements TimerProvider {
             existingTask.timerTask.cancel();
         }
 
+        return existingTask;
+    }
+
+    @Override
+    public TimerTaskContext cancelTaskAndNotify(String taskName) {
+        TimerTaskContextImpl existingTask = factory.removeTask(taskName);
+        if (existingTask != null) {
+            // Notify all nodes to cancel the task
+            clusterProvider.notify(TaskCancellationEvent.CANCEL_TASK, new TaskCancellationEvent(taskName), true);
+            logger.debugf("Cancelling task '%s'", taskName);
+            existingTask.timerTask.cancel();
+        }
         return existingTask;
     }
 

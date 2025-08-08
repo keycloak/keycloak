@@ -53,6 +53,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -345,153 +346,157 @@ public class DescriptionConverter {
 
     }
 
-    public static OIDCClientRepresentation toExternalResponse(KeycloakSession session, ClientRepresentation client, URI uri) {
-        OIDCClientRepresentation response = new OIDCClientRepresentation();
-        response.setClientId(client.getClientId());
+    public static <T extends OIDCClientRepresentation> T toExternalResponse(KeycloakSession session, ClientRepresentation client, URI uri, Class<T> clazz) {
+        try {
+            T response = clazz.getDeclaredConstructor().newInstance();
+            response.setClientId(client.getClientId());
 
-        if ("none".equals(client.getClientAuthenticatorType())) {
-            response.setTokenEndpointAuthMethod("none");
-        } else {
-            ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
-            Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
-                response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+            if ("none".equals(client.getClientAuthenticatorType())) {
+                response.setTokenEndpointAuthMethod("none");
+            } else {
+                ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
+                Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
+                    response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+                }
+
+                if (clientAuth.supportsSecret()) {
+                    response.setClientSecret(client.getSecret());
+                    response.setClientSecretExpiresAt(
+                            OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
+                }
             }
 
-            if (clientAuth.supportsSecret()) {
-                response.setClientSecret(client.getSecret());
-                response.setClientSecretExpiresAt(
-                    OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
+            response.setClientName(client.getName());
+            response.setClientUri(client.getBaseUrl());
+            response.setRedirectUris(client.getRedirectUris());
+            response.setRegistrationAccessToken(client.getRegistrationAccessToken());
+            response.setRegistrationClientUri(uri.toString());
+            response.setResponseTypes(getOIDCResponseTypes(client));
+            response.setGrantTypes(getOIDCGrantTypes(client));
+
+            List<String> scopes = client.getOptionalClientScopes();
+            if (scopes != null) response.setScope(scopes.stream().collect(Collectors.joining(" ")));
+
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+            if (config.isUserInfoSignatureRequired()) {
+                response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg());
             }
-        }
-
-        response.setClientName(client.getName());
-        response.setClientUri(client.getBaseUrl());
-        response.setRedirectUris(client.getRedirectUris());
-        response.setRegistrationAccessToken(client.getRegistrationAccessToken());
-        response.setRegistrationClientUri(uri.toString());
-        response.setResponseTypes(getOIDCResponseTypes(client));
-        response.setGrantTypes(getOIDCGrantTypes(client));
-
-        List<String> scopes = client.getOptionalClientScopes();
-        if (scopes != null) response.setScope(scopes.stream().collect(Collectors.joining(" ")));
-
-        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        if (config.isUserInfoSignatureRequired()) {
-            response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg());
-        }
-        if (config.getUserInfoEncryptedResponseAlg() != null) {
-            response.setUserinfoEncryptedResponseAlg(config.getUserInfoEncryptedResponseAlg());
-        }
-        if (config.getUserInfoEncryptedResponseEnc() != null) {
-            response.setUserinfoEncryptedResponseEnc(config.getUserInfoEncryptedResponseEnc());
-        }
-        if (config.getRequestObjectSignatureAlg() != null) {
-            response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg());
-        }
-        if (config.getRequestObjectEncryptionAlg() != null) {
-            response.setRequestObjectEncryptionAlg(config.getRequestObjectEncryptionAlg());
-        }
-        if (config.getRequestObjectEncryptionEnc() != null) {
-            response.setRequestObjectEncryptionEnc(config.getRequestObjectEncryptionEnc());
-        }
-        if (config.isUseJwksUrl()) {
-            response.setJwksUri(config.getJwksUrl());
-        }
-        if (config.isUseJwksString()) {
-            try {
-                response.setJwks(JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class));
-            } catch (IOException e) {
-                throw new ClientRegistrationException("Illegal jwks format");
+            if (config.getUserInfoEncryptedResponseAlg() != null) {
+                response.setUserinfoEncryptedResponseAlg(config.getUserInfoEncryptedResponseAlg());
             }
-        }
-        String defaultSignatureAlgorithm = session.getContext().getRealm().getDefaultSignatureAlgorithm();
-        if (Algorithm.RS256.equals(defaultSignatureAlgorithm) || StringUtil.isBlank(defaultSignatureAlgorithm)) {
-            defaultSignatureAlgorithm = null;
-        }
-        // KEYCLOAK-6771 Certificate Bound Token
-        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
-        if (config.isUseMtlsHokToken()) {
-            response.setTlsClientCertificateBoundAccessTokens(Boolean.TRUE);
-        } else {
-            response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
-        }
-        if (config.getTlsClientAuthSubjectDn() != null) {
-            response.setTlsClientAuthSubjectDn(config.getTlsClientAuthSubjectDn());
-        }
-        if (config.getIdTokenSignedResponseAlg() != null) {
-            response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
-        } else if (defaultSignatureAlgorithm != null){
-            response.setIdTokenSignedResponseAlg(defaultSignatureAlgorithm);
-        }
-        if (config.getIdTokenEncryptedResponseAlg() != null) {
-            response.setIdTokenEncryptedResponseAlg(config.getIdTokenEncryptedResponseAlg());
-        }
-        if (config.getIdTokenEncryptedResponseEnc() != null) {
-            response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
-        }
-        if (config.getAuthorizationSignedResponseAlg() != null) {
-            response.setAuthorizationSignedResponseAlg(config.getAuthorizationSignedResponseAlg());
-        }
-        if (config.getAuthorizationEncryptedResponseAlg() != null) {
-            response.setAuthorizationEncryptedResponseAlg(config.getAuthorizationEncryptedResponseAlg());
-        }
-        if (config.getAuthorizationEncryptedResponseEnc() != null) {
-            response.setAuthorizationEncryptedResponseEnc(config.getAuthorizationEncryptedResponseEnc());
-        }
-        if (config.getRequestUris() != null) {
-            response.setRequestUris(config.getRequestUris());
-        }
-        if (config.getTokenEndpointAuthSigningAlg() != null) {
-            response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
-        }
-        if (config.getPostLogoutRedirectUris() != null) {
-            response.setPostLogoutRedirectUris(config.getPostLogoutRedirectUris());
-        }
-        response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
-        response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
-        response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
-        if (config.isUseDPoP()) {
-            response.setDpopBoundAccessTokens(Boolean.TRUE);
-        } else {
-            response.setDpopBoundAccessTokens(Boolean.FALSE);
-        }
-
-        if (client.getAttributes() != null) {
-            String mode = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);
-            if (StringUtil.isNotBlank(mode)) {
-                response.setBackchannelTokenDeliveryMode(mode);
+            if (config.getUserInfoEncryptedResponseEnc() != null) {
+                response.setUserinfoEncryptedResponseEnc(config.getUserInfoEncryptedResponseEnc());
             }
-            String clientNotificationEndpoint = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
-            if (StringUtil.isNotBlank(clientNotificationEndpoint)) {
-                response.setBackchannelClientNotificationEndpoint(clientNotificationEndpoint);
+            if (config.getRequestObjectSignatureAlg() != null) {
+                response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg());
             }
-            String alg = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
-            if (StringUtil.isNotBlank(alg)) {
-                response.setBackchannelAuthenticationRequestSigningAlg(alg);
+            if (config.getRequestObjectEncryptionAlg() != null) {
+                response.setRequestObjectEncryptionAlg(config.getRequestObjectEncryptionAlg());
             }
-            Boolean requirePushedAuthorizationRequests = Boolean.valueOf(client.getAttributes().get(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS));
-            response.setRequirePushedAuthorizationRequests(requirePushedAuthorizationRequests.booleanValue());
+            if (config.getRequestObjectEncryptionEnc() != null) {
+                response.setRequestObjectEncryptionEnc(config.getRequestObjectEncryptionEnc());
+            }
+            if (config.isUseJwksUrl()) {
+                response.setJwksUri(config.getJwksUrl());
+            }
+            if (config.isUseJwksString()) {
+                try {
+                    response.setJwks(JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class));
+                } catch (IOException e) {
+                    throw new ClientRegistrationException("Illegal jwks format");
+                }
+            }
+            String defaultSignatureAlgorithm = session.getContext().getRealm().getDefaultSignatureAlgorithm();
+            if (Algorithm.RS256.equals(defaultSignatureAlgorithm) || StringUtil.isBlank(defaultSignatureAlgorithm)) {
+                defaultSignatureAlgorithm = null;
+            } 
+            // KEYCLOAK-6771 Certificate Bound Token
+            // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
+            if (config.isUseMtlsHokToken()) {
+                response.setTlsClientCertificateBoundAccessTokens(Boolean.TRUE);
+            } else {
+                response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
+            }
+            if (config.getTlsClientAuthSubjectDn() != null) {
+                response.setTlsClientAuthSubjectDn(config.getTlsClientAuthSubjectDn());
+            }
+            if (config.getIdTokenSignedResponseAlg() != null) {
+                response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
+            } else if (defaultSignatureAlgorithm != null){
+                response.setIdTokenSignedResponseAlg(defaultSignatureAlgorithm);
+            }
+            if (config.getIdTokenEncryptedResponseAlg() != null) {
+                response.setIdTokenEncryptedResponseAlg(config.getIdTokenEncryptedResponseAlg());
+            }
+            if (config.getIdTokenEncryptedResponseEnc() != null) {
+                response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
+            }
+            if (config.getAuthorizationSignedResponseAlg() != null) {
+                response.setAuthorizationSignedResponseAlg(config.getAuthorizationSignedResponseAlg());
+            }
+            if (config.getAuthorizationEncryptedResponseAlg() != null) {
+                response.setAuthorizationEncryptedResponseAlg(config.getAuthorizationEncryptedResponseAlg());
+            }
+            if (config.getAuthorizationEncryptedResponseEnc() != null) {
+                response.setAuthorizationEncryptedResponseEnc(config.getAuthorizationEncryptedResponseEnc());
+            }
+            if (config.getRequestUris() != null) {
+                response.setRequestUris(config.getRequestUris());
+            }
+            if (config.getTokenEndpointAuthSigningAlg() != null) {
+                response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
+            }
+            if (config.getPostLogoutRedirectUris() != null) {
+                response.setPostLogoutRedirectUris(config.getPostLogoutRedirectUris());
+            }
+            response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
+            response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
+            response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
+            if (config.isUseDPoP()) {
+                response.setDpopBoundAccessTokens(Boolean.TRUE);
+            } else {
+                response.setDpopBoundAccessTokens(Boolean.FALSE);
+            }
+
+            if (client.getAttributes() != null) {
+                String mode = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);
+                if (StringUtil.isNotBlank(mode)) {
+                    response.setBackchannelTokenDeliveryMode(mode);
+                }
+                String clientNotificationEndpoint = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
+                if (StringUtil.isNotBlank(clientNotificationEndpoint)) {
+                    response.setBackchannelClientNotificationEndpoint(clientNotificationEndpoint);
+                }
+                String alg = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
+                if (StringUtil.isNotBlank(alg)) {
+                    response.setBackchannelAuthenticationRequestSigningAlg(alg);
+                }
+                Boolean requirePushedAuthorizationRequests = Boolean.valueOf(client.getAttributes().get(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS));
+                response.setRequirePushedAuthorizationRequests(requirePushedAuthorizationRequests.booleanValue());
+            }
+
+            List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
+            SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;
+            response.setSubjectType(subjectType.toString().toLowerCase());
+            if (subjectType.equals(SubjectType.PAIRWISE)) {
+                // Get sectorIdentifier from 1st found
+                String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwiseMappers.get(0));
+                response.setSectorIdentifierUri(sectorIdentifierUri);
+            }
+
+            response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
+            response.setFrontchannelLogoutSessionRequired(config.isFrontChannelLogoutSessionRequired());
+
+            List<String> defaultAcrValues = config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
+            if (!defaultAcrValues.isEmpty()) {
+                response.setDefaultAcrValues(defaultAcrValues);
+            }
+
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to instantiate client representation", e);
         }
-
-        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
-        SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;
-        response.setSubjectType(subjectType.toString().toLowerCase());
-        if (subjectType.equals(SubjectType.PAIRWISE)) {
-            // Get sectorIdentifier from 1st found
-            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwiseMappers.get(0));
-            response.setSectorIdentifierUri(sectorIdentifierUri);
-        }
-
-        response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
-        response.setFrontchannelLogoutSessionRequired(config.isFrontChannelLogoutSessionRequired());
-
-        List<String> defaultAcrValues = config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
-        if (!defaultAcrValues.isEmpty()) {
-            response.setDefaultAcrValues(defaultAcrValues);
-        }
-
-        return response;
     }
 
     private static List<String> getOIDCResponseTypes(ClientRepresentation client) {
