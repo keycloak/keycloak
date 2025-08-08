@@ -494,6 +494,31 @@ public class PodTemplateTest {
                       topologyKey: "kubernetes.io/hostname"
                     weight: 90
                 """);
+
+        var topologySpreadConstraints = podTemplate.getSpec().getTopologySpreadConstraints();
+        assertNotNull(topologySpreadConstraints);
+        assertThat(topologySpreadConstraints).hasSize(2);
+        assertThat(Serialization.asYaml(topologySpreadConstraints)).isEqualTo("""
+                ---
+                - labelSelector:
+                    matchLabels:
+                      app: "keycloak"
+                      app.kubernetes.io/managed-by: "keycloak-operator"
+                      app.kubernetes.io/instance: "instance"
+                      app.kubernetes.io/component: "server"
+                  maxSkew: 1
+                  topologyKey: "topology.kubernetes.io/zone"
+                  whenUnsatisfiable: "ScheduleAnyway"
+                - labelSelector:
+                    matchLabels:
+                      app: "keycloak"
+                      app.kubernetes.io/managed-by: "keycloak-operator"
+                      app.kubernetes.io/instance: "instance"
+                      app.kubernetes.io/component: "server"
+                  maxSkew: 1
+                  topologyKey: "kubernetes.io/hostname"
+                  whenUnsatisfiable: "ScheduleAnyway"
+                """);
     }
 
     @Test

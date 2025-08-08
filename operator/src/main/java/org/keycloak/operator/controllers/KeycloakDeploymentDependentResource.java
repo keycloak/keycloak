@@ -439,6 +439,25 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
             antiAffinity.endPodAntiAffinity().endAffinity();
         }
+
+        if (!specBuilder.hasTopologySpreadConstraints()) {
+            specBuilder.addNewTopologySpreadConstraint()
+                    .withMaxSkew(1)
+                    .withTopologyKey(ZONE_KEY)
+                    .withWhenUnsatisfiable("ScheduleAnyway")
+                    .withNewLabelSelector()
+                    .withMatchLabels(labels)
+                    .endLabelSelector()
+                    .endTopologySpreadConstraint()
+                    .addNewTopologySpreadConstraint()
+                    .withMaxSkew(1)
+                    .withTopologyKey("kubernetes.io/hostname")
+                    .withWhenUnsatisfiable("ScheduleAnyway")
+                    .withNewLabelSelector()
+                    .withMatchLabels(labels)
+                    .endLabelSelector()
+                    .endTopologySpreadConstraint();
+        }
     }
 
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {

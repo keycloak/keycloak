@@ -23,7 +23,7 @@ The behaviour and high-availability guarantees of the {project_name} deployment 
 the {kubernetes} cluster. Typically, {kubernetes} clusters are deployed on a single availability-zone, however in order to
 increase fault-tolerance, it is possible to https://kubernetes.io/docs/setup/best-practices/multiple-zones/[deploy the cluster across multiple availability-zones].
 
-The {project_name} Operator defines the following anti-affinity strategy by default to prefer that {project_name} pods are
+The {project_name} Operator defines the following anti-affinity and topology spread constraints by default to prefer that {project_name} pods are
 deployed on distinct nodes and distinct availability-zones when possible:
 
 [source,yaml]
@@ -48,6 +48,25 @@ deployed on distinct nodes and distinct availability-zones when possible:
                   app.kubernetes.io/component: server
                   app.kubernetes.io/instance: keycloak
               topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: "ScheduleAnyway"
+          labelSelector:
+            matchLabels:
+              app: "keycloak"
+              app.kubernetes.io/managed-by: "keycloak-operator"
+              app.kubernetes.io/instance: "keycloak"
+              app.kubernetes.io/component: "server"
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: "ScheduleAnyway"
+          labelSelector:
+            matchLabels:
+              app: "keycloak"
+              app.kubernetes.io/managed-by: "keycloak-operator"
+              app.kubernetes.io/instance: "keycloak"
+              app.kubernetes.io/component: "server"
 ----
 
 [IMPORTANT]
