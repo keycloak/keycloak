@@ -511,6 +511,7 @@ public class UserResource {
     @Path("federated-identity/{provider}")
     @POST
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Add a social login provider to the user")
     @APIResponses(value = {
