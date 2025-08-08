@@ -410,9 +410,13 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         }
     }
 
+    protected URI getOIDCDiscoveryUri(UriBuilder builder) {
+        return RealmsResource.wellKnownProviderUrl(builder).build("test", this.getWellKnownProviderId());
+    }
+
     private String getOIDCDiscoveryConfiguration(Client client, String uriTemplate) {
         UriBuilder builder = UriBuilder.fromUri(uriTemplate);
-        URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", this.getWellKnownProviderId());
+        URI oidcDiscoveryUri = getOIDCDiscoveryUri(builder);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
 
         Response response = oidcDiscoveryTarget.request().get();
