@@ -36,6 +36,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -45,6 +46,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.protocol.oauth2.resourceindicators.CheckedResourceIndicators;
+import org.keycloak.protocol.oauth2.resourceindicators.ResourceIndicatorsUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
@@ -214,7 +217,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
     protected abstract void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients);
 
     protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession,
-            AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
+                                              AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
 
         String requestedTokenType = getRequestedTokenType();
         event.detail(Details.REQUESTED_TOKEN_TYPE, requestedTokenType);
@@ -234,6 +237,34 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
+    protected CheckedResourceIndicators getCheckedResources() {
+        List<String> resourceParams = params.getResource();
+        if (resourceParams == null || resourceParams.isEmpty()) {
+            return null;
+        }
+        // ensure valid resource indicator URI
+        for (String resourceParam : resourceParams) {
+            if (!ResourceIndicatorsUtil.isValidResourceIndicatorUri(resourceParam)) {
+                event.detail(Details.REASON, "invalid resource uri");
+                event.detail(Details.RESOURCE, resourceParams);
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid resource", Response.Status.BAD_REQUEST);
+            }
+        }
+        // ensure resource is allowed for target client
+        CheckedResourceIndicators checkedResourceIndicators = ResourceIndicatorsUtil.narrowResourceIndicators(session, client, null, Set.copyOf(resourceParams));
+        if (checkedResourceIndicators == null) {
+            return null;
+        }
+        if (checkedResourceIndicators.hasUnsupportedResources()) {
+            event.detail(Details.REASON, "resource uri not allowed");
+            event.detail(Details.RESOURCE, resourceParams);
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid resource", Response.Status.BAD_REQUEST);
+        }
+        return checkedResourceIndicators;
     }
 
     protected void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token) {
@@ -271,7 +302,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
     }
 
     protected abstract Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
-                                                  List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken);
+                                                           List<ClientModel> targetAudienceClients, String scope, AccessToken subjectToken);
 
     protected abstract Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType, List<ClientModel> targetAudienceClients);
 
@@ -362,7 +393,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
 
             if (context.getIdpConfig().isTransientUsers()) {
                 String authSessionId = context.getAuthenticationSession() != null && context.getAuthenticationSession().getParentSession() != null
-                                       ? context.getAuthenticationSession().getParentSession().getId() : null;
+                        ? context.getAuthenticationSession().getParentSession().getId() : null;
                 user = new LightweightUserAdapter(session, realm, authSessionId);
             } else {
                 user = session.users().addUser(realm, username);
@@ -426,6 +457,16 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         }
 
         return user;
+    }
+
+    protected void validateTargetResources(ClientSessionContext clientSessionCtx) {
+        CheckedResourceIndicators targetResources = getCheckedResources();
+        if (targetResources == null) {
+            return;
+        }
+
+        Set<String> supportedResources = targetResources.getSupportedResources();
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, supportedResources);
     }
 
     // TODO: move to utility class
