@@ -52,6 +52,7 @@ import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
 import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
+import { RealmSettingsOid4vciTab } from "./RealmSettingsOid4vciTab";
 
 export interface UIRealmRepresentation extends RealmRepresentation {
   upConfig?: UserProfileConfig;
@@ -235,6 +236,34 @@ export const RealmSettingsTabs = () => {
         ),
       );
     }
+    if (r.attributes) {
+      // Handle nested vc object created by React Hook Form
+      if (r.attributes["vc"] && typeof r.attributes["vc"] === "object") {
+        const vcObj = r.attributes["vc"] as Record<string, any>;
+        Object.keys(vcObj).forEach((key) => {
+          const flatKey = `vc.${key}`;
+          r.attributes![flatKey] = vcObj[key]?.toString() || vcObj[key];
+        });
+        // Remove the nested object
+        delete r.attributes["vc"];
+      }
+
+      // Convert OID4VCI attributes to strings if they're not already
+      if (
+        r.attributes["vc.c-nonce-lifetime-seconds"] !== undefined &&
+        typeof r.attributes["vc.c-nonce-lifetime-seconds"] !== "string"
+      ) {
+        r.attributes["vc.c-nonce-lifetime-seconds"] =
+          r.attributes["vc.c-nonce-lifetime-seconds"].toString();
+      }
+      if (
+        r.attributes["preAuthorizedCodeLifespanS"] !== undefined &&
+        typeof r.attributes["preAuthorizedCodeLifespanS"] !== "string"
+      ) {
+        r.attributes["preAuthorizedCodeLifespanS"] =
+          r.attributes["preAuthorizedCodeLifespanS"].toString();
+      }
+    }
 
     try {
       const savedRealm: UIRealmRepresentation = {
@@ -287,6 +316,7 @@ export const RealmSettingsTabs = () => {
   const clientPoliciesTab = useTab("client-policies");
   const userProfileTab = useTab("user-profile");
   const userRegistrationTab = useTab("user-registration");
+  const oid4vciTab = useTab("oid4vci-attributes");
   const { hasAccess, hasSomeAccess } = useAccess();
   const canViewOrManageEvents =
     hasAccess("view-realm") && hasSomeAccess("view-events", "manage-events");
@@ -461,6 +491,15 @@ export const RealmSettingsTabs = () => {
               {...userRegistrationTab}
             >
               <UserRegistration />
+            </Tab>
+          )}
+          {isFeatureEnabled(Feature.OpenId4VCI) && (
+            <Tab
+              title={<TabTitleText>{t("oid4vciAttributes")}</TabTitleText>}
+              data-testid="rs-oid4vci-attributes-tab"
+              {...oid4vciTab}
+            >
+              <RealmSettingsOid4vciTab realm={realm!} save={save} />
             </Tab>
           )}
         </RoutableTabs>
