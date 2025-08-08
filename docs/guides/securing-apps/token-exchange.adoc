@@ -219,7 +219,7 @@ link:{adminguide_link}#_audience_resolve[Audience documentation] sections. The r
 Token exchange request sent with `scope=optional-scope2` and with `audience=target-client2`
 
 Same like previous example, but `target-client1` audience and client roles filtered due audience parameter was included, but only with this `target-client2` client. The client scope `default-scope1` will be
-also filtered due it contains some client roles, but at the same time, it does not contain any client roles of requested audience client `target-client2`. So the token would be like:
+also filtered because it contains some client roles but no client roles of the requested audience client `target-client2`. So the token would be as follows:
 
 [source,json]
 ----
