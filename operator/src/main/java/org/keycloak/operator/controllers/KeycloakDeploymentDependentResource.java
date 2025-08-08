@@ -415,25 +415,31 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
         }
 
-        // set defaults if nothing was specified by the user
-        // - server pods will have an affinity for the same zone as to avoid stretch clusters
-        // - server pods will have a stronger anti-affinity for the same node
-
         if (!specBuilder.hasAffinity()) {
-            specBuilder.editOrNewAffinity().withNewPodAffinity().addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                    .withWeight(10).withNewPodAffinityTerm().withNewLabelSelector().withMatchLabels(labels)
-                    .endLabelSelector().withTopologyKey(ZONE_KEY).endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAffinity().endAffinity();
+            var antiAffinity = specBuilder.editOrNewAffinity().withNewPodAntiAffinity();
+            // Server pods have an anti-affinity for the same zone in order to increase availability by creating a stretched cluster
+            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                  .withWeight(100)
+                  .withNewPodAffinityTerm()
+                  .withNewLabelSelector()
+                  .withMatchLabels(labels)
+                  .endLabelSelector()
+                  .withTopologyKey(ZONE_KEY)
+                  .endPodAffinityTerm()
+                  .endPreferredDuringSchedulingIgnoredDuringExecution();
 
-            specBuilder.editOrNewAffinity().withNewPodAntiAffinity()
-                    .addNewPreferredDuringSchedulingIgnoredDuringExecution().withWeight(50).withNewPodAffinityTerm()
-                    .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
-                    .withTopologyKey("kubernetes.io/hostname").endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAntiAffinity().endAffinity();
+            // Server pods have an anti-affinity for the same node in case it's not possible to provision to a zone that contains no existing pods
+            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                  .withWeight(90)
+                  .withNewPodAffinityTerm()
+                  .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
+                  .withTopologyKey("kubernetes.io/hostname")
+                  .endPodAffinityTerm()
+                  .endPreferredDuringSchedulingIgnoredDuringExecution();
+
+            antiAffinity.endPodAntiAffinity().endAffinity();
         }
-
     }
-
 
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
         var distConfigurator = ContextUtils.getDistConfigurator(context);
