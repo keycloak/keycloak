@@ -225,6 +225,7 @@
           "pl": "${locale_pl}",
           "pt": "${locale_pt}",
           "ru": "${locale_ru}",
+          "kk": "${locale_kk}",
           "ky": "${locale_ky}",
           "sk": "${locale_sk}",
           "sv": "${locale_sv}",
