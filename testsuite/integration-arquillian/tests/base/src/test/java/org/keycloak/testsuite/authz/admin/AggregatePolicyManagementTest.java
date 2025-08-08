@@ -28,8 +28,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.AggregatePoliciesResource;
 import org.keycloak.admin.client.resource.AggregatePolicyResource;
 import org.keycloak.admin.client.resource.AuthorizationResource;
-import org.keycloak.admin.client.resource.UserPoliciesResource;
-import org.keycloak.admin.client.resource.UserPolicyResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
@@ -168,29 +166,9 @@ public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest 
         }
     }
 
-    private void assertCreated(AuthorizationResource authorization, UserPolicyRepresentation representation) {
-        UserPoliciesResource permissions = authorization.policies().user();
-
-        try (Response response = permissions.create(representation)) {
-            UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
-            UserPolicyResource permission = permissions.findById(created.getId());
-            assertRepresentation(representation, permission);
-        }
-    }
-
     private void assertRepresentation(AggregatePolicyRepresentation representation, AggregatePolicyResource policy) {
         AggregatePolicyRepresentation actual = policy.toRepresentation();
         assertRepresentation(representation, actual, () -> policy.resources(), () -> Collections.emptyList(), () -> policy.associatedPolicies());
-    }
-
-    private void assertRepresentation(UserPolicyRepresentation representation, UserPolicyResource permission) {
-        UserPolicyRepresentation actual = permission.toRepresentation();
-        assertRepresentation(representation, actual, () -> permission.resources(), () -> Collections.emptyList(), () -> permission.associatedPolicies());
-        assertEquals(representation.getUsers().size(), actual.getUsers().size());
-        assertEquals(0, actual.getUsers().stream().filter(userId -> !representation.getUsers().stream()
-                        .filter(userName -> getRealm().users().get(userId).toRepresentation().getUsername().equalsIgnoreCase(userName))
-                        .findFirst().isPresent())
-                .count());
     }
 
 }

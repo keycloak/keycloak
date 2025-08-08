@@ -321,12 +321,6 @@ public class PartialExportTest {
             }
         }
     }
-    private void checkDefaultRoles(List<String> defaultRoles) {
-        HashSet<String> roles = new HashSet<>(defaultRoles);
-        Assert.assertTrue(roles.contains("uma_authorization"), "Default role 'uma_authorization'");
-        Assert.assertTrue(roles.contains("offline_access"), "Default role 'offline_access'");
-        Assert.assertTrue(roles.contains("user"), "Default role 'user'");
-    }
 
     private static <T> T loadJson(InputStream is, Class<T> type) {
         try {

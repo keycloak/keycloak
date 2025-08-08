@@ -391,19 +391,6 @@ public class AuthServerTestEnricher {
     private static final Pattern RECOGNIZED_ERRORS = Pattern.compile("ERROR \\[|SEVERE \\[|Exception ");
     private static final Pattern IGNORED = Pattern.compile("Jetty ALPN support not found|org.keycloak.events");
 
-    private static final boolean isRecognizedErrorLog(String logText) {
-        //There is expected string "Exception" in server log: Adding provider
-        //singleton org.keycloak.services.resources.ModelExceptionMapper
-        return RECOGNIZED_ERRORS.matcher(logText).find() && ! IGNORED.matcher(logText).find();
-    }
-
-    private static final void failOnRecognizedErrorInLog(Stream<String> logStream) {
-        Optional<String> anyRecognizedError = logStream.filter(AuthServerTestEnricher::isRecognizedErrorLog).findAny();
-        if (anyRecognizedError.isPresent()) {
-            throw new RuntimeException(String.format("Server log file contains ERROR: '%s'", anyRecognizedError.get()));
-        }
-    }
-
     public void checkServerLogs(@Observes(precedence = -1) BeforeSuite event) {
         suiteContext.setServerLogChecker(new TextFileChecker());
     }
