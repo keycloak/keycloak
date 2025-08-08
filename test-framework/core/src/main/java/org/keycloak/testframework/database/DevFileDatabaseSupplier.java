@@ -17,8 +17,8 @@ public class DevFileDatabaseSupplier extends AbstractDatabaseSupplier {
     private static class DevFileTestDatabase implements TestDatabase {
 
         @Override
-        public void start(DatabaseConfig config) {
-            if (config.initScript() != null)
+        public void start(DatabaseConfiguration config) {
+            if (config.getInitScript() != null)
                 throw new IllegalArgumentException("init script not supported, configure h2 properties via --db-url-properties");
         }
 
