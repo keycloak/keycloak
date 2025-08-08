@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { clickTableRowItem } from "./table";
 
 export async function goToRealm(page: Page, realmName: string) {

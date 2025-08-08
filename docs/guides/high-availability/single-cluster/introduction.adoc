@@ -1,0 +1,97 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Single cluster deployments"
+summary="Deploy a single Keycloak cluster, optionally stretched across multiple availability-zones" >
+
+== When to use a single cluster setup
+The {project_name} single cluster architecture is targeted at use cases that:
+
+* Deploy to an infrastructure with transparent networking, like for example a single {kubernetes} cluster.
+* Are constrained to a single
+<@profile.ifProduct>
+AWS Region.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+AWS Region or an equivalent low-latency setup.
+</@profile.ifCommunity>
+* Permit planned outages for maintenance.
+* Fit within a defined user and request count.
+* Can accept the impact of periodic outages.
+
+<@profile.ifCommunity>
+[#single-cluster-tested-configuration]
+== Tested Configuration
+
+We regularly test {project_name} with the following configuration:
+</@profile.ifCommunity>
+<@profile.ifProduct>
+[#single-cluster-supported-configuration]
+== Supported Configuration
+</@profile.ifProduct>
+
+* An OpenShift cluster deployed across three availability-zones
+** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
+<@profile.ifProduct>
+either ROSA HCP or ROSA classic.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+using ROSA HCP.
+</@profile.ifCommunity>
+
+** At least one worker node for each availability-zone
+** OpenShift version
+<@profile.ifProduct>
+4.17 (or later).
+</@profile.ifProduct>
+<@profile.ifCommunity>
+4.17.
+</@profile.ifCommunity>
+
+* Amazon Aurora PostgreSQL database
+** High availability with a primary DB instance in one Availability Zone, and synchronously replicated readers in the other Availability Zones
+** Version ${properties["aurora-postgresql.version"]}
+
+<#include "/high-availability/partials/configuration-disclaimer.adoc" />
+
+Read more on each item in the <@links.ha id="single-cluster-building-blocks" /> {section}.
+
+[#single-cluster-load]
+<#include "/high-availability/partials/tested-load.adoc" />
+
+[#single-cluster-limitations]
+== Limitations
+
+<@profile.ifCommunity>
+Even with the additional redundancy of three availability-zones, downtime can still occur when:
+</@profile.ifCommunity>
+
+* Simultaneous node failures occur
+* Rolling out {project_name} upgrades
+* Infrastructure fails, for example the {kubernetes} cluster
+
+For more details on limitations see the <@links.ha id="single-cluster-concepts" /> {section}.
+
+== Next steps
+
+The different {sections} introduce the necessary concepts and building blocks.
+For each building block, a blueprint shows how to deploy a fully functional example.
+Additional performance tuning and security hardening are still recommended when preparing a production setup.
+
+<@profile.ifCommunity>
+== Concept and building block overview
+
+* <@links.ha id="single-cluster-concepts" />
+* <@links.ha id="single-cluster-building-blocks" />
+* <@links.ha id="single-cluster-concepts-database-connections" />
+* <@links.ha id="single-cluster-concepts-threads" />
+* <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" />
+
+== Blueprints for building blocks
+* <@links.ha id="single-cluster-deploy-aurora" />
+* <@links.ha id="single-cluster-deploy-keycloak" />
+</@profile.ifCommunity>
+
+</@tmpl.guide>

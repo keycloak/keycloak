@@ -1,5 +1,5 @@
 import { Page, expect } from "@playwright/test";
-import { selectItem } from "../utils/form";
+import { selectItem } from "../utils/form.ts";
 
 export async function clickSaveRealm(page: Page) {
   await page.getByTestId("realmSettingsGeneralTab-save").click();

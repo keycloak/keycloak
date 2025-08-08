@@ -164,19 +164,6 @@ apply the upper bound to. For example, to apply an upper-bound of `1000` to the 
 
 Setting a maximum cache size for `sessions`, `clientSessions`, `offlineSessions` and `offlineClientSessions` is not supported when volatile sessions are enabled.
 
-=== Configuring caches for availability
-
-Distributed caches replicate cache entries on a subset of nodes in a cluster and assigns entries to fixed owner nodes.
-
-Each distributed cache, that is a primary source of truth of the data (`authenticationSessions`, `loginFailures` and `actionTokens`) has two owners per default, which means that two nodes have a copy of the specific cache entries.
-Non-owner nodes query the owners of a specific cache to obtain data.
-When one of the owners becomes unavailable, the data is restored from the remaining owner and rebalanced across the remaining nodes.
-When both owner nodes are offline, all data is lost.
-
-The default number of two owners is the minimum number is necessary to survive one node (owner) failure or a rolling restart in a cluster setup with at least two nodes.
-A higher number increases the availability of the data, but at the expense of slower writes as more nodes need to be updated.
-Therefore, changing the number of owners for the caches `authenticationSessions`, `loginFailures` and `actionTokens` is not recommended.
-
 === Specify your own cache configuration file
 
 To specify your own cache configuration file, enter this command:
@@ -254,7 +241,7 @@ Please refer to {infinispan_embedding_docs}#cluster-transport[Setting up Infinis
 
 == Securing transport stacks
 
-Encryption using TLS is enabled by default for TCP-based transport stacks, which is also the default configuration
+Encryption using TLS is enabled by default for TCP-based transport stacks, which is also the default configuration.
 No additional CLI options or modifications of the cache XML are required as long as you are using a TCP-based transport stack.
 
 [NOTE]
@@ -309,6 +296,7 @@ Although not recommended for standard setups, if it is essential in a specific s
 The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
 To restrict unauthorized access, always use a self-signed certificate for each {project_name} deployment.
 
+[#network-ports]
 == Network Ports
 
 To ensure a healthy {project_name} clustering, some network ports need to be open.
@@ -406,6 +394,46 @@ m|cache-embedded-network-external-address
 |IP address that other instances in the {project_name} should use to contact this node.
 
 |===
+
+== Verify cluster and network health
+
+This section provides methods to verify that your {project_name} cluster has formed correctly and that network communication between instances is functioning as expected.
+It is crucial to perform these checks after deployment to ensure high availability and data consistency.
+
+To verify if the cluster is formed properly, check one of these locations:
+
+* Admin UI
++
+Access the {project_name} Web UI, typically available at `++https://<your-host>/admin/master/console/#/master/providers++`.
+Under the *Provider Info* section, locate the *connectionsInfinispan* entry.
+Click on *Show more* to expand its details.
+You should find information about the cluster status and the health of individual caches.
++
+image:server/infinispan_info.png[Infinispan Cluster Information in Web UI]
+
+* Logs
++
+Infinispan logs a cluster view every time a new instance joins or leaves the cluster.
+Search for log entries with the ID `ISPN000094`.
++
+A healthy cluster view will show all expected nodes.
+For example:
++
+[source,text]
+----
+ISPN000094: Received new cluster view for channel ISPN: [node1-26186|1] (2) [node1-26186, node2-37007]
+----
++
+This log entry indicates that the cluster named "ISPN" currently has 2 nodes: `node1-26186` and `node2-37007`.
+The `(2)` confirms the total number of nodes in the cluster.
+
+* Metrics
++
+{project_name} exposes Infinispan metrics via a Prometheus endpoint, which can be visualized in tools like Grafana.
+The metric `vendor_cluster_size` shows the current number of instances in the cluster.
+You should verify that this metric matches the expected number of running instances configured in your cluster.
++
+Refer to <@links.observability id="metrics-for-troubleshooting-clustering-and-network" anchor="_cluster_size"/> for more information.
 
 == Exposing metrics from caches
 

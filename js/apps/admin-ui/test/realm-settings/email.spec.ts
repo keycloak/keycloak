@@ -1,9 +1,9 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   clickSaveEmailButton,
   goToEmailTab,
@@ -13,7 +13,7 @@ import {
   assertEmailPageWithPasswordAuth,
   populateEmailPageWithTokenAuth,
   assertEmailPageWithTokenAuth,
-} from "./email";
+} from "./email.ts";
 
 test.describe("Email", () => {
   const realmName = `email-realm-settings-${uuid()}`;

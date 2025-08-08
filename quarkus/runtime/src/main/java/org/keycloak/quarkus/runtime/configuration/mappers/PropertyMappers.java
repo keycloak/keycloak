@@ -56,6 +56,7 @@ public final class PropertyMappers {
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
         MAPPERS.addAll(HostnameV2PropertyMappers.getHostnamePropertyMappers());
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
+        MAPPERS.addAll(HttpAccessLogPropertyMappers.getMappers());
         MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(ConfigKeystorePropertyMappers.getConfigKeystorePropertyMappers());
         MAPPERS.addAll(ManagementPropertyMappers.getManagementPropertyMappers());
@@ -200,7 +201,7 @@ public final class PropertyMappers {
     }
 
     public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
-        return MAPPERS.wildcardMapFrom.get(from.getKey());
+        return MAPPERS.wildcardConfig.wildcardMapFrom.get(from.getKey());
     }
 
     public static boolean isSupported(PropertyMapper<?> mapper) {
@@ -238,8 +239,7 @@ public final class PropertyMappers {
         private final Map<String, PropertyMapper<?>> disabledBuildTimeMappers = new HashMap<>();
         private final Map<String, PropertyMapper<?>> disabledRuntimeMappers = new HashMap<>();
 
-        private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
-        private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
+        private final WildcardMappersConfig wildcardConfig = new WildcardMappersConfig();
 
         public void addAll(PropertyMapper<?>[] mappers) {
             for (PropertyMapper<?> mapper : mappers) {
@@ -259,10 +259,7 @@ public final class PropertyMappers {
 
         public void addMapper(PropertyMapper<?> mapper) {
             if (mapper.hasWildcard()) {
-                if (mapper.getMapFrom() != null) {
-                    wildcardMapFrom.put(mapper.getMapFrom(), (WildcardPropertyMapper<?>) mapper);
-                }
-                wildcardMappers.add((WildcardPropertyMapper<?>)mapper);
+                wildcardConfig.addMapper((WildcardPropertyMapper<?>) mapper);
             } else {
                 handleMapper(mapper, this::add);
             }
@@ -270,10 +267,7 @@ public final class PropertyMappers {
 
         public void removeMapper(PropertyMapper<?> mapper) {
             if (mapper.hasWildcard()) {
-                wildcardMappers.remove(mapper);
-                if (mapper.getFrom() != null) {
-                    wildcardMapFrom.remove(mapper.getMapFrom());
-                }
+                wildcardConfig.removeMapper((WildcardPropertyMapper<?>) mapper);
             } else {
                 handleMapper(mapper, this::remove);
             }
@@ -300,16 +294,8 @@ public final class PropertyMappers {
             // TODO: we may want to introduce a prefix tree here as we add more wildcardMappers
             // for now we'll just limit ourselves to searching wildcards when we see a quarkus or
             // keycloak key
-            if (strKey.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) || strKey.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
-                ret = wildcardMappers.stream()
-                        .filter(m -> m.matchesWildcardOptionName(strKey))
-                        .toList();
-                if (!ret.isEmpty()) {
-                    return ret;
-                }
-            }
-
-            return null;
+            ret = wildcardConfig.get(strKey);
+            return !ret.isEmpty() ? ret : null;
         }
 
         @Override
@@ -318,7 +304,7 @@ public final class PropertyMappers {
         }
 
         public Set<WildcardPropertyMapper<?>> getWildcardMappers() {
-            return Collections.unmodifiableSet(wildcardMappers);
+            return Collections.unmodifiableSet(wildcardConfig.wildcardMappers);
         }
 
         public void sanitizeDisabledMappers(AbstractCommand command) {
@@ -409,4 +395,37 @@ public final class PropertyMappers {
         }
     }
 
+    /**
+     * Helper class for handling Mappers config for wildcards
+     */
+    private static class WildcardMappersConfig {
+        private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
+        private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
+
+        public void addMapper(WildcardPropertyMapper<?> mapper) {
+            if (mapper.getMapFrom() != null) {
+                wildcardMapFrom.put(mapper.getMapFrom(), mapper);
+            }
+            wildcardMappers.add(mapper);
+        }
+
+        public void removeMapper(WildcardPropertyMapper<?> mapper) {
+            wildcardMappers.remove(mapper);
+            if (mapper.getFrom() != null) {
+                wildcardMapFrom.remove(mapper.getMapFrom());
+            }
+        }
+
+        public List<WildcardPropertyMapper<?>> get(String key) {
+            // TODO: we may want to introduce a prefix tree here as we add more wildcardMappers
+            // for now we'll just limit ourselves to searching wildcards when we see a quarkus or
+            // keycloak key
+            if (key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) || key.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                return wildcardMappers.stream()
+                        .filter(m -> m.matchesWildcardOptionName(key))
+                        .toList();
+            }
+            return Collections.emptyList();
+        }
+    }
 }

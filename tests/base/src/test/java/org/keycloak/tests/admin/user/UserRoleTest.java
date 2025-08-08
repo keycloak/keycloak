@@ -9,7 +9,6 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -21,7 +20,6 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.RoleBuilder;
 
 import java.util.Collections;
@@ -42,10 +40,6 @@ public class UserRoleTest extends AbstractUserTest {
     @Test
     public void roleMappings() {
         RealmResource realm = managedRealm.admin();
-        // Enable events
-        RealmRepresentation realmRep = addTestEventListener(managedRealm.admin().toRepresentation());
-        managedRealm.admin().update(realmRep);
-
         RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").singleAttribute("attribute1", "value1").build();
 
         realm.roles().create(RoleBuilder.create().name("realm-role").build());
@@ -238,17 +232,5 @@ public class UserRoleTest extends AbstractUserTest {
         }
 
         return null;
-    }
-
-    private RealmRepresentation addTestEventListener(RealmRepresentation rep) {
-        if (rep.getEventsListeners() == null) {
-            rep.setEventsListeners(new LinkedList<String>());
-        }
-
-        if (!rep.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
-            rep.getEventsListeners().add(TestEventsListenerProviderFactory.PROVIDER_ID);
-        }
-
-        return rep;
     }
 }

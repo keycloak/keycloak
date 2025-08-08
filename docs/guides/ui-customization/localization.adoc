@@ -35,6 +35,7 @@ Texts of these message bundles can be overwritten by realm-specific values, whic
 .Procedure
 
 . Create the file `<THEME TYPE>/messages/messages_<LOCALE>.properties` in the directory of your theme.
+The `<LOCALE>` follows the conventions of https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ResourceBundle.html#getBundle(java.lang.String,java.util.Locale,java.lang.ClassLoader)[ResourceBunndle#getBundle].
 
 . Add this file to the `locales` property in `<THEME TYPE>/theme.properties`.
 For a language to be available to users in a realm, the login, account, and email theme types must support the language, so you need to add your language for those theme types.
@@ -72,8 +73,10 @@ locale_no=Norsk
 
 By default, message properties files should be encoded using UTF-8.
 {project_name} falls back to ISO-8859-1 handling if it cannot read the contents as UTF-8.
-Unicode characters can be escaped as described in Java's documentation for https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/PropertyResourceBundle.html[PropertyResourceBundle].
-Previous versions of {project_name} had support for specifying the encoding in the first line with a comment such as `# encoding: UTF-8`, which is no longer supported.
+Unicode characters can be escaped as described in Java's documentation for https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/PropertyResourceBundle.html[PropertyResourceBundle].
+
+To simplify migration to the new language codes `zh-Hant` and `zh-Hans`, the classloader and folder based themes pick up for the old language codes `zh-TW` and `zh-CN` also the files `messages_zh_Hant.properties` and `messages_zh_Hant.properties`.
+Entries in `messages_zh_Hant.properties` take precedence over entries in `messages_zh_TW.properties`, and entries in `messages_zh_Hans.properties` take precedence over entries in `messages_zh_CN.properties`.
 
 [role="_additional-resources"]
 .Additional resources

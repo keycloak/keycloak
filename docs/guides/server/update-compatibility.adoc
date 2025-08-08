@@ -1,3 +1,4 @@
+<#import "/templates/features.adoc" as features>
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/links.adoc" as links>
@@ -5,6 +6,7 @@
 <@tmpl.guide
 title="Checking if rolling updates are possible"
 summary="Execute the update compatibility command to check if {project_name} supports a rolling update for a change in your deployment."
+includedOptions="features features-*"
 >
 
 Use the update compatibility command to determine if you can update your deployment with a rolling update strategy when enabling or disabling features or changing the {project_name} version, configurations or providers and themes.
@@ -46,15 +48,7 @@ NOTE: If you do not use `--optimized` keep in mind that an `update` command may 
 
 [WARNING]
 ====
-The `check` command currently offers only a limited functionality. At the moment, it takes into consideration only the version of {project_name} and the embedded Infinispan to determine if a rolling update is possible.
-If those are unchanged, it reports that a rolling update is possible.
-
-The current version does not yet verify configuration changes and assumes all configuration changes are eligible for a rolling update.
-The same applies to changes to custom extensions and themes.
-
-A good use case when to use this is, for example, when you want to do a rolling update when you change the {project_name} theme or your custom extensions, and only want run recreate update when the version of {project_name} changes which does not yet allow a rolling update.
-
-While consumers of these commands should know the limitations that exist today, they should not rely on the internal behavior or the structure of the metadata file.
+Consumers of these commands should not rely on the internal behavior or the structure of the metadata file.
 Instead, they should rely only on the exit code of the `check` command to benefit from future enhancements on the internal logic to determine when a rolling update is possible.
 ====
 
@@ -143,6 +137,67 @@ m|4
 The feature `rolling-updates` is disabled.
 |===
 
+== Rolling incompatible changes
+
+The following configuration changes return a "Rolling Update is not possible" result code.
+
+=== Features
+
+==== Recreate always
+
+The enabling or disabling of the following features requires a recreate update:
+
+<@features.table ctx.features.updatePolicyShutdown />
+
+
+==== Recreate on feature version change
+
+Changing the following features versions triggers a recreate update:
+
+<@features.table ctx.features.updatePolicyRollingNoUpgrade />
+
+=== Configuration options
+
+Changing the value of one of the following CLI options triggers a recreate update:
+
+[caption=]
+.Cache
+[cols="30%,70%", options="header"]
+|===
+| Option                          | Rationale
+| `--cache`                       | The `ispn` and `local` configurations are mutually exclusive, changing from one to another will lead to data loss.
+| `--cache-config-file`           | Changing the configuration file could result in incompatible cache or transport configurations, resulting in clusters not forming as expected.
+| `--cache-stack`                 | Changing stack will result in the cluster not forming during rolling update and will lead to data loss.
+| `--cache-embedded-mtls-enabled` | Enabling/Disabling TLS will result in the cluster not forming during rolling update and will lead to data loss.
+| `--cache-remote-host`           | Connecting to a new remote cache will cause previously cached data to be lost.
+| `--cache-remote-port`           | Connecting to a new remote cache will cause previously cached data to be lost.
+|===
+
+[WARNING]
+====
+{project_name} does not verify changes to the content of the cache configuration file provided via `--cache-config-file`.
+If you change this file, you need to review and test your changes to ensure that nodes using the new configuration can form a cluster with the nodes running the old configuration.
+If a cluster cannot be formed, you should shut down {project_name} running the old configuration first before migrating to the new configuration.
+====
+
+[caption=]
+.Database
+[cols="30%,70%", options="header"]
+|===
+| Option              | Rationale
+| `--db`              | Migration to a new database vendor should be applied to all cluster members to ensure data consistency.
+| `--db-schema`       | Migration to a new database schema should be applied to all cluster members to ensure data consistency.
+| `--db-url-database` | Migration to a new database name should be applied to all cluster members to ensure data consistency.
+| `--db-url-host`     | All cluster members should be connecting to the same database to ensure data consistency.
+| `--db-url-port`     | All cluster members should be connecting to the same database to ensure data consistency.
+|===
+
+[WARNING]
+====
+{project_name} allows changes to the `--db-url` option to be rolled out in order to facilitate changes to JDBC properties.
+Great care should be taken when updating this value as changes to the host, port or database name could lead to distinct
+cluster members connecting to a different database, resulting in data consistency issues.
+====
 
 [[rolling-updates-for-patch-releases]]
 == Rolling updates for patch releases

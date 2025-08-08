@@ -1,10 +1,10 @@
-import { Locator, Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 import {
   assertSelectValue,
   selectItem,
   switchOff,
   switchOn,
-} from "../utils/form";
+} from "../utils/form.ts";
 
 function getTermsOfServiceUrl(page: Page) {
   return page.getByTestId("attributes.tosUri");
@@ -79,7 +79,12 @@ export async function clickOffEncryptionAssertions(page: Page) {
 }
 
 export async function clickGenerate(page: Page) {
+  const responsePromise = page.waitForResponse(
+    (res) => res.url().includes("/generate") && res.status() === 200,
+    { timeout: 10000 },
+  );
   await page.getByTestId("generate").click();
+  await responsePromise;
 }
 
 export async function assertNameIdFormatDropdown(page: Page) {

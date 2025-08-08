@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { switchOn } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { switchOn } from "../utils/form.ts";
 
 export async function goToEmailTab(page: Page) {
   await page.getByTestId("rs-email-tab").click();

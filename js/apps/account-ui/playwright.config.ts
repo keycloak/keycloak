@@ -1,26 +1,26 @@
-import { defineConfig, devices } from "@playwright/test";
+import { type ViewportSize, defineConfig, devices } from "@playwright/test";
 
 import { getAccountUrl } from "./test/utils";
 
 const retryCount = parseInt(process.env.RETRY_COUNT || "0");
+console.log("----------------------------");
+console.log("Playwright retries = " + retryCount);
+console.log("----------------------------");
+
+const viewport: ViewportSize = { width: 1920, height: 1080 };
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
   testDir: "./test",
-  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: retryCount,
-  workers: 1,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
-  expect: {
-    timeout: 20 * 1000,
-  },
 
   use: {
     baseURL: getAccountUrl(),
-    trace: "on-first-retry",
+    trace: "retain-on-failure",
   },
 
   /* Configure projects for major browsers */
@@ -38,7 +38,15 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        viewport: { width: 1920, height: 1200 },
+        viewport,
+      },
+      dependencies: ["import realms"],
+    },
+    {
+      name: "firefox",
+      use: {
+        ...devices["Desktop Firefox"],
+        viewport,
       },
       dependencies: ["import realms"],
     },

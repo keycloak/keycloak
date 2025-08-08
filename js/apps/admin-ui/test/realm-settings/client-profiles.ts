@@ -1,6 +1,10 @@
-import { Page, expect } from "@playwright/test";
-import { assertEmptyTable, assertRowExists, searchItem } from "../utils/table";
-import { confirmModal } from "../utils/modal";
+import { type Page, expect } from "@playwright/test";
+import {
+  assertEmptyTable,
+  assertRowExists,
+  searchItem,
+} from "../utils/table.ts";
+import { confirmModal } from "../utils/modal.ts";
 
 export async function goToClientPoliciesTab(page: Page) {
   await page.getByTestId("rs-clientPolicies-tab").click();

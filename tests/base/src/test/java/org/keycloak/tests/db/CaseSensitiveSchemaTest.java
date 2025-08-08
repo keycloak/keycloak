@@ -1,12 +1,12 @@
 package org.keycloak.tests.db;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
 import org.keycloak.testframework.database.PostgresTestDatabase;
@@ -17,8 +17,9 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 
-@DisabledIfEnvironmentVariable(named = "KC_TEST_DATABASE", matches = "mssql", disabledReason = "MSSQL does not support setting the default schema per session")
 @KeycloakIntegrationTest(config = CaseSensitiveSchemaTest.KeycloakConfig.class)
+// MSSQL does not support setting the default schema per session
+@DisabledForDatabases("mssql")
 public class CaseSensitiveSchemaTest {
     @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = DatabaseConfigurator.class)
     TestDatabase db;

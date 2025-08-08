@@ -24,16 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import io.agroal.api.AgroalDataSource;
-import io.quarkus.agroal.DataSource;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.InstanceHandle;
-import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
-import io.quarkus.runtime.annotations.Recorder;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
-import liquibase.Scope;
-import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.protostream.SerializationContextInitializer;
 import org.keycloak.Config;
@@ -55,6 +45,17 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.runtime.annotations.Recorder;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
+import liquibase.Scope;
+import liquibase.servicelocator.ServiceLocator;
 
 @Recorder
 public class KeycloakRecorder {

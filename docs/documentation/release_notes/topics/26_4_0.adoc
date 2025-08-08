@@ -20,3 +20,14 @@ You can now add context information to each log message like the realm or the cl
 This helps you to track down a warning or error message in the log to a specific caller or environment
 
 For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Ability to specify a `tlsSecret` on the Keycloak CR `ingress` spec
+
+In order to support basic TLS termination (edge) deployments via the operator, you may now set the Keycloak CR `spec.ingress.tlsSecret` field to a TLS Secret name in the namespace.
+
+= HTTP Access logging
+
+{project_name} supports HTTP access logging to record details of incoming HTTP requests.
+While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring.
+
+For more information, see the https://www.keycloak.org/server/logging[Logging guide].

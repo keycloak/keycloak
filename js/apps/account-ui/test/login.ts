@@ -1,7 +1,7 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
-import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "./constants";
-import { getRootPath } from "./utils";
+import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "./constants.ts";
+import { getRootPath } from "./utils.ts";
 
 export const login = async (
   page: Page,

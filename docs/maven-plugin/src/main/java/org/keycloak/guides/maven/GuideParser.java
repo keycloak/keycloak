@@ -1,9 +1,9 @@
 package org.keycloak.guides.maven;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,26 +14,25 @@ public class GuideParser {
 
     /**
      * Parses a FreeMarker template to retrieve Guide attributes
-     * @param file
+     * @param guidePath
      * @return A Guide instance; or <code>null</code> if not a guide
      * @throws IOException
      */
-    public Guide parse(File file) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+    public Guide parse(Path root, Path guidePath) throws IOException {
+        try (BufferedReader br = Files.newBufferedReader(guidePath)) {
             String importName = getImportName(br);
             String importElement = getGuideElement(br, importName);
 
             if (importElement != null) {
                 Guide guide = new Guide();
-                guide.setTemplate(file.getName());
-
-                guide.setId(file.getName().replaceAll(".adoc", ""));
-
+                Path relativePath = root.relativize(guidePath);
+                guide.setId(Guide.toId(relativePath.toString()));
+                guide.setPath(guidePath);
+                guide.setRoot(root);
+                guide.setTemplate(relativePath.toString());
                 setAttributes(importElement, guide);
-
                 return guide;
             }
-
             return null;
         }
     }
@@ -83,5 +82,4 @@ public class GuideParser {
             }
         }
     }
-
 }

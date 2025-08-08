@@ -27,6 +27,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -108,6 +109,9 @@ public class ParEndpoint extends AbstractParEndpoint {
         try {
             authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, decodedFormParameters);
         } catch (Exception e) {
+            if (!decodedFormParameters.containsKey(OIDCLoginProtocol.REQUEST_PARAM)) {
+                throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+            }
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST_OBJECT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
