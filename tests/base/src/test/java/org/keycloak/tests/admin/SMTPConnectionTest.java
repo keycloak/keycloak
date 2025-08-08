@@ -309,7 +309,7 @@ public class SMTPConnectionTest {
 
             realm.addClient("myclient")
                     .secret("mysecret")
-                    .directAccessGrants();
+                    .directAccessGrantsEnabled(true);
 
             //add client for token gathering (XOAUTH2)
             //reuse the same client does not work
@@ -326,7 +326,7 @@ public class SMTPConnectionTest {
             realm.addUser("myadmin")
                     .name("My", "Admin")
                     .email("admin@localhost")
-                    .emailVerified()
+                    .emailVerified(true)
                     .password("myadmin")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
 

@@ -40,7 +40,7 @@ public class UserGroupTest extends AbstractUserTest {
 
         UserRepresentation userRepresentation = UserConfigBuilder.create()
                 .username(userName).name("average", "joe").password("password")
-                .email("joe@average.com").emailVerified().build();
+                .email("joe@average.com").emailVerified(true).build();
 
         GroupRepresentation groupRepresentation = GroupConfigBuilder.create().name(groupName).setAttributes(attributes).build();
 
@@ -68,7 +68,7 @@ public class UserGroupTest extends AbstractUserTest {
 
         UserRepresentation userRepresentation = UserConfigBuilder.create()
                 .username(userName).name("average", "joe").password("password")
-                .email("joe@average.com").emailVerified().build();
+                .email("joe@average.com").emailVerified(true).build();
 
         GroupRepresentation groupRepresentation = GroupConfigBuilder.create().name(groupName1).setAttributes(attributes1).build();
         GroupRepresentation groupRepresentation2 = GroupConfigBuilder.create().name(groupName2).setAttributes(attributes2).build();

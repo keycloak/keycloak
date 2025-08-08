@@ -29,7 +29,7 @@ public class RealmAdminPermissionsConfig implements RealmConfig {
         realm.addUser("myadmin")
                 .name("My", "Admin")
                 .email("myadmin@localhost")
-                .emailVerified()
+                .emailVerified(true)
                 .password("password")
                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, 
                         AdminRoles.QUERY_USERS,
@@ -37,11 +37,11 @@ public class RealmAdminPermissionsConfig implements RealmConfig {
                         AdminRoles.QUERY_CLIENTS);
         realm.addClient("myclient")
                 .secret("mysecret")
-                .directAccessGrants();
+                .directAccessGrantsEnabled(true);
         realm.addClient("myresourceserver")
                 .secret("mysecret")
-                .directAccessGrants()
-                .authorizationServices();
+                .directAccessGrantsEnabled(true)
+                .authorizationServicesEnabled(true);
         return realm.adminPermissionsEnabled(true);
     }
 }

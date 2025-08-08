@@ -415,7 +415,7 @@ public class ConsentsTest {
             builder.username("user");
             builder.password("password");
             builder.email("user@local");
-            builder.emailVerified();
+            builder.emailVerified(true);
             builder.name("Local", "User");
 
             return builder;
@@ -429,7 +429,7 @@ public class ConsentsTest {
             builder.username("provider");
             builder.password("password");
             builder.email("provider@local");
-            builder.emailVerified();
+            builder.emailVerified(true);
             builder.name("Provider", "User");
 
             return builder;

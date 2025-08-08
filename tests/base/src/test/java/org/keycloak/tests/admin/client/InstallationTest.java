@@ -441,7 +441,7 @@ public class InstallationTest {
                     .protocol("openid-connect")
                     .bearerOnly(false)
                     .publicClient(false)
-                    .authorizationServices()
+                    .authorizationServicesEnabled(true)
                     .serviceAccountsEnabled(true);
         }
     }
