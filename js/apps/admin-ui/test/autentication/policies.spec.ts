@@ -1,10 +1,10 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToAuthentication, goToRealm } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToAuthentication, goToRealm } from "../utils/sidebar.ts";
 import {
   assertSupportedApplications,
   fillSelects,
@@ -14,7 +14,7 @@ import {
   increaseInitialCounter,
   setPolicyType,
   setWebAuthnPolicyCreateTimeout,
-} from "./policies";
+} from "./policies.ts";
 
 test.describe("OTP policies tab", () => {
   const realmName = `policies-otp-${uuid()}`;

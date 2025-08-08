@@ -5,10 +5,10 @@ import {
   deleteCredential,
   deleteRealm,
   importRealm,
-} from "../admin-client";
-import { login } from "../login";
-import groupsRealm from "../realms/groups-realm.json" assert { type: "json" };
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+} from "../admin-client.ts";
+import { login } from "../login.ts";
+import groupsRealm from "../realms/groups-realm.json" with { type: "json" };
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 
 const realm = "groups";
 test.describe("Signing in", () => {

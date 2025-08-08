@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 
 export async function assertRowHasSignOutKebab(page: Page, row: string) {
   await page

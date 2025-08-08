@@ -1,20 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { clickCancelButton, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { clickCancelButton, clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
-} from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToClients, goToRealm } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertRowExists,
   clickRowKebabItem,
   clickTableRowItem,
   getTableData,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   clickCreateAnonymousPolicy,
   clickCreateAuthenticatedPolicy,
@@ -22,7 +22,7 @@ import {
   fillPolicyForm,
   goToAuthenticatedSubTab,
   goToClientRegistrationTab,
-} from "./registration-policies";
+} from "./registration-policies.ts";
 
 test.describe("Client registration policies tab", () => {
   const tabName = "Client registration";
