@@ -23,7 +23,6 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
@@ -33,18 +32,18 @@ import org.jboss.modules.ModuleLoader;
  */
 public class KeycloakDependencyProcessorWildFly extends KeycloakDependencyProcessor {
 
-    private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-adapter-core");
-    private static final ModuleIdentifier KEYCLOAK_ELYTRON_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-wildfly-elytron-adapter");
+    private static final String KEYCLOAK_CORE_ADAPTER = "org.keycloak.keycloak-saml-adapter-core";
+    private static final String KEYCLOAK_ELYTRON_ADAPTER = "org.keycloak.keycloak-saml-wildfly-elytron-adapter";
 
     @Override
     protected void addCoreModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE_ADAPTER, false, false, false, false));
+        moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, KEYCLOAK_CORE_ADAPTER).build());
     }
 
     @Override
     protected void addPlatformSpecificModules(DeploymentPhaseContext phaseContext, ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
         if (isElytronEnabled(phaseContext)) {
-            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_ADAPTER, true, false, false, false));
+            moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, KEYCLOAK_ELYTRON_ADAPTER).setOptional(true).build());
         } else {
             throw new RuntimeException("Legacy WildFly security layer is no longer supported by the Keycloak WildFly adapter");
         }
