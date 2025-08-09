@@ -10,7 +10,8 @@ export const TextComponent = ({
   helpText,
   defaultValue,
   required,
-  isDisabled = false,
+  readOnly,
+  isDisabled = readOnly ?? false,
   convertToName,
 }: ComponentProps) => {
   const { t } = useTranslation();
