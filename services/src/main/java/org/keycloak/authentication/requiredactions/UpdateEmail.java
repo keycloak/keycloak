@@ -123,6 +123,14 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         if (isEnabled(context.getRealm())) {
             KeycloakSession session = context.getSession();
 
+            // skip and clear UPDATE_EMAIL required action if email is readonly
+            UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+            UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_EMAIL, context.getUser());
+            if (profile.getAttributes().isReadOnly(UserModel.EMAIL)) {
+                context.getUser().removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
+                return;
+            }
+
             if (session.getAttributeOrDefault(FORCE_EMAIL_VERIFICATION, Boolean.FALSE)) {
                 sendEmailUpdateConfirmation(context, false);
                 return;
