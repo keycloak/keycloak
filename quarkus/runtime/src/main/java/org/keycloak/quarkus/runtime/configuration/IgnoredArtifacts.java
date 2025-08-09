@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.keycloak.common.Profile;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenTelemetryOptions;
 import org.keycloak.config.database.Database;
 
 /**
@@ -40,7 +41,8 @@ public class IgnoredArtifacts {
                         fips(),
                         jdbcDrivers(),
                         health(),
-                        metrics()
+                        metrics(),
+                        otelMetrics()
                 )
                 .flatMap(Collection::stream)
                 .collect(Collectors.toUnmodifiableSet());
@@ -169,5 +171,17 @@ public class IgnoredArtifacts {
     private static Set<String> metrics() {
         boolean isMetricsEnabled = Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
         return !isMetricsEnabled ? METRICS : emptySet();
+    }
+
+    // OpenTelemetry Metrics (Micrometer to OTel bridge)
+    public static Set<String> OTEL_METRICS = Set.of(
+            "io.quarkus:quarkus-micrometer-opentelemetry",
+            "io.quarkus:quarkus-micrometer-opentelemetry-deployment",
+            "io.opentelemetry.instrumentation:opentelemetry-micrometer-1.5"
+    );
+
+    private static Set<String> otelMetrics() {
+        boolean isOtelMetricsEnabled = Configuration.isTrue(OpenTelemetryOptions.OTEL_METRICS_ENABLED);
+        return !isOtelMetricsEnabled ? OTEL_METRICS : emptySet();
     }
 }

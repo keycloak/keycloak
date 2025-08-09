@@ -23,6 +23,7 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenTelemetryOptions;
 import org.keycloak.config.Option;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -154,6 +155,11 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
     @Test
     public void metrics() {
         assertIgnoredArtifacts(IgnoredArtifacts.METRICS, MetricsOptions.METRICS_ENABLED);
+    }
+
+    @Test
+    public void otelMetrics(){
+        assertIgnoredArtifacts(IgnoredArtifacts.OTEL_METRICS, OpenTelemetryOptions.OTEL_METRICS_ENABLED);
     }
 
     private void assertIgnoredArtifacts(Set<String> artifactsSet, Option<Boolean> enabledOption) {

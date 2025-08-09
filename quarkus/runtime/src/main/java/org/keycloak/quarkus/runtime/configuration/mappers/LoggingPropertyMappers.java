@@ -426,7 +426,7 @@ public final class LoggingPropertyMappers {
         return LoggingOptions.DEFAULT_LOG_FORMAT;
     }
 
-    private static String upperCase(String value, ConfigSourceInterceptorContext context) {
+    static String upperCase(String value, ConfigSourceInterceptorContext context) {
         return value.toUpperCase(Locale.ROOT);
     }
 
