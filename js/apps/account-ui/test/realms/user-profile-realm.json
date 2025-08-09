@@ -106,32 +106,27 @@
   ],
   "users": [
     {
-      "username": "alice",
+      "username": "jdoe",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "jdoe@keycloak.org",
       "enabled": true,
-      "email": "alice@keycloak.org",
-      "firstName": "Alice",
-      "lastName": "In Chains",
+      "realmRoles": [],
+      "clientRoles": {
+        "account": ["manage-account"]
+      },
       "credentials": [
         {
           "type": "password",
-          "value": "alice"
+          "value": "jdoe"
         }
-      ],
-      "realmRoles": [
-        "user", "uma_authorization"
-      ],
-      "clientRoles": {
-        "account": [
-          "manage-account"
-        ]
-      }
+      ]
     }
   ],
   "identityProviders": [
     {
       "alias": "keycloak-oidc",
       "displayName": "",
-      "internalId": "566b8743-6b80-4165-9675-ed10a2e9af9c",
       "providerId": "keycloak-oidc",
       "enabled": true,
       "updateProfileFirstLoginMode": "on",
