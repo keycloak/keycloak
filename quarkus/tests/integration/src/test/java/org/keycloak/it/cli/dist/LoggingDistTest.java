@@ -266,12 +266,12 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--features=log-mdc","--log-mdc-enabled=true", "--log-level=org.keycloak:debug" })
+    @Launch({ "start-dev", "--features=log-mdc","--log-mdc-enabled=true", "--log-level=org.keycloak.transaction:debug" })
     void testLogMdcShowingInTheLogs(CLIResult cliResult) {
 
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        assertTrue(cliResult.getOutput().contains("{kc.realm=master} DEBUG [org.keycloak."));
+        assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak."));
         cliResult.assertStartedDevMode();
     }
 

@@ -477,9 +477,10 @@ Logging:
                        debug, trace, all.
 --log-mdc-keys <keys>
                      Defines which information should be added to the mapped diagnostic context as
-                       a comma-separated list. Possible values are: realm, clientId, userId,
-                       ipAddress, org. Default: realm,org,clientId. Available only when MDC logging
-                       is enabled.
+                       a comma-separated list. Possible values are: realmName, clientId, userId,
+                       ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
+                       Default: realmName,clientId,org,sessionId,authenticationSessionId,
+                       authenticationTabId. Available only when MDC logging is enabled.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.
