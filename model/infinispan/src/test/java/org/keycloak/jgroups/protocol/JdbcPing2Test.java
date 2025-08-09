@@ -1,20 +1,31 @@
 package org.keycloak.jgroups.protocol;
 
 import org.jboss.logging.Logger;
+import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.util.ThreadFactory;
+import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.infinispan.health.impl.ClusterHealthImpl;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Misc tests for {@link KEYCLOAK_JDBC_PING2}, running against H2
@@ -22,7 +33,7 @@ import java.util.stream.Stream;
  * @author Alexander Schwartz
  */
 public class JdbcPing2Test {
-    protected static Logger log = Logger.getLogger(JdbcPing2Test.class);
+    protected static final Logger log = Logger.getLogger(JdbcPing2Test.class);
 
     protected static final String CLUSTER="jdbc-test";
     protected static final int NUM_NODES=8;
@@ -47,6 +58,70 @@ public class JdbcPing2Test {
         log.info("Average time to form the cluster: " + Duration.ofNanos(sum / count));
     }
 
+    @Test
+    public void testClusterHealth() throws Throwable {
+        var ping = new ControlledJdbcPing();
+        var clusterHealth = new ClusterHealthImpl();
+        var checkHealthMethod = createMethodHandleForClusterHealth();
+        var addresses = IntStream.range(0, 2)
+                .mapToObj(operand -> new UUID(0, operand))
+                .sorted()
+                .toArray(Address[]::new);
+
+        // test exception
+        ping.setException(new RuntimeException("Induced"));
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, ping.isHealthy());
+        checkHealthMethod.invoke(clusterHealth, ping);
+        // A database exception do not change the cluster health.
+        // It relies on Quarkus database health check to mark the Keycloak instance as not ready.
+        assertTrue(clusterHealth.isHealthy());
+        // Remove exception
+        ping.setException(null);
+
+        // test empty table / no coordinator
+        ping.setView(addresses[0]);
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.NO_COORDINATOR, ping.isHealthy());
+        checkHealthMethod.invoke(clusterHealth, ping);
+        assertFalse(clusterHealth.isHealthy());
+
+        // test member in the view / single coordinator
+        ping.setPingData(List.of(addresses[0]));
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.isHealthy());
+        checkHealthMethod.invoke(clusterHealth, ping);
+        assertTrue(clusterHealth.isHealthy());
+
+        // test higher ID loses
+        // coordinator a[0] in the table, and we belong to view with the coordinator a[1]
+        ping.setView(addresses[1]);
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, ping.isHealthy());
+        checkHealthMethod.invoke(clusterHealth, ping);
+        assertFalse(clusterHealth.isHealthy());
+
+        // test lower ID wins
+        // coordinator a[0] and a[1] in the table, and we belong to view with the coordinator a[0]
+        ping.setPingData(List.of(addresses[1], addresses[0]));
+        ping.setView(addresses[0]);
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.isHealthy());
+        checkHealthMethod.invoke(clusterHealth, ping);
+        assertTrue(clusterHealth.isHealthy());
+
+        // test lower ID wins
+        // coordinator a[0] and a[1] in the table, and we belong to view with the coordinator a[1]
+        ping.setPingData(List.of(addresses[1], addresses[0]));
+        ping.setView(addresses[1]);
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, ping.isHealthy());
+        checkHealthMethod.invoke(clusterHealth, ping);
+        assertFalse(clusterHealth.isHealthy());
+    }
+
+    private static MethodHandle createMethodHandleForClusterHealth() throws NoSuchMethodException, IllegalAccessException {
+        // to avoid exposing the method in ClusterHealthImpl.
+        var myLookup = MethodHandles.privateLookupIn(ClusterHealthImpl.class, MethodHandles.lookup());
+        var mt = MethodType.methodType(void.class, KEYCLOAK_JDBC_PING2.class);
+        return myLookup.findVirtual(ClusterHealthImpl.class, "checkHealth", mt);
+    }
+
+    @SuppressWarnings("resource")
     private static long runSingleTest() throws Exception {
         JChannel[] channels = new JChannel[NUM_NODES];
         List<Thread> threads = new ArrayList<>();
@@ -81,6 +156,7 @@ public class JdbcPing2Test {
         }
     }
 
+    @SuppressWarnings("resource")
     protected static JChannel createChannel(String cfg, String name) throws Exception {
         return new JChannel(cfg).name(name);
     }

@@ -71,8 +71,7 @@ public class HealthDistTest {
                 .statusCode(200);
         when().get("/health/ready").then()
                 .statusCode(200)
-                .body("checks[0].name", equalTo("Keycloak database connections async health check"))
-                .body("checks.size()", equalTo(1));
+                .body("checks.size()", equalTo(2));
         when().get("/lb-check").then()
                 .statusCode(404);
     }
