@@ -37,6 +37,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public final class Environment {
 
+    public static final String KC_CONFIG_REBUILD_CHECK = "kc.config.build-and-exit";
     private static final String KC_HOME_DIR = "kc.home.dir";
     public static final String NON_SERVER_MODE = "nonserver";
     public static final String PROFILE ="kc.profile";
@@ -196,11 +197,11 @@ public final class Environment {
     }
 
     public static boolean isRebuildCheck() {
-        return Boolean.getBoolean("kc.config.build-and-exit");
+        return Boolean.getBoolean(KC_CONFIG_REBUILD_CHECK);
     }
 
     public static void setRebuildCheck() {
-        System.setProperty("kc.config.build-and-exit", "true");
+        System.setProperty(KC_CONFIG_REBUILD_CHECK, "true");
     }
 
     public static boolean isRebuilt() {

@@ -50,7 +50,6 @@ esceval() {
     printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
 }
 
-PRE_BUILD=true
 while [ "$#" -gt 0 ]
 do
     case "$1" in
@@ -79,13 +78,8 @@ do
       *)
           OPT=$(esceval "$1")
           case "$1" in
-            start-dev) CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1";;
             -D*) SERVER_OPTS="$SERVER_OPTS ${OPT}";;
-            *) case "$1" in
-                 --optimized | --help | --help-all | -h) PRE_BUILD=false;;
-                 build) if [ -z "$CONFIG_ARGS" ]; then PRE_BUILD=false; fi;;
-               esac 
-               CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
+            *) CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
                ;;
           esac
           ;;
@@ -177,9 +171,13 @@ if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-if [ "$PRE_BUILD" = "true" ]; then
-  eval "'$JAVA'" -Dkc.config.build-and-exit=true "$JAVA_RUN_OPTS" || exit $?
+eval "'$JAVA'" "$JAVA_RUN_OPTS"
+status=$?
+# only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed 
+if [ $status = 10 ]; then
   JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
-fi
 
-eval exec "'$JAVA'" "$JAVA_RUN_OPTS"
+  eval exec "'$JAVA'" "$JAVA_RUN_OPTS"
+else
+  exit $status
+fi 

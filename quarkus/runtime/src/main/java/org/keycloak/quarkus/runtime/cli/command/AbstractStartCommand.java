@@ -47,6 +47,9 @@ public abstract class AbstractStartCommand extends AbstractCommand {
 
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
+    public static final int FEATURE_DISABLED_EXIT_CODE = 4;
+    public static final int REBUILT_EXIT_CODE = 10;
+
     @CommandLine.Mixin
     DryRunMixin dryRunMixin = new DryRunMixin();
 
@@ -59,7 +62,7 @@ public abstract class AbstractStartCommand extends AbstractCommand {
             if (requiresReAugmentation()) {
                 runReAugmentation();
             }
-            return Optional.of(CommandLine.ExitCode.OK);
+            return Optional.of(REBUILT_EXIT_CODE);
         }
         return Optional.empty();
     }
