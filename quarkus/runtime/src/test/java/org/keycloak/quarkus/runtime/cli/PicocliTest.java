@@ -33,6 +33,7 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -45,6 +46,7 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -102,9 +104,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        public void initConfig(AbstractCommand command) {
+        public void initConfig(List<String> cliArgs, AbstractCommand command) {
             KeycloakConfigSourceProvider.reload();
-            super.initConfig(command);
+            boolean checkBuild = Environment.isRebuildCheck();
+            super.initConfig(cliArgs, command);
+            if (!checkBuild && PersistedConfigSource.getInstance().getConfigValueProperties().isEmpty()) {
+                System.getProperties().remove(Environment.KC_CONFIG_REBUILD_CHECK);
+            }
             config = Configuration.getConfig();
         }
 
@@ -351,9 +357,8 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testReaugFromProdToDev() {
         build("build", "--db=dev-file");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=name", "--http-enabled=true");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("dev", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
@@ -370,12 +375,14 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private NonRunningPicocli build(Consumer<String> outChecker, String... args) {
+        int code = CommandLine.ExitCode.OK;
         if (Stream.of(args).anyMatch("start-dev"::equals)) {
-            Environment.setRebuildCheck(); // auto-build
+            Environment.setRebuildCheck();
+            code = AbstractStartCommand.REBUILT_EXIT_CODE;
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
         assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.reaug);
-        assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(nonRunningPicocli.getErrString(), code, nonRunningPicocli.exitCode);
         outChecker.accept(nonRunningPicocli.getOutString());
         onAfter();
         addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
@@ -386,9 +393,8 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testReaugFromProdToDevExport() {
         build("build", "--db=dev-file");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
     }
 
@@ -396,9 +402,8 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testNoReaugFromProdToExport() {
         build("build", "--db=dev-file");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 
@@ -407,7 +412,6 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testDBRequiredAutoBuild() {
         build("build", "--db=dev-file");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--file=file");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
     }
@@ -416,9 +420,8 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testReaugFromDevToProd() {
         build("start-dev");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--hostname=name", "--http-enabled=true");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
     }
 
@@ -426,9 +429,8 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testNoReaugFromDevToDevExport() {
         build("start-dev");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 
@@ -436,9 +438,8 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testReaugFromDevToProdExport() {
         build("start-dev", "-v");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
@@ -447,9 +448,8 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void testOptimizedReaugmentationMessage() {
         build("build", "--db=dev-file");
 
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--features=docker", "--hostname=name", "--http-enabled=true");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("features=<unset> > features=docker"));
         assertTrue(nonRunningPicocli.reaug);
     }
@@ -897,10 +897,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         putEnvVar("KC_SPI_EVENTS_LISTENER_PROVIDER", "jboss-logging");
         NonRunningPicocli nonRunningPicocli = build(out -> assertThat(out, containsString("The following SPI options")), "build", "--db=dev-file");
 
-        Environment.setRebuildCheck(); // auto-build
         putEnvVar("KC_SPI_EVENTS_LISTENER_PROVIDER", "new-jboss-logging");
         nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options"));
     }

@@ -21,7 +21,6 @@ import static java.lang.String.format;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
-import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
@@ -55,7 +54,7 @@ import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
-import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -165,12 +164,7 @@ public class Picocli {
                     currentCommand = ac;
                 }
             }
-            initConfig(currentCommand);
-
-            if (isRebuildCheck()) {
-                // build command should be available when running re-aug
-                addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
-            }
+            initConfig(cliArgs, currentCommand);
         });
     }
 
@@ -634,7 +628,7 @@ public class Picocli {
         if (!result.includeBuildTime && !result.includeRuntime) {
             return result;
         } else if (result.includeRuntime && !result.includeBuildTime) {
-            result.includeBuildTime = isRebuilt() || !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG);
+            result.includeBuildTime = !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG);
         } else if (result.includeBuildTime && !result.includeRuntime) {
             result.includeRuntime = isRebuildCheck();
         }
@@ -909,11 +903,16 @@ public class Picocli {
         QuarkusEntryPoint.main();
     }
 
-    public void initConfig(AbstractCommand command) {
+    public void initConfig(List<String> cliArgs, AbstractCommand command) {
         if (Configuration.isInitialized()) {
             throw new IllegalStateException("Config should not be initialized until profile is determined");
         }
         this.parsedCommand = Optional.ofNullable(command);
+
+        if (!Environment.isRebuilt() && command instanceof AbstractStartCommand
+                && !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG)) {
+            Environment.setRebuildCheck();
+        }
 
         String profile = parsedCommand.map(AbstractCommand::getInitProfile)
                 .orElseGet(() -> Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
