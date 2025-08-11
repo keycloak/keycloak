@@ -48,6 +48,7 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.smallrye.config.SmallRyeConfig;
 import picocli.CommandLine;
@@ -564,9 +565,22 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         addPersistedConfigValues(Map.of(Picocli.KC_PROVIDER_FILE_PREFIX + "fake", "value"));
 
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertTrue(nonRunningPicocli.getErrString().contains("A provider JAR was updated since the last build, please rebuild for this to be fully utilized."));
+        assertTrue(nonRunningPicocli.getErrString().contains(Picocli.PROVIDER_TIMESTAMP_ERROR));
+    }
+
+    @Test
+    public void warnProviderChanged() {
+        build("build", "--db=dev-file");
+
+        putEnvVar("KC_RUN_IN_CONTAINER", "true");
+        String key = PersistedConfigSource.getInstance().getConfigValueProperties().keySet().stream().filter(k -> k.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX)).findAny().orElseThrow();
+        addPersistedConfigValues(Map.of(key, "1")); // change to a fake timestamp
+
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        assertEquals(nonRunningPicocli.getErrString(), CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString().contains(Picocli.PROVIDER_TIMESTAMP_WARNING));
     }
 
     @Test
@@ -800,7 +814,6 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void timestampChanged() {
-        assertTrue(Picocli.timestampChanged("12345", null));
         assertTrue(Picocli.timestampChanged("12345", "12346"));
         assertTrue(Picocli.timestampChanged("12000", "12346"));
         // new is truncated - should not be a change
