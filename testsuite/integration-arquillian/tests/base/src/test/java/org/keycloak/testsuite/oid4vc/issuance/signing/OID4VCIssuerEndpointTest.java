@@ -43,8 +43,10 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -86,6 +88,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -103,6 +106,8 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -389,6 +394,80 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         jwe.verifyAndDecodeJwe();
         byte[] decryptedContent = jwe.getContent();
         return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
+    }
+
+    public String createEncryptedCredentialRequest(String payload, KeyWrapper encryptionKey) throws Exception {
+        byte[] content = payload.getBytes(StandardCharsets.UTF_8);
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                .keyId(encryptionKey.getKid())
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm("A256GCM")
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public String createEncryptedCredentialRequestWithCompression(String payload, KeyWrapper encryptionKey) throws Exception {
+        // Compress payload first
+        byte[] content = compressPayload(payload.getBytes(StandardCharsets.UTF_8));
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                .keyId(encryptionKey.getKid())
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm("A256GCM")
+                .compressionAlgorithm("DEF")
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public String createEncryptedCredentialRequestWithInvalidAlg(String payload, KeyWrapper encryptionKey) throws Exception {
+        byte[] content = payload.getBytes(StandardCharsets.UTF_8);
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                .keyId(encryptionKey.getKid())
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm("INVALID_ALG") // Invalid algorithm
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public String createEncryptedCredentialRequestWithoutKid(String payload, KeyWrapper encryptionKey) throws Exception {
+        byte[] content = payload.getBytes(StandardCharsets.UTF_8);
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                // Intentionally omit keyId
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm("A256GCM")
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public byte[] compressPayload(byte[] payload) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (DeflaterOutputStream deflater = new DeflaterOutputStream(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true))) {
+            deflater.write(payload);
+        }
+        return out.toByteArray();
     }
 
     void setClientOid4vciEnabled(String clientId, boolean enabled) {
