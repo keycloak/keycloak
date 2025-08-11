@@ -122,16 +122,12 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     CredentialRequestEncryptionMetadata requestEncryption = issuer.getCredentialRequestEncryption();
                     assertNotNull(requestEncryption);
 
-                    // Test encryption required
                     assertTrue(requestEncryption.getEncryptionRequired());
 
-                    // Test enc_values_supported
                     Assert.assertEquals(List.of(A256GCM), requestEncryption.getEncValuesSupported());
 
-                    // Test zip_values_supported
                     Assert.assertEquals(List.of(DEFLATE_COMPRESSION), requestEncryption.getZipValuesSupported());
 
-                    // Test JWKS
                     assertNotNull(requestEncryption.getJwks());
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> keys = (List<Map<String, Object>>) requestEncryption.getJwks().get("keys");
@@ -142,20 +138,17 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     @Test
     public void testCredentialRequestEncryptionMetadata() {
         testingClient.server(TEST_REALM_NAME).run(session -> {
-            // Test that metadata is properly generated
             CredentialRequestEncryptionMetadata metadata = OID4VCIssuerWellKnownProvider.getCredentialRequestEncryption(session);
 
             assertNotNull("Metadata should not be null", metadata);
             assertNotNull("JWKS should be present", metadata.getJwks());
             assertNotNull("Supported enc values should be present", metadata.getEncValuesSupported());
 
-            // Verify JWKS contains encryption keys
             Map<String, Object> jwks = metadata.getJwks();
             assertTrue("JWKS should contain keys", jwks.containsKey("keys"));
             List<?> keys = (List<?>) jwks.get("keys");
             assertFalse("Keys array should not be empty", keys.isEmpty());
 
-            // Verify supported algorithms
             assertTrue("Should support A256GCM", metadata.getEncValuesSupported().contains("A256GCM"));
         });
     }
@@ -174,23 +167,18 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
                 CredentialRequestEncryptionMetadata requestEncryption = oid4vciIssuerConfig.getCredentialRequestEncryption();
                 assertNotNull("Request encryption support should be advertised in metadata", requestEncryption);
-
-                // Test encryption_required
                 assertTrue("Encryption should be required", requestEncryption.getEncryptionRequired());
 
-                // Test enc_values_supported
                 assertFalse("Supported encryption methods should not be empty",
                         requestEncryption.getEncValuesSupported().isEmpty());
                 assertTrue("Supported encryption methods should include A256GCM",
                         requestEncryption.getEncValuesSupported().contains("A256GCM"));
 
-                // Test zip_values_supported
                 assertFalse("Supported compression methods should not be empty",
                         requestEncryption.getZipValuesSupported().isEmpty());
                 assertTrue("Supported compression methods should include DEF",
                         requestEncryption.getZipValuesSupported().contains("DEF"));
 
-                // Test JWKS
                 assertNotNull("JWKS should be present", requestEncryption.getJwks());
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> keys = (List<Map<String, Object>>) requestEncryption.getJwks().get("keys");
