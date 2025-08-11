@@ -18,7 +18,7 @@ The capabilities of {project_name} for token exchange are as follows:
 . A client can exchange an external token for a {project_name} token.
 . A client can impersonate a user.
 
-The standard token exchange supports only use-case (1). The legacy token exchange support the four use-cases, but it is a preview feature. Therefore, the standard token exchange V2 is recommended  since it is supported and will be maintained for the future. The legacy token exchange is useful for last three use cases, but it may not be
+The standard token exchange supports only use-case (1). The legacy token exchange supports the four use-cases, but it is a preview feature. Therefore, the standard token exchange V2 is recommended  since it is supported and will be maintained for the future. The legacy token exchange is useful for last three use cases, but it may not be
 backwards compatible with future {project_name} versions. You can also enable both token exchange features and use them together. For example, you could use both internal-internal exchange
 provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
 
@@ -41,9 +41,12 @@ Consider this typical token exchange flow:
 . The client `initial-client` may need to use the REST service `requester-client`, which requires authentication. So the `initial-client` sends the access token from step 1 to the `requester-client` with the
 use of the token
 . To serve the request, the `requester-client` may need to call another service `target-client`. However it may be unable to use the token sent to it from `initial-client`. For example:
++
+--
 * The token has insufficient permissions or scopes.
 * The `target-client` is not specified as the token audience; the token was intended to be used to invoke `requester-client`.
-* The token has to many permissions; therefore, the `requester-client` may not want to share it with the `target-client`.
+* The token has too many permissions; therefore, the `requester-client` may not want to share it with the `target-client`.
+--
 +
 Any of these situations could be the reason to invoke the token exchange. The `requester-client` may need to send the token exchange request to the {project_name} server and use the original token from step 1 as the
 _subject token_ and exchange it for another token _requested token_.
@@ -153,7 +156,7 @@ By default, the used client scopes will add the audiences to the `aud` claim of 
 The `audience` parameter can be used for filtering of audiences, so that the `aud` claim will contain only the audiences specified by the `audience` parameter. Similarly the client roles in the token will
 be filtered and the token will have only the client roles of the clients specified by the `audience` parameter.
 
-In addition, the `audience` parameter can be used to potentially filter client scopes as well. It works in a manner that is similar way to link:{adminguide_link}#client-scopes-permissions[Client scope permission for users].
+In addition, the `audience` parameter can be used to potentially filter client scopes as well. It works in a manner that is similar to link:{adminguide_link}#client-scopes-permissions[Client scope permission for users].
 If the client scope does not contain any client roles (for example, it contains zero roles or it contains only realm roles), no additional filtering occurs for client scopes. However, if the client scope contains any
 client role mappings, it must include some client roles of the clients requested by the `audience` parameter. Composite roles are also included for consideration. If the client scope contains no client
 roles of the clients requested by the `audience`, the client scope will be filtered.
@@ -216,7 +219,7 @@ link:{adminguide_link}#_audience_resolve[Audience documentation] sections. The r
 Token exchange request sent with `scope=optional-scope2` and with `audience=target-client2`
 
 Same like previous example, but `target-client1` audience and client roles filtered due audience parameter was included, but only with this `target-client2` client. The client scope `default-scope1` will be
-also filtered due it contains some client roles, but at the same time, it does not contain any client roles of requested audience client `target-client2`. So token would be like:
+also filtered because it contains some client roles but no client roles of the requested audience client `target-client2`. So the token would be as follows:
 
 [source,json]
 ----
@@ -250,7 +253,7 @@ to test if the token looks as expected for the given user and for the given set 
 
 These additional points clarify the behavior of token exchange.
 
-* It is not supported for public clients to send the token exchange requests. The V1 had some very limited support to public clients, when public client can exchange the token to itself with less scopes.
+* It is not supported for public clients to send the token exchange requests. Token exchange V1 includes very limited support for public clients, allowing public clients to exchange the token to itself with fewer scopes.
 This use case can be replaced by refresh token grant.
 
 * The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
@@ -307,10 +310,10 @@ While the preceding sections fully detail standard and legacy token exchange, th
 s|Internal-internal token exchange | Supported. Implemented as per rfc8693 | Preview support. Loose implementation of rfc8693. It is recommended to use V2 instead
 s|Allowed `subject_token_type`     | Access token type only   | Access token type only for internal-internal, JWT for external-internal scenarios
 s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML2 assertion
-s|Behaviour of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on scopes of
+s|Behavior of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on the scopes of
 the "target" client specified by audience parameter. Downscoping support only
-s|Behavior of `audience` parameter   | Support for more values as per the specification. Can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
-the required target audience | Support for single audience value. Token effectively issued to the client requested by audience parameter and using scopes of that client
+s|Behavior of `audience` parameter   | Support for more values as per the specification. It can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
+the required target audience | Support for single audience value. Token effectively issued to the client requested by the audience parameter and using the scopes of that client
 s|Public clients  | Not available. Downscoping implemented by V1 can be replaced by refresh token grant| Available only to exchange token of the client itself. Effectively downscoping support only
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
 s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
@@ -567,7 +570,7 @@ these conditions must be met:
 * The user must have linked with the external identity provider through the User Account Service
 * The user account was linked through the external identity provider using link:{developerguide_link}[Client Initiated Account Linking] API.
 
-Finally, the external identity provider must have been configured to store tokens, or, one of the above actions must
+Finally, the external identity provider must have been configured to store tokens, or one of the above actions must
 have been performed with the same user session as the internal token you are exchanging.
 
 If the account is not linked, the exchange response will contain a link you can use to establish it.  This is
@@ -633,7 +636,7 @@ curl -X POST \
 The `subject_token` parameter must be an access token for the target realm.  The `requested_token_type` parameter
 must be `urn:ietf:params:oauth:token-type:access_token` or left blank.  No other requested token type is supported
 at this time.  Here's
-an example successful JSON response you get back from this call.
+an example of a successful JSON response you get back from this call.
 
 [source,json]
 ----
@@ -695,7 +698,7 @@ to do this is <<_client_to_client_permission, discussed earlier>> in this sectio
 The `subject_token_type` must either be `urn:ietf:params:oauth:token-type:access_token` or `urn:ietf:params:oauth:token-type:jwt`.
 If the type is `urn:ietf:params:oauth:token-type:access_token` you specify the `subject_issuer` parameter and it must be the
 alias of the configured identity provider.  If the type is `urn:ietf:params:oauth:token-type:jwt`, the provider will be matched via
-the `iss` (issuer) claim within the JWT which must be the alias of the provider, or a registered issuer within the providers configuration.
+the `iss` (issuer) claim within the JWT which must be the alias of the provider, or a registered issuer within the provider's configuration.
 
 For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
 will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,
