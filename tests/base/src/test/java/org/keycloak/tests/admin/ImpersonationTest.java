@@ -475,20 +475,20 @@ public class ImpersonationTest {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder config) {
             config.addClient("myclient").clientId("myclient")
-                    .publicClient(true).directAccessGrants();
+                    .publicClient(true).directAccessGrantsEnabled(true);
 
             config.addUser("realm-admin")
                     .password("password").name("My", "Test Admin")
-                    .email("my-test-admin@email.org").emailVerified()
+                    .email("my-test-admin@email.org").emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
             config.addUser("impersonator")
                     .password("password").name("My", "Test Impersonator")
-                    .email("my-test-impersonator@email.org").emailVerified()
+                    .email("my-test-impersonator@email.org").emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS);
             config.addUser("bad-impersonator")
                     .password("password").name("My", "Test Bad Impersonator")
-                    .email("my-test-bad-impersonator@email.org").emailVerified()
+                    .email("my-test-bad-impersonator@email.org").emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS);
 
             return config;
@@ -503,7 +503,7 @@ public class ImpersonationTest {
             user.password("password");
             user.name("My", "Test");
             user.email("test@email.org");
-            user.emailVerified();
+            user.emailVerified(true);
 
             return user;
         }
