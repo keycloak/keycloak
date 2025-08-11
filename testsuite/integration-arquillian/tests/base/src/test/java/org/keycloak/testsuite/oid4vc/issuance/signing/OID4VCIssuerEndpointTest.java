@@ -113,6 +113,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
@@ -452,7 +453,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         JWEHeader header = new JWEHeader.JWEHeaderBuilder()
                 // Intentionally omit keyId
                 .algorithm(encryptionKey.getAlgorithm())
-                .encryptionAlgorithm("A256GCM")
+                .encryptionAlgorithm(A256GCM)
                 .build();
 
         JWE jwe = new JWE()
