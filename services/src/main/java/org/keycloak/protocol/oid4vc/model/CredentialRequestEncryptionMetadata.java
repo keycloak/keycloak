@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents the credential_request_encryption metadata for an OID4VCI Credential Issuer.
@@ -34,7 +35,7 @@ import java.util.List;
 public class CredentialRequestEncryptionMetadata {
 
     @JsonProperty("jwks")
-    private JSONWebKeySet jwks;
+    private Map<String, Object> jwks;
 
     @JsonProperty("enc_values_supported")
     private List<String> encValuesSupported;
@@ -45,11 +46,11 @@ public class CredentialRequestEncryptionMetadata {
     @JsonProperty("encryption_required")
     private Boolean encryptionRequired;
 
-    public JSONWebKeySet getJwks() {
+    public Map<String, Object> getJwks() {
         return jwks;
     }
 
-    public CredentialRequestEncryptionMetadata setJwks(JSONWebKeySet jwks) {
+    public CredentialRequestEncryptionMetadata setJwks(Map<String, Object> jwks) {
         this.jwks = jwks;
         return this;
     }
@@ -58,14 +59,15 @@ public class CredentialRequestEncryptionMetadata {
         return encValuesSupported;
     }
 
-    public CredentialRequestEncryptionMetadata setEncryptionRequired(Boolean encryptionRequired) {
-        this.encryptionRequired = encryptionRequired;
+    public CredentialRequestEncryptionMetadata setEncValuesSupported(List<String> encValuesSupported) {
+        this.encValuesSupported = encValuesSupported;
         return this;
     }
 
     public List<String> getZipValuesSupported() {
         return zipValuesSupported;
     }
+
     public CredentialRequestEncryptionMetadata setZipValuesSupported(List<String> zipValuesSupported) {
         this.zipValuesSupported = zipValuesSupported;
         return this;
@@ -74,8 +76,9 @@ public class CredentialRequestEncryptionMetadata {
     public Boolean getEncryptionRequired() {
         return encryptionRequired;
     }
-    public CredentialRequestEncryptionMetadata setEncValuesSupported(List<String> encValuesSupported) {
-        this.encValuesSupported = encValuesSupported;
+
+    public CredentialRequestEncryptionMetadata setEncryptionRequired(Boolean encryptionRequired) {
+        this.encryptionRequired = encryptionRequired;
         return this;
     }
 }

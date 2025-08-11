@@ -45,6 +45,7 @@ import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
 import org.keycloak.protocol.oid4vc.model.Claims;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -85,6 +86,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     public void configureTestRealm(RealmRepresentation testRealm) {
         Map<String, String> attributes = Optional.ofNullable(testRealm.getAttributes()).orElseGet(HashMap::new);
         attributes.put("credential_response_encryption.encryption_required", "true");
+        attributes.put("credential_request_encryption.encryption_required", "true");
         attributes.put("batch_credential_issuance.batch_size", "10");
         attributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
         attributes.put(ATTR_ENCRYPTION_REQUIRED, "true");
@@ -166,6 +168,22 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         Assert.assertEquals(clientScope.getName(), supportedConfig.getScope());
 
         compareClaims(supportedConfig.getFormat(), supportedConfig.getClaims(), clientScope.getProtocolMappers());
+    }
+
+    /**
+     * Tests that CredentialRequestEncryptionMetadata is correctly configured in the issuer metadata.
+     */
+    @Test
+    public void testCredentialRequestEncryptionMetadata() {
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+
+        CredentialRequestEncryptionMetadata requestEncryption = credentialIssuer.getCredentialRequestEncryption();
+        Assert.assertNotNull("credential_request_encryption should be present", requestEncryption);
+        Assert.assertTrue("encryption_required should be true", requestEncryption.getEncryptionRequired());
+        Assert.assertTrue("Should include A256GCM",
+                requestEncryption.getEncValuesSupported().contains(A256GCM));
+        Assert.assertEquals("Should support DEFLATE compression",
+                List.of(DEFLATE_COMPRESSION), requestEncryption.getZipValuesSupported());
     }
 
 

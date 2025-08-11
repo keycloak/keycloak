@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -51,6 +52,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +84,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     // Constants for compression algorithms
     public static final String DEFLATE_COMPRESSION = "DEF";
-    private static final List<String> DEFAULT_COMPRESSION_ALGORITHMS = List.of(DEFLATE_COMPRESSION);
+    public static final String ATTR_REQUEST_ZIP_ALGS = "oid4vci.request.zip.algorithms";
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
@@ -146,7 +148,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         // Get supported algorithms from available encryption keys
         metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(session))
                 .setEncValuesSupported(getSupportedEncryptionMethods())
-                .setZipValuesSupported(getSupportedCompressionMethods())
+                .setZipValuesSupported(getSupportedZipAlgorithms(realm))
                 .setEncryptionRequired(isEncryptionRequired(realm));
 
         return metadata;
@@ -160,9 +162,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = session.getContext().getRealm();
         CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
 
-        metadata.setJwks(getJWKSet(session))
+        metadata.setJwks(buildJwks(session))
                 .setEncValuesSupported(getSupportedEncryptionMethods())
-                .setZipValuesSupported(getSupportedCompressionMethods())
+                .setZipValuesSupported(getSupportedZipAlgorithms(realm))
                 .setEncryptionRequired(isRequestEncryptionRequired(realm));
 
         return metadata;
@@ -198,50 +200,45 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         return supportedEncryptionAlgorithms;
     }
 
-    /**
-     * Returns the JWK Set for credential request encryption, containing public keys for encrypting Credential Requests.
-     * Each JWK includes a unique 'kid' and supported algorithm.
-     *
-     * @param session The Keycloak session
-     * @return A JSONWebKeySet containing public encryption keys
-     */
 
-    private static JSONWebKeySet getJWKSet(KeycloakSession session) {
+    /**
+     * Builds JWKS from realm encryption keys with use=enc.
+     */
+    private static Map<String, Object> buildJwks(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         KeyManager keyManager = session.keys();
-        List<JWK> keys = new ArrayList<>();
 
-        keyManager.getKeysStream(realm)
+        List<JWK> jwkList = keyManager.getKeysStream(realm)
                 .filter(key -> KeyUse.ENC.equals(key.getUse()))
-                .forEach(key -> {
-                    JWK jwk = new JWK();
-                    jwk.setKeyId(key.getKid());
-                    jwk.setAlgorithm(key.getAlgorithm());
-                    jwk.setPublicKeyUse("enc"); // Static since we filtered for ENC keys
-
+                .map(key -> {
                     try {
-                        if (key.getType().equals("RSA")) {
-                            RSAPublicKey rsaKey = (RSAPublicKey) key.getPublicKey();
-                            jwk.setKeyType("RSA");
-                            jwk.setOtherClaims("n", Base64Url.encode(rsaKey.getModulus().toByteArray()));
-                            jwk.setOtherClaims("e", Base64Url.encode(rsaKey.getPublicExponent().toByteArray()));
-                            keys.add(jwk);
-                        } else if (key.getType().equals("EC")) {
-                            ECPublicKey ecKey = (ECPublicKey) key.getPublicKey();
-                            jwk.setKeyType("EC");
-                            jwk.setOtherClaims("crv", "P-256"); // Simplified - assumes P-256
-                            jwk.setOtherClaims("x", Base64Url.encode(ecKey.getW().getAffineX().toByteArray()));
-                            jwk.setOtherClaims("y", Base64Url.encode(ecKey.getW().getAffineY().toByteArray()));
-                            keys.add(jwk);
-                        }
-                        // Skip other key types
-                    } catch (Exception e) {
-                        LOGGER.warnf("Failed to process key %s: %s", key.getKid(), e.getMessage());
-                    }
-                });
+                        JWKBuilder builder = JWKBuilder.create()
+                                .kid(key.getKid())
+                                .algorithm(key.getAlgorithm());
+                        PublicKey publicKey = (PublicKey) key.getPublicKey();
+                        String keyType = key.getType();
+                        KeyUse keyUse = key.getUse();
 
-        JSONWebKeySet jwks = new JSONWebKeySet();
-        jwks.setKeys(keys.toArray(new JWK[0]));
+                        if (KeyType.RSA.equals(keyType)) {
+                            return builder.rsa(publicKey, keyUse);
+                        } else if (KeyType.EC.equals(keyType)) {
+                            return builder.ec(publicKey, keyUse);
+                        } else if (KeyType.OKP.equals(keyType)) {
+                            return builder.okp(publicKey, keyUse);
+                        } else {
+                            LOGGER.warnf("Unsupported key type %s for kid %s", keyType, key.getKid());
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        LOGGER.warnf("Failed to convert key %s to JWK: %s", key.getKid(), e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(jwk -> jwk != null)
+                .collect(Collectors.toList());
+
+        Map<String, Object> jwks = new HashMap<>();
+        jwks.put("keys", jwkList);
         return jwks;
     }
 
@@ -249,9 +246,18 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     /**
      * Returns the supported compression methods.
      */
-    private static List<String> getSupportedCompressionMethods() {
-        // Currently only DEFLATE is widely supported
-        return DEFAULT_COMPRESSION_ALGORITHMS;
+    /**
+     * Returns supported zip algorithms from realm attributes (optional).
+     */
+    private static List<String> getSupportedZipAlgorithms(RealmModel realm) {
+        String zipAlgs = realm.getAttribute(ATTR_REQUEST_ZIP_ALGS);
+        if (zipAlgs != null && !zipAlgs.isEmpty()) {
+            return Arrays.stream(zipAlgs.split(","))
+                    .map(String::trim)
+                    .filter(alg -> alg.equals("DEF")) // Only support DEFLATE for now
+                    .collect(Collectors.toList());
+        }
+        return null; // Omit if not configured
     }
 
 
