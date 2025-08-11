@@ -104,7 +104,7 @@ public class RealmConfigBuilder {
     }
 
     public RealmConfigBuilder eventsListeners(String... eventListeners) {
-        rep.setEventsListeners(Collections.combine(rep.getEventsListeners(),eventListeners));
+        rep.setEventsListeners(Collections.combine(rep.getEventsListeners(), eventListeners));
         return this;
     }
 
