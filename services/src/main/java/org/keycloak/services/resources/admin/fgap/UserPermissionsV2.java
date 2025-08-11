@@ -147,6 +147,15 @@ class UserPermissionsV2 extends UserPermissions {
         return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
     }
 
+    @Override
+    public boolean canResetPassword(UserModel user) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
+
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD);
+    }
+
     // todo this method should be removed and replaced by canImpersonate(user, client); once V1 is removed
     @Override
     public boolean canClientImpersonate(ClientModel client, UserModel user) {
