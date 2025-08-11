@@ -20,7 +20,9 @@ package org.keycloak.it.cli.dist;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import java.io.IOException;
@@ -35,23 +37,44 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class OpenApiDistTest {
 
   private static final String OPENAPI_ENDPOINT = "/openapi";
+  private static final String SWAGGER_UI_ENDPOINT = "/openapi-ui";
 
   @Test
   @Launch({"start-dev"})
-  void testSwaggerEndpointNotEnabled(KeycloakDistribution distribution) {
+  void testOpenApiEndpointNotEnabled(KeycloakDistribution distribution) {
     assertThrows(IOException.class, () -> when().get(OPENAPI_ENDPOINT), "Connection refused must be thrown");
+    assertThrows(IOException.class, () -> when().get(SWAGGER_UI_ENDPOINT), "Connection refused must be thrown");
 
     distribution.setRequestPort(8080);
 
     when().get(OPENAPI_ENDPOINT).then()
         .statusCode(404);
+    when().get(SWAGGER_UI_ENDPOINT).then()
+        .statusCode(404);
   }
 
   @Test
   @Launch({"start-dev", "--openapi-enabled=true"})
-  void testSwaggerEndpointEnabled(KeycloakDistribution distribution) {
+  void testOpenApiEndpointEnabled(KeycloakDistribution distribution) {
     when().get(OPENAPI_ENDPOINT)
         .then()
         .statusCode(200);
   }
+
+  @Test
+  @Launch({"start-dev", "--openapi-ui-enabled=true", "--openapi-enabled=true"})
+  void testOpenApiUiEndpointEnabled(KeycloakDistribution distribution) {
+    when().get(SWAGGER_UI_ENDPOINT)
+        .then()
+        .statusCode(200);
+  }
+
+
+  @DryRun
+  @Test
+  @Launch({ "start", "--openapi-ui-enabled=true", "--openapi-enabled=true"})
+  void testOpenApiUiFailsOnProfileProd(CLIResult cliResult) {
+    cliResult.assertError("Disabled option: '--openapi-ui-enabled'. Available only when OpenAPI is enabled and run in dev mode.");
+  }
+
 }

@@ -1,15 +1,15 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.config.OpenApiOptions;
-import org.keycloak.config.SwaggerOptions;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 
-final class OpenApiPropertyMappers {
-
-  public static final String OPENAPI_ENABLED_MSG = "OpenApi is enabled";
+public final class OpenApiPropertyMappers {
 
   private OpenApiPropertyMappers() {
   }
@@ -19,16 +19,14 @@ final class OpenApiPropertyMappers {
         fromOption(OpenApiOptions.OPENAPI_ENABLED)
             .to("quarkus.smallrye-openapi.enable")
             .build(),
-        fromOption(OpenApiOptions.OPENAPI_PATH)
-            .to("quarkus.smallrye-openapi.path")
-            .build(),
-        fromOption(OpenApiOptions.OPENAPI_STORE_SCHEMA_DIR)
-            .to("quarkus.smallrye-openapi.store-schema-directory")
+        fromOption(OpenApiOptions.OPENAPI_UI_ENABLED)
+            .isEnabled(OpenApiPropertyMappers::isUiEnabled, "OpenAPI is enabled and run in dev mode.")
+            .to("quarkus.swagger-ui.enable")
             .build(),
     };
   }
 
-  public static boolean openApiEnabled() {
-    return isTrue(OpenApiOptions.OPENAPI_ENABLED);
+  private static boolean isUiEnabled() {
+    return isTrue(OpenApiOptions.OPENAPI_ENABLED) && Environment.isDevMode();
   }
 }

@@ -22,7 +22,6 @@ import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.ManagementOptions.Scheme;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.OpenApiOptions;
-import org.keycloak.config.SwaggerOptions;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -130,7 +129,7 @@ public class ManagementPropertyMappers {
         return isTrue(HealthOptions.HEALTH_ENABLED)
             || isTrue(MetricsOptions.METRICS_ENABLED)
             || isTrue(OpenApiOptions.OPENAPI_ENABLED)
-            || isTrue(SwaggerOptions.SWAGGER_ENABLED);
+            || isTrue(OpenApiOptions.OPENAPI_UI_ENABLED);
     }
 
     private static String managementEnabledTransformer() {

@@ -60,7 +60,6 @@ public final class PropertyMappers {
         MAPPERS.addAll(ConfigKeystorePropertyMappers.getConfigKeystorePropertyMappers());
         MAPPERS.addAll(ManagementPropertyMappers.getManagementPropertyMappers());
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
-        MAPPERS.addAll(SwaggerPropertyMappers.getSwaggerPropertyMappers());
         MAPPERS.addAll(OpenApiPropertyMappers.getOpenApiPropertyMappers());
         MAPPERS.addAll(EventPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
