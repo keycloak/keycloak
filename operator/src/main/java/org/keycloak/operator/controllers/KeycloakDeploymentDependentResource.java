@@ -30,7 +30,6 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -130,18 +129,23 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         StatefulSet baseDeployment = createBaseDeployment(primary, context, operatorConfig);
         TreeSet<String> allSecrets = new TreeSet<>();
+        TreeSet<String> allConfigMaps = new TreeSet<>();
         if (isTlsConfigured(primary)) {
             configureTLS(primary, baseDeployment, allSecrets);
         }
         Container kcContainer = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        addTruststores(primary, baseDeployment, kcContainer, allSecrets);
+        addTruststores(primary, baseDeployment, kcContainer, allSecrets, allConfigMaps);
         addEnvVars(baseDeployment, primary, allSecrets, context);
         addResources(primary.getSpec().getResourceRequirements(), operatorConfig, kcContainer);
         Optional.ofNullable(primary.getSpec().getCacheSpec())
-                .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, context.getClient(), watchedResources));
+                .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, allConfigMaps));
 
         if (!allSecrets.isEmpty()) {
             watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
+        }
+
+        if (!allConfigMaps.isEmpty()) {
+            watchedResources.annotateDeployment(new ArrayList<>(allConfigMaps), ConfigMap.class, baseDeployment, context.getClient());
         }
 
         // default to the new revision - will be overriden to the old one if needed
@@ -181,7 +185,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         };
     }
 
-    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, KubernetesClient client, WatchedResources watchedResources) {
+    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, TreeSet<String> allConfigMaps) {
         Optional.ofNullable(spec.getConfigMapFile()).ifPresent(configFile -> {
             if (configFile.getName() == null || configFile.getKey() == null) {
                 throw new IllegalStateException("Cache file ConfigMap requires both a name and a key");
@@ -202,33 +206,54 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
             deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
             kcContainer.getVolumeMounts().add(0, volumeMount);
-
-            // currently the only configmap we're watching
-            watchedResources.annotateDeployment(List.of(configFile.getName()), ConfigMap.class, deployment, client);
+            allConfigMaps.add(configFile.getName());
         });
     }
 
-    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, TreeSet<String> allSecrets) {
+    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, TreeSet<String> allSecrets, TreeSet<String> allConfigMaps) {
         for (Truststore truststore : keycloakCR.getSpec().getTruststores().values()) {
             // for now we'll assume only secrets, later we can support configmaps
             TruststoreSource source = truststore.getSecret();
-            String secretName = source.getName();
-            var volume = new VolumeBuilder()
-                    .withName("truststore-secret-" + secretName)
-                    .withNewSecret()
-                    .withSecretName(secretName)
-                    .withOptional(source.getOptional())
-                    .endSecret()
-                    .build();
+            if (source != null) {
+                String secretName = source.getName();
+                var volume = new VolumeBuilder()
+                        .withName("truststore-secret-" + secretName)
+                        .withNewSecret()
+                        .withSecretName(secretName)
+                        .withOptional(source.getOptional())
+                        .endSecret()
+                        .build();
 
-            var volumeMount = new VolumeMountBuilder()
-                    .withName(volume.getName())
-                    .withMountPath(Constants.TRUSTSTORES_FOLDER + "/secret-" + secretName)
-                    .build();
+                var volumeMount = new VolumeMountBuilder()
+                        .withName(volume.getName())
+                        .withMountPath(Constants.TRUSTSTORES_FOLDER + "/secret-" + secretName)
+                        .build();
 
-            deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
-            kcContainer.getVolumeMounts().add(0, volumeMount);
-            allSecrets.add(secretName);
+                deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
+                kcContainer.getVolumeMounts().add(0, volumeMount);
+                allSecrets.add(secretName);
+            } else {
+                source = truststore.getConfigMap();
+                if (source != null) {
+                    String name = source.getName();
+                    var volume = new VolumeBuilder()
+                            .withName("truststore-configmap-" + name)
+                            .withNewConfigMap()
+                            .withName(name)
+                            .withOptional(source.getOptional())
+                            .endConfigMap()
+                            .build();
+
+                    var volumeMount = new VolumeMountBuilder()
+                            .withName(volume.getName())
+                            .withMountPath(Constants.TRUSTSTORES_FOLDER + "/configmap-" + name)
+                            .build();
+
+                    deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
+                    kcContainer.getVolumeMounts().add(0, volumeMount);
+                    allConfigMaps.add(name);
+                }
+            }
         }
     }
 
@@ -461,7 +486,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         var envVars = new ArrayList<>(varMap.values());
         baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
-        // watch the secrets used by secret key - we don't currently expect configmaps, optional refs, or watch the initial-admin
+        // watch the secrets used by secret key - we don't currently expect configmaps or watch the initial-admin
         TreeSet<String> serverConfigSecretsNames = envVars.stream().map(EnvVar::getValueFrom).filter(Objects::nonNull)
                 .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName).collect(Collectors.toCollection(TreeSet::new));
 
