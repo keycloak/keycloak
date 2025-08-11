@@ -80,7 +80,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     protected final KeycloakSession keycloakSession;
 
     public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
-    public static final String ATTR_REQUEST_ENCRYPTION_REQUIRED = "oid4vci.request.encryption.required";
 
     // Constants for compression algorithms
     public static final String DEFLATE_COMPRESSION = "DEF";
@@ -165,7 +164,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         metadata.setJwks(buildJwks(session))
                 .setEncValuesSupported(getSupportedEncryptionMethods())
                 .setZipValuesSupported(getSupportedZipAlgorithms(realm))
-                .setEncryptionRequired(isRequestEncryptionRequired(realm));
+                .setEncryptionRequired(isEncryptionRequired(realm));
 
         return metadata;
     }
@@ -273,14 +272,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     private static boolean isEncryptionRequired(RealmModel realm) {
         String required = realm.getAttribute(ATTR_ENCRYPTION_REQUIRED);
-        return Boolean.parseBoolean(required);
-    }
-
-    /**
-     * Returns whether request encryption is required from realm attributes.
-     */
-    private static boolean isRequestEncryptionRequired(RealmModel realm) {
-        String required = realm.getAttribute(ATTR_REQUEST_ENCRYPTION_REQUIRED);
         return Boolean.parseBoolean(required);
     }
 

@@ -597,22 +597,7 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Parse decrypted content to CredentialRequest
-        return fromDecryptedJwe(new String(content, StandardCharsets.UTF_8));
-    }
-
-    /**
-     * Parses a decrypted JWE payload into a CredentialRequest.
-     *
-     * @param decryptedPayload The decrypted JSON string from a JWE
-     * @return A CredentialRequest object
-     * @throws IllegalArgumentException if parsing fails
-     */
-    public static CredentialRequest fromDecryptedJwe(String decryptedPayload) {
-        try {
-            return JsonSerialization.mapper.readValue(decryptedPayload, CredentialRequest.class);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Failed to parse decrypted JWE payload into CredentialRequest: " + e.getMessage(), e);
-        }
+        return JsonSerialization.mapper.readValue(content, CredentialRequest.class);
     }
 
     /**

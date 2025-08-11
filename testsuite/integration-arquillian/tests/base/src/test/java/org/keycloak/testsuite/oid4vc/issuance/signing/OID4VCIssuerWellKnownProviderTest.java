@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -72,11 +73,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
 
 
@@ -90,6 +96,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         attributes.put("batch_credential_issuance.batch_size", "10");
         attributes.put("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
         attributes.put(ATTR_ENCRYPTION_REQUIRED, "true");
+        attributes.put(ATTR_REQUEST_ZIP_ALGS, "DEF");
         testRealm.setAttributes(attributes);
 
         if (testRealm.getComponents() == null) {
@@ -102,6 +109,94 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
 
         super.configureTestRealm(testRealm);
+    }
+
+    @Test
+    public void testCredentialRequestEncryptionMetadataFields() {
+        KeycloakTestingClient testingClient = this.testingClient;
+
+        testingClient
+                .server(TEST_REALM_NAME)
+                .run(session -> {
+                    CredentialIssuer issuer = getCredentialIssuer(session);
+                    CredentialRequestEncryptionMetadata requestEncryption = issuer.getCredentialRequestEncryption();
+                    assertNotNull(requestEncryption);
+
+                    // Test encryption required
+                    assertTrue(requestEncryption.getEncryptionRequired());
+
+                    // Test enc_values_supported
+                    Assert.assertEquals(List.of(A256GCM), requestEncryption.getEncValuesSupported());
+
+                    // Test zip_values_supported
+                    Assert.assertEquals(List.of(DEFLATE_COMPRESSION), requestEncryption.getZipValuesSupported());
+
+                    // Test JWKS
+                    assertNotNull(requestEncryption.getJwks());
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> keys = (List<Map<String, Object>>) requestEncryption.getJwks().get("keys");
+                    Assert.assertEquals(4, keys.size());
+                });
+    }
+
+    @Test
+    public void testCredentialRequestEncryptionMetadata() {
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            // Test that metadata is properly generated
+            CredentialRequestEncryptionMetadata metadata = OID4VCIssuerWellKnownProvider.getCredentialRequestEncryption(session);
+
+            assertNotNull("Metadata should not be null", metadata);
+            assertNotNull("JWKS should be present", metadata.getJwks());
+            assertNotNull("Supported enc values should be present", metadata.getEncValuesSupported());
+
+            // Verify JWKS contains encryption keys
+            Map<String, Object> jwks = metadata.getJwks();
+            assertTrue("JWKS should contain keys", jwks.containsKey("keys"));
+            List<?> keys = (List<?>) jwks.get("keys");
+            assertFalse("Keys array should not be empty", keys.isEmpty());
+
+            // Verify supported algorithms
+            assertTrue("Should support A256GCM", metadata.getEncValuesSupported().contains("A256GCM"));
+        });
+    }
+
+    @Test
+    public void testIssuerMetadataIncludesRequestEncryptionSupport() throws IOException {
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+            URI oid4vciDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder)
+                    .build(TEST_REALM_NAME, OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID);
+            WebTarget oid4vciDiscoveryTarget = client.target(oid4vciDiscoveryUri);
+
+            try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
+                CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(
+                        discoveryResponse.readEntity(String.class), CredentialIssuer.class);
+
+                CredentialRequestEncryptionMetadata requestEncryption = oid4vciIssuerConfig.getCredentialRequestEncryption();
+                assertNotNull("Request encryption support should be advertised in metadata", requestEncryption);
+
+                // Test encryption_required
+                assertTrue("Encryption should be required", requestEncryption.getEncryptionRequired());
+
+                // Test enc_values_supported
+                assertFalse("Supported encryption methods should not be empty",
+                        requestEncryption.getEncValuesSupported().isEmpty());
+                assertTrue("Supported encryption methods should include A256GCM",
+                        requestEncryption.getEncValuesSupported().contains("A256GCM"));
+
+                // Test zip_values_supported
+                assertFalse("Supported compression methods should not be empty",
+                        requestEncryption.getZipValuesSupported().isEmpty());
+                assertTrue("Supported compression methods should include DEF",
+                        requestEncryption.getZipValuesSupported().contains("DEF"));
+
+                // Test JWKS
+                assertNotNull("JWKS should be present", requestEncryption.getJwks());
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> keys = (List<Map<String, Object>>) requestEncryption.getJwks().get("keys");
+                assertFalse("JWKS keys should not be empty", keys.isEmpty());
+            }
+        }
     }
 
 
@@ -126,15 +221,13 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         // Check credential_response_encryption
         CredentialResponseEncryptionMetadata encryption = credentialIssuer.getCredentialResponseEncryption();
-        Assert.assertNotNull("credential_response_encryption should be present", encryption);
+        assertNotNull("credential_response_encryption should be present", encryption);
         Assert.assertEquals(List.of(RSA_OAEP, RSA_OAEP_256), encryption.getAlgValuesSupported());
-        Assert.assertTrue("Should include A256GCM", encryption.getEncValuesSupported().contains(A256GCM));
-        Assert.assertEquals("Should support DEFLATE compression",
-                List.of(DEFLATE_COMPRESSION), encryption.getZipValuesSupported());
-        Assert.assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
+        assertTrue("Should include A256GCM", encryption.getEncValuesSupported().contains(A256GCM));
+        assertTrue("encryption_required should be true", encryption.getEncryptionRequired());
 
         CredentialIssuer.BatchCredentialIssuance batch = credentialIssuer.getBatchCredentialIssuance();
-        Assert.assertNotNull("batch_credential_issuance should be present", batch);
+        assertNotNull("batch_credential_issuance should be present", batch);
         Assert.assertEquals(Integer.valueOf(10), batch.getBatchSize());
         Assert.assertEquals(
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
@@ -157,7 +250,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         SupportedCredentialConfiguration supportedConfig = credentialIssuer.getCredentialsSupported()
                 .get(clientScope.getName());
-        Assert.assertNotNull(supportedConfig);
+        assertNotNull(supportedConfig);
         Assert.assertEquals(Format.SD_JWT_VC, supportedConfig.getFormat());
         Assert.assertEquals(clientScope.getName(), supportedConfig.getScope());
         Assert.assertEquals(1, supportedConfig.getCredentialDefinition().getType().size());
@@ -170,23 +263,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         compareClaims(supportedConfig.getFormat(), supportedConfig.getClaims(), clientScope.getProtocolMappers());
     }
 
-    /**
-     * Tests that CredentialRequestEncryptionMetadata is correctly configured in the issuer metadata.
-     */
-    @Test
-    public void testCredentialRequestEncryptionMetadata() {
-        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
-
-        CredentialRequestEncryptionMetadata requestEncryption = credentialIssuer.getCredentialRequestEncryption();
-        Assert.assertNotNull("credential_request_encryption should be present", requestEncryption);
-        Assert.assertTrue("encryption_required should be true", requestEncryption.getEncryptionRequired());
-        Assert.assertTrue("Should include A256GCM",
-                requestEncryption.getEncValuesSupported().contains(A256GCM));
-        Assert.assertEquals("Should support DEFLATE compression",
-                List.of(DEFLATE_COMPRESSION), requestEncryption.getZipValuesSupported());
-    }
-
-
     @Test
     public void testCredentialIssuerMetadataFields() {
         KeycloakTestingClient testingClient = this.testingClient;
@@ -197,14 +273,12 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     CredentialIssuer issuer = getCredentialIssuer(session);
 
                     CredentialResponseEncryptionMetadata encryption = issuer.getCredentialResponseEncryption();
-                    Assert.assertNotNull(encryption);
+                    assertNotNull(encryption);
 
-                    Assert.assertTrue(encryption.getAlgValuesSupported().contains(RSA_OAEP));
-                    Assert.assertTrue("Should include A256GCM",
+                    assertTrue(encryption.getAlgValuesSupported().contains(RSA_OAEP));
+                    assertTrue("Should include A256GCM",
                             encryption.getEncValuesSupported().contains(A256GCM));
-                    Assert.assertEquals("Should support DEFLATE compression",
-                            List.of(DEFLATE_COMPRESSION), encryption.getZipValuesSupported());
-                    Assert.assertTrue(encryption.getEncryptionRequired());
+                    assertTrue(encryption.getEncryptionRequired());
                     Assert.assertEquals(Integer.valueOf(10), issuer.getBatchCredentialIssuance().getBatchSize());
                     Assert.assertEquals("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc",
                             issuer.getSignedMetadata());
@@ -215,6 +289,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         RealmModel realm = session.getContext().getRealm();
 
         realm.setAttribute(ATTR_ENCRYPTION_REQUIRED, "true");
+        realm.setAttribute(ATTR_REQUEST_ZIP_ALGS, "DEF");
         realm.setAttribute("batch_credential_issuance.batch_size", "10");
         realm.setAttribute("signed_metadata", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.XYZ123abc");
 
@@ -235,27 +310,19 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                         discoveryResponse.readEntity(String.class), CredentialIssuer.class);
 
                 CredentialResponseEncryptionMetadata encryption = oid4vciIssuerConfig.getCredentialResponseEncryption();
-                Assert.assertNotNull("Encryption support should be advertised in metadata", encryption);
+                assertNotNull("Encryption support should be advertised in metadata", encryption);
 
                 // Test alg_values_supported (backward compatibility)
-                Assert.assertFalse("Supported algorithms should not be empty",
+                assertFalse("Supported algorithms should not be empty",
                         encryption.getAlgValuesSupported().isEmpty());
-                Assert.assertTrue("Supported algorithms should include RSA-OAEP",
+                assertTrue("Supported algorithms should include RSA-OAEP",
                         encryption.getAlgValuesSupported().contains("RSA-OAEP"));
 
                 // Test enc_values_supported
-                Assert.assertFalse("Supported encryption methods should not be empty",
+                assertFalse("Supported encryption methods should not be empty",
                         encryption.getEncValuesSupported().isEmpty());
-                Assert.assertTrue("Supported encryption methods should include A256GCM",
+                assertTrue("Supported encryption methods should include A256GCM",
                         encryption.getEncValuesSupported().contains("A256GCM"));
-
-                // Test zip_values_supported
-                Assert.assertNotNull("Compression support should be advertised",
-                        encryption.getZipValuesSupported());
-                Assert.assertFalse("Compression algorithms should not be empty",
-                        encryption.getZipValuesSupported().isEmpty());
-                Assert.assertTrue("Should support DEFLATE compression",
-                        encryption.getZipValuesSupported().contains("DEF"));
             }
         }
     }
@@ -266,7 +333,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 .orElse(clientScope.getName());
         SupportedCredentialConfiguration supportedConfig = credentialIssuer.getCredentialsSupported()
                 .get(credentialConfigurationId);
-        Assert.assertNotNull("Configuration of type '" + credentialConfigurationId + "' must be present",
+        assertNotNull("Configuration of type '" + credentialConfigurationId + "' must be present",
                 supportedConfig);
         Assert.assertEquals(credentialConfigurationId, supportedConfig.getId());
 
@@ -288,8 +355,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 .orElse(clientScope.getName());
         Assert.assertEquals(expectedVct, supportedConfig.getVct());
 
-        Assert.assertNotNull(supportedConfig.getCredentialDefinition());
-        Assert.assertNotNull(supportedConfig.getCredentialDefinition().getType());
+        assertNotNull(supportedConfig.getCredentialDefinition());
+        assertNotNull(supportedConfig.getCredentialDefinition().getType());
         List<String> credentialDefinitionTypes = Optional.ofNullable(clientScope.getAttributes()
                         .get(CredentialScopeModel.TYPES))
                 .map(s -> s.split(","))
@@ -381,7 +448,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                             .filter(c -> c.getPath().equals(mapper.getMetadataAttributePath()))
                             .findFirst().orElse(null);
                     if (mapper.includeInMetadata()) {
-                        Assert.assertNotNull("There should be a claim matching the protocol-mappers config!", claim);
+                        assertNotNull("There should be a claim matching the protocol-mappers config!", claim);
                     }
                     else {
                         Assert.assertNull("This claim should not be included in the metadata-config!", claim);
@@ -436,17 +503,17 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 .run((session -> {
                     OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
                     Object issuerConfig = oid4VCIssuerWellKnownProvider.getConfig();
-                    Assert.assertTrue("Valid credential-issuer metadata should be returned.", issuerConfig instanceof CredentialIssuer);
+                    assertTrue("Valid credential-issuer metadata should be returned.", issuerConfig instanceof CredentialIssuer);
                     CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
                     Assert.assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     Assert.assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
                     Assert.assertEquals("The correct deferred_credential_endpoint should be included.", expectedDeferredEndpoint, credentialIssuer.getDeferredCredentialEndpoint());
                     Assert.assertEquals("Since the authorization server is equal to the issuer, just 1 should be returned.", 1, credentialIssuer.getAuthorizationServers().size());
                     Assert.assertEquals("The expected server should have been returned.", expectedAuthorizationServer, credentialIssuer.getAuthorizationServers().get(0));
-                    Assert.assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
+                    assertTrue("The test-credential should be supported.", credentialIssuer.getCredentialsSupported().containsKey("test-credential"));
                     Assert.assertEquals("The test-credential should offer type VerifiableCredential", "VerifiableCredential", credentialIssuer.getCredentialsSupported().get("test-credential").getScope());
                     Assert.assertEquals("The test-credential should be offered in the jwt-vc format.", Format.JWT_VC, credentialIssuer.getCredentialsSupported().get("test-credential").getFormat());
-                    Assert.assertNotNull("The test-credential can optionally provide a claims claim.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims());
+                    assertNotNull("The test-credential can optionally provide a claims claim.", credentialIssuer.getCredentialsSupported().get("test-credential").getClaims());
                 }));
     }
 
