@@ -80,7 +80,7 @@ public class RealmCreateTest extends AbstractRealmTest {
                 .username("new-realm-admin")
                 .name("new-realm-admin", "new-realm-admin")
                 .email("new-realm-admin@keycloak.org")
-                .emailVerified()
+                .emailVerified(true)
                 .password("password")
                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
                 .build()));

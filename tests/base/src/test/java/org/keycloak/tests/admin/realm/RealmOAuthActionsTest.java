@@ -112,7 +112,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
     public void logoutAll() throws InterruptedException {
         setupTestAppAndUser();
 
-        Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("user").name("User", "Name").email("user@name").emailVerified().build());
+        Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("user").name("User", "Name").email("user@name").emailVerified(true).build());
         String userId = ApiUtil.getCreatedId(response);
         response.close();
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.userResourcePath(userId), ResourceType.USER);
@@ -215,7 +215,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
 
         oauth.client("test-app-new", "secret");
 
-        UserRepresentation userRep = UserConfigBuilder.create().username("testuser").name("Test", "User").email("test@user").emailVerified().build();
+        UserRepresentation userRep = UserConfigBuilder.create().username("testuser").name("Test", "User").email("test@user").emailVerified(true).build();
         Response response = managedRealm.admin().users().create(userRep);
         String userId = ApiUtil.getCreatedId(response);
         response.close();
