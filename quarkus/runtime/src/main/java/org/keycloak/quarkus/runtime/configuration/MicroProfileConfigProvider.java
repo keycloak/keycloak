@@ -26,6 +26,7 @@ import java.util.stream.StreamSupport;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 
 public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
@@ -52,7 +53,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
     @Override
     public String getDefaultProvider(String spi) {
-        return scope(spi).get("provider.default");
+        return scope(spi).get("provider-default");
     }
 
     @Override
@@ -132,9 +133,17 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
+            if (NS_KEYCLOAK_PREFIX.equals(separatorPrefix)) {
+                return config.getOptionalValue(separatorPrefix.concat(key), clazz).orElse(defaultValue);
+            }
             String dashCase = toDashCase(key);
             return config.getOptionalValue(separatorPrefix.concat(dashCase), clazz)
                     .or(() -> config.getOptionalValue(prefix.concat(dashCase), clazz)).orElse(defaultValue);
+        }
+
+        @Override
+        public Scope root() {
+            return new MicroProfileScope(NS_KEYCLOAK_PREFIX);
         }
 
     }

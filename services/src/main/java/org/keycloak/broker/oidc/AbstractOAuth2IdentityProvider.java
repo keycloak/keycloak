@@ -505,8 +505,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 .queryParam(OAUTH2_PARAMETER_RESPONSE_TYPE, "code")
                 .queryParam(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                 .queryParam(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri());
+        AuthenticationSessionModel authenticationSession = request.getAuthenticationSession();
+        String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
-        String loginHint = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         if (getConfig().isLoginHint() && loginHint != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
@@ -517,31 +518,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         String prompt = getConfig().getPrompt();
         if (prompt == null || prompt.isEmpty()) {
-            prompt = request.getAuthenticationSession().getClientNote(OAuth2Constants.PROMPT);
+            prompt = authenticationSession.getClientNote(OAuth2Constants.PROMPT);
         }
         if (prompt != null) {
             uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
 
-        String acr = request.getAuthenticationSession().getClientNote(OAuth2Constants.ACR_VALUES);
-        if (acr != null) {
-            uriBuilder.queryParam(OAuth2Constants.ACR_VALUES, acr);
-        }
-        String forwardParameterConfig = getConfig().getForwardParameters() != null ? getConfig().getForwardParameters(): "";
-        List<String> forwardParameters = Arrays.asList(forwardParameterConfig.split("\\s*,\\s*"));
-        for(String forwardParameter: forwardParameters) {
-            String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
-            String parameter = request.getAuthenticationSession().getClientNote(name);
-            if(parameter != null && !parameter.isEmpty()) {
-                uriBuilder.queryParam(forwardParameter, parameter);
-            }
-        }
+        setForwardParameters(authenticationSession, uriBuilder);
 
         if (getConfig().isPkceEnabled()) {
             String codeVerifier = PkceUtils.generateCodeVerifier();
             String codeChallengeMethod = getConfig().getPkceMethod();
-            request.getAuthenticationSession().setClientNote(BROKER_CODE_CHALLENGE_PARAM, codeVerifier);
-            request.getAuthenticationSession().setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
+            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_PARAM, codeVerifier);
+            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
 
             String codeChallenge = PkceUtils.encodeCodeChallenge(codeVerifier, codeChallengeMethod);
             uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
@@ -549,6 +538,25 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         return uriBuilder;
+    }
+
+    private void setForwardParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
+        C config = getConfig();
+        String forwardParameterConfig = config.getForwardParameters() != null ? config.getForwardParameters(): OAuth2Constants.ACR_VALUES;
+
+        for (String forwardParameter: List.of(forwardParameterConfig.split("\\s*,\\s*"))) {
+            String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
+            String parameter = authenticationSession.getClientNote(name);
+
+            if (parameter == null) {
+                // try a value set as a client note
+                parameter = authenticationSession.getClientNote(forwardParameter);
+            }
+
+            if (parameter != null && !parameter.isEmpty()) {
+                uriBuilder.queryParam(forwardParameter, parameter);
+            }
+        }
     }
 
     /**

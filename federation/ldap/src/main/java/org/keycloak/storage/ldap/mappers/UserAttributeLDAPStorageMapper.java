@@ -28,6 +28,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.reflection.Property;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -43,6 +45,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -165,15 +168,14 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             UserModel that = UserStoragePrivateUtil.userLocalStorage(session).getUserByEmail(realm, email);
 
-            if (that != null) {
-                // delete and invalidate the cache for any existing account no longer available from LDAP
-                that = session.users().getUserByEmail(realm, that.getEmail());
-            }
-
             if (that != null && !that.getId().equals(user.getId())) {
-                session.getTransactionManager().setRollbackOnly();
-                String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
-                throw new ModelDuplicateException(exceptionMessage, UserModel.EMAIL);
+                // call getUserById to trigger validation - if user is federated from LDAP and no longer exists there, it is removed from the local DB.
+                that = ((StoreManagers) session.getProvider(DatastoreProvider.class)).userStorageManager().getUserById(realm, that.getId());
+                if (that != null) {
+                    session.getTransactionManager().setRollbackOnly();
+                    String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
+                    throw new ModelDuplicateException(exceptionMessage, UserModel.EMAIL);
+                }
             }
         }
     }

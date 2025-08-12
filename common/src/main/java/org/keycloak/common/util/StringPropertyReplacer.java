@@ -16,8 +16,16 @@
  */
 package org.keycloak.common.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+
+import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 
 /**
  * A utility class for replacing properties in strings.
@@ -32,6 +40,8 @@ import java.util.Optional;
 public final class StringPropertyReplacer
 {
 
+    private static final Logger logger = Logger.getLogger(StringPropertyReplacer.class);
+
     /** File separator value */
     private static final String FILE_SEPARATOR = File.separator;
 
@@ -44,13 +54,10 @@ public final class StringPropertyReplacer
     /** Path separator alias */
     private static final String PATH_SEPARATOR_ALIAS = ":";
 
-    // States used in property parsing
-    private static final int NORMAL = 0;
-    private static final int SEEN_DOLLAR = 1;
-    private static final int IN_BRACKET = 2;
-
     private static final PropertyResolver NULL_RESOLVER = property -> null;
     private static PropertyResolver DEFAULT_PROPERTY_RESOLVER;
+
+    private static final int MAX_KEY_LENGTH = 1<<22;
 
     public static void setDefaultPropertyResolver(PropertyResolver systemVariables) {
         DEFAULT_PROPERTY_RESOLVER = systemVariables;
@@ -99,138 +106,145 @@ public final class StringPropertyReplacer
      * @return the input string with all property references replaced if any.
      *    If there are no valid references the input string will be returned.
      */
-    public static String replaceProperties(final String string, PropertyResolver resolver)
-    {
-        if(string == null) {
+    public static String replaceProperties(final String string, PropertyResolver resolver) {
+        if (string == null) {
             return null;
         }
-        final char[] chars = string.toCharArray();
-        StringBuilder buffer = new StringBuilder();
-        boolean properties = false;
-        int state = NORMAL;
-        int start = 0;
-        int openBracketsCount = 0;
-        for (int i = 0; i < chars.length; ++i)
-        {
-            char c = chars[i];
+        int index = string.indexOf("${");
+        if (index == -1) {
+            return string;
+        }
+        try {
+            return string.substring(0, index).concat(StreamUtil
+                    .readString(replaceProperties(new ByteArrayInputStream(string.substring(index).getBytes(StandardCharsets.UTF_8)),
+                            resolver), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e); // not expected
+        }
+    }
 
-            // Dollar sign outside brackets
-            if (c == '$' && state != IN_BRACKET)
-                state = SEEN_DOLLAR;
+    public static InputStream replaceProperties(final InputStream source, PropertyResolver resolver) {
+        return replaceProperties(source, false, resolver);
+    }
 
-            // Open bracket immediately after dollar
-            else if (c == '{' && state == SEEN_DOLLAR)
-            {
-                buffer.append(string.substring(start, i - 1));
-                state = IN_BRACKET;
-                start = i - 1;
-                openBracketsCount = 1;
-            }
+    private static InputStream replaceProperties(final InputStream source, boolean readUntilCurlyBrace, PropertyResolver resolver) {
+        return new InputStream() {
+            private ByteArrayInputStream buffer;
+            private boolean closed;
 
-            // Seeing open bracket after we already saw some open bracket without corresponding closed bracket. This causes "nested" expressions. For example ${foo:${bar}}
-            else if (c == '{' && state == IN_BRACKET)
-                openBracketsCount++;
-
-            // No open bracket after dollar
-            else if (state == SEEN_DOLLAR)
-                state = NORMAL;
-
-            // Seeing closed bracket, but we already saw more than one open bracket before. Hence "nested" expression is still not fully closed.
-            // For example expression ${foo:${bar}} is closed after the second closed bracket, not after the first closed bracket.
-            else if (c == '}' && state == IN_BRACKET && openBracketsCount > 1)
-                openBracketsCount--;
-
-                // Closed bracket after open bracket
-            else if (c == '}' && state == IN_BRACKET)
-            {
-                // No content
-                if (start + 2 == i)
-                {
-                    buffer.append("${}"); // REVIEW: Correct?
+            @Override
+            public int read() throws IOException {
+                if (closed) {
+                    throw new IOException("Stream closed");
                 }
-                else // Collect the system property
-                {
-                    String value = null;
-
-                    String key = string.substring(start + 2, i);
-
-                    // check for alias
-                    if (FILE_SEPARATOR_ALIAS.equals(key))
-                    {
-                        value = FILE_SEPARATOR;
+                // read off of the buffer first if possible
+                if (buffer != null) {
+                    int c = buffer.read();
+                    if (c != -1) {
+                        return c;
                     }
-                    else if (PATH_SEPARATOR_ALIAS.equals(key))
-                    {
-                        value = PATH_SEPARATOR;
+                    buffer = null;
+                }
+                // if no buffer, scan for } or ${
+                int c = source.read();
+                if (c == '}' && readUntilCurlyBrace) {
+                    return -2;
+                }
+                if (c != '$') {
+                    return c;
+                }
+                int next = source.read();
+                if (next != '{') {
+                    buffer = new ByteArrayInputStream(new byte[] {(byte)c, (byte)next});
+                    return read();
+                }
+                // determine the key
+                int keyChar = -1;
+                InputStream keyStream = replaceProperties(source, true, resolver);
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                while ((keyChar = keyStream.read()) > -1) {
+                    bytes.write((byte)keyChar);
+                    if (bytes.size() == MAX_KEY_LENGTH) {
+                        logger.log(Level.WARN, "Detected an unclosed ${, replacement will not be performed");
+                        keyChar = -1;
+                        break;
                     }
-                    else
-                    {
-                        // check from the properties
-                        value = resolveValue(resolver, key);
-
-                        if (value == null)
-                        {
-                            // Check for a default value ${key:default}
-                            int colon = key.indexOf(':');
-                            if (colon > 0)
-                            {
-                                String realKey = key.substring(0, colon);
-                                value = resolveValue(resolver, realKey);
-
-                                if (value == null)
-                                {
-                                    // Check for a composite key, "key1,key2"
-                                    value = resolveCompositeKey(realKey, resolver);
-
-                                    // Not a composite key either, use the specified default
-                                    if (value == null)
-                                        value = key.substring(colon+1);
-                                }
-                            }
-                            else
-                            {
-                                // No default, check for a composite key, "key1,key2"
-                                value = resolveCompositeKey(key, resolver);
-                            }
+                }
+                String keyString = bytes.toString(StandardCharsets.UTF_8.name());
+                String replacement = null;
+                if (keyChar == -1) {
+                    // eof before } - prepend ${ and output directly
+                    replacement = "${" + keyString;
+                } else {
+                    replacement = replaceProperty(resolver, keyString);
+                    if (replacement == null) {
+                        replacement = "${" + keyString + "}";
+                    } else {
+                        try {
+                            replacement = replaceProperties(replacement, resolver);
+                        } catch (StackOverflowError ex) {
+                            throw new IllegalStateException("Infinite recursion happening when replacing properties on '" + replacement + "'");
                         }
                     }
-
-                    if (value != null)
-                    {
-                        properties = true;
-                        buffer.append(value);
-                    }
-                    else
-                    {
-                        buffer.append("${");
-                        buffer.append(key);
-                        buffer.append('}');
-                    }
-
                 }
-                start = i + 1;
-                state = NORMAL;
+                buffer = new ByteArrayInputStream(replacement.getBytes(StandardCharsets.UTF_8));
+                return read();
+            }
+
+            @Override
+            public void close() throws IOException {
+                closed = true;
+                source.close();
+            }
+        };
+    }
+
+    private static String replaceProperty(PropertyResolver resolver, String key) {
+        String value = null;
+
+        // check for alias
+        if (FILE_SEPARATOR_ALIAS.equals(key))
+        {
+            value = FILE_SEPARATOR;
+        }
+        else if (PATH_SEPARATOR_ALIAS.equals(key))
+        {
+            value = PATH_SEPARATOR;
+        }
+        else
+        {
+            // check from the properties
+            value = resolveValue(resolver, key);
+
+            if (value == null)
+            {
+                // Check for a default value ${key:default}
+                int colon = key.indexOf(':');
+                if (colon > 0)
+                {
+                    String realKey = key.substring(0, colon);
+                    value = resolveValue(resolver, realKey);
+
+                    if (value == null)
+                    {
+                        // Check for a composite key, "key1,key2"
+                        value = resolveCompositeKey(realKey, resolver);
+
+                        // Not a composite key either, use the specified default
+                        if (value == null) {
+                            value = key.substring(colon+1);
+                        }
+                    }
+                }
+                else
+                {
+                    // No default, check for a composite key, "key1,key2"
+                    value = resolveCompositeKey(key, resolver);
+                }
             }
         }
 
-        // No properties
-        if (!properties)
-            return string;
-
-        // Collect the trailing characters
-        if (start != chars.length)
-            buffer.append(string.substring(start, chars.length));
-
-        if (buffer.indexOf("${") != -1) {
-            try {
-                return replaceProperties(buffer.toString(), resolver);
-            } catch (StackOverflowError ex) {
-                throw new IllegalStateException("Infinite recursion happening when replacing properties on '" + buffer + "'");
-            }
-        }
-
-        // Done
-        return buffer.toString();
+        return value;
     }
 
     private static String resolveCompositeKey(String key, PropertyResolver resolver)

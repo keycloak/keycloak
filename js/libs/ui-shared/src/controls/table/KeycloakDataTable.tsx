@@ -287,7 +287,7 @@ function DataTable<T>({
                     rows[index + 1].cells.length === 0
                       ? undefined
                       : {
-                          isExpanded: !!expandedRows[index],
+                          isExpanded: expandedRows[index] ?? false,
                           rowIndex: index,
                           onToggle: (_, rowIndex, isOpen) => {
                             onCollapse(isOpen, rowIndex);

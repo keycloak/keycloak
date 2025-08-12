@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "./login";
+import { login } from "./login.ts";
 
 test.describe("My resources page", () => {
   test.describe.configure({ mode: "serial" });

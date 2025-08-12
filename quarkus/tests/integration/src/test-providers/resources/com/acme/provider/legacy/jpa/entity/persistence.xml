@@ -35,4 +35,7 @@
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
         </properties>
     </persistence-unit>
+
+    <persistence-unit name="pu-without-dialect-store" transaction-type="JTA">
+    </persistence-unit>
 </persistence>

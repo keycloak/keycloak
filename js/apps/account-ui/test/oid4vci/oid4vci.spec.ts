@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login } from "../login";
+import { login } from "../login.ts";
 
 const realm = "verifiable-credentials";
 

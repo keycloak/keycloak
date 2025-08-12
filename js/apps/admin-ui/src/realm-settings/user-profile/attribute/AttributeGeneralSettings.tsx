@@ -100,6 +100,8 @@ export const AttributeGeneralSettings = () => {
         </SelectOption>
       ));
 
+  const ROOT_ATTRIBUTE = [...USERNAME_EMAIL, "firstName", "lastName"];
+
   return (
     <FormProvider {...form}>
       <FormAccess role="manage-realm" isHorizontal>
@@ -139,6 +141,13 @@ export const AttributeGeneralSettings = () => {
           label={t("multivalued")}
           labelIcon={t("multivaluedHelp")}
         />
+        {!ROOT_ATTRIBUTE.includes(attributeName) && (
+          <TextControl
+            name="defaultValue"
+            label={t("defaultValue")}
+            labelIcon={t("defaultValueHelp")}
+          />
+        )}
         <SelectControl
           name="group"
           label={t("attributeGroup")}
