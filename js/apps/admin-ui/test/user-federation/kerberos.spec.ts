@@ -90,6 +90,21 @@ test.describe("User Fed Kerberos tests", () => {
       await goToUserFederation(page);
     });
 
+    test("Should edit existing Kerberos provider and cancel", async ({
+      page,
+    }) => {
+      await clickUserFederationCard(page, firstKerberosName);
+      await selectItem(page, "#kc-cache-policy", weeklyPolicy);
+      await selectItem(page, "#kc-eviction-day", newKerberosDay);
+      await selectItem(page, "#kc-eviction-hour", newKerberosHour);
+      await selectItem(page, "#kc-eviction-minute", newKerberosMinute);
+      await page.getByTestId(`${provider}-cancel`).click();
+
+      await clickUserFederationCard(page, firstKerberosName);
+
+      await expect(page.locator("#kc-cache-policy")).toHaveText(defaultPolicy);
+    });
+
     test("Should edit existing Kerberos provider", async ({ page }) => {
       await goToUserFederation(page);
       await clickUserFederationCard(page, firstKerberosName);
@@ -175,21 +190,6 @@ test.describe("User Fed Kerberos tests", () => {
 
       await expect(page.getByText(noCachePolicy)).toBeVisible();
       await expect(page.getByText(defaultPolicy)).toBeHidden();
-    });
-
-    test("Should edit existing Kerberos provider and cancel", async ({
-      page,
-    }) => {
-      await clickUserFederationCard(page, firstKerberosName);
-      await selectItem(page, "#kc-cache-policy", weeklyPolicy);
-      await selectItem(page, "#kc-eviction-day", newKerberosDay);
-      await selectItem(page, "#kc-eviction-hour", newKerberosHour);
-      await selectItem(page, "#kc-eviction-minute", newKerberosMinute);
-      await page.getByTestId(`${provider}-cancel`).click();
-
-      await clickUserFederationCard(page, firstKerberosName);
-
-      await expect(page.locator("#kc-cache-policy")).toHaveText(defaultPolicy);
     });
 
     test("Should disable an existing Kerberos provider", async ({ page }) => {

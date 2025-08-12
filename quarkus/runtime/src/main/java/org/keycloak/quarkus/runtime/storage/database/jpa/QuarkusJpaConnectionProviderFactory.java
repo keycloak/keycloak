@@ -61,6 +61,7 @@ import org.keycloak.quarkus.runtime.Environment;
 public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory {
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
+    public static final String DEFAULT_PERSISTENCE_UNIT = "keycloak-default";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
     private static final String SQL_GET_LATEST_VERSION = "SELECT ID, VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
 
@@ -165,7 +166,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             return instance.get();
         }
 
-        return getEntityManagerFactory("keycloak-default").orElseThrow(() -> new IllegalStateException("Failed to resolve the default entity manager factory"));
+        return getEntityManagerFactory(DEFAULT_PERSISTENCE_UNIT).orElseThrow(() -> new IllegalStateException("Failed to resolve the default entity manager factory"));
     }
 
     @Override

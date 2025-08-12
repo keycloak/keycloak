@@ -302,6 +302,9 @@ public class FlowUtil {
                         clearAuthenticationFlow(f.getFlowId());
                         realm.removeAuthenticationFlow(realm.getAuthenticationFlowById(f.getFlowId()));
                     }
+                    if (f.getAuthenticatorConfig() != null) {
+                        realm.removeAuthenticatorConfig(realm.getAuthenticatorConfigById(f.getAuthenticatorConfig()));
+                    }
                     realm.removeAuthenticatorExecution(f);
                 });
     }

@@ -1,5 +1,6 @@
 package org.keycloak.admin.api.client;
 
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -15,6 +16,7 @@ import org.keycloak.representations.admin.v2.ClientRepresentation;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public interface ClientApi {
+
     // TODO move these
     public static final String CONENT_TYPE_MERGE_PATCH = "application/merge-patch+json";
 
@@ -25,10 +27,12 @@ public interface ClientApi {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation createOrUpdateClient(ClientRepresentation client, @PathParam("fieldValidation") FieldValidation fieldValidation);
+    ClientRepresentation createOrUpdateClient(@Valid ClientRepresentation client,
+                                              @QueryParam("fieldValidation") FieldValidation fieldValidation);
 
     @PATCH
     @Consumes({MediaType.APPLICATION_JSON_PATCH_JSON, CONENT_TYPE_MERGE_PATCH})
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation patchClient(JsonNode patch, @PathParam("fieldValidation") FieldValidation fieldValidation);
+    ClientRepresentation patchClient(JsonNode patch, @QueryParam("fieldValidation") FieldValidation fieldValidation);
+
 }

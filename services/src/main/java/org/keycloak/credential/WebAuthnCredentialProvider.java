@@ -44,6 +44,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
 public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCredentialModel>, CredentialInputValidator {
 
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
+    private static final String WEBAUTHN_INFO = "webauthn-info";
 
     private KeycloakSession session;
 
@@ -302,6 +304,28 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
     protected KeycloakSession getKeycloakSession() {
         return session;
+    }
+    @Override
+    public CredentialMetadata getCredentialMetadata(WebAuthnCredentialModel credentialModel, CredentialTypeMetadata credentialTypeMetadata) {
+
+        CredentialMetadata credentialMetadata = new CredentialMetadata();
+
+        try {
+            WebAuthnCredentialData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(), WebAuthnCredentialData.class);
+            Set<String> transports = credentialData.getTransports();
+            if (transports != null && !transports.isEmpty()) {
+                String joinedTransports = String.join(", ", transports);
+                credentialMetadata.setInfoMessage(WEBAUTHN_INFO, joinedTransports);
+
+            }
+
+        } catch (
+                IOException e) {
+            logger.warn("unable to deserialize model information, skipping messages", e);
+        }
+
+        credentialMetadata.setCredentialModel(credentialModel);
+        return credentialMetadata;
     }
 
 }

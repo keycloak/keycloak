@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -29,20 +30,22 @@ import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.keycloak.crypto.KeyType.RSA;
+
 /**
- * {@link  WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
+ * {@link WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
  * the Credential Issuer Metadata as defined by the OID4VCI protocol
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-11.2.2}
  *
@@ -55,6 +58,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
 
     protected final KeycloakSession keycloakSession;
+
+    public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
@@ -85,27 +90,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         return getIssuer(context) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/deferred_credential";
     }
 
-    private CredentialIssuer.CredentialResponseEncryption getCredentialResponseEncryption(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        String algs = realm.getAttribute("credential_response_encryption.alg_values_supported");
-        String encs = realm.getAttribute("credential_response_encryption.enc_values_supported");
-        String required = realm.getAttribute("credential_response_encryption.encryption_required");
-        if (algs != null && encs != null && required != null) {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                return new CredentialIssuer.CredentialResponseEncryption()
-                        .setAlgValuesSupported(mapper.readValue(algs, new TypeReference<List<String>>() {
-                        }))
-                        .setEncValuesSupported(mapper.readValue(encs, new TypeReference<List<String>>() {
-                        }))
-                        .setEncryptionRequired(Boolean.parseBoolean(required));
-            } catch (Exception e) {
-                LOGGER.warnf(e, "Failed to parse credential_response_encryption fields from realm attributes.");
-            }
-        }
-        return null;
-    }
-
     private CredentialIssuer.BatchCredentialIssuance getBatchCredentialIssuance(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         String batchSize = realm.getAttribute("batch_credential_issuance.batch_size");
@@ -126,8 +110,70 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     /**
+     * Returns the credential response encryption высоко for the issuer.
+     * Now determines supported algorithms from available realm keys.
+     *
+     * @param session The Keycloak session
+     * @return The credential response encryption metadata
+     */
+    public static CredentialResponseEncryptionMetadata getCredentialResponseEncryption(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        CredentialResponseEncryptionMetadata metadata = new CredentialResponseEncryptionMetadata();
+
+        // Get supported algorithms from available encryption keys
+        metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(session));
+        metadata.setEncValuesSupported(getSupportedEncryptionMethods());
+        metadata.setEncryptionRequired(isEncryptionRequired(realm));
+
+        return metadata;
+    }
+
+    /**
+     * Returns the supported encryption algorithms from realm attributes.
+     */
+    public static List<String> getSupportedEncryptionAlgorithms(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        KeyManager keyManager = session.keys();
+
+        List<String> supportedEncryptionAlgorithms = keyManager.getKeysStream(realm)
+                .filter(key -> KeyUse.ENC.equals(key.getUse()))
+                .map(KeyWrapper::getAlgorithm)
+                .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (supportedEncryptionAlgorithms.isEmpty()) {
+            boolean hasRsaKeys = keyManager.getKeysStream(realm)
+                    .filter(key -> KeyUse.ENC.equals(key.getUse()))
+                    .anyMatch(key -> RSA.equals(key.getType()));
+
+            if (hasRsaKeys) {
+                supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP);
+                supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP_256);
+            }
+        }
+
+        return supportedEncryptionAlgorithms;
+    }
+
+    /**
+     * Returns the supported encryption methods from realm attributes.
+     */
+    private static List<String> getSupportedEncryptionMethods() {
+        return List.of(JWEConstants.A256GCM);
+    }
+
+    /**
+     * Returns whether encryption is required from realm attributes.
+     */
+    private static boolean isEncryptionRequired(RealmModel realm) {
+        String required = realm.getAttribute(ATTR_ENCRYPTION_REQUIRED);
+        return Boolean.parseBoolean(required);
+    }
+
+    /**
      * Return the supported credentials from the current session.
-     * It will take into account the configured {@link CredentialBuilder}'s and there supported format
+     * It will take into account the configured {@link CredentialBuilder}'s and their supported format
      * and the credentials supported by the clients available in the session.
      */
     public static Map<String, SupportedCredentialConfiguration> getSupportedCredentials(KeycloakSession keycloakSession) {
@@ -136,17 +182,16 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = keycloakSession.getContext().getRealm();
         Map<String, SupportedCredentialConfiguration> supportedCredentialConfigurations =
                 keycloakSession.clientScopes()
-                               .getClientScopesByProtocol(realm, Oid4VciConstants.OID4VC_PROTOCOL)
-                               .map(CredentialScopeModel::new)
-                               .map(clientScope -> {
-                                   return SupportedCredentialConfiguration.parse(keycloakSession,
-                                                                                 clientScope,
-                                                                                 globalSupportedSigningAlgorithms
-                                   );
-                               })
-                               .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
+                        .getClientScopesByProtocol(realm, Oid4VciConstants.OID4VC_PROTOCOL)
+                        .map(CredentialScopeModel::new)
+                        .map(clientScope -> {
+                            return SupportedCredentialConfiguration.parse(keycloakSession,
+                                    clientScope,
+                                    globalSupportedSigningAlgorithms
+                            );
+                        })
+                        .collect(Collectors.toMap(SupportedCredentialConfiguration::getId, sc -> sc, (sc1, sc2) -> sc1));
 
-        // Aggregating attributes. Having realm attributes take preference.
         return supportedCredentialConfigurations;
     }
 
@@ -154,8 +199,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                                                                                       CredentialScopeModel credentialModel) {
         List<String> globalSupportedSigningAlgorithms = getSupportedSignatureAlgorithms(keycloakSession);
         return SupportedCredentialConfiguration.parse(keycloakSession,
-                                                      credentialModel,
-                                                      globalSupportedSigningAlgorithms);
+                credentialModel,
+                globalSupportedSigningAlgorithms);
     }
 
     /**
@@ -165,7 +210,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         UriInfo frontendUriInfo = context.getUri(UrlType.FRONTEND);
         return Urls.realmIssuer(frontendUriInfo.getBaseUri(),
                 context.getRealm().getName());
-
     }
 
     /**

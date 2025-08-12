@@ -26,6 +26,7 @@ public class RegistryTest {
         MockInstances.reset();
         MockParentSupplier.reset();
         MockChildSupplier.reset();
+        Extensions.reset();
         registry = new Registry();
     }
 
@@ -173,6 +174,7 @@ public class RegistryTest {
         try {
             Config.initConfig();
 
+            Extensions.reset();
             registry = new Registry();
             List<Supplier<?, ?>> suppliers = registry.getSuppliers();
             Assertions.assertEquals(1, suppliers.stream().filter(s -> s.getValueType().equals(MockParentValue.class)).count());
@@ -261,6 +263,7 @@ public class RegistryTest {
 
         try {
             Config.initConfig();
+            Extensions.reset();
             registry = new Registry();
             parentTest = new ParentTest();
             registry.beforeEach(parentTest);

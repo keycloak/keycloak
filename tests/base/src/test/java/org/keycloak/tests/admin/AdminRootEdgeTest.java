@@ -39,13 +39,13 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 @KeycloakIntegrationTest(config = AdminRootEdgeTest.AdminUrlConfig.class)
 public class AdminRootEdgeTest {
     // full url with https, with default hostname-admin
-    private static final String HOSTNAME = "https://127.0.0.1.nip.io:8080";
+    private static final String HOSTNAME = "https://localtest.me:8080";
 
     @InjectHttpClient(followRedirects = false)
     private HttpClient client;
 
     @ParameterizedTest
-    @ValueSource(strings = {"http://127.0.0.1:8080", "http://127.0.0.1.nip.io:8080"})
+    @ValueSource(strings = {"http://127.0.0.1:8080", "http://localtest.me:8080"})
     public void testRedirect(String hostname) throws Exception {
         HttpResponse response = client.execute(new HttpGet(hostname + "/admin"));
 

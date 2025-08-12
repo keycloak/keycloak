@@ -82,8 +82,6 @@ import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
-import org.keycloak.testsuite.components.TestProvider;
-import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
@@ -690,22 +688,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/export-import")
     public TestingExportImportResource getExportImportResource() {
         return new TestingExportImportResource(session);
-    }
-
-    @GET
-    @Path("/test-component")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails() {
-        RealmModel realm = session.getContext().getRealm();
-        return realm.getComponentsStream(realm.getId(), TestProvider.class.getName())
-                .collect(Collectors.toMap(ComponentModel::getName,
-                        componentModel -> {
-                            ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory()
-                                    .getProviderFactory(TestProvider.class, componentModel.getProviderId());
-                            TestProviderFactory factory = (TestProviderFactory) f;
-                            TestProvider p = (TestProvider) factory.create(session, componentModel);
-                            return p.getDetails();
-                        }));
     }
 
     @GET

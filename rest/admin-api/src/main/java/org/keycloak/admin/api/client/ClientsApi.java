@@ -2,6 +2,9 @@ package org.keycloak.admin.api.client;
 
 import java.util.stream.Stream;
 
+import jakarta.validation.Valid;
+import jakarta.validation.groups.ConvertGroup;
+import jakarta.ws.rs.QueryParam;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
@@ -17,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
 
 @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
@@ -32,7 +36,8 @@ public interface ClientsApi extends Provider {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
-    ClientRepresentation createClient(ClientRepresentation client, @PathParam("fieldValidation") FieldValidation fieldValidation);
+    ClientRepresentation createClient(@Valid @ConvertGroup(to = CreateClient.class) ClientRepresentation client,
+                                      @QueryParam("fieldValidation") FieldValidation fieldValidation);
 
     @GET
     @Path("{id}")

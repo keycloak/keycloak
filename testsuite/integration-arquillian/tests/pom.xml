@@ -259,7 +259,7 @@
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <auth.server.fips.mode>disabled</auth.server.fips.mode>
         <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
-        <auth.server.supported.rsa.key.sizes>1024,2048,4096</auth.server.supported.rsa.key.sizes>
+        <auth.server.supported.rsa.key.sizes>1024,2048,3072,4096</auth.server.supported.rsa.key.sizes>
         <auth.server.kerberos.supported>true</auth.server.kerberos.supported>
     </properties>
 

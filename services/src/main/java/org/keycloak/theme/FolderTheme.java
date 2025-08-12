@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FolderTheme implements Theme {
+public class FolderTheme extends FileBasedTheme {
 
     private String parentName;
     private String importName;
@@ -101,14 +101,8 @@ public class FolderTheme implements Theme {
     private static final Pattern LEGAL_LOCALE = Pattern.compile("[a-zA-Z0-9-_#]*");
 
     @Override
-    public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-        if (locale == null){
-            return null;
-        }
-
-        Properties m = new Properties();
-
-        String filename = baseBundlename + "_" + locale;
+    protected void loadBundle(String baseBundlename, Locale locale, Properties m) throws IOException {
+        String filename = toBundleName(baseBundlename, locale);
 
         if (!LEGAL_LOCALE.matcher(filename).matches()) {
             throw new RuntimeException("Found illegal characters in locale or bundle name: " + filename);
@@ -120,7 +114,6 @@ public class FolderTheme implements Theme {
                 PropertiesUtil.readCharsetAware(m, stream);
             }
         }
-        return m;
     }
 
     public Properties getEnhancedMessages(RealmModel realm, Locale locale) throws IOException {

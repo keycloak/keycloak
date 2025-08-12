@@ -138,6 +138,10 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-validator-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm-deployment</artifactId>
             <exclusions>
                 <exclusion>
@@ -307,6 +311,8 @@
                 <configuration>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        <!-- We want to avoid any other artifacts fetches done via surefire and @QuarkusTest - see https://github.com/keycloak/keycloak/issues/41466 -->
+                        <maven.settings>void</maven.settings>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

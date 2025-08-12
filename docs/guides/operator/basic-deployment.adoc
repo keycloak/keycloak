@@ -211,6 +211,50 @@ spec:
       className: openshift-default
 ----
 
+NOTE: The operator annotates the Ingress to match expectations for TLS passthrough or TLS termination on OpenShift with the default IngressClass. 
+See below for more on TLS termination. 
+
+==== Proxy modes with the basic Ingress
+
+The operator annotates the Ingress to match expectations for TLS termination or passthrough on OpenShift with the default IngressClass. 
+For this reason TLS reencryption is not yet considered supported by basic Ingress, but you may be able to specify the `tlsSecret` on both the `http` and `ingress` specs as a starting point.
+You should double check the requirements of your IngressClass and platform to see if additional Ingress or Service annotations are needed in your desired scenario.
+
+TLS passthrough is shown in the preceding `example-kc` example. It is enabled when you associate a `tlsSecret` with the `http` configuration and leave Ingress enabled without specifying a `tlsSecret` on it. 
+
+TLS termination, or edge mode, is enabled by associating a `tlsSecret` with the `ingress` spec and by enabling HTTP access.
+ 
+Example TLS Termination YAML:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres-db
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  http:
+    httpEnabled: true
+  ingress:
+    tlsSecret: example-tls-secret
+  hostname:
+    hostname: test.keycloak.org
+  proxy:
+    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
+----
+
+==== Custom Access
+
 If the default ingress does not fit your use case, disable it by setting `ingress` spec with `enabled` property to `false` value:
 
 Edit YAML file `example-kc.yaml`:

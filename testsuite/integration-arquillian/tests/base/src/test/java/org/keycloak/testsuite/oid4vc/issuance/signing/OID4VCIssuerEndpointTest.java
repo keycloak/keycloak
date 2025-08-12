@@ -38,10 +38,15 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -60,7 +65,6 @@ import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
@@ -86,6 +90,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -99,6 +108,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
@@ -327,6 +338,59 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         user.logout();
     }
 
+    public static JWK generateRsaJwk() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+
+        String modulus = Base64Url.encode(publicKey.getModulus().toByteArray());
+        String exponent = Base64Url.encode(publicKey.getPublicExponent().toByteArray());
+
+        RSAPublicJWK jwk = new RSAPublicJWK();
+        jwk.setKeyType("RSA");
+        jwk.setPublicKeyUse("enc");
+        jwk.setAlgorithm("RSA-OAEP");
+        jwk.setModulus(modulus);
+        jwk.setPublicExponent(exponent);
+
+        return jwk;
+    }
+
+    public static Map<String, Object> generateRsaJwkWithPrivateKey() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        String modulus = Base64Url.encode(publicKey.getModulus().toByteArray());
+        String exponent = Base64Url.encode(publicKey.getPublicExponent().toByteArray());
+
+        RSAPublicJWK jwk = new RSAPublicJWK();
+        jwk.setKeyType("RSA");
+        jwk.setPublicKeyUse("enc");
+        jwk.setAlgorithm("RSA-OAEP");
+        jwk.setModulus(modulus);
+        jwk.setPublicExponent(exponent);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("jwk", jwk);
+        result.put("privateKey", privateKey);
+        return result;
+    }
+
+    protected static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
+        assertNotNull("Encrypted response should not be null", encryptedResponse);
+        assertEquals("Response should be a JWE", 5, encryptedResponse.split("\\.").length);
+
+        JWE jwe = new JWE(encryptedResponse);
+        jwe.getKeyStorage().setDecryptionKey(privateKey);
+        jwe.verifyAndDecodeJwe();
+        byte[] decryptedContent = jwe.getContent();
+        return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
+    }
+
     void setClientOid4vciEnabled(String clientId, boolean enabled) {
         ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
         ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
@@ -455,6 +519,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         }
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
+
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256"));
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep"));
 
         // Find existing client representation
         ClientRepresentation existingClient = testRealm.getClients().stream()

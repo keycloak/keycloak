@@ -444,7 +444,7 @@ public class FAPI2DPoPTest extends AbstractFAPI2Test {
                 .signedJwt(signedJwt)
                 .send();
         assertEquals(400, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, pResp.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
 
         // Set request object and correct responseType
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
