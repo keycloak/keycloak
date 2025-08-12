@@ -143,7 +143,6 @@
             },
             "ownerManagedAccess": true,
             "attributes": {},
-            "_id": "3fba8c0d-c388-4177-8808-18f2b1917ec9",
             "uris": [
               "/album/20277be2-548b-49dd-9dbe-95fe1fe80830"
             ],
@@ -164,7 +163,6 @@
             },
             "ownerManagedAccess": true,
             "attributes": {},
-            "_id": "575da73f-cc0c-482f-ac2a-47c9dd70c390",
             "uris": [
               "/album/5fc8c73d-40e0-4682-b555-7b9f56ede273"
             ],
@@ -181,11 +179,9 @@
         "policies": [],
         "scopes": [
           {
-            "id": "0b4de4d2-b173-415f-9071-20f866e879ab",
             "name": "album:view"
           },
           {
-            "id": "3b7cf7ed-46c7-4133-b15b-66d05b1f2afe",
             "name": "album:delete"
           }
         ],
