@@ -42,7 +42,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,7 +89,7 @@ public class ClientRolesTest {
     }
 
     private RoleRepresentation makeRole(String name) {
-        return RoleBuilder.create()
+        return RoleConfigBuilder.create()
                 .name(name)
                 .build();
     }
@@ -104,7 +104,7 @@ public class ClientRolesTest {
 
     @Test
     public void testAddRole() {
-        RoleRepresentation role1 = RoleBuilder.create()
+        RoleRepresentation role1 = RoleConfigBuilder.create()
                 .name("role1")
                 .description("role1-description")
                 .singleAttribute("role1-attr-key", "role1-attr-val")
@@ -121,7 +121,7 @@ public class ClientRolesTest {
 
     @Test
     public void createRoleWithSameName() {
-        RoleRepresentation role = RoleBuilder.create().name("role-a").build();
+        RoleRepresentation role = RoleConfigBuilder.create().name("role-a").build();
         rolesRsc.create(role);
         managedClient.cleanup().add(c -> c.roles().deleteRole("role-a"));
         assertThrows(ClientErrorException.class, () -> rolesRsc.create(role), "Client role with the same name is not allowed");
@@ -129,7 +129,7 @@ public class ClientRolesTest {
 
     @Test
     public void createRoleWithNamePattern() {
-        RoleRepresentation role = RoleBuilder.create().name("role-a-{pattern}").build();
+        RoleRepresentation role = RoleConfigBuilder.create().name("role-a-{pattern}").build();
         rolesRsc.create(role);
         managedClient.cleanup().add(c -> c.roles().deleteRole("role-a-{pattern}"));
     }
@@ -361,7 +361,7 @@ public class ClientRolesTest {
     public void getRolesWithFullRepresentation() {
         for (int i = 0; i < 5; i++) {
             String roleName = "attributesrole" + i;
-            RoleRepresentation role = RoleBuilder.create()
+            RoleRepresentation role = RoleConfigBuilder.create()
                     .name(roleName)
                     .attributes(Map.of("attribute1", List.of("value1", "value2")))
                     .build();
@@ -379,7 +379,7 @@ public class ClientRolesTest {
     public void getRolesWithBriefRepresentation() {
         for (int i = 0; i < 5; i++) {
             String roleName = "attributesrole" + i;
-            RoleRepresentation role = RoleBuilder.create()
+            RoleRepresentation role = RoleConfigBuilder.create()
                     .name(roleName)
                     .attributes(Map.of("attribute1", List.of("value1", "value2")))
                     .build();
