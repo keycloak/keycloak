@@ -1,22 +1,15 @@
 package org.keycloak.services.client;
 
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.inject.Inject;
-import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
 import jakarta.ws.rs.core.Response;
-import org.hibernate.validator.HibernateValidator;
-import org.hibernate.validator.HibernateValidatorFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.mapper.ModelMapper;
-import org.keycloak.representations.admin.v2.ClientRepres
+import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.services.ServiceException;
-import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 
 import java.util.Optional;
