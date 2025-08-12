@@ -30,13 +30,16 @@ import { ChangeRequestsTab, toChangeRequests } from './routes/ChangeRequests';
 import { useRealm } from "../context/realm-context/RealmContext";
 import { RolesChangeRequestsList } from "./RolesChangeRequestsList"
 import { ClientChangeRequestsList } from './ClientChangeRequestsList';
+import { RealmSettingsChangeRequestsList } from './RealmSettingsChangeRequestsList';
+import { SettingsChangeRequestsList } from './SettingsChangeRequestsList';
+import { groupRequestsByDraftId } from './utils/bundleUtils';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { useAccess } from '../context/access/Access';
 import DraftChangeSetRequest from "@keycloak/keycloak-admin-client/lib/defs/DraftChangeSetRequest"
 import { useEnvironment, useAlerts } from '@keycloak/keycloak-ui-shared';
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { findTideComponent } from '../identity-providers/utils/SignSettingsUtil';
-import { importHeimdall } from './HeimdallHelper';
+import { ApprovalEnclave} from "heimdall-tide";
 
 export interface changeSetApprovalRequest {
   message: string,
@@ -65,6 +68,7 @@ export default function ChangeRequestsSection() {
   const [userRequestCount, setUserRequestCount] = useState(0);
   const [roleRequestCount, setRoleRequestCount] = useState(0);
   const [clientRequestCount, setClientRequestCount] = useState(0);
+  const [realmSettingsRequestCount, setRealmSettingsRequestCount] = useState(0);
   const [isTideEnabled, setIsTideEnabled] = useState<boolean>(true)
 
 
@@ -166,13 +170,13 @@ export default function ChangeRequestsSection() {
         if (response.length === 1) {
           const respObj = JSON.parse(response[0]);
           if (respObj.requiresApprovalPopup === "true") {
-            const module = await importHeimdall();
-            if(module === null){
-                addAlert("Heimdall module no provided", AlertVariant.danger);
-              return
-            }
-            const heimdall = new module.Heimdall(respObj.uri, [keycloak.tokenParsed!['vuid']])
-            await heimdall.openEnclave();
+            const orkURL = new URL(respObj.uri);
+            const heimdall = new ApprovalEnclave({
+              homeOrkOrigin: orkURL.origin,
+              voucherURL: "",
+              signed_client_origin: "",
+              vendorId: ""
+            }).init([keycloak.tokenParsed!['vuid']], respObj.uri);
             const authApproval = await heimdall.getAuthorizerApproval(respObj.changeSetRequests, "UserContext:1", respObj.expiry, "base64url");
 
             if (authApproval.draft === respObj.changeSetRequests) {
@@ -194,7 +198,7 @@ export default function ChangeRequestsSection() {
                 await adminClient.tideAdmin.addAuthorization(formData)
               }
             }
-            heimdall.closeEnclave();
+            heimdall.close();
           }
           refresh();
         }
@@ -223,57 +227,81 @@ export default function ChangeRequestsSection() {
 
   const columns = [
     {
-      name: 'Action',
-      displayKey: 'Action',
-      cellRenderer: (row: RoleChangeRequest) => row.action
+      name: 'Summary',
+      displayKey: 'Summary',
+      cellRenderer: (bundle: any) => {
+        if (bundle.requests.length === 1) {
+          const request = bundle.requests[0];
+          return (
+            <div>
+              <div className="pf-v5-u-font-weight-bold">
+                {request.action} {request.requestType}
+              </div>
+              <div className="pf-v5-u-color-200">
+                {request.role ? `Role: ${request.role}` : ''} {request.clientId ? `• Client: ${request.clientId}` : ''}
+              </div>
+            </div>
+          );
+        } else {
+          const actions = [...new Set(bundle.requests.map((r: any) => r.action))];
+          const types = [...new Set(bundle.requests.map((r: any) => r.requestType))];
+          return (
+            <div>
+              <div className="pf-v5-u-font-weight-bold">
+                {bundle.requests.length} changes: {actions.join(', ')}
+              </div>
+              <div className="pf-v5-u-color-200">
+                {types.join(', ')}
+              </div>
+            </div>
+          );
+        }
+      }
     },
     {
-      name: 'Role',
-      displayKey: 'Role',
-      cellRenderer: (row: RoleChangeRequest) => row.role
-    },
-    {
-      name: 'Client ID',
-      displayKey: 'Client ID',
-      cellRenderer: (row: RoleChangeRequest) => row.clientId
-    },
-    {
-      name: 'Type',
-      displayKey: 'Type',
-      cellRenderer: (row: RoleChangeRequest) => row.requestType
+      name: 'Requested By',
+      displayKey: 'Requested By',
+      cellRenderer: (bundle: any) => bundle.requestedBy
     },
     {
       name: 'Status',
       displayKey: 'Status',
-      cellRenderer: (row: RoleChangeRequest) => statusLabel(row)
+      cellRenderer: (bundle: any) => bundleStatusLabel(bundle)
     },
   ];
 
+  const bundleStatusLabel = (bundle: any) => {
+    const statuses = [...new Set(bundle.requests.map((r: any) => r.status === "ACTIVE" ? r.deleteStatus || r.status : r.status))];
+    
+    if (statuses.length === 1) {
+      const status = statuses[0] as string;
+      return (
+        <Label 
+          color={status === 'PENDING' ? 'orange' : status === 'APPROVED' ? 'blue' : status === 'DENIED' ? 'red' : 'grey'}
+          className="keycloak-admin--role-mapping__client-name"
+        >
+          {status}
+        </Label>
+      );
+    } else {
+      return (
+        <Label color="purple" className="keycloak-admin--role-mapping__client-name">
+          MIXED
+        </Label>
+      );
+    }
+  };
+
   const statusLabel = (row: any) => {
+    const status = row.status === "ACTIVE" ? row.deleteStatus || row.status : row.status;
     return (
-      <>
-        {(row.status === "DRAFT" || row.deleteStatus === "DRAFT") && (
-          <Label className="keycloak-admin--role-mapping__client-name">
-            {"DRAFT"}
-          </Label>
-        )}
-        {(row.status === "PENDING" || row.deleteStatus === "PENDING") && (
-          <Label color="orange" className="keycloak-admin--role-mapping__client-name">
-            {"PENDING"}
-          </Label>
-        )}
-        {(row.status === "APPROVED" || row.deleteStatus === "APPROVED") && (
-          <Label color="blue" className="keycloak-admin--role-mapping__client-name">
-            {"APPROVED"}
-          </Label>
-        )}
-        {(row.status === "DENIED" || row.deleteStatus === "DENIED") && (
-          <Label color="red" className="keycloak-admin--role-mapping__client-name">
-            {"DENIED"}
-          </Label>
-        )}
-      </>
-    )
+      <Label 
+        color={status === 'PENDING' ? 'orange' : status === 'APPROVED' ? 'blue' : status === 'DENIED' ? 'red' : 'grey'}
+        className="keycloak-admin--role-mapping__client-name"
+      >
+        {status}
+      </Label>
+    );
   }
 
   const parseAndFormatJson = (str: string) => {
@@ -293,32 +321,45 @@ export default function ChangeRequestsSection() {
     accessDraft: 'Access Draft',
   };
 
-  const DetailCell = (row: RoleChangeRequest) => (
+  const DetailCell = (bundle: any) => (
     <Table
-      aria-label="Simple table"
+      aria-label="Bundle details"
       variant={'compact'}
       borders={false}
       isStriped
     >
       <Thead>
         <Tr>
-          <Th width={20} modifier="wrap">{columnNames.username}</Th>
-          <Th width={20} modifier="wrap">{columnNames.clientId}</Th>
-          <Th width={40}>{columnNames.accessDraft}</Th>
+          <Th width={15}>Action</Th>
+          <Th width={15}>Role</Th>
+          <Th width={15}>Client ID</Th>
+          <Th width={15}>Type</Th>
+          <Th width={10}>Status</Th>
+          <Th width={15}>Affected User</Th>
+          <Th width={15}>Affected Client</Th>
+          <Th width={30}>Access Draft</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {row.userRecord.map((value: RequestChangesUserRecord) => (
-          <Tr key={value.username}>
-            <Td dataLabel={columnNames.username}>{value.username}</Td>
-            <Td dataLabel={columnNames.clientId}>{value.clientId}</Td>
-            <Td dataLabel={columnNames.accessDraft}>
-              <ClipboardCopy isCode isReadOnly hoverTip="Copy" clickTip="Copied" variant={ClipboardCopyVariant.expansion}>
-                {parseAndFormatJson(value.accessDraft)}
-              </ClipboardCopy>
-            </Td>
-          </Tr>
-        ))}
+        {bundle.requests.map((request: any, index: number) => 
+          request.userRecord.map((userRecord: any, userIndex: number) => (
+            <Tr key={`${index}-${userIndex}`}>
+              <Td dataLabel="Action">{request.action}</Td>
+              <Td dataLabel="Role">{request.role}</Td>
+              <Td dataLabel="Client ID">{request.clientId}</Td>
+              <Td dataLabel="Type">{request.requestType}</Td>
+              <Td dataLabel="Status">{statusLabel(request)}</Td>
+              <Td dataLabel="Affected User">{userRecord.username}</Td>
+              <Td dataLabel="Affected Client">{userRecord.clientId}</Td>
+              <Td dataLabel={columnNames.accessDraft}>
+                <ClipboardCopy isCode isReadOnly hoverTip="Copy" clickTip="Copied" variant={ClipboardCopyVariant.expansion}>
+                  {parseAndFormatJson(userRecord.accessDraft)}
+                </ClipboardCopy>
+              </Td>
+            
+            </Tr>
+          ))
+        )}
       </Tbody>
     </Table>
   );
@@ -333,21 +374,26 @@ export default function ChangeRequestsSection() {
       setRoleRequestCount(counter);
     }
   }
+  const updateRealmSettingsCounter = (counter: number) => {
+    if (counter != realmSettingsRequestCount) {
+      setRealmSettingsRequestCount(counter);
+    }
+  }
 
-  const loader = async () => {
+  const loadUserRequests = async () => {
     try {
       const userRequest = await adminClient.tideUsersExt.getRequestedChangesForUsers();
-      const roleRequest = await adminClient.tideUsersExt.getRequestedChangesForRoles();
-      const clientRequest = await adminClient.tideUsersExt.getRequestedChangesForClients();
-
-      setUserRequestCount(userRequest.length)
-      setRoleRequestCount(roleRequest.length)
-      setClientRequestCount(clientRequest.length)
-
-      return userRequest;
+      // Update counter with bundle count, not individual request count
+      const bundledRequests = groupRequestsByDraftId(userRequest);
+      setUserRequestCount(bundledRequests.length);
+      return bundledRequests;
     } catch (error) {
       return [];
     }
+  };
+
+  const loader = async () => {
+    return loadUserRequests();
   };
 
   const useTab = (tab: ChangeRequestsTab) => {
@@ -357,6 +403,7 @@ export default function ChangeRequestsSection() {
   const userRequestsTab = useTab("users");
   const roleRequestsTab = useTab("roles");
   const clientRequestsTab = useTab("clients");
+  const settingsRequestsTab = useTab("settings");
 
   const [toggleCancelDialog, CancelConfirm] = useConfirmDialog({
     titleKey: "Cancel Change Request",
@@ -388,11 +435,17 @@ export default function ChangeRequestsSection() {
   });
 
 
+  const updateSettingsCounter = (counter: number) => {
+    if (counter !== realmSettingsRequestCount) {
+      setRealmSettingsRequestCount(counter);
+    }
+  };
+
   return (
     <>
       <ViewHeader
         titleKey="Change Requests"
-        subKey="Change requests are change requests that require approval from adminstrators"
+        subKey="Change requests are change requests that require approval from administrators"
         helpUrl={helpUrls.changeRequests}
         divider={false}
       />
@@ -407,9 +460,16 @@ export default function ChangeRequestsSection() {
           defaultLocation={toChangeRequests({ realm, tab: "users" })}
         >
           <Tab
-            title={<><TabTitleText>Users</TabTitleText><Label className="keycloak-admin--role-mapping__client-name">
-              {userRequestCount}
-            </Label></>}
+            title={
+              <>
+                <TabTitleText>Users</TabTitleText>
+                {userRequestCount > 0 && (
+                  <Label className="keycloak-admin--role-mapping__client-name pf-v5-u-ml-sm">
+                    {userRequestCount}
+                  </Label>
+                )}
+              </>
+            }
             {...userRequestsTab}
           >
             <div className="keycloak__events_table">
@@ -421,14 +481,18 @@ export default function ChangeRequestsSection() {
                 ariaLabelKey="Requested Changes"
                 detailColumns={[
                   {
-                    name: "details",
-                    enabled: (row) => row.userRecord.length > 0,
+                    name: "details", 
+                    enabled: (bundle) => bundle.requests.length > 0,
                     cellRenderer: DetailCell,
                   },
                 ]}
                 columns={columns}
                 isPaginated
-                onSelect={(value: RoleChangeRequest[]) => setSelectedRow([...value])}
+                onSelect={(value: any[]) => {
+                  // Flatten the selected bundles into individual requests for the toolbar
+                  const flattenedRequests = value.flatMap(bundle => bundle.requests);
+                  setSelectedRow(flattenedRequests);
+                }}
                 emptyState={
                   <EmptyState variant="lg">
                     <TextContent>
@@ -440,20 +504,49 @@ export default function ChangeRequestsSection() {
             </div>
           </Tab>
           <Tab
-            title={<><TabTitleText>Roles</TabTitleText><Label className="keycloak-admin--role-mapping__client-name">
-              {roleRequestCount}
-            </Label></>}
+            title={
+              <>
+                <TabTitleText>Roles</TabTitleText>
+                {roleRequestCount > 0 && (
+                  <Label className="keycloak-admin--role-mapping__client-name pf-v5-u-ml-sm">
+                    {roleRequestCount}
+                  </Label>
+                )}
+              </>
+            }
             {...roleRequestsTab}
           >
             <RolesChangeRequestsList updateCounter={updateRoleCounter} />
           </Tab>
           <Tab
-            title={<><TabTitleText>Clients</TabTitleText><Label className="keycloak-admin--role-mapping__client-name">
-              {clientRequestCount}
-            </Label></>}
+            title={
+              <>
+                <TabTitleText>Clients</TabTitleText>
+                {clientRequestCount > 0 && (
+                  <Label className="keycloak-admin--role-mapping__client-name pf-v5-u-ml-sm">
+                    {clientRequestCount}
+                  </Label>
+                )}
+              </>
+            }
             {...clientRequestsTab}
           >
             <ClientChangeRequestsList updateCounter={updateClientCounter} />
+          </Tab>
+          <Tab
+            title={
+              <>
+                <TabTitleText>Settings</TabTitleText>
+                {realmSettingsRequestCount > 0 && (
+                  <Label className="keycloak-admin--role-mapping__client-name pf-v5-u-ml-sm"> {/* TIDECLOAK IMPLEMENTATION */}
+                    {realmSettingsRequestCount}
+                  </Label>
+                )}
+              </>
+            }
+            {...settingsRequestsTab}
+          >
+            <SettingsChangeRequestsList updateCounter={updateSettingsCounter} />
           </Tab>
         </RoutableTabs>
       </PageSection>

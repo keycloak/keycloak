@@ -6,6 +6,10 @@ import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../components/form/FormAccess";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { findTideComponent } from "../identity-providers/utils/SignSettingsUtil";
+/** TIDECLOAK IMPLEMENTATION START */
+import { useState, useEffect } from "react";
+/** TIDECLOAK IMPLEMENTATION END */
 
 
 type RealmSettingsLoginTabProps = {
@@ -26,6 +30,28 @@ export const RealmSettingsLoginTab = ({
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
 
+  /** TIDECLOAK IMPLEMENTATION START */
+  const [isTideBackupEnabled, setIsTideBackupEnabled] = useState(false);
+  const [isLoadingTideConfig, setIsLoadingTideConfig] = useState(true);
+
+  useEffect(() => {
+    const checkTideBackupConfig = async () => {
+      try {
+        const tideIdp = await adminClient.identityProviders.findOne({ alias: "tide" });
+        const backupEnabled = tideIdp?.config?.backupOn === "true";
+        setIsTideBackupEnabled(backupEnabled);
+      } catch (error) {
+        // If error fetching tide IDP, default to not disabling toggles
+        setIsTideBackupEnabled(false);
+      } finally {
+        setIsLoadingTideConfig(false);
+      }
+    };
+
+    checkTideBackupConfig();
+  }, [adminClient, realmName]);
+  /** TIDECLOAK IMPLEMENTATION END */
+
   const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
     const name = Array.isArray(switches)
       ? Object.keys(switches[0])[0]
@@ -42,9 +68,10 @@ export const RealmSettingsLoginTab = ({
       );
 
       if (name === "registrationAllowed") {
-        const tideIdp = await adminClient.identityProviders.findOne({ alias: "tide" });
-        // TIDECLOAK IMPLEMENTATION
-        if (tideIdp) {
+      // TIDECLOAK IMPLEMENTATION
+      const hasTideIdp = await adminClient.identityProviders.findOne({ alias: "tide" });
+      const isTideKeyEnabled = await findTideComponent(adminClient, realmName) === undefined ? false : true
+      if(isTideKeyEnabled && hasTideIdp) {
           await adminClient.tideAdmin.signIdpSettings();
         }
       }
@@ -80,8 +107,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationAllowed}
-              onChange={async (_event, value) => {
-                await updateSwitchValue({ registrationAllowed: value });
+              onChange={(_event, value) => {
+                updateSwitchValue({ registrationAllowed: value });
               }}
               aria-label={t("registrationAllowed")}
             />
@@ -105,8 +132,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.resetPasswordAllowed}
-              onChange={async (_event, value) => {
-                await updateSwitchValue({ resetPasswordAllowed: value });
+              onChange={(_event, value) => {
+                updateSwitchValue({ resetPasswordAllowed: value });
               }}
               aria-label={t("resetPasswordAllowed")}
             />
@@ -129,8 +156,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.rememberMe}
-              onChange={async (_event, value) => {
-                await updateSwitchValue({ rememberMe: value });
+              onChange={(_event, value) => {
+                updateSwitchValue({ rememberMe: value });
               }}
               aria-label={t("rememberMe")}
             />
@@ -157,8 +184,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.registrationEmailAsUsername}
-              onChange={async (_event, value) => {
-                await updateSwitchValue([
+              onChange={(_event, value) => {
+                updateSwitchValue([
                   {
                     registrationEmailAsUsername: value,
                   },
@@ -188,14 +215,15 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.loginWithEmailAllowed}
-              onChange={async (_event, value) => {
-                await updateSwitchValue([
+              onChange={(_event, value) => {
+                updateSwitchValue([
                   {
                     loginWithEmailAllowed: value,
                   },
                   { duplicateEmailsAllowed: false },
                 ]);
               }}
+              isDisabled={isLoadingTideConfig || isTideBackupEnabled} // TIDECLOAK IMPLEMENTATION
               aria-label={t("loginWithEmailAllowed")}
             />
           </FormGroup>
@@ -216,13 +244,13 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.duplicateEmailsAllowed}
-              onChange={async (_event, value) => {
-                await updateSwitchValue({
+              onChange={(_event, value) => {
+                updateSwitchValue({
                   duplicateEmailsAllowed: value,
                 });
               }}
               isDisabled={
-                realm.loginWithEmailAllowed || realm.registrationEmailAsUsername
+                realm.loginWithEmailAllowed || realm.registrationEmailAsUsername || isLoadingTideConfig || isTideBackupEnabled // TIDECLOAK IMPLEMENTATION
               }
               aria-label={t("duplicateEmailsAllowed")}
             />
@@ -246,9 +274,10 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.verifyEmail}
-              onChange={async (_event, value) => {
-                await updateSwitchValue({ verifyEmail: value });
+              onChange={(_event, value) => {
+                updateSwitchValue({ verifyEmail: value });
               }}
+              isDisabled={isLoadingTideConfig || isTideBackupEnabled} // TIDECLOAK IMPLEMENTATION
               aria-label={t("verifyEmail")}
             />
           </FormGroup>
@@ -277,8 +306,8 @@ export const RealmSettingsLoginTab = ({
               label={t("on")}
               labelOff={t("off")}
               isChecked={realm.editUsernameAllowed}
-              onChange={async (_event, value) => {
-                await updateSwitchValue({ editUsernameAllowed: value });
+              onChange={(_event, value) => {
+                updateSwitchValue({ editUsernameAllowed: value });
               }}
               aria-label={t("editUsernameAllowed")}
             />

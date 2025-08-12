@@ -49,6 +49,11 @@ export class TideProvider extends Resource<{ realm?: string }> {
         },
     });
 
+    public toggleRagnarok = this.makeRequest<FormData, Response>({
+        method: "POST",
+        path: "/ragnarok/toggle-ragnarok",
+    });
+
     public addAuthorization = this.makeRequest<FormData, string>({
         method: "POST",
         path: "/tideAdminResources/add-authorization",
@@ -234,6 +239,12 @@ export class TideProvider extends Resource<{ realm?: string }> {
         urlParamKeys: ["error"],
         path: "/vendorResources/triggerAuthorizeEvent/{error}"
     })
+
+    public offboardProvider = this.makeRequest<void, void>({
+        method: "POST",
+        path: "/ragnarok/trigger-offboarding",
+    });
+
     constructor(client: KeycloakAdminClient) {
         super(client, {
             path: "/admin/realms/{realm}",

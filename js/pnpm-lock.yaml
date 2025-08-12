@@ -183,6 +183,9 @@ importers:
       flat:
         specifier: ^6.0.1
         version: 6.0.1
+      heimdall-tide:
+        specifier: ^0.1.1
+        version: 0.1.1
       i18next:
         specifier: ^25.3.2
         version: 25.3.2(typescript@5.8.3)
@@ -1070,10 +1073,6 @@ packages:
 
   '@eslint/eslintrc@3.3.1':
     resolution: {integrity: sha512-gtF186CXhIl1p4pJNGZw8Yc6RlshoePRvE0X91oPGb3vZ8pM3qOS9W9NGPat9LziaBV7XrJWGylNQXkGcnM3IQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@eslint/js@9.31.0':
-    resolution: {integrity: sha512-LOm5OVt7D4qiKCqoiPbA7LWmI+tbw1VbTUowBcUMgQSuM6poJufkFkYDcQpo5KfgD39TnNySV26QjOh7VFpSyw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/js@9.32.0':
@@ -2873,6 +2872,9 @@ packages:
   he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
+
+  heimdall-tide@0.1.1:
+    resolution: {integrity: sha512-+S0c+yyZFIIjcWx4wljOnvrIZmq99h5hZOyP3Dqd6sWNFAN7ejPmgnd3LM7m2aWMV1aX2vb9wmg8dknOr0CxMw==}
 
   hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
@@ -5034,8 +5036,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint/js@9.31.0': {}
-
   '@eslint/js@9.32.0': {}
 
   '@eslint/object-schema@2.1.6': {}
@@ -5109,6 +5109,7 @@ snapshots:
       '@uiw/react-textarea-code-editor': 3.1.1(@babel/runtime@7.27.6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       file-saver: 2.0.5
       flat: 6.0.1
+      heimdall-tide: 0.1.1
       i18next: 25.3.2(typescript@5.8.3)
       i18next-fetch-backend: 6.0.0
       jszip: 3.10.1
@@ -7119,6 +7120,8 @@ snapshots:
       space-separated-tokens: 2.0.2
 
   he@1.2.0: {}
+
+  heimdall-tide@0.1.1: {}
 
   hermes-estree@0.25.1: {}
 
