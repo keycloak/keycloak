@@ -21,7 +21,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
-    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Traces) is turned on";
+    private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Logs, Traces) is turned on";
 
     @Override
     public List<? extends PropertyMapper<?>> getPropertyMappers() {
@@ -58,7 +58,7 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     }
 
     private static String checkIfDependantsAreEnabled(String value, ConfigSourceInterceptorContext context) {
-        if (Configuration.isTrue(TracingOptions.TRACING_ENABLED)) {
+        if (LoggingPropertyMappers.isExportEnabled() || TracingPropertyMappers.isTracingEnabled()) {
             return Boolean.TRUE.toString();
         }
         return Boolean.FALSE.toString();
