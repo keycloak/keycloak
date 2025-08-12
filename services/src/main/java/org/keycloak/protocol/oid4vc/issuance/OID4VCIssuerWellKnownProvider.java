@@ -161,7 +161,13 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = session.getContext().getRealm();
         CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
 
-        metadata.setJwks(buildJwks(session))
+        JSONWebKeySet jwks = buildJwks(session);
+        if (jwks.getKeys() == null || jwks.getKeys().length == 0) {
+            LOGGER.warn("No valid encryption keys found; omitting credential_request_encryption");
+            return null; // Omit if no valid keys
+        }
+
+        metadata.setJwks(jwks)
                 .setEncValuesSupported(getSupportedEncryptionMethods())
                 .setZipValuesSupported(getSupportedZipAlgorithms(realm))
                 .setEncryptionRequired(isEncryptionRequired(realm));
@@ -203,12 +209,12 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     /**
      * Builds JWKS from realm encryption keys with use=enc.
      */
-    private static Map<String, Object> buildJwks(KeycloakSession session) {
+    private static JSONWebKeySet buildJwks(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         KeyManager keyManager = session.keys();
 
-        List<JWK> jwkList = keyManager.getKeysStream(realm)
-                .filter(key -> KeyUse.ENC.equals(key.getUse()))
+        JWK[] jwkArray = keyManager.getKeysStream(realm)
+                .filter(key -> KeyUse.ENC.equals(key.getUse()) && Arrays.asList("RSA", "EC", "OKP").contains(key.getType()))
                 .map(key -> {
                     try {
                         JWKBuilder builder = JWKBuilder.create()
@@ -217,6 +223,11 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                         PublicKey publicKey = (PublicKey) key.getPublicKey();
                         String keyType = key.getType();
                         KeyUse keyUse = key.getUse();
+
+                        if (key.getAlgorithm() == null || key.getAlgorithm().isEmpty()) {
+                            LOGGER.warnf("Key %s has no algorithm specified", key.getKid());
+                            return null;
+                        }
 
                         if (KeyType.RSA.equals(keyType)) {
                             return builder.rsa(publicKey, keyUse);
@@ -234,10 +245,10 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                     }
                 })
                 .filter(jwk -> jwk != null)
-                .collect(Collectors.toList());
+                .toArray(JWK[]::new);
 
-        Map<String, Object> jwks = new HashMap<>();
-        jwks.put("keys", jwkList);
+        JSONWebKeySet jwks = new JSONWebKeySet();
+        jwks.setKeys(jwkArray);
         return jwks;
     }
 

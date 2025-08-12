@@ -21,6 +21,7 @@ package org.keycloak.protocol.oid4vc.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
 
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ import java.util.Map;
 public class CredentialRequestEncryptionMetadata {
 
     @JsonProperty("jwks")
-    private Map<String, Object> jwks;
+    private JSONWebKeySet jwks;
 
     @JsonProperty("enc_values_supported")
     private List<String> encValuesSupported;
@@ -46,11 +47,27 @@ public class CredentialRequestEncryptionMetadata {
     @JsonProperty("encryption_required")
     private Boolean encryptionRequired;
 
-    public Map<String, Object> getJwks() {
+    public JSONWebKeySet getJwks() {
         return jwks;
     }
 
-    public CredentialRequestEncryptionMetadata setJwks(Map<String, Object> jwks) {
+    public CredentialRequestEncryptionMetadata setJwks(JSONWebKeySet jwks) {
+        if (jwks != null && jwks.getKeys() != null) {
+            if (jwks.getKeys().length == 0) {
+                throw new IllegalArgumentException("JWKS must contain at least one key");
+            }
+            for (JWK jwk : jwks.getKeys()) {
+                if (jwk.getKeyId() == null || jwk.getKeyId().isEmpty()) {
+                    throw new IllegalArgumentException("Each JWK must have a kid");
+                }
+                if (jwk.getAlgorithm() == null) {
+                    throw new IllegalArgumentException("Each JWK must have an alg");
+                }
+                if (!"enc".equalsIgnoreCase(jwk.getPublicKeyUse())) {
+                    throw new IllegalArgumentException("Each JWK must have use=enc");
+                }
+            }
+        }
         this.jwks = jwks;
         return this;
     }

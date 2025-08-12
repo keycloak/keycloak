@@ -113,10 +113,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.jose.jwe.JWEConstants.A128GCM;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
+import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
 /**
@@ -386,7 +388,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return result;
     }
 
-    protected static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
+    public static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
         assertNotNull("Encrypted response should not be null", encryptedResponse);
         assertEquals("Response should be a JWE", 5, encryptedResponse.split("\\.").length);
 
@@ -397,13 +399,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
     }
 
-    public String createEncryptedCredentialRequest(String payload, KeyWrapper encryptionKey) throws Exception {
+    public static String createEncryptedCredentialRequest(String payload, KeyWrapper encryptionKey) throws Exception {
         byte[] content = payload.getBytes(StandardCharsets.UTF_8);
 
         JWEHeader header = new JWEHeader.JWEHeaderBuilder()
                 .keyId(encryptionKey.getKid())
                 .algorithm(encryptionKey.getAlgorithm())
-                .encryptionAlgorithm("A256GCM")
+                .encryptionAlgorithm(A256GCM)
+                .type(JWT)
                 .build();
 
         JWE jwe = new JWE()
@@ -413,15 +416,16 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return jwe.encodeJwe();
     }
 
-    public String createEncryptedCredentialRequestWithCompression(String payload, KeyWrapper encryptionKey) throws Exception {
+    public static String createEncryptedCredentialRequestWithCompression(String payload, KeyWrapper encryptionKey) throws Exception {
         // Compress payload first
         byte[] content = compressPayload(payload.getBytes(StandardCharsets.UTF_8));
 
         JWEHeader header = new JWEHeader.JWEHeaderBuilder()
                 .keyId(encryptionKey.getKid())
                 .algorithm(encryptionKey.getAlgorithm())
-                .encryptionAlgorithm("A256GCM")
+                .encryptionAlgorithm(A256GCM)
                 .compressionAlgorithm("DEF")
+                .type(JWT)
                 .build();
 
         JWE jwe = new JWE()
@@ -431,13 +435,14 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return jwe.encodeJwe();
     }
 
-    public String createEncryptedCredentialRequestWithInvalidAlg(String payload, KeyWrapper encryptionKey) throws Exception {
+    public static String createEncryptedCredentialRequestWithInvalidAlg(String payload, KeyWrapper encryptionKey) throws Exception {
         byte[] content = payload.getBytes(StandardCharsets.UTF_8);
 
         JWEHeader header = new JWEHeader.JWEHeaderBuilder()
                 .keyId(encryptionKey.getKid())
                 .algorithm(encryptionKey.getAlgorithm())
-                .encryptionAlgorithm("INVALID_ALG") // Invalid algorithm
+                .encryptionAlgorithm(A128GCM)
+                .type(JWT)
                 .build();
 
         JWE jwe = new JWE()
@@ -447,23 +452,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return jwe.encodeJwe();
     }
 
-    public String createEncryptedCredentialRequestWithoutKid(String payload, KeyWrapper encryptionKey) throws Exception {
-        byte[] content = payload.getBytes(StandardCharsets.UTF_8);
-
-        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
-                // Intentionally omit keyId
-                .algorithm(encryptionKey.getAlgorithm())
-                .encryptionAlgorithm(A256GCM)
-                .build();
-
-        JWE jwe = new JWE()
-                .header(header)
-                .content(content);
-        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
-        return jwe.encodeJwe();
-    }
-
-    public byte[] compressPayload(byte[] payload) throws IOException {
+    public static byte[] compressPayload(byte[] payload) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (DeflaterOutputStream deflater = new DeflaterOutputStream(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true))) {
             deflater.write(payload);
@@ -597,6 +586,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         if (testRealm.getComponents() == null) {
             testRealm.setComponents(new MultivaluedHashMap<>());
         }
+
+        Map<String, String> attributes = Optional.ofNullable(testRealm.getAttributes()).orElseGet(HashMap::new);
+        attributes.put("oid4vci.request.encryption.required", "true");
+        attributes.put("oid4vci.request.zip.algorithms", "DEF");
+        testRealm.setAttributes(attributes);
+
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
 
