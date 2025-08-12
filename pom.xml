@@ -96,7 +96,7 @@
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
-        <angus.mail.version>2.0.3</angus.mail.version>
+        <angus.mail.version>2.0.4</angus.mail.version>
         <jakarta.xml.ws.version>4.0.0</jakarta.xml.ws.version>
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
