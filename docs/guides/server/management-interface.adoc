@@ -52,9 +52,7 @@ If you want to disable exposing them on the management interface, set the {proje
 
 [WARNING]
 ====
-Exposing health and metrics endpoints on the default server is not recommended for security reasons, and you should always use the management interface.
-Beware, the `legacy-observability-interface` option is deprecated and will be removed in future releases.
-It only allows you to give more time for the migration.
+Exposing health and metrics endpoints on the default server is not recommended for security reasons. If you enable the `legacy-observability-interface` be sure that your proxy blocks unintended traffic to the /health and /metrics endpoints.
 ====
 
 </@tmpl.guide>

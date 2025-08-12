@@ -31,3 +31,9 @@ In order to support basic TLS termination (edge) deployments via the operator, y
 While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring.
 
 For more information, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Legacy interface for metrics and health endpoints
+
+The `legacy-observability-interface` option is no longer deprecated. You may use that to make the `/health` and `/metrics` endpoints accessible by the main ports, which default to `8080` for HTTP and `8443` for HTTPS.
+
+Administrators using this option should take care at their proxy to block unintended access to the `/health` and `/metrics` endpoints.

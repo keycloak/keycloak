@@ -345,7 +345,6 @@ The `/health` and `/metrics` endpoints are accessible on the management port `90
 That means these endpoints are no longer exposed to the standard Keycloak ports `8080` and `8443`.
 
 In order to reflect the old behavior, use the property `--legacy-observability-interface=true`, which will not expose these endpoints on the management port.
-However, this property is deprecated and will be removed in future releases, so it is recommended not to use it.
 
 The management interface uses a different HTTP server than the default {project_name} HTTP server, and it is possible to configure them separately.
 Beware, if no values are supplied for the management interface properties, they are inherited from the default {project_name} HTTP server.
