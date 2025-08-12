@@ -76,7 +76,7 @@ If you do not enable this option, take additional measures to prevent non-ASCII 
 +
 --
 . Verifying that no email addresses of existing users have non-ASCII characters in the local part of the email address.
-. Updating the validation of email addresses to prevent non-ASCII characters in the local part of the email address, for example, by adding a regex pattern validation in the user profile for the email address field similar to `+\p{ASCII}*@.*+` with an error message similar to "Local part of the address must contain only ASCII characters".
+. Updating the validation of email addresses to prevent non-ASCII characters in the local part of the email address, for example, by adding a regex pattern validation in the user profile for the email address field similar to `\p&#123;ASCII&#125;*@.*` with an error message similar to `Local part of the address must contain only ASCII characters`.
 --
 
 ifeval::[{project_community}==true]
