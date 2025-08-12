@@ -1261,7 +1261,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), anyOf(
                 containsString("Disabled option: '--tracing-service-name'. Available only when Tracing is enabled"),
-                containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Traces) is turned on")
+                containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Metrics, Traces) is turned on")
         ));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
@@ -1271,7 +1271,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         // disabled tracing
         nonRunningPicocli = pseudoLaunch("start-dev", "--telemetry-service-name=service123");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Traces) is turned on"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--telemetry-service-name'. Available only when any of available OpenTelemetry components (Logs, Metrics, Traces) is turned on"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.traces.enabled").getValue(), is("false"));
         assertThat(nonRunningPicocli.config.getConfigValue("quarkus.otel.service.name").getValue(), is(nullValue()));
@@ -1489,6 +1489,217 @@ public class PicocliTest extends AbstractConfigurationTest {
                 "quarkus.otel.enabled", "true",
                 "quarkus.otel.logs.enabled", "true",
                 "quarkus.otel.logs.level", "DEBUG"
+        ));
+    }
+
+    @Test
+    public void otelMetrics() {
+        // parent feature disabled
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--feature-opentelemetry=disabled", "--feature-opentelemetry-metrics=enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("ERROR: Feature opentelemetry-metrics depends on disabled feature opentelemetry"));
+        onAfter();
+
+        // feature disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--metrics-export-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--metrics-export-enabled'. Available only when metrics and feature 'opentelemetry-metrics:v1' are enabled"));
+        onAfter();
+
+        // export disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-export-enabled=true");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--metrics-export-enabled'. Available only when metrics and feature 'opentelemetry-metrics:v1' are enabled"));
+        onAfter();
+
+        // export disabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--metrics-enabled=true", "--features=opentelemetry-metrics", "--metrics-export-enabled=false", "--metrics-export-endpoint=endpoint");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--metrics-export-endpoint'. Available only when metrics ('metrics-enabled') and metrics export ('metrics-export-enabled') are enabled"));
+        onAfter();
+
+        // check enabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertConfig("metrics-enabled", "true");
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true"
+        ));
+        onAfter();
+
+        // multiple components enabled
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics,opentelemetry-logs", "--metrics-enabled=true", "--metrics-export-enabled=true", "--log-export-enabled=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true",
+                "quarkus.otel.logs.enabled", "false"
+        ));
+        onAfter();
+
+        // wrong protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-protocol=wrong");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--metrics-export-protocol': wrong. Expected values are: grpc, http/protobuf"));
+        onAfter();
+
+        // otel protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.metrics.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // parent + child protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-protocol=http/protobuf", "--telemetry-protocol=grpc");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.protocol", "grpc",
+                "quarkus.otel.exporter.otlp.metrics.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // parent protocol
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--telemetry-protocol=http/protobuf");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.protocol", "http/protobuf",
+                "quarkus.otel.exporter.otlp.metrics.protocol", "http/protobuf"
+        ));
+        onAfter();
+
+        // wrong parent endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--telemetry-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // wrong endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-endpoint=not-url");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Specified Endpoint URL is invalid"));
+        onAfter();
+
+        // otel endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.endpoint", "http://localhost:4317",
+                "quarkus.otel.exporter.otlp.metrics.endpoint", "http://keycloak.org"
+        ));
+        onAfter();
+
+        // parent + child endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455", "--metrics-export-endpoint=http://keycloak.org");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.endpoint", "http://keycloak-keycloak-keycloak.org:3455",
+                "quarkus.otel.exporter.otlp.metrics.endpoint", "http://keycloak.org"
+        ));
+        onAfter();
+
+        // parent endpoint
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--telemetry-endpoint=http://keycloak-keycloak-keycloak.org:3455");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.endpoint", "http://keycloak-keycloak-keycloak.org:3455",
+                "quarkus.otel.exporter.otlp.metrics.endpoint", "http://keycloak-keycloak-keycloak.org:3455"
+        ));
+        onAfter();
+
+        // wrong export interval
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-interval=qwerty");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Duration specified via 'metrics-export-interval' is invalid."));
+        onAfter();
+
+        // negative export interval
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-interval=-12s");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Duration specified via 'metrics-export-interval' is invalid."));
+        onAfter();
+
+        // zero export interval
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-interval=0");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Duration specified via 'metrics-export-interval' is invalid."));
+        onAfter();
+
+        // interval minutes
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-interval=10m");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.otel.metric.export.interval","10m");
+        onAfter();
+
+        // interval hours
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--metrics-export-enabled=true", "--metrics-export-interval=12h");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.otel.metric.export.interval","12h");
+    }
+
+    @Test
+    public void otelAll() {
+        // tracing
+        pseudoLaunch("start-dev", "--tracing-enabled=true");
+        assertConfig("tracing-enabled", "true");
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.traces.enabled", "true"
+        ));
+        onAfter();
+
+        // logs
+        pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--log-export-enabled=true");
+        assertConfig(Map.of("log-export-enabled", "true"));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.logs.enabled", "true"
+        ));
+        onAfter();
+
+        // metrics - not enabled
+        pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-export-enabled=true");
+        assertConfig(Map.of(
+                "metrics-export-enabled", "true",
+                "metrics-enabled", "false"
+        ));
+        assertExternalConfigNull("quarkus.otel.metrics.enabled");
+        assertExternalConfig("quarkus.otel.enabled", "false");
+        onAfter();
+
+        // metrics
+        pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-export-enabled=true", "--metrics-enabled=true");
+        assertConfig(Map.of(
+                "metrics-export-enabled", "true",
+                "metrics-enabled", "true"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true"
+        ));
+        onAfter();
+
+        // all
+        pseudoLaunch("start-dev", "--features=opentelemetry-metrics,opentelemetry-logs", "--metrics-export-enabled=true", "--metrics-enabled=true", "--tracing-enabled=true", "--log-export-enabled=true");
+        assertConfig(Map.of(
+                "metrics-export-enabled", "true",
+                "metrics-enabled", "true",
+                "tracing-enabled", "true",
+                "log-export-enabled", "true"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.metrics.enabled", "true",
+                "quarkus.otel.traces.enabled", "true",
+                "quarkus.otel.logs.enabled", "true"
         ));
     }
 }

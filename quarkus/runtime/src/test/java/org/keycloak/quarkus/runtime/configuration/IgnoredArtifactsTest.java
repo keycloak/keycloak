@@ -155,6 +155,11 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
         assertIgnoredArtifacts(IgnoredArtifacts.METRICS, MetricsOptions.METRICS_ENABLED);
     }
 
+    @Test
+    public void otelMetrics(){
+        assertIgnoredArtifacts(IgnoredArtifacts.OTEL_METRICS, MetricsOptions.METRICS_EXPORT_ENABLED);
+    }
+
     private void assertIgnoredArtifacts(Set<String> artifactsSet, Option<Boolean> enabledOption) {
         assertIgnoredArtifacts(artifactsSet, enabledOption, true);
     }
