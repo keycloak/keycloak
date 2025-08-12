@@ -70,6 +70,10 @@ export async function assertCertificate(page: Page, exists = true) {
   await expect(page.getByTestId("certificate")).toHaveCount(exists ? 0 : 1);
 }
 
+export async function assertDualCertificates(page: Page) {
+  await expect(page.getByTestId("certificate")).toHaveCount(2);
+}
+
 export async function clickEncryptionAssertions(page: Page) {
   await switchOn(page, "#encryptAssertions");
 }

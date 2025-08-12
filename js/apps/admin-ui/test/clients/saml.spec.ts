@@ -34,6 +34,7 @@ import {
   selectEncryptionDigestMethodInput,
   selectEncryptionMaskGenerationFunctionInput,
   setTermsOfServiceUrl,
+  assertDualCertificates,
 } from "./saml.ts";
 
 test.describe("Fine Grain SAML Endpoint Configuration", () => {
@@ -143,7 +144,7 @@ test.describe("Clients SAML tests", () => {
       "New key pair and certificate generated successfully",
     );
     await confirmModal(page);
-    await assertCertificate(page, false);
+    await assertDualCertificates(page);
 
     // assert encryption algorithms can be modified
     await goToClientSettingsTab(page);
