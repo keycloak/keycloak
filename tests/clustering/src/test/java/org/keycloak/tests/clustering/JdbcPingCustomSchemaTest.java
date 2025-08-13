@@ -9,7 +9,7 @@ import org.keycloak.tests.db.CaseSensitiveSchemaTest;
 
 @KeycloakIntegrationTest(config = CaseSensitiveSchemaTest.CaseSensitiveServerConfig.class)
 public class JdbcPingCustomSchemaTest {
-    @InjectTestDatabase(config = CaseSensitiveSchemaTest.CaseSensitiveDatabaseConfig.class)
+    @InjectTestDatabase(config = CaseSensitiveSchemaTest.CaseSensitiveDatabaseConfig.class, lifecycle = LifeCycle.CLASS)
     TestDatabase db;
 
     @Test
