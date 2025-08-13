@@ -34,6 +34,15 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== Cache configuration removed from cache-ispn.xml
+
+{project_name} now defines all cache defaults programmatically. Consequently, the `conf/cache-ispn.xml` file no longer
+contains the default cache configurations. It is still possible to modify the cache configurations used by {project_name}
+in this file, however a warning will now be logged if the `--cache-config-mutate=true` flag is not set. When upgrading
+an existing deployment, it is recommended to remove all cache configurations from your existing `conf/cache-ispn.xml` if
+you previously relied upon {project_name} default cache configurations. Custom caches can still be configured without setting
+the flag.
+
 === Operator default affinity configuration changed
 
 The default affinity strategy has been updated so that a `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rule

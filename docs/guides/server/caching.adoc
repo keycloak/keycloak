@@ -24,12 +24,10 @@ When you start {project_name} in development mode, by using the `start-dev` comm
 The `local` cache mode is intended only for development and testing purposes.
 
 == Configuring caches
-{project_name} provides a cache configuration file with sensible defaults located at `conf/cache-ispn.xml`.
+{project_name} provides a regular {infinispan_configuring_docs}[Infinispan configuration file] located at `conf/cache-ispn.xml`.
+This file contains the default configuration used for the cache-container and JGroups transport.
 
-The cache configuration is a regular {infinispan_configuring_docs}[Infinispan configuration file].
-
-The following table gives an overview of the specific caches {project_name} uses.
-You configure these caches in `conf/cache-ispn.xml`:
+The following table gives an overview of the specific caches {project_name} uses:
 
 [%autowidth]
 |===
@@ -171,6 +169,18 @@ To specify your own cache configuration file, enter this command:
 <@kc.start parameters="--cache-config-file=my-cache-file.xml"/>
 
 The configuration file is relative to the `conf/` directory.
+
+=== Modifying cache configuration defaults
+{project_name} automatically creates all required caches with the expected configurations. It is not recommended to modify
+the default cache configurations in the majority of cases, however if required you can specify custom configurations for
+the default caches in `conf/cache-ispn.xml` or your own file provided via `--cache-config-file`.
+
+In order to prevent a warning being logged when a modified configuration is detected, enter this command:
+
+<@kc.start parameters="--cache-config-mutate=true"/>
+
+NOTE: No warning is issued when creating custom caches for extensions or custom providers that {project_name} does not
+rely upon for its core functionality.
 
 === CLI options for remote server
 

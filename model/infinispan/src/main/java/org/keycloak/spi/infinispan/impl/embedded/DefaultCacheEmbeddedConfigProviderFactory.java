@@ -74,6 +74,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     // Configuration
     public static final String CONFIG = "configFile";
+    public static final String CONFIG_MUTATE = "configMutate";
     public static final String TRACING = "tracingEnabled";
     private static final String HISTOGRAMS = "metricsHistogramsEnabled";
     public static final String STACK = "stack";
@@ -208,7 +209,8 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         holder.getGlobalConfigurationBuilder()
                 .addModule(KeycloakConfigurationBuilder.class)
                 .setKeycloakSessionFactory(factory);
-        CacheConfigurator.applyDefaultConfiguration(holder);
+
+        CacheConfigurator.applyDefaultConfiguration(holder, !keycloakConfig.getBoolean(CONFIG_MUTATE, Boolean.FALSE));
         CacheConfigurator.configureLocalCaches(keycloakConfig, holder);
         JGroupsConfigurator.configureTopology(keycloakConfig, holder);
         return holder;

@@ -165,11 +165,40 @@ public class ClusterConfigDistTest {
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`");
     }
 
+    @Test
+    @BeforeStartDistribution(ConfigureCustomCache.class)
+    @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-cache.xml" })
+    void testCustomCacheConfigurationWarning(CLIResult result) {
+        result.assertMessage("Custom cache configuration(s) detected, this is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.");
+    }
+
+    @Test
+    @BeforeStartDistribution(ConfigureCustomCache.class)
+    @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-cache.xml", "--cache-config-mutate=true" })
+    void testCustomCacheConfigurationNoWarning(CLIResult result) {
+        result.assertNoMessage("Custom cache configuration(s) detected, this is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.");
+    }
+
+    @Test
+    @BeforeStartDistribution(ConfigureCustomCache.class)
+    @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-user-cache.xml"})
+    void testCustomUserCacheConfigurationNoWarning(CLIResult result) {
+        result.assertNoMessage("Custom cache configuration(s) detected, this is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.");
+    }
+
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/cache-ispn-asym-enc.xml", Path.of("conf", "cache-ispn-asym-enc.xml"));
+        }
+    }
+
+    public static class ConfigureCustomCache implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.copyOrReplaceFileFromClasspath("/cache-ispn-custom-cache.xml", Path.of("conf", "cache-ispn-custom-cache.xml"));
         }
     }
 }

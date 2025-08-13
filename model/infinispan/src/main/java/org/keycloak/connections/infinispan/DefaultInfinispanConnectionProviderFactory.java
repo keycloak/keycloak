@@ -23,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.util.Version;
 import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.health.CacheHealth;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -233,15 +231,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
      */
     @Deprecated(since = "26.3", forRemoval = true)
     protected Configuration getKeysCacheConfig() {
-        var cb = CacheConfigurator.createCacheConfigurationBuilder();
-
-        cb.memory()
-                .whenFull(EvictionStrategy.REMOVE)
-                .maxCount(KEYS_CACHE_DEFAULT_MAX);
-
-        cb.expiration().maxIdle(KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
-
-        return cb.build();
+        return CacheConfigurator.getCacheConfiguration(KEYS_CACHE_NAME).build();
     }
 
     /**
