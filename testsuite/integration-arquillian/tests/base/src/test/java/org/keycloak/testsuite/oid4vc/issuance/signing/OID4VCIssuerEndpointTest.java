@@ -31,6 +31,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -128,6 +129,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected static final TimeProvider TIME_PROVIDER = new OID4VCTest.StaticTimeProvider(1000);
     protected static final String sdJwtCredentialVct = "https://credentials.example.com/SD-JWT-Credential";
+
+    private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
     protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
     protected static ClientScopeRepresentation jwtTypeCredentialClientScope;
@@ -417,8 +420,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     public static String createEncryptedCredentialRequestWithCompression(String payload, KeyWrapper encryptionKey) throws Exception {
-        // Compress payload first
         byte[] content = compressPayload(payload.getBytes(StandardCharsets.UTF_8));
+        LOGGER.debugf("Compressed payload size: %d bytes", content.length);
 
         JWEHeader header = new JWEHeader.JWEHeaderBuilder()
                 .keyId(encryptionKey.getKid())

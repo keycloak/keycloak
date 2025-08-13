@@ -194,19 +194,10 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                         .setFormat(Format.JWT_VC)
                         .setCredentialConfigurationId(jwtTypeCredentialClientScope.getName());
 
-                String unencryptedPayload;
-                try {
-                    unencryptedPayload = JsonSerialization.writeValueAsString(unencryptedRequest);
-                } catch (JsonProcessingException e) {
-                    fail("Failed to serialize CredentialRequest: " + e.getMessage());
-                    return;
-                }
-
+                String unencryptedPayload = JsonSerialization.writeValueAsString(unencryptedRequest);
                 Response unencryptedResponse = issuerEndpoint.requestCredential(unencryptedPayload);
-                assertEquals("Unencrypted request should be processed successfully",
-                        200, unencryptedResponse.getStatus());
-                assertEquals("Unencrypted response should be application/json",
-                        MediaType.APPLICATION_JSON, unencryptedResponse.getMediaType().toString());
+                assertEquals("Unencrypted request should be processed successfully", 200, unencryptedResponse.getStatus());
+                assertEquals("Unencrypted response should be application/json", MediaType.APPLICATION_JSON, unencryptedResponse.getMediaType().toString());
                 CredentialResponse unencryptedCredentialResponse = (CredentialResponse) unencryptedResponse.getEntity();
                 assertNotNull("Response should contain credentials", unencryptedCredentialResponse.getCredentials());
                 assertFalse("Credentials should not be empty", unencryptedCredentialResponse.getCredentials().isEmpty());
@@ -221,20 +212,20 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 String encryptedPayload = createEncryptedCredentialRequest(unencryptedPayload, encryptionKey);
                 assertNotNull("Encrypted request should not be null", encryptedPayload);
 
-                // Simulate setting Content-Type to application/jwt
                 session.getContext().getHttpRequest().getHttpHeaders().getRequestHeaders()
-                        .putSingle(HttpHeaders.CONTENT_TYPE, APPLICATION_JWT);
+                        .putSingle(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
 
                 Response encryptedResponse = issuerEndpoint.requestCredential(encryptedPayload);
-                assertEquals("Encrypted request should be processed successfully",
-                        200, encryptedResponse.getStatus());
-                assertEquals("Encrypted response should be application/json",
-                        MediaType.APPLICATION_JSON, encryptedResponse.getMediaType().toString());
-                CredentialResponse encryptedCredentialResponse = (CredentialResponse) encryptedResponse.getEntity();
+                assertEquals("Encrypted request should be processed successfully", 200, encryptedResponse.getStatus());
+                assertEquals("Encrypted response should be application/jwt", MediaType.APPLICATION_JWT, encryptedResponse.getMediaType().toString());
+
+                // Decrypt and verify response
+                CredentialResponse encryptedCredentialResponse = decryptJweResponse((String) encryptedResponse.getEntity(), (PrivateKey) encryptionKey.getPrivateKey());
                 assertNotNull("Response should contain credentials", encryptedCredentialResponse.getCredentials());
                 assertFalse("Credentials should not be empty", encryptedCredentialResponse.getCredentials().isEmpty());
 
             } catch (Exception e) {
+                LOGGER.error("Test failed", e);
                 throw new RuntimeException(e);
             } finally {
                 realm.removeAttribute("oid4vci.encryption.required");
@@ -243,7 +234,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             }
         });
     }
-
 
     @Test
     public void testEncryptedCredentialRequest() {
@@ -340,7 +330,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 String requestJson = JsonSerialization.writeValueAsString(credentialRequest);
 
-                // Get encryption key from realm
                 KeyManager keyManager = session.keys();
                 KeyWrapper encryptionKey = keyManager.getKeysStream(realm)
                         .filter(key -> KeyUse.ENC.equals(key.getUse()))
@@ -401,6 +390,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 try {
                     Response response = issuerEndpoint.requestCredential(encryptedRequest);
                     fail("Expected BadRequestException for invalid enc");
+                    assertEquals("Unexpected response status: " + response.getStatus(), 400, response.getStatus());
                 } catch (BadRequestException e) {
                     ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                     assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());

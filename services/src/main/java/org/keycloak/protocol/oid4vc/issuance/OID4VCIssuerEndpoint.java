@@ -414,20 +414,12 @@ public class OID4VCIssuerEndpoint {
                 .orElse(false);
 
         // Determine if the request is a JWE
-        boolean isJwe = false;
-        String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
-        if (contentType != null && contentType.contains(MediaType.APPLICATION_JWT)) {
-            try {
-                JWE jwe = new JWE(requestPayload);
-                JWEHeader header = (JWEHeader) jwe.getHeader();
-                if ("jwt".equalsIgnoreCase(header.getType())) {
-                    isJwe = true;
-                }
-            } catch (Exception e) {
-                LOGGER.debugf("Invalid JWE format: %s", e.getMessage());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, "Invalid JWE format"));
-            }
+        String contentType = session.getContext().getHttpRequest().getHttpHeaders()
+                .getHeaderString(HttpHeaders.CONTENT_TYPE);
+        if (contentType != null) {
+            contentType = contentType.split(";")[0].trim(); // Handle parameters like charset
         }
+        boolean isJwe = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType);
 
         if (isRequestEncryptionRequired && !isJwe) {
             String errorMessage = "Encryption is required by the Credential Issuer, but the request is not a JWE.";
@@ -608,8 +600,8 @@ public class OID4VCIssuerEndpoint {
         KeyWrapper keyWrapper = matchingKeys.get(0);
 
         // Validate alg matches key
-        if (!alg.equals(keyWrapper.getAlgorithm())) {
-            throw new JWEException("JWE alg " + alg + " does not match key algorithm " + keyWrapper.getAlgorithm());
+        if (!keyWrapper.getType().equals("RSA")) {
+            throw new JWEException("Only RSA keys are supported for encryption");
         }
 
         // Set the decryption key
@@ -646,25 +638,20 @@ public class OID4VCIssuerEndpoint {
     private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
         if ("DEF".equals(zipAlgorithm)) {
             try {
-                Inflater inflater = new Inflater(true); // RFC 7516: no-wrap mode
+                Inflater inflater = new Inflater(false); // Use default zlib header
                 inflater.setInput(content);
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 while (!inflater.finished()) {
                     int count = inflater.inflate(buffer);
-                    if (count > 0) {
-                        out.write(buffer, 0, count);
-                    } else if (!inflater.needsInput()) {
-                        break;
-                    }
+                    out.write(buffer, 0, count);
                 }
-                inflater.end();
                 return out.toByteArray();
-            } catch (DataFormatException e) {
-                throw new JWEException("Failed to decompress JWE payload: " + e.getMessage());
+            } catch (Exception e) {
+                throw new JWEException("Failed to decompress: " + e.getMessage());
             }
         }
-        throw new JWEException("Unsupported compression algorithm: " + zipAlgorithm);
+        throw new JWEException("Unsupported compression algorithm");
     }
 
     private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {
