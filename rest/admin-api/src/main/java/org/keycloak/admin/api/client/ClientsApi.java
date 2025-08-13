@@ -16,7 +16,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 
 public interface ClientsApi extends Provider {
 
@@ -28,7 +28,7 @@ public interface ClientsApi extends Provider {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation createClient(@Valid @ConvertGroup(to = CreateClient.class) ClientRepresentation client,
+    ClientRepresentation createClient(@Valid @ConvertGroup(to = CreateClientDefault.class) ClientRepresentation client,
                                       @QueryParam("fieldValidation") FieldValidation fieldValidation);
 
     @Path("{id}")
