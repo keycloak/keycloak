@@ -590,12 +590,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             testRealm.setComponents(new MultivaluedHashMap<>());
         }
 
-        Map<String, String> attributes = Optional.ofNullable(testRealm.getAttributes()).orElseGet(HashMap::new);
-        attributes.put("oid4vci.request.encryption.required", "true");
-        attributes.put("oid4vci.request.zip.algorithms", "DEF");
-        testRealm.setAttributes(attributes);
-
-
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
@@ -609,7 +603,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Client with ID " + clientId + " not found in realm"));
 
-        // Add role to existing client
+        // Add a role to an existing client
         if (testRealm.getRoles() != null) {
             Map<String, List<RoleRepresentation>> clientRoles = testRealm.getRoles().getClient();
             clientRoles.merge(

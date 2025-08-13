@@ -266,8 +266,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 .setCredentialConfigurationId(credentialConfigurationId)
                 .setProof(proof);
 
-        String requestPayload;
-        requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+        String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
         Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
         assertEquals("The credential request should be answered successfully.",

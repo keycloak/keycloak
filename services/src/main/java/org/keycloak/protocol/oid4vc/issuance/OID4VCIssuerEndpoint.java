@@ -27,35 +27,24 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -111,7 +100,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -122,10 +110,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.zip.DataFormatException;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
-import java.util.zip.InflaterOutputStream;
 
 import static org.keycloak.jose.jwk.ECPublicJWK.EC;
 import static org.keycloak.jose.jwk.OKPPublicJWK.OKP;
@@ -419,7 +405,8 @@ public class OID4VCIssuerEndpoint {
         if (contentType != null) {
             contentType = contentType.split(";")[0].trim(); // Handle parameters like charset
         }
-        boolean isJwe = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType);
+        boolean isJwe = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType)
+                || looksLikeCompactJwe(requestPayload);
 
         if (isRequestEncryptionRequired && !isJwe) {
             String errorMessage = "Encryption is required by the Credential Issuer, but the request is not a JWE.";
@@ -567,7 +554,6 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Validate alg and enc against supported values
-        String alg = header.getAlgorithm();
         String enc = header.getEncryptionAlgorithm();
         if (!metadata.getEncValuesSupported().contains(enc)) {
             throw new JWEException("Unsupported enc algorithm: " + enc + ErrorType.INVALID_ENCRYPTION_PARAMETERS);
@@ -627,6 +613,8 @@ public class OID4VCIssuerEndpoint {
             throw new JWEException("Failed to parse decrypted JWE payload: " + e.getMessage());
         }
     }
+
+
     /**
      * Decompresses content using the specified algorithm.
      *
@@ -638,12 +626,16 @@ public class OID4VCIssuerEndpoint {
     private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
         if ("DEF".equals(zipAlgorithm)) {
             try {
-                Inflater inflater = new Inflater(false); // Use default zlib header
+                // Tests compress with raw DEFLATE (nowrap=true).
+                Inflater inflater = new Inflater(true);
                 inflater.setInput(content);
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 while (!inflater.finished()) {
                     int count = inflater.inflate(buffer);
+                    if (count == 0 && inflater.needsInput()) {
+                        break;
+                    }
                     out.write(buffer, 0, count);
                 }
                 return out.toByteArray();
@@ -652,6 +644,13 @@ public class OID4VCIssuerEndpoint {
             }
         }
         throw new JWEException("Unsupported compression algorithm");
+    }
+
+    private boolean looksLikeCompactJwe(String payload) {
+        if (payload == null) return false;
+        // Compact JWE serialization consists of 5 dot-separated base64url parts
+        int parts = payload.split("\\.").length;
+        return parts == 5;
     }
 
     private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {
@@ -739,7 +738,7 @@ public class OID4VCIssuerEndpoint {
             }
 
             JWEHeader header = new JWEHeader.JWEHeaderBuilder()
-                    .algorithm(selectedAlg)  // Set the selected alg
+                    .algorithm(selectedAlg)
                     .encryptionAlgorithm(enc)
                     .compressionAlgorithm(zip)
                     .build();
@@ -826,19 +825,6 @@ public class OID4VCIssuerEndpoint {
         String publicKeyUse = jwk.getPublicKeyUse();
         return publicKeyUse == null || "enc".equals(publicKeyUse);
     }
-
-//    private boolean isSupportedEncryption(CredentialResponseEncryptionMetadata metadata, String enc) {
-//        if (metadata == null) {
-//            return false;
-//        }
-//
-//        if (metadata.getEncValuesSupported() == null ||
-//                metadata.getEncValuesSupported().isEmpty()) {
-//            return false;
-//        }
-//
-//        return metadata.getEncValuesSupported().contains(enc);
-//    }
 
     private boolean isSupportedCompression(CredentialResponseEncryptionMetadata metadata, String zip) {
         return metadata != null &&

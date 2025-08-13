@@ -18,14 +18,11 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
-import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -46,23 +43,15 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.jboss.logging.Logger;
 
-import java.security.Key;
 import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.keycloak.crypto.KeyType.OCT;
 import static org.keycloak.crypto.KeyType.RSA;
 import static org.keycloak.jose.jwk.ECPublicJWK.EC;
+import static org.keycloak.jose.jwk.OKPPublicJWK.OKP;
 
 /**
  * {@link WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
@@ -81,7 +70,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
-    // Constants for compression algorithms
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String ATTR_REQUEST_ZIP_ALGS = "oid4vci.request.zip.algorithms";
 
@@ -159,18 +147,28 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     public static CredentialRequestEncryptionMetadata getCredentialRequestEncryption(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
 
+        // Build JWKS with public encryption keys
         JSONWebKeySet jwks = buildJwks(session);
+
+        // If encryption is required but no keys exist → reject unencrypted requests
+        boolean encryptionRequired = isEncryptionRequired(realm);
         if (jwks.getKeys() == null || jwks.getKeys().length == 0) {
-            LOGGER.warn("No valid encryption keys found; omitting credential_request_encryption");
-            return null; // Omit if no valid keys
+            if (encryptionRequired) {
+                LOGGER.error("Encryption is required but no valid encryption keys are available.");
+                throw new IllegalStateException("Missing encryption keys for required credential_request_encryption.");
+            } else {
+                LOGGER.warn("No valid encryption keys found; omitting credential_request_encryption metadata.");
+                return null; // Entire object omitted
+            }
         }
 
-        metadata.setJwks(jwks)
+        // Build metadata
+        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata()
+                .setJwks(jwks)
                 .setEncValuesSupported(getSupportedEncryptionMethods())
                 .setZipValuesSupported(getSupportedZipAlgorithms(realm))
-                .setEncryptionRequired(isEncryptionRequired(realm));
+                .setEncryptionRequired(encryptionRequired);
 
         return metadata;
     }
@@ -214,7 +212,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         KeyManager keyManager = session.keys();
 
         JWK[] jwkArray = keyManager.getKeysStream(realm)
-                .filter(key -> KeyUse.ENC.equals(key.getUse()) && Arrays.asList("RSA", "EC", "OKP").contains(key.getType()))
+                .filter(key -> KeyUse.ENC.equals(key.getUse()) && Arrays.asList(RSA, EC, OKP).contains(key.getType()))
                 .map(key -> {
                     try {
                         JWKBuilder builder = JWKBuilder.create()

@@ -276,8 +276,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 CredentialRequest credentialRequest = new CredentialRequest()
                         .setCredentialIdentifier("test-credential");
 
-                String requestPayload;
-                requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+                String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
                 issuerEndpoint.requestCredential(requestPayload);
             });
@@ -293,25 +292,25 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         try {
             withCausePropagation(() -> {
-                testingClient.server(TEST_REALM_NAME).run(session -> {
+                testingClient.server(TEST_REALM_NAME).run((session -> {
                     AppAuthManager.BearerTokenAuthenticator authenticator =
                             new AppAuthManager.BearerTokenAuthenticator(session);
                     authenticator.setTokenString(token);
+
+                    // Prepare the issue endpoint with no credential builders.
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
-                    CredentialRequest credentialRequest = new CredentialRequest()
-                            .setCredentialConfigurationId(credentialConfigurationId);
 
-                    String requestPayload;
-                    requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+                    CredentialRequest credentialRequest =
+                            new CredentialRequest().setCredentialConfigurationId(credentialConfigurationId);
 
+                    String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                     issuerEndpoint.requestCredential(requestPayload);
-                });
+                }));
             });
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException e) {
-            ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-            assertEquals(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE, error.getError());
-            assertTrue(error.getErrorDescription().contains("No credential builder found for format jwt_vc"));
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof BadRequestException);
+            Assert.assertEquals("No credential builder found for format jwt_vc", e.getMessage());
         }
     }
 
@@ -326,8 +325,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 CredentialRequest credentialRequest = new CredentialRequest()
                         .setCredentialIdentifier("no-such-credential");
 
-                String requestPayload;
-                requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+                String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
                 issuerEndpoint.requestCredential(requestPayload);
             });
@@ -345,8 +343,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialIdentifier(scopeName);
 
-            String requestPayload;
-            requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
             Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
             assertEquals("The credential request should be answered successfully.",
@@ -386,13 +383,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialIdentifier(scopeName);
-            String requestPayload;
-            try {
-                requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-            } catch (JsonProcessingException e) {
-                Assert.fail("Failed to serialize CredentialRequest: " + e.getMessage());
-                return;
-            }
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+
             Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
             assertEquals("The credential request should be answered successfully.",
                     HttpStatus.SC_OK, credentialResponse.getStatus());
@@ -601,8 +594,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialIdentifier(scopeName);
 
-            String requestPayload;
-            requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
             // First credential request
             Response response1 = issuerEndpoint.requestCredential(requestPayload);

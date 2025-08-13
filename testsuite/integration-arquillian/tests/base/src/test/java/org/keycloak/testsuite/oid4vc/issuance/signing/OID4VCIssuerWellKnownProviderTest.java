@@ -133,7 +133,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
                     assertNotNull(requestEncryption.getJwks());
                     JWK[] keys = requestEncryption.getJwks().getKeys();
-                    assertEquals(2, keys.length);
+                    assertEquals(4, keys.length);
                     for (JWK jwk : keys) {
                         assertNotNull("JWK must have kid", jwk.getKeyId());
                         assertNotNull("JWK must have alg", jwk.getAlgorithm());
