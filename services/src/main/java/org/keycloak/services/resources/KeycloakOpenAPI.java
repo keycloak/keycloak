@@ -38,6 +38,7 @@ public class KeycloakOpenAPI {
             public static final String ATTACK_DETECTION = "Attack Detection";
             public static final String AUTHENTICATION_MANAGEMENT = "Authentication Management";
             public static final String CLIENTS = "Clients";
+            public static final String CLIENTS_V2 = "Clients (v2)";
             public static final String CLIENT_ATTRIBUTE_CERTIFICATE = "Client Attribute Certificate";
             public static final String CLIENT_INITIAL_ACCESS = "Client Initial Access";
             public static final String CLIENT_REGISTRATION_POLICY = "Client Registration Policy";
