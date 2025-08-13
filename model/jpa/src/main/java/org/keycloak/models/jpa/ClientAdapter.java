@@ -448,23 +448,23 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        if (mapping.getName() != null && !mapping.getName().equals(entity.getName())) {
+        ProtocolMapperEntity pmEntity = getProtocolMapperEntity(mapping.getId());
+        if (mapping.getName() != null && !mapping.getName().equals(pmEntity.getName())) {
             if (getProtocolMapperByName(mapping.getProtocol(), mapping.getName()) != null) {
                 throw new ModelDuplicateException("Protocol mapper name must be unique per protocol");
             }
         }
-        ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
         if (mapping.getName() != null) {
-            entity.setName(mapping.getName());
+            pmEntity.setName(mapping.getName());
         } else {
-            logger.warn("Deprecated: Always pass in the protocol mapper name when updating (since Keycloak 26.3)");
+            logger.warn("Deprecated: Always pass in the protocol mapper name when updating (since Keycloak 26.4)");
         }
-        entity.setProtocolMapper(mapping.getProtocolMapper());
-        if (entity.getConfig() == null) {
-            entity.setConfig(mapping.getConfig());
+        pmEntity.setProtocolMapper(mapping.getProtocolMapper());
+        if (pmEntity.getConfig() == null) {
+            pmEntity.setConfig(mapping.getConfig());
         } else {
-            entity.getConfig().clear();
-            entity.getConfig().putAll(mapping.getConfig());
+            pmEntity.getConfig().clear();
+            pmEntity.getConfig().putAll(mapping.getConfig());
         }
         em.flush();
 

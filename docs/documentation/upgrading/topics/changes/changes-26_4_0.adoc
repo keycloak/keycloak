@@ -156,7 +156,7 @@ as well as the *Passkeys Conditional UI Authenticator* as already announced.
 
 === Updating a protocol mapper without passing in the protocol mapper name
 
-It is now deprecated to not pass in the name of the protocol mapper when changing a protocol mapper.
+It is now deprecated to not pass in the name of the protocol mapper when changing a protocol mapper when using, for example, the Admin API.
 Future versions will require passing in a protocol mapper name when updating a protocol mapper.
 
 // ------------------------ Removed features ------------------------ //
