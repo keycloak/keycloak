@@ -36,6 +36,6 @@ For more information, see the link:{adminguide_link}#passkeys_server_administrat
 
 = New conditional authenticator `Conditional - credential`
 
-The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the *Passkeys* feature. It is added by {project_name} to the default *browser* flow to skip 2FA in case a passkey was used to login as the primary credential.
+The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the *Passkeys* feature. It is added by {project_name} to the default *browser* flow to skip 2FA in case a passkey was used to log in as the primary credential.
 
 For more information about conditional flows, see the link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows] chapter in the {adminguide_name}.

@@ -7,7 +7,7 @@
 Passkey registration and authentication are performed using the same features of xref:webauthn_{context}[WebAuthn]. More specifically *Passkeys* are related to xref:_webauthn_loginless[LoginLess WebAuthn] as they try to avoid any password during login.
 Therefore, users of {project_name} can do Passkey registration and authentication by existing xref:webauthn_{context}[WebAuthn registration and authentication], using the *passwordless* variants.
 
-The *Passkeys* feature has been integrated seamlessly in the default authentication forms in two different ways. When activated, both conditional UI and modal UI are available in the forms in which the username input is displayed (for example *Username Password Form*  or *Username Form*). Besides, the password forms, when the username was already selected, always show the modal UI button to login via passkey if the current user has passwordless WebAuthn credentials associated. This way modal and conditional UI can be used to perform a complete login from scratch that needs username and password, and only modal UI is presented when the username is already selected in the authentication process (because of re-authentication or because the user was selected before in the process not using a passkey).
+The *Passkeys* feature has been integrated seamlessly in the default authentication forms in two different ways. When activated, both conditional UI and modal UI are available in the forms in which the username input is displayed (for example *Username Password Form*  or *Username Form*). Besides, the password forms, when the username was already selected, always show the modal UI button to login by passkey if the current user has passwordless WebAuthn credentials associated. This way modal and conditional UI can be used to perform a complete login from scratch that needs username and password, and only modal UI is presented when the username is already selected in the authentication process (because of re-authentication or because the user was selected before in the process not using a passkey).
 
 *Passkeys* have been added to the following authenticator implementations:
 
@@ -61,4 +61,4 @@ Set up Passkey Authentication for the default forms as follows:
 +
 NOTE: Storage capacity is usually very limited on hardware passkeys meaning that you cannot store many discoverable credentials on your passkey. However, this limitation may be mitigated for instance if you use an Android phone backed by a Google account as a passkey device or an iPhone backed by Bitwarden.
 +
-. In the same policy tab *WebAuthn Passwordless Policy* activate the *Enable Passkeys* option at the bottom. This switch is the one that really enables passkeys in the realm.
+. In the *WebAuthn Passwordless Policy* tab, activate the *Enable Passkeys* option at the bottom. This switch is the one that really enables passkeys in the realm.
