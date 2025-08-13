@@ -19,8 +19,10 @@ package org.keycloak.models.policy;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -42,6 +44,62 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
     public JpaResourcePolicyStateProvider(KeycloakSession session) {
         this.session = session;
         this.em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+    }
+
+    @Override
+    public String isScheduled(ResourcePolicy policy, String resourceId) {
+        ResourcePolicyStateEntity.PrimaryKey pk = new ResourcePolicyStateEntity.PrimaryKey(resourceId, policy.getId());
+        ResourcePolicyStateEntity entity = em.find(ResourcePolicyStateEntity.class, pk);
+
+        if (entity == null) {
+            return null;
+        }
+
+        return entity.getLastCompletedActionId();
+    }
+
+    @Override
+    public void schedule(ResourcePolicy policy, ResourceAction action, String resourceId) {
+        ResourcePolicyStateEntity entity = new ResourcePolicyStateEntity();
+
+        entity.setResourceId(resourceId);
+        entity.setPolicyId(policy.getId());
+        entity.setPolicyProviderId(policy.getProviderId());
+        entity.setLastCompletedActionId(action.getId());
+        entity.setLastUpdatedTimestamp(Time.currentTimeMillis() + action.getAfter());
+
+        em.merge(entity);
+    }
+
+    @Override
+    public List<ScheduledAction> getScheduledActions(ResourcePolicy policy) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<ResourcePolicyStateEntity> query = cb.createQuery(ResourcePolicyStateEntity.class);
+        Root<ResourcePolicyStateEntity> stateRoot = query.from(ResourcePolicyStateEntity.class);
+
+        Predicate byPolicy = cb.equal(stateRoot.get("policyId"), policy.getId());
+        Predicate isExpired = cb.lessThan(stateRoot.get("lastUpdatedTimestamp"), Time.currentTimeMillis());
+
+        query.where(cb.and(byPolicy, isExpired));
+
+        return em.createQuery(query).getResultList().stream()
+                .map(s -> new ScheduledAction(s.getLastCompletedActionId(), s.getResourceId()))
+                .toList();
+    }
+
+    @Override
+    public void reSchedule(ResourcePolicy policy, ResourceAction action, String resourceId) {
+        ResourcePolicyStateEntity.PrimaryKey pk = new ResourcePolicyStateEntity.PrimaryKey(resourceId, policy.getId());
+        ResourcePolicyStateEntity entity = em.find(ResourcePolicyStateEntity.class, pk);
+
+        if (entity == null) {
+            return;
+        }
+
+        entity.setLastCompletedActionId(action.getId());
+        entity.setLastUpdatedTimestamp(Time.currentTimeMillis() + action.getAfter());
+
+        em.persist(entity);
     }
 
     @Override

@@ -39,4 +39,9 @@ public class UserCreationDateResourcePolicyProvider extends AbstractUserResource
         Expression<Long> timeMoment = cb.sum(userRoot.get("createdTimestamp"), cb.literal(time));
         return cb.lessThan(timeMoment, cb.literal(currentTimeMillis));
     }
+
+    @Override
+    public boolean supports(ResourceType type) {
+        return ResourceType.USERS.equals(type);
+    }
 }

@@ -110,6 +110,20 @@ public class TransientUserTest {
 
     @Test
     public void tesRunActionOnFederatedUser() {
+        runOnServer.run((session -> {
+                    configureSessionContext(session);
+                    PolicyBuilder.create()
+                            .of(FederatedIdentityPolicyProviderFactory.ID)
+                            .withConfig("source", "broker")
+                            .withConfig("source-id", List.of("kc-oidc-alias"))
+                            .withConfig("broker-aliases", IDP_OIDC_ALIAS)
+                            .withActions(
+                                    UserActionBuilder.builder(DeleteUserActionProviderFactory.ID)
+                                            .after(Duration.ofDays(1))
+                                            .build()
+                            ).build(session);
+                }));
+
         consumerRealmOAuth.openLoginForm();
         loginPage.clickSocial(IDP_OIDC_ALIAS);
 
@@ -129,26 +143,16 @@ public class TransientUserTest {
 
         runOnServer.run((session -> {
             RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = PolicyBuilder.create()
-                    .of(FederatedIdentityPolicyProviderFactory.ID)
-                    .withConfig("source", "broker")
-                    .withConfig("source-id", List.of("kc-oidc-alias"))
-                    .withConfig("broker-aliases", IDP_OIDC_ALIAS)
-                    .withActions(
-                            UserActionBuilder.builder(DeleteUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(1))
-                                    .build()
-                    ).build(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
-            manager.runPolicies();
+            manager.runScheduledTasks();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user);
             assertTrue(user.isEnabled());
 
             try {
-                manager = new ResourcePolicyManager(session);
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runPolicies();
+                manager.runScheduledTasks();
                 user = session.users().getUserByUsername(realm, username);
                 assertNull(user);
             } finally {

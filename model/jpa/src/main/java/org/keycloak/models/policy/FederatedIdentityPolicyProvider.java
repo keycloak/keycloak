@@ -26,7 +26,10 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 
@@ -34,6 +37,21 @@ public class FederatedIdentityPolicyProvider extends UserLastSessionRefreshTimeR
 
     public FederatedIdentityPolicyProvider(KeycloakSession session, ComponentModel model) {
         super(session, model);
+    }
+
+    @Override
+    public boolean isEligible(String id, long time) {
+        boolean eligible = super.isEligible(id, time);
+
+        RealmModel realm = getSession().getContext().getRealm();
+        UserModel user = getSession().users().getUserById(realm, id);
+
+        if (user == null) {
+            return false;
+        }
+
+        return eligible && getSession().users().getFederatedIdentitiesStream(realm, user)
+                .anyMatch(f -> getBrokerAliases().contains(f.getIdentityProvider()));
     }
 
     @Override

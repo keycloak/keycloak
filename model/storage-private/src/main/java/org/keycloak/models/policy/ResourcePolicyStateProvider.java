@@ -54,4 +54,13 @@ public interface ResourcePolicyStateProvider extends Provider {
      * Deletes all state records associated with the current realm bound to the session.
      */
     void removeAll();
+
+    String isScheduled(ResourcePolicy policy, String resourceId);
+
+    void schedule(ResourcePolicy policy, ResourceAction action, String resourceId);
+
+    void reSchedule(ResourcePolicy policy, ResourceAction action, String resourceId);
+
+    List<ScheduledAction> getScheduledActions(ResourcePolicy policy);
+    record ScheduledAction (String actionId, String resourceId) {};
 }

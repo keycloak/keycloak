@@ -34,10 +34,12 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
 
     private final ComponentModel policyModel;
     private final EntityManager em;
+    private final KeycloakSession session;
 
     public AbstractUserResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
         this.policyModel = model;
         this.em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        this.session = session;
     }
 
     public abstract Predicate timePredicate(long time, CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> userRoot);
@@ -106,7 +108,11 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
         return em;
     }
 
-    public ComponentModel getModel() {
+    protected ComponentModel getModel() {
         return policyModel;
+    }
+
+    protected KeycloakSession getSession() {
+        return session;
     }
 }

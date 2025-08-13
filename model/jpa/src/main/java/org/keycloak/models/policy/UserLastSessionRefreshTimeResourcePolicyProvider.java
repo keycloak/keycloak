@@ -28,6 +28,8 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserEntity;
 
 public class UserLastSessionRefreshTimeResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
@@ -37,10 +39,28 @@ public class UserLastSessionRefreshTimeResourcePolicyProvider extends AbstractUs
     }
 
     @Override
+    public boolean isEligible(String id, long time) {
+        KeycloakSession session = getSession();
+        RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserById(realm, id);
+
+        if (user == null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     public Predicate timePredicate(long time, CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> userRoot) {
         long currentTimeSeconds = Time.currentTime();
         Path<Long> lastSessionRefreshTime = userRoot.get("lastSessionRefreshTime");
         Expression<Long> lastSessionRefreshTimeExpiration = cb.sum(lastSessionRefreshTime, cb.literal(Duration.ofMillis(time).toSeconds()));
         return cb.and(cb.isNotNull(lastSessionRefreshTime), cb.lessThan(lastSessionRefreshTimeExpiration, cb.literal(currentTimeSeconds)));
+    }
+
+    @Override
+    public boolean supports(ResourceType type) {
+        return ResourceType.USERS.equals(type);
     }
 }

@@ -35,6 +35,7 @@ import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.policy.ResourcePolicyStateProvider.ScheduledAction;
 import org.keycloak.provider.ProviderFactory;
 
 public class ResourcePolicyManager {
@@ -294,5 +295,70 @@ public class ResourcePolicyManager {
             realm.getComponentsStream(policy.getId(), ResourceActionProvider.class.getName()).forEach(realm::removeComponent);
             realm.removeComponent(policy);
         });
+    }
+
+    public boolean trySchedule(ResourceType type, String id) {
+        ResourcePolicyStateProvider state = getResourcePolicyStateProvider();
+        List<ResourcePolicy> policies = getPolicies();
+
+        if (policies.isEmpty()) {
+            return false;
+        }
+
+        boolean scheduled = false;
+
+        for (ResourcePolicy policy : policies) {
+            ResourcePolicyProvider provider = getPolicyProvider(policy);
+
+            if (!provider.supports(type)) {
+                continue;
+            }
+
+            List<ResourceAction> actions = getActions(policy);
+
+            if (actions.isEmpty()) {
+                continue;
+            }
+
+            String scheduledAction = state.isScheduled(policy, id);
+
+            if (scheduledAction == null) {
+                // schedule the first action
+                getResourcePolicyStateProvider().schedule(policy, getFirstAction(policy), id);
+            } else {
+                // re-schedule the policy to reset the state and start from the first policy
+                getResourcePolicyStateProvider().reSchedule(policy, getFirstAction(policy), id);
+            }
+        }
+
+        return scheduled;
+    }
+
+    private ResourceAction getFirstAction(ResourcePolicy policy) {
+        return getActions(policy).get(0);
+    }
+
+    public void runScheduledTasks() {
+        for (ResourcePolicy policy : getPolicies()) {
+            ResourcePolicyStateProvider state = getResourcePolicyStateProvider();
+
+            for (ScheduledAction scheduled : state.getScheduledActions(policy)) {
+                List<ResourceAction> actions = getActions(policy);
+
+                for (int i = 0; i < actions.size(); i++) {
+                    ResourceAction next = actions.get(i);
+
+                    if (next.getId().equals(scheduled.actionId())) {
+                        runAction(getActionProvider(next), List.of(scheduled.resourceId()));
+
+                        if (actions.size() > i + 1) {
+                            state.schedule(policy, actions.get(i + 1), scheduled.resourceId());
+                        } else {
+                            state.removeByCompletedActions(policy.getId(), Set.of(scheduled.actionId()));
+                        }
+                    }
+                }
+            }
+        }
     }
 }

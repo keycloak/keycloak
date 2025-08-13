@@ -42,4 +42,10 @@ public interface ResourcePolicyProvider extends Provider {
      * This method checks a list of candidates and returns only those that are eligible based on time.
      */ 
     List<String> filterEligibleResources(List<String> candidateResourceIds, long time);
+
+    boolean supports(ResourceType type);
+
+    default boolean isEligible(String id, long time) {
+        throw new IllegalArgumentException("Not implemented");
+    }
 }
