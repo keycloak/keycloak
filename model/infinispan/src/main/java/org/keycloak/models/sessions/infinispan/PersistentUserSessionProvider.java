@@ -252,8 +252,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
-
-        user.setLastSessionRefreshTime(entity.getLastSessionRefresh());
     }
 
     @Override

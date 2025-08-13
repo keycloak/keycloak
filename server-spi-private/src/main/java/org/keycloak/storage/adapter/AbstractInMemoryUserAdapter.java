@@ -293,11 +293,6 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     }
 
     @Override
-    public void setLastSessionRefreshTime(int lastSessionRefreshTime) {
-        // no-op
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserModel)) return false;

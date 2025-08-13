@@ -252,7 +252,7 @@ public class ResourcePolicyManagementTest {
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
 
-            user.setLastSessionRefreshTime(Time.currentTime());
+//            user.setLastSessionRefreshTime(Time.currentTime());
 
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
@@ -297,7 +297,7 @@ public class ResourcePolicyManagementTest {
             assertNull(user.getFirstAttribute("notifier1"));
             assertNull(user.getFirstAttribute("notifier2"));
 
-            user.setLastSessionRefreshTime(Time.currentTime());
+//            user.setLastSessionRefreshTime(Time.currentTime());
 
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
