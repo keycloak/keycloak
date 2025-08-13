@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.admin.api.ChosenBySpi;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
@@ -29,6 +30,7 @@ import org.keycloak.services.client.ClientService;
 import java.io.IOException;
 
 @RequestScoped
+@ChosenBySpi
 public class DefaultClientApi implements ClientApi {
     private RealmModel realm;
     private ClientModel client;
@@ -106,5 +108,10 @@ public class DefaultClientApi implements ClientApi {
         } catch (IOException e) {
             throw ErrorResponse.error("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    public void close() {
+
     }
 }
