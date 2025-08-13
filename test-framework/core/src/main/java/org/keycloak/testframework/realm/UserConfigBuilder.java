@@ -73,6 +73,11 @@ public class UserConfigBuilder {
         return this;
     }
 
+    public UserConfigBuilder requiredActions(String... requiredActions) {
+        rep.setRequiredActions(Collections.combine(rep.getRequiredActions(), requiredActions));
+        return this;
+    }
+
     public UserConfigBuilder groups(String... groups) {
         rep.setGroups(Collections.combine(rep.getGroups(), groups));
         return this;
