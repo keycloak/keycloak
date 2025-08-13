@@ -37,8 +37,11 @@ import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -46,6 +49,9 @@ import org.keycloak.utils.CredentialHelper;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -53,6 +59,23 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory, CredentialRegistrator {
+
+    public static final String ADD_RECOVERY_CODES = "add-recovery-codes";
+
+    List<ProviderConfigProperty> ADD_RECOVERY_CODES_CONFIG_PROPERTIES = addRecoveryCodesConfig();
+
+    static List<ProviderConfigProperty> addRecoveryCodesConfig() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(ADD_RECOVERY_CODES)
+                .label("Add Recovery Codes")
+                .helpText("If this option is enabled, the user will be required to configure recovery codes following to the OTP configuration. If the user already has recovery codes configured, he won't be asked.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue(false)
+                .add()
+                .build();
+    }
+
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
@@ -138,6 +161,13 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             context.challenge(challenge);
             return;
         }
+
+        if (context.getConfig() != null && Boolean.parseBoolean(context.getConfig().getConfigValue(ADD_RECOVERY_CODES, "false"))) {
+            if (!context.getUser().credentialManager().isConfiguredFor(RecoveryAuthnCodesCredentialModel.TYPE)) {
+                context.getUser().addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+            }
+        }
+
         context.getAuthenticationSession().removeAuthNote(Constants.TOTP_SECRET_KEY);
         context.success();
         deprecatedEvent.success();
@@ -153,6 +183,13 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        List<ProviderConfigProperty> configs = new ArrayList<>(List.copyOf(MAX_AUTH_AGE_CONFIG_PROPERTIES));
+        configs.addAll(List.copyOf(ADD_RECOVERY_CODES_CONFIG_PROPERTIES));
+        return configs;
     }
 
     @Override
