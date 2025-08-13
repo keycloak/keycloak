@@ -30,14 +30,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import io.quarkus.runtime.logging.LogRuntimeConfig;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-
 import io.smallrye.config.SmallRyeConfig;
 
 public class LoggingConfigurationTest extends AbstractConfigurationTest {
@@ -86,7 +84,8 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "log-syslog-app-name", "keycloak",
                 "log-syslog-protocol", "tcp",
                 "log-syslog-format", DEFAULT_LOG_FORMAT,
-                "log-syslog-output", DEFAULT_SYSLOG_OUTPUT.toString()
+                "log-syslog-output", DEFAULT_SYSLOG_OUTPUT.toString(),
+                "log-syslog-counting-framing", "protocol-dependent"
         ));
         assertThat(Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_MAX_LENGTH).orElse(null), CoreMatchers.nullValue());
 
@@ -96,6 +95,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.log.syslog.syslog-type", "rfc5424",
                 "quarkus.log.syslog.app-name", "keycloak",
                 "quarkus.log.syslog.protocol", "tcp",
+                "quarkus.log.syslog.use-counting-framing", "protocol-dependent",
                 "quarkus.log.syslog.format", DEFAULT_LOG_FORMAT,
                 "quarkus.log.syslog.json.enabled", "false"
         ));
@@ -113,6 +113,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "KC_LOG_SYSLOG_MAX_LENGTH", "4096",
                 "KC_LOG_SYSLOG_APP_NAME", "keycloak2",
                 "KC_LOG_SYSLOG_PROTOCOL", "udp",
+                "KC_LOG_SYSLOG_COUNTING_FRAMING", "false",
                 "KC_LOG_SYSLOG_FORMAT", "some format",
                 "KC_LOG_SYSLOG_OUTPUT", "json"
         ));
@@ -126,6 +127,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "log-syslog-max-length", "4096",
                 "log-syslog-app-name", "keycloak2",
                 "log-syslog-protocol", "udp",
+                "log-syslog-counting-framing", "false",
                 "log-syslog-format", "some format",
                 "log-syslog-output", "json"
         ));
@@ -137,6 +139,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.log.syslog.max-length", "4096",
                 "quarkus.log.syslog.app-name", "keycloak2",
                 "quarkus.log.syslog.protocol", "udp",
+                "quarkus.log.syslog.use-counting-framing", "false",
                 "quarkus.log.syslog.format", "some format",
                 "quarkus.log.syslog.json.enabled", "true"
         ));
@@ -166,6 +169,32 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
 
         assertConfig("log-syslog-max-length", "512");
         assertExternalConfig("quarkus.log.syslog.max-length", "512");
+    }
+
+    @Test
+    public void syslogCountingFraming() {
+        assertSyslogCountingFraming(LogRuntimeConfig.SyslogConfig.CountingFraming.TRUE);
+        assertSyslogCountingFraming(LogRuntimeConfig.SyslogConfig.CountingFraming.FALSE);
+        assertSyslogCountingFraming(LogRuntimeConfig.SyslogConfig.CountingFraming.PROTOCOL_DEPENDENT);
+    }
+
+    protected void assertSyslogCountingFraming(LogRuntimeConfig.SyslogConfig.CountingFraming countingFraming) {
+        putEnvVars(Map.of(
+                "KC_LOG", "syslog",
+                "KC_LOG_SYSLOG_COUNTING_FRAMING", countingFraming.toString()
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "log-syslog-enabled", "true",
+                "log-syslog-counting-framing", countingFraming.toString()
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.log.syslog.enable", "true",
+                "quarkus.log.syslog.use-counting-framing", countingFraming.toString()
+        ));
+        onAfter();
     }
 
     @Test
@@ -452,5 +481,40 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         var handlerName = handler.toString();
         assertConfig("log-%s-async-queue-length".formatted(handlerName), queueLength.toString());
         assertExternalConfig("quarkus.log.%s.async.queue-length".formatted(handlerName), queueLength.toString());
+    }
+
+    // HTTP Access log
+    @Test
+    public void httpAccessLogDefaults() {
+        initConfig();
+
+        assertConfig(Map.of(
+                "http-access-log-enabled", "false",
+                "http-access-log-pattern", "common"
+        ));
+        assertConfigNull("http-access-log-exclude");
+
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.enabled", "false",
+                "quarkus.http.access-log.pattern", "common"
+        ));
+        assertExternalConfigNull("quarkus.http.access-log.exclude-pattern");
+    }
+
+    @Test
+    public void httpAccessLogChanges() {
+        ConfigArgsConfigSource.setCliArgs("--http-access-log-enabled=true", "--http-access-log-pattern=long", "--http-access-log-exclude=/realms/test/*");
+        initConfig();
+
+        assertConfig(Map.of(
+                "http-access-log-enabled", "true",
+                "http-access-log-pattern", "long",
+                "http-access-log-exclude", "/realms/test/*"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.http.access-log.enabled", "true",
+                "quarkus.http.access-log.pattern", "long",
+                "quarkus.http.access-log.exclude-pattern", "/realms/test/*"
+        ));
     }
 }

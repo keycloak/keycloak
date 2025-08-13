@@ -22,6 +22,11 @@ class MySQLTestDatabase extends AbstractContainerTestDatabase {
     }
 
     @Override
+    public String getJdbcUrl(boolean internal) {
+        return super.getJdbcUrl(internal) + "?allowPublicKeyRetrieval=true";
+    }
+
+    @Override
     public Logger getLogger() {
         return LOGGER;
     }

@@ -119,11 +119,15 @@ export const PersonalInfo = () => {
             ((key: unknown, params) =>
               t(key as TFuncKey, params as any)) as TFunction
           }
-          renderer={(attribute) =>
-            attribute.name === "email" &&
-            updateEmailFeatureEnabled &&
-            updateEmailActionEnabled &&
-            (!isRegistrationEmailAsUsername || isEditUserNameAllowed) ? (
+          renderer={(attribute) => {
+            const annotations = attribute.annotations
+              ? attribute.annotations
+              : {};
+            return attribute.name === "email" &&
+              updateEmailFeatureEnabled &&
+              updateEmailActionEnabled &&
+              annotations["kc.required.action.supported"] &&
+              (!isRegistrationEmailAsUsername || isEditUserNameAllowed) ? (
               <Button
                 id="update-email-btn"
                 variant="link"
@@ -135,8 +139,8 @@ export const PersonalInfo = () => {
               >
                 {t("updateEmail")}
               </Button>
-            ) : undefined
-          }
+            ) : undefined;
+          }}
         />
         {!allFieldsReadOnly() && (
           <ActionGroup>

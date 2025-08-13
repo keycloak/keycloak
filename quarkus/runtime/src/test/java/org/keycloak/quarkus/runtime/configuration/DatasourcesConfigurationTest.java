@@ -8,14 +8,16 @@ import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -97,7 +99,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertConfig("db-dialect-store", H2Dialect.class.getName());
         // XA datasource is the default
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.driver", JdbcDataSource.class.getName());
-        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
+        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2-store/keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-mem");
@@ -229,14 +231,14 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertConfig("db-dialect-clients", H2Dialect.class.getName());
         assertExternalConfig(Map.of(
-                "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
+                "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2-clients/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
                 "quarkus.datasource.\"clients\".jdbc.transactions", "xa"
         ));
 
         ConfigArgsConfigSource.setCliArgs("");
         initConfig();
-        assertConfig("db-dialect-clients", H2Dialect.class.getName());
-        assertExternalConfig("quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
+        assertConfigNull("db-dialect-clients");
+        assertConfigNull("quarkus.datasource.\"clients\".jdbc.url", true);
         onAfter();
 
         System.setProperty("kc.db-url-properties-users", "?test=test&test1=test1");
@@ -294,6 +296,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         initConfig();
 
         assertConfigNull("db-pool-initial-size-clients");
+        assertConfigNull("db-pool-min-size-clients");
+        assertConfig("db-pool-max-size-clients", "100");
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-clients=dev-mem");
+        initConfig();
+
+        assertConfigNull("db-pool-initial-size-clients");
         assertConfig(Map.of(
                 "db-pool-min-size-clients", "1",
                 "db-pool-max-size-clients", "100"
@@ -325,6 +334,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-pool-initial-size-clients=10");
+        initConfig();
+        assertConfigNull("db-pool-min-size-clients");
+        assertConfig("db-pool-initial-size-clients", "10");
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-pool-initial-size-clients=10", "--db-kind-clients=dev-file");
         initConfig();
         assertConfig(Map.of(
                 "db-pool-min-size-clients", "1", // set 1 for H2
@@ -386,5 +401,104 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.jdbc.max-size", "115",
                 "quarkus.datasource.\"users\".jdbc.max-size", "115"
         ));
+    }
+
+    @Test
+    public void envVarsHandling() {
+        putEnvVars(Map.of(
+                "KC_DB_KIND_USER_STORE", "postgres",
+                "KC_DB_URL_FULL_USER_STORE", "jdbc:postgresql://localhost/KEYCLOAK",
+                "KC_DB_USERNAME_USER_STORE", "my-username",
+                "KC_DB_KIND_MY_STORE", "mariadb"
+        ));
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-user-store", "postgres",
+                "db-url-full-user-store", "jdbc:postgresql://localhost/KEYCLOAK",
+                "db-username-user-store", "my-username",
+                "db-kind-my-store", "mariadb"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"user-store\".db-kind", "postgresql",
+                "quarkus.datasource.\"user-store\".jdbc.url", "jdbc:postgresql://localhost/KEYCLOAK",
+                "quarkus.datasource.\"user-store\".username", "my-username",
+                "quarkus.datasource.\"my-store\".db-kind", "mariadb"
+        ));
+
+        assertThat(Configuration.getPropertyNames(), hasItem("quarkus.datasource.\"my-store\".db-kind"));
+        assertThat(Configuration.getPropertyNames(), not(hasItem("quarkus.datasource.\"my.store\".db-kind")));
+    }
+
+    @Test
+    public void envVarsSpecialChars() {
+        putEnvVars(Map.of(
+                "KC_USER_STORE_DB_KIND", "mariadb",
+                "KCKEY_USER_STORE_DB_KIND", "db-kind-user_store$something",
+                "KC_CLIENT_STORE_PW", "password",
+                "KCKEY_CLIENT_STORE_PW", "db-password-client.store_123"
+        ));
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-user_store$something", "mariadb",
+                "db-password-client.store_123", "password"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"user_store$something\".db-kind", "mariadb",
+                "quarkus.datasource.\"client.store_123\".password", "password"
+        ));
+    }
+
+    @Test
+    public void sqlParameters() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-my-store=dev-mem");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-my-store", "dev-mem",
+                "db-debug-jpql-my-store", "false",
+                "db-log-slow-queries-threshold-my-store", "10000"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-my-store=dev-mem", "--db-debug-jpql-my-store=true", "--db-log-slow-queries-threshold-my-store=5000");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-my-store", "dev-mem",
+                "db-debug-jpql-my-store", "true",
+                "db-log-slow-queries-threshold-my-store","5000"
+        ));
+    }
+
+    @Test
+    public void propagatedPropertyNames() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mysql");
+
+        var config = createConfig();
+        Iterable<String> propertyNames = config.getPropertyNames();
+
+        assertThat(propertyNames, hasItems(
+                "kc.db-kind-user-store",
+                "quarkus.datasource.\"user-store\".db-kind",
+                "quarkus.datasource.\"user-store\".jdbc.url",
+                "quarkus.datasource.\"user-store\".jdbc.transactions"
+        ));
+
+        // verify the db-kind is there only once
+        long quarkusDbKindCount = StreamSupport.stream(propertyNames.spliterator(), false)
+                .filter("quarkus.datasource.\"user-store\".jdbc.url"::equals)
+                .count();
+        assertThat(quarkusDbKindCount, is(1L));
+
+        assertThat(propertyNames, not(hasItems(
+                "kc.db-dialect-user-store",
+                "quarkus.datasource.\"user-store\".username",
+                "quarkus.datasource.\"user-store\".password",
+                "quarkus.datasource.\"user-store\".jdbc.driver"
+        )));
     }
 }

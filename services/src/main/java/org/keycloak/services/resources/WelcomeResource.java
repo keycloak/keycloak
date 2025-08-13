@@ -179,7 +179,7 @@ public class WelcomeResource {
             Theme theme = getTheme();
 
             if(Objects.isNull(theme)) {
-                logger.error("Theme is null please check the \"--spi-theme-default\" parameter");
+                logger.error("Theme is null please check the \"--spi-theme--default\" parameter");
                 errorMessage = "The theme is null";
                 ResponseBuilder rb = Response.status(Status.BAD_REQUEST)
                         .entity(errorMessage)

@@ -22,9 +22,11 @@ import java.util.Map;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -38,6 +40,7 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 /**
  * Factory for creating all OID4VC related endpoints and the default mappers.
@@ -48,7 +51,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
 
-    public static final String PROTOCOL_ID = "oid4vc";
+    public static final String PROTOCOL_ID = Oid4VciConstants.OID4VC_PROTOCOL;
 
     private static final String CLIENT_ROLES_MAPPER = "client-roles";
     private static final String USERNAME_MAPPER = "username";
@@ -61,7 +64,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void init(Config.Scope config) {
-        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("id", "client roles"));
+        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("client roles"));
         builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create("subject id", "id"));
         builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
         builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
@@ -112,6 +115,31 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     @Override
     public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
         //no-op
+    }
+
+    @Override
+    public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONFIGURATION_ID, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CREDENTIAL_IDENTIFIER,
+                                                    k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TYPES, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONTEXTS, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.VCT, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.ISSUER_DID, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT,
+                                                    k -> CredentialScopeModel.FORMAT_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS,
+                                                    k -> CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS,
+                                                    k -> String.valueOf(CredentialScopeModel.SD_JWT_DECOYS_DEFAULT));
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS,
+                                                    k -> CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM,
+                                                    k -> CredentialScopeModel.HASH_ALGORITHM_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE,
+                                                    k -> CredentialScopeModel.TOKEN_TYPE_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS,
+                                                    k -> String.valueOf(CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT));
     }
 
     @Override

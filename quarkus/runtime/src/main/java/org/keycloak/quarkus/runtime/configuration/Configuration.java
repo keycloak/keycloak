@@ -89,6 +89,10 @@ public final class Configuration {
                 .isPresent();
     }
 
+    public static boolean isInitialized() {
+        return config != null;
+    }
+
     public static synchronized SmallRyeConfig getConfig() {
         if (config == null) {
             config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
@@ -109,10 +113,6 @@ public final class Configuration {
 
     public static Map<String, String> getRawPersistedProperties() {
         return PersistedConfigSource.getInstance().getProperties();
-    }
-
-    public static String getRawValue(String propertyName) {
-        return getConfig().getRawValue(propertyName);
     }
 
     public static Iterable<String> getPropertyNames() {
@@ -184,10 +184,10 @@ public final class Configuration {
 
         for (int i = 0; i < key.length(); i++) {
             char c = key.charAt(i);
-            if (c == ',') {
-                c = '-'; // should not happen, but was allowed by the previous logic
-            }
-            if (l && Character.isUpperCase(c)) {
+            if (c == '.') {
+                c = '-'; // this is not documented, but was in the previous logic
+                l = false;
+            } else if (l && Character.isUpperCase(c)) {
                 sb.append('-');
                 c = Character.toLowerCase(c);
                 l = false;

@@ -19,8 +19,10 @@
 
 package org.keycloak.testsuite.user.profile;
 
+import static java.util.Optional.ofNullable;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,7 +49,6 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -56,6 +57,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -63,7 +65,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.AttributeGroupMetadata;
@@ -80,6 +81,7 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.userprofile.validator.MultiValueValidator;
@@ -2225,10 +2227,14 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertEquals(attributes.get(UserModel.EMAIL).toLowerCase(), profileAttributes.getFirst(UserModel.EMAIL));
     }
 
-    @EnableFeature(Feature.UPDATE_EMAIL)
     @Test
     public void testEmailAttributeInUpdateEmailContext() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        try {
+            getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
+        } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+        }
     }
 
     private static void testEmailAttributeInUpdateEmailContext(KeycloakSession session) {
@@ -2312,8 +2318,147 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testEmailAnnotationsInAccountContext() {
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        try {
+            getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAnnotationsInAccountContext);
+        } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+        }
+    }
+
+    private static void testEmailAnnotationsInAccountContext(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, String> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, userName);
+        String originalEmail = userName + "@keycloak.org";
+        attributes.put(UserModel.EMAIL, originalEmail);
+        attributes.put(UserModel.FIRST_NAME, "Joe");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put("address", "some address");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        RealmModel realm = session.getContext().getRealm();
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertFalse(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).containsKey("kc.required.action.supported"));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(true);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertThat(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).get("kc.required.action.supported"), is(true));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+            UPConfig upConfig = provider.getConfiguration();
+            UPAttribute attribute = upConfig.getAttribute(UserModel.EMAIL);
+            attribute.setPermissions(new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN)));
+            provider.setConfiguration(upConfig);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertFalse(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).containsKey("kc.required.action.supported"));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+
+        try {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+            UPConfig upConfig = provider.getConfiguration();
+            UPAttribute attribute = upConfig.getAttribute(UserModel.EMAIL);
+            attribute.setPermissions(new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            provider.setConfiguration(upConfig);
+            profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+            assertThat(ofNullable(profile.getAttributes().getAnnotations(UserModel.EMAIL)).orElse(Map.of()).get("kc.required.action.supported"), is(true));
+        } finally {
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+        }
+    }
+
+    @Test
     public void testMultivalued() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testMultivalued);
+    }
+
+    @Test
+    public void testDefaultValue() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testInvalidConfigDefaultValue);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValue);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNoDefaultValueForRootAttributes);
+    }
+
+    private static void testInvalidConfigDefaultValue(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        provider.setConfiguration(upConfig);
+
+        UPAttribute foo = new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        foo.setDefaultValue("def");
+        foo.setValidations(Map.of("length", Map.of("min", "5", "max", "15")));
+        upConfig.addOrReplaceAttribute(foo);
+
+        try {
+            provider.setConfiguration(upConfig);
+            fail("Should fail because default value is not reach min length");
+        } catch (ComponentValidationException cve) {
+            //ignore
+        }
+    }
+
+    private static void testDefaultValue(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        UPAttribute foo = new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        foo.setDefaultValue("def");
+        upConfig.addOrReplaceAttribute(foo);
+        provider.setConfiguration(upConfig);
+
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, List.of(userName));
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        List<String> actualValue = user.getAttributes().get("foo");
+        List<String> expectedValue = List.of("def");
+        assertThat(actualValue, Matchers.equalTo(expectedValue));
+    }
+
+    private static void testNoDefaultValueForRootAttributes(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        upConfig.getAttribute(UserModel.USERNAME).setDefaultValue("def");
+        upConfig.getAttribute(UserModel.EMAIL).setDefaultValue("def");
+        upConfig.getAttribute(UserModel.FIRST_NAME).setDefaultValue("def");
+        upConfig.getAttribute(UserModel.LAST_NAME).setDefaultValue("def");
+
+        try {
+            provider.setConfiguration(upConfig);
+            fail("Should fail validation for default value");
+        } catch (ComponentValidationException cve) {
+            String message = cve.getMessage();
+            for (String attributeName : List.of(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME)) {
+                if (UserProfileUtil.isRootAttribute(attributeName)) {
+                    assertThat(message, Matchers.containsString("Default value not supported for attribute '" + attributeName + "'"));
+                }
+            }
+        }
     }
 
     private static void testMultivalued(KeycloakSession session) {

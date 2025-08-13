@@ -1,5 +1,5 @@
 import { Page, expect } from "@playwright/test";
-import { changeTimeUnit, switchOn } from "../utils/form";
+import { changeTimeUnit, switchOn } from "../utils/form.ts";
 
 export async function goToTokensTab(page: Page) {
   await page.getByTestId("rs-tokens-tab").click();

@@ -19,51 +19,41 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
-import java.util.function.Predicate;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.config.ConfigProviderFactory;
-import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import picocli.CommandLine;
 
-public abstract class AbstractUpdatesCommand extends AbstractCommand implements Runnable {
+public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
 
     private static final int FEATURE_DISABLED_EXIT_CODE = 4;
 
     @CommandLine.Mixin
-    HelpAllMixin helpAllMixin;
-
-    @CommandLine.Mixin
-    OptimizedMixin optimizedMixin;
+    OptimizedMixin optimizedMixin = new OptimizedMixin();
 
     @Override
-    public List<OptionCategory> getOptionCategories() {
-        return super.getOptionCategories().stream()
-                .filter(Predicate.not(OptionCategory.EXPORT::equals))
-                .filter(Predicate.not(OptionCategory.IMPORT::equals))
-                .toList();
+    protected boolean shouldStart() {
+        return false;
     }
 
     @Override
-    public void run() {
-        Environment.updateProfile(true);
-        if (!Profile.isAnyVersionOfFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
-            printFeatureDisabled();
-            picocli.exit(FEATURE_DISABLED_EXIT_CODE);
-            return;
-        }
-        loadConfiguration();
-        printPreviewWarning();
-        validateConfig();
-        var exitCode = executeAction();
-        picocli.exit(exitCode);
+    protected Optional<Integer> callCommand() {
+        return super.callCommand().or(() -> {
+            if (!Profile.isAnyVersionOfFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V1)) {
+                printFeatureDisabled();
+                return Optional.of(FEATURE_DISABLED_EXIT_CODE);
+            }
+            loadConfiguration();
+            printPreviewWarning();
+            validateConfig();
+            return Optional.of(executeAction());
+        });
     }
 
     abstract int executeAction();
@@ -74,33 +64,14 @@ public abstract class AbstractUpdatesCommand extends AbstractCommand implements 
         }
     }
 
-    void printOut(String message) {
-        var cmd = getCommandLine();
-        if (cmd.isPresent()) {
-            cmd.get().getOut().println(message);
-        } else {
-            System.out.println(message);
-        }
-    }
-
-    void printError(String message) {
-        var cmd = getCommandLine();
-        if (cmd.isPresent()) {
-            var colorScheme = cmd.get().getColorScheme();
-            cmd.get().getErr().println(colorScheme.errorText(message));
-        } else {
-            System.err.println(message);
-        }
-    }
-
     private void printPreviewWarning() {
         if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2) && (Profile.Feature.ROLLING_UPDATES_V2.getType() == Profile.Feature.Type.PREVIEW || Profile.Feature.ROLLING_UPDATES_V2.getType() == Profile.Feature.Type.EXPERIMENTAL)) {
-            printError("Warning! This command is '" + Profile.Feature.ROLLING_UPDATES_V2.getType() + "' and is not recommended for use in production. It may change or be removed at a future release.");
+            picocli.error("Warning! This command is '" + Profile.Feature.ROLLING_UPDATES_V2.getType() + "' and is not recommended for use in production. It may change or be removed at a future release.");
         }
     }
 
     void printFeatureDisabled() {
-        printError("Unable to use this command. None of the versions of the feature '" + Profile.Feature.ROLLING_UPDATES_V1.getUnversionedKey() + "' is enabled.");
+        picocli.error("Unable to use this command. None of the versions of the feature '" + Profile.Feature.ROLLING_UPDATES_V1.getUnversionedKey() + "' is enabled.");
     }
 
     static Map<String, CompatibilityMetadataProvider> loadAllProviders() {

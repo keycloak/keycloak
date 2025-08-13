@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { selectItem, switchOff, switchToggle } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToRealm, goToUserFederation } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { selectItem, switchOff, switchToggle } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToUserFederation } from "../utils/sidebar.ts";
 import {
   clickAddProvider,
   clickSave,
   clickUserFederationCard,
   fillKerberosForm,
-} from "./kerberos";
+} from "./kerberos.ts";
 
 const provider = "kerberos";
 const initCapProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
@@ -88,6 +88,21 @@ test.describe("User Fed Kerberos tests", () => {
 
     test.beforeEach(async ({ page }) => {
       await goToUserFederation(page);
+    });
+
+    test("Should edit existing Kerberos provider and cancel", async ({
+      page,
+    }) => {
+      await clickUserFederationCard(page, firstKerberosName);
+      await selectItem(page, "#kc-cache-policy", weeklyPolicy);
+      await selectItem(page, "#kc-eviction-day", newKerberosDay);
+      await selectItem(page, "#kc-eviction-hour", newKerberosHour);
+      await selectItem(page, "#kc-eviction-minute", newKerberosMinute);
+      await page.getByTestId(`${provider}-cancel`).click();
+
+      await clickUserFederationCard(page, firstKerberosName);
+
+      await expect(page.locator("#kc-cache-policy")).toHaveText(defaultPolicy);
     });
 
     test("Should edit existing Kerberos provider", async ({ page }) => {
@@ -175,21 +190,6 @@ test.describe("User Fed Kerberos tests", () => {
 
       await expect(page.getByText(noCachePolicy)).toBeVisible();
       await expect(page.getByText(defaultPolicy)).toBeHidden();
-    });
-
-    test("Should edit existing Kerberos provider and cancel", async ({
-      page,
-    }) => {
-      await clickUserFederationCard(page, firstKerberosName);
-      await selectItem(page, "#kc-cache-policy", weeklyPolicy);
-      await selectItem(page, "#kc-eviction-day", newKerberosDay);
-      await selectItem(page, "#kc-eviction-hour", newKerberosHour);
-      await selectItem(page, "#kc-eviction-minute", newKerberosMinute);
-      await page.getByTestId(`${provider}-cancel`).click();
-
-      await clickUserFederationCard(page, firstKerberosName);
-
-      await expect(page.locator("#kc-cache-policy")).toHaveText(defaultPolicy);
     });
 
     test("Should disable an existing Kerberos provider", async ({ page }) => {

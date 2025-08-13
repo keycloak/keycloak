@@ -389,6 +389,19 @@ public class PodTemplateTest {
     }
 
     @Test
+    public void testHttpManagment() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-scheme", "http")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTP", result.getReadinessProbe().getHttpGet().getScheme());
+    }
+
+    @Test
     public void testRelativePathHealthProbes() {
         final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
                 spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-relative-path", path)))
@@ -460,17 +473,6 @@ public class PodTemplateTest {
         assertNotNull(affinity);
         assertThat(Serialization.asYaml(affinity)).isEqualTo("""
                 ---
-                podAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchLabels:
-                          app: "keycloak"
-                          app.kubernetes.io/managed-by: "keycloak-operator"
-                          app.kubernetes.io/instance: "instance"
-                          app.kubernetes.io/component: "server"
-                      topologyKey: "topology.kubernetes.io/zone"
-                    weight: 10
                 podAntiAffinity:
                   preferredDuringSchedulingIgnoredDuringExecution:
                   - podAffinityTerm:
@@ -480,8 +482,17 @@ public class PodTemplateTest {
                           app.kubernetes.io/managed-by: "keycloak-operator"
                           app.kubernetes.io/instance: "instance"
                           app.kubernetes.io/component: "server"
+                      topologyKey: "topology.kubernetes.io/zone"
+                    weight: 100
+                  - podAffinityTerm:
+                      labelSelector:
+                        matchLabels:
+                          app: "keycloak"
+                          app.kubernetes.io/managed-by: "keycloak-operator"
+                          app.kubernetes.io/instance: "instance"
+                          app.kubernetes.io/component: "server"
                       topologyKey: "kubernetes.io/hostname"
-                    weight: 50
+                    weight: 90
                 """);
     }
 

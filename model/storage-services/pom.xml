@@ -9,7 +9,7 @@
 
     <artifactId>keycloak-model-storage-services</artifactId>
     <name>Keycloak Database Support - REST services</name>
-    <description/>
+    <description>Keycloak Database Support - REST services</description>
 
     <dependencies>
         <dependency>

@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -65,7 +66,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -76,6 +77,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anEmptyMap;
@@ -90,6 +94,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -109,6 +114,49 @@ public class GroupTest extends AbstractGroupTest {
     @InjectHttpClient
     CloseableHttpClient httpClient;
 
+    
+    @Test
+    public void createMultiDeleteMultiReadMulti() {
+        // create multiple groups
+        List<String> groupUuuids = new ArrayList<>();
+        IntStream.range(0, 100).forEach(groupIndex -> {
+            GroupRepresentation group = new GroupRepresentation();
+            group.setName("Test Group " + groupIndex);
+            try (Response response = managedRealm.admin().groups().add(group)) {
+                boolean created = response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL;
+                if (created) {
+                    final String groupUuid = ApiUtil.getCreatedId(response);
+                    groupUuuids.add(groupUuid);
+                } else {
+                    fail("Failed to create group: " + response.getStatusInfo().getReasonPhrase());
+                }
+            }
+        });
+
+        AtomicBoolean deletedAll = new AtomicBoolean(false);
+        List<Exception> caughtExceptions = new CopyOnWriteArrayList<>();
+        // read groups in a separate thread
+        new Thread(() -> {
+            while (!deletedAll.get()) {
+                try {
+                    // just loading briefs
+                    managedRealm.admin().groups().groups(null, 0, Integer.MAX_VALUE, true);
+                } catch (Exception e) {
+
+                    caughtExceptions.add(e);
+                }
+            }
+        }).start();
+
+        // delete groups
+        groupUuuids.forEach(groupUuid -> {
+            managedRealm.admin().groups().group(groupUuid).remove();
+        });
+        deletedAll.set(true);
+
+        assertThat(caughtExceptions, Matchers.empty());
+    }
+
     // KEYCLOAK-2716 Can't delete client if its role is assigned to a group
     @Test
     public void testClientRemoveWithClientRoleGroupMapping() {
@@ -127,7 +175,7 @@ public class GroupTest extends AbstractGroupTest {
                 .resourceType(ResourceType.CLIENT);
         client = realm.clients().findByClientId("foo").get(0);
 
-        RoleRepresentation role = RoleBuilder.create().name("foo-role").build();
+        RoleRepresentation role = RoleConfigBuilder.create().name("foo-role").build();
         realm.clients().get(client.getId()).roles().create(role);
         AdminEventAssertion.assertSuccess(adminEvents.poll())
                 .operationType(OperationType.CREATE)
@@ -322,9 +370,9 @@ public class GroupTest extends AbstractGroupTest {
 
     @Test
     public void createAndTestGroups() throws IOException {
-        RoleRepresentation topRole = createRealmRole(managedRealm, RoleBuilder.create().name("topRole").build());
-        RoleRepresentation level2Role = createRealmRole(managedRealm, RoleBuilder.create().name("level2Role").build());
-        RoleRepresentation level3Role = createRealmRole(managedRealm, RoleBuilder.create().name("level3Role").build());
+        RoleRepresentation topRole = createRealmRole(managedRealm, RoleConfigBuilder.create().name("topRole").build());
+        RoleRepresentation level2Role = createRealmRole(managedRealm, RoleConfigBuilder.create().name("level2Role").build());
+        RoleRepresentation level3Role = createRealmRole(managedRealm, RoleConfigBuilder.create().name("level3Role").build());
 
         // Role events tested elsewhere
         adminEvents.skipAll();
@@ -636,19 +684,19 @@ public class GroupTest extends AbstractGroupTest {
     @Test
     public void roleMappings() {
         RealmResource realm = managedRealm.admin();
-        createRealmRole(managedRealm, RoleBuilder.create().name("realm-role").build());
-        createRealmRole(managedRealm, RoleBuilder.create().name("realm-composite").build());
-        createRealmRole(managedRealm, RoleBuilder.create().name("realm-child").build());
+        createRealmRole(managedRealm, RoleConfigBuilder.create().name("realm-role").build());
+        createRealmRole(managedRealm, RoleConfigBuilder.create().name("realm-composite").build());
+        createRealmRole(managedRealm, RoleConfigBuilder.create().name("realm-child").build());
         realm.roles().get("realm-composite").addComposites(List.of(realm.roles().get("realm-child").toRepresentation()));
 
         Response response = realm.clients().create(ClientConfigBuilder.create().clientId("myclient").build());
         String clientId = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role").build());
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-role2").build());
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-composite").build());
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(clientId).roles().create(RoleConfigBuilder.create().name("client-role").build());
+        realm.clients().get(clientId).roles().create(RoleConfigBuilder.create().name("client-role2").build());
+        realm.clients().get(clientId).roles().create(RoleConfigBuilder.create().name("client-composite").build());
+        realm.clients().get(clientId).roles().create(RoleConfigBuilder.create().name("client-child").build());
         realm.clients().get(clientId).roles().get("client-composite").addComposites(List.of(realm.clients().get(clientId).roles().get("client-child").toRepresentation()));
 
         // Roles+clients tested elsewhere
@@ -712,8 +760,8 @@ public class GroupTest extends AbstractGroupTest {
     public void rolesCanBeAssignedEvenWhenTheyAreAlreadyIndirectlyAssigned() {
         RealmResource realm = managedRealm.admin();
 
-        createRealmRole(managedRealm, RoleBuilder.create().name("realm-composite").build());
-        createRealmRole(managedRealm, RoleBuilder.create().name("realm-child").build());
+        createRealmRole(managedRealm, RoleConfigBuilder.create().name("realm-composite").build());
+        createRealmRole(managedRealm, RoleConfigBuilder.create().name("realm-child").build());
         realm.roles().get("realm-composite")
                 .addComposites(List.of(realm.roles().get("realm-child").toRepresentation()));
 
@@ -721,8 +769,8 @@ public class GroupTest extends AbstractGroupTest {
         String clientId = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-composite").build());
-        realm.clients().get(clientId).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(clientId).roles().create(RoleConfigBuilder.create().name("client-composite").build());
+        realm.clients().get(clientId).roles().create(RoleConfigBuilder.create().name("client-child").build());
         realm.clients().get(clientId).roles().get("client-composite").addComposites(
                 List.of(realm.clients().get(clientId).roles().get("client-child").toRepresentation())
         );
@@ -931,7 +979,7 @@ public class GroupTest extends AbstractGroupTest {
                     .password("password");
 
             realm.addClient("resource-owner")
-                    .directAccessGrants()
+                    .directAccessGrantsEnabled(true)
                     .secret("secret");
 
             return realm;

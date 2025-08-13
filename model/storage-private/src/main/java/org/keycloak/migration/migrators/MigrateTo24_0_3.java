@@ -29,28 +29,19 @@ import org.keycloak.representations.idm.RealmRepresentation;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrateTo24_0_3 implements Migration {
+public class MigrateTo24_0_3 extends RealmMigration {
 
     private static final Logger LOG = Logger.getLogger(MigrateTo24_0_3.class);
 
     public static final ModelVersion VERSION = new ModelVersion("24.0.3");
 
     @Override
-    public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
-    }
-
-    @Override
-    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        migrateRealm(session, realm);
-    }
-
-    @Override
     public ModelVersion getVersion() {
         return VERSION;
     }
 
-    private void migrateRealm(KeycloakSession session, RealmModel realm) {
+    @Override
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
         DefaultRequiredActions.addDeleteCredentialAction(realm);
     }
 }

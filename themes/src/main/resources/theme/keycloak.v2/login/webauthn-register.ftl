@@ -44,7 +44,7 @@
                     errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
                 };
                 registerByWebAuthn(input);
-            });
+            },  { once: true });
         </script>
 
             <@buttons.actionGroup horizontal=true>

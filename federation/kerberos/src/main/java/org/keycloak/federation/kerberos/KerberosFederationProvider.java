@@ -19,6 +19,7 @@ package org.keycloak.federation.kerberos;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
@@ -31,10 +32,12 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -289,13 +292,23 @@ public class KerberosFederationProvider implements UserStorageProvider,
         user.setSingleAttribute(KERBEROS_PRINCIPAL, kerberosPrincipal.toString());
 
         if (kerberosConfig.isUpdateProfileFirstLogin()) {
-            if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+            if (isUpdateEmailEnabled(realm)) {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
             }
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 
         return validate(realm, user);
+    }
+
+    private static boolean isUpdateEmailEnabled(RealmModel realm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+            return false;
+        }
+
+        RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(RequiredAction.UPDATE_EMAIL.name());
+
+        return model != null && model.isEnabled();
     }
 
     @Override

@@ -32,8 +32,8 @@ export const SamlImportKeyDialog = ({
 
   const { addAlert, addError } = useAlerts();
 
-  const submit = (form: SamlKeysDialogForm) => {
-    submitForm(adminClient, form, id, attr, (error) => {
+  const submit = async (form: SamlKeysDialogForm) => {
+    await submitForm(adminClient, form, id, attr, (error) => {
       if (error) {
         addError("importError", error);
       } else {
@@ -50,8 +50,8 @@ export const SamlImportKeyDialog = ({
       continueButtonLabel="import"
       titleKey="importKey"
       confirmButtonDisabled={!isValid}
-      onConfirm={() => {
-        handleSubmit(submit)();
+      onConfirm={async () => {
+        await handleSubmit(submit)();
       }}
     >
       <FormProvider {...form}>

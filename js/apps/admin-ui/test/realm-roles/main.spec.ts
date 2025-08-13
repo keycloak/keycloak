@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import { fillRoleData } from "../clients/role";
-import adminClient from "../utils/AdminClient";
+import { fillRoleData } from "../clients/role.ts";
+import adminClient from "../utils/AdminClient.ts";
 import {
   assertAttribute,
   assertAttributeLength,
@@ -9,22 +9,22 @@ import {
   deleteAttribute,
   fillAttributeData,
   goToAttributesTab,
-} from "../utils/attributes";
+} from "../utils/attributes.ts";
 import {
   assertRequiredFieldError,
   clickCancelButton,
   clickSaveButton,
-} from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
+} from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
 import {
   pickRoleType,
   clickUnassign,
   confirmModalAssign,
   pickRole,
-} from "../utils/roles";
-import { goToRealm, goToRealmRoles } from "../utils/sidebar";
+} from "../utils/roles.ts";
+import { goToRealm, goToRealmRoles } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   assertNoResults,
@@ -32,12 +32,12 @@ import {
   clickRowKebabItem,
   clickTableRowItem,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   assertUnassignDisabled,
   clickCreateRoleButton,
   goToAssociatedRolesTab,
-} from "./main";
+} from "./main.ts";
 
 test.describe("Realm roles test", () => {
   const realmName = `realm-roles-${uuid()}`;

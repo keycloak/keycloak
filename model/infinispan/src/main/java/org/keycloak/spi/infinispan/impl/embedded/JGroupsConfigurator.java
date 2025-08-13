@@ -17,38 +17,21 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
+import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
+import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
+
 import java.lang.invoke.MethodHandles;
+import java.net.InetAddress;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import org.infinispan.commons.configuration.attributes.Attribute;
-import org.infinispan.configuration.global.TransportConfigurationBuilder;
-import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
-import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
-import org.jboss.logging.Logger;
-import org.jgroups.conf.ClassConfigurator;
-import org.jgroups.conf.ProtocolConfiguration;
-import org.jgroups.protocols.TCP;
-import org.jgroups.protocols.TCP_NIO2;
-import org.jgroups.protocols.UDP;
-import org.jgroups.stack.Protocol;
-import org.jgroups.util.DefaultSocketFactory;
-import org.jgroups.util.SocketFactory;
-import org.keycloak.Config;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -56,7 +39,45 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 
-import static org.infinispan.configuration.global.TransportConfiguration.STACK;
+import org.infinispan.commons.configuration.attributes.Attribute;
+import org.infinispan.configuration.global.TransportConfigurationBuilder;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
+import org.jboss.logging.Logger;
+import org.jgroups.Address;
+import org.jgroups.Global;
+import org.jgroups.JChannel;
+import org.jgroups.conf.ClassConfigurator;
+import org.jgroups.conf.ProtocolConfiguration;
+import org.jgroups.protocols.TCP;
+import org.jgroups.protocols.TCP_NIO2;
+import org.jgroups.protocols.UDP;
+import org.jgroups.stack.Protocol;
+import org.jgroups.util.DefaultSocketFactory;
+import org.jgroups.util.ExtendedUUID;
+import org.jgroups.util.SocketFactory;
+import org.jgroups.util.UUID;
+import org.keycloak.Config;
+import org.keycloak.common.util.Retry;
+import org.keycloak.config.CachingOptions;
+import org.keycloak.config.Option;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
+import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
+import org.keycloak.jgroups.header.TracerHeader;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
+import org.keycloak.spi.infinispan.impl.Util;
+import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 
 /**
  * Utility class to configure JGroups based on the Keycloak configuration.
@@ -66,6 +87,7 @@ public final class JGroupsConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
+    public static final String JGROUPS_ADDRESS_SEQUENCE = "JGROUPS_ADDRESS_SEQUENCE";
 
     private JGroupsConfigurator() {
     }
@@ -74,6 +96,8 @@ public final class JGroupsConfigurator {
         // Use custom Keycloak JDBC_PING implementation that workarounds issue https://issues.redhat.com/browse/JGRP-2870
         // The id 1025 follows this instruction: https://github.com/belaban/JGroups/blob/38219e9ec1c629fa2f7929e3b53d1417d8e60b61/conf/jg-protocol-ids.xml#L85
         ClassConfigurator.addProtocol((short) 1025, KEYCLOAK_JDBC_PING2.class);
+        ClassConfigurator.addProtocol((short) 1026, OPEN_TELEMETRY.class);
+        ClassConfigurator.add(TracerHeader.ID, TracerHeader.class);
     }
 
     /**
@@ -88,7 +112,9 @@ public final class JGroupsConfigurator {
         if (stack != null) {
             transportOf(holder).stack(stack);
         }
-        configureDiscovery(holder, session);
+        configureTransport(config);
+        boolean tracingEnabled = config.getBoolean(DefaultCacheEmbeddedConfigProviderFactory.TRACING, false);
+        configureDiscovery(holder, session, tracingEnabled);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
     }
@@ -126,6 +152,17 @@ public final class JGroupsConfigurator {
         }
     }
 
+    static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
+        Util.copyFromOption(builder, SystemProperties.BIND_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, false);
+        Util.copyFromOption(builder, SystemProperties.BIND_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, false);
+        Util.copyFromOption(builder, SystemProperties.EXTERNAL_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, false);
+        Util.copyFromOption(builder, SystemProperties.EXTERNAL_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, false);
+    }
+
+    private static void configureTransport(Config.Scope config) {
+        Arrays.stream(SystemProperties.values()).forEach(p -> p.set(config));
+    }
+
     private static void configureTls(ConfigurationBuilderHolder holder, KeycloakSession session) {
         var provider = session.getProvider(JGroupsCertificateProvider.class);
         if (provider == null || !provider.isEnabled()) {
@@ -157,7 +194,7 @@ public final class JGroupsConfigurator {
         return socketFactory;
     }
 
-    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session) {
+    private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session, boolean tracingEnabled) {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
@@ -174,15 +211,56 @@ public final class JGroupsConfigurator {
         var stackName = transportStackOf(holder).get();
         var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp);
+        var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
-        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
+
+        String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
+
+        Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
+                s -> prepareJGroupsAddress(s, clusterName)),
+                50, 10);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
-    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp) {
+    /**
+     * Generate the next sequence of the address, and place it into the JGROUPS_PING table so other nodes can see it.
+     * If we are the first = smallest entry, the other nodes will wait for us to become a coordinator
+     * for max_join_attempts x all_clients_retry_timeout = 10 x 100 ms = 1 second. Otherwise, we will wait for that
+     * one second. This prevents a split-brain scenario on a concurrent startup.
+     */
+    private static Address prepareJGroupsAddress(KeycloakSession session, String clusterName) {
+        var storage = session.getProvider(ServerConfigStorageProvider.class);
+        String seq = storage.loadOrCreate(JGROUPS_ADDRESS_SEQUENCE, () -> "0");
+        long value = Long.parseLong(seq) + 1;
+        String newSeq = Long.toString(value);
+        storage.replace(JGROUPS_ADDRESS_SEQUENCE, seq, newSeq);
+
+        var cp = session.getProvider(JpaConnectionProvider.class);
+        var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", cp.getEntityManager());
+        String statement = String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName);
+
+        ExtendedUUID address = new ExtendedUUID(0, value);
+
+
+        cp.getEntityManager().runWithConnection(o -> {
+            Connection con = (Connection) o;
+            try (PreparedStatement s = con.prepareStatement(statement)) {
+                s.setString(1, org.jgroups.util.Util.addressToString(new UUID(address.getMostSignificantBits(), address.getLeastSignificantBits()))); // address
+                s.setString(2, "(starting)"); // name
+                s.setString(3, clusterName); // cluster name
+                s.setString(4, "127.0.0.1:0"); // ip = new IpAddress("localhost", 0).toString()
+                s.setBoolean(5, false); // coord
+                s.execute();
+            }
+        });
+
+        return address;
+    }
+
+    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled) {
         var list = new ArrayList<ProtocolConfiguration>(udp ? 1 : 2);
         list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
               Map.of(
@@ -194,7 +272,10 @@ public final class JGroupsConfigurator {
                     "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
                     "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
                     "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+                    // This guarantees cleanup of stale data
                     "remove_all_data_on_view_change", "true",
+                    // This guarantees that merging happens even after the info writer completed
+                    "write_data_on_find", "true",
                     "register_shutdown_hook", "false",
                     "stack.combine", "REPLACE",
                     "stack.position", udp ? "PING" : "MPING"
@@ -204,6 +285,12 @@ public final class JGroupsConfigurator {
         if (!udp && InfinispanUtils.isVirtualThreadsEnabled())
             list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
 
+        if (tracingEnabled) {
+            list.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
+                    "stack.combine", "INSERT_ABOVE",
+                    "stack.position", udp ? "UDP" : "TCP"
+            )));
+        }
         return list;
     }
 
@@ -255,10 +342,18 @@ public final class JGroupsConfigurator {
     private static class JpaFactoryAwareJGroupsChannelConfigurator extends EmbeddedJGroupsChannelConfigurator {
 
         private final JpaConnectionProviderFactory factory;
+        private final Address address;
 
-        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp) {
+        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp, Address address) {
             super(name, stack, null, isUdp ? "udp" : "tcp");
             this.factory = Objects.requireNonNull(factory);
+            this.address = address;
+        }
+
+        @Override
+        protected JChannel amendChannel(JChannel channel) {
+            channel.addAddressGenerator(() -> address);
+            return super.amendChannel(channel);
         }
 
         @Override
@@ -267,6 +362,71 @@ public final class JGroupsConfigurator {
             if (protocol instanceof KEYCLOAK_JDBC_PING2 kcPing) {
                 kcPing.setJpaConnectionProviderFactory(factory);
             }
+        }
+    }
+
+    private enum SystemProperties {
+        BIND_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS, Global.BIND_ADDR, "jgroups.bind.address"),
+        BIND_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, Global.BIND_PORT, "jgroups.bind.port"),
+        EXTERNAL_ADDRESS(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, Global.EXTERNAL_ADDR),
+        EXTERNAL_PORT(CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, Global.EXTERNAL_PORT);
+
+        final Option<?> option;
+        final String property;
+        final String altProperty;
+        final String configKey;
+
+        SystemProperties(Option<?> option, String property) {
+            this(option, property, null);
+        }
+
+        SystemProperties(Option<?> option, String property, String altProperty) {
+            this.option = option;
+            this.property = property;
+            this.altProperty = altProperty;
+            this.configKey = configKey();
+        }
+
+        void set(Config.Scope config) {
+            String userConfig = fromConfig(config);
+            if (userConfig == null) {
+                // User property is either already set or missing, so do nothing
+                return;
+            }
+            checkPropertyAlreadySet(userConfig, property);
+            if (altProperty != null)
+                checkPropertyAlreadySet(userConfig, altProperty);
+            System.setProperty(property, userConfig);
+        }
+
+        void checkPropertyAlreadySet(String userValue, String property) {
+            String userProp = System.getProperty(property);
+            if (userProp != null) {
+                logger.warnf("Conflicting system property '%s' and CLI arg '%s' set, utilising CLI value '%s'",
+                      property, option.getKey(), userValue);
+                System.clearProperty(property);
+            }
+        }
+
+        String fromConfig(Config.Scope config) {
+            if (option.getType() == Integer.class) {
+                Integer val = config.getInt(configKey);
+                return val == null ? null : val.toString();
+            }
+            return config.get(configKey);
+        }
+
+        String configKey() {
+            // Strip the scope from the key and convert to camelCase
+            String key = option.getKey().substring(CACHE_EMBEDDED_PREFIX.length() + 1);
+            StringBuilder sb = new StringBuilder(key);
+            for (int i = 0; i < sb.length(); i++) {
+                if (sb.charAt(i) == '-') {
+                    sb.deleteCharAt(i);
+                    sb.replace(i, i+1, String.valueOf(Character.toUpperCase(sb.charAt(i))));
+                }
+            }
+            return sb.toString();
         }
     }
 }

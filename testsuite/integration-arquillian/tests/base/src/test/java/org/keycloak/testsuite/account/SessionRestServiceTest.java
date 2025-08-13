@@ -164,7 +164,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         List<SessionRepresentation> sessions = device.getSessions();
         assertEquals(1, sessions.size());
         SessionRepresentation session = sessions.get(0);
-        assertEquals("127.0.0.1", session.getIpAddress());
+        assertThat(session.getIpAddress(), anyOf(equalTo("127.0.0.1"), equalTo("0:0:0:0:0:0:0:1")));
         assertTrue(device.getLastAccess() == session.getLastAccess());
 
         List<ClientRepresentation> clients = session.getClients();
@@ -372,7 +372,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         List<SessionRepresentation> sessions = device.getSessions();
         assertEquals(1, sessions.size());
         SessionRepresentation session = sessions.get(0);
-        assertEquals("127.0.0.1", session.getIpAddress());
+        assertThat(session.getIpAddress(), anyOf(equalTo("127.0.0.1"), equalTo("0:0:0:0:0:0:0:1")));
         assertEquals(device.getLastAccess(), session.getLastAccess());
 
         assertEquals(1, session.getClients().size());

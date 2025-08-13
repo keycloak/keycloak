@@ -19,6 +19,7 @@ package org.keycloak.jose.jws;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.CekManagementProvider;
@@ -42,16 +43,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.LogoutTokenMapper;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.services.util.DefaultClientSessionContext;
@@ -246,7 +244,7 @@ public class DefaultTokenManager implements TokenManager {
         switch (category) {
             case ACCESS:
                 ClientModel client = session.getContext().getClient();
-                return OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRfc9068AccessTokenHeaderType()
+                return client != null && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRfc9068AccessTokenHeaderType()
                     ? TokenUtil.TOKEN_TYPE_JWT_ACCESS_TOKEN
                     : "JWT";
             case LOGOUT:
@@ -352,7 +350,7 @@ public class DefaultTokenManager implements TokenManager {
     public LogoutToken initLogoutToken(ClientModel client, UserModel user,
                                        AuthenticatedClientSessionModel clientSession) {
         LogoutToken token = new LogoutToken();
-        token.id(KeycloakModelUtils.generateId());
+        token.id(SecretGenerator.getInstance().generateSecureID());
         token.issuedNow();
         // From the spec "OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1" at https://openid.net/specs/openid-connect-backchannel-1_0.html
         // "OPs are encouraged to use short expiration times in Logout Tokens, preferably at most two minutes in the future [...]"

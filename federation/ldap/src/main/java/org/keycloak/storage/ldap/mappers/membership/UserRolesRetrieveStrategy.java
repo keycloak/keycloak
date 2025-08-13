@@ -106,14 +106,14 @@ public interface UserRolesRetrieveStrategy {
 
                 // load only those groups/roles the user is memberOf
                 // we do this by query to apply defined custom filters
-                ldapQuery.addWhereCondition(conditionBuilder.orCondition(
-                        memberOfValues.stream()
-                            .map(LDAPDn::fromString)
-                            .filter(roleDN -> roleDN.isDescendantOf(LDAPDn.fromString(roleOrGroupMapper.getConfig().getLDAPGroupsDn())))
-                            .map(roleDN -> conditionBuilder.equal(rdnAttr, roleDN.getFirstRdn().getAttrValue(rdnAttr)))
-                            .toArray(Condition[]::new)
-                        )
-                );
+                final Condition[] conditions = memberOfValues.stream()
+                        .map(LDAPDn::fromString)
+                        .filter(roleDN -> roleDN.isDescendantOf(LDAPDn.fromString(roleOrGroupMapper.getConfig().getLDAPGroupsDn())))
+                        .map(roleDN -> conditionBuilder.equal(rdnAttr, roleDN.getFirstRdn().getAttrValue(rdnAttr)))
+                        .toArray(Condition[]::new);
+                if (conditions.length > 0) {
+                    ldapQuery.addWhereCondition(conditionBuilder.orCondition(conditions));
+                }
 
                 return LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
             }

@@ -111,8 +111,8 @@ export const AccountRow = ({
             <Button
               id={`${account.providerAlias}-idp-link`}
               variant="link"
-              onClick={() => {
-                login({
+              onClick={async () => {
+                await login({
                   action: "idp_link:" + account.providerAlias,
                 });
               }}

@@ -1,11 +1,11 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { switchOff, switchOn } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToIdentityProviders } from "../utils/sidebar";
-import { clickTableRowItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { switchOn } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToIdentityProviders } from "../utils/sidebar.ts";
+import { clickTableRowItem } from "../utils/table.ts";
 import {
   addMapper,
   assertAuthorizationUrl,
@@ -20,7 +20,7 @@ import {
   createOIDCProvider,
   goToMappersTab,
   setUrl,
-} from "./main";
+} from "./main.ts";
 
 test.describe("OIDC identity provider test", () => {
   const oidcProviderName = "oidc";
@@ -53,8 +53,13 @@ test.describe("OIDC identity provider test", () => {
     await assertInvalidUrlNotification(page, "token");
     await clickRevertButton(page);
 
+    await setUrl(page, "tokenIntrospection", "invalid");
+    await clickSaveButton(page);
+    await assertInvalidUrlNotification(page, "tokenIntrospection");
+    await clickRevertButton(page);
+
     await assertJwksUrlExists(page);
-    await switchOff(page, "#config\\.useJwksUrl");
+    await page.getByText("Use JWKS URL").click();
     await assertJwksUrlExists(page, false);
 
     await assertPkceMethodExists(page, false);

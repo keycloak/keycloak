@@ -173,10 +173,7 @@ public class DebugHostnameSettingsResource {
     }
 
     private void addOption(String key) {
-        String rawValue = Configuration.getRawValue("kc." + key);
-        if (rawValue != null && !rawValue.isEmpty()) {
-            this.allConfigPropertiesMap.put(key, rawValue);
-        }
+        Configuration.getOptionalKcValue(key).ifPresent(value -> this.allConfigPropertiesMap.put(key, value));
     }
 
     private Map<String, String> getHeaders() {

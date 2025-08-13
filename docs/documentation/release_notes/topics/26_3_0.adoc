@@ -22,6 +22,10 @@ For newly created realms, the browser flow now includes the Recovery Authenticat
 
 For more information about this 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
 
+= Performance improvements to import, export and migration
+
+The time it takes to run imports, exports or migrations involving a large number of realms has been improved. There is no longer a cumulative performance degradation for each additional realm processed.
+
 = Simplified registration for WebAuthn and Passkeys
 
 Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) which are also used for Passkeys now support a parameter `skip_if_exists` when initiated by the application (AIA).
@@ -65,12 +69,20 @@ Asynchronous logging helps deployments that require high throughput and low late
 
 For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
 
-= Rolling updates for patch releases for minimized downtime (experimental)
+= Rolling updates for patch releases for minimized downtime (preview)
 
 In the previous release, the Keycloak Operator was enhanced to support performing rolling updates of the Keycloak image if both images contain the same version.
 This is useful, for example, when switching to an optimized image, changing a theme or a provider source code.
 
-In this release, we extended this to perform rolling update when the new image contains a future patch release from the same `major.minor` release stream as an experimental feature.
+In this release, we extended this to perform rolling update when the new image contains a future patch release from the same `major.minor` release stream as a preview feature.
 This can reduce the service's downtime even further, as downtime is only needed when upgrading from a different minor or major version.
 
 Read more on how to enable this feature in https://www.keycloak.org/server/update-compatibility#rolling-updates-for-patch-releases[update compatibility command].
+
+= Passkeys integrated in the default username forms
+
+In this release {project_name} integrates *Passkeys* in the default authentications forms. A new switch *Enable Passkeys* is available in the configuration, *Authentication* → *Policies* → *Webauthn Passwordless Policy*, that seamlessly incorporates passkeys support to the realm. With just one click, {project_name} offers conditional and modal user interfaces in the default login forms to allow users to authenticate with a passkey.
+
+The *Passkeys* feature is still in preview. Follow the https://www.keycloak.org/server/features[Enabling and disabling features] {section} to enable it.
+
+For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys section in the {adminguide_name}].

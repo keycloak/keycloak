@@ -252,6 +252,11 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
+    public void setLastSessionRefreshTime(int lastSessionRefreshTime) {
+        delegate.setLastSessionRefreshTime(lastSessionRefreshTime);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserModel)) return false;

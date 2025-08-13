@@ -17,22 +17,23 @@
 
 package org.keycloak.testframework.server;
 
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import io.quarkus.bootstrap.utils.BuildToolHelper;
+import org.infinispan.server.test.core.CountdownLatchLoggingConsumer;
 import org.jboss.logging.Logger;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
-import org.keycloak.testframework.database.JBossLogConsumer;
+import org.keycloak.testframework.clustering.LoadBalancer;
+import org.keycloak.testframework.logging.JBossLogConsumer;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
 
 public class ClusteredKeycloakServer implements KeycloakServer {
 
+    private static final String CLUSTER_VIEW_REGEX = ".*ISPN000093.*(?<=\\()(%1$d)(?=\\)).*|.*ISPN000094.*(?<=\\()(%1$d)(?=\\)).*";
     private static final boolean MANUAL_STOP = true;
     private static final int REQUEST_PORT = 8080;
     private static final int MANAGEMENT_PORT = 9000;
@@ -52,25 +53,39 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     @Override
     public void start(KeycloakServerConfigBuilder configBuilder) {
+        int numServers = containers.length;
+        CountdownLatchLoggingConsumer clusterLatch = new CountdownLatchLoggingConsumer(numServers, String.format(CLUSTER_VIEW_REGEX, numServers));
         String[] imagePeServer = null;
         if (images == null || images.isEmpty() || (imagePeServer = images.split(",")).length == 1) {
-            startContainersWithSameImage(configBuilder, imagePeServer == null ? SNAPSHOT_IMAGE : imagePeServer[0]);
+            startContainersWithSameImage(configBuilder, imagePeServer == null ? SNAPSHOT_IMAGE : imagePeServer[0], clusterLatch);
         } else {
-            startContainersWithMixedImage(configBuilder, imagePeServer);
+            startContainersWithMixedImage(configBuilder, imagePeServer, clusterLatch);
+        }
+
+        try {
+            clusterLatch.await((long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
         }
     }
 
-    private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer) {
+    private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, CountdownLatchLoggingConsumer clusterLatch) {
         assert imagePeServer != null;
         if (containers.length != imagePeServer.length) {
             throw new IllegalArgumentException("The number of containers and the number of images must match");
         }
+
         int[] exposedPorts = new int[]{REQUEST_PORT, MANAGEMENT_PORT};
         LazyFuture<String> snapshotImage = null;
         for (int i = 0; i < containers.length; ++i) {
             LazyFuture<String> resolvedImage;
             if (SNAPSHOT_IMAGE.equals(imagePeServer[i])) {
                 if (snapshotImage == null) {
+                    // Required otherwise we will receive an "Incorrect state of migration" error preventing startup
+                    configBuilder.option("spi-datastore--legacy--allow-migrate-existing-database-to-snapshot", "true");
                     snapshotImage = defaultImage();
                 }
                 resolvedImage = snapshotImage;
@@ -82,12 +97,12 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
             copyProvidersAndConfigs(container, configBuilder);
 
-            container.setCustomLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.keycloak." + i)));
+            configureLogConsumers(container, i, clusterLatch);
             container.run(configBuilder.toArgs());
         }
     }
 
-    private void startContainersWithSameImage(KeycloakServerConfigBuilder configBuilder, String image) {
+    private void startContainersWithSameImage(KeycloakServerConfigBuilder configBuilder, String image, CountdownLatchLoggingConsumer clusterLatch) {
         int[] exposedPorts = new int[]{REQUEST_PORT, MANAGEMENT_PORT};
         LazyFuture<String> imageFuture = image == null || SNAPSHOT_IMAGE.equals(image) ?
                 defaultImage() :
@@ -97,10 +112,14 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             containers[i] = container;
 
             copyProvidersAndConfigs(container, configBuilder);
-
-            container.setCustomLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.keycloak." + i)));
+            configureLogConsumers(container, i, clusterLatch);
             container.run(configBuilder.toArgs());
         }
+    }
+
+    private static void configureLogConsumers(DockerKeycloakDistribution container, int index, CountdownLatchLoggingConsumer clusterLatch) {
+        var logger = new JBossLogConsumer(Logger.getLogger("managed.keycloak." + index));
+        container.setCustomLogConsumer(logger.andThen(clusterLatch));
     }
 
     private void copyProvidersAndConfigs(DockerKeycloakDistribution container, KeycloakServerConfigBuilder configBuilder) {
@@ -122,7 +141,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        return getBaseUrl(0);
+        return LoadBalancer.HOSTNAME;
     }
 
     @Override
@@ -130,8 +149,12 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         return getManagementBaseUrl(0);
     }
 
+    public int getBasePort(int index) {
+        return containers[index].getMappedPort(REQUEST_PORT);
+    }
+
     public String getBaseUrl(int index) {
-        return "http://localhost:%d".formatted(containers[index].getMappedPort(REQUEST_PORT));
+        return "http://localhost:%d".formatted(getBasePort(index));
     }
 
     public String getManagementBaseUrl(int index) {

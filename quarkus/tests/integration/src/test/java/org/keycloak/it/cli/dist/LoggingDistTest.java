@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -31,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.config.LoggingOptions;
@@ -42,13 +42,12 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
 
-@DistributionTest
+@DistributionTest(keepAlive = true)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
 @Tag(DistributionTest.SLOW)
 public class LoggingDistTest {
@@ -266,6 +265,16 @@ public class LoggingDistTest {
         cliResult.assertStartedDevMode();
     }
 
+    @Test
+    @Launch({ "start-dev", "--features=log-mdc","--log-mdc-enabled=true", "--log-level=org.keycloak.transaction:debug" })
+    void testLogMdcShowingInTheLogs(CLIResult cliResult) {
+
+        when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
+                .statusCode(200);
+        assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak."));
+        cliResult.assertStartedDevMode();
+    }
+
     protected static String readDefaultFileLog(RawDistRootPath path) {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
@@ -276,5 +285,21 @@ public class LoggingDistTest {
         } catch (IOException e) {
             throw new AssertionError("Cannot read default file log", e);
         }
+    }
+
+    // HTTP Access log
+    @Test
+    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude='/realms/master/clients/.*'"})
+    void httpAccessLogNotNamedPattern(CLIResult cliResult) {
+        cliResult.assertStartedDevMode();
+
+        when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
+                .statusCode(200);
+        cliResult.assertMessage("[org.keycloak.http.access-log]");
+        cliResult.assertMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+
+        when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
+                .statusCode(200);
+        cliResult.assertNoMessage("http://127.0.0.1:8080/realms/master/clients/account/redirect");
     }
 }

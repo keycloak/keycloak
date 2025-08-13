@@ -151,13 +151,17 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
+        String serviceName = KeycloakDiscoveryServiceDependentResource.getName(primary);
         if (existingDeployment != null) {
             // copy the existing annotations to keep the status consistent
             CRDUtils.findUpdateReason(existingDeployment).ifPresent(r -> baseDeployment.getMetadata().getAnnotations()
                     .put(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, r));
             CRDUtils.fetchIsRecreateUpdate(existingDeployment).ifPresent(b -> baseDeployment.getMetadata()
                     .getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, b.toString()));
+            serviceName = existingDeployment.getSpec().getServiceName();
         }
+
+        baseDeployment.getSpec().setServiceName(serviceName);
 
         var updateType = ContextUtils.getUpdateType(context);
 
@@ -287,7 +291,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         .editOrNewSpec().withImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets()).endSpec()
                     .endTemplate()
                     .withReplicas(keycloakCR.getSpec().getInstances())
-                    .withServiceName(KeycloakDiscoveryServiceDependentResource.getName(keycloakCR))
                 .endSpec();
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
@@ -326,7 +329,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
         // probes
-        var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
+        var protocol = isManagementHttps(keycloakCR) ? "HTTPS" : "HTTP";
         var port = HttpManagementSpec.managementPort(keycloakCR);
         var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
         var livenessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getLivenessProbeSpec());
@@ -390,6 +393,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             .endContainer().endSpec().endTemplate().endSpec().build();
     }
 
+    private boolean isManagementHttps(Keycloak keycloakCR) {
+        return isTlsConfigured(keycloakCR) && keycloakCR.getSpec().getAdditionalOptions().stream()
+                .noneMatch(v -> "http-management-scheme".equals(v.getName()) && "http".equals(v.getValue()));
+    }
+
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {
         SchedulingSpec schedulingSpec = keycloakCR.getSpec().getSchedulingSpec();
         if (schedulingSpec != null) {
@@ -407,25 +415,31 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
         }
 
-        // set defaults if nothing was specified by the user
-        // - server pods will have an affinity for the same zone as to avoid stretch clusters
-        // - server pods will have a stronger anti-affinity for the same node
-
         if (!specBuilder.hasAffinity()) {
-            specBuilder.editOrNewAffinity().withNewPodAffinity().addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                    .withWeight(10).withNewPodAffinityTerm().withNewLabelSelector().withMatchLabels(labels)
-                    .endLabelSelector().withTopologyKey(ZONE_KEY).endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAffinity().endAffinity();
+            var antiAffinity = specBuilder.editOrNewAffinity().withNewPodAntiAffinity();
+            // Server pods have an anti-affinity for the same zone in order to increase availability by creating a stretched cluster
+            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                  .withWeight(100)
+                  .withNewPodAffinityTerm()
+                  .withNewLabelSelector()
+                  .withMatchLabels(labels)
+                  .endLabelSelector()
+                  .withTopologyKey(ZONE_KEY)
+                  .endPodAffinityTerm()
+                  .endPreferredDuringSchedulingIgnoredDuringExecution();
 
-            specBuilder.editOrNewAffinity().withNewPodAntiAffinity()
-                    .addNewPreferredDuringSchedulingIgnoredDuringExecution().withWeight(50).withNewPodAffinityTerm()
-                    .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
-                    .withTopologyKey("kubernetes.io/hostname").endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAntiAffinity().endAffinity();
+            // Server pods have an anti-affinity for the same node in case it's not possible to provision to a zone that contains no existing pods
+            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                  .withWeight(90)
+                  .withNewPodAffinityTerm()
+                  .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
+                  .withTopologyKey("kubernetes.io/hostname")
+                  .endPodAffinityTerm()
+                  .endPreferredDuringSchedulingIgnoredDuringExecution();
+
+            antiAffinity.endPodAntiAffinity().endAffinity();
         }
-
     }
-
 
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
         var distConfigurator = ContextUtils.getDistConfigurator(context);

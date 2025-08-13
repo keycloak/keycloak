@@ -128,15 +128,10 @@ public class CustomLockService extends StandardLockService {
 
         try {
             Set<Integer> currentIds = currentIdsInDatabaseChangeLogLockTable();
-
-            if (!Arrays.stream(DBLockProvider.Namespace.values())
-                       .map(DBLockProvider.Namespace::getId)
-                       .allMatch(currentIds::contains)) {
-
-                Arrays.stream(DBLockProvider.Namespace.values())
-                      .map(DBLockProvider.Namespace::getId)
-                      .forEach(currentIds::add);
-
+            Set<Integer> customNamespaceIds = Arrays.stream(DBLockProvider.Namespace.values())
+                    .map(DBLockProvider.Namespace::getId)
+                    .collect(Collectors.toSet());
+            if (currentIds.addAll(customNamespaceIds)) {
                 if (log.isTraceEnabled()) {
                     log.tracef("Initialize Database Lock Table, current locks %s", currentIds);
                 }

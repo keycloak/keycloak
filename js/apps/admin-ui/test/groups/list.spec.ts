@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { cancelModal, confirmModal } from "../utils/modal";
-import { goToGroups } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { cancelModal, confirmModal } from "../utils/modal.ts";
+import { goToGroups } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   assertRowExists,
@@ -17,9 +17,9 @@ import {
   clickTableRowItem,
   clickTableToolbarItem,
   searchItem,
-} from "../utils/table";
-import { createGroup, editGroup, searchGroup } from "./list";
-import { goToGroupDetails } from "./util";
+} from "../utils/table.ts";
+import { createGroup, editGroup, searchGroup } from "./list.ts";
+import { goToGroupDetails } from "./util.ts";
 
 test.describe("Group test", () => {
   const groupName = `group-${uuid()}`;

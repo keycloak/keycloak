@@ -112,13 +112,17 @@ public final class Database {
                                     .append(separator)
                                     .append("${kc.data.dir:data}")
                                     .append(separator)
-                                    .append("h2")
+                                    .append(getFolder(namedProperty))
                                     .append(separator)
                                     .append(getDbName(namedProperty))
                                     .append(getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty))
                                     .toString());
                         }
                         return amendH2("jdbc:h2:mem:%s%s".formatted(getDbName(namedProperty), getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty)));
+                    }
+
+                    private String getFolder(String namedProperty) {
+                        return StringUtil.isNullOrEmpty(namedProperty) ? "h2" : "h2-%s".formatted(namedProperty);
                     }
 
                     private String getDbName(String namedProperty) {
@@ -278,7 +282,7 @@ public final class Database {
 
         private static String getProperty(Option<?> option, String namedProperty, String defaultValue) {
             return "${kc.%s:%s}".formatted(StringUtil.isNullOrEmpty(namedProperty) ? option.getKey() :
-                            DatabaseOptions.getResultNamedKey(option, namedProperty).orElseThrow(() -> new IllegalArgumentException("Cannot find the named property")),
+                            DatabaseOptions.Datasources.getNamedKey(option, namedProperty).orElseThrow(() -> new IllegalArgumentException("Cannot find the named property")),
                     defaultValue);
         }
 

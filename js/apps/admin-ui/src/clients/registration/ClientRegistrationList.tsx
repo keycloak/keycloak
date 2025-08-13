@@ -1,5 +1,9 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
+import {
+  ListEmptyState,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -134,6 +138,14 @@ export const ClientRegistrationList = ({
             displayKey: "providerId",
           },
         ]}
+        emptyState={
+          <ListEmptyState
+            message={t("noAccessPolicies")}
+            instructions={t("noAccessPoliciesInstructions")}
+            primaryActionText={t("createPolicy")}
+            onPrimaryAction={toggleAddDialog}
+          />
+        }
       />
     </>
   );

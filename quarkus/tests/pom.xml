@@ -29,6 +29,8 @@
     </parent>
     
     <name>Keycloak Quarkus Test Parent</name>
+    <description>Keycloak Quarkus Test Parent</description>
+
     <artifactId>keycloak-quarkus-test-parent</artifactId>
     <packaging>pom</packaging>
 

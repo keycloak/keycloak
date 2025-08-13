@@ -28,6 +28,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AccountRoles;
@@ -65,6 +66,7 @@ import jakarta.transaction.InvalidTransactionException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
 import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -72,6 +74,7 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -218,8 +221,14 @@ public final class KeycloakModelUtils {
     }
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject) {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
-        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, 3);
+        return generateKeyPairCertificate(subject, 4096, calendar);
+    }
+
+    public static CertificateRepresentation generateKeyPairCertificate(String subject, int keysize, Calendar endDate) {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(keysize);
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject, BigInteger.valueOf(System.currentTimeMillis()), endDate.getTime());
 
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         String certPem = PemUtils.encodeCertificate(certificate);
@@ -1219,5 +1228,18 @@ public final class KeycloakModelUtils {
         } finally {
             context.setRealm(currentRealm);
         }
+    }
+
+    /**
+     * @return the list of protocols accepted for the given client.
+     */
+    public static List<String> getAcceptedClientScopeProtocols(ClientModel client) {
+        List<String> acceptedClientProtocols;
+        if (client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) {
+            acceptedClientProtocols = List.of("openid-connect", Oid4VciConstants.OID4VC_PROTOCOL);
+        }else {
+            acceptedClientProtocols = List.of(client.getProtocol());
+        }
+        return acceptedClientProtocols;
     }
 }

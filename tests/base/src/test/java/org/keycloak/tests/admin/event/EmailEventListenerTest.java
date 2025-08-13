@@ -72,7 +72,7 @@ public class EmailEventListenerTest {
 
         @Override
         public UserConfigBuilder configure(UserConfigBuilder user) {
-            return user.username("test").email("test@local").password("password").emailVerified();
+            return user.username("test").email("test@local").password("password").emailVerified(true);
         }
     }
 

@@ -28,6 +28,7 @@ import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -52,8 +53,6 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.WebAuthnConstants.OPTION_DISCOURAGED;
-import static org.keycloak.WebAuthnConstants.OPTION_REQUIRED;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.NO;
@@ -387,9 +386,9 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
     protected void setWebAuthnRealmSettings(boolean waRequireRK, boolean waRequireUV, boolean waplRequireRK, boolean waplRequireUV ) {
 
         String waRequireRKString = waRequireRK ? YES.getValue() : NO.getValue();
-        String waRequireUVString = waRequireUV ? OPTION_REQUIRED : OPTION_DISCOURAGED;
+        String waRequireUVString = waRequireUV ? Constants.WEBAUTHN_POLICY_OPTION_REQUIRED : Constants.WEBAUTHN_POLICY_OPTION_DISCOURAGED;
         String waplRequireRKString = waplRequireRK ? YES.getValue() : NO.getValue();
-        String waplRequireUVString = waplRequireUV ? OPTION_REQUIRED : OPTION_DISCOURAGED;
+        String waplRequireUVString = waplRequireUV ? Constants.WEBAUTHN_POLICY_OPTION_REQUIRED : Constants.WEBAUTHN_POLICY_OPTION_DISCOURAGED;
 
         RealmRepresentation realmRep = testRealm().toRepresentation();
 

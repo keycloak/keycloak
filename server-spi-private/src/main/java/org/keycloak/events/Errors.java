@@ -42,6 +42,7 @@ public interface Errors {
     String DIFFERENT_USER_AUTHENTICATING = "different_user_authenticating";
     String DIFFERENT_USER_AUTHENTICATED = "different_user_authenticated";
     String USER_DELETE_ERROR = "user_delete_error";
+    String INVALID_USER = "invalid_user";
 
     String USERNAME_MISSING = "username_missing";
     String USERNAME_IN_USE = "username_in_use";
