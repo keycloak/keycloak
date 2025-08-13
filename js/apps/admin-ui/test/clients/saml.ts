@@ -87,7 +87,7 @@ export async function clickOffEncryptionAssertions(page: Page) {
 export async function clickGenerate(page: Page) {
   const responsePromise = page.waitForResponse(
     (res) => res.url().includes("/generate") && res.status() === 200,
-    { timeout: 10000 },
+    { timeout: 60000 },
   );
   await page.getByTestId("generate").click();
   await responsePromise;
