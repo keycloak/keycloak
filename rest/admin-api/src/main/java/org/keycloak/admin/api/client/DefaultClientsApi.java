@@ -11,6 +11,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.admin.api.ChosenBySpi;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 @RequestScoped
+@ChosenBySpi
 public class DefaultClientsApi implements ClientsApi {
     private RealmModel realm;
     private HttpResponse response;
@@ -31,7 +33,7 @@ public class DefaultClientsApi implements ClientsApi {
     KeycloakSession session;
 
     @Inject
-    DefaultClientApi clientApi;
+    ClientApi clientApi;
 
     @PostConstruct
     public void init() {

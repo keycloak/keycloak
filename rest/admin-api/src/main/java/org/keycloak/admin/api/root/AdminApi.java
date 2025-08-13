@@ -1,4 +1,4 @@
-package org.keycloak.admin.api;
+package org.keycloak.admin.api.root;
 
 import jakarta.ws.rs.Path;
 import org.keycloak.admin.api.realm.RealmsApi;

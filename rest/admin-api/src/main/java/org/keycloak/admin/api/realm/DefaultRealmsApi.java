@@ -6,15 +6,17 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
+import org.keycloak.admin.api.ChosenBySpi;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Optional;
 
 @RequestScoped
+@ChosenBySpi
 public class DefaultRealmsApi implements RealmsApi {
 
     @Inject
-    DefaultRealmApi realmApi;
+    RealmApi realmApi;
 
     @Context
     KeycloakSession session;
