@@ -14,9 +14,10 @@
                     <input tabindex="1" id="recoveryCodeInput"
                            name="recoveryCodeInput"
                            aria-invalid="<#if messagesPerField.existsError('recoveryCodeInput')>true</#if>"
-                           autocomplete="off"
+                           autocomplete="one-time-code"
                            type="text"
                            class="${properties.kcInputClass!}"
+                           inputmode="numeric"
                            autofocus
                            dir="ltr"/>
 
