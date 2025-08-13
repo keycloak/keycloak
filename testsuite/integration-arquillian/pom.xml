@@ -432,7 +432,7 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${tidb-jdbc.version}</jdbc.mvn.version>
+                <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
                 <docker.database.image>${tidb.container}</docker.database.image>
                 <docker.database.port>4000</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>

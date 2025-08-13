@@ -153,7 +153,6 @@
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <tidb.version>v8.5.2</tidb.version>
         <tidb.container>mirror.gcr.io/pingcap/tidb:${tidb.version}</tidb.container>
-        <tidb-jdbc.version>8.3.0</tidb-jdbc.version>
         <mysql.version>8.4</mysql.version>
         <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
