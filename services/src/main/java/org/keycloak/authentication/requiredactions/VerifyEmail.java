@@ -150,6 +150,9 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     private Long retrieveCooldownEntry(RequiredActionContext context) {
         SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
         Map<String, String> cooldownDetails = singleUseCache.get(getCacheKey(context));
+        if (cooldownDetails == null) {
+            return null;
+        }
         long remaining = (Long.parseLong(cooldownDetails.get(KEY_EXPIRE)) - Time.currentTime());
         // Avoid the awkward situation where due to rounding the value is zero
         return remaining > 0 ? remaining : null;
