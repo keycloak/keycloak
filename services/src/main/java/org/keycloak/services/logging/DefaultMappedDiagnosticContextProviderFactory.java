@@ -34,11 +34,14 @@ import java.util.stream.Stream;
  */
 public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiagnosticContextProviderFactory, MappedDiagnosticContextProvider, EnvironmentDependentProviderFactory {
 
-    public static final String MDC_KEY_REALM = MDC_PREFIX + "realm";
+    public static final String MDC_KEY_REALM_NAME = MDC_PREFIX + "realmName";
     public static final String MDC_KEY_CLIENT_ID = MDC_PREFIX + "clientId";
     public static final String MDC_KEY_USER_ID = MDC_PREFIX + "userId";
     public static final String MDC_KEY_IP_ADDRESS = MDC_PREFIX + "ipAddress";
     public static final String MDC_KEY_ORGANIZATION = MDC_PREFIX + "org";
+    public static final String MDC_KEY_SESSION_ID = MDC_PREFIX + "sessionId";
+    public static final String MDC_KEY_AUTHENTICATION_SESSION_ID = MDC_PREFIX + "authenticationSessionId";
+    public static final String MDC_KEY_AUTHENTICATION_TAB_ID = MDC_PREFIX + "authenticationTabId";
 
     public static final String MDC_KEYS = "mdcKeys";
     private Set<String> mdcKeys;
@@ -78,7 +81,8 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
                 .name(MDC_KEYS)
                 .type("string")
                 .helpText("Comma-separated list of MDC keys to add to the Mapped Diagnostic Context.")
-                .options(Stream.of(MDC_KEY_REALM, MDC_KEY_CLIENT_ID, MDC_KEY_USER_ID, MDC_KEY_IP_ADDRESS, MDC_KEY_ORGANIZATION).map(s -> s.substring(MDC_PREFIX.length())).collect(Collectors.toList()))
+                .options(Stream.of(MDC_KEY_REALM_NAME, MDC_KEY_CLIENT_ID, MDC_KEY_USER_ID, MDC_KEY_IP_ADDRESS, MDC_KEY_ORGANIZATION, MDC_KEY_SESSION_ID, MDC_KEY_AUTHENTICATION_SESSION_ID, MDC_KEY_AUTHENTICATION_TAB_ID)
+                        .map(s -> s.substring(MDC_PREFIX.length())).collect(Collectors.toList()))
                 .add();
 
         return builder.build();
@@ -91,13 +95,18 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
 
     @Override
     public void update(KeycloakContext keycloakContext, AuthenticationSessionModel session) {
-        // nothing of interest here
+        if (mdcKeys.contains(MDC_KEY_AUTHENTICATION_SESSION_ID)) {
+            putMdc(MDC_KEY_AUTHENTICATION_SESSION_ID, session != null ? (session.getParentSession() != null ? session.getParentSession().getId() : null) : null);
+        }
+        if (mdcKeys.contains(MDC_KEY_AUTHENTICATION_TAB_ID)) {
+            putMdc(MDC_KEY_AUTHENTICATION_TAB_ID, session != null ? session.getTabId() : null);
+        }
     }
 
     @Override
     public void update(KeycloakContext keycloakContext, RealmModel realm) {
-        if (mdcKeys.contains(MDC_KEY_REALM)) {
-            putMdc(MDC_KEY_REALM, realm != null ? realm.getName() : null);
+        if (mdcKeys.contains(MDC_KEY_REALM_NAME)) {
+            putMdc(MDC_KEY_REALM_NAME, realm != null ? realm.getName() : null);
         }
     }
 
@@ -119,6 +128,9 @@ public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiag
     public void update(KeycloakContext keycloakContext, UserSessionModel userSession) {
         if (mdcKeys.contains(MDC_KEY_USER_ID)) {
             putMdc(MDC_KEY_USER_ID, userSession != null && userSession.getUser() != null ? userSession.getUser().getId() : null);
+        }
+        if (mdcKeys.contains(MDC_KEY_SESSION_ID)) {
+            putMdc(MDC_KEY_SESSION_ID, userSession != null ? userSession.getId() : null);
         }
         if (mdcKeys.contains(MDC_KEY_IP_ADDRESS)) {
             putMdc(MDC_KEY_IP_ADDRESS, userSession != null ? userSession.getIpAddress() : null);
