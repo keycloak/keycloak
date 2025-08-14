@@ -854,6 +854,14 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testNoKcDirWarning() {
+        putEnvVar("KC_DIR", "dir");
+        putEnvVar("KC_LOG_LEVEL", "debug");
+        var picocli = build("build", "--db=dev-file");
+        assertFalse(picocli.getOutString().contains("kc.dir"));
+    }
+
+    @Test
     public void errorSpiBuildtimeChanged() {
         putEnvVar("KC_SPI_EVENTS_LISTENER__PROVIDER", "jboss-logging");
         build("build", "--db=dev-file");
