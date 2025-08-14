@@ -94,26 +94,26 @@ public interface UserRolesRetrieveStrategy {
 
         @Override
         public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig) {
-            Set<String> memberOfValues = ldapUser.getAttributeAsSet(roleOrGroupMapper.getConfig().getMemberOfLdapAttribute());
-            if (memberOfValues == null || memberOfValues.isEmpty()) {
-                return Collections.emptyList();
-            }
-
             try (LDAPQuery ldapQuery = roleOrGroupMapper.createLDAPGroupQuery()) {
-
-                String rdnAttr = roleOrGroupMapper.getConfig().getLDAPGroupNameLdapAttribute();
+                CommonLDAPGroupMapperConfig config = roleOrGroupMapper.getConfig();
+                String rdnAttr = config.getLDAPGroupNameLdapAttribute();
                 LDAPQueryConditionsBuilder conditionBuilder = new LDAPQueryConditionsBuilder();
-
+                Set<String> memberOfValues = ldapUser.getAttributeAsSetOrDefault(config.getMemberOfLdapAttribute(), Set.of());
                 // load only those groups/roles the user is memberOf
                 // we do this by query to apply defined custom filters
-                final Condition[] conditions = memberOfValues.stream()
+                // and make sure the values of memberOf have the role/group base DN as its parent
+                Condition[] conditions = memberOfValues.stream()
                         .map(LDAPDn::fromString)
-                        .filter(roleDN -> roleDN.isDescendantOf(LDAPDn.fromString(roleOrGroupMapper.getConfig().getLDAPGroupsDn())))
+                        .filter(roleDN -> roleDN.isDescendantOf(LDAPDn.fromString(config.getLDAPGroupsDn())))
                         .map(roleDN -> conditionBuilder.equal(rdnAttr, roleDN.getFirstRdn().getAttrValue(rdnAttr)))
                         .toArray(Condition[]::new);
-                if (conditions.length > 0) {
-                    ldapQuery.addWhereCondition(conditionBuilder.orCondition(conditions));
+
+                if (conditions.length == 0) {
+                    // no roles/groups to fetch based on the pre-filters applied to the memberOf values
+                    return List.of();
                 }
+
+                ldapQuery.addWhereCondition(conditionBuilder.orCondition(conditions));
 
                 return LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapConfig);
             }
