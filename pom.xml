@@ -134,7 +134,6 @@
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Others -->
-        <commons-lang.version>2.6</commons-lang.version>
         <apacheds.version>2.0.0.AM26</apacheds.version>
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
@@ -1204,11 +1203,6 @@
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerby-asn1</artifactId>
                 <version>${org.apache.kerby.kerby-asn1.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons-lang.version}</version>
             </dependency>
 
             <!-- used in server-dist build while provisioning the distribution -->
