@@ -158,6 +158,14 @@
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-agroal-dev</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-assistant-dev</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-hibernate-orm-dev</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
