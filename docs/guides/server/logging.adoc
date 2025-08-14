@@ -544,7 +544,7 @@ As you can see, the timestamp is present twice, so you can amend it correspondin
 
 == Logs export (OpenTelemetry)
 
-It is possible to use OpenTelemetry Logs that enables sending logs to the OpenTelemetry collector and having a centralized observability stack for your deployment.
+It is possible to export OpenTelemetry logs from your deployment to the OpenTelemetry collector for centralized log management.
 
 For more details, see the _Centralize your observability stack with OpenTelemetry_ guide.
 
