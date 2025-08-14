@@ -38,10 +38,10 @@ You can override this behavior by setting your own value for `targetServerType` 
 
 {project_name} now defines all cache defaults programmatically. Consequently, the `conf/cache-ispn.xml` file no longer
 contains the default cache configurations. It is still possible to modify the cache configurations used by {project_name}
-in this file, however a warning will now be logged if the `--cache-config-mutate=true` flag is not set. When upgrading
-an existing deployment, it is recommended to remove all cache configurations from your existing `conf/cache-ispn.xml` if
-you previously relied upon {project_name} default cache configurations. Custom caches can still be configured without setting
-the flag.
+in this file, however a warning will now be logged if the `--cache-config-mutate=true` option is not set. When upgrading
+an existing deployment, it is recommended to remove all default cache configurations from your existing `conf/cache-ispn.xml`.
+To modify a default cache, prefer using the `--cache-...` options inst.
+Custom caches can still be configured without setting the option.
 
 === Operator default affinity configuration changed
 

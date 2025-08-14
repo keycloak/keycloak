@@ -171,16 +171,14 @@ To specify your own cache configuration file, enter this command:
 The configuration file is relative to the `conf/` directory.
 
 === Modifying cache configuration defaults
-{project_name} automatically creates all required caches with the expected configurations. It is not recommended to modify
-the default cache configurations in the majority of cases, however if required you can specify custom configurations for
-the default caches in `conf/cache-ispn.xml` or your own file provided via `--cache-config-file`.
 
-In order to prevent a warning being logged when a modified configuration is detected, enter this command:
+{project_name} automatically creates all required caches with the expected configurations. You can add additional caches or override the default cache configurations in `conf/cache-ispn.xml` or in your own file provided via `--cache-config-file`.
+
+WARNING: While overriding the default cache configurations via XML is technically possible, it is not supported. The only supported way to change the default cache configurations is via the `+cache-...+` options.
+
+In order to prevent a warning being logged when a modified default cache configuration is detected, add the following option:
 
 <@kc.start parameters="--cache-config-mutate=true"/>
-
-NOTE: No warning is issued when creating custom caches for extensions or custom providers that {project_name} does not
-rely upon for its core functionality.
 
 === CLI options for remote server
 
