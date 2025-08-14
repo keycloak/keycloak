@@ -15,14 +15,14 @@ The goal of {project_name} is to support OpenTelemetry Logs, Metrics, and Traces
 
 == General options
 {project_name} provides support for global settings of telemetry data export.
-It means that you can specify connection parameters to a single https://opentelemetry.io/docs/collector/[OpenTelemetry collector] that will be used for all supported components.
+It means that you can configure connection parameters to a single https://opentelemetry.io/docs/collector/[OpenTelemetry collector] that will be used for all supported components.
 
-In order to have OpenTelemetry enabled, at least one component needs to be turned on (i.e., see Traces guide below).
+In order to have OpenTelemetry enabled, at least one component needs to be turned on, for example <<traces, Traces>>.
 
-NOTE: OpenTelemetry can be enabled only when the `opentelemetry` feature is *enabled* (by default).
+NOTE: The OpenTelemetry feature is _enabled_ by default. Disable the feature in order to disable OpenTelemetry components.
 
 === Endpoint
-You can specify the global endpoint to the OpenTelemetry collector shared across the components by using the `telemetry-endpoint` option.
+You can configure the OpenTelemetry collector's global endpoint that is shared across all components by using the `telemetry-endpoint` option.
 The default value is `+http://localhost:4317+`.
 
 You can change the endpoint via CLI as follows:
@@ -30,7 +30,7 @@ You can change the endpoint via CLI as follows:
 <@kc.start parameters="--telemetry-endpoint=http://my-otel-endpoint:4317"/>
 
 === Service name
-You can specify the global OpenTelemetry service name used for identifying the exporter of the telemetry data.
+You can configure the global OpenTelemetry service name used for identifying the exporter of the telemetry data.
 The default service name is `keycloak`, specified via the `telemetry-service-name` property, which takes precedence over `service.name` defined in the `telemetry-resource-attributes` property.
 
 You can change the service name via CLI as follows:
@@ -38,7 +38,7 @@ You can change the service name via CLI as follows:
 <@kc.start parameters="--telemetry-service-name=my-keycloak-iam"/>
 
 === Protocol
-You can specify the global OpenTelemetry transport protocol used as a communication channel between {project_name} and the OpenTelemetry collector.
+You can configure the global OpenTelemetry transport protocol used as a communication channel between {project_name} and the OpenTelemetry collector.
 The default value is `grpc`.
 
 {project_name} supports these communication protocols:
