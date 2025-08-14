@@ -19,7 +19,8 @@ import org.keycloak.testframework.realm.RoleConfigBuilder;
 
 @KeycloakIntegrationTest(config = CaseSensitiveSchemaTest.KeycloakConfig.class)
 // MSSQL does not support setting the default schema per session
-@DisabledForDatabases("mssql")
+// TiDb does not support setting the default schema per session.
+@DisabledForDatabases({"mssql", "tidb"})
 public class CaseSensitiveSchemaTest {
     @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = DatabaseConfigurator.class)
     TestDatabase db;
