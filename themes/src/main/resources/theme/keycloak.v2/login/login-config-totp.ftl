@@ -60,8 +60,9 @@
                     </label>
                 </div>
                 <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('totp')>pf-m-error</#if>">
-                    <input type="text" required id="totp" name="totp" autocomplete="off"
+                    <input type="text" required id="totp" name="totp" autocomplete="one-time-code"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                           inputmode="numeric"
                     />
 
                     <@field.errorIcon error=kcSanitize(messagesPerField.get('totp'))?no_esc/>

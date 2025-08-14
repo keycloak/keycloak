@@ -56,8 +56,9 @@
                     <label for="totp" class="control-label">${msg("authenticatorCode")}</label> <span class="required">*</span>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="totp" name="totp" autocomplete="off" class="${properties.kcInputClass!}"
+                    <input type="text" id="totp" name="totp" autocomplete="one-time-code" class="${properties.kcInputClass!}"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                           inputmode="numeric"
                            dir="ltr"
                     />
 
