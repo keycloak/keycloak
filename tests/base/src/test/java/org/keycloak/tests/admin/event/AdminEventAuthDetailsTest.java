@@ -92,9 +92,9 @@ public class AdminEventAuthDetailsTest {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("client").name("client").publicClient(true).directAccessGrants();
+            realm.addClient("client").name("client").publicClient(true).directAccessGrantsEnabled(true);
             realm.addUser("admin").password("password").name("My", "Admin").email("admin@localhost")
-                    .emailVerified().clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .emailVerified(true).clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
             realm.addUser("app-user").password("password");
 
             return realm;

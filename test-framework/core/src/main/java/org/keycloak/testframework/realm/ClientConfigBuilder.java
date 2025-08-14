@@ -96,13 +96,13 @@ public class ClientConfigBuilder {
         return this;
     }
 
-    public ClientConfigBuilder directAccessGrants() {
-        rep.setDirectAccessGrantsEnabled(true);
+    public ClientConfigBuilder directAccessGrantsEnabled(boolean enabled) {
+        rep.setDirectAccessGrantsEnabled(enabled);
         return this;
     }
 
-    public ClientConfigBuilder authorizationServices() {
-        rep.setAuthorizationServicesEnabled(true);
+    public ClientConfigBuilder authorizationServicesEnabled(boolean enabled) {
+        rep.setAuthorizationServicesEnabled(enabled);
         return this;
     }
 

@@ -124,7 +124,7 @@ public class Profile {
 
         ORGANIZATION("Organization support within realms", Type.DEFAULT),
 
-        PASSKEYS("Passkeys", Type.PREVIEW, Feature.WEB_AUTHN),
+        PASSKEYS("Passkeys", Type.DEFAULT, Feature.WEB_AUTHN),
         PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR("Passkeys conditional UI authenticator", Type.DEPRECATED, FeatureUpdatePolicy.ROLLING_NO_UPGRADE, Feature.PASSKEYS),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
@@ -135,6 +135,8 @@ public class Profile {
 
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
+
+        RESOURCE_LIFECYCLE("Resource lifecycle management", Type.EXPERIMENTAL),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
 

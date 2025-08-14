@@ -12,8 +12,9 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 @KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.KeycloakConfig.class)
 // MSSQL does not support setting the default schema per session.
+// TiDb does not support setting the default schema per session.
 // Oracle image does not support configuring user/databases with '-'
-@DisabledForDatabases({ "mssql", "oracle" })
+@DisabledForDatabases({ "mssql", "oracle", "tidb" })
 public class PreserveSchemaCaseLiquibaseTest extends CaseSensitiveSchemaTest {
 
     @InjectTestDatabase(lifecycle = LifeCycle.CLASS, config = DatabaseConfigurator.class)
