@@ -941,7 +941,8 @@ public class SamlService extends AuthorizationEndpointBase {
                         .build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(),
                 true,
-                signingKeys);
+                signingKeys,
+                realm.getAttribute(SamlConfigAttributes.SAML_DESCRIPTOR_CACHE_SECONDS, (Long) null));
         } catch (Exception ex) {
             logger.error("Cannot generate IdP metadata", ex);
             return "";

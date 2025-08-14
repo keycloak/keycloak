@@ -47,6 +47,7 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -171,6 +172,44 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractBrokerTest {
 
             // manually refresh after 1d plus 20s (15s more min refresh is 10s)
             setTimeOffset(24*60*60 + 20);
+            Assert.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
+            doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
+        }
+    }
+
+    @Test
+    public void testRedirectLoginCacheDuration() throws Exception {
+        try (Closeable realmUpdater = new RealmAttributeUpdater(adminClient.realm(bc.providerRealmName()))
+                .setAttribute(SamlConfigAttributes.SAML_DESCRIPTOR_CACHE_SECONDS, "3600") // set cache in the descripto to 1h
+                .update();
+             Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false")
+                .update();
+             Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+                .update()) {
+            // do initial login with the current key
+            doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
+
+            // rotate keys it should fail
+            rotateKeys(Algorithm.RS256, "rsa-generated");
+            doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider");
+
+            // offset of 35 is not enough (POST require iteration of keys)
+            setTimeOffset(35);
+            doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider.");
+
+            // offset more than one hour set as cache duration in the realm
+            setTimeOffset(3600 + 5);
+            doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
+
+            // rotate keys it should fail again
+            rotateKeys(Algorithm.RS256, "rsa-generated");
+            doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider");
+
+            // manually refresh after 1d plus 20s (15s more min refresh is 10s)
+            setTimeOffset(3600 + 20);
             Assert.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
             doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
         }
