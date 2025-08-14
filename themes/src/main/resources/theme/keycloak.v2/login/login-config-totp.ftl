@@ -108,7 +108,7 @@
                         />
                         <button type="submit"
                                 class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
-                                id="cancelTOTPBtn" name="cancel-aia" value="true" />${msg("doCancel")}
+                                id="cancelTOTPBtn" name="cancel-aia" value="true">${msg("doCancel")}
                         </button>
                     <#else>
                         <input type="submit"
