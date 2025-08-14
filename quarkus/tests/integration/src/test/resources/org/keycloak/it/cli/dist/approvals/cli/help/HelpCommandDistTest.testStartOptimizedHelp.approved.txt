@@ -151,11 +151,12 @@ Database:
 
 Database - additional datasources (Preview):
 
---db-active-<datasource> <true|false>
-                     Preview: Deactivate specific named datasource <datasource>. Default: true.
 --db-debug-jpql-<datasource> <true|false>
                      Preview: Used for named <datasource>. Add JPQL information as comments to SQL
                        statements to debug JPA SQL statement generation. Default: false.
+--db-enabled-<datasource> <true|false>
+                     Preview: If the named datasource <datasource> should be enabled at runtime.
+                       Default: true.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
                      Preview: Used for named <datasource>. Log SQL statements slower than the
                        configured threshold with logger org.hibernate.SQL_SLOW and log-level info.
