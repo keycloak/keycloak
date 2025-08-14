@@ -18,14 +18,18 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
+import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -149,11 +153,43 @@ class UserPermissionsV2 extends UserPermissions {
 
     @Override
     public boolean canResetPassword(UserModel user) {
-        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
-            return true;
+        // FGAP v2 disabled or no admin-permissions client initialized -> legacy behavior
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(root.realm) || root.realmResourceServer() == null) {
+            return root.hasOneAdminRole(AdminRoles.MANAGE_USERS);
         }
 
-        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD);
+        // Check if there is at least one policy referencing RESET_PASSWORD scope
+        if (hasResetPasswordPolicies()) {
+            return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD);
+        }
+
+        // No policies: secure by default unless fallback is enabled
+        boolean fallbackToManage = Config.scope("fgap", "v2", "resetPassword").getBoolean("fallbackToManageUsers", false);
+        return fallbackToManage && root.hasOneAdminRole(AdminRoles.MANAGE_USERS);
+    }
+
+    private boolean hasResetPasswordPolicies() {
+        ResourceServer server = root.realmResourceServer();
+        if (server == null) {
+            return false;
+        }
+        AuthorizationProvider provider = root.authz();
+        Scope resetScope = provider == null ? null : provider.getStoreFactory().getScopeStore().findByName(server, AdminPermissionsSchema.RESET_PASSWORD);
+        if (resetScope == null) {
+            return false;
+        }
+        List<Policy> policies = policyStore.findByResourceType(server, AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+        for (Policy policy : policies) {
+            Set<Scope> scopes = policy.getScopes();
+            if (scopes != null) {
+                for (Scope s : scopes) {
+                    if (AdminPermissionsSchema.RESET_PASSWORD.equals(s.getName())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     // todo this method should be removed and replaced by canImpersonate(user, client); once V1 is removed
