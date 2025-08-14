@@ -290,7 +290,7 @@ As an alternative, to disable the mTLS communication, and rely on the service me
 * Set the option `cache-embedded-mtls-enabled` to `false`.
 * Configure your service mesh to authorize only traffic from other {project_name} Pods for the data transmission port (default: 7800).
 
-=== Proving your own keys and certificates
+=== Providing your own keys and certificates
 
 Although not recommended for standard setups, if it is essential in a specific setup, you can configure the keystore with the certificate for the transport stack manually. `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
 The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).
