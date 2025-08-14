@@ -19,7 +19,6 @@ package org.keycloak.it.utils;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -145,7 +144,7 @@ public final class Maven {
     }
 
     private static BootstrapMavenContext bootstrapCurrentMavenContext() throws BootstrapMavenException, URISyntaxException {
-        Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
+        Path classPathDir = Path.of(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
         Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
         return new BootstrapMavenContext(
                 BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)

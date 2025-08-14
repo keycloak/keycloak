@@ -49,7 +49,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -204,7 +204,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata-disabled.xml");
-        byte[] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        byte[] content = Files.readAllBytes(Path.of(idpMeta.toURI()));
         String body = new String(content, Charset.forName("utf-8"));
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-disabled.xml");
 
@@ -230,7 +230,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata-two-signing-certs.xml");
-        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        byte [] content = Files.readAllBytes(Path.of(idpMeta.toURI()));
         String body = new String(content, Charset.forName("utf-8"));
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-two-signing-certs");
 
@@ -269,7 +269,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata.xml");
-        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        byte [] content = Files.readAllBytes(Path.of(idpMeta.toURI()));
         String body = new String(content, Charset.forName("utf-8"));
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
 
@@ -303,7 +303,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata.xml");
-        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        byte [] content = Files.readAllBytes(Path.of(idpMeta.toURI()));
         String body = new String(content, Charset.forName("utf-8"));
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
 
@@ -364,7 +364,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource(fileName);
-        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        byte [] content = Files.readAllBytes(Path.of(idpMeta.toURI()));
         String body = new String(content, Charset.forName("utf-8"));
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, fileName);
 

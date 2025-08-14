@@ -7,7 +7,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
@@ -32,7 +32,7 @@ public class TLSUtils {
       try {
          String keystorePath = System.getProperty("dependency.keystore");;
          if (keystorePath == null) {
-            keystorePath = Paths.get(TLSUtils.class.getResource("/keycloak.jks").toURI()).toAbsolutePath().toString(); // when executed directly from IDE without Maven
+            keystorePath = Path.of(TLSUtils.class.getResource("/keycloak.jks").toURI()).toAbsolutePath().toString(); // when executed directly from IDE without Maven
          }
 
          KeyStore keystore = KeyStore.getInstance("jks");
@@ -45,7 +45,7 @@ public class TLSUtils {
 
          String truststorePath = System.getProperty("dependency.truststore");;
          if (truststorePath == null) {
-            truststorePath = Paths.get(TLSUtils.class.getResource("/keycloak.truststore").toURI()).toAbsolutePath().toString(); // when executed directly from IDE without Maven
+            truststorePath = Path.of(TLSUtils.class.getResource("/keycloak.truststore").toURI()).toAbsolutePath().toString(); // when executed directly from IDE without Maven
          }
 
          // Essentially, this is REQUEST CLIENT AUTH behavior. It doesn't fail if the client doesn't have a cert.

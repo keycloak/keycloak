@@ -17,7 +17,6 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -121,10 +120,10 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
                 throw new IllegalArgumentException("Cannot find migration import file");
             }
 
-            final Path path = Paths.get(url.toURI());
+            final Path path = Path.of(url.toURI());
             final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
 
-            Path keycloakConf = Paths.get(wrkDir.toURI()).getParent().resolve("conf").resolve("keycloak.conf");
+            Path keycloakConf = Path.of(wrkDir.toURI()).getParent().resolve("conf").resolve("keycloak.conf");
 
             // there are several issues with import in initial quarkus versions, so better use the keycloak.conf file
             StoreProvider storeProvider = StoreProvider.getCurrentProvider();

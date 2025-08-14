@@ -20,6 +20,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -95,7 +96,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
         }
 
         // save the cert to a file
-        File tmpCertFile = File.createTempFile("keycloak-docker-realm-cert-", ".pem");
+        File tmpCertFile = Files.createTempFile("keycloak-docker-realm-cert-", ".pem").toFile();
         tmpCertFile.deleteOnExit();
         PrintWriter tmpCertWriter = new PrintWriter(tmpCertFile);
         tmpCertWriter.println(PemUtils.BEGIN_CERT);

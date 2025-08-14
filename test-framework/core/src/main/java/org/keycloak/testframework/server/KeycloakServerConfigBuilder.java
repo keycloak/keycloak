@@ -9,7 +9,6 @@ import org.keycloak.common.Profile.Feature;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,7 +82,7 @@ public class KeycloakServerConfigBuilder {
 
     public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
         try {
-            Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
+            Path p = Path.of(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
             configFiles.add(p);
             option("cache-config-file", p.getFileName().toString());
         } catch (URISyntaxException e) {

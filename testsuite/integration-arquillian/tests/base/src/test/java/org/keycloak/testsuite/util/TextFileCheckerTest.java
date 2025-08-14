@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,7 +47,7 @@ public class TextFileCheckerTest {
 
     @Before
     public void before() throws IOException {
-        tempFile = File.createTempFile("TextFileCheckerTest-", ".tmp");
+        tempFile = Files.createTempFile("TextFileCheckerTest-", ".tmp").toFile();
         tfc = new TextFileChecker(tempFile.toPath());
     }
 

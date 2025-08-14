@@ -58,7 +58,7 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
                 logger.warnf("Fail to create cache directory %s", parent.toString());
             }
         }
-        File tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
+        File tmpEncodedFile = Files.createTempFile(parent.toPath(), target.getName(), "tmp").toFile();
 
         try (is; GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(tmpEncodedFile))) {
             IOUtils.copy(is, gos);
