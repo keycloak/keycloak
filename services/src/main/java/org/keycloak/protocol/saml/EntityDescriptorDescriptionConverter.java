@@ -109,22 +109,6 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
     }
 
     /**
-     * Gets from a SPSSO descriptor the artifact resolution service for a given index
-     * @param sp an SPSSO descriptor
-     * @param index the index of the artifact resolution service to return
-     * @return the location of the artifact resolution service
-     */
-    private static String getArtifactResolutionService(SPSSODescriptorType sp, int index) {
-        List<IndexedEndpointType> endpoints = sp.getArtifactResolutionService();
-        for (IndexedEndpointType endpoint : endpoints) {
-            if (endpoint.getIndex() == index) {
-                return endpoint.getLocation().toString();
-            }
-        }
-        return null;
-    }
-
-    /**
      * Tries to get from a SPSSO descriptor the default artifact resolution service. Or if it doesn't
      * exist, the artifact resolution service with the lowest index
      * @param sp an SPSSO descriptor

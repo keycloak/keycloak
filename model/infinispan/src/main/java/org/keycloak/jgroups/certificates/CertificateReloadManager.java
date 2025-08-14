@@ -183,11 +183,6 @@ public class CertificateReloadManager implements Lifecycle {
         }
     }
 
-    private void onInvalidCertificate() {
-        logger.info("On certificate exception");
-        blockingManager.runBlocking(this::reloadCertificate, "invalid-certificate");
-    }
-
     private void onCertificateReloadResponse(Address address, Void unused, Throwable throwable) {
         if (throwable != null) {
             logger.warnf(throwable, "Node %s failed to handle JGroups certificate reload notification.", address);

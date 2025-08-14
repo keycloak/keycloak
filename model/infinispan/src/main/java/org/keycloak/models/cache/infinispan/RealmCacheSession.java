@@ -1092,11 +1092,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         return getGroupDelegate().getTopLevelGroupsStream(realm, search, exact, first, max);
     }
 
-    private boolean hasInvalidation(RealmModel realm, String cacheKey) {
-        return invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
-                || listInvalidations.contains(realm.getId());
-    }
-
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer first, Integer max) {
         return getGroupDelegate().searchForGroupByNameStream(realm, search, false, first, max);

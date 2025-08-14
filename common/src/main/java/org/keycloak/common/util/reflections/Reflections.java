@@ -423,10 +423,6 @@ public class Reflections {
         return member;
     }
 
-    private static String buildSetFieldValueErrorMessage(Field field, Object obj, Object value) {
-        return String.format("Exception setting [%s] field on object [%s] to value [%s]", field.getName(), obj, value);
-    }
-
     private static String buildGetFieldValueErrorMessage(Field field, Object obj) {
         return String.format("Exception reading [%s] field from object [%s].", field.getName(), obj);
     }

@@ -20,9 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -131,16 +129,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
         UIUtils.click(webElement);
-    }
-
-
-    // Workaround, but works with HtmlUnit (WaitUtils.waitForElement doesn't). Find better solution for the future...
-    private void waitForElement(By by) {
-        Retry.executeWithBackoff((currentCount) -> {
-
-            driver.findElement(by);
-
-        }, 10, 10);
     }
 
 }

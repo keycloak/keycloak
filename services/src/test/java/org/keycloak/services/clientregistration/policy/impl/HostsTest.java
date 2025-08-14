@@ -41,35 +41,6 @@ public class HostsTest {
         }
     }
 
-    // 2 ms
-    private static Foo test1() throws Exception {
-        Foo f = new Foo();
-        InetAddress addr = InetAddress.getByName("10.40.2.225");
-        f.ipAddr = addr.getHostAddress();
-        f.hostname = "";
-        return f;
-    }
-
-    // 231 ms - increasing linearly
-    private static Foo test2() throws Exception {
-        Foo f = new Foo();
-        InetAddress addr = InetAddress.getByName("10.40.2.225");
-        f.ipAddr = addr.getHostAddress();
-        f.hostname = addr.getHostName();
-        return f;
-    }
-
-    // 240 ms - increasing linearly
-    private static Foo test3() throws Exception {
-        Foo f = new Foo();
-        InetAddress addr = InetAddress.getByName("10.40.2.225");
-        f.ipAddr = addr.getHostAddress();
-        for (int i=0 ; i<10 ; i++) {
-            f.hostname = addr.getHostName();
-        }
-        return f;
-    }
-
     // 27 ms (Everything at 1st call)
     private static Foo test4() throws Exception {
         Foo f = new Foo();
@@ -77,21 +48,6 @@ public class HostsTest {
         f.ipAddr = addr.getHostAddress();
         f.hostname = addr.getHostName();
         return f;
-    }
-
-    // 257 ms - increasing
-    private static Foo test5() throws Exception {
-        Foo f = new Foo();
-        InetAddress addr = InetAddress.getByName("77.75.77.53");
-        f.ipAddr = addr.getHostAddress();
-        f.hostname = addr.getHostName();
-        return f;
-    }
-
-    // Test DNS caching
-    private static Foo test6() throws Exception {
-        Thread.sleep(1000);
-        return test4();
     }
 
 
