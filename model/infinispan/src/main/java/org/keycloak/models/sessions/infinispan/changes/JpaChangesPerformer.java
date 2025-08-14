@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.infinispan.util.function.TriConsumer;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -25,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
@@ -36,6 +39,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.RealmModelDelegate;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.UserSessionModelDelegate;
+import org.keycloak.utils.SendResponseException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,10 +64,12 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
     private final List<PersistentUpdate> changes = new LinkedList<>();
     private final TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor;
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
+    private final List<UserSessionProvider.UserSessionExceptionHandler> exceptionHandlers;
 
-    public JpaChangesPerformer(String cacheName, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
+    public JpaChangesPerformer(String cacheName, ArrayBlockingQueue<PersistentUpdate> batchingQueue, List<UserSessionProvider.UserSessionExceptionHandler> exceptionHandlers) {
         this.cacheName = cacheName;
         this.batchingQueue = batchingQueue;
+        this.exceptionHandlers = exceptionHandlers;
         processor = processor();
     }
 
@@ -111,6 +117,13 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
             if (!exceptions.isEmpty()) {
                 RuntimeException ex = new RuntimeException("unable to complete the session updates");
                 exceptions.forEach(ex::addSuppressed);
+                for (UserSessionProvider.UserSessionExceptionHandler exceptionHandler : exceptionHandlers) {
+                    Response resp = exceptionHandler.handleExceptionAtTransactionCommit(ex);
+                    if (resp != null) {
+                        LOG.debugf("Exceptions '%s' during transaction commit handled by %s", exceptions, exceptionHandler);
+                        throw new SendResponseException(ex, resp);
+                    }
+                }
                 throw ex;
             }
             changes.clear();

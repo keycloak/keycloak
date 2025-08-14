@@ -33,6 +33,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -56,7 +57,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                             SerializeExecutionsByKey<UUID> serializerOnline,
                                                             SerializeExecutionsByKey<UUID> serializerOffline) {
-        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline, Collections.emptyList());
         this.userSessionTx = userSessionTx;
     }
 

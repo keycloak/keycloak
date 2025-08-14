@@ -22,6 +22,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkAuthenticator;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdpLinkAction;
+import org.keycloak.broker.provider.IdpUserSessionExceptionHandler;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -896,6 +897,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
 
     private Response finishBrokerAuthentication(BrokeredIdentityContext context, UserModel federatedUser, AuthenticationSessionModel authSession, String providerAlias) {
+        session.sessions().addExceptionHandler(new IdpUserSessionExceptionHandler(session));
         authSession.setAuthNote(AuthenticationProcessor.BROKER_SESSION_ID, context.getBrokerSessionId());
         authSession.setAuthNote(AuthenticationProcessor.BROKER_USER_ID, context.getBrokerUserId());
 

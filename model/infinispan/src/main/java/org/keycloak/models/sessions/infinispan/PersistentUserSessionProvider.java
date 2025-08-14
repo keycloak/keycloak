@@ -21,6 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -110,6 +112,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final UserSessionPersistentChangelogBasedTransaction sessionTx;
     protected final ClientSessionPersistentChangelogBasedTransaction clientSessionTx;
+    protected final List<UserSessionExceptionHandler> exceptionHandlers = new LinkedList<>();
 
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
@@ -143,7 +146,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs,
                 asyncQueuePersistentUpdate,
                 serializerSession,
-                serializerOfflineSession);
+                serializerOfflineSession,
+                exceptionHandlers);
 
         this.clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
                 clientSessionCache, offlineClientSessionCache,
@@ -909,14 +913,19 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
     }
 
+    @Override
+    public void addExceptionHandler(UserSessionExceptionHandler handler) {
+        this.exceptionHandlers.add(handler);
+    }
+
     /**
      * Copy over all sessions in Infinispan to the persistent user sessions in the database.
      * This method is public so people can use it to build their custom migrations or re-import sessions when necessary
      * in a future version of Keycloak.
      */
     public void migrateNonPersistentSessionsToPersistentSessions() {
-        JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName(), new ArrayBlockingQueue<>(1));
-        JpaChangesPerformer<UUID, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName(), new ArrayBlockingQueue<>(1));
+        JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName(), new ArrayBlockingQueue<>(1), exceptionHandlers);
+        JpaChangesPerformer<UUID, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName(), new ArrayBlockingQueue<>(1), Collections.emptyList());
         AtomicInteger currentBatch = new AtomicInteger(0);
         var persistence = ComponentRegistry.componentOf(sessionCache, PersistenceManager.class);
         if (persistence != null && !persistence.getStoresAsString().isEmpty()) {
