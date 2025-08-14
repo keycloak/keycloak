@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
@@ -761,6 +762,25 @@ public class PodTemplateTest {
                 });
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
+    }
+
+    @Test
+    public void testEnvVars() {
+        var statefulSet = getDeployment(null, null, builder -> builder.addNewEnv("JAVA_OPTS", "my opts")
+                .addToEnv(new ValueOrSecret("SECRET", new SecretKeySelector("key", "my-secret", null))));
+
+        var env = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+                .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
+
+        // make sure the raw value is present
+        var envVar = env.get("JAVA_OPTS");
+        assertEquals("my opts", envVar.getValue());
+
+        // make sure the secret is there, and is watched
+        envVar = env.get("SECRET");
+        assertEquals("key", envVar.getValueFrom().getSecretKeyRef().getKey());
+
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
 }
