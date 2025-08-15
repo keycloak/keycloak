@@ -36,12 +36,12 @@ You can override this behavior by setting your own value for `targetServerType` 
 
 === Cache configuration removed from cache-ispn.xml
 
-{project_name} now defines all cache defaults programmatically. Consequently, the `conf/cache-ispn.xml` file no longer
-contains the default cache configurations. It is still possible to modify the cache configurations used by {project_name}
-in this file, however a warning will now be logged if the `--cache-config-mutate=true` option is not set. Custom caches
-can still be configured without setting this option. To modify a default cache, prefer using the `--cache-...` options instead.
+The `conf/cache-ispn.xml` file no longer contains the default cache configurations.
+It is still possible to overwrite the cache configurations used by {project_name} in this file, however {project_name} will log a warning if the `--cache-config-mutate=true` option is not set.
+Custom caches can still be added without setting this option.
 
-When upgrading an existing deployment, it is recommended to remove all default cache configurations from your existing `conf/cache-ispn.xml`.
+When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
+and use the `+--cache-...+` options to make changes for example to the cache sizes.
 
 === Operator default affinity configuration changed
 
@@ -142,9 +142,10 @@ as well as the *Passkeys Conditional UI Authenticator* as already announced.
 
 === Modifying default cache configurations in the cache config file
 
-All {project_name} cache configurations have been removed from `conf/cache-ispn.xml`. Configuration of the default
-cache configurations in `conf/cache-ispn.xml`, or a custom file via `--cache-config-file`, has been deprecated and will
-result in a warning log unless `--cache-config-mutate=true` is explicitly passed.
+All {project_name} default cache configurations have been removed from `conf/cache-ispn.xml`.
+Configuration of the default cache configurations in `conf/cache-ispn.xml`, or in a custom file via `--cache-config-file`, without specifying `--cache-config-mutate=true` is now deprecated and will log a warning.
+
+In a future major release, the start-up will fail if default cache configurations are stated in those files and the option is not specified.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

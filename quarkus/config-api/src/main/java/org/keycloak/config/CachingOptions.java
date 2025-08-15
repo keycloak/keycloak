@@ -81,7 +81,7 @@ public class CachingOptions {
 
     public static final Option<Boolean> CACHE_CONFIG_MUTATE = new OptionBuilder<>(CACHE_CONFIG_MUTATE_PROPERTY, Boolean.class)
             .category(OptionCategory.CACHE)
-            .description("Determines whether changes to the default cache configurations are allowed. Set this to true in order to disable warnings when changes to the default cache configurations are required.")
+            .description("Determines whether changes to the default cache configurations are allowed. This is only recommended for advanced use-cases where the default cache configurations are proven to be problematic. The only supported way to change the default cache configurations is via the other 'cache-...' options.")
             .defaultValue(Boolean.FALSE)
             .build();
 

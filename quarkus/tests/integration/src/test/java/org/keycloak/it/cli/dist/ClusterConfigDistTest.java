@@ -40,7 +40,7 @@ import io.quarkus.test.junit.main.Launch;
 @Tag(DistributionTest.SLOW)
 public class ClusterConfigDistTest {
 
-    private static final String WARN_DEFAULT_CACHE_MUTATIONS = "Modifying the default cache configuration in the config file is deprecated. This is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.";
+    private static final String WARN_DEFAULT_CACHE_MUTATIONS = "Modifying the default cache configuration in the config file";
 
     @Test
     @Launch({ "start-dev", "--cache=ispn" })
