@@ -78,4 +78,8 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.4.0-unique-protocol-mapper">
+        <addUniqueConstraint tableName="PROTOCOL_MAPPER" constraintName="UK_PM_CLIENTNAMEPROTOCOL" columnNames="CLIENT_ID,CLIENT_SCOPE_ID,NAME,PROTOCOL" />
+    </changeSet>
+
 </databaseChangeLog>

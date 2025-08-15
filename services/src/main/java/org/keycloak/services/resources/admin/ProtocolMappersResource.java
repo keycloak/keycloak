@@ -234,6 +234,10 @@ public class ProtocolMappersResource {
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
+        if (rep.getName() == null) {
+            logger.warn("Skipping the name of the protocol mapper is deprecated since KC 26.4");
+            rep.setName(model.getName());
+        }
 
         validateModel(model);
 

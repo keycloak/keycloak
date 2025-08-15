@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -47,6 +48,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
+    protected static final Logger logger = Logger.getLogger(ClientAdapter.class);
 
     protected KeycloakSession session;
     protected RealmModel realm;
@@ -446,13 +448,23 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
-        ProtocolMapperEntity entity = getProtocolMapperEntity(mapping.getId());
-        entity.setProtocolMapper(mapping.getProtocolMapper());
-        if (entity.getConfig() == null) {
-            entity.setConfig(mapping.getConfig());
+        ProtocolMapperEntity pmEntity = getProtocolMapperEntity(mapping.getId());
+        if (mapping.getName() != null && !mapping.getName().equals(pmEntity.getName())) {
+            if (getProtocolMapperByName(mapping.getProtocol(), mapping.getName()) != null) {
+                throw new ModelDuplicateException("Protocol mapper name must be unique per protocol");
+            }
+        }
+        if (mapping.getName() != null) {
+            pmEntity.setName(mapping.getName());
         } else {
-            entity.getConfig().clear();
-            entity.getConfig().putAll(mapping.getConfig());
+            logger.warn("Deprecated: Always pass in the protocol mapper name when updating (since Keycloak 26.4)");
+        }
+        pmEntity.setProtocolMapper(mapping.getProtocolMapper());
+        if (pmEntity.getConfig() == null) {
+            pmEntity.setConfig(mapping.getConfig());
+        } else {
+            pmEntity.getConfig().clear();
+            pmEntity.getConfig().putAll(mapping.getConfig());
         }
         em.flush();
 
