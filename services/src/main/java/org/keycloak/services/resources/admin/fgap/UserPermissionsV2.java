@@ -18,14 +18,18 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
+import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -145,6 +149,30 @@ class UserPermissionsV2 extends UserPermissions {
         }
 
         return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
+    }
+
+    @Override
+    public boolean canResetPassword(UserModel user) {
+        // admin roles has the precedence over permissions
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
+
+        // by default use legacy behavior - with the aim to change the default in next major release
+        boolean fallbackToManage = Config.scope("fgap", "v2", "resetPassword").getBoolean("fallbackToManageUsers", true);
+
+        if (fallbackToManage) {
+            return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE);
+        }
+
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD);
+    }
+
+    @Override
+    public void requireResetPassword(UserModel user) {
+        if (!canResetPassword(user)) {
+            throw new ForbiddenException();
+        }
     }
 
     // todo this method should be removed and replaced by canImpersonate(user, client); once V1 is removed

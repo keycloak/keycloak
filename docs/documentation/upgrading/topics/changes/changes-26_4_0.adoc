@@ -4,7 +4,22 @@
 Breaking changes are identified as requiring changes from existing users to their configurations.
 In minor or patch releases we will only do breaking changes to fix bugs.
 
-=== <TODO>
+=== Fine-grained admin permissions: RESET_PASSWORD scope for Users
+
+A new `reset-password` scope has been added to the Users resource type in Fine-Grained Admin Permissions v2. This scope allows administrators to grant password reset permissions independently from the broader `manage` scope.
+
+By default, the behavior remains compatible with previous versions through the `fallbackToManageUsers` configuration option, which is set to `true` by default. When this fallback is enabled, password reset permissions will use the existing `manage` scope behavior.
+
+To enable the new granular password reset permissions, set the configuration option:
+
+[source]
+----
+fgap.v2.resetPassword.fallbackToManageUsers=false
+----
+
+When the fallback is disabled, only explicit `reset-password` scope permissions will allow password reset operations, providing more fine-grained control over administrative access.
+
+For more information about fine-grained admin permissions, see the link:{adminguide_finegrained_link}[{adminguide_finegrained_name}] chapter in the {adminguide_name}.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
