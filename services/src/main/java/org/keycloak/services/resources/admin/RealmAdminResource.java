@@ -56,6 +56,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailAuthenticator;
+import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -111,6 +112,7 @@ import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.SMTPUtil;
 
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
@@ -470,6 +472,13 @@ public class RealmAdminResource {
             ReservedCharValidator.validateLocales(rep.getSupportedLocales());
             ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
         } catch (ReservedCharValidator.ReservedCharException e) {
+            logger.error(e.getMessage(), e);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+        }
+
+        try {
+            SMTPUtil.checkSMTPConfiguration(session, rep.getSmtpServer());
+        } catch (EmailException e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         }
