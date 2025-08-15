@@ -757,7 +757,7 @@ public class UserResource {
         @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public void resetPassword(@Parameter(description = "The representation must contain a rawPassword with the plain-text password") CredentialRepresentation cred) {
-        auth.users().requireManage(user);
+        auth.users().requireResetPassword(user);
         if (cred == null || cred.getValue() == null) {
             throw new BadRequestException("No password provided");
         }
