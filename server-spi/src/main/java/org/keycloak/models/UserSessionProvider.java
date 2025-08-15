@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.Response;
 import org.keycloak.provider.Provider;
 
 /**
@@ -246,5 +247,27 @@ public interface UserSessionProvider extends Provider {
      */
     default UserSessionModel getUserSessionIfClientExists(RealmModel realm, String userSessionId, boolean offline, String clientUUID) {
         return getUserSessionWithPredicate(realm, userSessionId, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
+    }
+
+    /**
+     * Add handler to be able to handle the exception/error thrown by userSessionProvider. Handler is added just for this HTTP request (It is {@link KeycloakSession} scoped)
+     *
+     * @param handler exception handler
+     */
+    default void addExceptionHandler(UserSessionExceptionHandler handler) {
+
+    }
+
+    interface UserSessionExceptionHandler {
+
+        /**
+         * Invoked if some exception happens during transaction commit. It allows handler to eventually create the alternative HTTP response to be sent to the user
+         * in that case instead of throwing the generic error
+         *
+         * @param t exception. It can have "cause" or "suppressed" exceptions with the real cause
+         * @return response if handler is able to handle the exception. It returns null in case that handler is not able to handle this exception. Throwable would be typically just re-thrown in that case.
+         */
+        Response handleExceptionAtTransactionCommit(Throwable t);
+
     }
 }

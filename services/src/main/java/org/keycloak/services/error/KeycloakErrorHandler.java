@@ -36,6 +36,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.keycloak.utils.SendResponseException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -108,6 +109,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
                     .build();
         }
 
+        if (throwable instanceof SendResponseException sre) {
+            return sre.getResponse();
+        }
+
         try {
             RealmModel realm = resolveRealm(session);
 
@@ -143,6 +148,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
         if (throwable instanceof ModelDuplicateException) {
             return Response.Status.CONFLICT;
+        }
+
+        if (throwable instanceof SendResponseException ex) {
+            return Response.Status.fromStatusCode(ex.getStatus());
         }
 
         return Response.Status.INTERNAL_SERVER_ERROR;

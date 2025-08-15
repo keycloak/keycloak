@@ -405,7 +405,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return buildHtmlForm(actionUrl, inputTypes);
     }
 
-    public String buildHtmlForm(String actionUrl, Map<String, String> inputTypes) {
+    public static String buildHtmlForm(String actionUrl, Map<String, String> inputTypes) {
         StringBuilder builder = new StringBuilder();
 
         builder.append("<HTML>")

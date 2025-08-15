@@ -23,6 +23,7 @@ import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -50,6 +51,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
     private final SerializeExecutionsByKey<K> serializerOnline;
     private final SerializeExecutionsByKey<K> serializerOffline;
+    private final List<UserSessionProvider.UserSessionExceptionHandler> exceptionHandlers;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
@@ -61,7 +63,8 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                                                        SessionFunction<V> offlineMaxIdleTimeMsLoader,
                                                        ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                        SerializeExecutionsByKey<K> serializerOnline,
-                                                       SerializeExecutionsByKey<K> serializerOffline) {
+                                                       SerializeExecutionsByKey<K> serializerOffline,
+                                                       List<UserSessionProvider.UserSessionExceptionHandler> exceptionHandlers) {
         kcSession = session;
         this.cacheName = cacheName;
         this.cache = cache;
@@ -73,6 +76,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         this.batchingQueue = batchingQueue;
         this.serializerOnline = serializerOnline;
         this.serializerOffline = serializerOffline;
+        this.exceptionHandlers = exceptionHandlers;
     }
 
     protected Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
@@ -138,9 +142,9 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         List<SessionChangesPerformer<K, V>> changesPerformers = new LinkedList<>();
 
         if (batchingQueue != null) {
-            changesPerformers.add(new JpaChangesPerformer<>(cacheName, batchingQueue));
+            changesPerformers.add(new JpaChangesPerformer<>(cacheName, batchingQueue, exceptionHandlers));
         } else {
-            changesPerformers.add(new JpaChangesPerformer<>(cacheName, null) {
+            changesPerformers.add(new JpaChangesPerformer<>(cacheName, null, exceptionHandlers) {
                 @Override
                 public void applyChanges() {
                     KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(),
