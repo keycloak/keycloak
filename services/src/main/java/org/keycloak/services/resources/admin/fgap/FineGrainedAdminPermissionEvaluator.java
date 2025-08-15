@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -29,6 +30,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceWrapper;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -52,7 +54,37 @@ class FineGrainedAdminPermissionEvaluator {
         return hasPermission(model.getId(), model.getResourceType(), context, scope);
     }
 
+    /**
+     * Checks if there are permissions granted for the given {@code model} and {@code scope}. If
+     * the given {@code scope} is not associated with any permission, the value returned by {@code defaultValue} will
+     * be returned.
+     *
+     * @param model the model
+     * @param context the context
+     * @param scope the scope
+     * @param defaultValue the default value
+     * @return
+     */
+    boolean hasPermission(ModelRecord model, EvaluationContext context, String scope, Supplier<Boolean> defaultValue) {
+        return hasPermission(model.getId(), model.getResourceType(), context, scope, defaultValue);
+    }
+
     boolean hasPermission(String modelId, String resourceType, EvaluationContext context, String scope) {
+        return hasPermission(modelId, resourceType, context, scope, null);
+    }
+
+    /**
+     * Checks if there are permissions granted for the given {@code modelId} and {@code scope}. If
+     * the given {@code scope} is not associated with any permission, the value returned by {@code defaultValue} will
+     * be returned.
+     *
+     * @param modelId the model id
+     * @param context the context
+     * @param scope the scope
+     * @param defaultValue the default value
+     * @return
+     */
+    boolean hasPermission(String modelId, String resourceType, EvaluationContext context, String scope, Supplier<Boolean> defaultValue) {
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -70,15 +102,22 @@ class FineGrainedAdminPermissionEvaluator {
             resource = new ResourceWrapper(modelId, modelId, new HashSet<>(resourceTypeResource.getScopes()), server);
         }
 
-        Collection<Permission> permissions = (context == null) ?
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
-                root.evaluatePermission(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
+        DecisionPermissionCollector decision = (context == null) ?
+                root.getDecision(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server) :
+                root.getDecision(new ResourcePermission(resourceType, resource, resource.getScopes(), server), server, context);
+        Collection<Permission> permissions = decision.results();
 
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {
                 if (permission.getScopes().contains(scope)) {
                     return true;
                 }
+            }
+        }
+
+        if (defaultValue != null) {
+            if (!decision.isEvaluated(scope)) {
+                return defaultValue.get();
             }
         }
 
