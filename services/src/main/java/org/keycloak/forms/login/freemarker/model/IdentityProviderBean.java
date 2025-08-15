@@ -112,7 +112,10 @@ public class IdentityProviderBean {
         String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
         Map<String, String> themeConfig = identityProvider.getConfig().entrySet().stream()
             .filter(entry -> entry.getKey().startsWith(IDP_THEME_CONFIG_PREFIX))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            .collect(Collectors.toMap(
+                entry -> entry.getKey().substring(IDP_THEME_CONFIG_PREFIX.length()),
+                Map.Entry::getValue
+                 ));
         return new IdentityProvider(identityProvider.getAlias(),
                 displayName, identityProvider.getProviderId(), loginUrl,
                 identityProvider.getConfig().get("guiOrder"), getLoginIconClasses(identityProvider), themeConfig);
