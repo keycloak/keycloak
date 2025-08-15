@@ -101,6 +101,12 @@ In order to maintain backwards compatibility, {project_name}'s upgrade will modi
 
 For more information about client configuration, please see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] chapter in the {adminguide_name}.
 
+=== Validate email action
+
+When validating an email address as a required action or an application initiated action, a user can resend the verification email by default only every 30 seconds, while in earlier versions there was no limitation in re-sending the email.
+
+Administrators can configure the interval per realm in the Verify Email required action in the Authentication section of the realmm.
+
 === Tracing extended for embedded Infinispan caches
 
 When tracing is enabled, now also calls to other nodes of a {project_name} cluster will create spans in the traces.
