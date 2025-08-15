@@ -542,7 +542,13 @@ To use unstructured logging, enter the following command:
 
 As you can see, the timestamp is present twice, so you can amend it correspondingly via the `--log-syslog-format` property.
 
-<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-*">
+== Logs export (OpenTelemetry)
+
+It is possible to export OpenTelemetry logs from your deployment to the OpenTelemetry collector for centralized log management.
+
+For more details, see the _Centralize your observability stack with OpenTelemetry_ guide.
+
+<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-export-*">
 
 === Console
 <@opts.includeOptions includedOptions="log-console-*"/>
@@ -555,6 +561,9 @@ As you can see, the timestamp is present twice, so you can amend it correspondin
 
 === HTTP Access log
 <@opts.includeOptions includedOptions="http-access-log-*"/>
+
+=== Logs export (OpenTelemetry)
+<@opts.includeOptions includedOptions="log-export-*"/>
 
 </@opts.printRelevantOptions>
 
