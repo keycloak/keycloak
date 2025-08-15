@@ -133,7 +133,7 @@ public class IgnoredArtifacts {
         final Set<String> jdbcArtifacts = vendorsOfAllDatasources.stream()
                 .map(vendor -> switch (vendor) {
                     case H2 -> JDBC_H2;
-                    case MYSQL -> JDBC_MYSQL;
+                    case MYSQL, TIDB -> JDBC_MYSQL;
                     case MARIADB -> JDBC_MARIADB;
                     case POSTGRES -> JDBC_POSTGRES;
                     case MSSQL -> JDBC_MSSQL;

@@ -43,7 +43,7 @@ class TiDBTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public String getDatabaseVendor() {
-        return "mysql";
+        return "tidb";
     }
 
     @Override
