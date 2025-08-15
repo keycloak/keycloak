@@ -24,11 +24,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
+import jakarta.mail.Address;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -45,11 +48,13 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VALUE;
 
@@ -115,7 +120,7 @@ public class SMTPConnectionTest {
 
         RealmRepresentation realmRep = realm.toRepresentation();
         realmRep.setSmtpServer(smtpMap("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
-                "admin@localhost", password, null, null));
+                "admin@localhost", password, null, null, null));
         managedRealm.updateWithCleanup(r -> r.update(realmRep));
 
         mailServer.credentials("admin@localhost", password);
@@ -220,9 +225,54 @@ public class SMTPConnectionTest {
 
     }
 
+    @Test
+    @Order(9)
+    public void testAllowUTF8() throws Exception {
+        // utf8 on from not allowed if allowutf8 not enabled
+        Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(settings("127.0.0.1", "3025", "autoñ@keycloak.org",
+                null, null, null, null, null));
+        assertStatus(response, 500);
+
+        // utf-8 on from but in domain part is allowed and transformed
+        response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloakñ.org",
+                null, null, null, null, null));
+        assertStatus(response, 204);
+        assertMailReceived("auto@xn--keycloak-k3a.org");
+
+        // utf8 on from allowed if allowutf8 enabled
+        response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(smtpMap("127.0.0.1", "3025", "autoñ@keycloak.org",
+                null, null, null, null, null, null, null, "true"));
+        assertStatus(response, 204);
+        assertMailReceived();
+
+        // utf8 on address
+        AccessToken token = oAuthClient.parseToken(adminClient.tokenManager().getAccessToken().getToken(), AccessToken.class);
+        UserResource userRes = adminClient.realm("default").users().get(token.getSubject());
+        UserRepresentation userRep = userRes.toRepresentation();
+        final String previousEmail = userRep.getEmail();
+        userRep.setEmail("adminñ@localhost");
+        userRes.update(userRep);
+
+        try {
+            // not allowed on address if allowutf8 not enabled
+            response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org",
+                    null, null, null, null, null));
+            assertStatus(response, 500);
+
+            // allowed on address if allowutf8 enabled
+            response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(smtpMap("127.0.0.1", "3025", "auto@keycloak.org",
+                    null, null, null, null, null, null, null, "true"));
+            assertStatus(response, 204);
+            assertMailReceived();
+        } finally {
+            userRep.setEmail(previousEmail);
+            userRes.update(userRep);
+        }
+    }
+
     private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
                                          String username, String password) throws Exception {
-        return smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "");
+        return smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "", null);
     }
 
     private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
@@ -251,7 +301,7 @@ public class SMTPConnectionTest {
     }
 
     private Map<String, String> smtpMap(String host, String port, String from, String auth, String ssl, String starttls,
-                                        String username, String password, String replyTo, String envelopeFrom) {
+                                        String username, String password, String replyTo, String envelopeFrom, String allowutf8) {
         Map<String, String> config = new HashMap<>();
         config.put("host", host);
         config.put("port", port);
@@ -264,6 +314,9 @@ public class SMTPConnectionTest {
         config.put("password", password);
         config.put("replyTo", replyTo);
         config.put("envelopeFrom", envelopeFrom);
+        if (allowutf8 != null) {
+            config.put("allowutf8", allowutf8);
+        }
         return config;
     }
 
@@ -283,10 +336,13 @@ public class SMTPConnectionTest {
         response.close();
     }
 
-    private void assertMailReceived() {
+    private void assertMailReceived(String... from) {
         if (mailServer.getReceivedMessages().length == 1) {
             try {
                 MimeMessage message = mailServer.getReceivedMessages()[0];
+                if (from.length > 0) {
+                    assertArrayEquals(from, Arrays.stream(message.getFrom()).map(Address::toString).toArray(String[]::new));
+                }
                 assertEquals("[KEYCLOAK] - SMTP test message", message.getSubject());
                 mailServer.runCleanup();
             } catch (Exception e) {
