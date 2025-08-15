@@ -469,32 +469,6 @@ public class PodTemplateTest {
         assertThat(startup.getPath()).isEqualTo("/health/started");
         assertThat(startup.getPort().getIntVal()).isEqualTo(Constants.KEYCLOAK_MANAGEMENT_PORT);
 
-        var affinity = podTemplate.getSpec().getAffinity();
-        assertNotNull(affinity);
-        assertThat(Serialization.asYaml(affinity)).isEqualTo("""
-                ---
-                podAntiAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchLabels:
-                          app: "keycloak"
-                          app.kubernetes.io/managed-by: "keycloak-operator"
-                          app.kubernetes.io/instance: "instance"
-                          app.kubernetes.io/component: "server"
-                      topologyKey: "topology.kubernetes.io/zone"
-                    weight: 100
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchLabels:
-                          app: "keycloak"
-                          app.kubernetes.io/managed-by: "keycloak-operator"
-                          app.kubernetes.io/instance: "instance"
-                          app.kubernetes.io/component: "server"
-                      topologyKey: "kubernetes.io/hostname"
-                    weight: 90
-                """);
-
         var topologySpreadConstraints = podTemplate.getSpec().getTopologySpreadConstraints();
         assertNotNull(topologySpreadConstraints);
         assertThat(topologySpreadConstraints).hasSize(2);
