@@ -1,8 +1,8 @@
-import PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-import { Page } from "@playwright/test";
-import { selectItem } from "../utils/form";
-import { confirmModal } from "../utils/modal";
-import { clickRowKebabItem } from "../utils/table";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
+import type { Page } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { clickRowKebabItem } from "../utils/table.ts";
 
 type PermissionForm = PolicyRepresentation & {
   enforcementMode?: "allResources" | "specificResources";

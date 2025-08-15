@@ -65,7 +65,7 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
         }
     }
 
-    private static class EndHandler implements ServerRestHandler {
+    public static class EndHandler implements ServerRestHandler {
         @Override
         public void handle(ResteasyReactiveRequestContext requestContext) {
             Scope scope = (Scope) requestContext.getProperty("scope");

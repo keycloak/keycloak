@@ -48,6 +48,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreSource;
@@ -150,13 +151,17 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
+        String serviceName = KeycloakDiscoveryServiceDependentResource.getName(primary);
         if (existingDeployment != null) {
             // copy the existing annotations to keep the status consistent
             CRDUtils.findUpdateReason(existingDeployment).ifPresent(r -> baseDeployment.getMetadata().getAnnotations()
                     .put(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, r));
             CRDUtils.fetchIsRecreateUpdate(existingDeployment).ifPresent(b -> baseDeployment.getMetadata()
                     .getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, b.toString()));
+            serviceName = existingDeployment.getSpec().getServiceName();
         }
+
+        baseDeployment.getSpec().setServiceName(serviceName);
 
         var updateType = ContextUtils.getUpdateType(context);
 
@@ -286,7 +291,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         .editOrNewSpec().withImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets()).endSpec()
                     .endTemplate()
                     .withReplicas(keycloakCR.getSpec().getInstances())
-                    .withServiceName(KeycloakDiscoveryServiceDependentResource.getName(keycloakCR))
                 .endSpec();
 
         var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
@@ -325,8 +329,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
         // probes
-        var protocol = isTlsConfigured(keycloakCR) ? "HTTPS" : "HTTP";
+        var protocol = isManagementHttps(keycloakCR) ? "HTTPS" : "HTTP";
         var port = HttpManagementSpec.managementPort(keycloakCR);
+        var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
+        var livenessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getLivenessProbeSpec());
+        var startupOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getStartupProbeSpec());
         var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
                 .or(() -> readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, keycloakCR, context))
                 .map(path -> !path.endsWith("/") ? path + "/" : path)
@@ -334,8 +341,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         if (!containerBuilder.hasReadinessProbe()) {
             containerBuilder.withNewReadinessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withPeriodSeconds(readinessOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(10))
+                .withFailureThreshold(readinessOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(3))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -345,8 +352,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         if (!containerBuilder.hasLivenessProbe()) {
             containerBuilder.withNewLivenessProbe()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(3)
+                .withPeriodSeconds(livenessOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(10))
+                .withFailureThreshold(livenessOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(3))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -356,8 +363,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         if (!containerBuilder.hasStartupProbe()) {
             containerBuilder.withNewStartupProbe()
-                .withPeriodSeconds(1)
-                .withFailureThreshold(600)
+                .withPeriodSeconds(startupOptionalSpec.map(ProbeSpec::getProbePeriodSeconds).orElse(1))
+                .withFailureThreshold(startupOptionalSpec.map(ProbeSpec::getProbeFailureThreshold).orElse(600))
                 .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(port)
@@ -386,6 +393,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             .endContainer().endSpec().endTemplate().endSpec().build();
     }
 
+    private boolean isManagementHttps(Keycloak keycloakCR) {
+        return isTlsConfigured(keycloakCR) && keycloakCR.getSpec().getAdditionalOptions().stream()
+                .noneMatch(v -> "http-management-scheme".equals(v.getName()) && "http".equals(v.getValue()));
+    }
+
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {
         SchedulingSpec schedulingSpec = keycloakCR.getSpec().getSchedulingSpec();
         if (schedulingSpec != null) {
@@ -403,25 +415,31 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
         }
 
-        // set defaults if nothing was specified by the user
-        // - server pods will have an affinity for the same zone as to avoid stretch clusters
-        // - server pods will have a stronger anti-affinity for the same node
-
         if (!specBuilder.hasAffinity()) {
-            specBuilder.editOrNewAffinity().withNewPodAffinity().addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                    .withWeight(10).withNewPodAffinityTerm().withNewLabelSelector().withMatchLabels(labels)
-                    .endLabelSelector().withTopologyKey(ZONE_KEY).endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAffinity().endAffinity();
+            var antiAffinity = specBuilder.editOrNewAffinity().withNewPodAntiAffinity();
+            // Server pods have an anti-affinity for the same zone in order to increase availability by creating a stretched cluster
+            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                  .withWeight(100)
+                  .withNewPodAffinityTerm()
+                  .withNewLabelSelector()
+                  .withMatchLabels(labels)
+                  .endLabelSelector()
+                  .withTopologyKey(ZONE_KEY)
+                  .endPodAffinityTerm()
+                  .endPreferredDuringSchedulingIgnoredDuringExecution();
 
-            specBuilder.editOrNewAffinity().withNewPodAntiAffinity()
-                    .addNewPreferredDuringSchedulingIgnoredDuringExecution().withWeight(50).withNewPodAffinityTerm()
-                    .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
-                    .withTopologyKey("kubernetes.io/hostname").endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAntiAffinity().endAffinity();
+            // Server pods have an anti-affinity for the same node in case it's not possible to provision to a zone that contains no existing pods
+            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
+                  .withWeight(90)
+                  .withNewPodAffinityTerm()
+                  .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
+                  .withTopologyKey("kubernetes.io/hostname")
+                  .endPodAffinityTerm()
+                  .endPreferredDuringSchedulingIgnoredDuringExecution();
+
+            antiAffinity.endPodAntiAffinity().endAffinity();
         }
-
     }
-
 
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
         var distConfigurator = ContextUtils.getDistConfigurator(context);
@@ -429,10 +447,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR);
 
-        var env = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
+        var unsupportedEnv = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
-        // accumulate the env vars in priority order - unsupported, first class, additional
-        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
+        var env = keycloakCR.getSpec().getEnv().stream().map(this::toEnvVar);
+
+        // accumulate the env vars in priority order - unsupported, first class, additional, env
+        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
         String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
@@ -489,9 +509,22 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1]));
     }
 
+    private EnvVar toEnvVar(ValueOrSecret v) {
+        var envBuilder = new EnvVarBuilder().withName(v.getName());
+        var secret = v.getSecret();
+        if (secret != null) {
+            envBuilder.withValueFrom(
+                    new EnvVarSourceBuilder().withSecretKeyRef(secret).build());
+        } else {
+            envBuilder.withValue(v.getValue());
+        }
+        return envBuilder.build();
+    }
+
     private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {
         // default config values
         List<ValueOrSecret> serverConfigsList = new ArrayList<>(Constants.DEFAULT_DIST_CONFIG_LIST);
+        Set<String> defaultKeys = serverConfigsList.stream().map(ValueOrSecret::getName).collect(Collectors.toSet());
 
         // merge with the CR; the values in CR take precedence
         if (keycloakCR.getSpec().getAdditionalOptions() != null) {
@@ -502,7 +535,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // set env vars
         List<EnvVar> envVars = serverConfigsList.stream()
-                .map(v -> {
+                .flatMap(v -> {
                     var envBuilder = new EnvVarBuilder().withName(getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();
                     if (secret != null) {
@@ -511,7 +544,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                     } else {
                         envBuilder.withValue(v.getValue());
                     }
-                    return envBuilder.build();
+                    EnvVar mainVar = envBuilder.build();
+                    if (!defaultKeys.contains(v.getName())) {
+                        EnvVar keyVar = new EnvVarBuilder()
+                                .withName("KCKEY_" + mainVar.getName().substring(KeycloakDistConfigurator.KC_PREFIX.length()))
+                                .withValue(v.getName()).build();
+                        return Stream.of(mainVar, keyVar);
+                    }
+                    return Stream.of(mainVar);
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 

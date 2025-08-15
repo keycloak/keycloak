@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -47,8 +48,12 @@ public class IdpConfirmLinkPage extends LanguageComboboxAwarePage {
         updateProfileButton.click();
     }
 
+    public boolean isReviewProfileDisplayed() {
+        return UIUtils.isElementVisible(updateProfileButton);
+    }
+
     public void clickLinkAccount() {
-        linkAccountButton.click();
+        UIUtils.clickLink(linkAccountButton);
     }
 
 }

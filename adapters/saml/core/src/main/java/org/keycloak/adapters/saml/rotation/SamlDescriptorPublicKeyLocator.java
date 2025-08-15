@@ -24,7 +24,6 @@ import java.security.cert.X509Certificate;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
@@ -34,6 +33,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.adapters.cloned.HttpAdapterUtils;
 import org.keycloak.adapters.cloned.HttpClientAdapterException;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.rotation.KeyLocator;
@@ -179,7 +179,7 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator {
                 this.publicKeyCacheByKey.put(new KeyHash(x509certificate.getPublicKey()), x509certificate.getPublicKey());
             } else {
                 final X500Principal principal = x509certificate.getSubjectX500Principal();
-                String name = (principal == null ? "unnamed" : principal.getName()) + "@" + x509certificate.getSerialNumber() + "$" + UUID.randomUUID();
+                String name = (principal == null ? "unnamed" : principal.getName()) + "@" + x509certificate.getSerialNumber() + "$" + SecretGenerator.getInstance().generateSecureID();
                 this.publicKeyCacheByName.put(name, x509certificate.getPublicKey());
                 this.publicKeyCacheByKey.put(new KeyHash(x509certificate.getPublicKey()), x509certificate.getPublicKey());
                 LOG.tracef("Adding certificate %s without a specific key name: %s", name, x509certificate);

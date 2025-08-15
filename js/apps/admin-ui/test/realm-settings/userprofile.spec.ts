@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertFieldError, selectItem, switchOn } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToRealm, goToRealmSettings, goToUsers } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { assertFieldError, selectItem, switchOn } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToRealmSettings, goToUsers } from "../utils/sidebar.ts";
 import {
   assertRowExists,
   clickRowKebabItem,
   clickTableRowItem,
-} from "../utils/table";
-import { goToLoginTab } from "./login";
+} from "../utils/table.ts";
+import { goToLoginTab } from "./login.ts";
 import {
   clickAddValidator,
   clickCancelAttribute,
@@ -23,7 +23,7 @@ import {
   goToAttributesTab,
   goToUserProfileTab,
   switchOffIfOn,
-} from "./userprofile";
+} from "./userprofile.ts";
 
 test.describe("User profile tabs", () => {
   const name = "Test";
@@ -69,10 +69,12 @@ test.describe("User profile tabs", () => {
     test("Completes new attribute form and performs cancel", async ({
       page,
     }) => {
+      const uniqueName = "UniqueName";
       await clickCreateAttribute(page);
-      await fillAttributeForm(page, { name, displayName });
+      await fillAttributeForm(page, { name: uniqueName, displayName });
       await clickCancelAttribute(page);
-      await assertRowExists(page, name, false);
+      await assertRowExists(page, uniqueName, false);
+      await assertRowExists(page, "firstName", true);
     });
 
     test("Completes new attribute form and performs submit", async ({

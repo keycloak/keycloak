@@ -8,4 +8,6 @@ export default interface KeyStoreConfig {
   keyAlias?: string;
   realmAlias?: string;
   format?: string;
+  keySize?: number;
+  validity?: number;
 }

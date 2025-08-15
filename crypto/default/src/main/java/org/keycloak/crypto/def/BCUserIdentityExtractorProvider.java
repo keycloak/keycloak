@@ -73,23 +73,21 @@ public class BCUserIdentityExtractorProvider  extends UserIdentityExtractorProvi
                 throw new IllegalArgumentException();
 
             X500Name name = new X500Name(x500Name.apply(certs).getName());
-            if (name != null) {
-                RDN[] rnds = name.getRDNs(x500NameStyle);
-                if (rnds != null && rnds.length > 0) {
-                    RDN cn = rnds[0];
-                    if(cn.isMultiValued()){
-                        AttributeTypeAndValue[] attributeTypeAndValues = cn.getTypesAndValues();
-                        Optional<AttributeTypeAndValue> optionalFirst = Arrays.stream(attributeTypeAndValues).filter(attributeTypeAndValue -> attributeTypeAndValue.getType().getId().equals(x500NameStyle.getId())).findFirst();
-                        if(optionalFirst.isPresent()) {
-                            return IETFUtils.valueToString(optionalFirst.get().getValue());
-                        }
-                        else {
-                            return null;
-                        }
+            RDN[] rnds = name.getRDNs(x500NameStyle);
+            if (rnds != null && rnds.length > 0) {
+                RDN cn = rnds[0];
+                if(cn.isMultiValued()){
+                    AttributeTypeAndValue[] attributeTypeAndValues = cn.getTypesAndValues();
+                    Optional<AttributeTypeAndValue> optionalFirst = Arrays.stream(attributeTypeAndValues).filter(attributeTypeAndValue -> attributeTypeAndValue.getType().getId().equals(x500NameStyle.getId())).findFirst();
+                    if(optionalFirst.isPresent()) {
+                        return IETFUtils.valueToString(optionalFirst.get().getValue());
                     }
                     else {
-                        return IETFUtils.valueToString(cn.getFirst().getValue());
+                        return null;
                     }
+                }
+                else {
+                    return IETFUtils.valueToString(cn.getFirst().getValue());
                 }
             }
             return null;

@@ -41,12 +41,14 @@
         <module>db-mysql</module>
         <module>db-oracle</module>
         <module>db-postgres</module>
+        <module>db-tidb</module>
         <module>email-server</module>
         <module>examples</module>
         <module>oauth</module>
         <module>remote</module>
         <module>remote-providers</module>
         <module>ui</module>
+        <module>clustering</module>
     </modules>
 
 </project>

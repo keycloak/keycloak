@@ -64,7 +64,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -379,11 +379,11 @@ public class ClientTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep, ResourceType.CLIENT);
         ClientResource clientRsc = managedRealm.admin().clients().get(id);
 
-        RoleRepresentation roleB = RoleBuilder.create().name("role-b").build();
+        RoleRepresentation roleB = RoleConfigBuilder.create().name("role-b").build();
         clientRsc.roles().create(roleB);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-b"), roleB, ResourceType.CLIENT_ROLE);
 
-        RoleRepresentation roleA = RoleBuilder.create().name("role-a").build();
+        RoleRepresentation roleA = RoleConfigBuilder.create().name("role-a").build();
          clientRsc.roles().create(roleA);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-a"), roleA, ResourceType.CLIENT_ROLE);
 
@@ -764,8 +764,8 @@ public class ClientTest {
         RolesResource roleContainerClientRolesRsc = managedRealm.admin().clients().get(roleContainerClientUuid).roles();
         managedRealm.cleanup().add(r -> r.clients().get(roleContainerClientUuid).remove());
 
-        roleContainerClientRolesRsc.create(RoleBuilder.create().name("client-composite").build());
-        roleContainerClientRolesRsc.create(RoleBuilder.create().name("client-child").build());
+        roleContainerClientRolesRsc.create(RoleConfigBuilder.create().name("client-composite").build());
+        roleContainerClientRolesRsc.create(RoleConfigBuilder.create().name("client-child").build());
         roleContainerClientRolesRsc.get("client-composite").addComposites(List.of(
                 roleContainerClientRolesRsc.get("client-child").toRepresentation()));
 
@@ -823,10 +823,10 @@ public class ClientTest {
         RoleMappingResource scopesResource = managedRealm.admin().clients().get(idA).getScopeMappings();
 
         // create a realm role and a role in clientB
-        RoleRepresentation realmRoleRep = RoleBuilder.create().name("realm-role").build();
+        RoleRepresentation realmRoleRep = RoleConfigBuilder.create().name("realm-role").build();
         managedRealm.admin().roles().create(realmRoleRep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), realmRoleRep, ResourceType.REALM_ROLE);
-        RoleRepresentation clientBRoleRep = RoleBuilder.create().name("clientB-role").build();
+        RoleRepresentation clientBRoleRep = RoleConfigBuilder.create().name("clientB-role").build();
         managedRealm.admin().clients().get(idB).roles().create(clientBRoleRep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(idB, clientBRoleRep.getName()), clientBRoleRep, ResourceType.CLIENT_ROLE);
 
@@ -1007,7 +1007,7 @@ public class ClientTest {
     }
 
     private RoleRepresentation createRealmRole(String roleName) {
-        RoleRepresentation role = RoleBuilder.create().name(roleName).build();
+        RoleRepresentation role = RoleConfigBuilder.create().name(roleName).build();
         managedRealm.admin().roles().create(role);
 
         String createdId = managedRealm.admin().roles().get(role.getName()).toRepresentation().getId();

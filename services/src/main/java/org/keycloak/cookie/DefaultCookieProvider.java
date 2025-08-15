@@ -77,7 +77,7 @@ public class DefaultCookieProvider implements CookieProvider {
             StringBuilder warning = new StringBuilder("Non-secure context detected; cookies are not secured, and will not be available in cross-origin POST requests.");
 
             String forwarded = session.getContext().getRequestHeaders().getHeaderString("Forwarded");
-            String xForwarded = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded");
+            String xForwarded = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded-Proto");
 
             // if we are getting here then:
             //   if passthrough or reencrypt, proxy-headers may be misconfigured

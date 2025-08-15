@@ -357,7 +357,8 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     }
 
     private boolean isConditionalAuthenticator(AuthenticationExecutionModel model) {
-        return !model.isAuthenticatorFlow() && model.getAuthenticator() != null && createAuthenticator(getAuthenticatorFactory(model)) instanceof ConditionalAuthenticator;
+        return !model.isAuthenticatorFlow() && model.getAuthenticator() != null && model.isEnabled()
+                && createAuthenticator(getAuthenticatorFactory(model)) instanceof ConditionalAuthenticator;
     }
 
     private AuthenticatorFactory getAuthenticatorFactory(AuthenticationExecutionModel model) {

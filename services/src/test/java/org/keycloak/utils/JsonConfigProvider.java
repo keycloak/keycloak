@@ -20,7 +20,10 @@ package org.keycloak.utils;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+
 import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
 
@@ -190,6 +193,11 @@ public class JsonConfigProvider implements Config.ConfigProvider {
         @Override
         public Set<String> getPropertyNames() {
             throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Scope root() {
+            return new JsonScope(NullNode.getInstance());
         }
 
     }

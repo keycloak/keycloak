@@ -246,7 +246,7 @@ public class AbstractPermissionsTest {
             realm.addClient("test-client")
                     .enabled(true)
                     .publicClient(true)
-                    .directAccessGrants();
+                    .directAccessGrantsEnabled(true);
 
             realm.addUser(AdminRoles.REALM_ADMIN)
                     .name("realm-admin", "realm-admin")
@@ -292,7 +292,7 @@ public class AbstractPermissionsTest {
 
             realm.addClient("test-client")
                     .publicClient(true)
-                    .directAccessGrants();
+                    .directAccessGrantsEnabled(true);
 
             realm.addUser("admin")
                     .name("admin", "admin")

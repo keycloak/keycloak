@@ -56,7 +56,6 @@
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>2.0.3</version.org.wildfly.extras.creaper>
         <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
-        <smallrye.jandex.version>3.0.5</smallrye.jandex.version>
         <commons.validator.version>1.8.0</commons.validator.version>
         <byte-buddy.version>1.14.13</byte-buddy.version>
 
@@ -415,6 +414,29 @@
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>mysqld</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
+            <id>db-tidb</id>
+            <properties>
+                <keycloak.storage.connections.vendor>mysql</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>com.mysql.jdbc.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>test</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>root</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>com.mysql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mysql-connector-j</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mysql-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${tidb.container}</docker.database.image>
+                <docker.database.port>4000</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>start</docker.database.cmd>
+                <docker.database.wait-for-log-regex>server is running MySQL protocol</docker.database.wait-for-log-regex>
             </properties>
         </profile>
         <profile>

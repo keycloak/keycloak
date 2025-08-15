@@ -193,12 +193,17 @@ public class ResourceAdminManager {
                                                               AuthenticatedClientSessionModel clientSessionModel, String managementUrl) {
         UserModel user = clientSessionModel.getUserSession().getUser();
 
-        LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
-        String token = session.tokens().encode(logoutToken);
-        if (logger.isDebugEnabled())
-            logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
         HttpPost post = null;
+        ClientModel previousClient = session.getContext().getClient();
         try {
+            session.getContext().setClient(resource);
+
+            LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
+            String token = session.tokens().encode(logoutToken);
+            if (logger.isDebugEnabled()) {
+                logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
+            }
+
             post = new HttpPost(managementUrl);
             List<NameValuePair> parameters = new LinkedList<>();
             if (logoutToken != null) {
@@ -223,6 +228,7 @@ public class ResourceAdminManager {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return Response.serverError().build();
         } finally {
+            session.getContext().setClient(previousClient);
             if (post != null) {
                 post.reset();
             }

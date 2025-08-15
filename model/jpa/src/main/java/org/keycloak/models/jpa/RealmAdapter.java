@@ -932,7 +932,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public WebAuthnPolicy getWebAuthnPolicy() {
-        return getWebAuthnPolicy("");
+        return getWebAuthnPolicy("", WebAuthnPolicyTwoFactorDefaults.get());
     }
 
     @Override
@@ -943,7 +943,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public WebAuthnPolicy getWebAuthnPolicyPasswordless() {
         // We will use some prefix for attributes related to passwordless WebAuthn policy
-        return getWebAuthnPolicy(Constants.WEBAUTHN_PASSWORDLESS_PREFIX);
+        return getWebAuthnPolicy(Constants.WEBAUTHN_PASSWORDLESS_PREFIX, WebAuthnPolicyPasswordlessDefaults.get());
     }
 
     @Override
@@ -952,68 +952,81 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         setWebAuthnPolicy(policy, Constants.WEBAUTHN_PASSWORDLESS_PREFIX);
     }
 
-
-    private WebAuthnPolicy getWebAuthnPolicy(String attributePrefix) {
+    private WebAuthnPolicy getWebAuthnPolicy(String attributePrefix, WebAuthnPolicy defaultConfig) {
         WebAuthnPolicy policy = new WebAuthnPolicy();
 
         // mandatory parameters
         String rpEntityName = getAttribute(RealmAttributes.WEBAUTHN_POLICY_RP_ENTITY_NAME + attributePrefix);
         if (rpEntityName == null || rpEntityName.isEmpty())
-            rpEntityName = Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME;
+            rpEntityName = defaultConfig.getRpEntityName();
         policy.setRpEntityName(rpEntityName);
 
         String signatureAlgorithmsString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS + attributePrefix);
-        if (signatureAlgorithmsString == null || signatureAlgorithmsString.isEmpty())
-            signatureAlgorithmsString = Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS;
-        List<String> signatureAlgorithms = Arrays.asList(signatureAlgorithmsString.split(","));
+        List<String> signatureAlgorithms = (signatureAlgorithmsString == null || signatureAlgorithmsString.isEmpty())
+                ? defaultConfig.getSignatureAlgorithm()
+                : Arrays.asList(signatureAlgorithmsString.split(","));
         policy.setSignatureAlgorithm(signatureAlgorithms);
 
         // optional parameters
         String rpId = getAttribute(RealmAttributes.WEBAUTHN_POLICY_RP_ID + attributePrefix);
-        if (rpId == null || rpId.isEmpty()) rpId = "";
+        if (rpId == null || rpId.isEmpty()) {
+            rpId = defaultConfig.getRpId();
+        }
         policy.setRpId(rpId);
 
         String attestationConveyancePreference = getAttribute(RealmAttributes.WEBAUTHN_POLICY_ATTESTATION_CONVEYANCE_PREFERENCE + attributePrefix);
-        if (attestationConveyancePreference == null || attestationConveyancePreference.isEmpty())
-            attestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        if (attestationConveyancePreference == null || attestationConveyancePreference.isEmpty()) {
+            attestationConveyancePreference = defaultConfig.getAttestationConveyancePreference();
+        }
         policy.setAttestationConveyancePreference(attestationConveyancePreference);
 
         String authenticatorAttachment = getAttribute(RealmAttributes.WEBAUTHN_POLICY_AUTHENTICATOR_ATTACHMENT + attributePrefix);
-        if (authenticatorAttachment == null || authenticatorAttachment.isEmpty())
-            authenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        if (authenticatorAttachment == null || authenticatorAttachment.isEmpty()) {
+            authenticatorAttachment = defaultConfig.getAuthenticatorAttachment();
+        }
         policy.setAuthenticatorAttachment(authenticatorAttachment);
 
         String requireResidentKey = getAttribute(RealmAttributes.WEBAUTHN_POLICY_REQUIRE_RESIDENT_KEY + attributePrefix);
-        if (requireResidentKey == null || requireResidentKey.isEmpty())
-            requireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        if (requireResidentKey == null || requireResidentKey.isEmpty()) {
+            requireResidentKey = defaultConfig.getRequireResidentKey();
+        }
         policy.setRequireResidentKey(requireResidentKey);
 
         String userVerificationRequirement = getAttribute(RealmAttributes.WEBAUTHN_POLICY_USER_VERIFICATION_REQUIREMENT + attributePrefix);
-        if (userVerificationRequirement == null || userVerificationRequirement.isEmpty())
-            userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        if (userVerificationRequirement == null || userVerificationRequirement.isEmpty()) {
+            userVerificationRequirement = defaultConfig.getUserVerificationRequirement();
+        }
         policy.setUserVerificationRequirement(userVerificationRequirement);
 
-        String createTime = getAttribute(RealmAttributes.WEBAUTHN_POLICY_CREATE_TIMEOUT + attributePrefix);
-        if (createTime != null) policy.setCreateTimeout(Integer.parseInt(createTime));
-        else policy.setCreateTimeout(0);
+        String createTimeoutString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_CREATE_TIMEOUT + attributePrefix);
+        int createTimeout = (createTimeoutString != null)
+                ? Integer.parseInt(createTimeoutString)
+                : defaultConfig.getCreateTimeout();
+        policy.setCreateTimeout(createTimeout);
 
-        String avoidSameAuthenticatorRegister = getAttribute(RealmAttributes.WEBAUTHN_POLICY_AVOID_SAME_AUTHENTICATOR_REGISTER + attributePrefix);
-        if (avoidSameAuthenticatorRegister != null) policy.setAvoidSameAuthenticatorRegister(Boolean.parseBoolean(avoidSameAuthenticatorRegister));
+        String avoidSameAuthenticatorRegisterString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_AVOID_SAME_AUTHENTICATOR_REGISTER + attributePrefix);
+        boolean avoidSameAuthenticatorRegister = (avoidSameAuthenticatorRegisterString != null)
+                ? Boolean.parseBoolean(avoidSameAuthenticatorRegisterString)
+                : defaultConfig.isAvoidSameAuthenticatorRegister();
+        policy.setAvoidSameAuthenticatorRegister(avoidSameAuthenticatorRegister);
 
         String acceptableAaguidsString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS + attributePrefix);
-        List<String> acceptableAaguids = new ArrayList<>();
-        if (acceptableAaguidsString != null && !acceptableAaguidsString.isEmpty())
-            acceptableAaguids = Arrays.asList(acceptableAaguidsString.split(","));
+        List<String> acceptableAaguids = (acceptableAaguidsString != null && !acceptableAaguidsString.isEmpty())
+                ? Arrays.asList(acceptableAaguidsString.split(","))
+                : defaultConfig.getAcceptableAaguids();
         policy.setAcceptableAaguids(acceptableAaguids);
 
         String extraOriginsString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_EXTRA_ORIGINS + attributePrefix);
-        List<String> extraOrigins = new ArrayList<>();
-        if (extraOriginsString != null && !extraOriginsString.isEmpty())
-            extraOrigins = Arrays.asList(extraOriginsString.split(","));
+        List<String> extraOrigins = (extraOriginsString != null && !extraOriginsString.isEmpty())
+                ? Arrays.asList(extraOriginsString.split(","))
+                : defaultConfig.getExtraOrigins();
         policy.setExtraOrigins(extraOrigins);
 
-        String passkeysEnabled = getAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
-        if (passkeysEnabled != null) policy.setPasskeysEnabled(Boolean.parseBoolean(passkeysEnabled));
+        String passkeysEnabledString = getAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
+        Boolean passKeysEnabled = (passkeysEnabledString != null)
+                ? Boolean.valueOf(passkeysEnabledString)
+                : defaultConfig.isPasskeysEnabled();
+        policy.setPasskeysEnabled(passKeysEnabled);
 
         return policy;
     }

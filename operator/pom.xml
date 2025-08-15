@@ -12,6 +12,7 @@
     </parent>
 
     <name>Keycloak Operator</name>
+    <description>Keycloak Operator</description>
     <artifactId>keycloak-operator</artifactId>
 
     <properties>
@@ -104,16 +105,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-        </dependency>
-
-        <!-- FIXME: Adding BC for now as removing the Bouncycastle dependencies from the operator makes it unusable on K3s and possibly on other kubernetes distributions (e.g. Rancher is based on K3s). -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
 
         <!-- Test -->

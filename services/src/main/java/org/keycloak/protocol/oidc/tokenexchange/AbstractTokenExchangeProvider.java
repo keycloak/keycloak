@@ -323,7 +323,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         }
 
         UserModel user = null;
-        if (! context.getIdpConfig().isTransientUsers()) {
+        if (!context.getIdpConfig().isTransientUsers()) {
             FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
                     context.getUsername(), context.getToken());
 
@@ -435,9 +435,9 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         }
     }
 
-    record ExternalExchangeContext (ExchangeExternalToken provider, IdentityProviderModel idpModel) {};
+    protected record ExternalExchangeContext (ExchangeExternalToken provider, IdentityProviderModel idpModel) {};
 
-    private ExternalExchangeContext locateExchangeExternalTokenByAlias(String alias) {
+    protected ExternalExchangeContext locateExchangeExternalTokenByAlias(String alias) {
         try {
             IdentityProvider<?> idp = IdentityBrokerService.getIdentityProvider(session, alias);
 

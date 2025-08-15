@@ -29,7 +29,7 @@ import java.util.EnumSet;
 @Command(name = Export.NAME,
         header = "Export data from realms to a file or directory.",
         description = "%nExport data from realms to a file or directory.")
-public final class Export extends AbstractNonServerCommand implements Runnable {
+public final class Export extends AbstractNonServerCommand {
 
     public static final String NAME = "export";
 

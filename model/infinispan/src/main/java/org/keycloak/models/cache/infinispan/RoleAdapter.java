@@ -53,7 +53,7 @@ public class RoleAdapter implements RoleModel {
         this.cacheSession = cacheSession;
         this.session = cacheSession.session;
         this.realm = realm;
-        this.modelSupplier = this::getRoleModel;
+        this.modelSupplier = new LazyModel<>(this::getRoleModel);
     }
 
     protected void getDelegateForUpdate() {

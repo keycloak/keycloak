@@ -28,8 +28,8 @@
 
     <artifactId>keycloak-config-api</artifactId>
     <name>Keycloak Configuration API</name>
+    <description>Keycloak Configuration API</description>
     <packaging>jar</packaging>
-    <description/>
 
     <dependencies>
         <dependency>

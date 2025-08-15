@@ -32,3 +32,4 @@
 :upgrading_guide_link: {project_doc_base_url}/upgrading/
 :kc_js_path: /js
 :kc_realms_path: /realms
+:kubernetes: Kubernetes

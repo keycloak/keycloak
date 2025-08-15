@@ -1,10 +1,10 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToIdentityProviders } from "../utils/sidebar";
-import { clickTableRowItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToIdentityProviders } from "../utils/sidebar.ts";
+import { clickTableRowItem } from "../utils/table.ts";
 import {
   addAuthConstraints,
   addMapper,
@@ -12,8 +12,8 @@ import {
   clickSaveMapper,
   createSAMLProvider,
   goToMappersTab,
-} from "./main";
-import { editSAMLSettings } from "./saml";
+} from "./main.ts";
+import { editSAMLSettings } from "./saml.ts";
 
 test.describe("SAML identity provider test", () => {
   const samlProviderName = "saml";

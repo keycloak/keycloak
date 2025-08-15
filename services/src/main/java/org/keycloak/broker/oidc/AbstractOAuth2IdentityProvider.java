@@ -16,9 +16,13 @@
  */
 package org.keycloak.broker.oidc;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.http.HttpRequest;
@@ -55,20 +59,27 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.urls.UrlType;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -88,7 +99,9 @@ import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -120,6 +133,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     private static final String BROKER_CODE_CHALLENGE_PARAM = "BROKER_CODE_CHALLENGE";
     private static final String BROKER_CODE_CHALLENGE_METHOD_PARAM = "BROKER_CODE_CHALLENGE_METHOD";
 
+    public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
 
     public AbstractOAuth2IdentityProvider(KeycloakSession session, C config) {
         super(session, config);
@@ -145,9 +159,150 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
     }
 
+    /**
+     * This is a custom variant of {@link AccessTokenResponse} which avoid primitives that would auto-add zero values
+     * to the original responses. It also allows accessTokenExpiration to be handled as a long value.
+     */
+    public static class OAuthResponse {
+        @JsonProperty(OAuth2Constants.ACCESS_TOKEN)
+        protected String token;
+
+        @JsonProperty(OAuth2Constants.EXPIRES_IN)
+        protected Long expiresIn;
+
+        @JsonProperty(OAuth2Constants.REFRESH_TOKEN)
+        protected String refreshToken;
+
+        @JsonProperty("refresh_expires_in")
+        protected Long refreshExpiresIn;
+
+        @JsonProperty(OAuth2Constants.ID_TOKEN)
+        protected String idToken;
+
+        @JsonProperty(ACCESS_TOKEN_EXPIRATION)
+        protected Long accessTokenExpiration;
+
+        protected Map<String, Object> otherClaims = new HashMap<>();
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public long getExpiresIn() {
+            return expiresIn;
+        }
+
+        public void setExpiresIn(long expiresIn) {
+            this.expiresIn = expiresIn;
+        }
+
+        public String getRefreshToken() {
+            return refreshToken;
+        }
+
+        public void setRefreshToken(String refreshToken) {
+            this.refreshToken = refreshToken;
+        }
+
+        public long getRefreshExpiresIn() {
+            return refreshExpiresIn;
+        }
+
+        public void setRefreshExpiresIn(long refreshExpiresIn) {
+            this.refreshExpiresIn = refreshExpiresIn;
+        }
+
+        public String getIdToken() {
+            return idToken;
+        }
+
+        public void setIdToken(String idToken) {
+            this.idToken = idToken;
+        }
+
+        public Long getAccessTokenExpiration() {
+            return accessTokenExpiration;
+        }
+
+        public void setAccessTokenExpiration(Long accessTokenExpiration) {
+            this.accessTokenExpiration = accessTokenExpiration;
+        }
+
+        @JsonAnyGetter
+        public Map<String, Object> getOtherClaims() {
+            return otherClaims;
+        }
+
+        @JsonAnySetter
+        public void setOtherClaims(String name, Object value) {
+            otherClaims.put(name, value);
+        }
+
+    }
+
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        try {
+            if (identity.getToken().startsWith("{")) {
+                OAuthResponse previousResponse = JsonSerialization.readValue(identity.getToken(), OAuthResponse.class);
+                Long exp = previousResponse.getAccessTokenExpiration();
+                if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                    OAuthResponse newResponse = refreshToken(previousResponse, session);
+                    if (newResponse.getExpiresIn() > 0) {
+                        long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                        newResponse.setAccessTokenExpiration(accessTokenExpiration);
+                    }
+                    identity.setToken(JsonSerialization.writeValueAsString(newResponse));
+                }
+            }
+        } catch (IOException e) {
+            ErrorRepresentation error = new ErrorRepresentation();
+            error.setErrorMessage("Unable to refresh token");
+            throw new WebApplicationException("Unable to refresh token", e,
+                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+        }
         return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    private boolean needsRefresh(Long exp) {
+        return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
+    }
+
+    protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
+        SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
+                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
+        return authenticateTokenRequest(refreshTokenRequest);
+    }
+
+    private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+            SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+            try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
+                String response = refreshTokenResponse.asString();
+                if (response.contains("error")) {
+                    ErrorRepresentation error = new ErrorRepresentation();
+                    error.setErrorMessage("Unable to refresh token");
+                    throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
+                                                      " with a response '" + refreshTokenResponse.asString() + "'",
+                            Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+                }
+                OAuthResponse newResponse = JsonSerialization.readValue(response, OAuthResponse.class);
+
+                if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+                    newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                    newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+                }
+                if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
+                    newResponse.setIdToken(previousResponse.getIdToken());
+                }
+                return newResponse;
+            }
+        }
     }
 
     @Override
@@ -314,6 +469,21 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         BrokeredIdentityContext context = doGetFederatedIdentity(accessToken);
+
+        if (getConfig().isStoreToken() && response.startsWith("{")) {
+            try {
+                OAuthResponse tokenResponse = JsonSerialization.readValue(response, OAuthResponse.class);
+                if (tokenResponse.getExpiresIn() > 0) {
+                    long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
+                    tokenResponse.setAccessTokenExpiration(accessTokenExpiration);
+                    response = JsonSerialization.writeValueAsString(tokenResponse);
+                }
+                context.setToken(response);
+            } catch (IOException e) {
+                logger.debugf("Can't store expiration date in JSON token", e);
+            }
+        }
+
         context.getContextData().put(FEDERATED_ACCESS_TOKEN, accessToken);
         return context;
     }
@@ -335,8 +505,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 .queryParam(OAUTH2_PARAMETER_RESPONSE_TYPE, "code")
                 .queryParam(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                 .queryParam(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri());
+        AuthenticationSessionModel authenticationSession = request.getAuthenticationSession();
+        String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
-        String loginHint = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         if (getConfig().isLoginHint() && loginHint != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
@@ -347,31 +518,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         String prompt = getConfig().getPrompt();
         if (prompt == null || prompt.isEmpty()) {
-            prompt = request.getAuthenticationSession().getClientNote(OAuth2Constants.PROMPT);
+            prompt = authenticationSession.getClientNote(OAuth2Constants.PROMPT);
         }
         if (prompt != null) {
             uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
 
-        String acr = request.getAuthenticationSession().getClientNote(OAuth2Constants.ACR_VALUES);
-        if (acr != null) {
-            uriBuilder.queryParam(OAuth2Constants.ACR_VALUES, acr);
-        }
-        String forwardParameterConfig = getConfig().getForwardParameters() != null ? getConfig().getForwardParameters(): "";
-        List<String> forwardParameters = Arrays.asList(forwardParameterConfig.split("\\s*,\\s*"));
-        for(String forwardParameter: forwardParameters) {
-            String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
-            String parameter = request.getAuthenticationSession().getClientNote(name);
-            if(parameter != null && !parameter.isEmpty()) {
-                uriBuilder.queryParam(forwardParameter, parameter);
-            }
-        }
+        setForwardParameters(authenticationSession, uriBuilder);
 
         if (getConfig().isPkceEnabled()) {
             String codeVerifier = PkceUtils.generateCodeVerifier();
             String codeChallengeMethod = getConfig().getPkceMethod();
-            request.getAuthenticationSession().setClientNote(BROKER_CODE_CHALLENGE_PARAM, codeVerifier);
-            request.getAuthenticationSession().setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
+            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_PARAM, codeVerifier);
+            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
 
             String codeChallenge = PkceUtils.encodeCodeChallenge(codeVerifier, codeChallengeMethod);
             uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
@@ -379,6 +538,25 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         return uriBuilder;
+    }
+
+    private void setForwardParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
+        C config = getConfig();
+        String forwardParameterConfig = config.getForwardParameters() != null ? config.getForwardParameters(): OAuth2Constants.ACR_VALUES;
+
+        for (String forwardParameter: List.of(forwardParameterConfig.split("\\s*,\\s*"))) {
+            String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
+            String parameter = authenticationSession.getClientNote(name);
+
+            if (parameter == null) {
+                // try a value set as a client note
+                parameter = authenticationSession.getClientNote(forwardParameter);
+            }
+
+            if (parameter != null && !parameter.isEmpty()) {
+                uriBuilder.queryParam(forwardParameter, parameter);
+            }
+        }
     }
 
     /**
@@ -451,7 +629,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     protected JsonWebToken generateToken() {
         JsonWebToken jwt = new JsonWebToken();
-        jwt.id(KeycloakModelUtils.generateId());
+        jwt.id(SecretGenerator.getInstance().generateSecureID());
         jwt.type(OAuth2Constants.JWT);
         jwt.issuer(getConfig().getClientId());
         jwt.subject(getConfig().getClientId());
@@ -657,6 +835,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
         event.detail("validation_method", "user info");
+
         SimpleHttp.Response response = null;
         int status = 0;
         try {
@@ -754,6 +933,111 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         throw new UnsupportedOperationException("Not yet supported to verify the external token of the identity provider " + getConfig().getAlias());
     }
 
+    /**
+     * Called usually during external-internal token exchange for validation of external token, which is the token issued by the IDP.
+     * The validation of external token is done by calling OAuth2 introspection endpoint on the IDP side and validate if the response contains all the necessary claims
+     * and token is authorized for the token exchange (including validating of claims like aud from introspection response)
+     *
+     * @param tokenExchangeContext token exchange context with the external token (subject token) and other details related to token exchange
+     * @throws ErrorResponseException in case that validation failed for any reason
+     */
+    protected void validateExternalTokenWithIntrospectionEndpoint(TokenExchangeContext tokenExchangeContext) {
+        EventBuilder event = tokenExchangeContext.getEvent();
+
+        TokenMetadataRepresentation tokenMetadata = sendTokenIntrospectionRequest(tokenExchangeContext.getParams().getSubjectToken(), event);
+
+        boolean clientValid = false;
+        String tokenClientId = tokenMetadata.getClientId();
+        List<String> tokenAudiences = null;
+        if (tokenClientId != null && tokenClientId.equals(getConfig().getClientId())) {
+            // Consider external token valid if issued to same client, which was configured as the client on IDP side
+            clientValid = true;
+        } else if (tokenMetadata.getAudience() != null && tokenMetadata.getAudience().length > 0) {
+            tokenAudiences = Arrays.stream(tokenMetadata.getAudience()).toList();
+            if (tokenAudiences.contains(getConfig().getClientId())) {
+                // Consider external token valid if client configured as the IDP client included in token audience
+                clientValid = true;
+            } else {
+                // Consider valid introspection also if token contains audience where URL is Keycloak server (either as issuer or as token-endpoint URL).
+                // Aligned with https://datatracker.ietf.org/doc/html/rfc7523#section-3 - point 3
+                UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+                UriInfo backendUriInfo = session.getContext().getUri(UrlType.BACKEND);
+                RealmModel realm = session.getContext().getRealm();
+                String realmIssuer = Urls.realmIssuer(frontendUriInfo.getBaseUri(), realm.getName());
+                String realmTokenUrl = RealmsResource.protocolUrl(backendUriInfo).clone()
+                        .path(OIDCLoginProtocolService.class, "token")
+                        .build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString();
+                if (tokenAudiences.contains(realmIssuer) || tokenAudiences.contains(realmTokenUrl)) {
+                    clientValid = true;
+                }
+            }
+        }
+        if (!clientValid) {
+            logger.debugf("Token not authorized for token exchange. Token client Id: %s, Token audiences: %s", tokenClientId, tokenAudiences);
+            throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Token not authorized for token exchange");
+        }
+    }
+
+    /**
+     * Send introspection request as specified in the OAuth2 token introspection specification. It requires
+     *
+     * @param idpAccessToken access token issued by the IDP
+     * @param event event builder
+     * @return token metadata in case that token introspection was successful and token is valid and active
+     * @throws ErrorResponseException in case that introspection response was not correct for any reason (other status than 200) or the token was not active
+     */
+    protected TokenMetadataRepresentation sendTokenIntrospectionRequest(String idpAccessToken, EventBuilder event) {
+        String introspectionEndointUrl = getConfig().getTokenIntrospectionUrl();
+        if (introspectionEndointUrl == null) {
+            throwErrorResponse(event, Errors.INVALID_CONFIG, OAuthErrorException.INVALID_REQUEST, "Introspection endpoint not configured for IDP");
+        }
+
+        try {
+
+            // Supporting only access-tokens for now
+            SimpleHttp introspectionRequest = SimpleHttp.doPost(introspectionEndointUrl, session)
+                    .param(TokenIntrospectionEndpoint.PARAM_TOKEN, idpAccessToken)
+                    .param(TokenIntrospectionEndpoint.PARAM_TOKEN_TYPE_HINT, AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
+            introspectionRequest = authenticateTokenRequest(introspectionRequest);
+
+            try (SimpleHttp.Response introspectionResponse = introspectionRequest.asResponse()) {
+                int status = introspectionResponse.getStatus();
+
+                if (status != 200) {
+                    try {
+                        logger.warnf("Failed to invoke introspection endpoint. Status: %d, Introspection response details: %s", status, introspectionResponse.asString());
+                    } catch (Exception ioe) {
+                        logger.warnf("Failed to invoke introspection endpoint. Status: %d", status);
+                    }
+                    throwErrorResponse(event, Errors.INVALID_REQUEST, OAuthErrorException.INVALID_REQUEST, "Introspection endpoint call failure. Introspection response status: " + status);
+                }
+
+                TokenMetadataRepresentation tokenMetadata = null;
+                try {
+                    tokenMetadata = introspectionResponse.asJson(TokenMetadataRepresentation.class);
+                } catch (IOException e) {
+                    throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Invalid format of the introspection response");
+                }
+
+                if (!tokenMetadata.isActive()) {
+                    throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Token not active");
+                }
+
+                return tokenMetadata;
+            }
+        } catch (IOException e) {
+            logger.debug("Failed to invoke introspection endpoint", e);
+            throwErrorResponse(event, Errors.INVALID_TOKEN, OAuthErrorException.INVALID_TOKEN, "Failed to invoke introspection endpoint");
+            return null; // Unreachable
+        }
+    }
+
+    private void throwErrorResponse(EventBuilder event, String eventError, String oauthError, String errorDetails) {
+        event.detail(Details.REASON, errorDetails);
+        event.error(eventError);
+        throw new ErrorResponseException(oauthError, errorDetails, Response.Status.BAD_REQUEST);
+    }
+
     protected BrokeredIdentityContext exchangeExternalUserInfoValidationOnly(EventBuilder event, MultivaluedMap<String, String> params) {
         String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken == null) {
@@ -783,5 +1067,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     }
 
-
+    @Override
+    public boolean supportsLongStateParameter() {
+        return !getConfig().isRequiresShortStateParameter();
+    }
 }

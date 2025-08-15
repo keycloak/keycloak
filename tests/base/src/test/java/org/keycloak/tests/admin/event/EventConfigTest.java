@@ -96,7 +96,7 @@ public class EventConfigTest {
         Assertions.assertEquals(2, enabledEventTypes.size());
 
         // remove all event types
-        configRealm.updateWithCleanup(RealmConfigBuilder::overwriteEnabledEventTypes);
+        configRealm.updateWithCleanup(RealmConfigBuilder::setEnabledEventTypes);
 
         // removing all event types restores default events
         Assertions.assertEquals(defaultEventCount, configRealm.admin().getRealmEventsConfig().getEnabledEventTypes().size());

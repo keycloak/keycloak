@@ -16,6 +16,7 @@
  */
 package org.keycloak.models;
 
+import java.util.Optional;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;
@@ -56,6 +57,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String SEARCH = "search";
     public static final String SYNC_MODE = "syncMode";
     public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
+	public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
@@ -349,6 +351,10 @@ public class IdentityProviderModel implements Serializable {
     public void setMinValidityToken(int minValidityToken) {
         getConfig().put(MIN_VALIDITY_TOKEN, Integer.toString(minValidityToken));
     }
+
+	public IdentityProviderShowInAccountConsole getShowInAccountConsole() {
+		return IdentityProviderShowInAccountConsole.valueOf(getConfig().getOrDefault(SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name()));
+	}
 
     public int getMinValidityToken() {
         String minValidityTokenString = getConfig().get(MIN_VALIDITY_TOKEN);

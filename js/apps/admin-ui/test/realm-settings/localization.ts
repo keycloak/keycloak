@@ -1,5 +1,5 @@
-import { Page } from "@playwright/test";
-import { selectItem, switchOff, switchOn } from "../utils/form";
+import type { Page } from "@playwright/test";
+import { selectItem, switchOff, switchOn } from "../utils/form.ts";
 
 export async function goToLocalizationTab(page: Page) {
   await page.getByTestId("rs-localization-tab").click();

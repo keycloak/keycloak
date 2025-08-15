@@ -1,9 +1,9 @@
-import { Page, test } from "@playwright/test";
+import { type Page, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { goToUserFederation } from "../utils/sidebar";
-import { assertProviderCardText, assertRealmSettingsText } from "./i18n";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { goToUserFederation } from "../utils/sidebar.ts";
+import { assertProviderCardText, assertRealmSettingsText } from "./i18n.ts";
 
 // Test configuration
 const testConfig = {

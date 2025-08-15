@@ -17,12 +17,17 @@
 package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -35,7 +40,6 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedSet;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -48,6 +52,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
 
@@ -130,20 +135,28 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
     }
 
     private List<LinkedAccountRepresentation> linkedAccountsRep() throws IOException {
-        return SimpleHttpDefault.doGet(getAccountUrl("linked-accounts"), client).auth(tokenUtil.getToken()).asJson(new TypeReference<>() {});
+		return linkedAccountsRep(null);
     }
 
     private List<LinkedAccountRepresentation> linkedAccountsRep(String params) throws IOException {
-        return SimpleHttpDefault.doGet(getAccountUrl("linked-accounts?" + params), client).auth(tokenUtil.getToken()).asJson(new TypeReference<>() {});
+		String resource = Stream.of("linked-accounts", params)
+				.filter(Objects::nonNull)
+				.collect(Collectors.joining("?"));
+
+        return SimpleHttpDefault.doGet(getAccountUrl(resource), client).auth(tokenUtil.getToken()).asJson(new TypeReference<>() {});
     }
 
     private LinkedAccountRepresentation findLinkedAccount(String providerAlias) throws IOException {
-        for (LinkedAccountRepresentation account : linkedAccountsRep()) {
-            if (account.getProviderAlias().equals(providerAlias)) return account;
-        }
-
-        return null;
+        return findLinkedAccount(providerAlias, null);
     }
+
+	private LinkedAccountRepresentation findLinkedAccount(String providerAlias, String params) throws IOException {
+		for (LinkedAccountRepresentation account : linkedAccountsRep(params)) {
+			if (account.getProviderAlias().equals(providerAlias)) return account;
+		}
+
+		return null;
+	}
 
     @Test
 
@@ -277,4 +290,82 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
         assertFalse(findLinkedAccount("github").isConnected());
     }
 
+	@Test
+	public void testIdentityProviderShowInAccountConsoleNull() throws IOException {
+		// Linked
+		assertNotNull(findLinkedAccount("github"));
+		assertNotNull(findLinkedAccount("github", "linked=true"));
+		assertNull(findLinkedAccount("github", "linked=false"));
+		// Not linked
+		assertNotNull(findLinkedAccount("twitter"));
+		assertNull(findLinkedAccount("twitter", "linked=true"));
+		assertNotNull(findLinkedAccount("twitter", "linked=false"));
+	}
+
+	@Test
+	public void testIdentityProviderShowInAccountConsoleAlways() throws IOException {
+		// Linked
+		runUsingShowInAccountConsoleValue("github", "ALWAYS", () -> {
+			assertNotNull(findLinkedAccount("github"));
+			assertNotNull(findLinkedAccount("github", "linked=true"));
+			assertNull(findLinkedAccount("github", "linked=false"));
+		});
+		// Not linked
+		runUsingShowInAccountConsoleValue("twitter", "ALWAYS", () -> {
+			assertNotNull(findLinkedAccount("twitter"));
+			assertNull(findLinkedAccount("twitter", "linked=true"));
+			assertNotNull(findLinkedAccount("twitter", "linked=false"));
+		});
+	}
+
+	@Test
+	public void testIdentityProviderShowInAccountConsoleWhenLinked() throws IOException {
+		// Linked
+		runUsingShowInAccountConsoleValue("github", "WHEN_LINKED", () -> {
+			assertNotNull(findLinkedAccount("github"));
+			assertNotNull(findLinkedAccount("github", "linked=true"));
+			assertNull(findLinkedAccount("github", "linked=false"));
+		});
+		// Not linked
+		runUsingShowInAccountConsoleValue("twitter", "WHEN_LINKED", () -> {
+			assertNull(findLinkedAccount("twitter"));
+			assertNull(findLinkedAccount("twitter", "linked=true"));
+			assertNull(findLinkedAccount("twitter", "linked=false"));
+		});
+	}
+
+	@Test
+	public void testIdentityProviderShowInAccountConsoleNever() throws IOException {
+		// Linked
+		runUsingShowInAccountConsoleValue("github", "NEVER", () -> {
+			assertNull(findLinkedAccount("github"));
+			assertNull(findLinkedAccount("github", "linked=true"));
+			assertNull(findLinkedAccount("github", "linked=false"));
+		});
+		// Not linked
+		runUsingShowInAccountConsoleValue("twitter", "NEVER", () -> {
+			assertNull(findLinkedAccount("twitter"));
+			assertNull(findLinkedAccount("twitter", "linked=true"));
+			assertNull(findLinkedAccount("twitter", "linked=false"));
+		});
+	}
+
+	private void runUsingShowInAccountConsoleValue(String identityProviderAlias, String showInAccountConsoleValue, ThrowingRunnable runnable) throws IOException {
+		IdentityProviderResource identityProviderResource = testRealm().identityProviders().get(identityProviderAlias);
+		IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+		String attribute = "showInAccountConsole";
+		String genuineValue = representation.getConfig().get(attribute);
+		representation.getConfig().put(attribute, showInAccountConsoleValue);
+		identityProviderResource.update(representation);
+		try {
+			runnable.run();
+		} finally {
+			representation.getConfig().put(attribute, genuineValue);
+			identityProviderResource.update(representation);
+		}
+	}
+
+	private interface ThrowingRunnable {
+		void run() throws IOException;
+	}
 }

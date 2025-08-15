@@ -17,7 +17,9 @@ public class DevMemDatabaseSupplier extends AbstractDatabaseSupplier {
     private static class DevMemTestDatabase implements TestDatabase {
 
         @Override
-        public void start() {
+        public void start(DatabaseConfiguration config) {
+            if (config.getInitScript() != null)
+                throw new IllegalArgumentException("init script not supported, configure h2 properties via --db-url-properties");
         }
 
         @Override

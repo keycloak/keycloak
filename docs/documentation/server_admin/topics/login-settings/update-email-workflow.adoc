@@ -2,17 +2,49 @@
 
 == Update Email Workflow (UpdateEmail)
 
-With this workflow, users will have to use an UPDATE_EMAIL action to change their own email address.
+With this workflow, users will have to use an `UPDATE_EMAIL` action to change their own email address.
 
-The action is associated with a single email input form. If the realm has email verification disabled, this action will allow to update the email without verification. If the realm has email verification enabled, the action will send an email update action token to the new email address without changing the account email. Only the action token triggering will complete the email update.
+This action provides a more secure and consistent flow to update user emails because they will be forced to re-authenticate
+as well as verify their emails before any update to their account.
 
 Applications are able to send their users to the email update form by leveraging UPDATE_EMAIL as an <<con-aia_{context},AIA (Application Initiated Action)>>.
 
-:tech_feature_name: UpdateEmail
-:tech_feature_id: update-email
-include::../templates/techpreview.adoc[]
+To enable `Update Email` capability for a realm, go to the `Authentication` menu in the administration console and click on `Required actions` tab.
+Switch the toggle for `Update Email` required action to `enabled`.
 
-[NOTE]
-====
-If you enable this feature and you are migrating from a previous version, enable the *Update Email* required action in your realms. Otherwise, users cannot update their email addresses.
-====
+=== Verifying Emails
+
+If the realm has email verification disabled, this action will allow to update the email without verification.
+
+If the realm has email verification enabled, the action will send an email with a link to the new email address without changing the account email.
+Only after following the link and confirming the email, the email will be updated.
+
+Under certain circumstances, you do not want to enable email verification at the realm level but only when users are updating their emails.
+For that, you can set the `Force Email Verification` setting on the `Update Email` required action to force users to verify their emails
+even though email verification is eventually disabled at the realm level. By default, email verification is not enabled.
+
+In case the user is updating the email during the authentication flow (e.g.: when running the `UPDATE_PROFILE` required action),
+the user will be forced to verify the email if any of the `Verify Email` or the `Force Email Verification` settings are enabled.
+In case the `Verify Email` is enabled at the realm level, the `VERIFY_EMAIL` required action will be automatically added to the user account.
+Otherwise, if only the `Force Email Verification` is enabled the `UPDATE_EMAIL` required
+action will be added instead.
+
+If a user has `Email Verified` set, and both `Verify Email` and `Force Email Verification` are disabled, `Email Verified`
+resets after the user updates email.
+
+=== Updating the user email
+
+When the `Update Email` required action is enabled, the user can update their emails by:
+
+* Self-registering to a realm if this capability is enabled to realm
+* Accessing the account console and clicking the `Update email` link when at the `Personal info` section
+* Updating the profile during the authentication flow (e.g.: when running the `UPDATE_PROFILE` required action) if the email is not yet set.
+If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
+* Administrators when updating the user account through the administration console
+
+=== Update Email and User Profile
+
+If the email attribute is set as required in the user profile configuration, the requirement is kept in the `Update Email` workflow,
+meaning a user won't be able to clear his/her email in update email page. The opposite is true, if the email attribute is set as optional
+in the user profile configuration.
+

@@ -84,12 +84,12 @@ From this point, it is beneficial if load balancer forwards all the next request
 
 The sticky session is not mandatory for the cluster setup, however it is good for performance for the reasons mentioned above. You need to configure your loadbalancer to stick over the AUTH_SESSION_ID cookie. The appropriate procedure to make this change depends on your loadbalancer.
 
-If your proxy supports session affinity without processing cookies from backend nodes, you should set the `spi-sticky-session-encoder-infinispan-should-attach-route` option
+If your proxy supports session affinity without processing cookies from backend nodes, you should set the `+spi-sticky-session-encoder--infinispan--should-attach-route+` option
 to `false` in order to avoid attaching the node to cookies and just rely on the reverse proxy capabilities.
 
-<@kc.start parameters="--spi-sticky-session-encoder-infinispan-should-attach-route=false"/>
+<@kc.start parameters="--spi-sticky-session-encoder--infinispan--should-attach-route=false"/>
 
-By default, the `spi-sticky-session-encoder-infinispan-should-attach-route` option value is `true` so that the node name is attached to
+By default, the `+spi-sticky-session-encoder--infinispan--should-attach-route+` option value is `true` so that the node name is attached to
 cookies to indicate to the reverse proxy the node that subsequent requests should be sent to.
 
 == Exposed path recommendations
@@ -169,9 +169,9 @@ Client certificate lookup via a proxy header for X.509 authentication is conside
   and edge TLS termination.
 * If passthrough is not an option, implement the following security measures:
 ** Configure your network so that {project_name} is isolated and can accept connections only from the proxy.
-** Make sure that the proxy overwrites the header that is configured in `spi-x509cert-lookup-<provider>-ssl-client-cert` option.
-** Pay extra attention to the `spi-x509cert-lookup-<provider>-trust-proxy-verification` setting. Make sure you enable it only if you can trust your proxy to verify the client certificate.
-   Setting `spi-x509cert-lookup-<provider>-trust-proxy-verification=true` without the proxy verifying the client certificate chain will expose {project_name} to security vulnerability
+** Make sure that the proxy overwrites the header that is configured in `spi-x509cert-lookup--<provider>--ssl-client-cert` option.
+** Pay extra attention to the `spi-x509cert-lookup--<provider>--trust-proxy-verification` setting. Make sure you enable it only if you can trust your proxy to verify the client certificate.
+   Setting `spi-x509cert-lookup--<provider>--trust-proxy-verification=true` without the proxy verifying the client certificate chain will expose {project_name} to security vulnerability
    when a forged client certificate can be used for authentication.
 ====
 
@@ -194,10 +194,10 @@ The server supports some of the most commons TLS termination proxies such as:
 To configure how client certificates are retrieved from the requests you need to:
 
 .Enable the corresponding proxy provider
-<@kc.build parameters="--spi-x509cert-lookup-provider=<provider>"/>
+<@kc.build parameters="--spi-x509cert-lookup--provider=<provider>"/>
 
 .Configure the HTTP headers
-<@kc.start parameters="--spi-x509cert-lookup-<provider>-ssl-client-cert=SSL_CLIENT_CERT --spi-x509cert-lookup-<provider>-ssl-cert-chain-prefix=CERT_CHAIN --spi-x509cert-lookup-<provider>-certificate-chain-length=10"/>
+<@kc.start parameters="--spi-x509cert-lookup--<provider>--ssl-client-cert=SSL_CLIENT_CERT --spi-x509cert-lookup--<provider>--ssl-cert-chain-prefix=CERT_CHAIN --spi-x509cert-lookup--<provider>-certificate-chain-length=10"/>
 
 When configuring the HTTP headers, you need to make sure the values you are using correspond to the name of the headers
 forwarded by the proxy with the client certificate information.

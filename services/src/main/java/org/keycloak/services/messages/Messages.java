@@ -119,6 +119,8 @@ public class Messages {
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
 
+    public static final String COOLDOWN_VERIFICATION_EMAIL = "emailVerifySendCooldown";
+
     public static final String UPDATE_EMAIL = "updateEmailMessage";
 
     public static final String LINK_IDP = "linkIdpMessage";
@@ -214,6 +216,8 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
 
     public static final String CONFIRM_ACCOUNT_LINKING = "confirmAccountLinking";
+
+    public static final String CONFIRM_ACCOUNT_LINKING_BODY = "confirmAccountLinkingBody";
 
     public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION = "confirmEmailAddressVerification";
 

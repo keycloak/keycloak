@@ -213,12 +213,14 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
     @Override
     public void setConfiguration(UPConfig configuration) {
         RealmModel realm = session.getContext().getRealm();
-        Optional<ComponentModel> optionalComponent = realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
+        Optional<ComponentModel> optionalComponent = getComponentModel();
 
         // Avoid creating componentModel and then removing it right away
-        if (!optionalComponent.isPresent() && configuration == null) return;
+        if (optionalComponent.isEmpty() && configuration == null) {
+            return;
+        }
 
-        ComponentModel component = optionalComponent.isPresent() ? optionalComponent.get() : createComponentModel();
+        ComponentModel component = optionalComponent.orElseGet(this::createComponentModel);
 
         removeConfigJsonFromComponentModel(component);
 
@@ -238,7 +240,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     private Optional<ComponentModel> getComponentModel() {
         RealmModel realm = session.getContext().getRealm();
-        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny();
+        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).filter(componentModel -> componentModel.getProviderId().equals(providerId)).findFirst();
     }
 
     /**
@@ -396,6 +398,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                             .addWriteCondition(writeAllowed)
                             .addValidators(validators)
                             .setRequired(required)
+                            .setDefaultValue(attrConfig.getDefaultValue())
                             .setMultivalued(attrConfig.isMultivalued());
                 }
             } else {
@@ -403,6 +406,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
                         .setAttributeGroupMetadata(groupMetadata)
+                        .setDefaultValue(attrConfig.getDefaultValue())
                         .setMultivalued(attrConfig.isMultivalued());
             }
         }

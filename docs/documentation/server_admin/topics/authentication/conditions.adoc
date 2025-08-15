@@ -64,6 +64,15 @@ The name of the client scope, which should be present as a client scope of the c
 Negate output:::
 Apply a NOT to the check result. When this is true, then the condition will evaluate to true just if configured client scope is not present.
 
+`Condition - credential`::
+This condition evaluates if a specific credential type has been used (or not used) by the user during the authentication process. Configuration options:
+
+Credentials:::
+The list of credentials to be considered by the condition.
+
+Included:::
+If *included* is true, the condition will be evaluated to `true` when any of the credentials specified in the *credentials* option has been used in the authentication process, false otherwise. If *included* is false, the condition is evaluated in the opposite way, it will be `true` if none of the *credentials* configured have been used, and `false` if one or more of them have been used.
+
 
 ==== Explicitly deny/allow access in conditional flows
 
@@ -114,12 +123,14 @@ The section presents some examples of conditional workflows that integrates 2nd 
 
 ===== Conditional 2FA sub-flow
 
-The default `browser` flow uses a `Conditional OTP` sub-flow that already gives a 2FA with OTP Form (One Time Password). Following the same idea, different 2FA methods can be integrated with the `Condition - User Configured`.
+The default `browser` flow uses a `Conditional 2FA` sub-flow that already gives 2nd factor Authentication (2FA) with OTP Form (One Time Password). It also provides WebAuthn and Recovery Codes but they are disabled by default. Consistent with this approach, different 2FA methods can be integrated with the `Condition - User Configured`.
 
 .2FA all alternative
 image:images/2fa-example1.png[2FA all alternative]
 
 The `forms` sub-flow contains another `2FA` conditional sub-flow with `Condition - user configured`. Three 2FA steps (OTP, Webauthn and Recovery Codes) are allowed as alternative steps. The user will be able to choose one of the three options, if they are configured for the user. As the sub-flow is conditional, the authentication process will complete successfully if no 2FA credential is configured.
+
+This configuration provides the same behavior as when you configure with the default *browser* flow with both _Disabled_ steps are configured to _Alternative_.
 
 ===== Conditional 2FA sub-flow and deny access
 

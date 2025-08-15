@@ -51,6 +51,7 @@ export const Oid4Vci = () => {
 
   useEffect(() => {
     if (initialSelected !== selected && credentialsIssuer !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       requestVCOffer(context, selectOptions[selected], credentialsIssuer).then(
         (blob) => {
           const reader = new FileReader();

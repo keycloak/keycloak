@@ -39,6 +39,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
@@ -90,6 +91,9 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     @Page
     protected RegisterPage registerPage;

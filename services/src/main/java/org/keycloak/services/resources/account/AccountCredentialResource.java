@@ -248,7 +248,7 @@ public class AccountCredentialResource {
                                 .map(exe -> (AuthenticatorFactory) session.getKeycloakSessionFactory()
                                         .getProviderFactory(Authenticator.class, exe.getAuthenticator()))
                                 .filter(Objects::nonNull)
-                                .flatMap(authFact -> Stream.concat(Stream.of(authFact.getReferenceCategory()), authFact.getOptionalReferenceCategories().stream()))
+                                .flatMap(authFact -> Stream.concat(Stream.of(authFact.getReferenceCategory()), authFact.getOptionalReferenceCategories(session).stream()))
                                 .filter(Objects::nonNull)
                 ).collect(Collectors.toSet());
     }

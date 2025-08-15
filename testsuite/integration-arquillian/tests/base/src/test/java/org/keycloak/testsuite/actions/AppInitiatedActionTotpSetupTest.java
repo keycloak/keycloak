@@ -95,6 +95,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
 
         doAIA();
 
@@ -118,6 +119,33 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         assertEquals(authSessionId1, authSessionId2);
         events.expectLogin().user(userId).session(authSessionId2).detail(Details.USERNAME, "setuptotp").assertEvent();
+    }
+
+    @Test
+    public void setupTotpRegisterDuplicateUserLabel() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
+
+        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
+
+        doAIA();
+
+        totpPage.assertCurrent();
+
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
+
+        assertKcActionStatus(SUCCESS);
+
+        doAIA();
+
+        totpPage.assertCurrent();
+
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
+
+        assertEquals("Device already exists with the same name", totpPage.getInputLabelError());
+
     }
 
     @Test
@@ -146,8 +174,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         configureRealmEnableRequiredActionByAlias("CONFIGURE_TOTP", false);
         // Set "Browser - Conditional OTP" execution requirement to CONDITIONAL
         configureRealmSetExecutionRequirementByDisplayName("browser", "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.CONDITIONAL);
-        // Set "Condition - user configured" execution requirement to DISABLED
+        // Set "Condition - user configured" and "Condition - current credential" execution requirement to DISABLED to have no condition
         configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - user configured", AuthenticationExecutionModel.Requirement.DISABLED);
+        configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - credential", AuthenticationExecutionModel.Requirement.DISABLED);
         // Set "OTP Form" execution requirement to ALTERNATIVE
         configureRealmSetExecutionRequirementByDisplayName("browser", "OTP Form", AuthenticationExecutionModel.Requirement.ALTERNATIVE);
     }
@@ -382,6 +411,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
         String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
+        getCleanup().addUserId(userId);
 
         doAIA();
 

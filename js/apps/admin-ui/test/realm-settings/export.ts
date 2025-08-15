@@ -1,15 +1,15 @@
-import { Page, expect } from "@playwright/test";
-import { switchOff, switchOn } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { switchOff, switchOn } from "../utils/form.ts";
 
 export async function assertDialogClosed(page: Page) {
-  await expect(page.getByTestId("confirm")).not.toBeVisible();
+  await expect(page.getByTestId("confirm")).toBeHidden();
 }
 
 export async function assertWarningMessage(page: Page, toBeVisible = false) {
   if (toBeVisible) {
     await expect(page.getByTestId("warning-message")).toBeVisible();
   } else {
-    await expect(page.getByTestId("warning-message")).not.toBeVisible();
+    await expect(page.getByTestId("warning-message")).toBeHidden();
   }
 }
 

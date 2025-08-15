@@ -21,6 +21,7 @@ import java.util.List;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -139,5 +140,7 @@ public interface OrganizationMembersResource {
     @Path("{id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<OrganizationRepresentation> getOrganizations(@PathParam("id") String id);
+    List<OrganizationRepresentation> getOrganizations(
+            @PathParam("id") String id,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 }

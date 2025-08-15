@@ -37,12 +37,12 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -77,7 +77,6 @@ import java.util.Set;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -88,6 +87,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.authentication.requiredactions.VerifyEmail.EMAIL_RESEND_COOLDOWN_KEY_PREFIX;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -149,6 +149,15 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .emailVerified(false)
                 .email("test-user@localhost").build();
         testUserId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+
+        clearCooldownForUser();
+    }
+
+    private void clearCooldownForUser() {
+        String cooldownKey = EMAIL_RESEND_COOLDOWN_KEY_PREFIX + testUserId;
+        testingClient.server().run(session -> {
+            session.singleUseObjects().remove(cooldownKey);
+        });
     }
 
     protected boolean removeVerifyProfileAtImport() {
@@ -331,6 +340,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .assertEvent();
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
+        clearCooldownForUser();
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
 
@@ -360,6 +370,28 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
+    public void verifyEmailResendTooFast() {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        verifyEmailPage.clickResendEmail();
+        assertThat(verifyEmailPage.getFeedbackText(), Matchers.containsString("You must wait"));
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        try {
+            setTimeOffset(40);
+            verifyEmailPage.clickResendEmail();
+            Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+        } finally {
+            setTimeOffset(0);
+        }
+
+    }
+
+    @Test
     public void verifyEmailResendWithRefreshes() throws IOException, MessagingException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -374,6 +406,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .assertEvent();
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
+        clearCooldownForUser();
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
         driver.navigate().refresh();
@@ -409,6 +442,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
+        clearCooldownForUser();
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
 
@@ -443,6 +477,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
+        clearCooldownForUser();
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
 
@@ -470,6 +505,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // Email verification can be performed any number of times
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
+        clearCooldownForUser();
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
         Assert.assertEquals(2, greenMail.getReceivedMessages().length);
@@ -987,7 +1023,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String realmId = testRealm().toRepresentation().getId();
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
-            RootAuthenticationSessionModel ras = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+            RootAuthenticationSessionModel ras = session.authenticationSessions()
+                    .getRootAuthenticationSession(realm, new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false));
             assertThat("Expecting single auth session", ras.getAuthenticationSessions().keySet(), Matchers.hasSize(1));
             ras.getAuthenticationSessions().forEach((id, as) -> as.addRequiredAction(RequiredAction.VERIFY_EMAIL));
         });
@@ -1113,7 +1150,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
     public void actionTokenWithInvalidRequiredActions() throws IOException {
         // Send email with required action
         testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.UPDATE_EMAIL.name()));

@@ -17,14 +17,15 @@
 
 package org.keycloak.it.cli.dist;
 
-import static io.restassured.RestAssured.when;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.common.base.CaseFormat;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -37,7 +38,13 @@ import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import com.google.common.base.CaseFormat;
+import static io.restassured.RestAssured.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
  * @author Ryan Emerson <remerson@redhat.com>
@@ -60,20 +67,90 @@ public class ClusterConfigKeepAliveDistTest {
         String args = sb.toString();
         dist.run(args.split(" "));
 
-        ParserRegistry parserRegistry = new ParserRegistry();
         for (String cache : maxCountCaches) {
-            String configJson = when()
-                  .get("/realms/master/test-resources/cache/" + cache + "/config")
-                  .thenReturn()
-                  .getBody()
-                  .jsonPath()
-                  .prettyPrint();
-
-            ConfigurationBuilderHolder configHolder = parserRegistry.parse(configJson, MediaType.APPLICATION_JSON);
-            // Workaround for ISPN-16595
-            String cacheName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache);
-            Configuration config = configHolder.getNamedConfigurationBuilders().get(cacheName).build();
+            Configuration config = getCacheConfiguration(cache);
             assertEquals(maxCount, config.memory().maxCount());
         }
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testNumOwnersWithPersistentSessions(KeycloakDistribution dist) {
+        doNumOwnerTest(dist, false);
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testNumOwnersWithVolatileSessions(KeycloakDistribution dist) {
+        doNumOwnerTest(dist, true);
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testCheckMinimumNumOwners(KeycloakDistribution dist) {
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        args.add("--cache=ispn");
+        args.add("--features-disabled=persistent-user-sessions");
+
+        Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS)
+                .map(cache -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache))
+                .map("--spi-cache-embedded--default--%s-owners=1"::formatted)
+                .forEach(args::add);
+        dist.run(args);
+
+        // forces the numOwner to 2 to prevent data loss.
+        assertNumOwner(Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS), 2);
+    }
+
+    private void doNumOwnerTest(KeycloakDistribution dist, boolean volatileSessions) {
+        final int owners = 5;
+        List<String> args = new ArrayList<>();
+        args.add("start-dev");
+        args.add("--cache=ispn");
+        if (volatileSessions) {
+            args.add("--features-disabled=persistent-user-sessions");
+        }
+
+        Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS)
+                .map(cache -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache))
+                .map(cache -> "--spi-cache-embedded--default--%s-owners=%s".formatted(cache, owners))
+                .forEach(args::add);
+        dist.run(args);
+
+        Stream<String> caches = Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS);
+        if (!volatileSessions) {
+            Set<String> sessionCaches = Set.of(
+                    CLIENT_SESSION_CACHE_NAME,
+                    USER_SESSION_CACHE_NAME);
+            // filter out session caches, they have numOwner forced to 1.
+            caches = caches.filter(Predicate.not(sessionCaches::contains));
+            assertNumOwner(sessionCaches.stream(), 1);
+        }
+        assertNumOwner(caches, owners);
+        // offline session caches are not configurable and always have numOwners forced to 1.
+        assertNumOwner(Stream.of(OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME), 1);
+    }
+
+    private static void assertNumOwner(Stream<String> caches, int expectedOwner) {
+        caches.map(name -> new CacheOwners(name, getCacheConfiguration(name).clustering().hash().numOwners()))
+                .forEach(configuration -> assertEquals(expectedOwner, configuration.owners(), "Wrong numOwner for cache " + configuration.name));
+    }
+
+    private static Configuration getCacheConfiguration(String cache) {
+        String configJson = when()
+                .get("/realms/master/test-resources/cache/" + cache + "/config")
+                .thenReturn()
+                .getBody()
+                .jsonPath()
+                .prettyPrint();
+
+        ConfigurationBuilderHolder configHolder = new ParserRegistry().parse(configJson, MediaType.APPLICATION_JSON);
+        // Workaround for ISPN-16595
+        String cacheName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache);
+        return configHolder.getNamedConfigurationBuilders().get(cacheName).build();
+    }
+
+    private record CacheOwners(String name, int owners) {
     }
 }

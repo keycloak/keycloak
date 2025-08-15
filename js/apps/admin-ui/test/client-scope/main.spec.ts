@@ -1,19 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToClientScopes } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToClientScopes } from "../utils/sidebar.ts";
 import {
   assertRowExists,
+  assertTableRowsLength,
   clickNextPageButton,
   clickRowKebabItem,
   clickSelectRow,
   getTableData,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   assertConsentInputIsVisible,
   assertSwitchDisplayOnConsentScreenIsChecked,
@@ -26,20 +27,20 @@ import {
   selectSecondaryFilterAssignedType,
   selectSecondaryFilterProtocol,
   switchOffDisplayOnConsentScreen,
-} from "./main";
+} from "./main.ts";
 
-enum FilterAssignedType {
-  AllTypes = "All types",
-  Default = "Default",
-  Optional = "Optional",
-  None = "None",
-}
+const FilterAssignedType = {
+  AllTypes: "All types",
+  Default: "Default",
+  Optional: "Optional",
+  None: "None",
+};
 
-enum FilterProtocol {
-  All = "All",
-  SAML = "SAML",
-  OpenID = "OpenID Connect",
-}
+const FilterProtocol = {
+  All: "All",
+  SAML: "SAML",
+  OpenID: "OpenID Connect",
+};
 
 test.describe("Client Scopes test", () => {
   const clientScopeName = "client-scope-test";
@@ -83,8 +84,7 @@ test.describe("Client Scopes test", () => {
       const itemName = clientScopeName + "0";
       await searchItem(page, placeHolder, itemName);
       await assertRowExists(page, itemName);
-      const rows = await getTableData(page, tableName);
-      expect(rows.length).toBe(1);
+      await assertTableRowsLength(page, tableName, 1);
     });
 
     test("should filter items by Assigned type Default", async ({ page }) => {

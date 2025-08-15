@@ -102,7 +102,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     public static boolean isJobFromCurrentKeycloakCr(Job job, Keycloak keycloak) {
         var annotations = job.getMetadata().getAnnotations();
         var hash = annotations.get(KEYCLOAK_CR_HASH_ANNOTATION);
-        return Objects.equals(hash, keycloakHash(keycloak));
+        return job.hasOwnerReferenceFor(keycloak) && Objects.equals(hash, keycloakHash(keycloak));
     }
 
     public static String jobName(Keycloak keycloak) {
@@ -193,8 +193,9 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
             containerBuilder.withVolumeMounts(newVolumeMounts);
         }
 
-        // remove restart policy and probes
+        // remove restart policy, lifecycle, and probes
         containerBuilder.withRestartPolicy(null);
+        containerBuilder.withLifecycle(null);
         containerBuilder.withReadinessProbe(null);
         containerBuilder.withLivenessProbe(null);
         containerBuilder.withStartupProbe(null);

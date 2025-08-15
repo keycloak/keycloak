@@ -150,6 +150,15 @@ public interface AbstractAuthenticationFlowContext {
     void success();
 
     /**
+     * Mark the current execution as successful and the auth session sets the
+     * credential type in the authentication session as the last credential used
+     * to authenticate the user.
+     *
+     * @param credentialType The credential used to authenticate the user
+     */
+    void success(String credentialType);
+
+    /**
      * Aborts the current flow
      *
      * @param error

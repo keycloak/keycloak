@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { chooseFile } from "../utils/file-chooser";
-import { selectItem } from "../utils/form";
-import { login } from "../utils/login";
-import { selectActionToggleItem } from "../utils/masthead";
-import { cancelModal, confirmModal } from "../utils/modal";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { chooseFile } from "../utils/file-chooser.ts";
+import { selectItem } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { selectActionToggleItem } from "../utils/masthead.ts";
+import { cancelModal, confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   assertClearButtonDisabled,
   assertClientVisible,
@@ -23,7 +23,7 @@ import {
   toggleClients,
   toggleGroups,
   toggleUsers,
-} from "./import";
+} from "./import.ts";
 
 test.describe("Partial import test", () => {
   const testRealm = `Partial-import-${uuid()}`;
@@ -49,7 +49,7 @@ test.describe("Partial import test", () => {
   test("Opens and closes partial import dialog", async ({ page }) => {
     await expect(page.getByTestId("confirm")).toBeDisabled();
     await cancelModal(page);
-    await expect(page.getByTestId("confirm")).not.toBeVisible();
+    await expect(page.getByTestId("confirm")).toBeHidden();
   });
 
   test("Import button only enabled if JSON has something to import", async ({
@@ -108,7 +108,7 @@ test.describe("Partial import test", () => {
 
     await chooseFile(page, "../utils/files/client-only.json");
 
-    await expect(page.locator("select")).not.toBeVisible();
+    await expect(page.locator("select")).toBeHidden();
 
     await assertTextContent(page, "1 Clients");
 

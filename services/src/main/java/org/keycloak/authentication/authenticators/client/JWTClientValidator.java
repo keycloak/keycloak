@@ -31,6 +31,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -116,6 +117,11 @@ public class JWTClientValidator {
 
         jws = new JWSInput(clientAssertion);
         token = jws.readJsonContent(JsonWebToken.class);
+
+        var event = context.getEvent();
+        event.detail(Details.CLIENT_ASSERTION_ID, token.getId());
+        event.detail(Details.CLIENT_ASSERTION_ISSUER, token.getIssuer());
+        event.detail(Details.CLIENT_ASSERTION_SUB, token.getSubject());
     }
 
     public boolean validateClient() {

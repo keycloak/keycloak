@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.function.Function;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.common.Profile;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
@@ -48,12 +49,20 @@ public class WebAuthnConditionalUIAuthenticator extends WebAuthnPasswordlessAuth
         // the passkey failed, show error and maintain passkeys
         context.form().setError(errorCase, "");
         context.form().setAttribute(WebAuthnConstants.ENABLE_WEBAUTHN_CONDITIONAL_UI, Boolean.TRUE);
+
+        AuthenticatorUtils.setupReauthenticationInUsernamePasswordFormError(context);
+
         fillContextForm(context);
         return errorChallenge.apply(context);
     }
 
     public boolean isPasskeysEnabled() {
+        return isPasskeysEnabled(session);
+    }
+
+    static public boolean isPasskeysEnabled(KeycloakSession session) {
         return Profile.isFeatureEnabled(Profile.Feature.PASSKEYS) &&
+                session.getContext().getRealm() != null &&
                 Boolean.TRUE.equals(session.getContext().getRealm().getWebAuthnPolicyPasswordless().isPasskeysEnabled());
     }
 }

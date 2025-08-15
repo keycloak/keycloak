@@ -29,6 +29,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
@@ -65,6 +66,10 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> additionalOptions = new ArrayList<ValueOrSecret>(); // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+
+    @JsonPropertyDescription("Environment variables for the Keycloak server.\n" +
+            "Values can be either direct values or references to secrets. Use additionalOptions for first-class options rather than KC_ values here.")
+    private List<ValueOrSecret> env = new ArrayList<ValueOrSecret>();
 
     @JsonProperty("http")
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
@@ -134,6 +139,19 @@ public class KeycloakSpec {
     @JsonProperty("update")
     @JsonPropertyDescription("Configuration related to Keycloak deployment updates.")
     private UpdateSpec updateSpec;
+
+    @JsonProperty("readinessProbe")
+    @JsonPropertyDescription("Configuration for readiness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
+    private ProbeSpec readinessProbeSpec;
+
+    @JsonProperty("livenessProbe")
+    @JsonPropertyDescription("Configuration for liveness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
+    private ProbeSpec livenessProbeSpec;
+
+    @JsonProperty("startupProbe")
+    @JsonPropertyDescription("Configuration for startup probe, by default it is 1 for periodSeconds and 600 for failureThreshold")
+    private ProbeSpec startupProbeSpec;
+
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -230,6 +248,14 @@ public class KeycloakSpec {
         return additionalOptions;
     }
 
+    public List<ValueOrSecret> getEnv() {
+        return env;
+    }
+
+    public void setEnv(List<ValueOrSecret> env) {
+        this.env = env;
+    }
+
     public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
         this.additionalOptions = additionalOptions;
     }
@@ -315,5 +341,23 @@ public class KeycloakSpec {
 
     public void setUpdateSpec(UpdateSpec updateSpec) {
         this.updateSpec = updateSpec;
+    }
+
+    public ProbeSpec getLivenessProbeSpec() {return livenessProbeSpec;}
+
+    public void setLivenessProbeSpec(ProbeSpec livenessProbeSpec) {
+        this.livenessProbeSpec = livenessProbeSpec;
+    }
+
+    public ProbeSpec getReadinessProbeSpec() {return readinessProbeSpec;}
+
+    public void setReadinessProbeSpec(ProbeSpec readinessProbeSpec) {
+        this.readinessProbeSpec = readinessProbeSpec;
+    }
+
+    public ProbeSpec getStartupProbeSpec() {return startupProbeSpec;}
+
+    public void setStartupProbeSpec(ProbeSpec startupProbeSpec) {
+        this.startupProbeSpec = startupProbeSpec;
     }
 }

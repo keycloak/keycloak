@@ -155,14 +155,17 @@ public class UserProfileUtil {
             group = am.getAttributeGroupMetadata().getName();
         }
 
+        Attributes attributes = profile.getAttributes();
+
         return new UserProfileAttributeMetadata(am.getName(),
                 am.getAttributeDisplayName(),
-                profile.getAttributes().isRequired(am.getName()),
-                profile.getAttributes().isReadOnly(am.getName()),
+                attributes.isRequired(am.getName()),
+                attributes.isReadOnly(am.getName()),
                 group,
-                am.getAnnotations(),
+                attributes.getAnnotations(am.getName()),
                 toValidatorMetadata(am, session),
-                am.isMultivalued());
+                am.isMultivalued(),
+                am.getDefaultValue());
     }
 
     private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){

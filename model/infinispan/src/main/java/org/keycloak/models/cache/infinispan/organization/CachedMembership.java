@@ -23,20 +23,20 @@ import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class CachedMembership extends AbstractRevisioned implements InRealm {
 
-    private final RealmModel realm;
+    private final String realm;
     private final boolean managed;
     private final boolean isMember;
 
     public CachedMembership(Long revision, String key, RealmModel realm, boolean managed, boolean isMember) {
         super(revision, key);
-        this.realm = realm;
+        this.realm = realm.getId();
         this.managed = managed;
         this.isMember = isMember;
     }
 
     @Override
     public String getRealm() {
-        return realm.getId();
+        return realm;
     }
 
     public boolean isManaged() {

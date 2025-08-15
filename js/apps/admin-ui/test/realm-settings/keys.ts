@@ -1,6 +1,6 @@
-import { Page, expect } from "@playwright/test";
-import { clickTableRowItem } from "../utils/table";
-import { selectItem } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { clickTableRowItem } from "../utils/table.ts";
+import { selectItem } from "../utils/form.ts";
 
 export async function goToKeys(page: Page) {
   await page.getByTestId("rs-keys-tab").click();

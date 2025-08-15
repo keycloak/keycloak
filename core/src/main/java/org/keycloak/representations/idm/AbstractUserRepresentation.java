@@ -45,6 +45,7 @@ public abstract class AbstractUserRepresentation {
     @JsonDeserialize(using = StringListMapDeserializer.class)
     protected Map<String, List<String>> attributes;
     private UserProfileMetadata userProfileMetadata;
+    protected Boolean enabled;
 
 
     public String getId() {
@@ -153,5 +154,13 @@ public abstract class AbstractUserRepresentation {
 
     public UserProfileMetadata getUserProfileMetadata() {
         return userProfileMetadata;
+    }
+
+    public Boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 }

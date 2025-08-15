@@ -17,27 +17,111 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import static org.keycloak.quarkus.runtime.Environment.isDevMode;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
+import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 
-import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
+public abstract class AbstractStartCommand extends AbstractCommand {
 
-public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
     @CommandLine.Mixin
     DryRunMixin dryRunMixin = new DryRunMixin();
 
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
+
     @Override
-    public void run() {
+    protected Optional<Integer> callCommand() {
+        if (isRebuildCheck()) {
+            if (requiresReAugmentation()) {
+                runReAugmentation();
+            }
+            return Optional.of(CommandLine.ExitCode.OK);
+        }
+        return Optional.empty();
+    }
+
+    static boolean requiresReAugmentation() {
+        Map<String, String> rawPersistedProperties = Configuration.getRawPersistedProperties();
+        if (rawPersistedProperties.isEmpty()) {
+            return true; // no build yet
+        }
+        var current = Picocli.getNonPersistedBuildTimeOptions();
+
+        // everything but the optimized value must match
+        String key = Configuration.KC_OPTIMIZED;
+        Optional.ofNullable(rawPersistedProperties.get(key)).ifPresentOrElse(value -> current.put(key, value), () -> current.remove(key));
+        return !rawPersistedProperties.equals(current);
+    }
+
+    private void runReAugmentation() {
+        if(!isDevMode()) {
+            spec.commandLine().getOut().println("Changes detected in configuration. Updating the server image.");
+            if (Configuration.isOptimized()) {
+                Picocli.checkChangesInBuildOptionsDuringAutoBuild(spec.commandLine().getOut());
+            }
+        }
+
+        directBuild();
+
+        if(!isDevMode()) {
+            spec.commandLine().getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), String.join(" ", getSanitizedRuntimeCliOptions()), OPTIMIZED_BUILD_OPTION_LONG);
+        }
+    }
+
+    public void directBuild() {
+        Build build = new Build();
+        build.dryRunMixin = this.dryRunMixin;
+        build.setPicocli(picocli);
+        build.spec = spec;
+        build.runCommand();
+    }
+
+    /**
+     * checks the raw cli input for possible credentials / properties which should be masked,
+     * and masks them.
+     * @return a list of potentially masked properties in CLI format, e.g. `--db-password=*******`
+     * instead of the actual passwords value.
+     */
+    private static List<String> getSanitizedRuntimeCliOptions() {
+        List<String> properties = new ArrayList<>();
+
+        parseConfigArgs(ConfigArgsConfigSource.getAllCliArgs(), (key, value) -> {
+            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(key);
+
+            if (mapper == null || mapper.isRunTime()) {
+                properties.add(key + "=" + maskValue(value, mapper));
+            }
+        }, properties::add);
+
+        return properties;
+    }
+
+    @Override
+    protected void runCommand() {
         doBeforeRun();
         validateConfig();
 
@@ -45,9 +129,16 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
             picocli.getOutWriter().println(Ansi.AUTO.string(
                     "@|bold,red Running the server in development mode. DO NOT use this configuration in production.|@"));
         }
-        if (!Boolean.TRUE.equals(dryRunMixin.dryRun)) {
+        if (shouldStart() && !Boolean.TRUE.equals(dryRunMixin.dryRun)) {
             picocli.start();
         }
+    }
+
+    /**
+     * Controls whether the command actually starts the server
+     */
+    protected boolean shouldStart() {
+        return true;
     }
 
     protected void doBeforeRun() {
@@ -57,8 +148,10 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
     @Override
     protected void validateConfig() {
         super.validateConfig(); // we want to run the generic validation here first to check for unknown options
-        HttpPropertyMappers.validateConfig();
-        HostnameV2PropertyMappers.validateConfig(picocli);
+        if (shouldStart()) { // if not starting, we aren't accepting http requests so no validation needed
+            HttpPropertyMappers.validateConfig();
+            HostnameV2PropertyMappers.validateConfig(picocli);
+        }
     }
 
     @Override

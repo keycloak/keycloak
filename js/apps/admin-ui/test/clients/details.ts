@@ -1,5 +1,5 @@
-import { Page } from "@playwright/test";
-import { selectItem, assertSelectValue } from "../utils/form";
+import type { Page } from "@playwright/test";
+import { selectItem, assertSelectValue } from "../utils/form.ts";
 
 function getKeyForCodeExchangeInput(page: Page) {
   return page.locator("#keyForCodeExchange");

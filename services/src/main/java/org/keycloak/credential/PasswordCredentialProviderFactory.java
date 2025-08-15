@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
 import org.keycloak.Config;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -61,7 +62,7 @@ public class PasswordCredentialProviderFactory implements CredentialProviderFact
 
     @Override
     public void init(Config.Scope config) {
-        metricsEnabled = config.getBoolean("metrics-enabled", false);
+        metricsEnabled = config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), false);
         if (metricsEnabled) {
             meterProvider = Counter.builder(LOGIN_PASSWORD_VERIFY_METER_NAME)
                     .description(LOGIN_PASSWORD_VERIFY_METER_DESCRIPTION)

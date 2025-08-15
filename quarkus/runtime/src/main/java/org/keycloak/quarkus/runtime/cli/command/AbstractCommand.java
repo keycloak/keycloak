@@ -22,16 +22,19 @@ import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
-public abstract class AbstractCommand {
+public abstract class AbstractCommand implements Callable<Integer> {
 
     @Spec
     protected CommandSpec spec; // will be null for "start --optimized"
@@ -43,6 +46,52 @@ public abstract class AbstractCommand {
 
     protected void executionError(CommandLine cmd, String message, Throwable cause) {
         cliExecutionError(cmd, message, cause);
+    }
+
+    /**
+     * Get the effective profile used when the config is initialized
+     */
+    public String getInitProfile() {
+        String configuredProfile = org.keycloak.common.util.Environment.getProfile();
+        if (configuredProfile != null) {
+            return configuredProfile; // the profile was already set by the cli or even ENV
+        }
+        if (Environment.isRebuildCheck()) {
+            // builds default to prod, if the profile is not overriden via the cli
+            return Environment.PROD_PROFILE_VALUE;
+        }
+        // otherwise take the default profile, or what is persisted, or ultimately prod
+        return Optional.ofNullable(this.getDefaultProfile())
+                .or(() -> Optional.ofNullable(
+                        PersistedConfigSource.getInstance().getValue(org.keycloak.common.util.Environment.PROFILE)))
+                .orElse(Environment.PROD_PROFILE_VALUE);
+    }
+
+    @Override
+    public Integer call() {
+        return callCommand().orElseGet(() -> {
+            runCommand();
+            return CommandLine.ExitCode.OK;
+        });
+    }
+
+    /**
+     * An alternative to {@link #runCommand()} that allows for returning an exit code.
+     * If the Optional is empty, {@link #runCommand()} will still be called
+     * <br>
+     * see {@link #call()}
+     */
+    protected Optional<Integer> callCommand() {
+        return Optional.empty();
+    }
+
+    /**
+     * If {@link #callCommand()} returns an empty {@link Optional}, then this method will be used to run the command. OK will be returned as the exit code after successful completion.
+     * <br>
+     * see {@link #call()}
+     */
+    protected void runCommand() {
+
     }
 
     /**
@@ -78,6 +127,14 @@ public abstract class AbstractCommand {
 
     public void setPicocli(Picocli picocli) {
         this.picocli = picocli;
+    }
+
+    /**
+     * The default profile for the command, or null if the persisted profile should be checked first
+     * @return
+     */
+    protected String getDefaultProfile() {
+        return Environment.PROD_PROFILE_VALUE;
     }
 
 }

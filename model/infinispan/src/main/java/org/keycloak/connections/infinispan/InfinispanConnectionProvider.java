@@ -129,6 +129,15 @@ public interface InfinispanConnectionProvider extends Provider {
             USER_SESSION_CACHE_NAME
     };
 
+    // caches that allow numOwner attribute to be configurable using options.
+    String[] CLUSTERED_CACHE_NUM_OWNERS = new String[]{
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            LOGIN_FAILURE_CACHE_NAME,
+            AUTHENTICATION_SESSIONS_CACHE_NAME,
+            ACTION_TOKEN_CACHE,
+    };
+
     /**
      *
      * Effectively the same as {@link InfinispanConnectionProvider#getCache(String, boolean)} with createIfAbsent set to {@code true}

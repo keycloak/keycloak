@@ -31,7 +31,7 @@ export interface ConsentRepresentation {
 export interface ConsentScopeRepresentation {
   id: string;
   name: string;
-  displayTest: string;
+  displayText: string;
 }
 
 export interface CredentialMetadataRepresentationMessage {
@@ -87,6 +87,7 @@ export interface UserProfileAttributeMetadata {
   annotations?: { [index: string]: any };
   validators: { [index: string]: { [index: string]: any } };
   multivalued: boolean;
+  defaultValue: string;
 }
 
 export interface UserProfileMetadata {

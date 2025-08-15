@@ -37,6 +37,8 @@
         <module>utils</module>
         <module>utils-shared</module>
         <module>custom-providers</module>
+        <module>custom-scripts</module>
+        <module>clustering</module>
     </modules>
 
     <profiles>

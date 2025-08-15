@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertModalTitle, confirmModal } from "../utils/modal";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { assertModalTitle, confirmModal } from "../utils/modal.ts";
 import {
   pickRoleType,
   clickHideInheritedRoles,
   clickUnassign,
   confirmModalAssign,
   pickRole,
-} from "../utils/roles";
-import { goToClientScopes } from "../utils/sidebar";
+} from "../utils/roles.ts";
+import { goToClientScopes } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   assertRowExists,
@@ -19,8 +19,8 @@ import {
   clickTableRowItem,
   getTableData,
   searchItem,
-} from "../utils/table";
-import { goToScopeTab } from "./scope";
+} from "../utils/table.ts";
+import { goToScopeTab } from "./scope.ts";
 
 test.describe("Scope tab test", () => {
   const scopeName = `client-scope-mapper-${uuidv4()}`;

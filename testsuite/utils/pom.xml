@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-testsuite-utils</artifactId>
     <name>Keycloak TestSuite Utils</name>
-    <description />
+    <description>Keycloak TestSuite Utils</description>
 
     <properties>
         <keycloak.additionalClasspathElement>NON_EXISTENT_PATH_OVERRIDE_ON_COMMAND_LINE</keycloak.additionalClasspathElement>

@@ -29,6 +29,8 @@
     </parent>
 
     <name>Keycloak Quarkus Server JUnit 5 Internal Test Framework</name>
+    <description>Keycloak Quarkus Server JUnit 5 Internal Test Framework</description>
+
     <artifactId>keycloak-junit5</artifactId>
     <packaging>jar</packaging>
 
@@ -99,6 +101,10 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mssqlserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>tidb</artifactId>
         </dependency>
 
         <!-- JDBC Drivers -->

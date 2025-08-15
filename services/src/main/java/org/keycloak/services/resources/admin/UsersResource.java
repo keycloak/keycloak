@@ -312,6 +312,10 @@ public class UsersResource {
                 if (enabled != null) {
                     attributes.put(UserModel.ENABLED, enabled.toString());
                 }
+                if (emailVerified != null) {
+                    attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+                }
+
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                         maxResults, false);
             }
@@ -373,12 +377,17 @@ public class UsersResource {
      * {@code email} or {@code username} those criteria are matched against their
      * respective fields on a user entity. Combined with a logical and.
      *
-     * @param search   arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
-     * @param last     last name filter
-     * @param first    first name filter
-     * @param email    email filter
-     * @param username username filter
+     * @param search A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
+     * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
+     * @param first A String contained in firstName, or the complete firstName, if param "exact" is true
+     * @param email A String contained in email, or the complete email, if param "exact" is true
+     * @param username A String contained in username, or the complete username, if param "exact" is true
+     * @param emailVerified whether the email has been verified
+     * @param idpAlias The alias of an Identity Provider linked to the user
+     * @param idpUserId The userId at an Identity Provider linked to the user
      * @param enabled Boolean representing if user is enabled or not
+     * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+     * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
      * @return the number of users that match the given criteria
      */
     @Path("count")
@@ -397,32 +406,46 @@ public class UsersResource {
                     "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
                     "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
     public Integer getUsersCount(
-            @Parameter(description = "arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
-            @Parameter(description = "last name filter") @QueryParam("lastName") String last,
-            @Parameter(description = "first name filter") @QueryParam("firstName") String first,
-            @Parameter(description = "email filter") @QueryParam("email") String email,
-            @QueryParam("emailVerified") Boolean emailVerified,
-            @Parameter(description = "username filter") @QueryParam("username") String username,
+            @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
+            @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
+            @Parameter(description = "A String contained in firstName, or the complete firstName, if param \"exact\" is true") @QueryParam("firstName") String first,
+            @Parameter(description = "A String contained in email, or the complete email, if param \"exact\" is true") @QueryParam("email") String email,
+            @Parameter(description = "A String contained in username, or the complete username, if param \"exact\" is true") @QueryParam("username") String username,
+            @Parameter(description = "whether the email has been verified") @QueryParam("emailVerified") Boolean emailVerified,
+            @Parameter(description = "The alias of an Identity Provider linked to the user") @QueryParam("idpAlias") String idpAlias,
+            @Parameter(description = "The userId at an Identity Provider linked to the user") @QueryParam("idpUserId") String idpUserId,
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
-            @QueryParam("q") String searchQuery) {
+            @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
         Map<String, String> searchAttributes = searchQuery == null
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
-
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
                 UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
-            } else if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(realm, search.trim());
+            }
+
+            Map<String, String> parameters = new HashMap<>();
+            parameters.put(UserModel.SEARCH, search.trim());
+
+            if (enabled != null) {
+                parameters.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (emailVerified != null) {
+                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+
+            if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(realm, parameters);
             } else {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return session.users().getUsersCount(realm, search.trim());
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
                 } else {
-                    return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupIdsWithViewPermission());
+                    return session.users().getUsersCount(realm, parameters);
                 }
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
@@ -442,27 +465,37 @@ public class UsersResource {
             if (emailVerified != null) {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
+            if (idpAlias != null) {
+                parameters.put(UserModel.IDP_ALIAS, idpAlias);
+            }
+            if (idpUserId != null) {
+                parameters.put(UserModel.IDP_USER_ID, idpUserId);
+            }
             if (enabled != null) {
                 parameters.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (exact != null) {
+                parameters.put(UserModel.EXACT, exact.toString());
             }
             parameters.putAll(searchAttributes);
 
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return session.users().getUsersCount(realm, parameters);
-                } else {
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
                     return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
                 }
             }
         } else if (userPermissionEvaluator.canView()) {
             return session.users().getUsersCount(realm);
         } else {
-            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
+            } else {
                 return session.users().getUsersCount(realm);
             }
-            return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
         }
     }
 
@@ -480,7 +513,7 @@ public class UsersResource {
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
             if (!groupIds.isEmpty()) {
                 session.setAttribute(UserModel.GROUPS, groupIds);

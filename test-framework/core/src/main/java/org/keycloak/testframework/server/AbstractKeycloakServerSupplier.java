@@ -1,10 +1,10 @@
 package org.keycloak.testframework.server;
 
 import org.jboss.logging.Logger;
-import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.Registry;
@@ -21,11 +21,17 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
         KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
-                .cache("local")
+                .cache(cache())
                 .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
                 .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
         command.log().handlers(KeycloakServerConfigBuilder.LogHandlers.CONSOLE);
+
+        String supplierConfig = Config.getSupplierConfig(KeycloakServer.class);
+        if (supplierConfig != null) {
+            KeycloakServerConfig serverConfigOverride = SupplierHelpers.getInstance(supplierConfig);
+            serverConfigOverride.configure(command);
+        }
 
         command = serverConfig.configure(command);
 
@@ -73,6 +79,10 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     public abstract boolean requiresDatabase();
 
     public abstract Logger getLogger();
+
+    protected String cache() {
+        return "local";
+    }
 
     @Override
     public int order() {

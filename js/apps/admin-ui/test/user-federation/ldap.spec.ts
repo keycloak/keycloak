@@ -1,18 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToRealm, goToUserFederation } from "../utils/sidebar";
-import { clickAddProvider, clickSave } from "./kerberos";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToRealm, goToUserFederation } from "../utils/sidebar.ts";
+import { clickAddProvider, clickSave } from "./kerberos.ts";
 import {
   assertEvictionValues,
   clickLdapCard,
   fillEviction,
   fillLdapForm,
   selectEvictionPolicy,
-} from "./ldap";
-import { switchToggle } from "../utils/form";
+} from "./ldap.ts";
+import { switchToggle } from "../utils/form.ts";
 
 const provider = "ldap";
 

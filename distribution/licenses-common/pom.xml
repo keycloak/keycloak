@@ -26,6 +26,7 @@
     <artifactId>keycloak-distribution-licenses-common</artifactId>
     <packaging>jar</packaging>
     <name>Keycloak Distribution Licenses Common</name>
+    <description>Keycloak Distribution Licenses Common</description>
 
     <build>
         <resources>

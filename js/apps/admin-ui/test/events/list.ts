@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { selectItem, switchOn } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { selectItem, switchOn } from "../utils/form.ts";
 
 export async function goToEventsConfig(page: Page) {
   await page.getByRole("link", { name: "Event configs" }).click();
@@ -51,7 +51,7 @@ export async function assertSearchButtonDisabled(page: Page, disabled = true) {
   if (disabled) {
     await expect(page.getByTestId("search-events-btn")).toBeDisabled();
   } else {
-    await expect(page.getByTestId("search-events-btn")).not.toBeDisabled();
+    await expect(page.getByTestId("search-events-btn")).toBeEnabled();
   }
 }
 
@@ -68,7 +68,7 @@ export async function assertSearchChipGroupItemExist(
   if (exist) {
     await expect(locator).toHaveText(`User ID${itemName}`);
   } else {
-    await expect(locator).not.toBeVisible();
+    await expect(locator).toBeHidden();
   }
 }
 

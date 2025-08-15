@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { changeTimeUnit, switchOn } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { changeTimeUnit, switchOn } from "../utils/form.ts";
 
 export async function goToSessionsTab(page: Page) {
   await page.getByTestId("rs-sessions-tab").click();

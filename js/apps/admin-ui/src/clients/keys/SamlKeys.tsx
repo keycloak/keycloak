@@ -38,19 +38,35 @@ type SamlKeysProps = {
   save: () => void;
 };
 
+type KeyMapping = {
+  name: string;
+  title: string;
+  key: string;
+  relatedKeys: string[];
+};
+
 const KEYS = ["saml.signing", "saml.encryption"] as const;
 export type KeyTypes = (typeof KEYS)[number];
 
-const KEYS_MAPPING: { [key in KeyTypes]: { [index: string]: string } } = {
+const KEYS_MAPPING: { [key in KeyTypes]: KeyMapping } = {
   "saml.signing": {
     name: convertAttributeNameToForm("attributes.saml.client.signature"),
     title: "signingKeysConfig",
     key: "clientSignature",
+    relatedKeys: [],
   },
   "saml.encryption": {
     name: convertAttributeNameToForm("attributes.saml.encrypt"),
     title: "encryptionKeysConfig",
     key: "encryptAssertions",
+    relatedKeys: [
+      convertAttributeNameToForm("attributes.saml.encryption.algorithm"),
+      convertAttributeNameToForm("attributes.saml.encryption.keyAlgorithm"),
+      convertAttributeNameToForm("attributes.saml.encryption.digestMethod"),
+      convertAttributeNameToForm(
+        "attributes.saml.encryption.maskGenerationFunction",
+      ),
+    ],
   },
 };
 
@@ -215,6 +231,9 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     cancelButtonLabel: "no",
     onConfirm: () => {
       setValue(KEYS_MAPPING[selectedType!].name, "false");
+      for (const key of KEYS_MAPPING[selectedType!].relatedKeys) {
+        setValue(key, ""); // remove related attributes when disabled
+      }
       save();
     },
   });
@@ -224,8 +243,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     messageKey: "reGenerateSigningExplain",
     continueButtonLabel: "yes",
     cancelButtonLabel: "no",
-    onConfirm: () => {
-      generate(selectedType!);
+    onConfirm: async () => {
+      await generate(selectedType!);
     },
   });
 
@@ -237,6 +256,9 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
           attr={isChanged}
           onClose={() => {
             setIsChanged(undefined);
+            for (const key of KEYS_MAPPING[selectedType!].relatedKeys) {
+              setValue(key, ""); // take defaults when enabled
+            }
             save();
             setRefresh(refresh + 1);
           }}
@@ -262,7 +284,10 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
             clientId={clientId}
             keyInfo={keyInfo?.[index]}
             attr={attr}
-            onChanged={setIsChanged}
+            onChanged={(type) => {
+              setIsChanged(type);
+              setSelectedType(type);
+            }}
             onGenerate={(type, isNew) => {
               setSelectedType(type);
               if (!isNew) {

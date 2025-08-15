@@ -75,12 +75,13 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.BasicAuthHelper;
 
 /**
- * Test for identity-provider token exchange scenarios. Base for tests of token-exchange V1 as well as token-exchange-federated V2
+ * Test for identity-provider token exchange scenarios. Base for tests of token-exchange V1
  */
 @EnableFeatures({@EnableFeature(Profile.Feature.TOKEN_EXCHANGE), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)})
 public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {

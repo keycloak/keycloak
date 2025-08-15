@@ -1,11 +1,11 @@
-import { Locator, Page, expect } from "@playwright/test";
-import { switchOff, switchOn } from "../utils/form";
+import { type Locator, type Page, expect } from "@playwright/test";
+import { switchOff, switchOn } from "../utils/form.ts";
 
 export async function assertImportButtonDisabled(page: Page, disabled = true) {
   if (disabled) {
     await expect(page.getByTestId("confirm")).toBeDisabled();
   } else {
-    await expect(page.getByTestId("confirm")).not.toBeDisabled();
+    await expect(page.getByTestId("confirm")).toBeEnabled();
   }
 }
 
@@ -91,7 +91,7 @@ export async function assertClearButtonDisabled(page: Page, disabled = true) {
   if (disabled) {
     await expect(getClearButton(page)).toBeDisabled();
   } else {
-    await expect(getClearButton(page)).not.toBeDisabled();
+    await expect(getClearButton(page)).toBeEnabled();
   }
 }
 

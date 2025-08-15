@@ -138,7 +138,7 @@ public class RealmImportTest extends BaseOperatorTest {
         k8sclient.getKubernetesSerialization().registerKubernetesResource(KeycloakRealmImport.class);
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"), obj -> {
             KeycloakRealmImport realmImport = (KeycloakRealmImport) obj;
-            realmImport.getSpec().getRealm().setSmtpServer(Map.of("port", "${MY_SMTP_PORT}", "host", "${MY_SMTP_SERVER}"));
+            realmImport.getSpec().getRealm().setSmtpServer(Map.of("port", "${MY_SMTP_PORT}", "host", "${MY_SMTP_SERVER}", "from", "admin@keycloak.org"));
             realmImport.getSpec().setPlaceholders(Map.of("MY_SMTP_PORT", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_PORT").build()),
                             "MY_SMTP_SERVER", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_SERVER").build())));
             return realmImport;

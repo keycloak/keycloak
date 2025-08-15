@@ -91,19 +91,43 @@ metadata:
 spec:
   ...
   additionalOptions:
-    - name: spi-connections-http-client-default-connection-pool-size
+    - name: spi-connections-http-client--default--connection-pool-size
       secret: # Secret reference
         name: http-client-secret # name of the Secret
         key: poolSize # name of the Key in the Secret
-    - name: spi-email-template-mycustomprovider-enabled
+    - name: spi-email-template--mycustomprovider--enabled
       value: true # plain text value
 ----
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
        For details on various configuration formats, see <@links.server id="configuration"/>.
+       
+==== Custom environment variables
 
+You may find a need to set custom environment variables - such as for theme properties or `kc.[sh|bat]` script variables.
+The `spec.env` field of the Keycloak CR allows you to directly set any environment variable.
+Logic in the operator based upon looking for value of a particular setting does not consult `spec.env`,
+therefore do not use `spec.env` for anything that has a first-class configuration in the CR or may be specified as an `additionalOption`.
+
+Here's an example setting JAVA_OPTS_APPEND:  
+     
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  env:
+    - name: JAVA_OPTS_APPEND
+      value: -Djava.net.preferIPv6Addresses=true
+----
+
+Similar to `additionalOptions` you may specify either a value or reference a Secret.
+       
 === Secret References
 
-Secret References are used by some dedicated options in the Keycloak CR, such as `tlsSecret`, or as a value in `additionalOptions`.
+Secret References are used by some dedicated options in the Keycloak CR, such as a `tlsSecret`, or as a value in `additionalOptions`.
 
 Similarly ConfigMap References are used by options such as the `configMapFile`.
 
@@ -149,15 +173,9 @@ spec:
               secretName: keycloak-additional-secret
 ----
 
-===== Probe Timeouts
+===== Probe Configuration
 
-The unsupported podTemplate may be used to override the default probes.
-
-In particular the default startup probe timeout of 10 minutes may be too short in scenarios where there is a long-running migration.
-
-If your instances encounter this startup failure or if you wish to proactively prevent such a startup failure from occurring, then the startup probe timeout should be increased.
-
-With otherwise default settings, something like the following increases the timeout to 20 minutes:
+The Keycloak CR exposes options to set periodSeconds and failureThreshold on each of the three probes (readiness, liveness and startup)
 
 [source,yaml]
 ----
@@ -166,21 +184,16 @@ kind: Keycloak
 metadata:
   name: example-kc
 spec:
-  ...
-  unsupported:
-    podTemplate:
-      spec:
-        containers:
-          startupProbe:
-            httpGet:
-              path: "/health/started"
-            port: 9000
-            scheme: "HTTPS"
-            failureThreshold: 1200
-            periodSeconds: 1
+  readinessProbe:
+    periodSeconds: 20
+    failureThreshold: 5
+  livenessProbe:
+    periodSeconds: 20
+    failureThreshold: 5
+  startupProbe:
+    periodSeconds: 20
+    failureThreshold: 5
 ----
-
-Note that the usage of a relative HTTP path, or an alternative management port, requires changes to the probe configuration.
 
 === Disabling required options
 
@@ -277,7 +290,7 @@ spec:
 
 Please see https://kubernetes.io/docs/concepts/scheduling-eviction[the kubernetes docs] for more on scheduling concepts.
 
-If you do not specify a custom affinity, your Pods will have an affinity for the same zone and an anti-affinity for the same node to improve availability. Scheduling to the same zone if possible helps prevent stretch clusters where cross zone cache cluster traffic may have too high of a latency.
+If you do not specify a custom affinity, your Pods will have an anti-affinity for the same zone and node to improve availability.
 
 === Management Interface
 
@@ -301,7 +314,7 @@ spec:
 ----
 
 NOTE: If you are using a custom image, the Operator is *unaware* of any configuration options that might've been specified there.
-For instance, it may cause that the management interface uses the `https` schema, but the Operator accesses it via `http` when the TLS settings is specified in the custom image.
+For instance, the management interface may use `https`, but the Operator accesses it via `http` when the TLS settings are specified in the custom image.
 To ensure proper TLS configuration, use the `tlsSecret` and `truststores` fields in the Keycloak CR so that the Operator can reflect that.
 
 For more details, see <@links.server id="management-interface" />.
@@ -472,5 +485,26 @@ The traffic from outside the OpenShift cluster goes through these pods.
 They need to access {project_name} to scrape the available metrics.
 
 Check the https://kubernetes.io/docs/concepts/services-networking/network-policies/[Kubernetes Network Policies documentation] for more information about NetworkPolicies.
+
+=== Parameterizing service labels and annotations
+
+If you need to set custom labels or annotations to keycloak service you can do that through `spec.http.labels` and `spec.http.annotations`
+
+.Custom service labels and annotations
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    labels:
+      label1: label-value1
+      label2: label-value2
+    annotations:
+      annotation1: annotation-value1
+      annotation2: annotation-value2
+----
 
 </@tmpl.guide>

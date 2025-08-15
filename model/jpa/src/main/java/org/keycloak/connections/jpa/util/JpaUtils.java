@@ -17,28 +17,35 @@
 
 package org.keycloak.connections.jpa.util;
 
+import jakarta.persistence.PersistenceUnitTransactionType;
 import jakarta.persistence.ValidationMode;
 import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
 import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
+import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 import org.jboss.logging.Logger;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.models.KeycloakSession;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.spi.PersistenceUnitTransactionType;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,16 +58,28 @@ public class JpaUtils {
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
 
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
-        String schema = (String) em.getEntityManagerFactory().getProperties().get(HIBERNATE_DEFAULT_SCHEMA);
         final Dialect dialect = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getDialect();
-        return (schema==null) ? tableName : dialect.openQuote() + schema + dialect.closeQuote() + "." + tableName;
+        IdentifierHelper identifierHelper = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getJdbcServices().getJdbcEnvironment().getIdentifierHelper();
+        String schema = em.getEntityManagerFactory().unwrap(SessionFactoryImpl.class).getSessionFactoryOptions().getDefaultSchema();
+        return (schema==null) ? tableName : identifierHelper.toIdentifier(schema).render(dialect) + "." + tableName;
+    }
+
+    private static List<ParsedPersistenceXmlDescriptor> transformPersistenceUnits(Collection<PersistenceUnitDescriptor> descriptors) {
+        return descriptors.stream().map(descriptor -> (ParsedPersistenceXmlDescriptor) descriptor).collect(Collectors.toList());
     }
 
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {
         PersistenceUnitTransactionType txType = jta ? PersistenceUnitTransactionType.JTA : PersistenceUnitTransactionType.RESOURCE_LOCAL;
-        List<ParsedPersistenceXmlDescriptor> persistenceUnits = new ArrayList<>(PersistenceXmlParser.locatePersistenceUnits(properties));
+        PersistenceXmlParser parser = PersistenceXmlParser.create(properties);
+        List<URL> urls = parser.getClassLoaderService().locateResources("META-INF/persistence.xml");
 
-        persistenceUnits.add(PersistenceXmlParser.locateIndividualPersistenceUnit(JpaUtils.class.getClassLoader().getResource("default-persistence.xml")));
+        List<ParsedPersistenceXmlDescriptor> persistenceUnits = urls.isEmpty() ? new ArrayList<>() : transformPersistenceUnits(parser.parse(urls).values());
+        ParsedPersistenceXmlDescriptor defaultPersistenceUnit = transformPersistenceUnits(parser.parse(Collections.singletonList(JpaUtils.class.getClassLoader().getResource("default-persistence.xml")), txType)
+                .values())
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Cannot find the file 'default-persistence.xml'"));
+        persistenceUnits.add(defaultPersistenceUnit);
 
         for (ParsedPersistenceXmlDescriptor persistenceUnit : persistenceUnits) {
             if (persistenceUnit.getName().equals(unitName)) {

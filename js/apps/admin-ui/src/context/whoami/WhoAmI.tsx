@@ -33,7 +33,7 @@ export class WhoAmI {
   constructor(me?: WhoAmIRepresentation) {
     this.#me = me;
     if (this.#me?.locale) {
-      i18n.changeLanguage(this.#me.locale, (error) => {
+      void i18n.changeLanguage(this.#me.locale, (error) => {
         if (error) {
           console.warn("Error(s) loading locale", this.#me?.locale, error);
         }

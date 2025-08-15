@@ -1,14 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { selectChangeType } from "../client-scope/main";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertModalTitle, confirmModal } from "../utils/modal";
-import { goToClients, goToRealm } from "../utils/sidebar";
+import { selectChangeType } from "../client-scope/main.ts";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { assertModalTitle, confirmModal } from "../utils/modal.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   assertRowExists,
+  assertTableRowsLength,
   clickNextPageButton,
   clickRowKebabItem,
   clickSelectRow,
@@ -16,7 +17,7 @@ import {
   clickTableToolbarItem,
   getTableData,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   assertHasAccessTokenGenerated,
   assertHasIdTokenGenerated,
@@ -31,7 +32,7 @@ import {
   goToClientScopesTab,
   goToGenerateAccessTokenTab,
   selectUser,
-} from "./scope";
+} from "./scope.ts";
 
 type ClientScope = {
   name: string;
@@ -53,7 +54,7 @@ test.describe("Client details - Client scopes subtab", () => {
   const msgScopeMappingRemoved = "Scope mapping successfully removed";
   const realmName = `clients-realm-${uuid()}`;
   const placeHolder = "Search by name";
-  const tableName = "clientScopeList-0";
+  const tableName = "Client scopes";
 
   const clientScope: ClientScope = {
     name: clientScopeName,
@@ -110,8 +111,7 @@ test.describe("Client details - Client scopes subtab", () => {
   test("Should search existing client scope by name", async ({ page }) => {
     await searchItem(page, placeHolder, clientScopeName + "0");
     await assertRowExists(page, clientScopeName + "0");
-    const rows = await getTableData(page, tableName);
-    expect(rows.length).toBe(1);
+    await assertTableRowsLength(page, tableName, 1);
   });
 
   test("Should search non-existent client scope by name", async ({ page }) => {
@@ -141,10 +141,11 @@ test.describe("Client details - Client scopes subtab", () => {
     page,
   }) => {
     await searchItem(page, placeHolder, itemName);
-    await clickSelectRow(page, "clientScopeList-0", itemName);
+    await clickSelectRow(page, tableName, itemName);
     await selectChangeType(page, "Default");
     await assertNotificationMessage(page, "Scope mapping updated");
     await searchItem(page, placeHolder, itemName);
+    await assertTableRowsLength(page, tableName, 1);
     await assertTableCellDropdownValue(page, "Default");
     await assertRowExists(page, itemName);
   });

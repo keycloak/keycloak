@@ -36,6 +36,12 @@ data:
         metrics:
           namesAsTags: true
           histograms: false
+        tracing:
+          enabled: true
+          collector-endpoint: "http://tempo-tempo.monitoring.svc:4318"
+          exporter-protocol: "OTLP"
+          service-name: "infinispan-server"
+          security: false
       server:
         endpoints:
           - securityRealm: default
@@ -507,12 +513,12 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:15.0.11.Final
-  version: 15.0.4
+  image: 
+  version: 15.0.15
   configListener:
     enabled: false
   container:
-    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=10000'
+    extraJvmOpts: '-Dorg.infinispan.openssl=false -Dorg.infinispan.threads.virtual=true -Dinfinispan.cluster.name=ISPN  -Djgroups.xsite.fd.interval=2000 -Djgroups.xsite.fd.timeout=10000 -Dotel.traces.sampler=parentbased_always_off'
     cpu: 4:2
     memory: 2Gi:1Gi
   logging:

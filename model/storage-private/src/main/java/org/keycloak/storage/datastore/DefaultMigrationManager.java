@@ -196,13 +196,7 @@ public class DefaultMigrationManager implements MigrationManager {
 
     @Override
     public void migrate(RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        ModelVersion stored = null;
-        if (rep.getKeycloakVersion() != null) {
-            stored = convertRHSSOVersionToKeycloakVersion(rep.getKeycloakVersion());
-            if (stored == null) {
-                stored = new ModelVersion(rep.getKeycloakVersion());
-            }
-        }
+        ModelVersion stored = getModelVersionFromRep(rep);
         if (stored == null) {
             stored = migrations[0].getVersion();
         } else {
@@ -229,9 +223,9 @@ public class DefaultMigrationManager implements MigrationManager {
 
     public static ModelVersion convertRHSSOVersionToKeycloakVersion(String version) {
         // look for the keycloakVersion pattern to identify it as RH SSO
-        for (Pattern pattern : PATTERN_MATCHER.keySet()) {
-            if (pattern.matcher(version).find()) {
-                return PATTERN_MATCHER.get(pattern);
+        for (var entry : PATTERN_MATCHER.entrySet()) {
+            if (entry.getKey().matcher(version).find()) {
+                return entry.getValue();
             }
         }
         // chceck if the version is in format for CD releases, e.g.: "keycloakVersion": "6"
@@ -239,6 +233,17 @@ public class DefaultMigrationManager implements MigrationManager {
             return new ModelVersion(Integer.parseInt(version), 0, 0);
         }
         return null;
+    }
+
+    public static ModelVersion getModelVersionFromRep(RealmRepresentation rep) {
+        ModelVersion version = null;
+        if (rep.getKeycloakVersion() != null) {
+            version = convertRHSSOVersionToKeycloakVersion(rep.getKeycloakVersion());
+            if (version == null) {
+                version = new ModelVersion(rep.getKeycloakVersion());
+            }
+        }
+        return version;
     }
 
 }

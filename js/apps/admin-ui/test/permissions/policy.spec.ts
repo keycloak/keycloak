@@ -1,16 +1,16 @@
 import test from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
-import { goToRealm } from "../utils/sidebar";
-import { goToPermissions } from "./main";
+import adminClient from "../utils/AdminClient.ts";
+import { clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { goToRealm } from "../utils/sidebar.ts";
+import { goToPermissions } from "./main.ts";
 import {
   clickCreateNewPolicy,
   clickPolicyType,
   fillPolicyForm,
   goToPolicies,
-} from "./policy";
+} from "./policy.ts";
 
 test.describe("Policy section tests", () => {
   const realmName = `permissions-policy-${uuid()}`;

@@ -1,5 +1,5 @@
-import { Page } from "@playwright/test";
-import { clickSelectRow, clickTableToolbarItem } from "../utils/table";
+import type { Page } from "@playwright/test";
+import { clickSelectRow, clickTableToolbarItem } from "../utils/table.ts";
 
 export async function goToMembersTab(page: Page) {
   await page.getByTestId("members").click();

@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 
 const SERVER_URL = "http://localhost:8080";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
@@ -52,6 +52,7 @@ export async function assertAuthorizationUrl(page: Page) {
 type UrlType =
   | "authorization"
   | "token"
+  | "tokenIntrospection"
   | "singleSignOnService"
   | "singleLogoutService";
 
@@ -89,14 +90,14 @@ async function assertElementExists(
 }
 
 export async function assertJwksUrlExists(page: Page, exist: boolean = true) {
-  assertElementExists(page, "[data-testid='config.jwksUrl']", exist);
+  await assertElementExists(page, "[data-testid='config.jwksUrl']", exist);
 }
 
 export async function assertPkceMethodExists(
   page: Page,
   exist: boolean = true,
 ) {
-  assertElementExists(page, "#config\\.pkceMethod", exist);
+  await assertElementExists(page, "#config\\.pkceMethod", exist);
 }
 
 export async function goToMappersTab(page: Page) {

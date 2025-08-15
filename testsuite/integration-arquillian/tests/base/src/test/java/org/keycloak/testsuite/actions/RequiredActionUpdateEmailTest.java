@@ -18,13 +18,17 @@ package org.keycloak.testsuite.actions;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -32,6 +36,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -101,5 +108,31 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
     @Test
     public void updateEmailLogoutSessionsNotChecked() {
         updateEmail(false);
+    }
+
+    @Test
+    public void updateEmailRequiredActionWhenEmailIsReadonly() {
+        UserProfileResource userProfile = testRealm().users().userProfile();
+        UPConfig upConfigOld = userProfile.getConfiguration();
+        UPConfig upConfig = userProfile.getConfiguration();
+        upConfig.addOrReplaceAttribute((new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(Set.of(ROLE_USER, ROLE_ADMIN), Set.of(ROLE_ADMIN)))));
+        getCleanup().addCleanup(() -> {
+            userProfile.update(upConfigOld);
+        });
+        userProfile.update(upConfig);
+
+        configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
+
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        // UPDATE_EMAIL required action is skipped and cleared
+        appPage.assertCurrent();
+
+        assertEquals(0, testUser.toRepresentation().getRequiredActions().size());
     }
 }

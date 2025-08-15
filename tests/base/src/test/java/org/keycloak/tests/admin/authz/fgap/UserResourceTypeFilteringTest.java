@@ -56,7 +56,7 @@ import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 
 @KeycloakIntegrationTest
 public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
@@ -347,7 +347,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
 
-        RoleRepresentation role = RoleBuilder.create().name("myrole").build();
+        RoleRepresentation role = RoleConfigBuilder.create().name("myrole").build();
         realm.admin().roles().create(role);
         role = realm.admin().roles().get(role.getName()).toRepresentation();
 
@@ -373,15 +373,15 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
 
-        RoleRepresentation role = RoleBuilder.create().name("myrole").build();
+        RoleRepresentation role = RoleConfigBuilder.create().name("myrole").build();
 
         realm.admin().roles().create(role);
         role = realm.admin().roles().get(role.getName()).toRepresentation();
 
-        RoleRepresentation compositeRole = RoleBuilder.create()
+        RoleRepresentation compositeRole = RoleConfigBuilder.create()
                 .name("mycompositerole")
-                .composite()
-                .realmComposite(role)
+                .composite(true)
+                .realmComposite(role.getName())
                 .build();
         realm.admin().roles().create(compositeRole);
         compositeRole = realm.admin().roles().get(compositeRole.getName()).toRepresentation();

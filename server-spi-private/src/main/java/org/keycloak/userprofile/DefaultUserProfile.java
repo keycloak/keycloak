@@ -41,6 +41,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.utils.StringUtil;
 
@@ -249,6 +250,18 @@ public final class DefaultUserProfile implements UserProfile {
 
         setAttributeIfExists(user, DISABLED_REASON, attributesRep);
         setAttributeIfExists(user, IS_TEMP_ADMIN_ATTR_NAME, attributesRep);
+
+        RealmModel realm = session.getContext().getRealm();
+
+        if (realm.isBruteForceProtected() && !attributesRep.containsKey(DISABLED_REASON)) {
+            BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
+            boolean lockedOut = protector.isPermanentlyLockedOut(session, realm, user);
+
+            if (lockedOut) {
+                rep.setEnabled(false);
+                attributesRep.put(DISABLED_REASON, List.of(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT));
+            }
+        }
 
         rep.setId(user.getId());
         rep.setAttributes(attributesRep.isEmpty() ? null : attributesRep);

@@ -10,6 +10,8 @@
     </parent>
 
     <name>Keycloak Documentation dist</name>
+    <description>Keycloak Documentation dist</description>
+
     <artifactId>keycloak-documentation</artifactId>
     <packaging>pom</packaging>
 

@@ -7,7 +7,6 @@ import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.ast.Document;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,25 +152,17 @@ public class Config {
     }
 
     private List<String> loadConfig(String resource) {
-        try {
-            return IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
     }
 
     private Map<String, String> loadConfigMap(String resource) {
-        try {
-            List<String> lines = IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
-            Map<String, String> m = new HashMap<>();
-            for (String l : lines) {
-                String[] s = l.split("=");
-                m.put(s[0], s[1]);
-            }
-            return m;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        List<String> lines = IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
+        Map<String, String> m = new HashMap<>();
+        for (String l : lines) {
+            String[] s = l.split("=");
+            m.put(s[0], s[1]);
         }
+        return m;
     }
 
 }

@@ -43,6 +43,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.WebAuthnAuthenticatorsBean;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -209,7 +210,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         boolean isUVFlagChecked = false;
         String userVerificationRequirement = getWebAuthnPolicy(context).getUserVerificationRequirement();
-        if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
+        if (Constants.WEBAUTHN_POLICY_OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
 
         UserModel user = session.users().getUserById(context.getRealm(), userId);
 
@@ -252,7 +253,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.getEvent()
                 .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, isUVChecked)
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
-            context.success();
+            context.success(getCredentialType());
         } else {
             context.getEvent()
                 .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId)

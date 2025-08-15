@@ -179,8 +179,9 @@ public class RealmConfigData {
             if (clients == null) {
                 clients = source.clients;
             } else {
-                for (String key: source.clients.keySet()) {
-                    String val = source.clients.get(key);
+                for (var entry : source.clients.entrySet()) {
+                    String key = entry.getKey();
+                    String val = entry.getValue();
                     if (!"".equals(val)) {
                         clients.put(key, val);
                     } else {

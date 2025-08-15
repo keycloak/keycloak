@@ -38,7 +38,7 @@ public interface ProviderFactory<T extends Provider> {
     T create(KeycloakSession session);
 
     /**
-     * Only called once when the factory is first created.  This config is pulled from keycloak_server.json
+     * Only called once when the factory is first created.
      *
      * @param config
      */

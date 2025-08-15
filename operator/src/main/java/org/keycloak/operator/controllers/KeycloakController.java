@@ -127,7 +127,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
             return UpdateControl.patchResource(patchedKc);
         }
 
-        var existingDeployment = context.getSecondaryResource(StatefulSet.class).orElse(null);
+        var existingDeployment = context.getSecondaryResource(StatefulSet.class).filter(ss -> ss.hasOwnerReferenceFor(kc)).orElse(null);
         ContextUtils.storeOperatorConfig(context, config);
         ContextUtils.storeWatchedResources(context, watchedResources);
         ContextUtils.storeDistConfigurator(context, distConfigurator);
@@ -218,14 +218,18 @@ public class KeycloakController implements Reconciler<Keycloak> {
                 .ofNullable(existingDeployment.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MIGRATING_ANNOTATION))
                 .map(Boolean::valueOf).orElse(false)) {
             status.addNotReadyMessage("Performing Keycloak update, scaling down the deployment");
-        } else if (existingDeployment.getStatus() != null
-                && existingDeployment.getStatus().getCurrentRevision() != null
-                && existingDeployment.getStatus().getUpdateRevision() != null
-                && !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision())) {
+        } else if (isRolling(existingDeployment)) {
             status.addRollingUpdateMessage("Rolling out deployment update");
         }
 
         distConfigurator.validateOptions(keycloakCR, status);
+    }
+
+    public static boolean isRolling(StatefulSet existingDeployment) {
+        return existingDeployment.getStatus() != null
+                && existingDeployment.getStatus().getCurrentRevision() != null
+                && existingDeployment.getStatus().getUpdateRevision() != null
+                && !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision());
     }
 
     public void validatePodTemplate(Keycloak keycloakCR, KeycloakStatusAggregator status) {

@@ -1,3 +1,4 @@
+<#import "/templates/features.adoc" as features>
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 
@@ -48,20 +49,20 @@ When a feature is disabled all versions of that feature are disabled.
 
 The following list contains supported features that are enabled by default, and can be disabled if not needed.
 
-<@showFeatures ctx.features.supported/>
+<@features.table ctx.features.supported/>
 
 === Disabled by default
 
 The following list contains supported features that are disabled by default, and can be enabled if needed.
 
-<@showFeatures ctx.features.supportedDisabledByDefault/>
+<@features.table ctx.features.supportedDisabledByDefault/>
 
 == Preview features
 
 Preview features are disabled by default and are not recommended for use in production.
 These features may change or be removed at a future release.
 
-<@showFeatures ctx.features.preview/>
+<@features.table ctx.features.preview/>
 
 == Deprecated features
 
@@ -69,7 +70,7 @@ These features may change or be removed at a future release.
 
 The following list contains deprecated features that will be removed in a future release. These features are disabled by default.
 
-<@showFeatures ctx.features.deprecated/>
+<@features.table ctx.features.deprecated/>
 
 <#else>
 
@@ -78,10 +79,3 @@ There are no deprecated features in this {project_name} release.
 </#if>
 
 </@tmpl.guide>
-
-<#macro showFeatures features>
-<#list features as feature>
-[.features-name]#${feature.name}#::
-[.features-description]#${feature.description}#
-</#list>
-</#macro>

@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 
 function getMobileUserDropdownSelector(page: Page) {
   return page.getByTestId("options-kebab-toggle");

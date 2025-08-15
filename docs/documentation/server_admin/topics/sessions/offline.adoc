@@ -24,20 +24,4 @@ Clients can request an offline token by adding the parameter `scope=offline_acce
 
 {project_name} will limit its internal cache for offline user and offline client sessions to 10000 entries by default, which will reduce the overall memory usage for offline sessions.
 Items which are evicted from memory will be loaded on-demand from the database when needed.
-To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
-
-If you disabled feature `persistent-user-sessions`, it is possible to reduce memory requirements using a configuration option that shortens lifespan for imported offline sessions. Such sessions will be evicted from the Infinispan caches after the specified lifespan, but still available in the database. This will lower memory consumption, especially for deployments with a large number of offline sessions.
-
-To specify the lifespan override for offline user sessions, start {project_name} server with the following parameter:
-
-[source,bash]
-----
---spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override=<lifespan-in-seconds>
-----
-
-Similarly for offline client sessions:
-
-[source,bash]
-----
---spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override=<lifespan-in-seconds>
-----
+See the server configuration guide to change this default.

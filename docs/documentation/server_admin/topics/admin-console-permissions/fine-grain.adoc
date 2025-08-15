@@ -1,8 +1,9 @@
 
+[#fine-grained-admin-permissions-v1]
 === Fine grained admin permissions V1
 
-IMPORTANT: fine-grained admin permissions V1 have been replaced by a <<_fine_grained_permissions, new version>>. 
-Version 1 of the feature is still marked as preview and is available, but it may be deprecated and removed 
+IMPORTANT: fine-grained admin permissions V1 have been replaced by a <<_fine_grained_permissions, new version>>.
+Version 1 of the feature is still marked as preview and is available, but it may be deprecated and removed
 in future. To enable it, start the server with `--features=admin-fine-grained-authz:v1`.
 
 Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create

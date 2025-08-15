@@ -1,18 +1,22 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { selectItem } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToRealm, goToUserFederation } from "../utils/sidebar";
-import { assertRowExists, clickRowKebabItem, searchItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { selectItem } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToUserFederation } from "../utils/sidebar.ts";
+import {
+  assertRowExists,
+  clickRowKebabItem,
+  searchItem,
+} from "../utils/table.ts";
 import {
   clickAddMapper,
   fillHardwareAttributeMapper,
   goToMapperTab,
   saveMapper,
-} from "./ldap-mapper";
+} from "./ldap-mapper.ts";
 
 const provider = "ldap";
 

@@ -1,12 +1,12 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
 import {
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   assertExecutorInList,
   assertIntentClient,
@@ -22,9 +22,9 @@ import {
   searchClientProfile,
   searchNonExistingClientProfile,
   selectExecutorType,
-} from "./client-profiles";
-import { clickTableRowItem } from "../utils/table";
-import { confirmModal } from "../utils/modal";
+} from "./client-profiles.ts";
+import { clickTableRowItem } from "../utils/table.ts";
+import { confirmModal } from "../utils/modal.ts";
 
 test.describe("Realm settings client profiles tab tests", () => {
   const profileName = "Test";
@@ -74,6 +74,7 @@ test.describe("Realm settings client profiles tab tests", () => {
     );
 
     test.beforeEach(async ({ page }) => {
+      await searchClientProfile(page, editedProfileName);
       await clickTableRowItem(page, editedProfileName);
     });
 

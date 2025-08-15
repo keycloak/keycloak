@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-admin-cli</artifactId>
     <name>Keycloak Admin CLI</name>
-    <description/>
+    <description>Keycloak Admin CLI</description>
 
     <dependencies>
         <dependency>

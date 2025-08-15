@@ -221,4 +221,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setAdminPermissionsEnabled(adminPermissionsEnabled);
         return this;
     }
+
+    public RealmAttributeUpdater setWebAuthnPolicyPasswordlessPasskeysEnabled(Boolean passkeysEnabled) {
+        rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(passkeysEnabled);
+        return this;
+    }
 }

@@ -1,23 +1,27 @@
 package org.keycloak.guides.maven;
 
-import freemarker.template.TemplateException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Stream;
+
 import org.apache.maven.plugin.logging.Log;
 import org.keycloak.common.Version;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import freemarker.template.TemplateException;
 
 public class GuideBuilder {
 
     private final FreeMarker freeMarker;
-    private final File srcDir;
-    private final File targetDir;
+    private final Path srcDir;
+    private final Path targetDir;
     private final Log log;
 
-    public GuideBuilder(File srcDir, File targetDir, Log log, Properties properties) throws IOException {
+    public GuideBuilder(Path srcDir, Path targetDir, Log log, Properties properties) throws IOException {
         this.srcDir = srcDir;
         this.targetDir = targetDir;
         this.log = log;
@@ -27,32 +31,29 @@ public class GuideBuilder {
         globalAttributes.put("version", Version.VERSION);
         globalAttributes.put("properties", properties);
 
-        this.freeMarker = new FreeMarker(srcDir.getParentFile(), globalAttributes);
+        this.freeMarker = new FreeMarker(srcDir.getParent(), globalAttributes);
     }
 
     public void build() throws TemplateException, IOException {
-        if (!srcDir.isDirectory()) {
-            if (!srcDir.mkdir()) {
-                throw new RuntimeException("Can't create folder " + srcDir);
-            }
+        Files.createDirectories(srcDir);
+        Path partials = srcDir.resolve("partials");
+        List<Path> templatePaths;
+        try (Stream<Path> files = Files.walk(srcDir)) {
+            templatePaths = files
+                  .filter(Files::isRegularFile)
+                  .filter(p -> !p.startsWith(partials))
+                  .filter(p -> p.getFileName().toString().endsWith(".adoc"))
+                  .toList();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to discover templates in " + srcDir, e);
         }
 
-        for (String t : srcDir.list((dir, name) -> name.endsWith(".adoc"))) {
-            freeMarker.template(srcDir.getName() + "/" + t, targetDir.getParentFile());
+        for (Path path : templatePaths) {
+            Path relativePath = srcDir.getParent().relativize(path);
+            freeMarker.template(relativePath, targetDir.getParent());
             if (log != null) {
-                log.info("Templated: " + srcDir.getName() + "/" + t);
-            }
-        }
-
-        File templatesDir = new File(srcDir, "templates");
-        if (templatesDir.isDirectory()) {
-            for (String t : templatesDir.list((dir, name) -> name.endsWith(".adoc"))) {
-                freeMarker.template(srcDir.getName() + "/" + templatesDir.getName() + "/" + t, targetDir.getParentFile());
-                if (log != null) {
-                    log.info("Templated: " + templatesDir.getName() + "/" + t);
-                }
+                log.info("Templated: " + relativePath);
             }
         }
     }
-
 }

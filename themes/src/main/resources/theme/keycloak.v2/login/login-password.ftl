@@ -1,6 +1,7 @@
 <#import "template.ftl" as layout>
 <#import "field.ftl" as field>
 <#import "buttons.ftl" as buttons>
+<#import "passkeys.ftl" as passkeys>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('password'); section>
 <!-- template: login-password.ftl -->
     <#if section = "header">
@@ -14,6 +15,7 @@
                 </form>
             </div>
         </div>
+        <@passkeys.conditionalUIData />
     </#if>
 
 </@layout.registrationLayout>

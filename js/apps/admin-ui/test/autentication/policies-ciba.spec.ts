@@ -1,14 +1,14 @@
 import { test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
+import adminClient from "../utils/AdminClient.ts";
 import {
   assertFieldError,
   assertRequiredFieldError,
   clickSaveButton,
-} from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToAuthentication, goToRealm } from "../utils/sidebar";
+} from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToAuthentication, goToRealm } from "../utils/sidebar.ts";
 import {
   assertBackchannelTokenDeliveryMode,
   assertExpiresInput,
@@ -22,7 +22,7 @@ import {
   setBackchannelTokenDeliveryMode,
   setExpiresInput,
   setIntervalInput,
-} from "./policies-ciba";
+} from "./policies-ciba.ts";
 
 test.describe("Authentication - Policies - CIBA", () => {
   const realmName = `authentication-policies-${uuidv4()}`;

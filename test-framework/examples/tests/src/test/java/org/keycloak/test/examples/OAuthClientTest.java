@@ -134,7 +134,7 @@ public class OAuthClientTest {
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(authzResponse.getCode());
         oauth.logoutForm().idTokenHint(accessTokenResponse.getIdToken()).open();
         oauth.loginForm().open();
-        Assertions.assertTrue(loginPage.isActivePage());
+        loginPage.assertCurrent();
     }
 
     public static class OAuthUserConfig implements UserConfig {

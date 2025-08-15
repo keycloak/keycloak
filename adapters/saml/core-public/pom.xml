@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-saml-adapter-api-public</artifactId>
     <name>Keycloak SAML Client Adapter Public API</name>
-    <description/>
+    <description>Keycloak SAML Client Adapter Public API</description>
 
 
     <properties>

@@ -162,17 +162,27 @@ public class DefaultThemeManager implements ThemeManager {
 
     private static class ExtendingTheme implements Theme {
 
-        private List<Theme> themes;
-        private Set<ThemeResourceProvider> themeResourceProviders;
+        private final List<Theme> themes;
+        private final Set<ThemeResourceProvider> themeResourceProviders;
 
         private Properties properties;
 
-        private ConcurrentHashMap<String, ConcurrentHashMap<Locale, Map<Locale, Properties>>> messages =
+        private final ConcurrentHashMap<String, ConcurrentHashMap<Locale, Map<Locale, Properties>>> messages =
                 new ConcurrentHashMap<>();
+
+        private Pattern compiledContentHashPattern;
 
         public ExtendingTheme(List<Theme> themes, Set<ThemeResourceProvider> themeResourceProviders) {
             this.themes = themes;
             this.themeResourceProviders = themeResourceProviders;
+            try {
+                Object contentHashPattern = getProperties().get(CONTENT_HASH_PATTERN);
+                if (contentHashPattern != null) {
+                    compiledContentHashPattern = Pattern.compile(contentHashPattern.toString());
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
@@ -250,6 +260,11 @@ public class DefaultThemeManager implements ThemeManager {
             return LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, messagesByLocale);
         }
 
+        @Override
+        public boolean hasContentHash(String path) throws IOException {
+            return compiledContentHashPattern != null && compiledContentHashPattern.matcher(path).matches();
+        }
+
         private Map<Locale, Properties> getMessagesByLocale(String baseBundlename, Locale locale) throws IOException {
             if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
                 Locale parent = getParent(locale);
@@ -296,9 +311,9 @@ public class DefaultThemeManager implements ThemeManager {
                 // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
                 // Once the existing locales have been moved, this code can be removed.
                 if (l.equals("zh-CN")) {
-                    rl = "zh-HANS";
+                    rl = "zh-Hans";
                 } else if (l.equals("zh-TW")) {
-                    rl = "zh-HANT";
+                    rl = "zh-Hans";
                 }
                 Locale loc = Locale.forLanguageTag(rl);
                 label = capitalize(loc.getDisplayName(locale), locale);

@@ -2,6 +2,7 @@ package org.keycloak.it.utils;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
+import io.quarkus.bootstrap.utils.BuildToolHelper;
 import io.restassured.RestAssured;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
@@ -16,8 +17,10 @@ import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
+import org.testcontainers.utility.MountableFile;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -33,9 +36,16 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
         final ToStringConsumer stdOut = new ToStringConsumer();
         final ToStringConsumer stdErr = new ToStringConsumer();
+        final Consumer<OutputFrame> customLogConsumer;
+        public BackupConsumer(Consumer<OutputFrame> customLogConsumer) {
+            this.customLogConsumer = customLogConsumer;
+        }
 
         @Override
         public void accept(OutputFrame t) {
+            if (customLogConsumer != null) {
+                customLogConsumer.accept(t);
+            }
             if (t.getType() == OutputType.STDERR) {
                 stdErr.accept(t);
             } else if (t.getType() == OutputType.STDOUT) {
@@ -46,6 +56,8 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     private static final Logger LOGGER = Logger.getLogger(DockerKeycloakDistribution.class);
 
+    public static final int STARTUP_TIMEOUT_SECONDS = 120;
+
     private final boolean debug;
     private final boolean manualStop;
     private final int requestPort;
@@ -55,20 +67,27 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     private String stdout = "";
     private String stderr = "";
-    private BackupConsumer backupConsumer = new BackupConsumer();
-    private final File dockerScriptFile = new File("../../container/ubi-null.sh");
-
+    private BackupConsumer backupConsumer;
+    private Consumer<OutputFrame> customLogConsumer;
     private GenericContainer<?> keycloakContainer = null;
     private String containerId = null;
 
     private final Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
     private final Map<String, String> envVars = new HashMap<>();
+    private final LazyFuture<String> image;
+
+    private final Map<MountableFile, String> copyToContainer = new HashMap<>();
 
     public DockerKeycloakDistribution(boolean debug, boolean manualStop, int requestPort, int[] exposedPorts) {
+        this(debug, manualStop, requestPort, exposedPorts, null);
+    }
+
+    public DockerKeycloakDistribution(boolean debug, boolean manualStop, int requestPort, int[] exposedPorts, LazyFuture<String> image) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.requestPort = requestPort;
         this.exposedPorts = IntStream.of(exposedPorts).boxed().toArray(Integer[]::new);
+        this.image = image == null ? createImage(false) : image;
     }
 
     @Override
@@ -76,37 +95,54 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         this.envVars.put(name, value);
     }
 
+    public void setCustomLogConsumer(Consumer<OutputFrame> customLogConsumer) {
+        this.customLogConsumer = customLogConsumer;
+    }
+
     private GenericContainer<?> getKeycloakContainer() {
-        File distributionFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".tar.gz");
-
-        if (!distributionFile.exists()) {
-            distributionFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
-        }
-
-        if (!distributionFile.exists()) {
-            throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exist");
-        }
-
-        File dockerFile = new File("../../container/Dockerfile");
-        LazyFuture<String> image;
-
-        if (dockerFile.exists()) {
-            image = new ImageFromDockerfile("keycloak-under-test", false)
-                    .withFileFromFile("keycloak.tar.gz", distributionFile)
-                    .withFileFromFile("ubi-null.sh", dockerScriptFile)
-                    .withFileFromFile("Dockerfile", dockerFile)
-                    .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz");
-            toString();
-        } else {
-            image = new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
-        }
-
         return new GenericContainer<>(image)
                 .withEnv(envVars)
                 .withExposedPorts(exposedPorts)
                 .withStartupAttempts(1)
-                .withStartupTimeout(Duration.ofSeconds(120))
+                .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
                 .waitingFor(Wait.forListeningPorts(8080));
+    }
+
+    public static LazyFuture<String> createImage(boolean failIfDockerFileMissing) {
+        Path quarkusModule = Maven.getKeycloakQuarkusModulePath();
+        var distributionFile = quarkusModule.resolve(Path.of("dist", "target", "keycloak-" + Version.VERSION + ".tar.gz"))
+                .toFile();
+
+//        In current Dockerfile we support only tar.gz keycloak distribution, this module, however. does not have this
+//        dependency. Adding the dependency breaks our CI as tar.gz files are not part of CI build archive.
+//        Adding tar.gz files to archive would double the size of each build archive.
+//        Therefore, for now, we support only building the image from the target folder of this module.
+//        if (!distributionFile.exists()) {
+//            distributionFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
+//        }
+
+        if (!distributionFile.exists()) {
+            throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exist");
+        }
+        LOGGER.infof("Building a new docker image from distribution: %s", distributionFile.getAbsoluteFile());
+
+        var dockerFile = quarkusModule.resolve(Path.of("container", "Dockerfile"))
+                .toFile();
+        var ubiNullScript = quarkusModule.resolve(Path.of("container", "ubi-null.sh"))
+                .toFile();
+
+        if (dockerFile.exists()) {
+            return new ImageFromDockerfile("keycloak-under-test", false)
+                    .withFileFromFile("keycloak.tar.gz", distributionFile)
+                    .withFileFromFile("ubi-null.sh", ubiNullScript)
+                    .withFileFromFile("Dockerfile", dockerFile)
+                    .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz");
+        } else {
+            if (failIfDockerFileMissing) {
+                throw new RuntimeException("Docker file %s not found".formatted(dockerFile.getAbsolutePath()));
+            }
+            return new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
+        }
     }
 
     @Override
@@ -117,9 +153,11 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             this.stdout = "";
             this.stderr = "";
             this.containerId = null;
-            this.backupConsumer = new BackupConsumer();
+            this.backupConsumer = new BackupConsumer(customLogConsumer);
 
             keycloakContainer = getKeycloakContainer();
+
+            copyToContainer.forEach(keycloakContainer::withCopyFileToContainer);
 
             keycloakContainer
                     .withLogConsumer(backupConsumer)
@@ -158,6 +196,19 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    public void copyProvider(String groupId, String artifactId) {
+        Path providerPath = Maven.resolveArtifact(groupId, artifactId);
+        if (!Files.isRegularFile(providerPath)) {
+            throw new RuntimeException("Failed to copy JAR file to 'providers' directory; " + providerPath + " is not a file");
+        }
+
+        copyToContainer.put(MountableFile.forHostPath(providerPath), "/opt/keycloak/providers/" + providerPath.getFileName());
+    }
+
+    public void copyConfigFile(Path configFilePath) {
+        copyToContainer.put(MountableFile.forHostPath(configFilePath), "/opt/keycloak/conf/" + configFilePath.getFileName());
+    }
+
     // After the web server is responding we are still producing some logs that got checked in the tests
     private void waitForStableOutput() {
         int retry = 10;
@@ -174,7 +225,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 String newLastLine = splitted[splitted.length - 1];
 
                 retry -= 1;
-                stableOutput = lastLine.equals(newLastLine) | (retry <= 0);
+                stableOutput = lastLine.equals(newLastLine) || (retry <= 0);
                 lastLine = newLastLine;
             } else {
                 stableOutput = true;
@@ -224,7 +275,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 };
                 parallelReaperExecutor.execute(reaper);
             } catch (Exception cause) {
-                throw new RuntimeException("Failed to schecdule the removal of the container", cause);
+                throw new RuntimeException("Failed to schedule the removal of the container", cause);
             }
         }
     }
@@ -290,6 +341,14 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     @Override
     public void clearEnv() {
         this.envVars.clear();
+    }
+
+    public int getMappedPort(int port) {
+        if (keycloakContainer == null || !keycloakContainer.isRunning()) {
+            throw new IllegalStateException("KeycloakContainer is not running.");
+        }
+
+        return keycloakContainer.getMappedPort(port);
     }
 
 }

@@ -1,11 +1,11 @@
 import { test } from "@playwright/test";
-import adminClient from "../utils/AdminClient";
-import { switchOn } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertModalMessage, confirmModal } from "../utils/modal";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
-import { assertRowExists, searchItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { switchOn } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { assertModalMessage, confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
+import { assertRowExists, searchItem } from "../utils/table.ts";
 import {
   addSavedEventTypes,
   clickClearEvents,
@@ -15,7 +15,7 @@ import {
   fillEventListener,
   goToEventsTab,
   goToRealmEventsTab,
-} from "./events";
+} from "./events.ts";
 
 test.describe("Realm settings events tab tests", () => {
   const realmName = `events-realm-settings-${crypto.randomUUID()}`;

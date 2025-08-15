@@ -32,19 +32,36 @@ import jakarta.ws.rs.core.Response;
 
 public class PasswordForm extends UsernamePasswordForm implements CredentialValidator<PasswordCredentialProvider> {
 
+    public PasswordForm(KeycloakSession session) {
+        super(session);
+    }
+
+    @Override
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         return validatePassword(context, context.getUser(), formData, false);
     }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        if (alreadyAuthenticatedUsingPasswordlessCredential(context)) {
+            context.success();
+            return;
+        }
+
+        // setup webauthn data when passkeys enabled
+        if (isConditionalPasskeysEnabled(context.getUser())) {
+            webauthnAuth.fillContextForm(context);
+        }
+
         Response challengeResponse = context.form().createLoginPassword();
         context.challenge(challengeResponse);
     }
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return user.credentialManager().isConfiguredFor(getCredentialProvider(session).getType());
+        return user.credentialManager().isConfiguredFor(getCredentialProvider(session).getType())
+                || (isConditionalPasskeysEnabled(user))
+                || alreadyAuthenticatedUsingPasswordlessCredential(session.getContext().getAuthenticationSession());
     }
 
     @Override

@@ -74,6 +74,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo26_0_0(true);
         testMigrationTo26_1_0(true);
         testMigrationTo26_3_0();
+        testMigrationTo26_4_0();
     }
 
     @Test
@@ -89,5 +90,6 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo26_0_0(true);
         testMigrationTo26_1_0(true);
         testMigrationTo26_3_0();
+        testMigrationTo26_4_0();
     }
 }

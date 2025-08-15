@@ -12,6 +12,8 @@
     </parent>
     
     <name>Keycloak Quarkus Server App</name>
+    <description>Keycloak Quarkus Server App</description>
+
     <artifactId>keycloak-quarkus-server-app</artifactId>
 
     <dependencies>
@@ -51,7 +53,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire-plugin.version}</version>
+                <version>${version.surefire.plugin}</version>
                 <configuration>
                     <systemProperties>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>

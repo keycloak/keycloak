@@ -12,7 +12,7 @@ We are really sorry for this inconvenience and understand this will make it sign
 
 One thing worth pointing out is the switch to Quarkus distribution, which we plan to make fully supported in Keycloak 17, will make it significantly easier to configure and upgrade Keycloak.
 
-For more information on WildFly 25 refer to the https://www.wildfly.org/news/2021/10/05/WildFly25-Final-Released/[WildFly 25 release notes].
+For more information on WildFly 25 refer to the https://www.wildfly.org/news/2021/10/05/WildFly-25-is-released/[WildFly 25 release notes].
 
 = Proxy environment variables
 

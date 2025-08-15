@@ -49,4 +49,8 @@ public abstract class SimpleHttpDefault extends SimpleHttp {
         return SimpleHttp.doGet(url, client, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
     }
 
+    public static SimpleHttp doHead(String url, HttpClient client) {
+        return SimpleHttp.doHead(url, client, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
+    }
+
 }

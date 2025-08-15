@@ -116,7 +116,7 @@ spec:
     ...
 ----
 
-In the above example placeholder replacement will be enabled and an environment variable with key `ENV_KEY` will be created from the Secret `SECRET_NAME`'s value for key `SECRET_KEY`.
+In the above example placeholder replacement will be enabled and an environment variable with key `ENV_KEY` will be created from the Secret ``SECRET_NAME``'s value for key `SECRET_KEY`.
 Currently only Secrets are supported and they must be in the same namespace as the Keycloak CR.
 
 </@tmpl.guide>

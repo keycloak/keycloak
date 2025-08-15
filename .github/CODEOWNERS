@@ -2,7 +2,7 @@
 # Overview
 #
 # Pattern used to match files follows most of the same rules as used in gitignore files. Order is
-# important; the last matching pattern takes precendence.
+# important; the last matching pattern takes precedence.
 #
 # For more info see:
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
@@ -46,7 +46,17 @@
 ###################################################################################################
 
 /themes/                                                    @keycloak/ui-maintainers @keycloak/maintainers
-/js/                                                        @keycloak/ui-maintainers
+/js/                                                        @keycloak/ui-maintainers @keycloak/maintainers
 /js/**/messages_*.properties                                @keycloak/ui-maintainers @keycloak/maintainers
-/adapters/oidc/js/                                          @keycloak/ui-maintainers
-/rest/admin-ui-ext/                                         @keycloak/ui-maintainers
+/adapters/oidc/js/                                          @keycloak/ui-maintainers @keycloak/maintainers
+/rest/admin-ui-ext/                                         @keycloak/ui-maintainers @keycloak/maintainers
+
+###################################################################################################
+# SRE (@keycloak/sre-maintainers)
+###################################################################################################
+
+/model/infinispan/                                          @keycloak/sre-maintainers @keycloak/maintainers
+/tests/clustering/                                          @keycloak/sre-maintainers @keycloak/maintainers
+/test-framework/clustering/                                 @keycloak/sre-maintainers @keycloak/maintainers
+/docs/guides/high-availability/                             @keycloak/sre-maintainers @keycloak/maintainers
+/docs/guides/observability/                                 @keycloak/sre-maintainers @keycloak/maintainers

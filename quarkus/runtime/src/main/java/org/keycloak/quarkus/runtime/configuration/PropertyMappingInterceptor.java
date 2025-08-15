@@ -17,9 +17,11 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -35,6 +37,7 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
 import jakarta.annotation.Priority;
+import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
@@ -48,6 +51,9 @@ import jakarta.annotation.Priority;
  *
  * <p>This interceptor must execute after the {@link io.smallrye.config.ExpressionConfigSourceInterceptor} so that expressions
  * are properly resolved before executing this interceptor.
+ *
+ * <p>The {@link NestedPropertyMappingInterceptor} catches property mappings that need to be performed within expressions.
+ *
  * <p>
  * The reason for the used priority is to always execute the interceptor before default Application Config Source interceptors
  */
@@ -81,7 +87,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
      */
     @Override
     public Iterator<String> iterateNames(ConfigSourceInterceptorContext context) {
-        Iterable<String> iterable = () -> context.iterateNames();
+        Iterable<String> iterable = context::iterateNames;
 
         final Set<PropertyMapper<?>> allMappers = PropertyMappers.getMappers();
 
@@ -92,7 +98,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         boolean filterRuntime = isRebuild() || Environment.isRebuildCheck();
 
         var baseStream = StreamSupport.stream(iterable.spliterator(), false).flatMap(name -> {
-            PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
+            final PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
 
             if (mapper == null) {
                 return Stream.of(name);
@@ -100,9 +106,28 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             if (filterRuntime && mapper.getCategory() == OptionCategory.CONFIG) {
                 return Stream.of(); // advertising the keystore type causes the keystore to be used early
             }
+
+            final PropertyMapper<?> mappedMapper = mapper.forKey(name);
+
+            // only include additional mappings if we're on the from side of the mapping as the mapping may not be bi-directional
+            if (!name.equals(mappedMapper.getFrom())) {
+                return Stream.of(name);
+            }
+
             allMappers.remove(mapper);
 
-            if (!mapper.hasWildcard()) {
+            if (mapper.hasWildcard()) {
+                // non-wildcard connected options should be already advertised by the logic in iterateNames()
+                if (mapper.hasConnectedOptions()) {
+                    var wildcardMapper = (WildcardPropertyMapper<?>) mapper;
+                    var wildcardValue = wildcardMapper.extractWildcardValue(name).orElseThrow();
+                    var connectedTo = wildcardMapper.getConnectedOptions(wildcardValue).stream()
+                            .map(option -> Optional.ofNullable(PropertyMappers.getMapper(NS_KEYCLOAK_PREFIX + option)).orElseThrow(() -> new IllegalArgumentException("Cannot find connected options")))
+                            .map(m -> m.hasWildcard() ? ((WildcardPropertyMapper<?>) m).getTo(wildcardValue) : m.getTo());
+
+                    return Stream.concat(toDistinctStream(name, wildcardMapper.getTo(wildcardValue)), connectedTo);
+                }
+            } else {
                 // this is not a wildcard value, but may map to wildcards
                 // the current example is something like log-level=wildcardCat1:level,wildcardCat2:level
                 var wildCard = PropertyMappers.getWildcardMappedFrom(mapper.getOption());
@@ -114,16 +139,14 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
                 }
             }
 
-            mapper = mapper.forKey(name);
-
             // there is a corner case here: -1 for the reload period has no 'to' value.
             // if that becomes an issue we could use more metadata to perform a full mapping
-            return toDistinctStream(name, mapper.getTo());
+            return toDistinctStream(name, mappedMapper.getTo());
         });
 
         // include anything remaining that has a default value
         var defaultStream = allMappers.stream()
-                .filter(m -> !m.getDefaultValue().isEmpty() && !m.hasWildcard()
+                .filter(m -> m.getDefaultValue().isPresent() && !m.hasWildcard()
                         && m.getCategory() != OptionCategory.CONFIG) // advertising the keystore type causes the keystore to be used early
                 .flatMap(m -> toDistinctStream(m.getTo()));
 

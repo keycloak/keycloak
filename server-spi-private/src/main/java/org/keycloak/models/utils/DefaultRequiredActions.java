@@ -193,7 +193,7 @@ public class DefaultRequiredActions {
             verifyProfile.setName("Verify Profile");
             verifyProfile.setProviderId(UserModel.RequiredAction.VERIFY_PROFILE.name());
             verifyProfile.setDefaultAction(false);
-            verifyProfile.setPriority(90);
+            verifyProfile.setPriority(100);
             realm.addRequiredActionProvider(verifyProfile);
         }
     }
@@ -219,7 +219,7 @@ public class DefaultRequiredActions {
             deleteCredential.setName("Delete Credential");
             deleteCredential.setProviderId("delete_credential");
             deleteCredential.setDefaultAction(false);
-            deleteCredential.setPriority(100);
+            deleteCredential.setPriority(110);
             realm.addRequiredActionProvider(deleteCredential);
         }
     }
@@ -232,7 +232,7 @@ public class DefaultRequiredActions {
             idpLink.setName("Linking Identity Provider");
             idpLink.setProviderId("idp_link");
             idpLink.setDefaultAction(false);
-            idpLink.setPriority(110);
+            idpLink.setPriority(120);
             realm.addRequiredActionProvider(idpLink);
         }
     }
@@ -261,7 +261,7 @@ public class DefaultRequiredActions {
 
         if (!isRequiredActionActive) {
             RequiredActionProviderModel updateEmail = new RequiredActionProviderModel();
-            updateEmail.setEnabled(true);
+            updateEmail.setEnabled(false);
             updateEmail.setAlias(PROVIDER_ID);
             updateEmail.setName("Update Email");
             updateEmail.setProviderId(PROVIDER_ID);
@@ -287,7 +287,7 @@ public class DefaultRequiredActions {
             recoveryCodes.setName("Recovery Authentication Codes");
             recoveryCodes.setProviderId(PROVIDER_ID);
             recoveryCodes.setDefaultAction(false);
-            recoveryCodes.setPriority(120);
+            recoveryCodes.setPriority(130);
             realm.addRequiredActionProvider(recoveryCodes);
         }
     }
@@ -308,7 +308,7 @@ public class DefaultRequiredActions {
             webauthnRegister.setName("Webauthn Register");
             webauthnRegister.setProviderId(PROVIDER_ID);
             webauthnRegister.setDefaultAction(false);
-            webauthnRegister.setPriority(70);
+            webauthnRegister.setPriority(80);
             realm.addRequiredActionProvider(webauthnRegister);
         }
     }
@@ -329,7 +329,7 @@ public class DefaultRequiredActions {
             webauthnRegister.setName("Webauthn Register Passwordless");
             webauthnRegister.setProviderId(PROVIDER_ID);
             webauthnRegister.setDefaultAction(false);
-            webauthnRegister.setPriority(80);
+            webauthnRegister.setPriority(90);
             realm.addRequiredActionProvider(webauthnRegister);
         }
     }

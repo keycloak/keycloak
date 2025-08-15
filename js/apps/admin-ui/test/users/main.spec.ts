@@ -1,23 +1,23 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
+import adminClient from "../utils/AdminClient.ts";
 import {
   assertAttributeLength,
   clickAttributeSaveButton,
   fillAttributeData,
   goToAttributesTab,
-} from "../utils/attributes";
-import { selectItem } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToRealm, goToRealmSettings, goToUsers } from "../utils/sidebar";
+} from "../utils/attributes.ts";
+import { selectItem } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToRealmSettings, goToUsers } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   assertRowExists,
   clickTableRowItem,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   clickAddUserButton,
   clickCancelButton,
@@ -25,7 +25,7 @@ import {
   fillUserForm,
   goToGroupTab,
   joinGroup,
-} from "./main";
+} from "./main.ts";
 
 let groupName = "group";
 let groupsList: string[] = [];

@@ -19,6 +19,7 @@ package org.keycloak.client.cli.util;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessTokenResponse;
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyPair;
-import java.util.UUID;
 
 import static java.lang.System.currentTimeMillis;
 import static org.keycloak.client.cli.util.ConfigUtil.checkServerInfo;
@@ -91,22 +91,22 @@ public class AuthUtil {
                     authorization = BasicAuthHelper.createHeader(realmConfig.getClientId(), realmConfig.getSecret());
                 }
 
-                InputStream result = doPost(realmConfig.serverUrl() + "/realms/" + realmConfig.realm() + "/protocol/openid-connect/token",
-                        APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), authorization);
+                try (InputStream result = doPost(realmConfig.serverUrl() + "/realms/" + realmConfig.realm() + "/protocol/openid-connect/token",
+                        APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), authorization)) {
 
-                AccessTokenResponse token = JsonSerialization.readValue(result, AccessTokenResponse.class);
+                    AccessTokenResponse token = JsonSerialization.readValue(result, AccessTokenResponse.class);
 
-                saveMergeConfig(cfg -> {
-                    RealmConfigData realmData = cfg.sessionRealmConfigData();
-                    realmData.setToken(token.getToken());
-                    realmData.setRefreshToken(token.getRefreshToken());
-                    realmData.setExpiresAt(currentTimeMillis() + token.getExpiresIn() * 1000);
-                    if (token.getRefreshToken() != null) {
-                        realmData.setRefreshExpiresAt(currentTimeMillis() + token.getRefreshExpiresIn() * 1000);
-                    }
-                });
-                return token.getToken();
-
+                    saveMergeConfig(cfg -> {
+                        RealmConfigData realmData = cfg.sessionRealmConfigData();
+                        realmData.setToken(token.getToken());
+                        realmData.setRefreshToken(token.getRefreshToken());
+                        realmData.setExpiresAt(currentTimeMillis() + token.getExpiresIn() * 1000);
+                        if (token.getRefreshToken() != null) {
+                            realmData.setRefreshExpiresAt(currentTimeMillis() + token.getRefreshExpiresIn() * 1000);
+                        }
+                    });
+                    return token.getToken();
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to refresh access token - " + e.getMessage(), e);
             }
@@ -123,10 +123,10 @@ public class AuthUtil {
                     .append("&password=").append(urlencode(password))
                     .append("&client_id=").append(urlencode(clientId));
 
-            InputStream result = doPost(server + "/realms/" + realm + "/protocol/openid-connect/token",
-                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), null);
-            return JsonSerialization.readValue(result, AccessTokenResponse.class);
-
+            try (InputStream result = doPost(server + "/realms/" + realm + "/protocol/openid-connect/token",
+                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), null)) {
+                return JsonSerialization.readValue(result, AccessTokenResponse.class);
+            }
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Unexpected error: ", e);
         } catch (IOException e) {
@@ -152,10 +152,10 @@ public class AuthUtil {
                 body.append("&grant_type=client_credentials");
             }
 
-            InputStream result = doPost(server + "/realms/" + realm + "/protocol/openid-connect/token",
-                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), null);
-            return JsonSerialization.readValue(result, AccessTokenResponse.class);
-
+            try (InputStream result = doPost(server + "/realms/" + realm + "/protocol/openid-connect/token",
+                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), null)) {
+                return JsonSerialization.readValue(result, AccessTokenResponse.class);
+            }
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Unexpected error: ", e);
         } catch (IOException e) {
@@ -180,10 +180,10 @@ public class AuthUtil {
                 body.append("grant_type=client_credentials");
             }
 
-            InputStream result = doPost(server + "/realms/" + realm + "/protocol/openid-connect/token",
-                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), BasicAuthHelper.createHeader(clientId, secret));
-            return JsonSerialization.readValue(result, AccessTokenResponse.class);
-
+            try (InputStream result = doPost(server + "/realms/" + realm + "/protocol/openid-connect/token",
+                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), BasicAuthHelper.createHeader(clientId, secret))) {
+                return JsonSerialization.readValue(result, AccessTokenResponse.class);
+            }
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Unexpected error: ", e);
         } catch (IOException e) {
@@ -197,7 +197,7 @@ public class AuthUtil {
         KeyPair keypair = KeystoreUtil.loadKeyPairFromKeystore(keystore, storePass, keyPass, alias, keystoreType);
 
         JsonWebToken reqToken = new JsonWebToken();
-        reqToken.id(UUID.randomUUID().toString());
+        reqToken.id(SecretGenerator.getInstance().generateSecureID());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);

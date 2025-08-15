@@ -19,7 +19,13 @@ package org.keycloak.social.github;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.ws.rs.core.Response;
+
+import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
@@ -29,6 +35,9 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.util.BasicAuthHelper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,8 +57,10 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     public static final String TOKEN_URL = DEFAULT_TOKEN_URL;
 
     public static final String DEFAULT_API_URL = "https://api.github.com";
+    public static final String APPLICATIONS_FRAGMENT = "/applications";
     public static final String PROFILE_FRAGMENT = "/user";
     public static final String EMAIL_FRAGMENT = "/user/emails";
+    public static final String DEFAULT_APPLICATIONS_URL = DEFAULT_API_URL + APPLICATIONS_FRAGMENT;
     public static final String DEFAULT_PROFILE_URL = DEFAULT_API_URL + PROFILE_FRAGMENT;
     public static final String DEFAULT_EMAIL_URL = DEFAULT_API_URL + EMAIL_FRAGMENT;
     /** @deprecated Use {@link #DEFAULT_PROFILE_URL} instead. */
@@ -65,6 +76,8 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     protected static final String BASE_URL_KEY = "baseUrl";
     /** API URL key in config map. */
     protected static final String API_URL_KEY = "apiUrl";
+    /** API URL key in config map. */
+    protected static final String GITHUB_JSON_FORMAT_KEY = "githubJsonFormat";
     /** Email URL key in config map. */
     protected static final String EMAIL_URL_KEY = "emailUrl";
 
@@ -72,6 +85,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     private final String tokenUrl;
     private final String profileUrl;
     private final String emailUrl;
+    private final boolean githubJsonFormat;
 
     public GitHubIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
         super(session, config);
@@ -88,6 +102,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
         config.setTokenUrl(tokenUrl);
         config.setUserInfoUrl(profileUrl);
         config.getConfig().put(EMAIL_URL_KEY, emailUrl);
+        githubJsonFormat = Boolean.parseBoolean(config.getConfig().getOrDefault(GITHUB_JSON_FORMAT_KEY, "false"));
     }
 
     /**
@@ -119,7 +134,16 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		return profileUrl;
 	}
 
-	@Override
+    @Override
+    public SimpleHttp authenticateTokenRequest(SimpleHttp tokenRequest) {
+        SimpleHttp simpleHttp = super.authenticateTokenRequest(tokenRequest);
+        if (githubJsonFormat) {
+            simpleHttp.acceptJson();
+        }
+        return simpleHttp;
+    }
+
+    @Override
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
 		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"), getConfig());
 
@@ -153,7 +177,6 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
                     if (user.getEmail() == null) {
                         user.setEmail(searchEmail(accessToken));
                     }
-
                     return user;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Profile could not be retrieved from the github endpoint", e);
@@ -190,7 +213,45 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		}
 	}
 
-	@Override
+    private void verifyToken(String accessToken) throws IOException {
+        String tokenUrl = DEFAULT_APPLICATIONS_URL + "/" + getConfig().getClientId() + "/token";
+        SimpleHttp.Response response = SimpleHttp.doPost(tokenUrl, session)
+                .header("Authorization",  BasicAuthHelper.createHeader(getConfig().getClientId(), getConfig().getClientSecret()))
+                .json(Map.of("access_token", accessToken)).asResponse();
+
+        JsonNode jsonNodeResponse = response.asJson();
+        if (response.getStatus() != 200) {
+            String errorMessage = getJsonProperty(jsonNodeResponse, "message");
+            throw new RuntimeException("Error message: " + errorMessage);
+        }
+
+        JsonNode appNode = jsonNodeResponse.get("app");
+        if (appNode == null || appNode.isNull()) {
+            throw new RuntimeException("Invalid token check response: 'app' field is missing.");
+        }
+
+        String clientId = getJsonProperty(appNode, "client_id");
+        if (!getConfig().getClientId().equals(clientId)) {
+            throw new RuntimeException("Client ID does not match the client_id in the access token check response.");
+        }
+    }
+
+    @Override
+    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
+        String subjectToken = tokenExchangeContext.getFormParams().getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        if (subjectToken == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
+        }
+        try {
+            verifyToken(subjectToken);
+            return doGetFederatedIdentity(subjectToken);
+        }
+        catch (Exception e) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, e.getMessage(), Response.Status.BAD_REQUEST);
+        }
+    }
+
+    @Override
 	protected String getDefaultScopes() {
 		return DEFAULT_SCOPE;
 	}

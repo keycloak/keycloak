@@ -37,7 +37,7 @@ Using distributed cache may lead to results where the SAML logout request would 
 to SAML session index to HTTP session mapping which would lead to unsuccessful logout.
 
 [[_saml_logout_in_cross_dc]]
-=== Logout in cross-site scenario
+=== Logout in multi-cluster deployments
 
 Special handling is needed for handling sessions that span multiple data centers. Imagine the following scenario:
 

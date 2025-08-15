@@ -1,6 +1,6 @@
-import { Page, expect } from "@playwright/test";
-import { selectItem } from "../utils/form";
-import { confirmModal } from "../utils/modal";
+import { type Page, expect } from "@playwright/test";
+import { selectItem } from "../utils/form.ts";
+import { confirmModal } from "../utils/modal.ts";
 
 export async function fillDuplicateFlowModal(
   page: Page,
@@ -61,7 +61,7 @@ export async function assertRowExists(page: Page, name: string, exists = true) {
   if (exists) {
     await expect(locator).toBeVisible();
   } else {
-    await expect(locator).not.toBeVisible();
+    await expect(locator).toBeHidden();
   }
 }
 
@@ -92,7 +92,7 @@ export async function goToCIBAPolicyTab(page: Page) {
   await page.getByTestId("tab-ciba-policy").click();
 }
 
-export async function addPolicy(page: Page, value) {
+export async function addPolicy(page: Page, value: string) {
   await selectItem(page, page.getByTestId("add-policy"), value);
 }
 

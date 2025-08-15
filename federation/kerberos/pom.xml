@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-kerberos-federation</artifactId>
     <name>Keycloak Kerberos Federation</name>
-    <description />
+    <description>Keycloak Kerberos Federation</description>
 
     <dependencies>
         <dependency>
@@ -54,6 +54,16 @@
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

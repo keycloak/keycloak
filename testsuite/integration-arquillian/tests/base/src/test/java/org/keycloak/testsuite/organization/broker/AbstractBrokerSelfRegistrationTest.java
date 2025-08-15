@@ -302,6 +302,189 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testRedirectManagedMemberOfMultipleOrganizations() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, email, email);
+        account = getUserRepresentation(account.getEmail());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        openIdentityFirstLoginPage(email, true, null, false, false);
+        // login to the organization identity provider using e-mail and automatically redirects to the app as the account already exists
+        loginPage.login(email, bc.getUserPassword());
+        appPage.assertCurrent();
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+        openIdentityFirstLoginPage(email, true, null, false, false);
+        // login to the organization identity provider user username and automatically redirects to the app as the account already exists
+        loginPage.login(account.getUsername(), bc.getUserPassword());
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectManagedMemberOfMultipleOrganizationsAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, email, email);
+        account = getUserRepresentation(account.getEmail());
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        oauth.scope("organization:*");
+        openIdentityFirstLoginPage(email, true, null, false, false);
+        // login to the organization identity provider by username and automatically redirects to the app as the account already exists
+        loginPage.login(email, bc.getUserPassword());
+        appPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectManagedMemberUsingUnManagedMemberAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, email, email);
+        account = getUserRepresentation(account.getEmail());
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        oauth.scope("organization:*");
+        String orgBEmail = bc.getUserLogin() + "@" + orgB.toRepresentation().getDomains().iterator().next().getName();
+        openIdentityFirstLoginPage(orgBEmail, true, null, false, false);
+        // login to the organization identity provider by username and as to review profile because the user is not yet linked with the idp
+        loginPage.login(email, bc.getUserPassword());
+        updateAccountInformationPage.assertCurrent();
+        // should enforce a email with the same domain as the organization
+        updateAccountInformationPage.updateAccountInformation(email, email, "f", "l");
+        Assert.assertTrue(driver.getPageSource().contains("Email domain does not match any domain from the organization"));
+
+        updateAccountInformationPage.updateAccountInformation(email, orgBEmail, "f", "l");
+        // user is asked to link accounts
+        idpConfirmLinkPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectUnManagedMemberAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String orgAEmail = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        // create user without credential to force the redirect to the IdP
+        UserRepresentation account = UserBuilder.create()
+                .username(orgAEmail)
+                .email(orgAEmail)
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.consumerRealmName()).users();
+        try (Response response = users.create(account)) {
+            String id = ApiUtil.getCreatedId(response);
+            account.setId(id);
+            getCleanup().addCleanup(() -> users.get(id).remove());
+        }
+
+        // add the unmanaged member to both organizations
+        orgA.members().addMember(account.getId()).close();
+        orgB.members().addMember(account.getId()).close();
+
+        oauth.scope("organization:*");
+        // resolve both organizations and redirect the user automatically
+        openIdentityFirstLoginPage(orgAEmail, true, null, false, false);
+        assertTrue(driver.getPageSource().contains("Sign in to provider"));
+        openIdentityFirstLoginPage(bc.getUserLogin() + "@" + orgB.toRepresentation().getDomains().iterator().next().getName(), true, null, false, false);
+        assertTrue(driver.getPageSource().contains("Sign in to provider"));
+
+        oauth.scope("organization");
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(orgAEmail);
+        selectOrganizationPage.assertCurrent();
+    }
+
+    @Test
+    public void testRedirectBrokerManagedMemberUsingUsernameAllOrganizationsScope() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        String email = bc.getUserLogin() + "@" + orgA.toRepresentation().getDomains().iterator().next().getName();
+        UserRepresentation account = UserBuilder.create()
+                .username(email)
+                .email(email)
+                .password(bc.getUserPassword())
+                .enabled(true)
+                .build();
+        UsersResource users = realmsResouce().realm(bc.providerRealmName()).users();
+        try (Response response = users.create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> users.get(finalAccount.getId()).remove());
+        // add the member for the first time
+        assertBrokerRegistration(orgA, bc.getUserLogin(), email);
+        account = getUserRepresentation(account.getEmail());
+        UserRepresentation finalAccount1 = account;
+        getCleanup().addCleanup(() -> realmsResouce().realm(bc.consumerRealmName()).users().get(finalAccount1.getId()).remove());
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+
+        orgB.members().addMember(account.getId()).close();
+        oauth.scope("organization:*");
+        // provide the username, the user is automatically redirected to home broker because he is a managed member
+        openIdentityFirstLoginPage(bc.getUserLogin(), true, null, false, false);
+        // login to the organization identity provider by username
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        appPage.assertCurrent();
+    }
+
+    @Test
     public void testRedirectBrokerWhenUnmanagedMemberProfileEmailMatchesOrganization() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         addMember(organization, bc.getUserLogin(), bc.getUserEmail(), "f", "l", false);

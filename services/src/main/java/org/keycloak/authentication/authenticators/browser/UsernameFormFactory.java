@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.Collections;
+import java.util.Set;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -24,6 +26,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
@@ -35,11 +38,10 @@ import java.util.List;
 public class UsernameFormFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-username-form";
-    public static final UsernameForm SINGLETON = new UsernameForm();
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return new UsernameForm(session);
     }
 
     @Override
@@ -68,9 +70,17 @@ public class UsernameFormFactory implements AuthenticatorFactory {
     }
 
     @Override
+    public Set<String> getOptionalReferenceCategories(KeycloakSession session) {
+        return WebAuthnConditionalUIAuthenticator.isPasskeysEnabled(session)
+                ? Collections.singleton(WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                : AuthenticatorFactory.super.getOptionalReferenceCategories(session);
+    }
+
+    @Override
     public boolean isConfigurable() {
         return false;
     }
+
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED
     };

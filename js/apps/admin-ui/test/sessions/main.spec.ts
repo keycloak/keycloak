@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { goToSessions } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { goToSessions } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   assertRowExists,
@@ -15,14 +15,14 @@ import {
   clickTableRowItem,
   getTableData,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   assertNotBeforeValue,
   assertRowHasSignOutKebab,
   clickNotBefore,
   clickPush,
   clickSetToNow,
-} from "./main";
+} from "./main.ts";
 
 const admin = "admin";
 const client = "security-admin-console";

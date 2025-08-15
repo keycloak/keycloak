@@ -77,6 +77,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-db-tidb</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-db-oracle</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
@@ -102,6 +108,12 @@
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-remote-providers</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-clustering</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>

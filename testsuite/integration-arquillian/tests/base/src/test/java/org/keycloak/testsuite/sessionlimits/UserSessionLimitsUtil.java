@@ -37,6 +37,17 @@ public class UserSessionLimitsUtil {
         realm.addAuthenticatorExecution(execution);
     }
 
+    static RunOnServer assertClientSessionCount(String realmName, String username, String clientId, int count) {
+        return (session) -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertEquals(count, session.sessions()
+                    .getUserSessionsStream(realm, realm.getClientByClientId(clientId))
+                    .filter(userSessionModel -> userSessionModel.getUser().getId().equals(user.getId()))
+                    .count());
+        };
+    }
+
     static RunOnServer assertSessionCount(String realmName, String username, int count) {
         return (session) -> {
             RealmModel realm = session.realms().getRealmByName(realmName);

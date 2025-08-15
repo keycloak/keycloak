@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 export async function goToUserRegistrationTab(page: Page) {
   await page.getByTestId("rs-userRegistration-tab").click();

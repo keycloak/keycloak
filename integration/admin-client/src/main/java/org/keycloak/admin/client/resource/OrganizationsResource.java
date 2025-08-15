@@ -155,6 +155,7 @@ public interface OrganizationsResource {
      * Counts organizations by search.
      * @param search text to look for.
      * @return the number of organizations that match the search.
+     * @since Keycloak 26.3
      */
     @GET
     @Path("count")
@@ -169,6 +170,7 @@ public interface OrganizationsResource {
      *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
      *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
      * @return the number of organizations that match the search.
+     * @since Keycloak 26.3
      */
     @GET
     @Path("count")
@@ -183,6 +185,7 @@ public interface OrganizationsResource {
      * Counts all organizations that contain attributes matching the specified query.
      * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
      * @return the number of the organizations that match the attribute query.
+     * @since Keycloak 26.3
      */
     @GET
     @Path("count")

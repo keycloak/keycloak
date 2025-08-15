@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -36,6 +37,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
 @EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
+@DisableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2, skipRestart = true)
 public class StandardTokenExchangeV2WithLegacyTokenExchangeTest extends StandardTokenExchangeV2Test {
 
     @Test

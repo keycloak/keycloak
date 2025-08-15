@@ -107,7 +107,10 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -169,6 +172,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -197,6 +201,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected static final String POLICY_NAME = "MyPolicy";
     protected static final String PROFILE_NAME = "MyProfile";
     protected static final String SAMPLE_CLIENT_ROLE = "sample-client-role";
+    protected static final String SAMPLE_CLIENT_SCOPE = "sample-client-scope";
 
     protected static final String FAPI1_BASELINE_PROFILE_NAME = "fapi-1-baseline";
     protected static final String FAPI1_ADVANCED_PROFILE_NAME = "fapi-1-advanced";
@@ -206,6 +211,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected static final String OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME = "oauth-2-1-for-confidential-client";
     protected static final String OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME = "oauth-2-1-for-public-client";
     protected static final String SAML_SECURITY_PROFILE_NAME = "saml-security-profile";
+    protected static final String FAPI2_DPOP_SECURITY_PROFILE_NAME = "fapi-2-dpop-security-profile";
+    protected static final String FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME = "fapi-2-dpop-message-signing";
 
     protected static final String ERR_MSG_MISSING_NONCE = "Missing parameter: nonce";
     protected static final String ERR_MSG_MISSING_STATE = "Missing parameter: state";
@@ -247,6 +254,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     @Before
     public void before() throws Exception {
         setInitialAccessTokenForDynamicClientRegistration();
+        adminClient.realm(REALM_NAME).clientScopes().create(ClientScopeBuilder.create().name(SAMPLE_CLIENT_SCOPE).protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
     }
 
     protected void setInitialAccessTokenForDynamicClientRegistration() {
@@ -307,7 +315,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
                     .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
                             createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
                     .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
-                            createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_ROLE)))
+                            createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_SCOPE)))
                         .addProfile("ordinal-test-profile")
                         .addProfile("lack-of-builtin-field-test-profile")
 
@@ -344,7 +352,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME, FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME, OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME, SAML_SECURITY_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME, FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME, OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME, SAML_SECURITY_PROFILE_NAME, FAPI2_DPOP_SECURITY_PROFILE_NAME, FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
@@ -403,7 +411,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertExpectedConditions(Arrays.asList(ClientAccessTypeConditionFactory.PROVIDER_ID, ClientRolesConditionFactory.PROVIDER_ID, ClientScopesConditionFactory.PROVIDER_ID), actualPolicyRep);
         assertExpectedClientAccessTypeCondition(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_PUBLIC, ClientAccessTypeConditionFactory.TYPE_BEARERONLY), actualPolicyRep);
         assertExpectedClientRolesCondition(List.of(SAMPLE_CLIENT_ROLE), actualPolicyRep);
-        assertExpectedClientScopesCondition(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_ROLE), actualPolicyRep);
+        assertExpectedClientScopesCondition(ClientScopesConditionFactory.OPTIONAL, List.of(SAMPLE_CLIENT_SCOPE), actualPolicyRep);
 
         // each policy - lack-of-builtin-field-test-policy
         actualPolicyRep = getPolicyRepresentation(actualPoliciesRep, "lack-of-builtin-field-test-policy");
@@ -477,6 +485,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
    // Signed JWT for client authentication utility
 
+    protected void allowMultipleAudiencesForClientJWTOnServer(boolean allowMultipleAudiences) {
+        getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, String.valueOf(allowMultipleAudiences));
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+    }
+
     protected String createSignedRequestToken(String clientId, PrivateKey privateKey, PublicKey publicKey, String algorithm) {
         JsonWebToken jwt = createRequestToken(clientId, getRealmInfoUrl());
         String kid = KeyUtils.createKeyId(publicKey);
@@ -489,12 +502,26 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build(REALM_NAME).toString();
     }
 
-    private JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
+    protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken reqToken = new JsonWebToken();
+        if (realmInfoUrl != null && !realmInfoUrl.isEmpty()) {
+            reqToken.audience(realmInfoUrl);
+        }
+        return createRequestToken(reqToken, clientId);
+    }
+
+    protected JsonWebToken createRequestToken(String clientId, String[] audienceUrls) {
+        JsonWebToken reqToken = new JsonWebToken();
+        if (audienceUrls != null && audienceUrls.length > 0) {
+            reqToken.audience(audienceUrls);
+        }
+        return createRequestToken(reqToken, clientId);
+    }
+
+    private JsonWebToken createRequestToken(JsonWebToken reqToken, String clientId) {
         reqToken.id(KeycloakModelUtils.generateId());
         reqToken.issuer(clientId);
         reqToken.subject(clientId);
-        reqToken.audience(realmInfoUrl);
 
         int now = Time.currentTime();
         reqToken.iat((long) now);

@@ -1,10 +1,14 @@
 import { test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import { clickCancelButton, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToClientScopes } from "../utils/sidebar";
-import { assertRowExists, clickTableRowItem, searchItem } from "../utils/table";
+import { clickCancelButton, clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToClientScopes } from "../utils/sidebar.ts";
+import {
+  assertRowExists,
+  clickTableRowItem,
+  searchItem,
+} from "../utils/table.ts";
 import {
   addMappersByConfiguration,
   addPredefinedMappers,
@@ -13,8 +17,8 @@ import {
   fillMapperDetails,
   goToMappersTab,
   removeMappers,
-} from "./mappers";
-import adminClient from "../utils/AdminClient";
+} from "./mappers.ts";
+import adminClient from "../utils/AdminClient.ts";
 
 test.describe("Mappers tab test", () => {
   const placeHolderClientScope = "Search for client scope";

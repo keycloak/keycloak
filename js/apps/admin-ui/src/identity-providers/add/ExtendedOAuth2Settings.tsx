@@ -34,6 +34,10 @@ export const ExtendedOAuth2Settings = () => {
           field="config.acceptsPromptNoneForwardFromClient"
           label="acceptsPromptNone"
         />
+        <SwitchField
+          field="config.requiresShortStateParameter"
+          label="requiresShortStateParameter"
+        />
         <NumberControl
           name="config.allowedClockSkew"
           label={t("allowedClockSkew")}

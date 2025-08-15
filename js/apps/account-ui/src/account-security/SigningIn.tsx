@@ -194,7 +194,7 @@ export const SigningIn = () => {
           {credentials
             .filter((cred) => cred.category == category)
             .map((container) => (
-              <Fragment key={container.category}>
+              <Fragment key={container.type}>
                 <Split className="pf-v5-u-mt-lg pf-v5-u-mb-lg">
                   <SplitItem>
                     <Title
@@ -266,8 +266,8 @@ export const SigningIn = () => {
                                 <Button
                                   variant="danger"
                                   data-testrole="remove"
-                                  onClick={() => {
-                                    login({
+                                  onClick={async () => {
+                                    await login({
                                       action:
                                         "delete_credential:" +
                                         meta.credential.id,
@@ -280,8 +280,10 @@ export const SigningIn = () => {
                               {container.updateAction && (
                                 <Button
                                   variant="secondary"
-                                  onClick={() => {
-                                    login({ action: container.updateAction });
+                                  onClick={async () => {
+                                    await login({
+                                      action: container.updateAction,
+                                    });
                                   }}
                                   data-testrole="update"
                                 >

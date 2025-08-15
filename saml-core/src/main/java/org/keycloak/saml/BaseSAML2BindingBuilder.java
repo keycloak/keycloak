@@ -17,6 +17,8 @@
 
 package org.keycloak.saml;
 
+import org.apache.xml.security.encryption.XMLCipher;
+
 import org.jboss.logging.Logger;
 
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -68,9 +70,9 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     protected boolean signAssertions;
     protected SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RSA_SHA1;
     protected String relayState;
-    protected int encryptionKeySize = 128;
+    protected int encryptionKeySize = 256;
     protected PublicKey encryptionPublicKey;
-    protected String encryptionAlgorithm = "AES";
+    protected String encryptionAlgorithm = XMLCipher.AES_256_GCM;
     protected boolean encrypt;
     protected String canonicalizationMethodType = CanonicalizationMethod.EXCLUSIVE;
     protected String keyEncryptionAlgorithm;
@@ -129,12 +131,42 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return (T)this;
     }
 
+    private String updateAesWithSize(int size) {
+        switch (size) {
+            case 128: return XMLCipher.AES_128;
+            case 192: return XMLCipher.AES_192;
+            case 256: return XMLCipher.AES_256;
+            default:
+                throw new RuntimeException("Invalid size for AES: " + size);
+        }
+    }
+
+    /**
+     * The encryption algorithm to use as expected by XMLCipher (XMLCipher.AES_256_GCM for example)
+     * @param alg The algorithm in XMLCipher format.
+     * @return This same builder
+     */
     public T encryptionAlgorithm(String alg) {
-        this.encryptionAlgorithm = alg;
+        if ("AES".equals(alg)) {
+            // deprecated way, remove later
+            this.encryptionAlgorithm = updateAesWithSize(this.encryptionKeySize);
+        } else {
+            this.encryptionAlgorithm = alg;
+        }
         return (T)this;
     }
 
+    /**
+     * Sets the size for the AES method to use.
+     * @param size
+     * @return This same builder
+     * @deprecated Use directly the XMLCipher algorithm in the
+     * {@link #encryptionAlgorithm(java.lang.String)} method
+     * (for example XMLCipher.AES_256_GCM).
+     */
+    @Deprecated(since = "26.4.0", forRemoval = true)
     public T encryptionKeySize(int size) {
+        this.encryptionAlgorithm = updateAesWithSize(size);
         this.encryptionKeySize = size;
         return (T)this;
     }
@@ -284,13 +316,15 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             QName encryptedAssertionElementQName = new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                     JBossSAMLConstants.ENCRYPTED_ASSERTION.get(), samlNSPrefix);
 
-            byte[] secret = RandomSecret.createRandomSecret(encryptionKeySize / 8);
-            SecretKey secretKey = new SecretKeySpec(secret, encryptionAlgorithm);
+            final String keyAlgorithm = XMLEncryptionUtil.getJCEKeyAlgorithmFromURI(encryptionAlgorithm);
+            final int keySize = XMLEncryptionUtil.getKeyLengthFromURI(encryptionAlgorithm);
+            byte[] secret = RandomSecret.createRandomSecret(keySize / 8);
+            SecretKey secretKey = new SecretKeySpec(secret, keyAlgorithm);
 
             // encrypt the Assertion element and replace it with a EncryptedAssertion element.
             XMLEncryptionUtil.encryptElement(new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
-                            JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), samlDocument, encryptionPublicKey, secretKey, encryptionKeySize,
-                            encryptedAssertionElementQName, true, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm);
+                            JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), samlDocument, encryptionPublicKey, secretKey, keySize,
+                            encryptedAssertionElementQName, true, encryptionAlgorithm, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm);
         } catch (Exception e) {
             throw new ProcessingException("failed to encrypt", e);
         }
@@ -385,8 +419,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
         builder.append("<p>Redirecting, please wait.</p>");
 
-        for (String key: inputTypes.keySet()) {
-            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"").append(key).append("\"").append(" VALUE=\"").append(escapeAttribute(inputTypes.get(key))).append("\"/>");
+        for (var entry : inputTypes.entrySet()) {
+            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"").append(entry.getKey()).append("\"").append(" VALUE=\"").append(escapeAttribute(entry.getValue())).append("\"/>");
         }
 
         builder.append("<NOSCRIPT>")
