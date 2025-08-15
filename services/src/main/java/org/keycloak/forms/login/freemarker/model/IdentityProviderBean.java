@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -53,6 +54,7 @@ public class IdentityProviderBean {
 
     public static OrderedModel.OrderedModelComparator<IdentityProvider> IDP_COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
     private static final String ICON_THEME_PREFIX = "kcLogoIdP-";
+    private static final String IDP_THEME_CONFIG_PREFIX = "kcTheme-";
 
     protected AuthenticationFlowContext context;
     protected List<IdentityProvider> providers;
@@ -108,9 +110,15 @@ public class IdentityProviderBean {
     protected IdentityProvider createIdentityProvider(RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getAlias(), realm.getName()).toString();
         String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
+        Map<String, String> themeConfig = identityProvider.getConfig().entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith(IDP_THEME_CONFIG_PREFIX))
+            .collect(Collectors.toMap(
+                entry -> entry.getKey().substring(IDP_THEME_CONFIG_PREFIX.length()),
+                Map.Entry::getValue
+                 ));
         return new IdentityProvider(identityProvider.getAlias(),
                 displayName, identityProvider.getProviderId(), loginUrl,
-                identityProvider.getConfig().get("guiOrder"), getLoginIconClasses(identityProvider));
+                identityProvider.getConfig().get("guiOrder"), getLoginIconClasses(identityProvider), themeConfig);
     }
 
     // Get icon classes defined in properties of current theme with key 'kcLogoIdP-{alias}'
@@ -253,18 +261,20 @@ public class IdentityProviderBean {
         private final String guiOrder;
         private final String displayName;
         private final String iconClasses;
+        private final Map<String, String> themeConfig;
 
         public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder) {
-            this(alias, displayName, providerId, loginUrl, guiOrder, "");
+            this(alias, displayName, providerId, loginUrl, guiOrder, "", null);
         }
 
-        public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder, String iconClasses) {
+        public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder, String iconClasses, Map<String, String> themeConfig) {
             this.alias = alias;
             this.displayName = displayName;
             this.providerId = providerId;
             this.loginUrl = loginUrl;
             this.guiOrder = guiOrder;
             this.iconClasses = iconClasses;
+            this.themeConfig = themeConfig;
         }
 
         public String getAlias() {
@@ -290,6 +300,10 @@ public class IdentityProviderBean {
 
         public String getIconClasses() {
             return iconClasses;
+        }
+
+        public Map<String, String> getThemeConfig() {
+            return themeConfig;
         }
     }
 
