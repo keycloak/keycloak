@@ -24,6 +24,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+<<<<<<< Updated upstream
+=======
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.smallrye.health.runtime.SmallRyeReadinessHandler;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
+import liquibase.Scope;
+import liquibase.servicelocator.ServiceLocator;
+>>>>>>> Stashed changes
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.protostream.SerializationContextInitializer;
 import org.keycloak.Config;
@@ -66,6 +80,10 @@ public class KeycloakRecorder {
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
         Profile.init(profileName, features);
+    }
+
+    public Handler<RoutingContext> getMainReadinessHandler() {
+        return new SmallRyeReadinessHandler();
     }
 
     // default handler for redirecting to specific path
