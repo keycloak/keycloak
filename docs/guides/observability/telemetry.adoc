@@ -1,0 +1,133 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links> <#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Centralize your observability stack with OpenTelemetry"
+summary="Learn about OpenTelemetry integration for centralized observability and telemetry data.">
+
+https://opentelemetry.io/docs/what-is-opentelemetry/[OpenTelemetry] (OTel) is an open-source observability framework designed to provide consistent and reliable ways to collect telemetry data across distributed systems.
+It is a project under the https://www.cncf.io/projects/opentelemetry/[Cloud Native Computing Foundation (CNCF)] as an incubating project.
+Its goal is to provide a unified standard and toolset for instrumenting, generating, and exporting telemetry data from modern applications, making it easier to monitor, debug, and understand complex services.
+
+The goal of {project_name} is to support OpenTelemetry Logs, Metrics, and Traces to create a centralized observability stack without any additional deployment overhead.
+
+== General options
+{project_name} provides support for global settings of telemetry data export.
+It means that you can specify connection parameters to a single https://opentelemetry.io/docs/collector/[OpenTelemetry collector] that will be used for all supported components.
+
+In order to have OpenTelemetry enabled, at least one component needs to be turned on (i.e., see Traces guide below).
+
+NOTE: OpenTelemetry can be enabled only when the `opentelemetry` feature is *enabled* (by default).
+
+=== Endpoint
+You can specify the global endpoint to the OpenTelemetry collector shared across the components by using the `telemetry-endpoint` option.
+The default value is `+http://localhost:4317+`.
+
+You can change the endpoint via CLI as follows:
+
+<@kc.start parameters="--telemetry-endpoint=http://my-otel-endpoint:4317"/>
+
+=== Service name
+You can specify the global OpenTelemetry service name used for identifying the exporter of the telemetry data.
+The default service name is `keycloak`, specified via the `telemetry-service-name` property, which takes precedence over `service.name` defined in the `telemetry-resource-attributes` property.
+
+You can change the service name via CLI as follows:
+
+<@kc.start parameters="--telemetry-service-name=my-keycloak-iam"/>
+
+=== Protocol
+You can specify the global OpenTelemetry transport protocol used as a communication channel between {project_name} and the OpenTelemetry collector.
+The default value is `grpc`.
+
+{project_name} supports these communication protocols:
+
+<@opts.expectedValues option="telemetry-protocol"/>
+
+You can change the protocol via CLI as follows:
+
+<@kc.start parameters="--telemetry-protocol=http/protobuf"/>
+
+== Traces
+
+{project_name} has already supported OpenTelemetry Tracing for some time, and you can find more information in the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].
+
+You can override the global OpenTelemetry settings via the Tracing options if you want to export traces to a different OpenTelemetry collector.
+
+== Logs
+
+WARNING: OpenTelemetry Logs is considered a *preview* and can be changed. Feedback is more than welcome.
+
+It is possible to export {project_name}'s logs to the OpenTelemetry collector and be managed by various logging backends that support OpenTelemetry.
+It helps to have a centralized logging system that is beneficial for application deployments.
+
+=== Enable Logs
+You can enable OpenTelemetry Logs via CLI as follows:
+
+<@kc.start parameters="--log-export-enabled=true"/>
+
+For more details about OpenTelemetry Logs functionality in Quarkus, see the https://quarkus.io/guides/opentelemetry-logging[Quarkus OpenTelemetry Logging guide].
+For more information on how to set up logging, see the https://www.keycloak.org/server/logging[Configuring Logging guide].
+
+=== Log level
+You can specify what logs will be exported to the OpenTelemetry Collector based on the log level via the `log-export-level` option.
+By default, all log levels are exported, but you can choose the most verbose log level that should be exported.
+For instance, if you set the level to `WARN`, warning and errors will be exported.
+
+You can change the log level via CLI as follows:
+
+<@kc.start parameters="--log-export-level=WARN"/>
+
+== Metrics
+
+WARNING: OpenTelemetry Metrics is considered a *preview* and can be changed. Feedback is more than welcome.
+
+For integrating OpenTelemetry Metrics, {project_name} uses the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge] that provides the functionality to export metrics created by Micrometer to OpenTelemetry Collector.
+It means that all metrics created via Micrometer or OpenTelemetry metrics will be exported to the OpenTelemetry.
+
+There are some https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry#metric-differences-between-micrometer-and-opentelemetry[API, and Semantic convention differences] for Micrometer vs OTel Metrics, so you should check if all required metrics are exported.
+
+=== Enable metrics
+You can enable the OpenTelemetry Metrics via CLI as follows:
+
+<@kc.start parameters="--metrics-enabled=true --metrics-export-enabled=true"/>
+
+NOTE: Metrics (`metrics-enabled`) needs to be enabled as well
+
+For more information on how to set up metrics, see the configuration options below or visit the https://www.keycloak.org/observability/configuration-metrics[Gaining insights with metrics guide].
+
+<@profile.ifCommunity>
+
+== Development setup
+
+For development purposes, you can use the https://github.com/grafana/docker-otel-lgtm[Grafana OTel-LGTM service], containing OpenTelemetry Collector and backends for logs (Loki), metrics (Prometheus), and traces (Tempo).
+
+.Service architecture
+image::observability/grafana-otel-lgtm.png[]
+
+You can start the service by using Docker/Podman as follows:
+
+[source,shell]
+----
+docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
+----
+
+Then, you can navigate to Grafana UI by accessing `+localhost:3000+` and then you can explore all the data sent to OpenTelemetry Collector.
+
+</@profile.ifCommunity>
+
+<@opts.printRelevantOptions includedOptions="telemetry-*">
+
+=== Traces
+<@opts.includeOptions includedOptions="tracing-enabled tracing-endpoint tracing-protocol tracing-service-name tracing-resource-attributes"/>
+
+=== Logs
+<@opts.includeOptions includedOptions="log-export-*"/>
+
+=== Metrics
+<@opts.includeOptions includedOptions="metrics-enabled metrics-export-*"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>
