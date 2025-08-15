@@ -229,6 +229,7 @@ public class CertificateValidator {
         public CRLLoaderProxy(X509CRL crl) {
             _crl = crl;
         }
+        @Override
         public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
             return Collections.singleton(_crl);
         }
@@ -278,6 +279,7 @@ public class CertificateValidator {
                 throw new NullPointerException("Context cannot be null");
         }
 
+        @Override
         public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
             if (cRLPath == null) {
                 throw new GeneralSecurityException("Unable to load CRL because no crl path is defined");
@@ -735,9 +737,7 @@ public class CertificateValidator {
                     logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
                 else
                     throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
-            }
-
-            if (rs.getRevocationStatus() == OCSPProvider.RevocationStatus.UNKNOWN) {
+            } else if (rs.getRevocationStatus() == OCSPProvider.RevocationStatus.UNKNOWN) {
                 if (_ocspFailOpen)
                     logger.warnf("Unable to determine certificate's revocation status - continuing certificate authentication because of fail-open OCSP configuration setting");
                 else
