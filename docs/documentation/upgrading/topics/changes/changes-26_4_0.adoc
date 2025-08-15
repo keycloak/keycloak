@@ -38,10 +38,10 @@ You can override this behavior by setting your own value for `targetServerType` 
 
 {project_name} now defines all cache defaults programmatically. Consequently, the `conf/cache-ispn.xml` file no longer
 contains the default cache configurations. It is still possible to modify the cache configurations used by {project_name}
-in this file, however a warning will now be logged if the `--cache-config-mutate=true` option is not set. When upgrading
-an existing deployment, it is recommended to remove all default cache configurations from your existing `conf/cache-ispn.xml`.
-To modify a default cache, prefer using the `--cache-...` options inst.
-Custom caches can still be configured without setting the option.
+in this file, however a warning will now be logged if the `--cache-config-mutate=true` option is not set. Custom caches
+can still be configured without setting this option. To modify a default cache, prefer using the `--cache-...` options instead.
+
+When upgrading an existing deployment, it is recommended to remove all default cache configurations from your existing `conf/cache-ispn.xml`.
 
 === Operator default affinity configuration changed
 
@@ -139,6 +139,12 @@ The authenticator *Passkeys Conditional UI Authenticator*, which was deprecated 
 This allows administrator to start the server and re-configure authentication flows for passkeys authentication in a recommended way as described
 in the link:{adminguide_link}#passkeys_server_administration_guide[Passkeys] chapter in the {adminguide_name}. In the future major version, we plan to remove the feature
 as well as the *Passkeys Conditional UI Authenticator* as already announced.
+
+=== Modifying default cache configurations in the cache config file
+
+All {project_name} cache configurations have been removed from `conf/cache-ispn.xml`. Configuration of the default
+cache configurations in `conf/cache-ispn.xml`, or a custom file via `--cache-config-file`, has been deprecated and will
+result in a warning log unless `--cache-config-mutate=true` is explicitly passed.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

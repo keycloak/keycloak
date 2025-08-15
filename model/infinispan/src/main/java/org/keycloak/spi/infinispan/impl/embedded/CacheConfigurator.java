@@ -122,7 +122,9 @@ public final class CacheConfigurator {
             }
         }
         if (warnMutate && userProvidedConfig) {
-            logger.warnf("Custom cache configuration(s) detected, this is only recommended for advanced use-cases where the default cache configurations are proven to be problematic. You can suppress this warning by setting %s=true", CachingOptions.CACHE_CONFIG_MUTATE_PROPERTY);
+            logger.warnf("Modifying the default cache configuration in the config file is deprecated. " +
+                  "This is only recommended for advanced use-cases where the default cache configurations are proven to be problematic. " +
+                  "You can suppress this warning by setting %s=true", CachingOptions.CACHE_CONFIG_MUTATE_PROPERTY);
         }
     }
 

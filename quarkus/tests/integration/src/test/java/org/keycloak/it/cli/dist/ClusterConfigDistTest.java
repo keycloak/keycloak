@@ -40,6 +40,8 @@ import io.quarkus.test.junit.main.Launch;
 @Tag(DistributionTest.SLOW)
 public class ClusterConfigDistTest {
 
+    private static final String WARN_DEFAULT_CACHE_MUTATIONS = "Modifying the default cache configuration in the config file is deprecated. This is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.";
+
     @Test
     @Launch({ "start-dev", "--cache=ispn" })
     void changeClusterSetting(CLIResult result) {
@@ -169,21 +171,21 @@ public class ClusterConfigDistTest {
     @BeforeStartDistribution(ConfigureCustomCache.class)
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-cache.xml" })
     void testCustomCacheConfigurationWarning(CLIResult result) {
-        result.assertMessage("Custom cache configuration(s) detected, this is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.");
+        result.assertMessage(WARN_DEFAULT_CACHE_MUTATIONS);
     }
 
     @Test
     @BeforeStartDistribution(ConfigureCustomCache.class)
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-cache.xml", "--cache-config-mutate=true" })
     void testCustomCacheConfigurationNoWarning(CLIResult result) {
-        result.assertNoMessage("Custom cache configuration(s) detected, this is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.");
+        result.assertNoMessage(WARN_DEFAULT_CACHE_MUTATIONS);
     }
 
     @Test
     @BeforeStartDistribution(ConfigureCustomCache.class)
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-user-cache.xml"})
     void testCustomUserCacheConfigurationNoWarning(CLIResult result) {
-        result.assertNoMessage("Custom cache configuration(s) detected, this is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.");
+        result.assertNoMessage(WARN_DEFAULT_CACHE_MUTATIONS);
     }
 
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
