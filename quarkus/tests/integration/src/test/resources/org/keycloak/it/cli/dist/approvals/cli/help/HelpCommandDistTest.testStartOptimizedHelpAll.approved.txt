@@ -26,6 +26,12 @@ Cache:
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
+--cache-config-mutate <true|false>
+                     Determines whether changes to the default cache configurations are allowed.
+                       This is only recommended for advanced use-cases where the default cache
+                       configurations are proven to be problematic. The only supported way to
+                       change the default cache configurations is via the other 'cache-...'
+                       options. Default: false.
 --cache-embedded-authorization-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        authorization cache.

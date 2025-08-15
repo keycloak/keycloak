@@ -23,5 +23,12 @@
 
     <cache-container name="keycloak">
         <transport lock-timeout="60000"/>
+        <local-cache name="realms">
+            <encoding>
+                <key media-type="application/x-java-object"/>
+                <value media-type="application/x-java-object"/>
+            </encoding>
+            <memory max-count="10000"/>
+        </local-cache>
     </cache-container>
 </infinispan>

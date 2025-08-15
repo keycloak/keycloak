@@ -34,6 +34,15 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== Cache configuration removed from cache-ispn.xml
+
+The `conf/cache-ispn.xml` file no longer contains the default cache configurations.
+It is still possible to overwrite the cache configurations used by {project_name} in this file, however {project_name} will log a warning if the `--cache-config-mutate=true` option is not set.
+Custom caches can still be added without setting this option.
+
+When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
+and use the `+--cache-...+` options to make changes for example to the cache sizes.
+
 === Operator default affinity configuration changed
 
 The default affinity strategy has been updated so that a `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rule
@@ -160,6 +169,13 @@ The authenticator *Passkeys Conditional UI Authenticator*, which was deprecated 
 This allows administrator to start the server and re-configure authentication flows for passkeys authentication in a recommended way as described
 in the link:{adminguide_link}#passkeys_server_administration_guide[Passkeys] chapter in the {adminguide_name}. In the future major version, we plan to remove the feature
 as well as the *Passkeys Conditional UI Authenticator* as already announced.
+
+=== Modifying default cache configurations in the cache config file
+
+All {project_name} default cache configurations have been removed from `conf/cache-ispn.xml`.
+Configuration of the default cache configurations in `conf/cache-ispn.xml`, or in a custom file via `--cache-config-file`, without specifying `--cache-config-mutate=true` is now deprecated and will log a warning.
+
+In a future major release, the start-up will fail if default cache configurations are stated in those files and the option is not specified.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

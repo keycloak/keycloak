@@ -23,5 +23,6 @@
 
     <cache-container name="keycloak">
         <transport lock-timeout="60000"/>
+        <local-cache name="user-cache" />
     </cache-container>
 </infinispan>
