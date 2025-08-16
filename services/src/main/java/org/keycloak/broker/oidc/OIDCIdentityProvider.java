@@ -1031,6 +1031,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return null;
         }
 
-        return (Boolean) token.getOtherClaims().get(IDToken.EMAIL_VERIFIED);
+        return Boolean.valueOf(String.valueOf(token.getOtherClaims().get(IDToken.EMAIL_VERIFIED)));
     }
 }
