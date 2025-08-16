@@ -75,10 +75,10 @@ public final class CRAssert {
     public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status) {
         assertKeycloakStatusCondition(kc, condition, status, null);
     }
-    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status, String containedMessage) {
+    public static ObjectAssert<KeycloakStatusCondition> assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status, String containedMessage) {
         Log.debugf("Asserting CR: %s, condition: %s, status: %s, message: %s", kc.getMetadata().getName(), condition, status, containedMessage);
         try {
-            assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
+            return assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
         } catch (Exception e) {
             Log.infof("Asserting CR: %s with status:\n%s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
             throw e;
