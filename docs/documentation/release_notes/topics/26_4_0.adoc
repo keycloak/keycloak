@@ -102,3 +102,8 @@ ifeval::[{project_community}==true]
 Thank you to https://github.com/tnorimat[@tnorimat] for contributing this.
 endif::[]
 
+= Automatic certificate management for SAML clients
+
+The SAML clients can now be configured to automatically download the signing and encrypting certificates from the SP entity metadata descriptor endpoint. In order to use this new feature, in the client *Settings* tab, section *Signature and Encryption*, configure the *Metadata descriptor URL* option (the URL where the SP metadata information with the certificates is published) and activate *Use metadata descriptor URL*. The certificates will be automatically downloaded and cached in the `public-key-storage` SPI from that URL.
+
+For more information, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] in the {adminguide_name}.
