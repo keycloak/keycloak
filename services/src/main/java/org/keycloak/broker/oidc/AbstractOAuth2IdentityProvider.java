@@ -96,6 +96,8 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -554,7 +556,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             }
 
             if (parameter != null && !parameter.isEmpty()) {
-                uriBuilder.queryParam(forwardParameter, parameter);
+                uriBuilder.queryParam(forwardParameter, URLEncoder.encode(parameter, StandardCharsets.UTF_8));
             }
         }
     }
