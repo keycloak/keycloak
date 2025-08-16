@@ -40,6 +40,21 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
 
     T getCredentialFromModel(CredentialModel model);
 
+    /**
+     * Get the credential (usually stored credential retrieved from the DB) and decorates it with additional metadata
+     * to be present for example in the admin console. Those additional metadata could be various metadata, which are not saved in the DB,
+     * but can be retrieved from saved data to be presented to admins/users in the nice way (For example display "authenticator Provider"
+     * for WebAuthn credential based on the AAGUID of WebAuthn credential)
+     *
+     * @param model stored credential retrieved from the DB
+     * @return credential model useful for the presentation (not necessarily only stored data, but possibly some other metadata added)
+     */
+    default T getCredentialForPresentationFromModel(CredentialModel model) {
+        T presentationModel = getCredentialFromModel(model);
+        presentationModel.setFederationLink(model.getFederationLink());
+        return presentationModel;
+    }
+
     default T getDefaultCredential(KeycloakSession session, RealmModel realm, UserModel user) {
         CredentialModel model = user.credentialManager().getStoredCredentialsByTypeStream(getType())
                 .findFirst().orElse(null);
