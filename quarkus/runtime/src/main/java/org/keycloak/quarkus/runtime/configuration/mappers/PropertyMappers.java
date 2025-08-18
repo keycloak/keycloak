@@ -50,7 +50,7 @@ public final class PropertyMappers {
                 new ExportPropertyMappers(), new BootstrapAdminPropertyMappers(), new HostnameV2PropertyMappers(),
                 new HttpPropertyMappers(), new HttpAccessLogPropertyMappers(), new HealthPropertyMappers(),
                 new FeaturePropertyMappers(), new ImportPropertyMappers(), new ManagementPropertyMappers(),
-                new MetricsPropertyMappers(), new LoggingPropertyMappers(), new ProxyPropertyMappers(),
+                new MetricsPropertyMappers(), new OpenApiPropertyMappers(), new LoggingPropertyMappers(), new ProxyPropertyMappers(),
                 new VaultPropertyMappers(), new TracingPropertyMappers(), new TransactionPropertyMappers(),
                 new SecurityPropertyMappers(), new TruststorePropertyMappers());
     }

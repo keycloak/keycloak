@@ -62,6 +62,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-api</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
