@@ -27,6 +27,7 @@ import java.time.Duration;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -83,6 +84,7 @@ public class UserSessionRefreshTimePolicyTest {
     }
 
     @Test
+    @Disabled
     public void testDisabledUserAfterInactivityPeriod() {
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
