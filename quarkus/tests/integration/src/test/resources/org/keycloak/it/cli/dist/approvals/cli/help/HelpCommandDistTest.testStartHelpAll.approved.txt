@@ -690,6 +690,16 @@ Security:
                        feature is enabled. Possible values are: non-strict, strict. Default:
                        disabled.
 
+OpenAPI configuration (Preview):
+
+--openapi-enabled <true|false>
+                     Preview: If the server should expose OpenAPI Endpoint. If enabled, OpenAPI is
+                       available at '/openapi'. Default: false.
+--openapi-ui-enabled <true|false>
+                     Preview: If the server should expose OpenApi-UI Endpoint. If enabled, OpenAPI
+                       UI is available at '/openapi/ui'. Default: false. Available only when
+                       OpenAPI Endpoint is enabled.
+
 Bootstrap Admin:
 
 --bootstrap-admin-client-id <client id>
