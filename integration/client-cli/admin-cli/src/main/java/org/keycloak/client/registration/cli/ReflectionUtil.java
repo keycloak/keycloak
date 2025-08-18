@@ -436,16 +436,13 @@ public class ReflectionUtil {
     }
 
     public static String getTypeString(Type type, Field field) {
-        Class clazz = null;
         if (type == null) {
             if (field == null) {
                 throw new IllegalArgumentException("type == null and field == null");
             }
             type = field.getGenericType();
         }
-        if (type instanceof Class) {
-            clazz = (Class) type;
-        } else if (type instanceof ParameterizedType) {
+        if (type instanceof ParameterizedType) {
             StringBuilder sb = new StringBuilder();
             String rtype = getTypeString(((ParameterizedType) type).getRawType(), null);
 
@@ -462,6 +459,12 @@ public class ReflectionUtil {
             sb.append(")");
             return sb.toString();
         }
+
+        if (!(type instanceof Class)) {
+            throw new IllegalArgumentException("unsupported type " + type.getClass().getName());
+        }
+
+        Class clazz = (Class) type;
 
         if (CharSequence.class.isAssignableFrom(clazz)) {
             return "string";
