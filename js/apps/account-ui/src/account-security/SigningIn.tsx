@@ -6,6 +6,10 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  DescriptionList,
+  DescriptionListDescription,
+  DescriptionListGroup,
+  DescriptionListTerm,
   Dropdown,
   DropdownItem,
   MenuToggle,
@@ -98,9 +102,6 @@ export const SigningIn = () => {
     const maxWidth = {
       "--pf-v5-u-max-width--MaxWidth": "300px",
     } as CSSProperties;
-    const topVerticalAlign = {
-      "vertical-align": "top",
-    } as CSSProperties;
     const items = [
       <DataListCell
         key="title"
@@ -127,6 +128,7 @@ export const SigningIn = () => {
     }
     if (
       credMetadata.infoMessage ||
+      credMetadata.infoProperties ||
       (credMetadata.warningMessageTitle &&
         credMetadata.warningMessageDescription)
     ) {
@@ -137,23 +139,41 @@ export const SigningIn = () => {
         >
           <>
             {credMetadata.infoMessage && (
-              <table>
-                <tr>
-                  <td style={topVerticalAlign}>
-                    <InfoAltIcon />{" "}
-                  </td>
-                  <td>
-                    <Trans
-                      i18nKey={credMetadata.infoMessage.key}
-                      components={{ 99: <br /> }}
-                      values={credMetadata.infoMessage.parameters?.reduce(
-                        (acc, val, idx) => ({ ...acc, [idx]: val }),
-                        {},
-                      )}
-                    ></Trans>
-                  </td>
-                </tr>
-              </table>
+              <p>
+                <InfoAltIcon />{" "}
+                {t(
+                  credMetadata.infoMessage.key,
+                  credMetadata.infoMessage.parameters?.reduce(
+                    (acc, val, idx) => ({ ...acc, [idx]: val }),
+                    {},
+                  ),
+                )}
+              </p>
+            )}
+            {credMetadata.infoProperties && (
+              <Split className="pf-v5-u-mb-lg">
+                <SplitItem>
+                  <InfoAltIcon />{" "}
+                </SplitItem>
+                <SplitItem isFilled className="pf-v5-u-ml-xs">
+                  <DescriptionList
+                    isHorizontal
+                    aria-label="Horizontal"
+                    horizontalTermWidthModifier={{
+                      "2xl": "15ch",
+                    }}
+                  >
+                    {credMetadata.infoProperties.map((prop) => (
+                      <DescriptionListGroup key={prop.key}>
+                        <DescriptionListTerm>{t(prop.key)}</DescriptionListTerm>
+                        <DescriptionListDescription>
+                          {prop.parameters ? prop.parameters[0] : ""}
+                        </DescriptionListDescription>
+                      </DescriptionListGroup>
+                    ))}
+                  </DescriptionList>
+                </SplitItem>
+              </Split>
             )}
             {credMetadata.warningMessageTitle &&
               credMetadata.warningMessageDescription && (

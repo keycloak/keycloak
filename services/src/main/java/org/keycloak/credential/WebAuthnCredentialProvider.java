@@ -50,6 +50,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,7 +61,8 @@ import java.util.stream.Collectors;
 public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCredentialModel>, CredentialInputValidator {
 
     private static final Logger logger = Logger.getLogger(WebAuthnCredentialProvider.class);
-    private static final String WEBAUTHN_INFO = "webauthn-info";
+    private static final String WEBAUTHN_AUTHENTICATOR_PROVIDER = "webauthn-authenticator-provider";
+    private static final String WEBAUTHN_TRANSPORTS = "webauthn-transports";
 
     private final KeycloakSession session;
     private final WebAuthnMetadataService metadataService;
@@ -325,17 +327,22 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     public CredentialMetadata getCredentialMetadata(WebAuthnCredentialModel credentialModel, CredentialTypeMetadata credentialTypeMetadata) {
 
         CredentialMetadata credentialMetadata = new CredentialMetadata();
+        List<CredentialMetadata.LocalizedMessage> properties = new LinkedList<>();
 
         try {
             credentialModel = getCredentialForPresentationFromModel(credentialModel);
             WebAuthnCredentialPresentationData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(), WebAuthnCredentialPresentationData.class);
             Set<String> transports = credentialData.getTransports();
-            String joinedTransports = (transports != null && !transports.isEmpty()) ? String.join(", ", transports) : "unknown";
-            String authenticatorProvider = credentialData.getAuthenticatorProvider() != null ? credentialData.getAuthenticatorProvider() : "unknown";
-            if (!joinedTransports.equals("unknown") || !authenticatorProvider.equals("unknown")) {
-                credentialMetadata.setInfoMessage(WEBAUTHN_INFO, authenticatorProvider, joinedTransports);
+            if (credentialData.getAuthenticatorProvider() != null) {
+                properties.add(new CredentialMetadata.LocalizedMessage(WEBAUTHN_AUTHENTICATOR_PROVIDER, new String[] { credentialData.getAuthenticatorProvider() }));
             }
-
+            if (transports != null && !transports.isEmpty()) {
+                String joinedTransports = String.join(", ", transports);
+                properties.add(new CredentialMetadata.LocalizedMessage(WEBAUTHN_TRANSPORTS, new String[] { joinedTransports }));
+            }
+            if (!properties.isEmpty()) {
+                credentialMetadata.setInfoProperties(properties);
+            }
         } catch (
                 IOException e) {
             logger.warn("unable to deserialize model information, skipping messages", e);
