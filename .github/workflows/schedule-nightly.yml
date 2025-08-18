@@ -41,6 +41,7 @@ jobs:
         - codeql-analysis.yml
         - snyk-analysis.yml
         - trivy-analysis.yml
+        - owasp-analysis.yml
 
     steps:
       - name: Run workflow
@@ -58,6 +59,8 @@ jobs:
       matrix:
         workflow:
           - snyk-analysis.yml
+          - trivy-analysis.yml
+          - owasp-analysis.yml
 
     steps:
       - run: echo ${{ needs.setup.outputs.latest-release-branch }}
