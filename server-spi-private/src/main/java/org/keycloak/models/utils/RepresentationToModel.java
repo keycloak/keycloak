@@ -432,7 +432,7 @@ public class RepresentationToModel {
 
         updateClientProperties(resource, rep, false);
 
-        if ("saml".equals(rep.getProtocol())
+        if (newClientId != null && "saml".equals(rep.getProtocol())
                 && (rep.getAttributes() == null
                 || !rep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
             resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(newClientId));
