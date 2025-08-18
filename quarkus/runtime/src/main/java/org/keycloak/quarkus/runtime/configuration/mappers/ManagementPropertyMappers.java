@@ -21,6 +21,7 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.ManagementOptions.Scheme;
 import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.config.ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE;
@@ -126,9 +127,9 @@ public class ManagementPropertyMappers implements PropertyMapperGrouping {
         if (isTrue(LEGACY_OBSERVABILITY_INTERFACE)) {
             return false;
         }
-        var isManagementOccupied = isTrue(MetricsOptions.METRICS_ENABLED)
-                || (isTrue(HealthOptions.HEALTH_ENABLED) && isTrue(ManagementOptions.HTTP_MANAGEMENT_HEALTH_ENABLED));
-        return isManagementOccupied;
+        return (isTrue(HealthOptions.HEALTH_ENABLED) && isTrue(ManagementOptions.HTTP_MANAGEMENT_HEALTH_ENABLED))
+            || isTrue(MetricsOptions.METRICS_ENABLED)
+            || isTrue(OpenApiOptions.OPENAPI_ENABLED);
     }
 
     private static String managementEnabledTransformer() {
