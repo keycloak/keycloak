@@ -129,6 +129,13 @@ public class ClusterConfigDistTest {
     }
 
     @Test
+    @Launch({ "start", "--cache=ispn", "--log-level=info,org.keycloak.connections.infinispan:debug", "--http-enabled=true", "--hostname-strict=false"})
+    void testPrintCacheConfigurationsDebug(CLIResult result) {
+        result.assertStarted();
+        result.assertMessage("Infinispan configuration");
+    }
+
+    @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start", "--db=dev-file", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true", "--hostname-strict=false" })
     void testStartDefaultsToClustering(CLIResult result) {
