@@ -18,15 +18,12 @@
 package org.keycloak.infinispan.health.impl;
 
 import java.lang.invoke.MethodHandles;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
-import org.infinispan.configuration.global.GlobalConfiguration;
-import org.infinispan.factories.KnownComponentNames;
-import org.infinispan.factories.annotations.ComponentName;
 import org.infinispan.factories.annotations.Inject;
-import org.infinispan.factories.annotations.Stop;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
 import org.infinispan.remoting.transport.Transport;
@@ -34,7 +31,6 @@ import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.infinispan.health.ClusterHealth;
-import org.keycloak.infinispan.module.configuration.global.KeycloakConfiguration;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2.HealthStatus;
 
@@ -43,44 +39,31 @@ import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2.HealthStatus;
  * <p>
  * Since each node is registered in the database, it is possible to detect if a partition is happening.
  * <p>
- * The method {@link KEYCLOAK_JDBC_PING2#isHealthy()} contains the algorithm description. If it returns
+ * The method {@link KEYCLOAK_JDBC_PING2#healthStatus()} contains the algorithm description. If it returns
  * {@link HealthStatus#ERROR}, the healthy state does not change and relies on the Quarkus/Agroal readiness health
  * check. But, if {@link HealthStatus#NO_COORDINATOR} is returned, the state will be changed to unhealthy. The should be
  * a temporary situation as at least one coordinator must be present in the database table.
  *
- * @see KEYCLOAK_JDBC_PING2#isHealthy()
+ * @see KEYCLOAK_JDBC_PING2#healthStatus()
  */
 @Scope(Scopes.GLOBAL)
-public class ClusterHealthImpl implements ClusterHealth {
+public class JdbcPingClusterHealthImpl implements ClusterHealth {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
+    private final ReentrantLock lock = new ReentrantLock();
     private volatile boolean healthy = true;
-    private ScheduledFuture<?> future;
+    private volatile HealthRunner runner;
 
     @Inject
-    public void inject(BlockingManager blockingManager,
-                       @ComponentName(KnownComponentNames.EXPIRATION_SCHEDULED_EXECUTOR) ScheduledExecutorService scheduledExecutorService,
-                       Transport transport,
-                       GlobalConfiguration configuration
-    ) {
+    public void inject(Transport transport, BlockingManager blockingManager) {
         // hacking to avoid creating fields :)
-        var kcConfig = configuration.module(KeycloakConfiguration.class);
-        if (kcConfig == null) {
-            logger.warn("Keycloak Configuration not found. Unable to check cluster health.");
-            return;
-        }
-        int delayInSeconds = kcConfig.clusterHealthInterval();
-        if (delayInSeconds <= 0) {
-            logger.debug("Cluster health check disabled.");
-            return;
-        }
         if (transport == null) {
             logger.debug("Cluster health check disabled. Local mode");
             return;
         }
         if (!(transport instanceof JGroupsTransport jgrp)) {
-            logger.warn("JGroups Transport not found. Unable to check cluster health.");
+            logger.debug("JGroups Transport not found. Unable to check cluster health.");
             return;
         }
         KEYCLOAK_JDBC_PING2 ping = jgrp.getChannel().getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
@@ -89,31 +72,40 @@ public class ClusterHealthImpl implements ClusterHealth {
             return;
         }
 
-        logger.infof("Starting cluster health schedule task (interval=%s seconds)", delayInSeconds);
-        future = scheduledExecutorService.scheduleWithFixedDelay(
-                () -> blockingManager.runBlocking(() -> checkHealth(ping), "cluster-health"),
-                delayInSeconds, delayInSeconds, TimeUnit.SECONDS);
+        logger.debug("Cluster Health check available");
+        init(ping, blockingManager.asExecutor("cluster-health"));
+    }
 
+    public void init(KEYCLOAK_JDBC_PING2 discovery, Executor executor) {
+        runner = new HealthRunner(discovery, executor, this::checkHealth);
     }
 
     private void checkHealth(KEYCLOAK_JDBC_PING2 ping) {
-        var status = ping.isHealthy();
-        switch (status) {
-            case HEALTHY:
-                logger.debug("Set cluster health status to healthy");
-                healthy = true;
-                break;
-            case NO_COORDINATOR:
-                logger.warn("Unable to check the cluster health because no coordinator has been found.");
-                // fallthrough
-            case UNHEALTHY:
-                logger.debug("Set cluster health status to unhealthy");
-                healthy = false;
-                break;
-            case ERROR:
-                // do not change the state
-                logger.debug("Error querying the database. Skip updating the cluster health status.");
-                break;
+        assert ping != null;
+        if (!lock.tryLock()) {
+            // check in progress
+            return;
+        }
+        try {
+            var status = ping.healthStatus();
+            switch (status) {
+                case HEALTHY:
+                    logger.debug("Set cluster health status to healthy");
+                    healthy = true;
+                    break;
+                case NO_COORDINATOR:
+                    logger.warn("Unable to check the cluster health because no coordinator has been found.");
+                    // fallthrough
+                case UNHEALTHY:
+                    logger.debug("Set cluster health status to unhealthy");
+                    healthy = false;
+                    break;
+                case ERROR:
+                    logger.debug("Error querying the database. Skip updating the cluster health status.");
+                    break;
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -122,11 +114,23 @@ public class ClusterHealthImpl implements ClusterHealth {
         return healthy;
     }
 
-    @Stop
-    public void stop() {
-        if (future != null) {
-            future.cancel(true);
+    @Override
+    public void triggerClusterHealthCheck() {
+        if (runner != null) {
+            runner.trigger();
         }
     }
 
+    private record HealthRunner(KEYCLOAK_JDBC_PING2 discovery, Executor executor, Consumer<KEYCLOAK_JDBC_PING2> check) {
+
+        HealthRunner {
+            Objects.requireNonNull(discovery);
+            Objects.requireNonNull(executor);
+            Objects.requireNonNull(check);
+        }
+
+        void trigger() {
+            executor.execute(() -> check.accept(discovery));
+        }
+    }
 }

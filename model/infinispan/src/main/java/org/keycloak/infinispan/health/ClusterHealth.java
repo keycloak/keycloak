@@ -36,4 +36,11 @@ public interface ClusterHealth {
      */
     boolean isHealthy();
 
+    /**
+     * Triggers a cluster health check.
+     * <p>
+     * This method should only trigger the health check logic without blocking or waiting for its outcome.
+     */
+    void triggerClusterHealthCheck();
+
 }

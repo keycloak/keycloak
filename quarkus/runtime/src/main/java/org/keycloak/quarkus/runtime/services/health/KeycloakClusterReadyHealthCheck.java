@@ -32,7 +32,6 @@ import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import static org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck.DATE_FORMATTER;
 import static org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck.FAILING_SINCE;
 
-
 @Readiness
 @ApplicationScoped
 public class KeycloakClusterReadyHealthCheck implements AsyncHealthCheck {
@@ -56,6 +55,4 @@ public class KeycloakClusterReadyHealthCheck implements AsyncHealthCheck {
         }
         return Uni.createFrom().item(builder.build());
     }
-
-
 }

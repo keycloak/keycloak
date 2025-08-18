@@ -40,18 +40,4 @@ public class KeycloakConfigurationBuilder implements Builder<KeycloakConfigurati
         return this;
     }
 
-    /**
-     * Configures the interval, in seconds, to check the cluster health (network partitions).
-     * <p>
-     * A small value may increase the load in the database, as it is used to discovery the cluster members. A zero or
-     * negative value disables the check.
-     *
-     * @param intervalSeconds The interval in seconds. It can be zero or negative.
-     * @return {@code this}.
-     */
-    public KeycloakConfigurationBuilder setClusterHealthInterval(int intervalSeconds) {
-        attributes.attribute(KeycloakConfiguration.CLUSTER_HEALTH_INTERVAL).set(intervalSeconds);
-        return this;
-    }
-
 }

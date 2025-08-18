@@ -21,14 +21,13 @@ import org.infinispan.factories.AbstractComponentFactory;
 import org.infinispan.factories.AutoInstantiableFactory;
 import org.infinispan.factories.annotations.DefaultFactoryFor;
 import org.keycloak.infinispan.health.ClusterHealth;
-import org.keycloak.infinispan.health.impl.ClusterHealthImpl;
+import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
 
 @DefaultFactoryFor(classes = ClusterHealth.class)
 public class ClusterHealthFactory extends AbstractComponentFactory implements AutoInstantiableFactory {
 
     @Override
     public Object construct(String componentName) {
-        return new ClusterHealthImpl();
+        return new JdbcPingClusterHealthImpl();
     }
-
 }

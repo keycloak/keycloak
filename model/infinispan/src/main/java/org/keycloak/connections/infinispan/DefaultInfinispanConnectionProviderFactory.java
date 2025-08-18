@@ -307,6 +307,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public boolean isClusterHealthy() {
+        clusterHealth.triggerClusterHealthCheck();
         return clusterHealth.isHealthy();
     }
 

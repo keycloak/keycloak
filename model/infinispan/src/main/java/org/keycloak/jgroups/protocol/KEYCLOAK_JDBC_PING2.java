@@ -260,7 +260,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      * @return The {@link HealthStatus}.
      * @see HealthStatus
      */
-    public HealthStatus isHealthy() {
+    public HealthStatus healthStatus() {
         try {
             // maybe create an index, and a query to return coordinators only?
             return readFromDB(cluster_name)
@@ -274,6 +274,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     .orElse(HealthStatus.NO_COORDINATOR);
         } catch (Exception e) {
             // database failed?
+            log.debug("Failed to fetch the cluster members fromm the database.", e);
             return HealthStatus.ERROR;
         }
     }

@@ -20,7 +20,6 @@ package org.keycloak.it.cli.dist;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
-import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -28,11 +27,11 @@ import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.Storage;
+import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import io.quarkus.test.junit.main.Launch;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Not possible to mount files using docker.")
@@ -194,50 +193,6 @@ public class ClusterConfigDistTest {
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-user-cache.xml"})
     void testCustomUserCacheConfigurationNoWarning(CLIResult result) {
         result.assertNoMessage(WARN_DEFAULT_CACHE_MUTATIONS);
-    }
-
-    @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true", "--cache=local" })
-    void testClusterHealthDoesNotStartWithLocal(CLIResult result) {
-        result.assertStartedDevMode();
-        assertFalse(result.isClustered());
-        result.assertNoMessage("Starting cluster health schedule task");
-        // no log entry from this class
-        result.assertNoMessage("ClusterHealthImpl");
-    }
-
-    @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true", "--cache=ispn", "--cache-stack=udp" })
-    void testClusterHealthDoesNotStartWithOtherStacks(CLIResult result) {
-        result.assertStartedDevMode();
-        result.assertClusteredCache();
-        result.assertMessage("Stack 'jdbc-ping' not used. Unable to check cluster health.");
-    }
-
-    @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true","--cache=ispn", "--spi-cache-embedded--default--health-check-interval=-1" })
-    void testClusterHealthDisabled(CLIResult result) {
-        result.assertStartedDevMode();
-        result.assertClusteredCache();
-        result.assertNoMessage("Starting cluster health schedule task");
-        // no log entry from this class
-        result.assertNoMessage("ClusterHealthImpl");
-    }
-
-    @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true","--cache=ispn" })
-    void testClusterHealthEnabled(CLIResult result) {
-        result.assertStartedDevMode();
-        result.assertClusteredCache();
-        result.assertMessage("Starting cluster health schedule task");
-    }
-
-    @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true","--cache=ispn", "--spi-cache-embedded--default--health-check-interval=100" })
-    void testClusterHealthEnabledWithCustomerInterval(CLIResult result) {
-        result.assertStartedDevMode();
-        result.assertClusteredCache();
-        result.assertMessage("Starting cluster health schedule task (interval=100 seconds)");
     }
 
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
