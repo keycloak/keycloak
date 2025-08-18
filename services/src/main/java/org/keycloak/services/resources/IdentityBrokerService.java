@@ -125,6 +125,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGISTERED_NEW_USER;
+import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
 /**
  * <p></p>
@@ -924,7 +925,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return AuthenticationManager.redirectToRequiredActions(session, realmModel, authSession, session.getContext().getUri(), nextRequiredAction);
         } else {
             event.detail(Details.CODE_ID, authSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
-            return AuthenticationManager.finishedRequiredActions(session, authSession, null, clientConnection, request, session.getContext().getUri(), event);
+            return AuthenticationManager.finishedRequiredActions(session, authSession, null, clientConnection, request, session.getContext().getUri(), event, !isLightweightUser(federatedUser));
         }
     }
 
