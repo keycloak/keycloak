@@ -1,9 +1,11 @@
 package org.keycloak.admin.api.client;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
@@ -27,21 +29,21 @@ import jakarta.ws.rs.core.Response;
 public class DefaultClientApi implements ClientApi {
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final String clientId;
+    private final ClientModel client;
     private final ClientService clientService;
     private HttpResponse response;
 
-    public DefaultClientApi(KeycloakSession session, String clientId) {
+    public DefaultClientApi(KeycloakSession session) {
         this.session = session;
-        this.clientId = clientId;
-        this.realm = session.getContext().getRealm();
+        this.realm = Objects.requireNonNull(session.getContext().getRealm());
+        this.client = Objects.requireNonNull(session.getContext().getClient());
         this.clientService = session.services().clients();
         this.response = session.getContext().getHttpResponse();
     }
 
     @Override
     public ClientRepresentation getClient() {
-        return clientService.getClient(realm, clientId, null)
+        return clientService.getClient(realm, client.getClientId(), null)
                 .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
     }
 
@@ -95,5 +97,10 @@ public class DefaultClientApi implements ClientApi {
         } catch (IOException e) {
             throw ErrorResponse.error("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    public void close() {
+
     }
 }
