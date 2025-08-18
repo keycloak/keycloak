@@ -1315,6 +1315,40 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.openrewrite.maven</groupId>
+                    <artifactId>rewrite-maven-plugin</artifactId>
+                    <version>6.15.0</version>
+                    <configuration>
+                        <activeRecipes>
+                            <recipe>org.keycloak.openrewrite.DefinitionOfDone</recipe>
+                        </activeRecipes>
+                        <exclusions>
+                            <exclusion>**ASTAnnotationTypeDeclaration.java</exclusion>
+                            <exclusion>**OIDCClientRegistrationTest.java</exclusion>
+                            <exclusion>**RSAVerifierTest.java</exclusion>
+                        </exclusions>
+                        <exportDatatables>true</exportDatatables>
+                        <failOnDryRunResults>true</failOnDryRunResults>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-third-party</artifactId>
+                            <version>0.24.3</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-rewrite</artifactId>
+                            <version>0.10.1</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-static-analysis</artifactId>
+                            <version>2.14.0</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${shade.plugin.version}</version>
@@ -1502,6 +1536,12 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.openrewrite.maven</groupId>
+                <artifactId>rewrite-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>

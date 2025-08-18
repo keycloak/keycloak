@@ -1,0 +1,52 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: org.keycloak.openrewrite.DefinitionOfDone
+displayName: Definition of Done
+description: Automatically code cleanup to comply common convention.
+recipeList:
+  - org.openrewrite.staticanalysis.MissingOverrideAnnotation
+# TBD
+#  - org.openrewrite.java.RemoveUnusedImports
+#  - org.openrewrite.java.RemoveUnusedImports
+#  - org.openrewrite.java.migrate.UpgradeToJava17
+#  - org.openrewrite.java.migrate.UpgradeToJava25
+#  - org.openrewrite.java.recipes.JavaRecipeBestPractices
+#  - org.openrewrite.java.recipes.RecipeNullabilityBestPractices
+#  - org.openrewrite.java.recipes.RecipeTestingBestPractices
+#  - org.openrewrite.maven.OrderPomElements
+#  - org.openrewrite.maven.cleanup.PrefixlessExpressions
+#  - org.openrewrite.staticanalysis.CodeCleanup
+#  - org.openrewrite.staticanalysis.CommonStaticAnalysis
+#  - org.openrewrite.staticanalysis.EqualsAvoidsNull
+#  - org.openrewrite.staticanalysis.JavaApiBestPractices
+#  - org.openrewrite.staticanalysis.LowercasePackage
+#  - org.openrewrite.staticanalysis.LowercasePackage
+#  - org.openrewrite.staticanalysis.MissingOverrideAnnotation
+#  - org.openrewrite.staticanalysis.ModifierOrder
+#  - org.openrewrite.staticanalysis.ModifierOrder
+#  - org.openrewrite.staticanalysis.RemoveUnusedLocalVariables
+#  - org.openrewrite.staticanalysis.RemoveUnusedLocalVariables
+#  - org.openrewrite.staticanalysis.RemoveUnusedPrivateFields
+#  - org.openrewrite.staticanalysis.RemoveUnusedPrivateFields
+#  - org.openrewrite.staticanalysis.RemoveUnusedPrivateMethods
+#  - org.openrewrite.staticanalysis.RemoveUnusedPrivateMethods
+#  - org.openrewrite.staticanalysis.UnnecessaryThrows
+#  - tech.picnic.errorprone.refasterrules.BigDecimalRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.BugCheckerRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.BugCheckerRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.CharSequenceRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.ClassRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.CollectionRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.ComparatorRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.EqualityRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.FileRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.FileRulesRecipes # security fixes
+#  - tech.picnic.errorprone.refasterrules.MicrometerRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.NullRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.OptionalRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.PatternRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.PreconditionsRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.PrimitiveRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.StreamRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.StringRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.SuggestedFixRulesRecipes
+#  - tech.picnic.errorprone.refasterrules.TimeRulesRecipes
