@@ -89,12 +89,12 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
         create(createRep("keycloak-oidc", "keycloak-oidc"));
         provider = managedRealm.admin().identityProviders().get("keycloak-oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-group-idp-mapper", "oidc-advanced-role-idp-mapper", "oidc-user-session-note-idp-mapper");
+        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-group-idp-mapper", "oidc-advanced-role-idp-mapper", "oidc-user-session-note-idp-mapper", "oidc-prefixed-user-attribute-idp-mapper");
 
         create(createRep("oidc", "oidc"));
         provider = managedRealm.admin().identityProviders().get("oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-group-idp-mapper", "oidc-advanced-role-idp-mapper", "oidc-user-session-note-idp-mapper");
+        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-group-idp-mapper", "oidc-advanced-role-idp-mapper", "oidc-user-session-note-idp-mapper", "oidc-prefixed-user-attribute-idp-mapper");
 
         create(createRep("saml", "saml"));
         provider = managedRealm.admin().identityProviders().get("saml");
