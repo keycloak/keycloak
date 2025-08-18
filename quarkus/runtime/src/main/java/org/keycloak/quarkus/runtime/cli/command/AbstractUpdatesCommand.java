@@ -91,7 +91,8 @@ public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
     }
 
     private static void loadConfiguration() {
-        // Initialize config
+        // Initialize config without directly referencing MicroProfileConfigProvider
+        // as that currently causing classloading issue during command creation
         var configProvider = ServiceLoader.load(ConfigProviderFactory.class)
                 .stream()
                 .findFirst()
