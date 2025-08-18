@@ -25,9 +25,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class UserCreationDateResourcePolicyProviderFactory implements ResourcePolicyProviderFactory<UserCreationDateResourcePolicyProvider> {
+public class UserSessionRefreshTimeResourcePolicyProviderFactory implements ResourcePolicyProviderFactory<UserSessionRefreshTimeResourcePolicyProvider> {
 
-    public static final String ID = "user-creation-date-resource-policy";
+    public static final String ID = "user-refresh-time-resource-policy";
 
     @Override
     public ResourceType getType() {
@@ -35,8 +35,8 @@ public class UserCreationDateResourcePolicyProviderFactory implements ResourcePo
     }
 
     @Override
-    public UserCreationDateResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
-        return new UserCreationDateResourcePolicyProvider(session, model);
+    public UserSessionRefreshTimeResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
+        return new UserSessionRefreshTimeResourcePolicyProvider(session, model);
     }
 
     @Override

@@ -27,9 +27,13 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.UserEntity;
 
-public class UserCreationDateResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
+import java.util.List;
 
-    public UserCreationDateResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
+import static org.keycloak.models.policy.ResourceOperationType.CREATE;
+
+public class UserCreationTimeResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
+
+    public UserCreationTimeResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
         super(session, model);
     }
 
@@ -41,7 +45,7 @@ public class UserCreationDateResourcePolicyProvider extends AbstractUserResource
     }
 
     @Override
-    public boolean supports(ResourceType type) {
-        return ResourceType.USERS.equals(type);
+    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
+        return List.of(CREATE);
     }
 }

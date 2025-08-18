@@ -17,6 +17,68 @@
 
 package org.keycloak.models.policy;
 
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.OperationType;
+
+import java.util.List;
+import java.util.Objects;
+
 public enum ResourceType {
-    USERS
+
+    USERS(org.keycloak.events.admin.ResourceType.USER, List.of(OperationType.CREATE), List.of(EventType.LOGIN, EventType.REGISTER));
+
+    private final org.keycloak.events.admin.ResourceType supportedAdminResourceType;
+    private final List<OperationType> supportedAdminOperationTypes;
+    private final List<EventType> supportedEventTypes;
+
+    ResourceType(org.keycloak.events.admin.ResourceType supportedAdminResourceType,
+                 List<OperationType> supportedAdminOperationTypes,
+                 List<EventType> supportedEventTypes) {
+        this.supportedAdminResourceType = supportedAdminResourceType;
+        this.supportedAdminOperationTypes = supportedAdminOperationTypes;
+        this.supportedEventTypes = supportedEventTypes;
+    }
+
+    public ResourcePolicyEvent toEvent(AdminEvent event) {
+        if (Objects.equals(this.supportedAdminResourceType, event.getResourceType())
+                && this.supportedAdminOperationTypes.contains(event.getOperationType())) {
+
+            ResourceOperationType resourceOperationType = toOperationType(event.getOperationType());
+            if (resourceOperationType != null) {
+                return new ResourcePolicyEvent(this, resourceOperationType, event.getResourceId());
+            }
+        }
+        return null;
+    }
+
+    public ResourcePolicyEvent toEvent(Event event) {
+        if (this.supportedEventTypes.contains(event.getType())) {
+            ResourceOperationType resourceOperationType = toOperationType(event.getType());
+            String resourceId = switch (this) {
+                case USERS -> event.getUserId();
+            };
+            if (resourceOperationType != null && resourceId != null) {
+                return new ResourcePolicyEvent(this, resourceOperationType, event.getUserId());
+            }
+        }
+        return null;
+    }
+
+    private ResourceOperationType toOperationType(OperationType operation) {
+        return switch (operation) {
+            case CREATE -> ResourceOperationType.CREATE;
+            default -> null;
+        };
+    }
+
+    private ResourceOperationType toOperationType(EventType type) {
+        return switch (type) {
+            case REGISTER -> ResourceOperationType.CREATE;
+            case LOGIN -> ResourceOperationType.LOGIN;
+            default -> null;
+        };
+    }
+
 }

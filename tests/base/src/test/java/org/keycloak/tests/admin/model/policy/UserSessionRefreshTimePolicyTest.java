@@ -25,17 +25,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.UserActionBuilder;
-import org.keycloak.models.policy.UserLastSessionRefreshTimeResourcePolicyProviderFactory;
+import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -78,12 +78,11 @@ public class UserSessionRefreshTimePolicyTest {
     }
 
     @Test
-    @Disabled
     public void testDisabledUserAfterInactivityPeriod() {
         runOnServer.run((RunOnServer) session -> {
             configureSessionContext(session);
             PolicyBuilder.create()
-                    .of(UserLastSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                    .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
                     .withActions(
                             UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
                                     .after(Duration.ofDays(5))
@@ -94,30 +93,33 @@ public class UserSessionRefreshTimePolicyTest {
                     ).build(session);
         });
 
+        // login with alice - this will attach the policy to the user and schedule the first action
         oauth.openLoginForm();
-        loginPage.fillLogin("alice", "alice");
+        String username = userAlice.getUsername();
+        loginPage.fillLogin(username, userAlice.getPassword());
         loginPage.submit();
-        assertTrue(driver.getPageSource().contains("Happy days"));
+        assertTrue(driver.getPageSource() != null && driver.getPageSource().contains("Happy days"));
 
-        // test run policy
+        // test running the scheduled actions
         runOnServer.run((session -> {
             RealmModel realm = configureSessionContext(session);
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
-            UserModel user = session.users().getUserByUsername(realm, "alice");
+            UserModel user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
 
+            // running the scheduled tasks now shouldn't pick up any action as none are due to run yet
             manager.runScheduledTasks();
-            user = session.users().getUserByUsername(realm, "alice");
+            user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
 
             try {
-                manager = new ResourcePolicyManager(session);
-                Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
+                // set offset to 6 days - notify action should run now
+                Time.setOffset(Math.toIntExact(Duration.ofDays(5).toSeconds()));
                 manager.runScheduledTasks();
-                user = session.users().getUserByUsername(realm, "alice");
+                user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
                 assertNotNull(user.getAttributes().get("message"));
             } finally {
@@ -125,35 +127,109 @@ public class UserSessionRefreshTimePolicyTest {
             }
         }));
 
+        // trigger a login event that should reset the flow of the policy
         oauth.openLoginForm();
 
-        // test run policy
         runOnServer.run((session -> {
             try {
+                // setting the offset to 11 days should not run the second action as we re-started the flow on login
                 RealmModel realm = configureSessionContext(session);
                 Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
                 ResourcePolicyManager manager = new ResourcePolicyManager(session);
                 manager.runScheduledTasks();
-                UserModel user = session.users().getUserByUsername(realm, "alice");
+                UserModel user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
             } finally {
                 Time.setOffset(0);
             }
-        }));
 
-        // test run policy
-        runOnServer.run((session -> {
             try {
+                // first action has run and the next action should be triggered after 5 more days (time difference between the actions)
                 RealmModel realm = configureSessionContext(session);
-                Time.setOffset(Math.toIntExact(Duration.ofDays(21).toSeconds()));
+                Time.setOffset(Math.toIntExact(Duration.ofDays(17).toSeconds()));
                 ResourcePolicyManager manager = new ResourcePolicyManager(session);
                 manager.runScheduledTasks();
-                UserModel user = session.users().getUserByUsername(realm, "alice");
+                UserModel user = session.users().getUserByUsername(realm, username);
+                // second action should have run and the user should be disabled now
                 assertFalse(user.isEnabled());
             } finally {
                 Time.setOffset(0);
             }
         }));
+    }
+
+    @Test
+    public void testMultiplePolicies() {
+        runOnServer.run(session -> {
+                PolicyBuilder.create()
+                    .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                    .withActions(
+                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
+                                    .after(Duration.ofDays(5))
+                                    .withConfig("message_key", "notifier1")
+                                    .build()
+                    )
+                    .build(session);
+                PolicyBuilder.create()
+                    .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                    .withActions(
+                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
+                                    .after(Duration.ofDays(10))
+                                    .withConfig("message_key", "notifier2")
+                                    .build())
+                    .build(session);
+        });
+
+        // perform a login to associate the policies with the new user.
+        oauth.openLoginForm();
+        String username = userAlice.getUsername();
+        loginPage.fillLogin(username, userAlice.getPassword());
+        loginPage.submit();
+        assertTrue(driver.getPageSource() != null && driver.getPageSource().contains("Happy days"));
+
+        runOnServer.run(session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            UserProvider users = session.users();
+            UserModel user = users.getUserByUsername(realm, username);
+            assertTrue(user.isEnabled());
+            assertNull(user.getFirstAttribute("notifier1"));
+            assertNull(user.getFirstAttribute("notifier2"));
+
+            try {
+                Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
+                manager.runScheduledTasks();
+                user = users.getUserByUsername(realm, username);
+                assertTrue(user.isEnabled());
+                assertNotNull(user.getFirstAttribute("notifier1"));
+                assertNull(user.getFirstAttribute("notifier2"));
+                user.removeAttribute("notifier1");
+            } finally {
+                Time.setOffset(0);
+            }
+
+            try {
+                Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
+                manager.runScheduledTasks();
+                user = users.getUserByUsername(realm, username);
+                assertTrue(user.isEnabled());
+                assertNotNull(user.getFirstAttribute("notifier2"));
+                assertNull(user.getFirstAttribute("notifier1"));
+                user.removeAttribute("notifier2");
+            } finally {
+                Time.setOffset(0);
+            }
+
+            try {
+                manager.runScheduledTasks();
+                assertNull(user.getFirstAttribute("notifier1"));
+                assertNull(user.getFirstAttribute("notifier2"));
+            } finally {
+                Time.setOffset(0);
+            }
+
+        });
     }
 
     private static RealmModel configureSessionContext(KeycloakSession session) {

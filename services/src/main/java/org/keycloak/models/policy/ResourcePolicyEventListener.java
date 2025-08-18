@@ -15,32 +15,31 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 
-/**
- * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
- */
-public class UserPolicyEventListener implements EventListenerProvider {
+public class ResourcePolicyEventListener implements EventListenerProvider {
 
     private final KeycloakSession session;
 
-    public UserPolicyEventListener(KeycloakSession session) {
+    public ResourcePolicyEventListener(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
     public void onEvent(Event event) {
-        switch (event.getType()) {
-            case LOGIN -> onLogin(event);
-        }
-    }
-
-    private void onLogin(Event event) {
-        ResourcePolicyManager manager = new ResourcePolicyManager(session);
-        manager.trySchedule(ResourceType.USERS, event.getUserId());
+        ResourcePolicyEvent policyEvent = ResourceType.USERS.toEvent(event);
+        trySchedule(policyEvent);
     }
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
+        ResourcePolicyEvent policyEvent = ResourceType.USERS.toEvent(event);
+        trySchedule(policyEvent);
+    }
 
+    private void trySchedule(ResourcePolicyEvent event) {
+        if (event != null) {
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+            manager.processEvent(event);
+        }
     }
 
     @Override

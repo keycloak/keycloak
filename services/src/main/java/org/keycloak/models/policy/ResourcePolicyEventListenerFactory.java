@@ -23,11 +23,11 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-public class UserPolicyEventListenerFactory implements EventListenerProviderFactory {
+public class ResourcePolicyEventListenerFactory implements EventListenerProviderFactory {
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return new UserPolicyEventListener(session);
+        return new ResourcePolicyEventListener(session);
     }
 
     @Override
@@ -52,6 +52,6 @@ public class UserPolicyEventListenerFactory implements EventListenerProviderFact
 
     @Override
     public String getId() {
-        return "user-policy-event-listener";
+        return "resource-policy-event-listener";
     }
 }

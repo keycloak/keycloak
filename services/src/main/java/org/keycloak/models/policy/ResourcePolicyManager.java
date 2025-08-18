@@ -107,13 +107,12 @@ public class ResourcePolicyManager {
 
         // find which action IDs were deleted
         oldActionIds.removeAll(newActionIds); // The remaining IDs are the deleted ones
-        Set<String> deletedActionIds = oldActionIds;
 
         ResourcePolicyStateProvider stateProvider = getResourcePolicyStateProvider();
         // delete orphaned state records - this means that we actually reset the flow for users which completed the action which is being removed
         // it seems like the best way to handle this
-        if (!deletedActionIds.isEmpty()) {
-            stateProvider.removeByCompletedActions(policy.getId(), deletedActionIds);
+        if (!oldActionIds.isEmpty()) {
+            stateProvider.removeByCompletedActions(policy.getId(), oldActionIds);
         }
 
         RealmModel realm = getRealm();
@@ -184,7 +183,7 @@ public class ResourcePolicyManager {
         Map<String, List<String>> candidatesForAction = new HashMap<>();
         for (int i = 1; i < actions.size(); i++) {
             ResourceAction previousAction = actions.get(i - 1);
-            List<String> candidateIds = stateProvider.findResourceIdsByLastCompletedAction(policy.getId(), previousAction.getId());
+            List<String> candidateIds = stateProvider.findResourceIdsByScheduledAction(policy.getId(), previousAction.getId());
             candidatesForAction.put(actions.get(i).getId(), candidateIds);
         }
 
@@ -297,41 +296,30 @@ public class ResourcePolicyManager {
         });
     }
 
-    public boolean trySchedule(ResourceType type, String id) {
+    public void processEvent(ResourcePolicyEvent event) {
+
         ResourcePolicyStateProvider state = getResourcePolicyStateProvider();
-        List<ResourcePolicy> policies = getPolicies();
+        List<String> currentlyAssignedPolicies = state.getScheduledActionsByResource(event.getResourceId())
+                .stream().map(ScheduledAction::policyId).toList();
+        List<ResourcePolicy> policies = this.getPolicies();
 
-        if (policies.isEmpty()) {
-            return false;
-        }
-
-        boolean scheduled = false;
-
-        for (ResourcePolicy policy : policies) {
-            ResourcePolicyProvider provider = getPolicyProvider(policy);
-
-            if (!provider.supports(type)) {
-                continue;
-            }
-
-            List<ResourceAction> actions = getActions(policy);
-
-            if (actions.isEmpty()) {
-                continue;
-            }
-
-            String scheduledAction = state.isScheduled(policy, id);
-
-            if (scheduledAction == null) {
-                // schedule the first action
-                getResourcePolicyStateProvider().schedule(policy, getFirstAction(policy), id);
-            } else {
-                // re-schedule the policy to reset the state and start from the first policy
-                getResourcePolicyStateProvider().reSchedule(policy, getFirstAction(policy), id);
-            }
-        }
-
-        return scheduled;
+        // iterate through the policies, and for those not yet assigned to the user check if they can be assigned
+        policies.stream()
+                .filter(policy -> !getActions(policy).isEmpty())
+                .forEach(policy -> {
+                            ResourcePolicyProvider provider = getPolicyProvider(policy);
+                            if (!currentlyAssignedPolicies.contains(policy.getId())) {
+                                // if policy is not assigned, check if the provider allows assigning based on the event
+                                if (provider.scheduleOnEvent(event)) {
+                                    state.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                                }
+                            } else {
+                                if (provider.resetOnEvent(event)) {
+                                    state.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                                }
+                                // TODO add a removeOnEvent to allow policies to detach from resources on specific events (e.g. unlinking an identity)
+                            }
+                        });
     }
 
     private ResourceAction getFirstAction(ResourcePolicy policy) {
@@ -342,19 +330,21 @@ public class ResourcePolicyManager {
         for (ResourcePolicy policy : getPolicies()) {
             ResourcePolicyStateProvider state = getResourcePolicyStateProvider();
 
-            for (ScheduledAction scheduled : state.getScheduledActions(policy)) {
+            for (ScheduledAction scheduled : state.getDueScheduledActions(policy)) {
                 List<ResourceAction> actions = getActions(policy);
 
                 for (int i = 0; i < actions.size(); i++) {
-                    ResourceAction next = actions.get(i);
+                    ResourceAction currentAction = actions.get(i);
 
-                    if (next.getId().equals(scheduled.actionId())) {
-                        runAction(getActionProvider(next), List.of(scheduled.resourceId()));
+                    if (currentAction.getId().equals(scheduled.actionId())) {
+                        runAction(getActionProvider(currentAction), List.of(scheduled.resourceId()));
 
                         if (actions.size() > i + 1) {
-                            state.schedule(policy, actions.get(i + 1), scheduled.resourceId());
+                            // schedule the next action using the time offset difference between the actions.
+                            ResourceAction nextAction = actions.get(i + 1);
+                            state.scheduleAction(policy, nextAction,nextAction.getAfter() - currentAction.getAfter(), scheduled.resourceId());
                         } else {
-                            state.removeByCompletedActions(policy.getId(), Set.of(scheduled.actionId()));
+                            state.remove(policy.getId(), scheduled.resourceId());
                         }
                     }
                 }

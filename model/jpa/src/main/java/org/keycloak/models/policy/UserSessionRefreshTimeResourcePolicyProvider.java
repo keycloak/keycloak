@@ -18,6 +18,7 @@
 package org.keycloak.models.policy;
 
 import java.time.Duration;
+import java.util.List;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -28,27 +29,15 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserEntity;
 
-public class UserLastSessionRefreshTimeResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
+import static org.keycloak.models.policy.ResourceOperationType.CREATE;
+import static org.keycloak.models.policy.ResourceOperationType.LOGIN;
 
-    public UserLastSessionRefreshTimeResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
+public class UserSessionRefreshTimeResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
+
+    public UserSessionRefreshTimeResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
         super(session, model);
-    }
-
-    @Override
-    public boolean isEligible(String id, long time) {
-        KeycloakSession session = getSession();
-        RealmModel realm = session.getContext().getRealm();
-        UserModel user = session.users().getUserById(realm, id);
-
-        if (user == null) {
-            return false;
-        }
-
-        return true;
     }
 
     @Override
@@ -60,7 +49,12 @@ public class UserLastSessionRefreshTimeResourcePolicyProvider extends AbstractUs
     }
 
     @Override
-    public boolean supports(ResourceType type) {
-        return ResourceType.USERS.equals(type);
+    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
+        return List.of(CREATE, LOGIN);
+    }
+
+    @Override
+    protected List<ResourceOperationType> getSupportedOperationsForResetting() {
+        return List.of(LOGIN);
     }
 }
