@@ -419,7 +419,7 @@
         <profile>
             <id>db-tidb</id>
             <properties>
-                <keycloak.storage.connections.vendor>mysql</keycloak.storage.connections.vendor>
+                <keycloak.storage.connections.vendor>tidb</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>com.mysql.jdbc.Driver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>test</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>root</keycloak.connectionsJpa.user>
