@@ -271,7 +271,9 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
                 event.error(cpe.getError());
                 logger.warnf("Error in client policies processing the request: %s - %s", cpe.getError(), cpe.getErrorDetail());
-                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+                if (!cpe.isPermissiveMode()) {
+                    return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+                }
             }
             return null;
         }

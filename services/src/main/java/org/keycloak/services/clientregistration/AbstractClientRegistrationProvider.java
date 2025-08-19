@@ -97,7 +97,17 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
 
             session.getContext().setClient(clientModel);
-            session.clientPolicy().triggerOnEvent(new DynamicClientRegisteredContext(context, clientModel, auth.getJwt(), realm));
+            try {
+                session.clientPolicy().triggerOnEvent(new DynamicClientRegisteredContext(context, clientModel, auth.getJwt(), realm));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                if (!cpe.isPermissiveMode()) {
+                    throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+                }
+            }
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
             client = ModelToRepresentation.toRepresentation(clientModel, session);
@@ -123,12 +133,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             return client;
         } catch (ModelDuplicateException e) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier in use", Response.Status.BAD_REQUEST);
-        } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
     }
 

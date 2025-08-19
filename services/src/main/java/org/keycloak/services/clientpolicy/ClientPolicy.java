@@ -33,6 +33,7 @@ class ClientPolicy implements Serializable {
     protected boolean enable;
     protected List<ClientPolicyConditionProvider> conditions;
     protected List<String> profiles;
+    protected boolean permissiveMode;
 
     public String getName() {
         return name;
@@ -72,5 +73,13 @@ class ClientPolicy implements Serializable {
 
     public void setProfiles(List<String> profiles) {
         this.profiles = profiles;
+    }
+
+    public boolean isPermissiveMode() {
+        return permissiveMode;
+    }
+
+    public void setPermissiveMode(boolean permissiveMode) {
+        this.permissiveMode = permissiveMode;
     }
 }

@@ -440,6 +440,8 @@ public class ClientPoliciesUtil {
                 policyModel.setProfiles(policyRep.getProfiles().stream().collect(Collectors.toList()));
             }
 
+            policyModel.setPermissiveMode(policyRep.isPermissiveMode() != null && policyRep.isPermissiveMode());
+
             policyList.add(policyModel);
         }
 
@@ -553,6 +555,8 @@ public class ClientPoliciesUtil {
                     policyRep.getProfiles().add(profile);
                 }
             }
+
+            policyRep.setPermissiveMode(proposedPolicyRep.isPermissiveMode() != null ? proposedPolicyRep.isPermissiveMode() : Boolean.FALSE);
 
             updatingPolicyList.add(policyRep);
         }

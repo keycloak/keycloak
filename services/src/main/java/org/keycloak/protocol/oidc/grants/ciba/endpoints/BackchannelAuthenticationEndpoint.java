@@ -237,7 +237,9 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            if (!cpe.isPermissiveMode()) {
+                throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            }
         }
 
         return request;
