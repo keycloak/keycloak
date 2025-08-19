@@ -32,4 +32,11 @@ public interface EmailSenderProvider extends Provider {
     }
 
     void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException;
+
+    /**
+     * Validates configuration for the SMTP sender.
+     * @param config The configuration to test
+     * @throws EmailException If some error is found
+     */
+    void validate(Map<String, String> config) throws EmailException;
 }

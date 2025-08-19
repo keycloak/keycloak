@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.jpa;
 
+import jakarta.persistence.criteria.JoinType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderShowInAccountConsole;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -61,6 +63,7 @@ import static org.keycloak.models.IdentityProviderModel.ORGANIZATION_ID;
 import static org.keycloak.models.IdentityProviderModel.ORGANIZATION_ID_NOT_NULL;
 import static org.keycloak.models.IdentityProviderModel.POST_BROKER_LOGIN_FLOW_ID;
 import static org.keycloak.models.IdentityProviderModel.SEARCH;
+import static org.keycloak.models.IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -271,21 +274,17 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                         break;
                     }
                     default: {
-                        String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
-                        MapJoin<IdentityProviderEntity, String, String> configJoin = idp.joinMap("config");
-                        Predicate configNamePredicate = builder.equal(configJoin.key(), key);
+						boolean orNull = switch (key) {
+							case SHOW_IN_ACCOUNT_CONSOLE -> IdentityProviderShowInAccountConsole.ALWAYS.name().equals(value);
+							default -> false;
+						};
+						List<Predicate> orPredicates = new ArrayList<>();
+						orPredicates.add(createConfigPredicate(builder, idp, key, value));
+						if (orNull) {
+							orPredicates.add(createConfigPredicate(builder, idp, key, null));
+						}
 
-                        if (dbProductName.equals("Oracle")) {
-                            // SELECT * FROM identity_provider_config WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
-                            // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
-                            // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
-                            // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
-                            // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
-                            Predicate configValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, configJoin.value(), builder.literal(value)), 0);
-                            predicates.add(builder.and(configNamePredicate, configValuePredicate));
-                        } else {
-                            predicates.add(builder.and(configNamePredicate, builder.equal(configJoin.value(), value)));
-                        }
+						predicates.add(builder.or(orPredicates.toArray(Predicate[]::new)));
                     }
                 }
             }
@@ -295,6 +294,27 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
         TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicates.toArray(Predicate[]::new)));
         return closing(paginateQuery(typedQuery, first, max).getResultStream()).map(this::toModel);
     }
+
+	private Predicate createConfigPredicate(CriteriaBuilder builder, Root<IdentityProviderEntity> idp, String key, String value) {
+		String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+		MapJoin<IdentityProviderEntity, String, String> configJoin = idp.joinMap("config", JoinType.LEFT);
+		configJoin.on(builder.equal(configJoin.key(), key));
+
+		if (value == null)  {
+			return builder.isNull(configJoin.value());
+		}
+
+		if (dbProductName.equals("Oracle")) {
+			// SELECT * FROM identity_provider_config WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
+			// Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
+			// But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
+			// "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
+			// This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
+			return builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, configJoin.value(), builder.literal(value)), 0);
+		} else {
+			return builder.equal(configJoin.value(), value);
+		}
+	}
 
     @Override
     public Stream<String> getByFlow(String flowId, String search, Integer first, Integer max) {

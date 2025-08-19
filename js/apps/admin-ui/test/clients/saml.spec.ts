@@ -9,7 +9,7 @@ import { goToClients } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
-  assertCertificate,
+  assertCertificates,
   assertEncryptionAlgorithm,
   assertEncryptionKeyAlgorithm,
   assertEncryptionDigestMethod,
@@ -121,7 +121,7 @@ test.describe("Clients SAML tests", () => {
     await clickClientSignature(page);
     await assertModalTitle(page, 'Disable "Client signature required"');
     await cancelModal(page);
-    await assertCertificate(page, false);
+    await assertCertificates(page);
   });
 
   test("should disable client signature", async ({ page }) => {
@@ -130,7 +130,7 @@ test.describe("Clients SAML tests", () => {
     await assertModalTitle(page, 'Disable "Client signature required"');
     await confirmModal(page);
     await assertNotificationMessage(page, "Client successfully updated");
-    await assertCertificate(page);
+    await assertCertificates(page);
   });
 
   test("should enable Encryption keys config", async ({ page }) => {
@@ -143,7 +143,7 @@ test.describe("Clients SAML tests", () => {
       "New key pair and certificate generated successfully",
     );
     await confirmModal(page);
-    await assertCertificate(page, false);
+    await assertCertificates(page);
 
     // assert encryption algorithms can be modified
     await goToClientSettingsTab(page);

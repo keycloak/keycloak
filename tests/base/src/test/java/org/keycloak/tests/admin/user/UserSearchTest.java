@@ -167,7 +167,7 @@ public class UserSearchTest extends AbstractUserTest {
 
         UserRepresentation userRep = UserConfigBuilder.create()
                 .username("user1").password("password").name("user1FirstName", "user1LastName")
-                .email("user1@example.com").emailVerified().attribute("attr", longValue).build();
+                .email("user1@example.com").emailVerified(true).attribute("attr", longValue).build();
         String userId = createUser(userRep);
 
         UserRepresentation user1 = managedRealm.admin().users().get(userId).toRepresentation();
@@ -177,7 +177,7 @@ public class UserSearchTest extends AbstractUserTest {
 
         UserRepresentation userRep2 = UserConfigBuilder.create()
                 .username("user2").password("password").name("user2FirstName", "user2LastName")
-                .email("user2@example.com").emailVerified().attribute("attr", longValue + "a").build();
+                .email("user2@example.com").emailVerified(true).attribute("attr", longValue + "a").build();
 
         Response response =  managedRealm.admin().users().create(userRep2);
         assertThat(response.getStatus(), equalTo(400));
@@ -192,15 +192,15 @@ public class UserSearchTest extends AbstractUserTest {
 
         UserRepresentation userRep = UserConfigBuilder.create()
                 .username("user1").password("password").name("user1FirstName", "user1LastName")
-                .email("user1@example.com").emailVerified()
+                .email("user1@example.com").emailVerified(true)
                 .attribute("test1", longValue, "v2").attribute("test2", "v2").build();
         UserRepresentation userRep2 = UserConfigBuilder.create()
                 .username("user2").password("password").name("user2FirstName", "user2LastName")
-                .email("user2@example.com").emailVerified()
+                .email("user2@example.com").emailVerified(true)
                 .attribute("test1", longValue, "v2").attribute("test2", longValue2).build();
         UserRepresentation userRep3 = UserConfigBuilder.create()
                 .username("user3").password("password").name("user3FirstName", "user3LastName")
-                .email("user3@example.com").emailVerified()
+                .email("user3@example.com").emailVerified(true)
                 .attribute("test2", longValue, "v3").attribute("test4", "v4").build();
 
         createUser(userRep);

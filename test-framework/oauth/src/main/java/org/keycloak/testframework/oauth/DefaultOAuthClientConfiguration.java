@@ -9,7 +9,7 @@ public class DefaultOAuthClientConfiguration implements ClientConfig {
     public ClientConfigBuilder configure(ClientConfigBuilder client) {
         return client.clientId("test-app")
                 .serviceAccountsEnabled(true)
-                .directAccessGrants()
+                .directAccessGrantsEnabled(true)
                 .secret("test-secret");
     }
 

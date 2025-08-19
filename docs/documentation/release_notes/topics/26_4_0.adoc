@@ -31,3 +31,22 @@ In order to support basic TLS termination (edge) deployments via the operator, y
 While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring.
 
 For more information, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Supported passkeys
+
+*Passkeys* integration is now a supported feature. This feature integrates passkeys seamlessly in the {project_name} forms using both conditional and modal UI. Although supported, *passkeys* are disabled by default. To activate the integration in the realm, the option *Enable Passkeys* in the *WebAuthn Passwordless Policy* (*Authentication* → *Policies* → *Webauthn Passwordless Policy*) needs to be enabled.
+
+For more information, see the link:{adminguide_link}#passkeys_server_administration_guide[Passkeys] chapter in the {adminguide_name}.
+
+= New conditional authenticator `Conditional - credential`
+
+The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the *Passkeys* feature. It is added by {project_name} to the default *browser* flow to skip 2FA in case a passkey was used to log in as the primary credential.
+
+For more information about conditional flows, see the link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows] chapter in the {adminguide_name}.
+
+= Possibility to hide identity providers from the account console
+
+It is now possible to change which identity providers are shown in the account console based on different options using
+the `Show in Account console` setting. You can choose to show only those linked with a user or not show them at all.
+
+For more information, please see link:{adminguide_link}#_general-idp-config[General configuration] section in the {adminguide_name}.

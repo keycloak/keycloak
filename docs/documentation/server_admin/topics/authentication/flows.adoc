@@ -36,9 +36,11 @@ Since this sub-flow is marked as _alternative_, it will not be executed if the *
 
 The first execution is the *Username Password Form*, an authentication type that renders the username and password page. It is marked as _required_, so the user must enter a valid username and password.
 
-The second execution is the *Browser - Conditional 2FA* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
+The second execution is the *Browser - Conditional 2FA* sub-flow. This sub-flow is _conditional_ and executes depending on the result of the *Condition - User Configured* and *Condition - credential* execution. If the result is true, {project_name} loads the executions for this sub-flow and processes them.
 
 The next execution is the *Condition - User Configured* authentication. This authentication checks if {project_name} has configured other executions in the flow for the user. The *Browser - Conditional 2FA* sub-flow executes only when the user has a configured OTP credential.
+
+The next execution is the *Condition - credential* authentication. The step checks if the authentication process has already authenticated the user with a passwordless WebAuthn credential (passkey), avoiding 2FA in that case.
 
 The final execution is the *OTP Form*. {project_name} marks this execution as _alternative_, but it runs only when the user has an OTP credential set up because of the setup in the _conditional_ sub-flow. If the OTP credential is not set up, the user does not see an OTP form.
 

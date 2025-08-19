@@ -411,13 +411,14 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         // the profile should always hold all attributes defined in the config
-        for (String attributeName : metadataByAttribute.keySet()) {
+        for (var entry : metadataByAttribute.entrySet()) {
+            String attributeName = entry.getKey();
             if (!isSupportedAttribute(attributeName) || newAttributes.containsKey(attributeName)) {
                 continue;
             }
 
             List<String> values = EMPTY_VALUE;
-            AttributeMetadata metadata = metadataByAttribute.get(attributeName);
+            AttributeMetadata metadata = entry.getValue();
 
             if (user != null && isIncludeAttributeIfNotProvided(metadata)) {
                 values = user.getAttributes().getOrDefault(attributeName, EMPTY_VALUE);

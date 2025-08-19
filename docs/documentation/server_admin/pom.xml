@@ -9,7 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>Server Administration</name>
+    <name>Server Administration Guide</name>
+    <description>Server Administration Guide</description>
+
     <artifactId>server-admin</artifactId>
     <packaging>pom</packaging>
 

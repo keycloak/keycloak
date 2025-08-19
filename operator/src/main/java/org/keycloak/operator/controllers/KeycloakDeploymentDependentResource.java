@@ -447,10 +447,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR);
 
-        var env = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
+        var unsupportedEnv = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
-        // accumulate the env vars in priority order - unsupported, first class, additional
-        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
+        var env = keycloakCR.getSpec().getEnv().stream().map(this::toEnvVar);
+
+        // accumulate the env vars in priority order - unsupported, first class, additional, env
+        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
         String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
@@ -505,6 +507,18 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .filter(entry -> entry.contains("="))
                 .map(entry -> entry.split("=", 2))
                 .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1]));
+    }
+
+    private EnvVar toEnvVar(ValueOrSecret v) {
+        var envBuilder = new EnvVarBuilder().withName(v.getName());
+        var secret = v.getSecret();
+        if (secret != null) {
+            envBuilder.withValueFrom(
+                    new EnvVarSourceBuilder().withSecretKeyRef(secret).build());
+        } else {
+            envBuilder.withValue(v.getValue());
+        }
+        return envBuilder.build();
     }
 
     private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {

@@ -26,6 +26,12 @@ Cache:
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
+--cache-config-mutate <true|false>
+                     Determines whether changes to the default cache configurations are allowed.
+                       This is only recommended for advanced use-cases where the default cache
+                       configurations are proven to be problematic. The only supported way to
+                       change the default cache configurations is via the other 'cache-...'
+                       options. Default: false.
 --cache-embedded-authorization-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        authorization cache.
@@ -157,8 +163,6 @@ Database:
 
 Database - additional datasources (Preview):
 
---db-active-<datasource> <true|false>
-                     Preview: Deactivate specific named datasource <datasource>. Default: true.
 --db-debug-jpql-<datasource> <true|false>
                      Preview: Used for named <datasource>. Add JPQL information as comments to SQL
                        statements to debug JPA SQL statement generation. Default: false.
@@ -166,6 +170,9 @@ Database - additional datasources (Preview):
                      Preview: Used for named <datasource>. The fully qualified class name of the
                        JDBC driver. If not set, a default driver is set accordingly to the chosen
                        database.
+--db-enabled-<datasource> <true|false>
+                     Preview: If the named datasource <datasource> should be enabled at runtime.
+                       Default: true.
 --db-kind-<datasource> <vendor>
                      Preview: Used for named <datasource>. The database vendor. In production mode
                        the default value of 'dev-file' is deprecated, you should explicitly specify

@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-model-infinispan</artifactId>
     <name>Keycloak Model Infinispan</name>
-    <description/>
+    <description>Keycloak Model Infinispan</description>
 
     <dependencies>
         <dependency>

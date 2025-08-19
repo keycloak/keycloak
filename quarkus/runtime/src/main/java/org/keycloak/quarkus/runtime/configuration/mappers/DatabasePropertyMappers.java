@@ -101,7 +101,7 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
                         .paramLabel("milliseconds")
                         .build(),
-                fromOption(DatabaseOptions.DB_ACTIVE_DATASOURCE)
+                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
                         .to("quarkus.datasource.\"<datasource>\".active")
                         .build(),
                 fromOption(DB_URL_PATH)

@@ -86,6 +86,8 @@ import picocli.CommandLine.ParseResult;
 
 public class Picocli {
 
+    static final String PROVIDER_TIMESTAMP_ERROR = "A provider JAR was updated since the last build, please rebuild for this to be fully utilized.";
+    static final String PROVIDER_TIMESTAMP_WARNING = "A provider jar has a different timestamp than when the optimized container image was created. If you are changing provider jars after the build, you must run another build to properly account for those modifications.";
     static final String KC_PROVIDER_FILE_PREFIX = "kc.provider.file.";
     public static final String ARG_PREFIX = "--";
     public static final String ARG_SHORT_PREFIX = "-";
@@ -100,6 +102,7 @@ public class Picocli {
     private Set<PropertyMapper<?>> allowedMappers;
     private final List<String> unrecognizedArgs = new ArrayList<>();
     private Optional<AbstractCommand> parsedCommand = Optional.empty();
+    private boolean warnedTimestampChanged;
 
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
@@ -234,8 +237,19 @@ public class Picocli {
             // we have to ignore things like the profile properties because the commands set them at runtime
             checkChangesInBuildOptions((key, oldValue, newValue) -> {
                 if (key.startsWith(KC_PROVIDER_FILE_PREFIX)) {
-                    if (timestampChanged(oldValue, newValue)) {
-                        throw new PropertyException("A provider JAR was updated since the last build, please rebuild for this to be fully utilized.");
+                    boolean changed = false;
+                    if (newValue == null || oldValue == null) {
+                        changed = true;
+                    } else if (!warnedTimestampChanged && timestampChanged(oldValue, newValue)) {
+                        if (Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false)) {
+                            warnedTimestampChanged = true;
+                            warn(PROVIDER_TIMESTAMP_WARNING);
+                        } else {
+                            changed = true;
+                        }
+                    }
+                    if (changed) {
+                        throw new PropertyException(PROVIDER_TIMESTAMP_ERROR);
                     }
                 } else if (newValue != null && !isIgnoredPersistedOption(key)
                         && isUserModifiable(Configuration.getConfigValue(key))
@@ -352,13 +366,10 @@ public class Picocli {
     }
 
     static boolean timestampChanged(String oldValue, String newValue) {
-        if (newValue != null && oldValue != null) {
-            long longNewValue = Long.valueOf(newValue);
-            long longOldValue = Long.valueOf(oldValue);
-            // docker commonly truncates to the second at runtime, so we'll allow that special case
-            return ((longNewValue / 1000) * 1000) != longNewValue || ((longOldValue / 1000) * 1000) != longNewValue;
-        }
-        return true;
+        long longNewValue = Long.valueOf(newValue);
+        long longOldValue = Long.valueOf(oldValue);
+        // docker commonly truncates to the second at runtime, so we'll allow that special case
+        return ((longNewValue / 1000) * 1000) != longNewValue || ((longOldValue / 1000) * 1000) != longNewValue;
     }
 
     private void validateProperty(AbstractCommand abstractCommand, IncludeOptions options,

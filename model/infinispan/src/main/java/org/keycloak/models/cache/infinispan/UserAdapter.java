@@ -29,6 +29,7 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
+import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
@@ -469,6 +470,17 @@ public class UserAdapter implements CachedUserModel {
     public boolean isMemberOf(GroupModel group) {
         if (updated != null) return updated.isMemberOf(group);
         return cached.getGroups(keycloakSession, modelSupplier).contains(group.getId()) || RoleUtils.isMember(getGroupsStream(), group);
+    }
+
+    @Override
+    public void setLastSessionRefreshTime(int lastSessionRefreshTime) {
+        if (ResourcePolicyManager.isFeatureEnabled()) {
+            UserModel delegate = modelSupplier.get();
+
+            if (delegate != null) {
+                delegate.setLastSessionRefreshTime(lastSessionRefreshTime);
+            }
+        }
     }
 
     @Override

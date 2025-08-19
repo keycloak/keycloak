@@ -1463,12 +1463,14 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         realm.setResetCredentialsFlow(flow.getId());
     }
 
+    @Override
     public AuthenticationFlowModel getClientAuthenticationFlow() {
         String flowId = realm.getClientAuthenticationFlow();
         if (flowId == null) return null;
         return getAuthenticationFlowById(flowId);
     }
 
+    @Override
     public void setClientAuthenticationFlow(AuthenticationFlowModel flow) {
         realm.setClientAuthenticationFlow(flow.getId());
     }
@@ -1616,6 +1618,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         return entityToModel(entity);
     }
 
+    @Override
     public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
         TypedQuery<AuthenticationExecutionEntity> query = em.createNamedQuery("authenticationFlowExecution", AuthenticationExecutionEntity.class)
                 .setParameter("flowId", flowId);
@@ -1637,6 +1640,9 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         entity.setRequirement(model.getRequirement());
         entity.setAuthenticatorConfig(model.getAuthenticatorConfig());
         AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
+        if (flow == null) {
+            throw new ModelException("Parent flow " + model.getParentFlow() + " does not exist");
+        }
         entity.setParentFlow(flow);
         flow.getExecutions().add(entity);
         entity.setRealm(realm);

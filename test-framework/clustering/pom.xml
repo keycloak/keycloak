@@ -10,6 +10,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <name>Keycloak Test Framework Clustering</name>
+    <description>Keycloak Test Framework Clustering</description>
+
     <artifactId>keycloak-test-framework-clustering</artifactId>
 
     <dependencies>

@@ -12,6 +12,7 @@
     </parent>
 
     <name>Keycloak Operator</name>
+    <description>Keycloak Operator</description>
     <artifactId>keycloak-operator</artifactId>
 
     <properties>

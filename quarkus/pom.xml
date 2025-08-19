@@ -24,7 +24,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Quarkus Parent</name>
-    <description/>
+    <description>Keycloak Quarkus Parent</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-quarkus-parent</artifactId>
