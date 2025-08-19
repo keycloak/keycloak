@@ -22,6 +22,7 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -31,7 +32,6 @@ import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
 import org.wildfly.security.asn1.OidsUtil;
-import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.principal.X500AttributePrincipalDecoder;
 
 /**
@@ -108,73 +108,76 @@ public class ElytronUserIdentityExtractorProvider  extends UserIdentityExtractor
                 if (subjectAlternativeNames == null) {
                     return null;
                 }
-                log.info(Arrays.toString(subjectAlternativeNames.toArray()));
-                for (List<?> sbjAltName : subjectAlternativeNames) {
-                    if (sbjAltName == null)
-                        continue;
-    
+                Iterator<List<?>> iterator = subjectAlternativeNames.iterator();
+                boolean upnOidFound = false;
+                log.debug(Arrays.toString(subjectAlternativeNames.toArray()));
+                while (iterator.hasNext() && !upnOidFound) {
+                    List<?> sbjAltName = iterator.next();
+
                     Integer nameType = (Integer) sbjAltName.get(0);
     
                     if (nameType == generalName) {
-                        Object sbjObj = sbjAltName.get(1);
 
-                        switch (nameType) {
-                            case GeneralName.RFC_822_NAME:
-                            case GeneralName.DNS_NAME:
-                            case GeneralName.DIRECTORY_NAME:
-                            case GeneralName.URI_NAME:
-                               subjectName = (String) sbjObj;
-                               break;
-                            case GeneralName.OTHER_NAME:
-                            DERDecoder derDecoder = new DERDecoder((byte[])sbjObj);
-                            derDecoder.startSequence();
-                            boolean upnOidFound = false;
-                            while (derDecoder.hasNextElement() && !upnOidFound) {
-                                int asn1Type = derDecoder.peekType();
-                                log.debug("ASN.1 Type: " + derDecoder.peekType());
-                                
-                                switch (asn1Type) {
-                                    case ASN1.OBJECT_IDENTIFIER_TYPE:
-                                        String oid = derDecoder.decodeObjectIdentifier();
-                                        log.debug("OID: " + oid);
-                                        if(UPN_OID.equals(oid)) {
-                                            derDecoder.decodeImplicit(160);
-                                            byte[] sb = derDecoder.drainElementValue();
-                                            while(!Character.isLetterOrDigit(sb[0])) {
-                                                sb = Arrays.copyOfRange(sb, 1, sb.length);
+                        altName: for (int i = 1 ; i<sbjAltName.size() ; i++) {
+                            Object obj = sbjAltName.get(i);
+
+                            // We have Subject Alternative Name of other type than 'otherName' . Just return it directly
+                            if (generalName != 0) {
+                                log.tracef("Extracted identity '%s' from Subject Alternative Name of type '%d'", obj, generalName);
+                                return obj;
+                            }
+
+                            // From Java 21, the 3rd entry can be present with the type-id as String and 4th entry with the value (either in String or byte format).
+                            // See javadoc of X509Certificate.getSubjectAlternativeNames in Java 21. For the sake of simplicity, we just ignore those additional String entries and
+                            // always parse it from byte (2nd entry) as we still need to support Java 17 and it is not reliable anyway that entries are present in Java 21.
+                            if (obj instanceof byte[]) {
+                                byte[] otherNameBytes = (byte[]) obj;
+
+                                DERDecoder derDecoder = new DERDecoder(otherNameBytes);
+                                derDecoder.startSequence();
+                                while (derDecoder.hasNextElement() && !upnOidFound) {
+                                    int asn1Type = derDecoder.peekType();
+                                    log.debug("ASN.1 Type: " + derDecoder.peekType());
+
+                                    switch (asn1Type) {
+                                        case ASN1.OBJECT_IDENTIFIER_TYPE:
+                                            String oid = derDecoder.decodeObjectIdentifier();
+                                            log.debug("OID: " + oid);
+                                            if(UPN_OID.equals(oid)) {
+                                                derDecoder.decodeImplicit(160);
+                                                byte[] sb = derDecoder.drainElementValue();
+                                                while(!Character.isLetterOrDigit(sb[0])) {
+                                                    sb = Arrays.copyOfRange(sb, 1, sb.length);
+                                                }
+                                                subjectName = new String(sb, StandardCharsets.UTF_8);
+                                                upnOidFound = true;
                                             }
-                                            subjectName = new String(sb, StandardCharsets.UTF_8);
-                                            upnOidFound = true;
-                                        }
-                                        break;
-                                    case ASN1.UTF8_STRING_TYPE:
-                                        subjectName = derDecoder.decodeUtf8String();
-                                        break;
-                                    case ASN1.PRINTABLE_STRING_TYPE:
-                                        subjectName = derDecoder.decodePrintableString();
-                                        break;
-                                    case ASN1.UNIVERSAL_STRING_TYPE:
-                                        subjectName = derDecoder.decodeUniversalString();
-                                        break;
-                                    case ASN1.OCTET_STRING_TYPE:
-                                        subjectName = derDecoder.decodeOctetStringAsString();
-                                        break;
-                                    case 0xa0:
-                                        derDecoder.startExplicit(asn1Type);
-                                        break;
-                                    case ASN1.SEQUENCE_TYPE:
-                                        derDecoder.startSequence();
-                                    default:
-                                        derDecoder.skipElement();
-
+                                            break;
+                                        case ASN1.UTF8_STRING_TYPE:
+                                            subjectName = derDecoder.decodeUtf8String();
+                                            break;
+                                        case ASN1.PRINTABLE_STRING_TYPE:
+                                            subjectName = derDecoder.decodePrintableString();
+                                            break;
+                                        case ASN1.UNIVERSAL_STRING_TYPE:
+                                            subjectName = derDecoder.decodeUniversalString();
+                                            break;
+                                        case ASN1.OCTET_STRING_TYPE:
+                                            subjectName = derDecoder.decodeOctetStringAsString();
+                                            break;
+                                        case 0xa0:
+                                            derDecoder.startExplicit(asn1Type);
+                                            break;
+                                        case ASN1.SEQUENCE_TYPE:
+                                            continue altName; // sub-sequence is not expected
+                                        default:
+                                            derDecoder.skipElement();
+                                            break;
+                                    }
                                 }
-                                
-
                             }
                         }
-                        
                     }
-                    
                 }
             } catch (CertificateParsingException e) {
                 log.error("Failed to parse Subject Name:",e);
