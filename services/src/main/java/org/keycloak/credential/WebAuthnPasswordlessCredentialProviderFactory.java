@@ -31,7 +31,7 @@ public class WebAuthnPasswordlessCredentialProviderFactory implements Credential
 
     public static final String PROVIDER_ID = "keycloak-webauthn-passwordless";
 
-    private ObjectConverter converter;
+    private volatile ObjectConverter converter;
 
     @Override
     public CredentialProvider create(KeycloakSession session) {
