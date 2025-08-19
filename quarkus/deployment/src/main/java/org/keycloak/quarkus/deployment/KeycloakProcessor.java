@@ -794,14 +794,21 @@ class KeycloakProcessor {
             ClassInfo disabledBean = index.getIndex()
                     .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
             removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
-            ClassInfo clusterHealth = index.getIndex().getClassByName(DotName.createSimple(KeycloakClusterReadyHealthCheck.class));
-            removeBeans.produce(new BuildTimeConditionBuildItem(clusterHealth.asClass(), false));
+        } else if (!isHealthEnabled()) {
+            // health enabled / metrics disabled
+            disableClusterHealthCheck(removeBeans, index);
         } else {
+            // both enabled
             if (InfinispanUtils.isRemoteInfinispan()) {
-                ClassInfo clusterHealth = index.getIndex().getClassByName(DotName.createSimple(KeycloakClusterReadyHealthCheck.class));
-                removeBeans.produce(new BuildTimeConditionBuildItem(clusterHealth.asClass(), false));
+                // no cluster when the remote infinispan is used.
+                disableClusterHealthCheck(removeBeans, index);
             }
         }
+    }
+
+    private static void disableClusterHealthCheck(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        ClassInfo clusterHealth = index.getIndex().getClassByName(DotName.createSimple(KeycloakClusterReadyHealthCheck.class));
+        removeBeans.produce(new BuildTimeConditionBuildItem(clusterHealth.asClass(), false));
     }
 
     @BuildStep

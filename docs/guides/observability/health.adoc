@@ -40,7 +40,11 @@ These endpoints respond with HTTP status `200 OK` on success or `503 Service Una
     "status": "UP",
     "checks": [
         {
-            "name": "Keycloak database connections health check",
+            "name": "Keycloak cluster health check",
+            "status": "UP"
+        },
+        {
+            "name": "Keycloak database connections async health check",
             "status": "UP"
         }
     ]
@@ -92,6 +96,10 @@ The table below shows the available checks.
 |Database
 |Returns the status of the database connection pool.
 |Yes
+
+|Cluster
+|Returns the status of the cluster (network partitions).
+|No
 
 |===
 
