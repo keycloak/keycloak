@@ -31,6 +31,13 @@ public class ManagementOptions {
             .hidden()
             .build();
 
+    public static final Option<Boolean> HTTP_MANAGEMENT_HEALTH_ENABLED = new OptionBuilder<>("http-management-health-enabled", Boolean.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("If health endpoints should be exposed on the management interface. If false, health endpoints will be exposed on the main interface.")
+            .defaultValue(true)
+            .buildTime(true)
+            .build();
+
     public static final Option<Boolean> LEGACY_OBSERVABILITY_INTERFACE = new OptionBuilder<>("legacy-observability-interface", Boolean.class)
             .category(OptionCategory.MANAGEMENT)
             .deprecated()

@@ -367,6 +367,10 @@ Health:
 
 Management:
 
+--http-management-health-enabled <true|false>
+                     If health endpoints should be exposed on the management interface. If false,
+                       health endpoints will be exposed on the main interface. Default: true.
+                       Available only when health is enabled.
 --http-management-port <port>
                      Port of the management interface. Relevant only when something is exposed on
                        the management interface - see the guide for details. Default: 9000.
