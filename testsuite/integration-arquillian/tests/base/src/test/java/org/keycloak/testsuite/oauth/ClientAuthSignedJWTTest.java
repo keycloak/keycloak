@@ -342,19 +342,19 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testClientWithGeneratedKeysJKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.JKS);
-        testClientWithGeneratedKeys("JKS");
+        testClientWithGeneratedKeys("JKS", null, null);
     }
 
     @Test
     public void testClientWithGeneratedKeysPKCS12() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.PKCS12);
-        testClientWithGeneratedKeys("PKCS12");
+        testClientWithGeneratedKeys("PKCS12", 2048, null);
     }
 
     @Test
     public void testClientWithGeneratedKeysBCFKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.BCFKS);
-        testClientWithGeneratedKeys(KeystoreFormat.BCFKS.toString());
+        testClientWithGeneratedKeys(KeystoreFormat.BCFKS.toString(), 3072, 5);
     }
 
     @Test
