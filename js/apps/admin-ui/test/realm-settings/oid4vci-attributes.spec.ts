@@ -17,28 +17,33 @@ test.beforeEach(async ({ page }) => {
   await goToRealmSettings(page);
 });
 
-// Helper function to check if OID4VCI tab is available and click it
-const ensureOid4vciTabAvailable = async (page: any) => {
-  try {
-    await page.waitForSelector('[data-testid="rs-oid4vci-attributes-tab"]', {
-      state: "visible",
-      timeout: 10000,
-    });
-    await page.getByTestId("rs-oid4vci-attributes-tab").click();
-    return true;
-  } catch {
-    // Tab doesn't exist or is not visible - feature is disabled
-    test.skip();
-    return false;
+// Helper function to check if OID4VCI feature is enabled by checking server info
+const isOid4vciFeatureEnabled = async () => {
+  const serverInfo = await adminClient.getServerInfo();
+  const oid4vciFeature = serverInfo.features?.find(
+    (feature: any) => feature.name === "OID4VC_VCI",
+  );
+  const isEnabled = oid4vciFeature?.enabled || false;
+  return isEnabled;
+};
+
+// Helper function to handle feature flag logic and return tab element
+const getOid4vciTab = async (page: any) => {
+  const isFeatureEnabled = await isOid4vciFeatureEnabled();
+  const oid4vciTab = page.getByTestId("rs-oid4vci-attributes-tab");
+
+  if (!isFeatureEnabled) {
+    await expect(oid4vciTab).toBeHidden();
+    return null;
   }
+  return oid4vciTab;
 };
 
 test("OID4VCI tab visibility", async ({ page }) => {
-  // Check if the OID4VCI tab is visible
+  const isFeatureEnabled = await isOid4vciFeatureEnabled();
   const oid4vciTab = page.getByTestId("rs-oid4vci-attributes-tab");
-  const isVisible = await oid4vciTab.isVisible();
 
-  if (isVisible) {
+  if (isFeatureEnabled) {
     await expect(oid4vciTab).toBeVisible();
   } else {
     await expect(oid4vciTab).toBeHidden();
@@ -48,8 +53,11 @@ test("OID4VCI tab visibility", async ({ page }) => {
 test("should render fields and save values with correct attribute keys", async ({
   page,
 }) => {
-  // Ensure OID4VCI tab is available and click it
-  await ensureOid4vciTabAvailable(page);
+  const oid4vciTab = await getOid4vciTab(page);
+  if (!oid4vciTab) return;
+
+  // Feature is enabled, proceed with the test
+  await oid4vciTab.click();
 
   const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
   const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
@@ -69,8 +77,11 @@ test("should render fields and save values with correct attribute keys", async (
 });
 
 test("should persist values after page refresh", async ({ page }) => {
-  // Ensure OID4VCI tab is available and click it
-  await ensureOid4vciTabAvailable(page);
+  const oid4vciTab = await getOid4vciTab(page);
+  if (!oid4vciTab) return;
+
+  // Feature is enabled, proceed with the test
+  await oid4vciTab.click();
 
   await page.getByTestId("oid4vci-nonce-lifetime-seconds").fill("120");
   await page.getByTestId("pre-authorized-code-lifespan-s").fill("300");
@@ -100,8 +111,11 @@ test("should persist values after page refresh", async ({ page }) => {
 });
 
 test("should validate required fields and minimum values", async ({ page }) => {
-  // Ensure OID4VCI tab is available and click it
-  await ensureOid4vciTabAvailable(page);
+  const oid4vciTab = await getOid4vciTab(page);
+  if (!oid4vciTab) return;
+
+  // Feature is enabled, proceed with the test
+  await oid4vciTab.click();
 
   const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
   const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");

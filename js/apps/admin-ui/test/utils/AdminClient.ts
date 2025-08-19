@@ -539,6 +539,11 @@ class AdminClient {
     }
   }
 
+  async getServerInfo() {
+    await this.#login();
+    return await this.#client.serverInfo.find();
+  }
+
   async copyFlow(
     name: string,
     newName: string,
