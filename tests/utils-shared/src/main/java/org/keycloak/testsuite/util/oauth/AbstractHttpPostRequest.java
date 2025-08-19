@@ -24,6 +24,8 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected String clientSecret;
 
+    protected String clientAssertion;
+
     protected HttpPost post;
 
     protected Map<String, String> headers = new HashMap<>();
@@ -70,6 +72,11 @@ public abstract class AbstractHttpPostRequest<T, R> {
         return request();
     }
 
+    public T clientJwt(String clientAssertion) {
+        this.clientAssertion = clientAssertion;
+        return request();
+    }
+
     protected void header(String name, String value) {
         if (value != null) {
             headers.put(name, value);
@@ -86,10 +93,13 @@ public abstract class AbstractHttpPostRequest<T, R> {
         String clientId = this.clientId != null ? this.clientId : client.config().getClientId();
         String clientSecret = this.clientId != null ? this.clientSecret : client.config().getClientSecret();
 
-        if (clientSecret != null) {
+        if (clientAssertion != null) {
+            parameter("client_assertion_type", OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT);
+            parameter("client_assertion", clientAssertion);
+        } else if (clientSecret != null) {
             String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             header("Authorization", authorization);
-        } else {
+        } else if (clientId != null) {
             parameter("client_id", clientId);
         }
     }

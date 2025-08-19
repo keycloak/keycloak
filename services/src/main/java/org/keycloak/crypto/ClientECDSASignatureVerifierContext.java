@@ -31,6 +31,10 @@ public class ClientECDSASignatureVerifierContext extends AsymmetricSignatureVeri
         super(getKey(session, client, input));
     }
 
+    public ClientECDSASignatureVerifierContext(KeyWrapper keyWrapper) {
+        super(keyWrapper);
+    }
+
     private static KeyWrapper getKey(KeycloakSession session, ClientModel client, JWSInput input) throws VerificationException {
         KeyWrapper key = PublicKeyStorageManager.getClientPublicKeyWrapper(session, client, input);
         if (key == null) {
