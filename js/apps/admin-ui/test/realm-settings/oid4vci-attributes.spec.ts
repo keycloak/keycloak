@@ -55,7 +55,7 @@ test("should render fields and save values with correct attribute keys", async (
   page,
 }) => {
   const oid4vciTab = await getOid4vciTab(page);
-  if (!oid4vciTab) return;
+  if (!oid4vciTab) test.skip();
 
   // Feature is enabled, proceed with the test
   await oid4vciTab.click();
@@ -79,7 +79,7 @@ test("should render fields and save values with correct attribute keys", async (
 
 test("should persist values after page refresh", async ({ page }) => {
   const oid4vciTab = await getOid4vciTab(page);
-  if (!oid4vciTab) return;
+  if (!oid4vciTab) test.skip();
 
   // Feature is enabled, proceed with the test
   await oid4vciTab.click();
@@ -113,7 +113,7 @@ test("should persist values after page refresh", async ({ page }) => {
 
 test("should validate required fields and minimum values", async ({ page }) => {
   const oid4vciTab = await getOid4vciTab(page);
-  if (!oid4vciTab) return;
+  if (!oid4vciTab) test.skip();
 
   // Feature is enabled, proceed with the test
   await oid4vciTab.click();
