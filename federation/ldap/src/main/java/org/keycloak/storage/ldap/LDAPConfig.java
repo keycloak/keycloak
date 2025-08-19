@@ -34,6 +34,8 @@ import java.util.Set;
  */
 public class LDAPConfig {
 
+    public static final String DEFAULT_CONNECTION_TIMEOUT = "5000";
+
     private final MultivaluedHashMap<String, String> config;
     private final Set<String> binaryAttributeNames = new HashSet<>();
 
@@ -142,7 +144,8 @@ public class LDAPConfig {
     }
 
     public String getConnectionTimeout() {
-        return config.getFirst(LDAPConstants.CONNECTION_TIMEOUT);
+        return config.getFirstOrDefault(LDAPConstants.CONNECTION_TIMEOUT,
+                System.getProperty("com.sun.jndi.ldap.connect.timeout", DEFAULT_CONNECTION_TIMEOUT));
     }
 
     public String getReadTimeout() {
