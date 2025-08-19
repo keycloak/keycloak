@@ -392,7 +392,7 @@ public class PodTemplateTest {
     @Test
     public void testHttpManagment() {
         var result = getDeployment(null, new StatefulSet(),
-                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-scheme", "http")))
+                spec -> spec.withAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.HTTP_MANAGEMENT_SCHEME, "http")))
                 .getSpec()
                 .getTemplate()
                 .getSpec()
@@ -400,6 +400,21 @@ public class PodTemplateTest {
                 .get(0);
 
         assertEquals("HTTP", result.getReadinessProbe().getHttpGet().getScheme());
+        assertEquals(9000, result.getReadinessProbe().getHttpGet().getPort().getIntVal());
+    }
+
+    @Test
+    public void testHealthOnMain() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.HTTP_MANAGEMENT_HEALTH_ENABLED, "false")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTPS", result.getReadinessProbe().getHttpGet().getScheme());
+        assertEquals(8443, result.getReadinessProbe().getHttpGet().getPort().getIntVal());
     }
 
     @Test
