@@ -1,0 +1,83 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>999.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-scim-federation</artifactId>
+    <name>Keycloak Federation from SCIM endpoints</name>
+    <description>
+        This extension adds SCIM2 client capabilities to Keycloak using [Scim SDK](https://github.com/Captain-P-Goldfish/SCIM-SDK).
+        It allows to :
+        * Declare SCIM endpoints (through the identity federation UI). Any tool implementing SCIM protocol can be wired to the
+        Keycloak instance through this declaration.
+        * Propagate users and groups from Keycloak to SCIM endpoints : when a user/group gets created or modified in Keycloak,
+        the modification is forwarded to all declared SCIM endpoints through SCIM calls within the transaction scope. If
+        propagation fails, changes can be rolled back or not according to a configurable rollback strategy.
+        * Import users and groups from SCIM endpoints (through the Keycloak synchronization mechanism).
+        See [RFC7643](https://datatracker.ietf.org/doc/html/rfc7643)
+        and [RFC7644](https://datatracker.ietf.org/doc/html/rfc7644)) for further details
+    </description>
+
+    <properties>
+        <scim-sdk-version>1.26.0</scim-sdk-version>
+        <r4j-version>2.2.0</r4j-version>
+        <maven-wildfly-plugin.version>2.0.2.Final</maven-wildfly-plugin.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+            <version>${r4j-version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.captaingoldfish</groupId>
+            <artifactId>scim-sdk-common</artifactId>
+            <version>${scim-sdk-version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.captaingoldfish</groupId>
+            <artifactId>scim-sdk-client</artifactId>
+            <version>${scim-sdk-version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+</project>
