@@ -43,6 +43,7 @@ test("OID4VCI tab visibility", async ({ page }) => {
   const isFeatureEnabled = await isOid4vciFeatureEnabled();
   const oid4vciTab = page.getByTestId("rs-oid4vci-attributes-tab");
 
+  // Always assert based on feature flag state
   if (isFeatureEnabled) {
     await expect(oid4vciTab).toBeVisible();
   } else {
@@ -143,14 +144,20 @@ test("should validate required fields and minimum values", async ({ page }) => {
     }
     await preAuthField.blur();
 
-    // The save button should be enabled when form is dirty (has changes)
-    if (nonceValue !== "" || preAuthValue !== "") {
+    // check if save button is enabled when form has values
+    const hasValues = nonceValue !== "" || preAuthValue !== "";
+    if (hasValues) {
       await expect(saveButton).toBeEnabled();
     }
 
+    await saveButton.click();
+
     if (shouldShowError) {
-      await saveButton.click();
       await expect(page.getByText(validationErrorText).first()).toBeVisible();
+    } else {
+      await expect(
+        page.getByText("Realm successfully updated").first(),
+      ).toBeVisible();
     }
   };
 
@@ -165,9 +172,4 @@ test("should validate required fields and minimum values", async ({ page }) => {
 
   // Test with valid values
   await testValidationScenario("30", "60", false);
-
-  // Wait for the success message to appear
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
 });
