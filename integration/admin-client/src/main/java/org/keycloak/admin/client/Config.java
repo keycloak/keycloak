@@ -33,6 +33,7 @@ public class Config {
     private String clientSecret;
     private String grantType;
     private String scope;
+    private boolean useDPoP = false;
 
     public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
         this(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, null);
@@ -124,5 +125,13 @@ public class Config {
             throw new IllegalArgumentException("Unsupported grantType: " + grantType +
                     " (only " + PASSWORD + " and " + CLIENT_CREDENTIALS + " are supported)");
         }
+    }
+
+    public boolean isUseDPoP() {
+        return useDPoP;
+    }
+
+    public void setUseDPoP(boolean useDPoP) {
+        this.useDPoP = useDPoP;
     }
 }

@@ -24,10 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,6 +80,8 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.TokenUtil;
 
+import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
+import static org.keycloak.OAuth2Constants.DPOP_HTTP_HEADER;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 
 /**
@@ -102,10 +100,6 @@ public class DPoPUtil {
         OPTIONAL,
         DISABLED
     }
-
-    public static final String DPOP_HTTP_HEADER = "DPoP";
-    private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
-    public static final String DPOP_ATH_ALG = "RS256";
 
     private static URI normalize(URI uri) {
         return UriBuilder.fromUri(uri).replaceQuery("").build();
@@ -151,7 +145,7 @@ public class DPoPUtil {
 
         HttpRequest request = keycloakSession.getContext().getHttpRequest();
         final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
-        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
+        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER) != null;
 
         if (!isClientRequiresDpop && !isDpopHeaderPresent) {
             return;
@@ -445,7 +439,7 @@ public class DPoPUtil {
         private final String hash;
 
         public DPoPAccessTokenHashCheck(String tokenString) {
-            hash = HashUtils.accessTokenHash(DPOP_ATH_ALG, tokenString, true);
+            hash = HashUtils.accessTokenHash(OAuth2Constants.DPOP_DEFAULT_ALGORITHM.toString(), tokenString, true);
         }
 
         @Override

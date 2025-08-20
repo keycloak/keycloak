@@ -220,7 +220,7 @@ public class AdminClientTest extends AbstractKeycloakTest {
     @Test
     public void adminAuthUserDisabled() throws Exception {
         try (Keycloak adminClient = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-             Keycloak adminClientOffline = AdminClientUtil.createAdminClient(false, ServerURLs.getAuthServerContextRoot(), realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null, OAuth2Constants.OFFLINE_ACCESS);
+             Keycloak adminClientOffline = AdminClientUtil.createAdminClient(false, ServerURLs.getAuthServerContextRoot(), realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null, OAuth2Constants.OFFLINE_ACCESS, false);
         ) {
             // Check possible to load the realm
             RealmRepresentation realm = adminClient.realm(realmName).toRepresentation();
