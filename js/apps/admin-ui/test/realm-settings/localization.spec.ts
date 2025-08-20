@@ -73,11 +73,11 @@ test.describe("Go to localization tab", () => {
     });
 
     test("Realm Overrides - Search for and delete bundle", async ({ page }) => {
-      await addBundle(page, "search", "321");
+      await addBundle(page, "searchit", "321");
       await clickCreateButton(page);
 
       await searchItem(page, "Search for translation", "321");
-      await assertRowExists(page, "search");
+      await assertRowExists(page, "searchit");
 
       await searchItem(page, "Search for translation", "not-found");
       await assertRowExists(page, "not-found", false);
