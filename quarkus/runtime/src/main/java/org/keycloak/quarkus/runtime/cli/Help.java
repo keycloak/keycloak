@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
-import static org.keycloak.quarkus.runtime.cli.OptionRenderer.undecorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
 import static org.keycloak.utils.StringUtil.removeSuffix;
 import static picocli.CommandLine.Help.Column.Overflow.SPAN;
@@ -166,7 +165,7 @@ public final class Help extends CommandLine.Help {
             return true;
         }
 
-        String optionName = undecorateDuplicitOptionName(option.longestName());
+        String optionName = option.longestName();
 
         OptionCategory category = null;
         if (option.group() != null && option.group().heading() != null) {

@@ -22,7 +22,6 @@ import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
-import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -157,15 +156,19 @@ public class Picocli {
             }
 
             AbstractCommand currentCommand = null;
+            CommandLine commandLine = null;
             if (currentSpec != null) {
-                CommandLine commandLine = currentSpec.commandLine();
-                addCommandOptions(cliArgs, commandLine);
+                commandLine = currentSpec.commandLine();
 
                 if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
                     currentCommand = ac;
                 }
             }
+            // init the config before adding options to properly sanitize mappers
             initConfig(currentCommand);
+            if (currentSpec != null) {
+                addCommandOptions(cliArgs, commandLine);
+            }
 
             if (isRebuildCheck()) {
                 // build command should be available when running re-aug
@@ -391,9 +394,10 @@ public class Picocli {
 
             // only check build-time for a rebuild, we'll check the runtime later
             if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
-                if (PropertyMapper.isCliOption(configValue)) {
-                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
-                } else {
+                // some cli options may be directly on the command and not
+                // backed by a property mapper - if they are disabled that should have already been handled as
+                // an unrecognized arg
+                if (!PropertyMapper.isCliOption(configValue)) {
                     handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
                 }
             }
@@ -656,8 +660,6 @@ public class Picocli {
     private void addOptionsToCli(CommandLine commandLine, IncludeOptions includeOptions) {
         final Map<OptionCategory, List<PropertyMapper<?>>> mappers = new EnumMap<>(OptionCategory.class);
 
-        // Since we can't run sanitizeDisabledMappers sooner, PropertyMappers.getRuntime|BuildTimeMappers() at this point
-        // contain both enabled and disabled mappers. Actual filtering is done later (help command, validations etc.).
         if (includeOptions.includeRuntime) {
             mappers.putAll(PropertyMappers.getRuntimeMappers());
         }
@@ -696,21 +698,11 @@ public class Picocli {
                     .order(category.getOrder())
                     .validate(false);
 
-            final Set<String> alreadyPresentArgs = new HashSet<>();
-
             for (PropertyMapper<?> mapper : mappersInCategory) {
                 String name = mapper.getCliFormat();
-                // Picocli doesn't allow to have multiple options with the same name. We need this in help-all which also prints
-                // currently disabled options which might have a duplicate among enabled options. This is to register the disabled
-                // options with a unique name in Picocli. To keep it simple, it adds just a suffix to the options, i.e. there cannot
-                // be more that 1 disabled option with a unique name.
-                if (cSpec.optionsMap().containsKey(name)) {
-                    name = decorateDuplicitOptionName(name);
-                }
 
-                if (cSpec.optionsMap().containsKey(name) || alreadyPresentArgs.contains(name)) {
-                    //when key is already added, don't add.
-                    continue;
+                if (cSpec.optionsMap().containsKey(name)) {
+                    throw new IllegalStateException("Only one mapper with a given name should be enabled");
                 }
 
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
@@ -740,8 +732,6 @@ public class Picocli {
                 } else {
                     optBuilder.type(String.class);
                 }
-
-                alreadyPresentArgs.add(name);
 
                 argGroupBuilder.addArg(optBuilder.build());
             }
