@@ -137,4 +137,6 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return Environment.PROD_PROFILE_VALUE;
     }
 
+    public abstract HelpAllMixin getHelpAllMixin();
+
 }

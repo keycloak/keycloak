@@ -54,7 +54,9 @@ import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.HelpAllMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -155,7 +157,7 @@ public class Picocli {
                 addHelp(currentSpec);
             }
 
-            AbstractCommand currentCommand = null;
+            AbstractCommand currentCommand = null; // this is the command that will be used in the next parsing pass
             CommandLine commandLine = null;
             if (currentSpec != null) {
                 commandLine = currentSpec.commandLine();
@@ -165,12 +167,16 @@ public class Picocli {
                 }
             }
             // init the config before adding options to properly sanitize mappers
-            initConfig(currentCommand);
+            boolean allHelpOptions = false;
+            if (commandLineList.size() > 1 && commandLineList.get(commandLineList.size() - 1).getCommand() instanceof AbstractCommand ac) {
+                allHelpOptions = Optional.ofNullable(ac.getHelpAllMixin()).map(HelpAllMixin::isAllOptions).orElse(false);
+            }
+            initConfig(allHelpOptions, currentCommand);
             if (currentSpec != null) {
                 addCommandOptions(cliArgs, commandLine);
             }
 
-            if (isRebuildCheck()) {
+            if (isRebuildCheck() && currentCommand instanceof AbstractStartCommand) {
                 // build command should be available when running re-aug
                 addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
             }
@@ -702,7 +708,8 @@ public class Picocli {
                 String name = mapper.getCliFormat();
 
                 if (cSpec.optionsMap().containsKey(name)) {
-                    throw new IllegalStateException("Only one mapper with a given name should be enabled");
+                    // we should not have this situation
+                    throw new IllegalStateException("PropertyMapper conflicts with option on command");
                 }
 
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
@@ -899,7 +906,7 @@ public class Picocli {
         QuarkusEntryPoint.main();
     }
 
-    public void initConfig(AbstractCommand command) {
+    public void initConfig(boolean allHelpOptions, AbstractCommand command) {
         if (Configuration.isInitialized()) {
             throw new IllegalStateException("Config should not be initialized until profile is determined");
         }
@@ -910,7 +917,9 @@ public class Picocli {
                         .orElse(Environment.PROD_PROFILE_VALUE));
 
         Environment.setProfile(profile);
-        parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        if (!allHelpOptions) {
+            parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        }
     }
 
 }

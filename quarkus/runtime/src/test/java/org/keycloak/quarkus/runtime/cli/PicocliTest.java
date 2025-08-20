@@ -102,9 +102,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        public void initConfig(AbstractCommand command) {
+        public void initConfig(boolean allHelpOptions, AbstractCommand command) {
             KeycloakConfigSourceProvider.reload();
-            super.initConfig(command);
+            super.initConfig(allHelpOptions, command);
             config = Configuration.getConfig();
         }
 

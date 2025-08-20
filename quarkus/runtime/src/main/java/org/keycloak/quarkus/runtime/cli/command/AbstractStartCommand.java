@@ -164,4 +164,9 @@ public abstract class AbstractStartCommand extends AbstractCommand {
         return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
     }
 
+    @Override
+    public HelpAllMixin getHelpAllMixin() {
+        return helpAllMixin;
+    }
+
 }
