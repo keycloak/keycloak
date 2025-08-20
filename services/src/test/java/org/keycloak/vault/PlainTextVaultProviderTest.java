@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -216,14 +217,15 @@ public class PlainTextVaultProviderTest {
         );
 
         // when
-        VaultRawSecret secret = provider.obtainSecret(".../key1");
+        String vaultSecretId = "..." + File.separator + "key1";
+        VaultRawSecret secret = provider.obtainSecret(vaultSecretId);
 
         // then
         assertNotNull(secret);
         assertFalse(secret.get().isPresent());
         assertTrue(
                 logMessages.stream()
-                        .anyMatch(msg -> msg.contains("Key .../key1 contains invalid file separator character"))
+                        .anyMatch(msg -> msg.contains("Key " + vaultSecretId + " contains invalid file separator character"))
         );
     }
 
