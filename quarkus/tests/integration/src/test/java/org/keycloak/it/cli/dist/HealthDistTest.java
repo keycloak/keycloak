@@ -65,7 +65,7 @@ public class HealthDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true" })
+    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true", "--cache=ispn" })
     void testNonBlockingProbes() {
         when().get("/health/live").then()
                 .statusCode(200);
