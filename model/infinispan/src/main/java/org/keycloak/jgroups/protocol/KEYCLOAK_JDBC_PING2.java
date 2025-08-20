@@ -274,7 +274,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     .orElse(HealthStatus.NO_COORDINATOR);
         } catch (Exception e) {
             // database failed?
-            log.debug("Failed to fetch the cluster members fromm the database.", e);
+            log.warn("Failed to fetch the cluster members from the database.", e);
             return HealthStatus.ERROR;
         }
     }

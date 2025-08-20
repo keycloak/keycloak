@@ -23,7 +23,7 @@ import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.protocols.PingData;
 
-/*
+/**
  * A controllable KEYCLOAK_JDBC_PING2 where we can overwrite the view, the data returned from the database, and simulate exceptions.
  */
 public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
