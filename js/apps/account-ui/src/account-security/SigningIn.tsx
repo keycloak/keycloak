@@ -153,12 +153,11 @@ export const SigningIn = () => {
             {credMetadata.infoProperties && (
               <Split className="pf-v5-u-mb-lg">
                 <SplitItem>
-                  <InfoAltIcon />{" "}
+                  <InfoAltIcon />
                 </SplitItem>
                 <SplitItem isFilled className="pf-v5-u-ml-xs">
                   <DescriptionList
                     isHorizontal
-                    aria-label="Horizontal"
                     horizontalTermWidthModifier={{
                       "2xl": "15ch",
                     }}
