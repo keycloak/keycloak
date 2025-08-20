@@ -16,8 +16,10 @@
  */
 package org.keycloak.admin.client;
 
+import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.WebTarget;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
+import org.keycloak.admin.client.resource.DPoPAuthFilter;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.ServerInfoResource;
@@ -84,8 +86,9 @@ public class Keycloak implements AutoCloseable {
     private final Client client;
     private boolean closed = false;
 
-    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken, String scope) {
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken, String scope, boolean useDPoP) {
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType, scope);
+        config.setUseDPoP(useDPoP);
         client = resteasyClient != null ? resteasyClient : newRestEasyClient(null, null, false);
         authToken = authtoken;
         tokenManager = authtoken == null ? new TokenManager(config, client) : null;
@@ -98,7 +101,11 @@ public class Keycloak implements AutoCloseable {
         return CLIENT_PROVIDER.newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager);
     }
 
-    private BearerAuthFilter newAuthFilter() {
+    private ClientRequestFilter newAuthFilter() {
+        if (config.isUseDPoP()) {
+            if (authToken != null) throw new IllegalArgumentException("Not supported to require DPoP when token is provisioned");
+            return new DPoPAuthFilter(tokenManager, false);
+        }
         return authToken != null ? new BearerAuthFilter(authToken) : new BearerAuthFilter(tokenManager);
     }
 
@@ -120,14 +127,14 @@ public class Keycloak implements AutoCloseable {
      * @return Java admin client instance
      */
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken, String scope) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, scope);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, scope, false);
     }
 
     /**
      * See {@link #getInstance(String, String, String, String, String, String, SSLContext, Object, boolean, String, String)} for the details about the parameters and their default values
      */
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, null);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, null, false);
     }
 
     /**
