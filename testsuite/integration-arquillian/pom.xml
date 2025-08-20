@@ -425,6 +425,7 @@
                 <keycloak.connectionsJpa.user>root</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <auth.server.feature>db-tidb</auth.server.feature>
 
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
