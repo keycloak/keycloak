@@ -58,7 +58,7 @@ public class SMTPUtil {
      * @return The converted email or null (if IDN.toASCII throws an exception)
      */
     public static String convertIDNEmailAddress(String email) {
-        final int idx = email == null ? -1 : email.indexOf('@');
+        final int idx = email == null ? -1 : email.lastIndexOf('@');
         if (idx < 0) {
             return email;
         }
