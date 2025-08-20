@@ -18,6 +18,7 @@ package org.keycloak.credential;
 
 import com.webauthn4j.converter.util.ObjectConverter;
 import org.keycloak.Config;
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -27,13 +28,14 @@ public class WebAuthnCredentialProviderFactory implements CredentialProviderFact
     public static final String PROVIDER_ID = "keycloak-webauthn";
 
     private ObjectConverter converter;
+    private volatile WebAuthnMetadataService metadataService;
 
     @Override
     public CredentialProvider create(KeycloakSession session) {
-        return new WebAuthnCredentialProvider(session, createOrGetObjectConverter());
+        return new WebAuthnCredentialProvider(session, getMetadataService(), createOrGetObjectConverter());
     }
 
-    private ObjectConverter createOrGetObjectConverter() {
+    protected ObjectConverter createOrGetObjectConverter() {
         if (converter == null) {
             synchronized (this) {
                 if (converter == null) {
@@ -52,5 +54,16 @@ public class WebAuthnCredentialProviderFactory implements CredentialProviderFact
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
+    }
+
+    protected WebAuthnMetadataService getMetadataService() {
+        if (metadataService == null) {
+            synchronized (this) {
+                if (metadataService == null) {
+                    this.metadataService = new WebAuthnMetadataService();
+                }
+            }
+        }
+        return this.metadataService;
     }
 }
