@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { DEFAULT_PASSWORD, DEFAULT_USERNAME, getAccountUrl } from "./common.ts";
 
 export async function login(
@@ -24,4 +24,15 @@ export async function login(
     .getByRole("textbox", { name: "Password", exact: true })
     .fill(password);
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
+}
+
+export async function assertLastAlert(
+  page: Page,
+  message: string,
+): Promise<void> {
+  await expect(page.getByTestId("last-alert")).toHaveText(message);
+  await page
+    .getByTestId("last-alert")
+    .getByRole("button", { name: "Close alert", exact: false })
+    .click();
 }

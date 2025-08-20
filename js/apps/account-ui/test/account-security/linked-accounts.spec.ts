@@ -1,7 +1,7 @@
 import { type Page, expect, test } from "@playwright/test";
 import groupsIdPClient from "../realms/groups-idp.json" with { type: "json" };
 import userProfileRealm from "../realms/user-profile-realm.json" with { type: "json" };
-import { login } from "../support/actions.ts";
+import { assertLastAlert, login } from "../support/actions.ts";
 import { adminClient } from "../support/admin-client.ts";
 import { DEFAULT_USER, getAccountUrl, SERVER_URL } from "../support/common.ts";
 import { createTestBed } from "../support/testbed.ts";
@@ -92,8 +92,9 @@ test.describe("Linked accounts", () => {
       .click();
 
     // Expect an error shown that the account cannot be unlinked
-    await expect(page.getByTestId("last-alert")).toContainText(
-      "You can not remove last federated identity as you do not have a password.",
+    await assertLastAlert(
+      page,
+      "Could not unlink due to: You can not remove last federated identity as you do not have a password.",
     );
   });
 });
