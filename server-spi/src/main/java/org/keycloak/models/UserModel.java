@@ -232,8 +232,6 @@ public interface UserModel extends RoleMapperModel {
      */
     SubjectCredentialManager credentialManager();
 
-    void setLastSessionRefreshTime(int lastSessionRefreshTime);
-
     enum RequiredAction {
         VERIFY_EMAIL,
         UPDATE_PROFILE,
