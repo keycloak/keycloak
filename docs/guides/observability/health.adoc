@@ -108,4 +108,6 @@ use the `metrics-enabled` option as follows:
 
 <@kc.build parameters="--health-enabled=true --metrics-enabled=true"/>
 
+The cluster health check is only available for clustered setups when the cache transport stacks `jdbc-ping` or `jdbc-ping-udp` are used.
+
 </@tmpl.guide>

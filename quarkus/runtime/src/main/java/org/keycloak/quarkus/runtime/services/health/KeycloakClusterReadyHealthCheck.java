@@ -21,9 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
-import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.Readiness;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -32,8 +30,6 @@ import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import static org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck.DATE_FORMATTER;
 import static org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck.FAILING_SINCE;
 
-@Readiness
-@ApplicationScoped
 public class KeycloakClusterReadyHealthCheck implements AsyncHealthCheck {
 
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();

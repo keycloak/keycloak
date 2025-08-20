@@ -34,7 +34,6 @@ import org.infinispan.commons.io.StringBuilderWriter;
 import org.infinispan.commons.util.Version;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.health.CacheHealth;
 import org.infinispan.manager.DefaultCacheManager;
@@ -309,6 +308,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public boolean isClusterHealthy() {
         clusterHealth.triggerClusterHealthCheck();
         return clusterHealth.isHealthy();
+    }
+
+    @Override
+    public boolean isClusterHealthSupported() {
+        return clusterHealth.isSupported();
     }
 
     private void addEmbeddedOperationalInfo(Map<String, String> info) {

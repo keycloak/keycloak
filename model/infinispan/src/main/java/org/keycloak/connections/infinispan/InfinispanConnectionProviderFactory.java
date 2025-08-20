@@ -37,4 +37,8 @@ public interface InfinispanConnectionProviderFactory extends ProviderFactory<Inf
         return true;
     }
 
+    default boolean isClusterHealthSupported() {
+        return false;
+    }
+
 }

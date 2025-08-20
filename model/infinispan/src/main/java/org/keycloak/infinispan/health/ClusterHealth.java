@@ -43,4 +43,10 @@ public interface ClusterHealth {
      */
     void triggerClusterHealthCheck();
 
+    /**
+     * Determine if the cluster health check is supported.
+     * @return false if the current transport setup doesn't provide enough information.
+     */
+    boolean isSupported();
+
 }
