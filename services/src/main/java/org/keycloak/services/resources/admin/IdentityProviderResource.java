@@ -107,7 +107,7 @@ public class IdentityProviderResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Get the identity provider")
+    @Operation(summary = "Get the identity provider", operationId = "getIdentityProvider")
     public IdentityProviderRepresentation getIdentityProvider() {
         this.auth.realm().requireViewIdentityProviders();
 
@@ -126,7 +126,7 @@ public class IdentityProviderResource {
     @DELETE
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Delete the identity provider")
+    @Operation(summary = "Delete the identity provider", operationId = "deleteIdentityProvider")
     public Response delete() {
         this.auth.realm().requireManageIdentityProviders();
 
@@ -156,7 +156,7 @@ public class IdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Update the identity provider")
+    @Operation(summary = "Update the identity provider", operationId = "updateIdentityProvider")
     public Response update(IdentityProviderRepresentation providerRep) {
         this.auth.realm().requireManageIdentityProviders();
 
@@ -247,7 +247,10 @@ public class IdentityProviderResource {
     @Path("export")
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Export public broker configuration for identity provider")
+    @Operation(
+            summary = "Export public broker configuration for identity provider",
+            operationId = "export"
+    )
     public Response export(@Parameter(description = "Format to use") @QueryParam("format") String format) {
         this.auth.realm().requireViewIdentityProviders();
 
@@ -274,7 +277,7 @@ public class IdentityProviderResource {
     @Path("mapper-types")
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Get mapper types for identity provider")
+    @Operation(summary = "Get mapper types for identity provider", operationId = "getMapperTypes")
     public Map<String, IdentityProviderMapperTypeRepresentation> getMapperTypes() {
         this.auth.realm().requireViewIdentityProviders();
 
@@ -309,7 +312,7 @@ public class IdentityProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Get mappers for identity provider")
+    @Operation(summary = "Get mappers for identity provider", operationId = "getMappers")
     public Stream<IdentityProviderMapperRepresentation> getMappers() {
         this.auth.realm().requireViewIdentityProviders();
 
@@ -331,7 +334,7 @@ public class IdentityProviderResource {
     @Path("mappers")
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Add a mapper to identity provider")
+    @Operation(summary = "Add a mapper to identity provider", operationId = "addMapper")
     public Response addMapper(IdentityProviderMapperRepresentation mapper) {
         this.auth.realm().requireManageIdentityProviders();
 
@@ -365,7 +368,7 @@ public class IdentityProviderResource {
     @Path("mappers/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Get mapper by id for the identity provider")
+    @Operation(summary = "Get mapper by id for the identity provider", operationId = "getMapperById")
     public IdentityProviderMapperRepresentation getMapperById(@PathParam("id") String id) {
         this.auth.realm().requireViewIdentityProviders();
 
@@ -389,7 +392,7 @@ public class IdentityProviderResource {
     @Path("mappers/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Update a mapper for the identity provider")
+    @Operation(summary = "Update a mapper for the identity provider", operationId = "updateMapper")
     public void update(@Parameter(description = "Mapper id") @PathParam("id") String id, IdentityProviderMapperRepresentation rep) {
         this.auth.realm().requireManageIdentityProviders();
 
@@ -414,7 +417,7 @@ public class IdentityProviderResource {
     @NoCache
     @Path("mappers/{id}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Delete a mapper for the identity provider")
+    @Operation(summary = "Delete a mapper for the identity provider", operationId = "deleteMapper")
     public void delete(@Parameter(description = "Mapper id") @PathParam("id") String id) {
         this.auth.realm().requireManageIdentityProviders();
 
@@ -439,7 +442,10 @@ public class IdentityProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
+    @Operation(
+            summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference",
+            operationId = "getManagementPermissions"
+    )
     public ManagementPermissionReference getManagementPermissions() {
         ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         this.auth.realm().requireViewIdentityProviders();
@@ -476,7 +482,10 @@ public class IdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference")
+    @Operation(
+            summary = "Return object stating whether client Authorization permissions have been initialized or not and a reference",
+            operationId = "setManagementPermissionsEnabled"
+    )
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
         ProfileHelper.requireFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
         this.auth.realm().requireManageIdentityProviders();
@@ -499,7 +508,10 @@ public class IdentityProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation(summary = "Reaload keys for the identity provider if the provider supports it, \"true\" is returned if reload was performed, \"false\" if not.")
+    @Operation(
+            summary = "Reaload keys for the identity provider if the provider supports it, \"true\" is returned if reload was performed, \"false\" if not.",
+            operationId = "reloadKeys"
+    )
     public boolean reloadKeys() {
         this.auth.realm().requireManageIdentityProviders();
 
