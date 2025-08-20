@@ -50,11 +50,11 @@ Grafana dashboards for the metrics below can be found in <@links.observability i
 * <@links.observability id="metrics-for-troubleshooting-jvm"/>
 * <@links.observability id="metrics-for-troubleshooting-database"/>
 * <@links.observability id="metrics-for-troubleshooting-http"/>
-* Single site metrics (without external {jdgserver_name})
+* <@links.ha id="single-cluster-introduction" /> metrics
 ** <@links.observability id="metrics-for-troubleshooting-clustering-and-network"/>
 ** <@links.observability id="metrics-for-troubleshooting-embedded-caches"/>
-* Multiple sites metrics (as described in <@links.ha id="introduction"/>)
-** <@links.observability id="metrics-for-troubleshooting-embedded-caches-multi-site"/>
-** <@links.observability id="metrics-for-troubleshooting-external-infinispan-multi-site"/>
+* <@links.ha id="multi-cluster-introduction" /> metrics
+** <@links.observability id="metrics-for-troubleshooting-embedded-caches-multi-cluster"/>
+** <@links.observability id="metrics-for-troubleshooting-external-infinispan-multi-cluster"/>
 
 </@tmpl.guide>
