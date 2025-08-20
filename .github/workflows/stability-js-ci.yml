@@ -73,6 +73,22 @@ jobs:
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
         working-directory: js
 
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: account-ui-playwright-report-${{ matrix.browser }}
+          path: js/apps/account-ui/playwright-report
+          retention-days: 7
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: account-ui-server-log-${{ matrix.browser }}
+          path: ~/server.log
+          retention-days: 7
+
   admin-ui-e2e:
     name: Admin UI E2E
     needs:
@@ -118,6 +134,22 @@ jobs:
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test:integration -- --project=${{ matrix.browser }}
         working-directory: js
 
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: admin-ui-playwright-report-${{ matrix.browser }}
+          path: js/apps/admin-ui/playwright-report
+          retention-days: 7
+
+      - name: Upload server logs
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: admin-ui-server-log-${{ matrix.browser }}
+          path: ~/server.log
+          retention-days: 7
+
   delete-artifacts:
     name: Delete artifacts
     needs:
@@ -128,6 +160,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Delete artifacts
-        run:
-          gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts | jq .artifacts[].id | xargs -I {} gh api -X DELETE /repos/${{ github.repository }}/actions/artifacts/{}
+      - name: Delete artifacts (excluding Playwright reports and server logs)
+        run: |
+          gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
+          | jq '.artifacts[] | select(.name | test("playwright-report|server-log") | not) | .id' \
+          | xargs -I {} gh api -X DELETE /repos/${{ github.repository }}/actions/artifacts/{}

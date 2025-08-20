@@ -87,8 +87,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
-    private static final String ZONE_KEY = "topology.kubernetes.io/zone";
-
     private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
     private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
 
@@ -415,29 +413,23 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
         }
 
-        if (!specBuilder.hasAffinity()) {
-            var antiAffinity = specBuilder.editOrNewAffinity().withNewPodAntiAffinity();
-            // Server pods have an anti-affinity for the same zone in order to increase availability by creating a stretched cluster
-            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                  .withWeight(100)
-                  .withNewPodAffinityTerm()
-                  .withNewLabelSelector()
-                  .withMatchLabels(labels)
-                  .endLabelSelector()
-                  .withTopologyKey(ZONE_KEY)
-                  .endPodAffinityTerm()
-                  .endPreferredDuringSchedulingIgnoredDuringExecution();
-
-            // Server pods have an anti-affinity for the same node in case it's not possible to provision to a zone that contains no existing pods
-            antiAffinity.addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                  .withWeight(90)
-                  .withNewPodAffinityTerm()
-                  .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
-                  .withTopologyKey("kubernetes.io/hostname")
-                  .endPodAffinityTerm()
-                  .endPreferredDuringSchedulingIgnoredDuringExecution();
-
-            antiAffinity.endPodAntiAffinity().endAffinity();
+        if (!specBuilder.hasTopologySpreadConstraints()) {
+            specBuilder.addNewTopologySpreadConstraint()
+                    .withMaxSkew(1)
+                    .withTopologyKey("topology.kubernetes.io/zone")
+                    .withWhenUnsatisfiable("ScheduleAnyway")
+                    .withNewLabelSelector()
+                    .withMatchLabels(labels)
+                    .endLabelSelector()
+                    .endTopologySpreadConstraint()
+                    .addNewTopologySpreadConstraint()
+                    .withMaxSkew(1)
+                    .withTopologyKey("kubernetes.io/hostname")
+                    .withWhenUnsatisfiable("ScheduleAnyway")
+                    .withNewLabelSelector()
+                    .withMatchLabels(labels)
+                    .endLabelSelector()
+                    .endTopologySpreadConstraint();
         }
     }
 
