@@ -122,7 +122,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         event.detail(Details.REQUESTED_TOKEN_TYPE, context.getParams().getRequestedTokenType());
 
-        AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null, false, subjectToken, context.getHeaders());
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null,
+                false, subjectToken, context.getHeaders(), verifier -> {});
         if (authResult == null) {
             event.detail(Details.REASON, "subject_token validation failure");
             event.error(Errors.INVALID_TOKEN);

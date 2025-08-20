@@ -23,21 +23,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedMap;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
-import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.SignatureException;
-import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
-import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
@@ -70,9 +62,9 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutor;
-import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionCondition;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutor;
+import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -84,7 +76,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
@@ -454,14 +445,7 @@ public final class ClientPoliciesUtil {
 
     // DPoP
     public static  JWK createRsaJwk(Key publicKey) {
-        RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
-
-        RSAPublicJWK k = new RSAPublicJWK();
-        k.setKeyType(KeyType.RSA);
-        k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
-        k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
-
-        return k;
+        return DPoPGenerator.createRsaJwk(publicKey);
     }
 
     public static JWK createEcJwk(Key publicKey) {
@@ -487,45 +471,17 @@ public final class ClientPoliciesUtil {
     }
 
     public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) throws IOException {
-
-        String dpopProofHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
-
-        DPoP dpop = new DPoP();
-        dpop.id(jti);
-        dpop.setHttpMethod(htm);
-        dpop.setHttpUri(htu);
-        dpop.iat(iat);
-        if (accessToken != null) {
-            dpop.setAccessTokenHash(HashUtils.accessTokenHash(DPoPUtil.DPOP_ATH_ALG, accessToken, true));
-        }
-
-        String dpopProofPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(dpop));
-
-        try {
-            KeyWrapper keyWrapper = new KeyWrapper();
-            keyWrapper.setKid(jwsHeader.getKeyId());
-            keyWrapper.setAlgorithm(algorithm);
-            keyWrapper.setPrivateKey(privateKey);
-            keyWrapper.setType(privateKey.getAlgorithm());
-            keyWrapper.setUse(KeyUse.SIG);
-            SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
-
-            String data = dpopProofHeaderEncoded + "." + dpopProofPayloadEncoded;
-            byte[] signatureByteArray = sigCtx.sign(data.getBytes());
-            return data + "." + Base64Url.encode(signatureByteArray);
-        } catch (SignatureException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
-        switch (keyWrapper.getType()) {
-            case KeyType.RSA:
-                return new AsymmetricSignatureSignerContext(keyWrapper);
-            case KeyType.EC:
-                return new ECDSASignatureSignerContext(keyWrapper);
-            default:
-                throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
+        if (algorithm.equals(jwsHeader.getAlgorithm().toString())) {
+            return DPoPGenerator.generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, privateKey, accessToken);
+        } else {
+            // Ability to test failure scenarios when different algorithms are used for the JWSHeader and for the actual key
+            Algorithm origJwsAlg = jwsHeader.getAlgorithm();
+            JWSHeader updatedHeader = new JWSHeader(Algorithm.valueOf(algorithm), jwsHeader.getType(), jwsHeader.getKeyId(), jwsHeader.getKey());
+            String dpop = DPoPGenerator.generateSignedDPoPProof(jti, htm, htu, iat, updatedHeader, privateKey, accessToken);
+            String dpopOrigHeader = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
+            // Replace header with the original algorithm
+            String updatedAlgorithmHeader = dpop.substring(0, dpop.indexOf('.'));
+            return dpop.replace(updatedAlgorithmHeader, dpopOrigHeader);
         }
     }
 }
