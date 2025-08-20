@@ -928,6 +928,9 @@ public class AuthenticationProcessor {
             return flowExecution;
 
         } else if (flow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
+            if (execution == null) {
+                throw new AuthenticationFlowException("Execution not provided to flow", AuthenticationFlowError.INTERNAL_ERROR);
+            }
             FormAuthenticationFlow flowExecution = new FormAuthenticationFlow(this, execution);
             return flowExecution;
         } else if (flow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
