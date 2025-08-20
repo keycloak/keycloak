@@ -789,7 +789,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
-            SamlProtocolUtils.verifyDocumentSignature(client, documentHolder.getSamlDocument());
+            SamlProtocolUtils.verifyDocumentSignature(session, client, documentHolder.getSamlDocument());
         }
 
         @Override
@@ -834,8 +834,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
-            PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
-            KeyLocator clientKeyLocator = new HardcodedKeyLocator(publicKey);
+            KeyLocator clientKeyLocator = SamlProtocolUtils.createKeyLocatorForClient(session, client, KeyUse.SIG);
             SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, session.getContext().getUri(), GeneralConstants.SAML_REQUEST_KEY);
         }
 
@@ -941,7 +940,8 @@ public class SamlService extends AuthorizationEndpointBase {
                         .build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(),
                 true,
-                signingKeys);
+                signingKeys,
+                realm.getAttribute(SamlConfigAttributes.SAML_DESCRIPTOR_CACHE_SECONDS, (Long) null));
         } catch (Exception ex) {
             logger.error("Cannot generate IdP metadata", ex);
             return "";
@@ -1208,7 +1208,7 @@ public class SamlService extends AuthorizationEndpointBase {
         // Check signature within ArtifactResolve request if client requires it
         if (samlClient.requiresClientSignature()) {
             try {
-                SamlProtocolUtils.verifyDocumentSignature(clientModel, artifactResolveHolder.getSamlDocument());
+                SamlProtocolUtils.verifyDocumentSignature(session, clientModel, artifactResolveHolder.getSamlDocument());
             } catch (VerificationException e) {
                 SamlService.logger.error("request validation failed", e);
                 return emptyArtifactResponseMessage(artifactResolveMessage, clientModel);
@@ -1306,7 +1306,7 @@ public class SamlService extends AuthorizationEndpointBase {
             // Encrypt assertion if client requires it
             if (samlClient.requiresEncryption()) {
                 try {
-                    SamlProtocolUtils.setupEncryption(samlClient, bindingBuilder);
+                    SamlProtocolUtils.setupEncryption(session, samlClient, bindingBuilder);
                 } catch (Exception e) {
                     logger.error("Failed to obtain encryption key for client", e);
                     return emptyArtifactResponseMessage(artifactResolveMessage, null);
