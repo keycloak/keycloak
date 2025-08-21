@@ -37,6 +37,14 @@ public interface InfinispanConnectionProviderFactory extends ProviderFactory<Inf
         return true;
     }
 
+    /**
+     * Checks if the cluster health check is supported.
+     * <p>
+     * Not all JGroups configurations support discovering network splits and this method signals if the current in use
+     * configuration can detect those.
+     *
+     * @return {@code true} if the cluster health check is supported.
+     */
     default boolean isClusterHealthSupported() {
         return false;
     }

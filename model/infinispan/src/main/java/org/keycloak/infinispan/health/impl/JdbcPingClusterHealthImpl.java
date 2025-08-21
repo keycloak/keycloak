@@ -54,7 +54,6 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
     private final ReentrantLock lock = new ReentrantLock();
     private volatile boolean healthy = true;
     private volatile HealthRunner runner;
-    private boolean supported;
 
     @Inject
     public void inject(Transport transport, BlockingManager blockingManager) {
@@ -73,7 +72,6 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
             return;
         }
 
-        supported = true;
         logger.debug("Cluster Health check available");
         init(ping, blockingManager.asExecutor("cluster-health"));
     }
@@ -125,7 +123,7 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
 
     @Override
     public boolean isSupported() {
-        return supported;
+        return runner != null;
     }
 
     private record HealthRunner(KEYCLOAK_JDBC_PING2 discovery, Executor executor, Consumer<KEYCLOAK_JDBC_PING2> check) {
