@@ -1,7 +1,6 @@
 package org.keycloak.authentication.authenticators.client;
 
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.models.ClientModel;
 
 public class SpiffeClientValidator extends JWTClientValidator {
 
@@ -15,8 +14,13 @@ public class SpiffeClientValidator extends JWTClientValidator {
     }
 
     @Override
-    protected boolean isIssuerRequired() {
+    protected boolean isClientIssuedTokenRequired() {
         return false;
+    }
+
+    @Override
+    protected String getClientAssertionType() {
+        return SpiffeConstants.CLIENT_ASSERTION_TYPE_SPIFFE;
     }
 
     @Override
@@ -25,19 +29,6 @@ public class SpiffeClientValidator extends JWTClientValidator {
             return false;
         }
 
-        String subjectPrefix = "spiffe://" + client.getAttribute(SpiffeClientAuthenticator.TRUST_DOMAIN_KEY) + "/";
-        if (!token.getSubject().startsWith(subjectPrefix)) {
-            throw new RuntimeException("Subject is not a SPIFFE ID, or not associated with the correct domain");
-        }
-        return true;
-    }
-
-    protected boolean supportedSubject(String subject) {
-        return subject.startsWith("spiffe://");
-    }
-
-    @Override
-    protected boolean validateSubject(ClientModel client) {
         String subjectPrefix = "spiffe://" + client.getAttribute(SpiffeClientAuthenticator.TRUST_DOMAIN_KEY) + "/";
         if (!token.getSubject().startsWith(subjectPrefix)) {
             throw new RuntimeException("Subject is not a SPIFFE ID, or not associated with the correct domain");

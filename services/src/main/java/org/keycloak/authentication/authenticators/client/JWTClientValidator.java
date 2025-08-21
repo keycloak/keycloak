@@ -96,9 +96,9 @@ public class JWTClientValidator {
             return false;
         }
 
-        if (!clientAssertionType.equals(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)) {
+        if (!clientAssertionType.equals(getClientAssertionType())) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type has value '"
-                    + clientAssertionType + "' but expected is '" + OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT + "'");
+                    + clientAssertionType + "' but expected is '" + getClientAssertionType() + "'");
             context.challenge(challengeResponse);
             return false;
         }
@@ -132,11 +132,7 @@ public class JWTClientValidator {
             throw new RuntimeException("Can't identify client. Subject missing on JWT token");
         }
 
-        if (!supportedSubject(clientId)) {
-            return false;
-        }
-
-        if (isIssuerRequired() && !clientId.equals(token.getIssuer())) {
+        if (isClientIssuedTokenRequired() && !clientId.equals(token.getIssuer())) {
             throw new RuntimeException("Issuer mismatch. The issuer should match the subject");
         }
 
@@ -164,14 +160,6 @@ public class JWTClientValidator {
             return false;
         }
 
-        return true;
-    }
-
-    protected boolean supportedSubject(String subject) {
-        return !subject.startsWith("spiffe://");
-    }
-
-    protected boolean validateSubject(ClientModel client) {
         return true;
     }
 
@@ -340,8 +328,12 @@ public class JWTClientValidator {
         return true;
     }
 
-    protected boolean isIssuerRequired() {
+    protected boolean isClientIssuedTokenRequired() {
         return true;
+    }
+
+    protected String getClientAssertionType() {
+        return OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT;
     }
 
     private boolean isFormDataRequest(HttpRequest request) {

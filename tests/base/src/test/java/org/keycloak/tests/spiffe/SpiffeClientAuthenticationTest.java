@@ -3,6 +3,7 @@ package org.keycloak.tests.spiffe;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.authentication.authenticators.client.SpiffeClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.SpiffeConstants;
 import org.keycloak.common.Profile;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -34,7 +35,7 @@ public class SpiffeClientAuthenticationTest {
         String token = SPIFFE.generateToken(SPIFFE_ID, oAuthClient.getEndpoints().getIssuer());
 
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
-                .clientJwt(token).send();
+                .clientJwt(token, SpiffeConstants.CLIENT_ASSERTION_TYPE_SPIFFE).send();
 
         Assertions.assertTrue(response.isSuccess());
     }
@@ -44,7 +45,7 @@ public class SpiffeClientAuthenticationTest {
         String token = SPIFFE.generateToken("spiffe://example.org/invalid", oAuthClient.getEndpoints().getIssuer());
 
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
-                .clientJwt(token).send();
+                .clientJwt(token, SpiffeConstants.CLIENT_ASSERTION_TYPE_SPIFFE).send();
 
         Assertions.assertFalse(response.isSuccess());
         Assertions.assertEquals("invalid_client", response.getError());
@@ -58,7 +59,7 @@ public class SpiffeClientAuthenticationTest {
         String token = SPIFFE.generateToken(SPIFFE_ID, oAuthClient.getEndpoints().getIssuer());
 
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
-                .clientJwt(token).send();
+                .clientJwt(token, SpiffeConstants.CLIENT_ASSERTION_TYPE_SPIFFE).send();
 
         Assertions.assertFalse(response.isSuccess());
         Assertions.assertEquals("invalid_client", response.getError());
