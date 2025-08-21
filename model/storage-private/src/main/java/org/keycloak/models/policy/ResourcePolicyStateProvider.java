@@ -17,7 +17,6 @@
 
 package org.keycloak.models.policy;
 
-import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import java.util.List;
 import java.util.Set;
@@ -28,9 +27,9 @@ import java.util.Set;
 public interface ResourcePolicyStateProvider extends Provider {
 
     /**
-     * Finds resource IDs that have completed a specific action within a policy.
+     * Finds resource IDs scheduled to run the specified action within a policy.
      */
-    List<String> findResourceIdsByLastCompletedAction(String policyId, String lastCompletedActionId);
+    List<String> findResourceIdsByScheduledAction(String policyId, String scheduledActionId);
 
     /**
      * Updates the state for a list of resources that have just completed a new action.
@@ -44,14 +43,35 @@ public interface ResourcePolicyStateProvider extends Provider {
     void removeByCompletedActions(String policyId, Set<String> deletedActionIds);
 
     /**
-     * Deletes the state records associated with the given {@code user}.
+     * Deletes the state records associated with the given {@code resourceId}.
      *
-     * @param user the user
+     * @param resourceId the id of the resource.
      */
-    void removeByUser(UserModel user);
+    void removeByResource(String resourceId);
+
+    /**
+     * Removes the record identified by the specified {@code policyId} and {@code resourceId}.
+     * @param policyId the id of the policy.
+     * @param resourceId the id of the resource.
+     */
+    void remove(String policyId, String resourceId);
 
     /**
      * Deletes all state records associated with the current realm bound to the session.
      */
     void removeAll();
+
+    default void scheduleAction(ResourcePolicy policy, ResourceAction action, String resourceId) {
+        this.scheduleAction(policy, action, action.getAfter(), resourceId);
+    }
+
+    void scheduleAction(ResourcePolicy policy, ResourceAction action, long scheduledTimeOffset, String resourceId);
+
+    ScheduledAction getScheduledAction(String policyId, String resourceId);
+
+    List<ScheduledAction> getScheduledActionsByResource(String resourceId);
+
+    List<ScheduledAction> getDueScheduledActions(ResourcePolicy policy);
+
+    record ScheduledAction (String policyId, String actionId, String resourceId) {};
 }

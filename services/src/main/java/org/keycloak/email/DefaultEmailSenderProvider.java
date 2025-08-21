@@ -233,7 +233,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     private static boolean isAllowUTF8(Map<String, String> config) {
-        return "true".equals(config.get("allowutf8"));
+        return "true".equals(config.get(CONFIG_ALLOW_UTF8));
     }
 
     private static boolean isDebugEnabled(Map<String, String> config) {

@@ -57,12 +57,12 @@ public class AuthorizeClientUtil {
 
         ClientModel client = processor.getClient();
         if (client == null) {
-            throwErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST, cors.allowAllOrigins());
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Client authentication ended, but client is null", Response.Status.BAD_REQUEST, cors);
         }
-        
+
         if(!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            throwErrorResponseException(Errors.INVALID_CLIENT, "Invalid client or Invalid client credentials", Response.Status.UNAUTHORIZED, cors.allowAllOrigins());
+            throwErrorResponseException(Errors.INVALID_CLIENT, "Invalid client or Invalid client credentials", Response.Status.UNAUTHORIZED, cors);
         }
 
         if (cors != null) {

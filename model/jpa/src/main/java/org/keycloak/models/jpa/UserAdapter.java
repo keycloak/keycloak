@@ -578,13 +578,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
-    public void setLastSessionRefreshTime(int lastSessionRefreshTime) {
-        if (ResourcePolicyManager.isFeatureEnabled()) {
-            user.setLastSessionRefreshTime(lastSessionRefreshTime);
-        }
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserModel)) return false;

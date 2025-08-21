@@ -140,16 +140,30 @@ if not "x%JAVA_OPTS_APPEND%" == "x" (
     set JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_APPEND%
 )
 
-if NOT "x%DEBUG%" == "x" (
-    set DEBUG_MODE=%DEBUG%
+if NOT "x%KC_DEBUG%" == "x" (
+    set DEBUG_MODE=%KC_DEBUG%
+) else (
+    if NOT "x%DEBUG%" == "x" (
+        set DEBUG_MODE=%DEBUG%
+    )
 )
 
-if NOT "x%DEBUG_PORT%" == "x" (
-    set DEBUG_PORT_VAR=%DEBUG_PORT%
+if NOT "x%KC_DEBUG_PORT%" == "x" (
+    set DEBUG_PORT_VAR=%KC_DEBUG_PORT%
+    set DEBUG_ADDRESS=0.0.0.0:!DEBUG_PORT_VAR!
+) else (
+    if NOT "x%DEBUG_PORT%" == "x" (
+        set DEBUG_PORT_VAR=%DEBUG_PORT%
+        set DEBUG_ADDRESS=0.0.0.0:!DEBUG_PORT_VAR!
+    )
 )
 
-if NOT "x%DEBUG_SUSPEND%" == "x" (
-    set DEBUG_SUSPEND_VAR=%DEBUG_SUSPEND%
+if NOT "x%KC_DEBUG_SUSPEND%" == "x" (
+    set DEBUG_SUSPEND_VAR=%KC_DEBUG_SUSPEND%
+) else (
+    if NOT "x%DEBUG_SUSPEND%" == "x" (
+        set DEBUG_SUSPEND_VAR=%DEBUG_SUSPEND%
+    )
 )
 
 rem Set debug settings if not already set

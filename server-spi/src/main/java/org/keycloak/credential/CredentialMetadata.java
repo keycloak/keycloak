@@ -1,7 +1,10 @@
 package org.keycloak.credential;
 
+import java.util.List;
+
 public class CredentialMetadata {
     LocalizedMessage infoMessage;
+    List<LocalizedMessage> infoProperties;
     LocalizedMessage warningMessageTitle;
     LocalizedMessage warningMessageDescription;
     CredentialModel credentialModel;
@@ -16,6 +19,10 @@ public class CredentialMetadata {
 
     public LocalizedMessage getInfoMessage() {
         return infoMessage;
+    }
+
+    public List<LocalizedMessage> getInfoProperties() {
+        return infoProperties;
     }
 
     public LocalizedMessage getWarningMessageTitle() {
@@ -39,6 +46,10 @@ public class CredentialMetadata {
     public void setInfoMessage(String key, String... parameters) {
         LocalizedMessage message = new LocalizedMessage(key, parameters);
         this.infoMessage = message;
+    }
+
+    public void setInfoProperties(List<LocalizedMessage> infoProperties) {
+        this.infoProperties = infoProperties;
     }
 
     public static class LocalizedMessage {

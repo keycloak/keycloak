@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.ws.rs.core.Response.Status;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,6 +41,7 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
 import org.keycloak.authentication.requiredactions.UpdateEmail;
+import org.keycloak.broker.provider.util.SimpleHttp.Response;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
@@ -48,6 +51,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -173,6 +177,26 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("The link you clicked is an old stale link and is no longer valid. Maybe you have already verified your email.", errorPage.getError());
 		assertTrue(ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 	}
+
+    @Test
+    public void testSkipHeadRequestWhenFollowingVerificationLink() throws MessagingException, IOException {
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+
+        updateEmailPage.assertCurrent();
+        updateEmailPage.changeEmail("new@localhost");
+
+        String confirmationLink = fetchEmailConfirmationLink("new@localhost");
+
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            try (Response response = SimpleHttpDefault.doHead(confirmationLink, httpClient).asResponse()) {
+                assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            }
+        }
+
+        driver.navigate().to(confirmationLink);
+        infoPage.assertCurrent();
+    }
 
     @Test
     public void testForceEmailVerification() throws MessagingException, IOException {

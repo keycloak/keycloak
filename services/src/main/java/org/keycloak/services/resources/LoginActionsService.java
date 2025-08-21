@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import jakarta.ws.rs.HEAD;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -546,6 +547,19 @@ public class LoginActionsService {
                                        @QueryParam(Constants.CLIENT_DATA) String clientData,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
         return handleActionToken(key, execution, clientId, tabId, clientData, null);
+    }
+
+    /**
+     * Skip processing {@link jakarta.ws.rs.HttpMethod#HEAD} requests for action tokens
+     * as they are usually used by mail servers to validate links. The actual request will eventually be
+     * processed by the {@link #executeActionToken} method.
+     *
+     * @return a {@link Response.Status#OK} response with no message body
+     */
+    @Path("action-token")
+    @HEAD
+    public Response executeActionTokenHead() {
+        return Response.ok().build();
     }
 
     protected <T extends JsonWebToken & SingleUseObjectKeyModel> Response handleActionToken(String tokenString, String execution, String clientId, String tabId, String clientData, 

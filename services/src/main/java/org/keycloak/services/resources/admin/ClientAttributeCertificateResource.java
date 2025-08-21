@@ -18,7 +18,6 @@
 package org.keycloak.services.resources.admin;
 
 import com.google.common.base.Strings;
-import jakarta.ws.rs.QueryParam;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -342,15 +341,15 @@ public class ClientAttributeCertificateResource {
             throw new ErrorResponseException("password-missing", "Need to specify a store password for jks generation and download", Response.Status.BAD_REQUEST);
         }
 
-        CertificateRepresentation info;
-        if (config.getKeySize() <= 0 || config.getValidity() <= 0) {
-            info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
-        }
-        else {
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.YEAR, config.getValidity());
-            info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId(), config.getKeySize(), calendar);
-        }
+        int keySize = config.getKeySize() != null && config.getKeySize() > 0
+                ? config.getKeySize()
+                : KeycloakModelUtils.DEFAULT_RSA_KEY_SIZE;
+        int validity = config.getValidity() != null && config.getValidity() > 0
+                ? config.getValidity()
+                : KeycloakModelUtils.DEFAULT_CERTIFICATE_VALIDITY_YEARS;
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, validity);
+        CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId(), keySize, calendar);
         byte[] rtn = getKeystore(config, info.getPrivateKey(), info.getCertificate());
 
         info.setPrivateKey(null);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,9 +34,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.DeleteUserActionProviderFactory;
-import org.keycloak.models.policy.FederatedIdentityPolicyProviderFactory;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.UserActionBuilder;
+import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -65,10 +65,9 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.openqa.selenium.WebDriver;
 
 /**
- * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @KeycloakIntegrationTest(config = RLMServerConfig.class)
-public class TransientUserTest {
+public class BrokeredUserSessionRefreshTimePolicyTest {
 
     private static final String REALM_NAME = "consumer";
 
@@ -81,8 +80,11 @@ public class TransientUserTest {
     @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD)
     ManagedRealm providerRealm;
 
-    @InjectUser(ref = "provider", realmRef = "provider", config = ProviderRealmUserConf.class)
-    ManagedUser userFromProviderRealm;
+    @InjectUser(ref = "alice", realmRef = "provider", config = ProviderRealmUserConf.class)
+    ManagedUser aliceFromProviderRealm;
+
+    @InjectUser(ref = "bob", realmRef = "consumer", config = ConsumerRealmUserConf.class)
+    ManagedUser bobFromConsumerRealm;
 
     @InjectOAuthClient(ref = "consumer", realmRef = "consumer")
     OAuthClient consumerRealmOAuth;
@@ -110,12 +112,23 @@ public class TransientUserTest {
 
     @Test
     public void tesRunActionOnFederatedUser() {
+        runOnServer.run((session -> {
+                    configureSessionContext(session);
+                    PolicyBuilder.create()
+                            .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                            .withConfig("broker-aliases", IDP_OIDC_ALIAS)
+                            .withActions(
+                                    UserActionBuilder.builder(DeleteUserActionProviderFactory.ID)
+                                            .after(Duration.ofDays(1))
+                                            .build()
+                            ).build(session);
+                }));
+
         consumerRealmOAuth.openLoginForm();
         loginPage.clickSocial(IDP_OIDC_ALIAS);
 
         Assertions.assertTrue(driver.getCurrentUrl().contains("/realms/" + providerRealm.getName() + "/"), "Driver should be on the provider realm page right now");
-        String username = userFromProviderRealm.getUsername();
-        loginPage.fillLogin(username, userFromProviderRealm.getPassword());
+        loginPage.fillLogin(aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
         loginPage.submit();
         consentPage.waitForPage();
         consentPage.assertCurrent();
@@ -123,34 +136,53 @@ public class TransientUserTest {
         assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         UsersResource users = consumerRealm.admin().users();
+        String username = aliceFromProviderRealm.getUsername();
         UserRepresentation federatedUser = users.search(username).get(0);
         List<FederatedIdentityRepresentation> federatedIdentities = users.get(federatedUser.getId()).getFederatedIdentity();
         assertFalse(federatedIdentities.isEmpty());
 
         runOnServer.run((session -> {
             RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = PolicyBuilder.create()
-                    .of(FederatedIdentityPolicyProviderFactory.ID)
-                    .withConfig("source", "broker")
-                    .withConfig("source-id", List.of("kc-oidc-alias"))
-                    .withConfig("broker-aliases", IDP_OIDC_ALIAS)
-                    .withActions(
-                            UserActionBuilder.builder(DeleteUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(1))
-                                    .build()
-                    ).build(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
-            manager.runPolicies();
+            manager.runScheduledTasks();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user);
             assertTrue(user.isEnabled());
 
             try {
-                manager = new ResourcePolicyManager(session);
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runPolicies();
+                manager.runScheduledTasks();
                 user = session.users().getUserByUsername(realm, username);
                 assertNull(user);
+            } finally {
+                Time.setOffset(0);
+            }
+        }));
+
+        // now authenticate with bob directly in the consumer realm - he is not associated with the IDP and thus not influenced
+        // by the idp-exclusive lifecycle policy.
+        consumerRealmOAuth.openLoginForm();
+        loginPage.fillLogin(bobFromConsumerRealm.getUsername(), bobFromConsumerRealm.getPassword());
+        loginPage.submit();
+        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+
+        runOnServer.run((session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            // run the scheduled tasks - bob should not be affected.
+            manager.runScheduledTasks();
+            UserModel user = session.users().getUserByUsername(realm, "bob");
+            assertNotNull(user);
+            assertTrue(user.isEnabled());
+
+            try {
+                // run with a time offset - bob should still not be affected.
+                Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
+                manager.runScheduledTasks();
+                user = session.users().getUserByUsername(realm, "bob");
+                assertNotNull(user);
             } finally {
                 Time.setOffset(0);
             }
@@ -190,12 +222,24 @@ public class TransientUserTest {
 
         @Override
         public UserConfigBuilder configure(UserConfigBuilder builder) {
-            builder.username("provider");
+            builder.username("alice");
             builder.password("password");
-            builder.email("provider@local");
+            builder.email("alice@wonderland.org");
             builder.emailVerified(true);
-            builder.name("Provider", "User");
+            builder.name("Alice", "Wonderland");
+            return builder;
+        }
+    }
 
+    private static class ConsumerRealmUserConf implements UserConfig {
+
+        @Override
+        public UserConfigBuilder configure(UserConfigBuilder builder) {
+            builder.username("bob");
+            builder.password("password");
+            builder.email("bob@wonderland.org");
+            builder.emailVerified(true);
+            builder.name("Bob", "Madhatter");
             return builder;
         }
     }
@@ -220,7 +264,6 @@ public class TransientUserTest {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder builder) {
             builder.identityProvider(setUpIdentityProvider());
-
             return builder;
         }
     }

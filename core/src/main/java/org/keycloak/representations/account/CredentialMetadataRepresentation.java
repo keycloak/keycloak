@@ -1,10 +1,13 @@
 package org.keycloak.representations.account;
 
+import java.util.List;
+
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 public class CredentialMetadataRepresentation {
 
     LocalizedMessage infoMessage;
+    List<LocalizedMessage> infoProperties;
     LocalizedMessage warningMessageTitle;
     LocalizedMessage warningMessageDescription;
 
@@ -25,6 +28,14 @@ public class CredentialMetadataRepresentation {
 
     public void setInfoMessage(LocalizedMessage infoMessage) {
         this.infoMessage = infoMessage;
+    }
+
+    public List<LocalizedMessage> getInfoProperties() {
+        return infoProperties;
+    }
+
+    public void setInfoProperties(List<LocalizedMessage> infoProperties) {
+        this.infoProperties = infoProperties;
     }
 
     public LocalizedMessage getWarningMessageTitle() {

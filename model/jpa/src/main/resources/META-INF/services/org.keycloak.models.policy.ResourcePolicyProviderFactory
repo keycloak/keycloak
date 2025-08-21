@@ -15,6 +15,5 @@
 # limitations under the License.
 #
 
-org.keycloak.models.policy.UserCreationDateResourcePolicyProviderFactory
-org.keycloak.models.policy.UserLastSessionRefreshTimeResourcePolicyProviderFactory
-org.keycloak.models.policy.FederatedIdentityPolicyProviderFactory
+org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory
+org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory

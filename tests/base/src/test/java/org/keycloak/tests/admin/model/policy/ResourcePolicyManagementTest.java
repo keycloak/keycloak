@@ -37,7 +37,6 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourceAction;
@@ -46,8 +45,7 @@ import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.ResourcePolicyStateEntity;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
 import org.keycloak.models.policy.UserActionBuilder;
-import org.keycloak.models.policy.UserCreationDateResourcePolicyProviderFactory;
-import org.keycloak.models.policy.UserLastSessionRefreshTimeResourcePolicyProviderFactory;
+import org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -79,7 +77,7 @@ public class ResourcePolicyManagementTest {
             RealmModel realm = configureSessionContext(session);
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
-            ResourcePolicy created = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicy created = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
             assertNotNull(created.getId());
 
             List<ResourcePolicy> policies = manager.getPolicies();
@@ -91,7 +89,7 @@ public class ResourcePolicyManagementTest {
             assertNotNull(policy.getId());
             assertEquals(created.getId(), policy.getId());
             assertNotNull(realm.getComponent(policy.getId()));
-            assertEquals(UserCreationDateResourcePolicyProviderFactory.ID, policy.getProviderId());
+            assertEquals(UserCreationTimeResourcePolicyProviderFactory.ID, policy.getProviderId());
         });
     }
 
@@ -100,7 +98,7 @@ public class ResourcePolicyManagementTest {
         runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
 
             int expectedActionsSize = 5;
 
@@ -141,7 +139,7 @@ public class ResourcePolicyManagementTest {
             UserModel user = session.users().addUser(realm, "test");
 
             // Create a policy with two actions
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
             ResourceAction notify = UserActionBuilder.builder(NotifyUserActionProviderFactory.ID).after(Duration.ofDays(5)).build();
             ResourceAction disable = UserActionBuilder.builder(DisableUserActionProviderFactory.ID).after(Duration.ofDays(10)).build();
             manager.updateActions(policy, List.of(notify, disable));
@@ -180,7 +178,7 @@ public class ResourcePolicyManagementTest {
             user.setEnabled(true);
 
             // Create a policy with notify (5 days) and disable (10 days) actions
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationDateResourcePolicyProviderFactory.ID));
+            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
             ResourceAction notifyAction = UserActionBuilder.builder(NotifyUserActionProviderFactory.ID).after(Duration.ofDays(5)).build();
             ResourceAction disableAction = UserActionBuilder.builder(DisableUserActionProviderFactory.ID).after(Duration.ofDays(10)).build();
             manager.updateActions(policy, List.of(notifyAction, disableAction));
@@ -203,7 +201,7 @@ public class ResourcePolicyManagementTest {
                 ResourcePolicyStateEntity state = em.find(ResourcePolicyStateEntity.class, pk);
 
                 assertNotNull(state, "A state record should have been created for the user.");
-                assertEquals(createdNotifyAction.getId(), state.getLastCompletedActionId(), "The user's state should be at the first action.");
+                assertEquals(createdNotifyAction.getId(), state.getScheduledActionId(), "The user's state should be at the first action.");
             } finally {
                 Time.setOffset(0);
             }
@@ -215,7 +213,7 @@ public class ResourcePolicyManagementTest {
         runOnServer.run(session -> {
             configureSessionContext(session);
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicy policy = manager.addPolicy(UserCreationDateResourcePolicyProviderFactory.ID);
+            ResourcePolicy policy = manager.addPolicy(UserCreationTimeResourcePolicyProviderFactory.ID);
 
             ResourceAction action1 = UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
                     .after(Duration.ofDays(10))
@@ -229,117 +227,6 @@ public class ResourcePolicyManagementTest {
                 manager.updateActions(policy, List.of(action1, action2));
                 fail("Expected exception was not thrown");
             } catch (BadRequestException expected) {}
-        });
-    }
-
-    @Test
-    public void testRunSinglePolicy() {
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = PolicyBuilder.create()
-                    .of(UserLastSessionRefreshTimeResourcePolicyProviderFactory.ID)
-                        .withActions(
-                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(5))
-                                    .build(),
-                            UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(10))
-                                    .build()
-                    ).build(session);
-
-            UserProvider users = session.users();
-            UserModel user = users.getUserByUsername(realm, "alice");
-            assertTrue(user.isEnabled());
-            assertNull(user.getAttributes().get("message"));
-
-            user.setLastSessionRefreshTime(Time.currentTime());
-
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
-                manager.runPolicies();
-                user = users.getUserByUsername(realm, "alice");
-                assertTrue(user.isEnabled());
-                assertNotNull(user.getAttributes().get("message"));
-
-                Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
-                manager.runPolicies();
-                user = users.getUserByUsername(realm, "alice");
-                assertFalse(user.isEnabled());
-                assertNotNull(user.getAttributes().get("message"));
-            } finally {
-                Time.setOffset(0);
-            }
-        });
-    }
-
-    @Test
-    public void testMultiplePolicies() {
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = PolicyBuilder.create()
-                    .of(UserLastSessionRefreshTimeResourcePolicyProviderFactory.ID)
-                    .withActions(
-                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(5))
-                                    .withConfig("message_key", "notifier1")
-                                    .build()
-                    ).of(UserLastSessionRefreshTimeResourcePolicyProviderFactory.ID)
-                    .withActions(
-                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(10))
-                                    .withConfig("message_key", "notifier2")
-                                    .build())
-                    .build(session);
-
-            UserProvider users = session.users();
-            UserModel user = users.getUserByUsername(realm, "alice");
-            assertTrue(user.isEnabled());
-            assertNull(user.getFirstAttribute("notifier1"));
-            assertNull(user.getFirstAttribute("notifier2"));
-
-            user.setLastSessionRefreshTime(Time.currentTime());
-
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
-                manager.runPolicies();
-                user = users.getUserByUsername(realm, "alice");
-                assertTrue(user.isEnabled());
-                assertNotNull(user.getFirstAttribute("notifier1"));
-                assertNull(user.getFirstAttribute("notifier2"));
-                user.removeAttribute("notifier1");
-            } finally {
-                Time.setOffset(0);
-            }
-
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
-                manager.runPolicies();
-                user = users.getUserByUsername(realm, "alice");
-                assertTrue(user.isEnabled());
-                assertNotNull(user.getFirstAttribute("notifier2"));
-                assertNull(user.getFirstAttribute("notifier1"));
-                user.removeAttribute("notifier2");
-            } finally {
-                Time.setOffset(0);
-            }
-
-            try {
-                manager.runPolicies();
-                assertNull(user.getFirstAttribute("notifier1"));
-                assertNull(user.getFirstAttribute("notifier2"));
-            } finally {
-                Time.setOffset(0);
-            }
-
-//            try {
-                //TODO: test re-run policies based on the last time the action was executed?
-//                Time.setOffset(Math.toIntExact(Duration.ofDays(40).toSeconds()));
-//                manager.runPolicies();
-//                assertNotNull(user.getFirstAttribute("notifier1"));
-//                assertNotNull(user.getFirstAttribute("notifier2"));
-//            } finally {
-//                Time.setOffset(0);
-//            }
         });
     }
 

@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultFreeMarkerProviderFactory implements FreeMarkerProviderFactory {
 
-    private DefaultFreeMarkerProvider provider;
+    private volatile DefaultFreeMarkerProvider provider;
     private ConcurrentHashMap<String, Template> cache;
     private KeycloakSanitizerMethod kcSanitizeMethod;
 

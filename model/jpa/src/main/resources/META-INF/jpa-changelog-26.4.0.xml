@@ -38,8 +38,8 @@
             </column>
             <column name="POLICY_PROVIDER_ID" type="VARCHAR(255)" />
             <column name="RESOURCE_TYPE" type="VARCHAR(255)" />
-            <column name="LAST_COMPLETED_ACTION_ID" type="VARCHAR(255)" />
-            <column name="LAST_UPDATED_TIMESTAMP" type="BIGINT" />
+            <column name="SCHEDULED_ACTION_ID" type="VARCHAR(255)" />
+            <column name="SCHEDULED_ACTION_TIMESTAMP" type="BIGINT" />
         </createTable>
 
         <addPrimaryKey
@@ -50,31 +50,13 @@
         <createIndex indexName="IDX_RES_POLICY_STATE_ACTION"
                      tableName="RESOURCE_POLICY_STATE">
             <column name="POLICY_ID" />
-            <column name="LAST_COMPLETED_ACTION_ID" />
+            <column name="SCHEDULED_ACTION_ID" />
         </createIndex>
 
         <createIndex indexName="IDX_RES_POLICY_STATE_PROVIDER"
                      tableName="RESOURCE_POLICY_STATE">
             <column name="RESOURCE_ID" />
             <column name="POLICY_PROVIDER_ID" />
-        </createIndex>
-
-        <!-- constraint to ensure that each resource has only one policy of a specific type -->
-        <addUniqueConstraint
-                constraintName="UC_RES_POLICY_PROVIDER_ID"
-                tableName="RESOURCE_POLICY_STATE"
-                columnNames="RESOURCE_ID, POLICY_PROVIDER_ID"
-        />
-    </changeSet>
-
-    <changeSet id="RLM-add-last-session-refresh-time-to-user-entity" author="keycloak">
-        <addColumn tableName="USER_ENTITY">
-            <column name="LAST_SESSION_REFRESH_TIME" type="BIGINT" />
-        </addColumn>
-
-        <createIndex indexName="IDX_USER_LAST_SESSION_REFRESH_TIME"
-                     tableName="USER_ENTITY">
-            <column name="LAST_SESSION_REFRESH_TIME" />
         </createIndex>
     </changeSet>
 

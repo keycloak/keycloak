@@ -473,17 +473,6 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
-    public void setLastSessionRefreshTime(int lastSessionRefreshTime) {
-        if (ResourcePolicyManager.isFeatureEnabled()) {
-            UserModel delegate = modelSupplier.get();
-
-            if (delegate != null) {
-                delegate.setLastSessionRefreshTime(lastSessionRefreshTime);
-            }
-        }
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserModel)) return false;

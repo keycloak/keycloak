@@ -65,6 +65,6 @@ public class JpaResourcePolicyStateProviderFactory implements ResourcePolicyStat
     private void onUserRemovedEvent(UserRemovedEvent event) {
         KeycloakSession session = event.getKeycloakSession();
         ResourcePolicyStateProvider provider = session.getProvider(ResourcePolicyStateProvider.class);
-        provider.removeByUser(event.getUser());
+        provider.removeByResource(event.getUser().getId());
     }
 }

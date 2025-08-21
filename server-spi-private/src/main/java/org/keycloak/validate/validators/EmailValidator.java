@@ -20,7 +20,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -43,6 +45,8 @@ public class EmailValidator extends AbstractStringValidator implements Configure
 
     public static final String MESSAGE_INVALID_EMAIL = "error-invalid-email";
 
+    public static final String MESSAGE_NON_ASCII_LOCAL_PART_EMAIL = "error-non-ascii-local-part-email";
+
     public static final String MAX_LOCAL_PART_LENGTH_PROPERTY = "max-local-length";
 
     @Override
@@ -61,6 +65,29 @@ public class EmailValidator extends AbstractStringValidator implements Configure
                 ? EmailValidationUtil.isValidEmail(value, maxEmailLocalPartLength)
                 : EmailValidationUtil.isValidEmail(value))) {
             context.addError(new ValidationError(ID, inputHint, MESSAGE_INVALID_EMAIL, value));
+            return;
+        }
+
+        final KeycloakSession session = context.getSession();
+        if (session == null) {
+            return;
+        }
+
+        final RealmModel realm = session.getContext().getRealm();
+        if (realm == null || realm.getSmtpConfig() == null || realm.getSmtpConfig().isEmpty()
+                || "true".equals(realm.getSmtpConfig().get(EmailSenderProvider.CONFIG_ALLOW_UTF8))) {
+            // UTF-8 non-ascii chars allowed because no smtp configuration or allowutf8 is enabled
+            return;
+        }
+
+        final int idx = value.lastIndexOf('@');
+        if (idx < 0) {
+            return;
+        }
+
+        final String localPart = value.substring(0, idx);
+        if (!localPart.chars().allMatch(c -> c < 128)) {
+            context.addError(new ValidationError(ID, inputHint, MESSAGE_NON_ASCII_LOCAL_PART_EMAIL));
         }
     }
     

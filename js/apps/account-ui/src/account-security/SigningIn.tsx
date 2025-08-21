@@ -6,6 +6,10 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  DescriptionList,
+  DescriptionListDescription,
+  DescriptionListGroup,
+  DescriptionListTerm,
   Dropdown,
   DropdownItem,
   MenuToggle,
@@ -124,6 +128,7 @@ export const SigningIn = () => {
     }
     if (
       credMetadata.infoMessage ||
+      credMetadata.infoProperties ||
       (credMetadata.warningMessageTitle &&
         credMetadata.warningMessageDescription)
     ) {
@@ -144,6 +149,30 @@ export const SigningIn = () => {
                   ),
                 )}
               </p>
+            )}
+            {credMetadata.infoProperties && (
+              <Split className="pf-v5-u-mb-lg">
+                <SplitItem>
+                  <InfoAltIcon />
+                </SplitItem>
+                <SplitItem isFilled className="pf-v5-u-ml-xs">
+                  <DescriptionList
+                    isHorizontal
+                    horizontalTermWidthModifier={{
+                      "2xl": "15ch",
+                    }}
+                  >
+                    {credMetadata.infoProperties.map((prop) => (
+                      <DescriptionListGroup key={prop.key}>
+                        <DescriptionListTerm>{t(prop.key)}</DescriptionListTerm>
+                        <DescriptionListDescription>
+                          {prop.parameters ? prop.parameters[0] : ""}
+                        </DescriptionListDescription>
+                      </DescriptionListGroup>
+                    ))}
+                  </DescriptionList>
+                </SplitItem>
+              </Split>
             )}
             {credMetadata.warningMessageTitle &&
               credMetadata.warningMessageDescription && (

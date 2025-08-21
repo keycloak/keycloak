@@ -24,8 +24,6 @@ import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -78,14 +76,6 @@ public class ImportAtStartupDistTest {
     @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.exportimport.ExportImportManager:debug"})
     void testIgnoreFileWithUnsupportedExtension(CLIResult cliResult) {
         cliResult.assertMessage("Ignoring import file because it is not a valid file");
-    }
-
-    @Test
-    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    @Launch({"start-dev", "--import-realm=some-file"})
-    void failSetValueToImportRealmOption(CLIResult cliResult) {
-        cliResult.assertError("option '--import-realm' should be specified without 'some-file' parameter");
     }
 
     @Test

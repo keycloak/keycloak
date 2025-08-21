@@ -66,6 +66,15 @@ public class WebAuthnCredentialModel extends CredentialModel {
         return credentialModel;
     }
 
+    public static WebAuthnCredentialModel create(String id, String credentialType, Long createdDate, String userLabel, WebAuthnCredentialData credentialData, WebAuthnSecretData secretData) {
+        WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialType, credentialData, secretData);
+        credentialModel.fillCredentialModelFields();
+        credentialModel.setId(id);
+        credentialModel.setCreatedDate(createdDate);
+        credentialModel.setUserLabel(userLabel);
+        return credentialModel;
+    }
+
 
     public static WebAuthnCredentialModel createFromCredentialModel(CredentialModel credentialModel) {
         try {

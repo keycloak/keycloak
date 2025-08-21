@@ -20,8 +20,8 @@ include::../partials/concepts/perf_recommendations.adoc[]
 <#include "/high-availability/partials/concepts/perf_measuring_running_instance.adoc" />
 
 [#single-cluster-single-site-calculation]
-=== Calculation example (single site)
+=== Calculation example (single cluster)
 
-include::../partials/concepts/perf_single_site_calculation.adoc[]
+include::../partials/concepts/perf_single_cluster_calculation.adoc[]
 
 </@tmpl.guide>

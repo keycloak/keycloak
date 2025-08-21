@@ -22,7 +22,7 @@ Follow these steps to remove a site from the load balancer so that no traffic ca
 +
 <#include "/high-availability/partials/accelerator/nlb-arn.adoc" />
 +
-. Update the Accelerator EndpointGroup to only include a single site
+. Update the Accelerator EndpointGroup to only include a single cluster
 +
 <#include "/high-availability/partials/accelerator/endpoint-group.adoc" />
 +

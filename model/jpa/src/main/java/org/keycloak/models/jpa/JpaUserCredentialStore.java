@@ -63,7 +63,11 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = em.find(CredentialEntity.class, cred.getId());
         if (!checkCredentialEntity(entity, user)) return;
-        validateDuplicateCredential(realm, user, cred.getUserLabel(), cred.getId());
+        if (!Objects.equals(cred.getUserLabel(), entity.getUserLabel())) {
+            // For legacy entries in the credentials, there might be a duplicate for historical reasons.
+            // Ignore them when the credential is updated, which might happen when credentials are verified.
+            validateDuplicateCredential(realm, user, cred.getUserLabel(), cred.getId());
+        }
         entity.setCreatedDate(cred.getCreatedDate());
         entity.setUserLabel(cred.getUserLabel());
         entity.setType(cred.getType());

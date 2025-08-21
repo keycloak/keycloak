@@ -47,11 +47,11 @@ public class ResourcePolicyStateEntity {
     @Column(name = "POLICY_PROVIDER_ID")
     private String policyProviderId;
 
-    @Column(name = "LAST_COMPLETED_ACTION_ID")
-    private String lastCompletedActionId;
+    @Column(name = "SCHEDULED_ACTION_ID")
+    private String scheduledActionId;
 
-    @Column(name = "LAST_UPDATED_TIMESTAMP")// might be useful?? - audit?
-    private long lastUpdatedTimestamp;
+    @Column(name = "SCHEDULED_ACTION_TIMESTAMP")
+    private long scheduledActionTimestamp;
 
     public String getResourceId() {
         return resourceId;
@@ -85,20 +85,20 @@ public class ResourcePolicyStateEntity {
         this.resourceType = resourceType;
     }
 
-    public String getLastCompletedActionId() {
-        return lastCompletedActionId;
+    public String getScheduledActionId() {
+        return scheduledActionId;
     }
 
-    public void setLastCompletedActionId(String lastCompletedActionId) {
-        this.lastCompletedActionId = lastCompletedActionId;
+    public void setScheduledActionId(String scheduledActionId) {
+        this.scheduledActionId = scheduledActionId;
     }
 
-    public long getLastUpdatedTimestamp() {
-        return lastUpdatedTimestamp;
+    public long getScheduledActionTimestamp() {
+        return scheduledActionTimestamp;
     }
 
-    public void setLastUpdatedTimestamp(long lastUpdatedTimestamp) {
-        this.lastUpdatedTimestamp = lastUpdatedTimestamp;
+    public void setScheduledActionTimestamp(long scheduledActionTimestamp) {
+        this.scheduledActionTimestamp = scheduledActionTimestamp;
     }
 
     public static class PrimaryKey implements Serializable {

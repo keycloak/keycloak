@@ -27,28 +27,29 @@ import java.util.Collections;
 import java.util.List;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserEntity;
 
 public abstract class AbstractUserResourcePolicyProvider implements ResourcePolicyProvider {
 
     private final ComponentModel policyModel;
     private final EntityManager em;
+    private final KeycloakSession session;
 
     public AbstractUserResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
         this.policyModel = model;
         this.em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        this.session = session;
     }
 
     public abstract Predicate timePredicate(long time, CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> userRoot);
 
-    @Override
-    public void close() {
-        // no-op
-    }
+    // For each user row, a subquery is executed to check if a corresponding record exists in
+    // the state table. If no record is found, the condition is met -> user is eligible for initial action
 
-    // For each user row, a subquery is executed to check if a corresponding record exists in 
-    // the state table. If no record is found, the condition is met -> user is eligable for initial action 
     @Override
     public List<String> getEligibleResourcesForInitialAction(long time) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -78,7 +79,6 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
 
         return em.createQuery(query).getResultList();
     }
-
     @Override
     public List<String> filterEligibleResources(List<String> candidateResourceIds, long time) {
         // If there are no candidates, return an empty list
@@ -102,11 +102,76 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
         return em.createQuery(query).getResultList();
     }
 
+    /**
+     * Indicates whether the specified resource is in the scope of this policy. For example, a policy associated with a
+     * broker is applicable only to users with a federated identity associated with the same broker.
+     *
+     * @param resourceId the id of the resource being checked.
+     * @return {@code true} if the resource is in the policy scope; {@code false} otherwise.
+     */
+    protected boolean isResourceInScope(String resourceId) {
+        UserModel user = this.getSession().users().getUserById(this.getRealm(), resourceId);
+        if (user != null) {
+            List<String> brokerAliases = this.getBrokerAliases();
+            if (!brokerAliases.isEmpty()) {
+                return session.users().getFederatedIdentitiesStream(this.getRealm(), user)
+                        .map(FederatedIdentityModel::getIdentityProvider)
+                        .anyMatch(brokerAliases::contains);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean supports(ResourceType type) {
+        return ResourceType.USERS.equals(type);
+    }
+
+    @Override
+    public boolean scheduleOnEvent(ResourcePolicyEvent event) {
+        return this.supports(event.getResourceType())
+                && this.getSupportedOperationsForScheduling().contains(event.getOperation())
+                && this.isResourceInScope(event.getResourceId());
+    }
+
+    @Override
+    public boolean resetOnEvent(ResourcePolicyEvent event) {
+        return this.supports(event.getResourceType())
+                && this.getSupportedOperationsForResetting().contains(event.getOperation())
+                && this.isResourceInScope(event.getResourceId());
+    }
+
+    @Override
+    public void close() {
+        // no-op
+    }
+
+    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
+        return List.of();
+    }
+
+    protected List<ResourceOperationType> getSupportedOperationsForResetting() {
+        return List.of();
+    }
+
     protected EntityManager getEntityManager() {
         return em;
     }
 
-    public ComponentModel getModel() {
+    protected ComponentModel getModel() {
         return policyModel;
+    }
+
+    protected KeycloakSession getSession() {
+        return session;
+    }
+
+    protected RealmModel getRealm() {
+        return getSession().getContext().getRealm();
+    }
+
+    protected List<String> getBrokerAliases() {
+        return getModel().getConfig().getOrDefault("broker-aliases", List.of());
     }
 }

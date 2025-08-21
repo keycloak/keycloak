@@ -27,6 +27,8 @@ import java.util.Map;
  */
 public interface EmailSenderProvider extends Provider {
 
+    String CONFIG_ALLOW_UTF8 = "allowutf8";
+
     default void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
         send(config, user.getEmail(), subject, textBody, htmlBody);
     }

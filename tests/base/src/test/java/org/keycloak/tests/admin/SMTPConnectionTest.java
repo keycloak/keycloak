@@ -25,6 +25,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.AccessToken;
@@ -246,6 +247,11 @@ public class SMTPConnectionTest {
         assertMailReceived();
 
         // utf8 on address
+        RealmResource realmRes = adminClient.realms().realm(managedRealm.getName());
+        RealmRepresentation realmRep = realmRes.toRepresentation();
+        realmRep.getSmtpServer().put(EmailSenderProvider.CONFIG_ALLOW_UTF8, Boolean.TRUE.toString());
+        realmRes.update(realmRep);
+
         AccessToken token = oAuthClient.parseToken(adminClient.tokenManager().getAccessToken().getToken(), AccessToken.class);
         UserResource userRes = adminClient.realm("default").users().get(token.getSubject());
         UserRepresentation userRep = userRes.toRepresentation();
@@ -267,6 +273,8 @@ public class SMTPConnectionTest {
         } finally {
             userRep.setEmail(previousEmail);
             userRes.update(userRep);
+            realmRep.getSmtpServer().remove(EmailSenderProvider.CONFIG_ALLOW_UTF8);
+            realmRes.update(realmRep);
         }
     }
 
@@ -315,7 +323,7 @@ public class SMTPConnectionTest {
         config.put("replyTo", replyTo);
         config.put("envelopeFrom", envelopeFrom);
         if (allowutf8 != null) {
-            config.put("allowutf8", allowutf8);
+            config.put(EmailSenderProvider.CONFIG_ALLOW_UTF8, allowutf8);
         }
         return config;
     }

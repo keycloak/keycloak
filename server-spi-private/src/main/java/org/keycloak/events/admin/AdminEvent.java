@@ -65,6 +65,17 @@ public class AdminEvent {
         this.details = toCopy.getDetails() == null ? null : new HashMap<>(toCopy.getDetails());
     }
 
+    public String getResourceId() {
+        if (this.resourcePath != null) {
+            int slashIndex = this.resourcePath.lastIndexOf("/");
+            if (slashIndex < this.resourcePath.length() - 1) {
+                // return the id that is found after the last slash
+                return this.resourcePath.substring(slashIndex + 1);
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns the UUID of the event.
      *

@@ -25,9 +25,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class FederatedIdentityPolicyProviderFactory implements ResourcePolicyProviderFactory<FederatedIdentityPolicyProvider> {
+public class UserCreationTimeResourcePolicyProviderFactory implements ResourcePolicyProviderFactory<UserCreationTimeResourcePolicyProvider> {
 
-    public static final String ID = "federated-identity-policy";
+    public static final String ID = "user-creation-time-resource-policy";
 
     @Override
     public ResourceType getType() {
@@ -35,8 +35,8 @@ public class FederatedIdentityPolicyProviderFactory implements ResourcePolicyPro
     }
 
     @Override
-    public FederatedIdentityPolicyProvider create(KeycloakSession session, ComponentModel model) {
-        return new FederatedIdentityPolicyProvider(session, model);
+    public UserCreationTimeResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
+        return new UserCreationTimeResourcePolicyProvider(session, model);
     }
 
     @Override
@@ -46,6 +46,7 @@ public class FederatedIdentityPolicyProviderFactory implements ResourcePolicyPro
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        // no-op
     }
 
     @Override

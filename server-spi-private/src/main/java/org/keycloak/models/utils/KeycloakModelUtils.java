@@ -110,6 +110,9 @@ public final class KeycloakModelUtils {
 
     public static final int MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE = 25;
 
+    public static final int DEFAULT_RSA_KEY_SIZE = 4096;
+    public static final int DEFAULT_CERTIFICATE_VALIDITY_YEARS = 3;
+
     private KeycloakModelUtils() {
     }
 
@@ -222,8 +225,8 @@ public final class KeycloakModelUtils {
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject) {
         Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, 3);
-        return generateKeyPairCertificate(subject, 4096, calendar);
+        calendar.add(Calendar.YEAR, DEFAULT_CERTIFICATE_VALIDITY_YEARS);
+        return generateKeyPairCertificate(subject, DEFAULT_RSA_KEY_SIZE, calendar);
     }
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject, int keysize, Calendar endDate) {

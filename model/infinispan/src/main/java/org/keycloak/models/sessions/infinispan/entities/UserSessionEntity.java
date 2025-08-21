@@ -272,8 +272,6 @@ public class UserSessionEntity extends SessionEntity {
 
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
-
-        user.setLastSessionRefreshTime(entity.getLastSessionRefresh());
     }
 
     public static UserSessionEntity createFromModel(UserSessionModel userSession) {

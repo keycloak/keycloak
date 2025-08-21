@@ -41,9 +41,9 @@ SERVER_OPTS="$SERVER_OPTS -Dpicocli.disable.closures=true"
 SERVER_OPTS="$SERVER_OPTS -Dquarkus-log-max-startup-records=10000"
 CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 
-DEBUG_MODE="${DEBUG:-false}"
-DEBUG_PORT="${DEBUG_PORT:-8787}"
-DEBUG_SUSPEND="${DEBUG_SUSPEND:-n}"
+DEBUG_MODE="${KC_DEBUG:-${DEBUG:-false}}"
+DEBUG_PORT="${KC_DEBUG_PORT:-${DEBUG_PORT:-8787}}"
+DEBUG_SUSPEND="${KC_DEBUG_SUSPEND:-${DEBUG_SUSPEND:-n}}"
 DEBUG_ADDRESS="0.0.0.0:$DEBUG_PORT"
 
 esceval() {

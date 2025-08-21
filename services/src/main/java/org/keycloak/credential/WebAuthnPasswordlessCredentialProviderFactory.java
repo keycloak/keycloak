@@ -18,35 +18,18 @@
 
 package org.keycloak.credential;
 
-import com.webauthn4j.converter.util.ObjectConverter;
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class WebAuthnPasswordlessCredentialProviderFactory implements CredentialProviderFactory<WebAuthnPasswordlessCredentialProvider>, EnvironmentDependentProviderFactory {
+public class WebAuthnPasswordlessCredentialProviderFactory extends WebAuthnCredentialProviderFactory {
 
     public static final String PROVIDER_ID = "keycloak-webauthn-passwordless";
 
-    private ObjectConverter converter;
-
     @Override
     public CredentialProvider create(KeycloakSession session) {
-        return new WebAuthnPasswordlessCredentialProvider(session, createOrGetObjectConverter());
-    }
-
-    private ObjectConverter createOrGetObjectConverter() {
-        if (converter == null) {
-            synchronized (this) {
-                if (converter == null) {
-                    converter = new ObjectConverter();
-                }
-            }
-        }
-        return converter;
+        return new WebAuthnPasswordlessCredentialProvider(session, getMetadataService(), createOrGetObjectConverter());
     }
 
     @Override
@@ -54,8 +37,4 @@ public class WebAuthnPasswordlessCredentialProviderFactory implements Credential
         return PROVIDER_ID;
     }
 
-    @Override
-    public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
-    }
 }

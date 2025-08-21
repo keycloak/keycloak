@@ -466,6 +466,20 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void invalidImportRealmArgument() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--import-realm", "some-file");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.getErrString().contains("Unknown option: 'some-file'"));
+    }
+
+    @Test
+    public void invalidImportRealmEqualsArgument() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--import-realm=some-file");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.getErrString().contains("option '--import-realm' should be specified without 'some-file' parameter"));
+    }
+
+    @Test
     public void wrongLevelForCategory() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
