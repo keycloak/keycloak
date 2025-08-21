@@ -18,12 +18,14 @@
 package org.keycloak.models.policy;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.common.Profile;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class ResourcePolicyEventListenerFactory implements EventListenerProviderFactory {
+public class ResourcePolicyEventListenerFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
@@ -53,5 +55,10 @@ public class ResourcePolicyEventListenerFactory implements EventListenerProvider
     @Override
     public String getId() {
         return "resource-policy-event-listener";
+    }
+
+    @Override
+    public boolean isSupported(Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.RESOURCE_LIFECYCLE);
     }
 }
