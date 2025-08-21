@@ -158,6 +158,9 @@ public class ClusterConfigDistTest {
     void testStartDevDefaultsToLocalCaches(CLIResult result) {
         result.assertStartedDevMode();
         result.assertLocalCache();
+        result.assertNoMessage("JGroups JDBC_PING discovery enabled");
+        result.assertNoMessage("JGroups Encryption enabled.");
+        result.assertNoMessage("Starting JGroups certificate reload manager");
     }
 
     @Test
@@ -193,6 +196,16 @@ public class ClusterConfigDistTest {
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-user-cache.xml"})
     void testCustomUserCacheConfigurationNoWarning(CLIResult result) {
         result.assertNoMessage(WARN_DEFAULT_CACHE_MUTATIONS);
+    }
+
+    @Test
+    @Launch({ "start", "--cache=local", "--http-enabled=true", "--hostname-strict=false"})
+    void testNotClustered(CLIResult result) {
+        result.assertStarted();
+        result.assertLocalCache();
+        result.assertNoMessage("JGroups JDBC_PING discovery enabled");
+        result.assertNoMessage("JGroups Encryption enabled.");
+        result.assertNoMessage("Starting JGroups certificate reload manager");
     }
 
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
