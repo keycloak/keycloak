@@ -136,7 +136,7 @@ public class OrganizationsResource {
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "if true, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("false") boolean briefRepresentation
     ) {
-        auth.realm().requireManageRealm();
+        auth.realm().requireViewRealm();
         Organizations.checkEnabled(provider);
 
         // check if are searching orgs by attribute.
