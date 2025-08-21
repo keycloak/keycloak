@@ -29,8 +29,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.commons.configuration.io.ConfigurationWriter;
+import org.infinispan.commons.io.StringBuilderWriter;
 import org.infinispan.commons.util.Version;
 import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.health.CacheHealth;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -39,6 +43,7 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
+import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
@@ -64,9 +69,8 @@ import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -87,10 +91,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     private Config.Scope config;
 
     private volatile EmbeddedCacheManager cacheManager;
-
     private volatile RemoteCacheManager remoteCacheManager;
-
     private volatile InfinispanConnectionProvider connectionProvider;
+    private volatile ClusterHealth clusterHealth;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -169,15 +172,26 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
             this.remoteCacheManager = createRemoteCacheManager(keycloakSession);
             this.connectionProvider = InfinispanUtils.isRemoteInfinispan() ?
-                  new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
-                  new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
+                    new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
+                    new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
 
+            clusterHealth = GlobalComponentRegistry.componentOf(cacheManager, ClusterHealth.class);
             return connectionProvider;
         }
     }
 
     protected EmbeddedCacheManager createEmbeddedCacheManager(KeycloakSession session) {
         var holder = session.getProvider(CacheEmbeddedConfigProvider.class).configuration();
+
+        StringBuilderWriter sw = new StringBuilderWriter();
+        ParserRegistry parser = new ParserRegistry();
+        try (ConfigurationWriter w = ConfigurationWriter.to(sw).prettyPrint(true).build()) {
+            var globalConfig = holder.getGlobalConfigurationBuilder().build();
+            var cacheConfigs = holder.getNamedConfigurationBuilders().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().build()));
+            parser.serialize(w, globalConfig, cacheConfigs);
+            logger.debugf("Infinispan configuration:\n%s", sw);
+        }
+
         var cm = new DefaultCacheManager(holder, true);
         cm.getCache(KEYS_CACHE_NAME, true);
         cm.getCache(CRL_CACHE_NAME, true);
@@ -290,10 +304,21 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return info;
     }
 
+    @Override
+    public boolean isClusterHealthy() {
+        clusterHealth.triggerClusterHealthCheck();
+        return clusterHealth.isHealthy();
+    }
+
+    @Override
+    public boolean isClusterHealthSupported() {
+        return clusterHealth.isSupported();
+    }
+
     private void addEmbeddedOperationalInfo(Map<String, String> info) {
         var cacheManagerInfo = cacheManager.getCacheManagerInfo();
         info.put("clusterSize", Integer.toString(cacheManagerInfo.getClusterSize()));
-        var cacheNames = Arrays.stream(InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES)
+        var cacheNames = Arrays.stream(CLUSTERED_CACHE_NAMES)
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         for (CacheHealth health : cacheManager.getHealth().getCacheHealth(cacheNames)) {

@@ -17,12 +17,9 @@
 
 package org.keycloak.models.policy;
 
-import java.time.Duration;
-
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.keycloak.common.util.Time;
@@ -30,17 +27,25 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.UserEntity;
 
-public class UserLastSessionRefreshTimeResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
+import java.util.List;
 
-    public UserLastSessionRefreshTimeResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
+import static org.keycloak.models.policy.ResourceOperationType.CREATE;
+
+public class UserCreationTimeResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
+
+    public UserCreationTimeResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
         super(session, model);
     }
 
     @Override
     public Predicate timePredicate(long time, CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> userRoot) {
-        long currentTimeSeconds = Time.currentTime();
-        Path<Long> lastSessionRefreshTime = userRoot.get("lastSessionRefreshTime");
-        Expression<Long> lastSessionRefreshTimeExpiration = cb.sum(lastSessionRefreshTime, cb.literal(Duration.ofMillis(time).toSeconds()));
-        return cb.and(cb.isNotNull(lastSessionRefreshTime), cb.lessThan(lastSessionRefreshTimeExpiration, cb.literal(currentTimeSeconds)));
+        long currentTimeMillis = Time.currentTimeMillis();
+        Expression<Long> timeMoment = cb.sum(userRoot.get("createdTimestamp"), cb.literal(time));
+        return cb.lessThan(timeMoment, cb.literal(currentTimeMillis));
+    }
+
+    @Override
+    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
+        return List.of(CREATE);
     }
 }

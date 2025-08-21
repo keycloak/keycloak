@@ -17,55 +17,48 @@
 
 package org.keycloak.models.policy;
 
-import java.util.List;
-
-import org.keycloak.Config;
-import org.keycloak.component.ComponentModel;
+import org.keycloak.Config.Scope;
+import org.keycloak.common.Profile;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class UserCreationDateResourcePolicyProviderFactory implements ResourcePolicyProviderFactory<UserCreationDateResourcePolicyProvider> {
-
-    public static final String ID = "user-creation-date-resource-policy";
+public class ResourcePolicyEventListenerFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
+    public EventListenerProvider create(KeycloakSession session) {
+        return new ResourcePolicyEventListener(session);
     }
 
     @Override
-    public UserCreationDateResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
-        return new UserCreationDateResourcePolicyProvider(session, model);
+    public boolean isGlobal() {
+        return true;
     }
 
     @Override
-    public void init(Config.Scope config) {
-        // no-op
+    public void init(Scope config) {
+
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        // no-op
+
     }
 
     @Override
     public void close() {
-        // no-op
+
     }
 
     @Override
     public String getId() {
-        return ID;
+        return "resource-policy-event-listener";
     }
 
     @Override
-    public String getHelpText() {
-        return "";
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return List.of();
+    public boolean isSupported(Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.RESOURCE_LIFECYCLE);
     }
 }

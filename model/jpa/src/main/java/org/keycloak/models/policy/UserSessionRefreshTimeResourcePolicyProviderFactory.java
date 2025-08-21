@@ -25,9 +25,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class UserLastSessionRefreshTimeResourcePolicyProviderFactory implements ResourcePolicyProviderFactory<UserLastSessionRefreshTimeResourcePolicyProvider> {
+public class UserSessionRefreshTimeResourcePolicyProviderFactory implements ResourcePolicyProviderFactory<UserSessionRefreshTimeResourcePolicyProvider> {
 
-    public static final String ID = "user-last-auth-time-resource-policy";
+    public static final String ID = "user-refresh-time-resource-policy";
 
     @Override
     public ResourceType getType() {
@@ -35,8 +35,8 @@ public class UserLastSessionRefreshTimeResourcePolicyProviderFactory implements 
     }
 
     @Override
-    public UserLastSessionRefreshTimeResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
-        return new UserLastSessionRefreshTimeResourcePolicyProvider(session, model);
+    public UserSessionRefreshTimeResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
+        return new UserSessionRefreshTimeResourcePolicyProvider(session, model);
     }
 
     @Override
