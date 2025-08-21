@@ -59,6 +59,9 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     public FormAuthenticationFlow(AuthenticationProcessor processor, AuthenticationExecutionModel execution) {
         this.processor = processor;
+        if (execution == null) {
+            throw new AuthenticationFlowException("Execution not provided to flow", AuthenticationFlowError.INTERNAL_ERROR);
+        }
         this.formExecution = execution;
         formActionExecutions = processor.getRealm().getAuthenticationExecutionsStream(execution.getFlowId()).collect(Collectors.toList());
         formAuthenticator = processor.getSession().getProvider(FormAuthenticator.class, execution.getAuthenticator());
