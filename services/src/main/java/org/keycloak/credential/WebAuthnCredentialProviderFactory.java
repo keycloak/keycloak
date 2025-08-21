@@ -27,7 +27,7 @@ public class WebAuthnCredentialProviderFactory implements CredentialProviderFact
 
     public static final String PROVIDER_ID = "keycloak-webauthn";
 
-    private ObjectConverter converter;
+    private volatile ObjectConverter converter;
     private volatile WebAuthnMetadataService metadataService;
 
     @Override
