@@ -95,6 +95,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
@@ -118,6 +119,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
+import org.keycloak.quarkus.runtime.services.health.KeycloakClusterReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -787,12 +789,29 @@ class KeycloakProcessor {
 
     @BuildStep
     void disableHealthCheckBean(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
-        if (!isHealthEnabled() || !isMetricsEnabled()) {
-            // disables the single check we provide which depends on metrics enabled
-            ClassInfo disabledBean = index.getIndex()
-                    .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
-            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
+        if (isHealthDisabled()) {
+            disableReadyHealthCheck(removeBeans, index);
+            disableClusterHealthCheck(removeBeans, index);
+            return;
         }
+        if (isMetricsDisabled()) {
+            // disables the single check we provide which depends on metrics enabled.
+            disableReadyHealthCheck(removeBeans, index);
+        }
+        if (InfinispanUtils.isRemoteInfinispan()) {
+            // no cluster when the remote infinispan is used.
+            disableClusterHealthCheck(removeBeans, index);
+        }
+    }
+
+    private static void disableClusterHealthCheck(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        ClassInfo clusterHealth = index.getIndex().getClassByName(DotName.createSimple(KeycloakClusterReadyHealthCheck.class));
+        removeBeans.produce(new BuildTimeConditionBuildItem(clusterHealth.asClass(), false));
+    }
+
+    private static void disableReadyHealthCheck(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        ClassInfo disabledBean = index.getIndex().getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
+        removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
     }
 
     @BuildStep
@@ -1105,12 +1124,12 @@ class KeycloakProcessor {
         }
     }
 
-    private boolean isMetricsEnabled() {
-        return Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
+    private static boolean isMetricsDisabled() {
+        return !Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
     }
 
-    private boolean isHealthEnabled() {
-        return Configuration.isTrue(HealthOptions.HEALTH_ENABLED);
+    private static boolean isHealthDisabled() {
+        return !Configuration.isTrue(HealthOptions.HEALTH_ENABLED);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {
