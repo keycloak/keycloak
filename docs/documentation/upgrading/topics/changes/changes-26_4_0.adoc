@@ -133,13 +133,14 @@ The input fields  in the login theme for OTP and recovery codes and have been op
 
 * The input mode is now `numeric`, which will ease the input on mobile devices.
 * The auto-complete is set to `one-time-code` to avoid interference with password managers.
+
 === UTF-8 management in the email sender
 
 Since this release, {project_name} adds a new option `allowutf8` for the realm SMTP configuration (*Allow UTF-8* field inside the *Email* tab in the *Realm settings* section of the Admin Console).
 For more information about email configuration, see the link:{adminguide_link}#_email[Configuring email for a realm] chapter in the {adminguide_name}.
 
 Enabling the option encodes email addresses in UTF-8 when sending them, but it depends on the SMTP server to also supports UTF-8 via the SMTPUTF8 extension.
-If *Allow UTF-8* is disabled, {project_name} will encode the domain part of the email address (second part after `@`) using punycode if non-ASCII characters are used, and will reject email addresses that use non-ASCII characters in the local part.
+If *Allow UTF-8* is disabled, {project_name} will encode the domain part of the email address (second part after `@`) using punycode if non-ASCII characters are used, and will reject email addresses that use non-ASCII characters in the local part. The built-in User Profile email validator also checks that the local part of the address contains only ASCII characters when this option is disabled, avoiding the registration of emails that cannot be used by the SMTP configuration.
 
 If you have an SMTP server configured for your realm, perform the following migration after the upgrade:
 
@@ -147,8 +148,7 @@ If you have an SMTP server configured for your realm, perform the following migr
 . Enable the *Allow UTF-8* option.
 * If your SMTP server does not support SMTPUTF8:
 . Keep the *Allow UTF-8* option disabled.
-. Verify that no email addresses of users have non-ASCII characters in the local part of the email address.
-. Update the validation of email addresses to prevent allow non-ASCII characters in the local part of the email address, for example, by adding a regex pattern validation in the user profile for the email address field similar to `\p&#123;ASCII&#125;*@.*` with an error message similar to `Local part of the address must contain only ASCII characters`.
+. Verify that no email addresses of users have non-ASCII characters in the local part of the email address. If you detect emails with non-ascii characters in the local part you can use the Verify Profile action to force the user to modify the email after the upgrade.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
