@@ -29,7 +29,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -75,7 +74,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -125,7 +123,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     CredentialRequestEncryptionMetadata requestEncryption = issuer.getCredentialRequestEncryption();
                     assertNotNull(requestEncryption);
 
-                    assertTrue(requestEncryption.getEncryptionRequired());
+                    assertTrue(requestEncryption.isEncryptionRequired());
 
                     assertEquals(List.of(JWEConstants.A256GCM), requestEncryption.getEncValuesSupported());
 
@@ -173,7 +171,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
                 CredentialRequestEncryptionMetadata requestEncryption = oid4vciIssuerConfig.getCredentialRequestEncryption();
                 assertNotNull("Request encryption support should be advertised in metadata", requestEncryption);
-                assertTrue("Encryption should be required", requestEncryption.getEncryptionRequired());
+                assertTrue("Encryption should be required", requestEncryption.isEncryptionRequired());
 
                 assertFalse("Supported encryption methods should not be empty",
                         requestEncryption.getEncValuesSupported().isEmpty());

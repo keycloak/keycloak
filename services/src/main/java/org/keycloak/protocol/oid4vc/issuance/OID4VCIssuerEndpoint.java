@@ -396,7 +396,7 @@ public class OID4VCIssuerEndpoint {
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
         CredentialRequestEncryptionMetadata requestEncryptionMetadata = issuerMetadata.getCredentialRequestEncryption();
         boolean isRequestEncryptionRequired = Optional.ofNullable(requestEncryptionMetadata)
-                .map(CredentialRequestEncryptionMetadata::getEncryptionRequired)
+                .map(CredentialRequestEncryptionMetadata::isEncryptionRequired)
                 .orElse(false);
 
         // Determine if the request is a JWE
@@ -550,19 +550,24 @@ public class OID4VCIssuerEndpoint {
 
         // Validate typ header
         if (!"jwt".equalsIgnoreCase(header.getType())) {
-            throw new JWEException("JWE typ header must be 'jwt'" + ErrorType.INVALID_ENCRYPTION_PARAMETERS);
+            LOGGER.debugf("Invalid typ header: %s", header.getType());
+            throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
         }
 
         // Validate alg and enc against supported values
         String enc = header.getEncryptionAlgorithm();
         if (!metadata.getEncValuesSupported().contains(enc)) {
-            throw new JWEException("Unsupported enc algorithm: " + enc + ErrorType.INVALID_ENCRYPTION_PARAMETERS);
+            String errorMessage = String.format("Unsupported content encryption algorithm: enc=%s", enc);
+            LOGGER.debugf(errorMessage);
+            throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
         }
 
         // Handle compression if present
         String zip = header.getCompressionAlgorithm();
         if (zip != null && (metadata.getZipValuesSupported() == null || !metadata.getZipValuesSupported().contains(zip))) {
-            throw new JWEException("Unsupported zip algorithm: " + zip + ErrorType.INVALID_ENCRYPTION_PARAMETERS);
+            String errorMessage = String.format("Unsupported compression algorithm: zip=%s", zip);
+            LOGGER.debugf(errorMessage);
+            throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
         }
 
         // Get a private key from KeyManager based on kid
@@ -659,31 +664,22 @@ public class OID4VCIssuerEndpoint {
             return null;
         }
 
-        // Prefer alg from JWK if present and supported
+        // The alg parameter MUST be present in the JWK
         String jwkAlg = jwk.getAlgorithm();
-        if (jwkAlg != null && supportedAlgs.contains(jwkAlg)) {
+        if (jwkAlg == null) {
+            // If alg is missing from JWK, this is invalid
+            LOGGER.debugf("JWK is missing required 'alg' parameter for key type: %s", jwk.getKeyType());
+            return null;
+        }
+
+        // Verify the alg is supported by the server
+        if (supportedAlgs.contains(jwkAlg)) {
             return jwkAlg;
         }
 
-        // Otherwise, select based on kty (Key Type)
-        String kty = jwk.getKeyType();
-        if (RSA.equals(kty)) {
-            // Prefer RSA-OAEP-256 if supported, else RSA-OAEP
-            if (supportedAlgs.contains(JWEConstants.RSA_OAEP_256)) {
-                return JWEConstants.RSA_OAEP_256;
-            } else if (supportedAlgs.contains(JWEConstants.RSA_OAEP)) {
-                return JWEConstants.RSA_OAEP;
-            }
-        } else if (EC.equals(kty) || OKP.equals(kty)) {
-            // For EC/OKP, prefer ECDH-ES+A256KW if supported, else ECDH-ES
-            if (supportedAlgs.contains(JWEConstants.ECDH_ES_A256KW)) {
-                return JWEConstants.ECDH_ES_A256KW;
-            } else if (supportedAlgs.contains(JWEConstants.ECDH_ES)) {
-                return JWEConstants.ECDH_ES;
-            }
-        }
-
-        // If no match, return null to trigger error
+        // If the JWK's alg is not supported, we cannot proceed
+        LOGGER.debugf("JWK algorithm '%s' is not supported by the server. Supported algorithms: %s",
+                jwkAlg, supportedAlgs);
         return null;
     }
 
@@ -774,11 +770,9 @@ public class OID4VCIssuerEndpoint {
             try (DeflaterOutputStream deflate = new DeflaterOutputStream(out)) {
                 deflate.write(content);
             }
-            
             return out.toByteArray();
-
         }
-        throw new IOException("Unsupported compression algorithm: " + zipAlgorithm);
+        throw new IllegalArgumentException("Unsupported compression algorithm: " + zipAlgorithm);
     }
 
 

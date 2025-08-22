@@ -26,7 +26,7 @@ import java.util.List;
 
 /**
  * Represents the credential_request_encryption metadata for an OID4VCI Credential Issuer.
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-credential-issuer-metadata-p}
+ * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p
  *
  * @author <a href="mailto:Bertrand.Ogen@adorsys.com">Bertrand Ogen</a>
  */
@@ -72,7 +72,7 @@ public class CredentialRequestEncryptionMetadata {
         return this;
     }
 
-    public Boolean getEncryptionRequired() {
+    public Boolean isEncryptionRequired() {
         return encryptionRequired;
     }
 
