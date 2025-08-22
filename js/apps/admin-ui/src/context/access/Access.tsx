@@ -1,11 +1,12 @@
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
+import {
+  createNamedContext,
+  KeycloakSpinner,
+  useRequiredContext,
+} from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useEffect, useState } from "react";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import {
-  createNamedContext,
-  useRequiredContext,
-} from "@keycloak/keycloak-ui-shared";
 
 type AccessContextProps = {
   hasAccess: (...types: AccessType[]) => boolean;
@@ -22,13 +23,17 @@ export const useAccess = () => useRequiredContext(AccessContext);
 export const AccessContextProvider = ({ children }: PropsWithChildren) => {
   const { whoAmI } = useWhoAmI();
   const { realm } = useRealm();
-  const [access, setAccess] = useState<readonly AccessType[]>([]);
+  const [access, setAccess] = useState<readonly AccessType[]>();
 
   useEffect(() => {
-    if (whoAmI.getRealmAccess()[realm]) {
-      setAccess(whoAmI.getRealmAccess()[realm]);
+    if (whoAmI.realm_access[realm]) {
+      setAccess(whoAmI.realm_access[realm]);
     }
   }, [whoAmI, realm]);
+
+  if (!access) {
+    return <KeycloakSpinner />;
+  }
 
   const hasAccess = (...types: AccessType[]): boolean => {
     return types.every(
