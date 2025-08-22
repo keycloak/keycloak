@@ -12,6 +12,8 @@ import org.keycloak.models.UserModel;
 
 public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredActionFactory {
 
+    private boolean updateOnClientRequestedLocale;
+
     @Override
     public String getDisplayText() {
         return "Update User Locale";
@@ -19,18 +21,19 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
+        LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
+
         String userRequestedLocale = context.getAuthenticationSession().getAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE);
+        String clientRequestedLocale = context.getAuthenticationSession ().getClientNote (LocaleSelectorProvider.CLIENT_REQUEST_LOCALE);
         if (userRequestedLocale != null) {
-            LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
             updater.updateUsersLocale(context.getUser(), userRequestedLocale);
+        } else if (updateOnClientRequestedLocale && clientRequestedLocale != null) {
+            updater.updateUsersLocale(context.getUser(), clientRequestedLocale);
         } else {
             String userLocale = context.getUser().getFirstAttribute(UserModel.LOCALE);
-
             if (userLocale != null) {
-                LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
                 updater.updateLocaleCookie(userLocale);
             } else {
-                LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
                 updater.expireLocaleCookie();
             }
         }
@@ -51,6 +54,7 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
 
     @Override
     public void init(Config.Scope config) {
+        this.updateOnClientRequestedLocale = config.getBoolean("updateOnClientRequestedLocale", false);
     }
 
     @Override
