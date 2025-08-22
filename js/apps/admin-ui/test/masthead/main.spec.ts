@@ -88,7 +88,12 @@ test.describe("Masthead tests", () => {
     test("Login without privileges to see admin console", async ({ page }) => {
       await logout(page);
       await login(page, username, "test", realmName);
-      await logout(page, "Test User");
+      await expect(
+        page.getByText(
+          "You do not have permission to access this resource, sign in with a user that has permission, or contact your administrator.",
+        ),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Sign out" }).click();
       await expect(page).toHaveURL(/\/auth/);
     });
   });
