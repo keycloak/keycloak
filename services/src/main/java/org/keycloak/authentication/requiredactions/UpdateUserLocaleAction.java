@@ -9,10 +9,27 @@ import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredActionFactory {
 
-    private boolean updateOnClientRequestedLocale;
+    public static final String UPDATE_ON_CLIENT_REQUESTED_LOCALE_KEY = "update_on_client_requested_locale";
+
+    static List<ProviderConfigProperty> getUpdateOnClientRequestedLocalePropertyConfig() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(UPDATE_ON_CLIENT_REQUESTED_LOCALE_KEY)
+                .label("Update on Client Requested Locale")
+                .helpText("If enabled and client requested locale (ui_locales parameter) is present the user's locale is updated by this locale. If both user and client locales are present, the user requested locale takes precedence.")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue(Boolean.FALSE)
+                .add()
+                .build();
+    }
 
     @Override
     public String getDisplayText() {
@@ -21,6 +38,8 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
+        boolean updateOnClientRequestedLocale = Boolean.parseBoolean(context.getConfig().getConfigValue(UPDATE_ON_CLIENT_REQUESTED_LOCALE_KEY));
+
         LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
 
         String userRequestedLocale = context.getAuthenticationSession().getAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE);
@@ -48,13 +67,20 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
     }
 
     @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        List<ProviderConfigProperty> result = new ArrayList<>();
+        result.addAll(RequiredActionFactory.super.getConfigMetadata());
+        result.addAll(getUpdateOnClientRequestedLocalePropertyConfig());
+        return List.copyOf(result);
+    }
+
+    @Override
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
     }
 
     @Override
     public void init(Config.Scope config) {
-        this.updateOnClientRequestedLocale = config.getBoolean("updateOnClientRequestedLocale", false);
     }
 
     @Override
