@@ -99,7 +99,7 @@ public abstract class AbstractVaultProvider implements VaultProvider {
      * @return a boolean indicating whether the validation passed.
      */
     protected boolean validate(VaultKeyResolver resolver, String key, String resolvedKey) {
-        if (key.contains(File.separator)) {
+        if (key.indexOf('/') >= 0 || key.indexOf(File.separatorChar) >= 0) {
             logger.warnf("Key %s contains invalid file separator character", key);
             return false;
         }
