@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -48,6 +49,7 @@ import org.openqa.selenium.By;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -635,33 +637,35 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     private void setupTotpRegisterVerifyRecoveryCodesSetup(boolean enforceRecoveryCodesSetup) {
         configureTotpActionToEnforceRecoveryCodes(enforceRecoveryCodesSetup);
 
-        // Login
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
-        // Configure OTP as AIA
-        doAIA();
-        totpPage.assertCurrent();
-        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
-
-        // The next page should be the setup page for recovery codes
-        setupRecoveryAuthnCodesPage.assertCurrent();
-        setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
-
-        // call the action the second time, now no recovery code setup should be shown
-        doAIA();
-        totpPage.assertCurrent();
-        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
         try {
-            // This should now fail
-            setupRecoveryAuthnCodesPage.assertCurrent();
-            Assert.fail("Expected AssertionError was not thrown");
-        } catch (AssertionError e) {
-            Assert.assertTrue(e.getMessage().startsWith("Expected SetupRecoveryAuthnCodesPage"));
-        }
+            // Login
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
 
-        // finally, reset totp action config
-        configureTotpActionToEnforceRecoveryCodes(false);
+            // Configure OTP as AIA
+            doAIA();
+            totpPage.assertCurrent();
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+
+            // The next page should be the setup page for recovery codes
+            setupRecoveryAuthnCodesPage.assertCurrent();
+            setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+
+            // call the action the second time, now no recovery code setup should be shown
+            doAIA();
+            totpPage.assertCurrent();
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+            try {
+                // This should now fail
+                setupRecoveryAuthnCodesPage.assertCurrent();
+                Assert.fail("Expected AssertionError was not thrown");
+            } catch (AssertionError e) {
+                Assert.assertTrue(e.getMessage().startsWith("Expected SetupRecoveryAuthnCodesPage"));
+            }
+        } finally {
+            // finally, reset totp action config
+            configureTotpActionToEnforceRecoveryCodes(false);
+        }
     }
 
     private void configureTotpActionToEnforceRecoveryCodes(boolean enforceRecoveryCodes) {
@@ -669,6 +673,12 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         RequiredActionProviderRepresentation totpAction = requiredActions.stream().filter(ra -> ra.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())).findFirst().orElseThrow();
         totpAction.setConfig(Map.of(UpdateTotp.ADD_RECOVERY_CODES, Boolean.toString(enforceRecoveryCodes)));
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
+        testRealm().flows().getExecutions("browser").forEach(exe -> {
+            if (Objects.equals(exe.getProviderId(), RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)) {
+                exe.setRequirement(enforceRecoveryCodes ? "ALTERNATIVE" : "DISABLED");
+                testRealm().flows().updateExecutions("browser", exe);
+            }
+        });
     }
 
 }

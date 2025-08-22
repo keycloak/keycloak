@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -68,6 +69,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -783,19 +785,21 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     private void setupTotpRegisterVerifyRecoveryCodesSetup(boolean enforceRecoveryCodesSetup) {
         configureTotpActionToEnforceRecoveryCodes(enforceRecoveryCodesSetup);
 
-        // Login
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        try {
+            // Login
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
 
-        // Configure OTP
-        totpPage.assertCurrent();
-        totpPage.configure(this.totp.generateTOTP(totpPage.getTotpSecret()));
+            // Configure OTP
+            totpPage.assertCurrent();
+            totpPage.configure(this.totp.generateTOTP(totpPage.getTotpSecret()));
 
-        // The next page should be the setup page for recovery codes
-        setupRecoveryAuthnCodesPage.assertCurrent();
-
-        // finally, reset totp action config
-        configureTotpActionToEnforceRecoveryCodes(false);
+            // The next page should be the setup page for recovery codes
+            setupRecoveryAuthnCodesPage.assertCurrent();
+        } finally {
+            // finally, reset totp action config
+            configureTotpActionToEnforceRecoveryCodes(false);
+        }
     }
 
     private void configureTotpActionToEnforceRecoveryCodes(boolean enforceRecoveryCodes) {
@@ -803,5 +807,11 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         RequiredActionProviderRepresentation totpAction = requiredActions.stream().filter(ra -> ra.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())).findFirst().orElseThrow();
         totpAction.setConfig(Map.of(UpdateTotp.ADD_RECOVERY_CODES, Boolean.toString(enforceRecoveryCodes)));
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
+        testRealm().flows().getExecutions("browser").forEach(exe -> {
+            if (Objects.equals(exe.getProviderId(), RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)) {
+              exe.setRequirement(enforceRecoveryCodes ? "ALTERNATIVE" : "DISABLED");
+              testRealm().flows().updateExecutions("browser", exe);
+            }
+        });
     }
 }
