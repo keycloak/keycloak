@@ -67,7 +67,7 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
 
     const init = () =>
       keycloak.init({
-        onLoad: "check-sso",
+        onLoad: "login-required",
         pkceMethod: "S256",
         responseMode: "query",
         scope: environment.scope,
@@ -80,14 +80,8 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
     calledOnce.current = true;
   }, [keycloak]);
 
-  const searchParams = new URLSearchParams(window.location.search);
-
-  if (error || searchParams.get("error_description")) {
-    return (
-      <ErrorPage
-        error={error ? error : searchParams.get("error_description")}
-      />
-    );
+  if (error) {
+    return <ErrorPage error={error} />;
   }
 
   if (!init) {

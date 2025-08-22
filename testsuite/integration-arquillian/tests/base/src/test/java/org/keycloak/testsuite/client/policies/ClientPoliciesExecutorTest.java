@@ -88,11 +88,10 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
@@ -138,7 +137,9 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.ParResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -956,9 +957,16 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         // Test account-console is loaded successfully when "secure-session-enforce" executor is present
-        appPage.open();
-        appPage.openAccount();
+        oauth.client(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
+                .redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .responseMode(OIDCResponseMode.QUERY.value())
+                .loginForm()
+                .state(KeycloakModelUtils.generateId())
+                .nonce(KeycloakModelUtils.generateId())
+                .codeChallenge(PkceGenerator.s256())
+                .open();
         loginPage.assertCurrent();
+        Assert.assertEquals("Sign in to your account", loginPage.getTitleText());
     }
 
     @Test
