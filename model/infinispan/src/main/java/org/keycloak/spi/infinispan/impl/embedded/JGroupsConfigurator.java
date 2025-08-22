@@ -22,7 +22,6 @@ import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
 
 import java.lang.invoke.MethodHandles;
-import java.net.InetAddress;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -101,6 +100,26 @@ public final class JGroupsConfigurator {
     }
 
     /**
+     * Checks if Infinispan is configured with or without a clustering.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} with the Infinispan configuration.
+     * @return {@code true} if Infinispan is configured without clustering.
+     */
+    public static boolean isLocal(ConfigurationBuilderHolder holder) {
+        return transportOf(holder).getTransport() == null;
+    }
+
+    /**
+     * Checks if Infinispan is configured with or without a clustering.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} with the Infinispan configuration.
+     * @return {@code true} if Infinispan is configured with clustering enabled.
+     */
+    public static boolean isClustered(ConfigurationBuilderHolder holder) {
+        return transportOf(holder).getTransport() != null;
+    }
+
+    /**
      * Configures JGroups based on the Keycloak configuration.
      *
      * @param config  The Keycloak configuration.
@@ -108,6 +127,9 @@ public final class JGroupsConfigurator {
      * @param session The {@link KeycloakSession} sessions for Database access.
      */
     public static void configureJGroups(Config.Scope config, ConfigurationBuilderHolder holder, KeycloakSession session) {
+        if (isLocal(holder)) {
+            return;
+        }
         var stack = config.get(DefaultCacheEmbeddedConfigProviderFactory.STACK);
         if (stack != null) {
             transportOf(holder).stack(stack);

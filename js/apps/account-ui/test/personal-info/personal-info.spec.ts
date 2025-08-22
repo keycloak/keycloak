@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login } from "../support/actions.ts";
+import { assertLastAlert, login } from "../support/actions.ts";
 import { createTestBed } from "../support/testbed.ts";
 import userProfile from "./user-profile.json" with { type: "json" };
 import { adminClient } from "../support/admin-client.ts";
@@ -16,8 +16,7 @@ test.describe("Personal info", () => {
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
 
-    const alerts = page.getByTestId("last-alert");
-    await expect(alerts).toHaveText("Your account has been updated.");
+    await assertLastAlert(page, "Your account has been updated.");
   });
 });
 
@@ -80,7 +79,8 @@ test.describe("Personal info (user profile enabled)", () => {
     await page.getByRole("option", { name: "two" }).click();
     await page.getByTestId("email2").fill("non-valid");
     await page.getByTestId("save").click();
-    await expect(page.getByTestId("last-alert")).toHaveText(
+    await assertLastAlert(
+      page,
       "Could not update account due to validation errors",
     );
 
@@ -91,6 +91,7 @@ test.describe("Personal info (user profile enabled)", () => {
     await page.getByTestId("email2").clear();
     await page.getByTestId("email2").fill("valid@email.com");
     await page.getByTestId("save").click();
+    await assertLastAlert(page, "Your account has been updated.");
 
     await page.reload();
     await page.locator("delete-account").isVisible();
@@ -110,6 +111,8 @@ test.describe("Realm localization", () => {
     page.getByRole("option").filter({ hasText: "Deutsch" });
     await page.getByRole("option", { name: "English" }).click();
     await page.getByTestId("save").click();
+    await assertLastAlert(page, "Your account has been updated.");
+
     await page.reload();
 
     expect(
