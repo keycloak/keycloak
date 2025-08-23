@@ -1,0 +1,3629 @@
+{{- if .Values.crd.enabled }}
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "keycloakrealmimports.k8s.keycloak.org"
+spec:
+  group: "k8s.keycloak.org"
+  names:
+    kind: "KeycloakRealmImport"
+    plural: "keycloakrealmimports"
+    singular: "keycloakrealmimport"
+  scope: "Namespaced"
+  versions:
+  - name: "v2alpha1"
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              keycloakCRName:
+                description: "The name of the Keycloak CR to reference, in the same\
+                  \ namespace."
+                type: "string"
+              placeholders:
+                additionalProperties:
+                  properties:
+                    secret:
+                      properties:
+                        key:
+                          type: "string"
+                        name:
+                          type: "string"
+                        optional:
+                          type: "boolean"
+                      type: "object"
+                  type: "object"
+                description: "Optionally set to replace ENV variable placeholders\
+                  \ in the realm import."
+                type: "object"
+              realm:
+                description: "The RealmRepresentation to import into Keycloak."
+                properties:
+                  accessCodeLifespan:
+                    type: "integer"
+                  accessCodeLifespanLogin:
+                    type: "integer"
+                  accessCodeLifespanUserAction:
+                    type: "integer"
+                  accessTokenLifespan:
+                    type: "integer"
+                  accessTokenLifespanForImplicitFlow:
+                    type: "integer"
+                  accountTheme:
+                    type: "string"
+                  actionTokenGeneratedByAdminLifespan:
+                    type: "integer"
+                  actionTokenGeneratedByUserLifespan:
+                    type: "integer"
+                  adminEventsDetailsEnabled:
+                    type: "boolean"
+                  adminEventsEnabled:
+                    type: "boolean"
+                  adminPermissionsClient:
+                    properties:
+                      access:
+                        additionalProperties:
+                          type: "boolean"
+                        type: "object"
+                      adminUrl:
+                        type: "string"
+                      alwaysDisplayInConsole:
+                        type: "boolean"
+                      attributes:
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      authenticationFlowBindingOverrides:
+                        additionalProperties:
+                          type: "string"
+                        type: "object"
+                      authorizationServicesEnabled:
+                        type: "boolean"
+                      authorizationSettings:
+                        properties:
+                          allowRemoteResourceManagement:
+                            type: "boolean"
+                          authorizationSchema:
+                            properties:
+                              resourceTypes:
+                                additionalProperties:
+                                  properties:
+                                    groupType:
+                                      type: "string"
+                                    scopeAliases:
+                                      additionalProperties:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                      type: "object"
+                                    scopes:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type:
+                                      type: "string"
+                                  type: "object"
+                                type: "object"
+                            type: "object"
+                          clientId:
+                            type: "string"
+                          decisionStrategy:
+                            enum:
+                            - "AFFIRMATIVE"
+                            - "CONSENSUS"
+                            - "UNANIMOUS"
+                            type: "string"
+                          id:
+                            type: "string"
+                          name:
+                            type: "string"
+                          policies:
+                            items:
+                              properties:
+                                config:
+                                  additionalProperties:
+                                    type: "string"
+                                  type: "object"
+                                decisionStrategy:
+                                  enum:
+                                  - "AFFIRMATIVE"
+                                  - "CONSENSUS"
+                                  - "UNANIMOUS"
+                                  type: "string"
+                                description:
+                                  type: "string"
+                                id:
+                                  type: "string"
+                                logic:
+                                  enum:
+                                  - "NEGATIVE"
+                                  - "POSITIVE"
+                                  type: "string"
+                                name:
+                                  type: "string"
+                                owner:
+                                  type: "string"
+                                policies:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                resourceType:
+                                  type: "string"
+                                resources:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                resourcesData:
+                                  items:
+                                    properties:
+                                      _id:
+                                        type: "string"
+                                      attributes:
+                                        additionalProperties:
+                                          items:
+                                            type: "string"
+                                          type: "array"
+                                        type: "object"
+                                      displayName:
+                                        type: "string"
+                                      icon_uri:
+                                        type: "string"
+                                      name:
+                                        type: "string"
+                                      owner:
+                                        properties:
+                                          id:
+                                            type: "string"
+                                          name:
+                                            type: "string"
+                                        type: "object"
+                                      ownerManagedAccess:
+                                        type: "boolean"
+                                      scopes:
+                                        items:
+                                          properties:
+                                            displayName:
+                                              type: "string"
+                                            iconUri:
+                                              type: "string"
+                                            id:
+                                              type: "string"
+                                            name:
+                                              type: "string"
+                                          type: "object"
+                                        type: "array"
+                                      type:
+                                        type: "string"
+                                      uris:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                    type: "object"
+                                  type: "array"
+                                scopes:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                scopesData:
+                                  items:
+                                    properties:
+                                      displayName:
+                                        type: "string"
+                                      iconUri:
+                                        type: "string"
+                                      id:
+                                        type: "string"
+                                      name:
+                                        type: "string"
+                                    type: "object"
+                                  type: "array"
+                                type:
+                                  type: "string"
+                              type: "object"
+                            type: "array"
+                          policyEnforcementMode:
+                            enum:
+                            - "DISABLED"
+                            - "ENFORCING"
+                            - "PERMISSIVE"
+                            type: "string"
+                          resources:
+                            items:
+                              properties:
+                                _id:
+                                  type: "string"
+                                attributes:
+                                  additionalProperties:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  type: "object"
+                                displayName:
+                                  type: "string"
+                                icon_uri:
+                                  type: "string"
+                                name:
+                                  type: "string"
+                                owner:
+                                  properties:
+                                    id:
+                                      type: "string"
+                                    name:
+                                      type: "string"
+                                  type: "object"
+                                ownerManagedAccess:
+                                  type: "boolean"
+                                scopes:
+                                  items:
+                                    properties:
+                                      displayName:
+                                        type: "string"
+                                      iconUri:
+                                        type: "string"
+                                      id:
+                                        type: "string"
+                                      name:
+                                        type: "string"
+                                    type: "object"
+                                  type: "array"
+                                type:
+                                  type: "string"
+                                uris:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                              type: "object"
+                            type: "array"
+                          scopes:
+                            items:
+                              properties:
+                                displayName:
+                                  type: "string"
+                                iconUri:
+                                  type: "string"
+                                id:
+                                  type: "string"
+                                name:
+                                  type: "string"
+                              type: "object"
+                            type: "array"
+                        type: "object"
+                      baseUrl:
+                        type: "string"
+                      bearerOnly:
+                        type: "boolean"
+                      clientAuthenticatorType:
+                        type: "string"
+                      clientId:
+                        type: "string"
+                      clientTemplate:
+                        type: "string"
+                      consentRequired:
+                        type: "boolean"
+                      defaultClientScopes:
+                        items:
+                          type: "string"
+                        type: "array"
+                      defaultRoles:
+                        items:
+                          type: "string"
+                        type: "array"
+                      description:
+                        type: "string"
+                      directAccessGrantsEnabled:
+                        type: "boolean"
+                      directGrantsOnly:
+                        type: "boolean"
+                      enabled:
+                        type: "boolean"
+                      frontchannelLogout:
+                        type: "boolean"
+                      fullScopeAllowed:
+                        type: "boolean"
+                      id:
+                        type: "string"
+                      implicitFlowEnabled:
+                        type: "boolean"
+                      name:
+                        type: "string"
+                      nodeReRegistrationTimeout:
+                        type: "integer"
+                      notBefore:
+                        type: "integer"
+                      optionalClientScopes:
+                        items:
+                          type: "string"
+                        type: "array"
+                      origin:
+                        type: "string"
+                      protocol:
+                        type: "string"
+                      protocolMappers:
+                        items:
+                          properties:
+                            config:
+                              additionalProperties:
+                                type: "string"
+                              type: "object"
+                            consentRequired:
+                              type: "boolean"
+                            consentText:
+                              type: "string"
+                            id:
+                              type: "string"
+                            name:
+                              type: "string"
+                            protocol:
+                              type: "string"
+                            protocolMapper:
+                              type: "string"
+                          type: "object"
+                        type: "array"
+                      publicClient:
+                        type: "boolean"
+                      redirectUris:
+                        items:
+                          type: "string"
+                        type: "array"
+                      registeredNodes:
+                        additionalProperties:
+                          type: "integer"
+                        type: "object"
+                      registrationAccessToken:
+                        type: "string"
+                      rootUrl:
+                        type: "string"
+                      secret:
+                        type: "string"
+                      serviceAccountsEnabled:
+                        type: "boolean"
+                      standardFlowEnabled:
+                        type: "boolean"
+                      surrogateAuthRequired:
+                        type: "boolean"
+                      type:
+                        type: "string"
+                      useTemplateConfig:
+                        type: "boolean"
+                      useTemplateMappers:
+                        type: "boolean"
+                      useTemplateScope:
+                        type: "boolean"
+                      webOrigins:
+                        items:
+                          type: "string"
+                        type: "array"
+                    type: "object"
+                  adminPermissionsEnabled:
+                    type: "boolean"
+                  adminTheme:
+                    type: "string"
+                  applicationScopeMappings:
+                    additionalProperties:
+                      items:
+                        properties:
+                          client:
+                            type: "string"
+                          clientScope:
+                            type: "string"
+                          clientTemplate:
+                            type: "string"
+                          roles:
+                            items:
+                              type: "string"
+                            type: "array"
+                          self:
+                            type: "string"
+                        type: "object"
+                      type: "array"
+                    type: "object"
+                  applications:
+                    items:
+                      properties:
+                        access:
+                          additionalProperties:
+                            type: "boolean"
+                          type: "object"
+                        adminUrl:
+                          type: "string"
+                        alwaysDisplayInConsole:
+                          type: "boolean"
+                        attributes:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        authenticationFlowBindingOverrides:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        authorizationServicesEnabled:
+                          type: "boolean"
+                        authorizationSettings:
+                          properties:
+                            allowRemoteResourceManagement:
+                              type: "boolean"
+                            authorizationSchema:
+                              properties:
+                                resourceTypes:
+                                  additionalProperties:
+                                    properties:
+                                      groupType:
+                                        type: "string"
+                                      scopeAliases:
+                                        additionalProperties:
+                                          items:
+                                            type: "string"
+                                          type: "array"
+                                        type: "object"
+                                      scopes:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                      type:
+                                        type: "string"
+                                    type: "object"
+                                  type: "object"
+                              type: "object"
+                            clientId:
+                              type: "string"
+                            decisionStrategy:
+                              enum:
+                              - "AFFIRMATIVE"
+                              - "CONSENSUS"
+                              - "UNANIMOUS"
+                              type: "string"
+                            id:
+                              type: "string"
+                            name:
+                              type: "string"
+                            policies:
+                              items:
+                                properties:
+                                  config:
+                                    additionalProperties:
+                                      type: "string"
+                                    type: "object"
+                                  decisionStrategy:
+                                    enum:
+                                    - "AFFIRMATIVE"
+                                    - "CONSENSUS"
+                                    - "UNANIMOUS"
+                                    type: "string"
+                                  description:
+                                    type: "string"
+                                  id:
+                                    type: "string"
+                                  logic:
+                                    enum:
+                                    - "NEGATIVE"
+                                    - "POSITIVE"
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                  owner:
+                                    type: "string"
+                                  policies:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  resourceType:
+                                    type: "string"
+                                  resources:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  resourcesData:
+                                    items:
+                                      properties:
+                                        _id:
+                                          type: "string"
+                                        attributes:
+                                          additionalProperties:
+                                            items:
+                                              type: "string"
+                                            type: "array"
+                                          type: "object"
+                                        displayName:
+                                          type: "string"
+                                        icon_uri:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                        owner:
+                                          properties:
+                                            id:
+                                              type: "string"
+                                            name:
+                                              type: "string"
+                                          type: "object"
+                                        ownerManagedAccess:
+                                          type: "boolean"
+                                        scopes:
+                                          items:
+                                            properties:
+                                              displayName:
+                                                type: "string"
+                                              iconUri:
+                                                type: "string"
+                                              id:
+                                                type: "string"
+                                              name:
+                                                type: "string"
+                                            type: "object"
+                                          type: "array"
+                                        type:
+                                          type: "string"
+                                        uris:
+                                          items:
+                                            type: "string"
+                                          type: "array"
+                                      type: "object"
+                                    type: "array"
+                                  scopes:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  scopesData:
+                                    items:
+                                      properties:
+                                        displayName:
+                                          type: "string"
+                                        iconUri:
+                                          type: "string"
+                                        id:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                      type: "object"
+                                    type: "array"
+                                  type:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                            policyEnforcementMode:
+                              enum:
+                              - "DISABLED"
+                              - "ENFORCING"
+                              - "PERMISSIVE"
+                              type: "string"
+                            resources:
+                              items:
+                                properties:
+                                  _id:
+                                    type: "string"
+                                  attributes:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  displayName:
+                                    type: "string"
+                                  icon_uri:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                  owner:
+                                    properties:
+                                      id:
+                                        type: "string"
+                                      name:
+                                        type: "string"
+                                    type: "object"
+                                  ownerManagedAccess:
+                                    type: "boolean"
+                                  scopes:
+                                    items:
+                                      properties:
+                                        displayName:
+                                          type: "string"
+                                        iconUri:
+                                          type: "string"
+                                        id:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                      type: "object"
+                                    type: "array"
+                                  type:
+                                    type: "string"
+                                  uris:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                type: "object"
+                              type: "array"
+                            scopes:
+                              items:
+                                properties:
+                                  displayName:
+                                    type: "string"
+                                  iconUri:
+                                    type: "string"
+                                  id:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                          type: "object"
+                        baseUrl:
+                          type: "string"
+                        bearerOnly:
+                          type: "boolean"
+                        claims:
+                          properties:
+                            address:
+                              type: "boolean"
+                            email:
+                              type: "boolean"
+                            gender:
+                              type: "boolean"
+                            locale:
+                              type: "boolean"
+                            name:
+                              type: "boolean"
+                            phone:
+                              type: "boolean"
+                            picture:
+                              type: "boolean"
+                            profile:
+                              type: "boolean"
+                            username:
+                              type: "boolean"
+                            website:
+                              type: "boolean"
+                          type: "object"
+                        clientAuthenticatorType:
+                          type: "string"
+                        clientId:
+                          type: "string"
+                        clientTemplate:
+                          type: "string"
+                        consentRequired:
+                          type: "boolean"
+                        defaultClientScopes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        defaultRoles:
+                          items:
+                            type: "string"
+                          type: "array"
+                        description:
+                          type: "string"
+                        directAccessGrantsEnabled:
+                          type: "boolean"
+                        directGrantsOnly:
+                          type: "boolean"
+                        enabled:
+                          type: "boolean"
+                        frontchannelLogout:
+                          type: "boolean"
+                        fullScopeAllowed:
+                          type: "boolean"
+                        id:
+                          type: "string"
+                        implicitFlowEnabled:
+                          type: "boolean"
+                        name:
+                          type: "string"
+                        nodeReRegistrationTimeout:
+                          type: "integer"
+                        notBefore:
+                          type: "integer"
+                        optionalClientScopes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        origin:
+                          type: "string"
+                        protocol:
+                          type: "string"
+                        protocolMappers:
+                          items:
+                            properties:
+                              config:
+                                additionalProperties:
+                                  type: "string"
+                                type: "object"
+                              consentRequired:
+                                type: "boolean"
+                              consentText:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              protocol:
+                                type: "string"
+                              protocolMapper:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        publicClient:
+                          type: "boolean"
+                        redirectUris:
+                          items:
+                            type: "string"
+                          type: "array"
+                        registeredNodes:
+                          additionalProperties:
+                            type: "integer"
+                          type: "object"
+                        registrationAccessToken:
+                          type: "string"
+                        rootUrl:
+                          type: "string"
+                        secret:
+                          type: "string"
+                        serviceAccountsEnabled:
+                          type: "boolean"
+                        standardFlowEnabled:
+                          type: "boolean"
+                        surrogateAuthRequired:
+                          type: "boolean"
+                        type:
+                          type: "string"
+                        useTemplateConfig:
+                          type: "boolean"
+                        useTemplateMappers:
+                          type: "boolean"
+                        useTemplateScope:
+                          type: "boolean"
+                        webOrigins:
+                          items:
+                            type: "string"
+                          type: "array"
+                      type: "object"
+                    type: "array"
+                  attributes:
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  authenticationFlows:
+                    items:
+                      properties:
+                        alias:
+                          type: "string"
+                        authenticationExecutions:
+                          items:
+                            properties:
+                              authenticator:
+                                type: "string"
+                              authenticatorConfig:
+                                type: "string"
+                              authenticatorFlow:
+                                type: "boolean"
+                              autheticatorFlow:
+                                type: "boolean"
+                              flowAlias:
+                                type: "string"
+                              priority:
+                                type: "integer"
+                              requirement:
+                                type: "string"
+                              userSetupAllowed:
+                                type: "boolean"
+                            type: "object"
+                          type: "array"
+                        builtIn:
+                          type: "boolean"
+                        description:
+                          type: "string"
+                        id:
+                          type: "string"
+                        providerId:
+                          type: "string"
+                        topLevel:
+                          type: "boolean"
+                      type: "object"
+                    type: "array"
+                  authenticatorConfig:
+                    items:
+                      properties:
+                        alias:
+                          type: "string"
+                        config:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        id:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  browserFlow:
+                    type: "string"
+                  browserSecurityHeaders:
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  bruteForceProtected:
+                    type: "boolean"
+                  bruteForceStrategy:
+                    enum:
+                    - "LINEAR"
+                    - "MULTIPLE"
+                    type: "string"
+                  certificate:
+                    type: "string"
+                  clientAuthenticationFlow:
+                    type: "string"
+                  clientOfflineSessionIdleTimeout:
+                    type: "integer"
+                  clientOfflineSessionMaxLifespan:
+                    type: "integer"
+                  clientPolicies:
+                    x-kubernetes-preserve-unknown-fields: true
+                  clientProfiles:
+                    x-kubernetes-preserve-unknown-fields: true
+                  clientScopeMappings:
+                    additionalProperties:
+                      items:
+                        properties:
+                          client:
+                            type: "string"
+                          clientScope:
+                            type: "string"
+                          clientTemplate:
+                            type: "string"
+                          roles:
+                            items:
+                              type: "string"
+                            type: "array"
+                          self:
+                            type: "string"
+                        type: "object"
+                      type: "array"
+                    type: "object"
+                  clientScopes:
+                    items:
+                      properties:
+                        attributes:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        description:
+                          type: "string"
+                        id:
+                          type: "string"
+                        name:
+                          type: "string"
+                        protocol:
+                          type: "string"
+                        protocolMappers:
+                          items:
+                            properties:
+                              config:
+                                additionalProperties:
+                                  type: "string"
+                                type: "object"
+                              consentRequired:
+                                type: "boolean"
+                              consentText:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              protocol:
+                                type: "string"
+                              protocolMapper:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                      type: "object"
+                    type: "array"
+                  clientSessionIdleTimeout:
+                    type: "integer"
+                  clientSessionMaxLifespan:
+                    type: "integer"
+                  clientTemplates:
+                    items:
+                      properties:
+                        attributes:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        bearerOnly:
+                          type: "boolean"
+                        consentRequired:
+                          type: "boolean"
+                        description:
+                          type: "string"
+                        directAccessGrantsEnabled:
+                          type: "boolean"
+                        frontchannelLogout:
+                          type: "boolean"
+                        fullScopeAllowed:
+                          type: "boolean"
+                        id:
+                          type: "string"
+                        implicitFlowEnabled:
+                          type: "boolean"
+                        name:
+                          type: "string"
+                        protocol:
+                          type: "string"
+                        protocolMappers:
+                          items:
+                            properties:
+                              config:
+                                additionalProperties:
+                                  type: "string"
+                                type: "object"
+                              consentRequired:
+                                type: "boolean"
+                              consentText:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              protocol:
+                                type: "string"
+                              protocolMapper:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        publicClient:
+                          type: "boolean"
+                        serviceAccountsEnabled:
+                          type: "boolean"
+                        standardFlowEnabled:
+                          type: "boolean"
+                      type: "object"
+                    type: "array"
+                  clients:
+                    items:
+                      properties:
+                        access:
+                          additionalProperties:
+                            type: "boolean"
+                          type: "object"
+                        adminUrl:
+                          type: "string"
+                        alwaysDisplayInConsole:
+                          type: "boolean"
+                        attributes:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        authenticationFlowBindingOverrides:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        authorizationServicesEnabled:
+                          type: "boolean"
+                        authorizationSettings:
+                          properties:
+                            allowRemoteResourceManagement:
+                              type: "boolean"
+                            authorizationSchema:
+                              properties:
+                                resourceTypes:
+                                  additionalProperties:
+                                    properties:
+                                      groupType:
+                                        type: "string"
+                                      scopeAliases:
+                                        additionalProperties:
+                                          items:
+                                            type: "string"
+                                          type: "array"
+                                        type: "object"
+                                      scopes:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                      type:
+                                        type: "string"
+                                    type: "object"
+                                  type: "object"
+                              type: "object"
+                            clientId:
+                              type: "string"
+                            decisionStrategy:
+                              enum:
+                              - "AFFIRMATIVE"
+                              - "CONSENSUS"
+                              - "UNANIMOUS"
+                              type: "string"
+                            id:
+                              type: "string"
+                            name:
+                              type: "string"
+                            policies:
+                              items:
+                                properties:
+                                  config:
+                                    additionalProperties:
+                                      type: "string"
+                                    type: "object"
+                                  decisionStrategy:
+                                    enum:
+                                    - "AFFIRMATIVE"
+                                    - "CONSENSUS"
+                                    - "UNANIMOUS"
+                                    type: "string"
+                                  description:
+                                    type: "string"
+                                  id:
+                                    type: "string"
+                                  logic:
+                                    enum:
+                                    - "NEGATIVE"
+                                    - "POSITIVE"
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                  owner:
+                                    type: "string"
+                                  policies:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  resourceType:
+                                    type: "string"
+                                  resources:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  resourcesData:
+                                    items:
+                                      properties:
+                                        _id:
+                                          type: "string"
+                                        attributes:
+                                          additionalProperties:
+                                            items:
+                                              type: "string"
+                                            type: "array"
+                                          type: "object"
+                                        displayName:
+                                          type: "string"
+                                        icon_uri:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                        owner:
+                                          properties:
+                                            id:
+                                              type: "string"
+                                            name:
+                                              type: "string"
+                                          type: "object"
+                                        ownerManagedAccess:
+                                          type: "boolean"
+                                        scopes:
+                                          items:
+                                            properties:
+                                              displayName:
+                                                type: "string"
+                                              iconUri:
+                                                type: "string"
+                                              id:
+                                                type: "string"
+                                              name:
+                                                type: "string"
+                                            type: "object"
+                                          type: "array"
+                                        type:
+                                          type: "string"
+                                        uris:
+                                          items:
+                                            type: "string"
+                                          type: "array"
+                                      type: "object"
+                                    type: "array"
+                                  scopes:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  scopesData:
+                                    items:
+                                      properties:
+                                        displayName:
+                                          type: "string"
+                                        iconUri:
+                                          type: "string"
+                                        id:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                      type: "object"
+                                    type: "array"
+                                  type:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                            policyEnforcementMode:
+                              enum:
+                              - "DISABLED"
+                              - "ENFORCING"
+                              - "PERMISSIVE"
+                              type: "string"
+                            resources:
+                              items:
+                                properties:
+                                  _id:
+                                    type: "string"
+                                  attributes:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  displayName:
+                                    type: "string"
+                                  icon_uri:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                  owner:
+                                    properties:
+                                      id:
+                                        type: "string"
+                                      name:
+                                        type: "string"
+                                    type: "object"
+                                  ownerManagedAccess:
+                                    type: "boolean"
+                                  scopes:
+                                    items:
+                                      properties:
+                                        displayName:
+                                          type: "string"
+                                        iconUri:
+                                          type: "string"
+                                        id:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                      type: "object"
+                                    type: "array"
+                                  type:
+                                    type: "string"
+                                  uris:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                type: "object"
+                              type: "array"
+                            scopes:
+                              items:
+                                properties:
+                                  displayName:
+                                    type: "string"
+                                  iconUri:
+                                    type: "string"
+                                  id:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                          type: "object"
+                        baseUrl:
+                          type: "string"
+                        bearerOnly:
+                          type: "boolean"
+                        clientAuthenticatorType:
+                          type: "string"
+                        clientId:
+                          type: "string"
+                        clientTemplate:
+                          type: "string"
+                        consentRequired:
+                          type: "boolean"
+                        defaultClientScopes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        defaultRoles:
+                          items:
+                            type: "string"
+                          type: "array"
+                        description:
+                          type: "string"
+                        directAccessGrantsEnabled:
+                          type: "boolean"
+                        directGrantsOnly:
+                          type: "boolean"
+                        enabled:
+                          type: "boolean"
+                        frontchannelLogout:
+                          type: "boolean"
+                        fullScopeAllowed:
+                          type: "boolean"
+                        id:
+                          type: "string"
+                        implicitFlowEnabled:
+                          type: "boolean"
+                        name:
+                          type: "string"
+                        nodeReRegistrationTimeout:
+                          type: "integer"
+                        notBefore:
+                          type: "integer"
+                        optionalClientScopes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        origin:
+                          type: "string"
+                        protocol:
+                          type: "string"
+                        protocolMappers:
+                          items:
+                            properties:
+                              config:
+                                additionalProperties:
+                                  type: "string"
+                                type: "object"
+                              consentRequired:
+                                type: "boolean"
+                              consentText:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              protocol:
+                                type: "string"
+                              protocolMapper:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        publicClient:
+                          type: "boolean"
+                        redirectUris:
+                          items:
+                            type: "string"
+                          type: "array"
+                        registeredNodes:
+                          additionalProperties:
+                            type: "integer"
+                          type: "object"
+                        registrationAccessToken:
+                          type: "string"
+                        rootUrl:
+                          type: "string"
+                        secret:
+                          type: "string"
+                        serviceAccountsEnabled:
+                          type: "boolean"
+                        standardFlowEnabled:
+                          type: "boolean"
+                        surrogateAuthRequired:
+                          type: "boolean"
+                        type:
+                          type: "string"
+                        useTemplateConfig:
+                          type: "boolean"
+                        useTemplateMappers:
+                          type: "boolean"
+                        useTemplateScope:
+                          type: "boolean"
+                        webOrigins:
+                          items:
+                            type: "string"
+                          type: "array"
+                      type: "object"
+                    type: "array"
+                  codeSecret:
+                    type: "string"
+                  components:
+                    additionalProperties:
+                      items:
+                        properties:
+                          config:
+                            additionalProperties:
+                              items:
+                                type: "string"
+                              type: "array"
+                            type: "object"
+                          id:
+                            type: "string"
+                          name:
+                            type: "string"
+                          providerId:
+                            type: "string"
+                          subComponents:
+                            additionalProperties:
+                              items:
+                                properties:
+                                  config:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  id:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                  providerId:
+                                    type: "string"
+                                  subComponents:
+                                    additionalProperties:
+                                      items:
+                                        properties:
+                                          config:
+                                            additionalProperties:
+                                              items:
+                                                type: "string"
+                                              type: "array"
+                                            type: "object"
+                                          id:
+                                            type: "string"
+                                          name:
+                                            type: "string"
+                                          providerId:
+                                            type: "string"
+                                          subComponents:
+                                            additionalProperties:
+                                              items:
+                                                properties:
+                                                  config:
+                                                    additionalProperties:
+                                                      items:
+                                                        type: "string"
+                                                      type: "array"
+                                                    type: "object"
+                                                  id:
+                                                    type: "string"
+                                                  name:
+                                                    type: "string"
+                                                  providerId:
+                                                    type: "string"
+                                                  subComponents:
+                                                    additionalProperties:
+                                                      items:
+                                                        properties:
+                                                          config:
+                                                            additionalProperties:
+                                                              items:
+                                                                type: "string"
+                                                              type: "array"
+                                                            type: "object"
+                                                          id:
+                                                            type: "string"
+                                                          name:
+                                                            type: "string"
+                                                          providerId:
+                                                            type: "string"
+                                                          subComponents:
+                                                            additionalProperties:
+                                                              items:
+                                                                properties:
+                                                                  config:
+                                                                    additionalProperties:
+                                                                      items:
+                                                                        type: "string"
+                                                                      type: "array"
+                                                                    type: "object"
+                                                                  id:
+                                                                    type: "string"
+                                                                  name:
+                                                                    type: "string"
+                                                                  providerId:
+                                                                    type: "string"
+                                                                  subComponents:
+                                                                    additionalProperties:
+                                                                      items:
+                                                                        properties:
+                                                                          config:
+                                                                            additionalProperties:
+                                                                              items:
+                                                                                type: "string"
+                                                                              type: "array"
+                                                                            type: "object"
+                                                                          id:
+                                                                            type: "string"
+                                                                          name:
+                                                                            type: "string"
+                                                                          providerId:
+                                                                            type: "string"
+                                                                          subComponents:
+                                                                            additionalProperties:
+                                                                              items:
+                                                                                properties:
+                                                                                  config:
+                                                                                    additionalProperties:
+                                                                                      items:
+                                                                                        type: "string"
+                                                                                      type: "array"
+                                                                                    type: "object"
+                                                                                  id:
+                                                                                    type: "string"
+                                                                                  name:
+                                                                                    type: "string"
+                                                                                  providerId:
+                                                                                    type: "string"
+                                                                                  subComponents:
+                                                                                    additionalProperties:
+                                                                                      items:
+                                                                                        properties:
+                                                                                          config:
+                                                                                            additionalProperties:
+                                                                                              items:
+                                                                                                type: "string"
+                                                                                              type: "array"
+                                                                                            type: "object"
+                                                                                          id:
+                                                                                            type: "string"
+                                                                                          name:
+                                                                                            type: "string"
+                                                                                          providerId:
+                                                                                            type: "string"
+                                                                                          subComponents:
+                                                                                            additionalProperties:
+                                                                                              items:
+                                                                                                properties:
+                                                                                                  config:
+                                                                                                    additionalProperties:
+                                                                                                      items:
+                                                                                                        type: "string"
+                                                                                                      type: "array"
+                                                                                                    type: "object"
+                                                                                                  id:
+                                                                                                    type: "string"
+                                                                                                  name:
+                                                                                                    type: "string"
+                                                                                                  providerId:
+                                                                                                    type: "string"
+                                                                                                  subComponents:
+                                                                                                    additionalProperties:
+                                                                                                      items:
+                                                                                                        properties:
+                                                                                                          config:
+                                                                                                            additionalProperties:
+                                                                                                              items:
+                                                                                                                type: "string"
+                                                                                                              type: "array"
+                                                                                                            type: "object"
+                                                                                                          id:
+                                                                                                            type: "string"
+                                                                                                          name:
+                                                                                                            type: "string"
+                                                                                                          providerId:
+                                                                                                            type: "string"
+                                                                                                          subType:
+                                                                                                            type: "string"
+                                                                                                        type: "object"
+                                                                                                      type: "array"
+                                                                                                    type: "object"
+                                                                                                  subType:
+                                                                                                    type: "string"
+                                                                                                type: "object"
+                                                                                              type: "array"
+                                                                                            type: "object"
+                                                                                          subType:
+                                                                                            type: "string"
+                                                                                        type: "object"
+                                                                                      type: "array"
+                                                                                    type: "object"
+                                                                                  subType:
+                                                                                    type: "string"
+                                                                                type: "object"
+                                                                              type: "array"
+                                                                            type: "object"
+                                                                          subType:
+                                                                            type: "string"
+                                                                        type: "object"
+                                                                      type: "array"
+                                                                    type: "object"
+                                                                  subType:
+                                                                    type: "string"
+                                                                type: "object"
+                                                              type: "array"
+                                                            type: "object"
+                                                          subType:
+                                                            type: "string"
+                                                        type: "object"
+                                                      type: "array"
+                                                    type: "object"
+                                                  subType:
+                                                    type: "string"
+                                                type: "object"
+                                              type: "array"
+                                            type: "object"
+                                          subType:
+                                            type: "string"
+                                        type: "object"
+                                      type: "array"
+                                    type: "object"
+                                  subType:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                            type: "object"
+                          subType:
+                            type: "string"
+                        type: "object"
+                      type: "array"
+                    type: "object"
+                  defaultDefaultClientScopes:
+                    items:
+                      type: "string"
+                    type: "array"
+                  defaultGroups:
+                    items:
+                      type: "string"
+                    type: "array"
+                  defaultLocale:
+                    type: "string"
+                  defaultOptionalClientScopes:
+                    items:
+                      type: "string"
+                    type: "array"
+                  defaultRole:
+                    properties:
+                      attributes:
+                        additionalProperties:
+                          items:
+                            type: "string"
+                          type: "array"
+                        type: "object"
+                      clientRole:
+                        type: "boolean"
+                      composite:
+                        type: "boolean"
+                      composites:
+                        properties:
+                          application:
+                            additionalProperties:
+                              items:
+                                type: "string"
+                              type: "array"
+                            type: "object"
+                          client:
+                            additionalProperties:
+                              items:
+                                type: "string"
+                              type: "array"
+                            type: "object"
+                          realm:
+                            items:
+                              type: "string"
+                            type: "array"
+                        type: "object"
+                      containerId:
+                        type: "string"
+                      description:
+                        type: "string"
+                      id:
+                        type: "string"
+                      name:
+                        type: "string"
+                      scopeParamRequired:
+                        type: "boolean"
+                    type: "object"
+                  defaultRoles:
+                    items:
+                      type: "string"
+                    type: "array"
+                  defaultSignatureAlgorithm:
+                    type: "string"
+                  directGrantFlow:
+                    type: "string"
+                  displayName:
+                    type: "string"
+                  displayNameHtml:
+                    type: "string"
+                  dockerAuthenticationFlow:
+                    type: "string"
+                  duplicateEmailsAllowed:
+                    type: "boolean"
+                  editUsernameAllowed:
+                    type: "boolean"
+                  emailTheme:
+                    type: "string"
+                  enabled:
+                    type: "boolean"
+                  enabledEventTypes:
+                    items:
+                      type: "string"
+                    type: "array"
+                  eventsEnabled:
+                    type: "boolean"
+                  eventsExpiration:
+                    type: "integer"
+                  eventsListeners:
+                    items:
+                      type: "string"
+                    type: "array"
+                  failureFactor:
+                    type: "integer"
+                  federatedUsers:
+                    items:
+                      properties:
+                        access:
+                          additionalProperties:
+                            type: "boolean"
+                          type: "object"
+                        applicationRoles:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        attributes:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        clientConsents:
+                          items:
+                            properties:
+                              clientId:
+                                type: "string"
+                              createdDate:
+                                type: "integer"
+                              grantedClientScopes:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              grantedRealmRoles:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              lastUpdatedDate:
+                                type: "integer"
+                            type: "object"
+                          type: "array"
+                        clientRoles:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        createdTimestamp:
+                          type: "integer"
+                        credentials:
+                          items:
+                            properties:
+                              algorithm:
+                                type: "string"
+                              config:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              counter:
+                                type: "integer"
+                              createdDate:
+                                type: "integer"
+                              credentialData:
+                                type: "string"
+                              device:
+                                type: "string"
+                              digits:
+                                type: "integer"
+                              federationLink:
+                                type: "string"
+                              hashIterations:
+                                type: "integer"
+                              hashedSaltedValue:
+                                type: "string"
+                              id:
+                                type: "string"
+                              period:
+                                type: "integer"
+                              priority:
+                                type: "integer"
+                              salt:
+                                type: "string"
+                              secretData:
+                                type: "string"
+                              temporary:
+                                type: "boolean"
+                              type:
+                                type: "string"
+                              userLabel:
+                                type: "string"
+                              value:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        disableableCredentialTypes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        email:
+                          type: "string"
+                        emailVerified:
+                          type: "boolean"
+                        enabled:
+                          type: "boolean"
+                        federatedIdentities:
+                          items:
+                            properties:
+                              identityProvider:
+                                type: "string"
+                              userId:
+                                type: "string"
+                              userName:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        federationLink:
+                          type: "string"
+                        firstName:
+                          type: "string"
+                        groups:
+                          items:
+                            type: "string"
+                          type: "array"
+                        id:
+                          type: "string"
+                        lastName:
+                          type: "string"
+                        notBefore:
+                          type: "integer"
+                        origin:
+                          type: "string"
+                        realmRoles:
+                          items:
+                            type: "string"
+                          type: "array"
+                        requiredActions:
+                          items:
+                            type: "string"
+                          type: "array"
+                        self:
+                          type: "string"
+                        serviceAccountClientId:
+                          type: "string"
+                        socialLinks:
+                          items:
+                            properties:
+                              socialProvider:
+                                type: "string"
+                              socialUserId:
+                                type: "string"
+                              socialUsername:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        totp:
+                          type: "boolean"
+                        userProfileMetadata:
+                          properties:
+                            attributes:
+                              items:
+                                properties:
+                                  annotations:
+                                    additionalProperties:
+                                      type: "object"
+                                    type: "object"
+                                  displayName:
+                                    type: "string"
+                                  group:
+                                    type: "string"
+                                  multivalued:
+                                    type: "boolean"
+                                  name:
+                                    type: "string"
+                                  readOnly:
+                                    type: "boolean"
+                                  required:
+                                    type: "boolean"
+                                  validators:
+                                    additionalProperties:
+                                      additionalProperties:
+                                        type: "object"
+                                      type: "object"
+                                    type: "object"
+                                type: "object"
+                              type: "array"
+                            groups:
+                              items:
+                                properties:
+                                  annotations:
+                                    additionalProperties:
+                                      type: "object"
+                                    type: "object"
+                                  displayDescription:
+                                    type: "string"
+                                  displayHeader:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                          type: "object"
+                        username:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  firstBrokerLoginFlow:
+                    type: "string"
+                  groups:
+                    items:
+                      properties:
+                        access:
+                          additionalProperties:
+                            type: "boolean"
+                          type: "object"
+                        attributes:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        clientRoles:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        description:
+                          type: "string"
+                        id:
+                          type: "string"
+                        name:
+                          type: "string"
+                        parentId:
+                          type: "string"
+                        path:
+                          type: "string"
+                        realmRoles:
+                          items:
+                            type: "string"
+                          type: "array"
+                        subGroupCount:
+                          type: "integer"
+                        subGroups:
+                          items:
+                            properties:
+                              access:
+                                additionalProperties:
+                                  type: "boolean"
+                                type: "object"
+                              attributes:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              clientRoles:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              description:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              parentId:
+                                type: "string"
+                              path:
+                                type: "string"
+                              realmRoles:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              subGroupCount:
+                                type: "integer"
+                              subGroups:
+                                items:
+                                  properties:
+                                    access:
+                                      additionalProperties:
+                                        type: "boolean"
+                                      type: "object"
+                                    attributes:
+                                      additionalProperties:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                      type: "object"
+                                    clientRoles:
+                                      additionalProperties:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                      type: "object"
+                                    description:
+                                      type: "string"
+                                    id:
+                                      type: "string"
+                                    name:
+                                      type: "string"
+                                    parentId:
+                                      type: "string"
+                                    path:
+                                      type: "string"
+                                    realmRoles:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    subGroupCount:
+                                      type: "integer"
+                                    subGroups:
+                                      items:
+                                        properties:
+                                          access:
+                                            additionalProperties:
+                                              type: "boolean"
+                                            type: "object"
+                                          attributes:
+                                            additionalProperties:
+                                              items:
+                                                type: "string"
+                                              type: "array"
+                                            type: "object"
+                                          clientRoles:
+                                            additionalProperties:
+                                              items:
+                                                type: "string"
+                                              type: "array"
+                                            type: "object"
+                                          description:
+                                            type: "string"
+                                          id:
+                                            type: "string"
+                                          name:
+                                            type: "string"
+                                          parentId:
+                                            type: "string"
+                                          path:
+                                            type: "string"
+                                          realmRoles:
+                                            items:
+                                              type: "string"
+                                            type: "array"
+                                          subGroupCount:
+                                            type: "integer"
+                                          subGroups:
+                                            items:
+                                              properties:
+                                                access:
+                                                  additionalProperties:
+                                                    type: "boolean"
+                                                  type: "object"
+                                                attributes:
+                                                  additionalProperties:
+                                                    items:
+                                                      type: "string"
+                                                    type: "array"
+                                                  type: "object"
+                                                clientRoles:
+                                                  additionalProperties:
+                                                    items:
+                                                      type: "string"
+                                                    type: "array"
+                                                  type: "object"
+                                                description:
+                                                  type: "string"
+                                                id:
+                                                  type: "string"
+                                                name:
+                                                  type: "string"
+                                                parentId:
+                                                  type: "string"
+                                                path:
+                                                  type: "string"
+                                                realmRoles:
+                                                  items:
+                                                    type: "string"
+                                                  type: "array"
+                                                subGroupCount:
+                                                  type: "integer"
+                                                subGroups:
+                                                  items:
+                                                    properties:
+                                                      access:
+                                                        additionalProperties:
+                                                          type: "boolean"
+                                                        type: "object"
+                                                      attributes:
+                                                        additionalProperties:
+                                                          items:
+                                                            type: "string"
+                                                          type: "array"
+                                                        type: "object"
+                                                      clientRoles:
+                                                        additionalProperties:
+                                                          items:
+                                                            type: "string"
+                                                          type: "array"
+                                                        type: "object"
+                                                      description:
+                                                        type: "string"
+                                                      id:
+                                                        type: "string"
+                                                      name:
+                                                        type: "string"
+                                                      parentId:
+                                                        type: "string"
+                                                      path:
+                                                        type: "string"
+                                                      realmRoles:
+                                                        items:
+                                                          type: "string"
+                                                        type: "array"
+                                                      subGroupCount:
+                                                        type: "integer"
+                                                      subGroups:
+                                                        items:
+                                                          properties:
+                                                            access:
+                                                              additionalProperties:
+                                                                type: "boolean"
+                                                              type: "object"
+                                                            attributes:
+                                                              additionalProperties:
+                                                                items:
+                                                                  type: "string"
+                                                                type: "array"
+                                                              type: "object"
+                                                            clientRoles:
+                                                              additionalProperties:
+                                                                items:
+                                                                  type: "string"
+                                                                type: "array"
+                                                              type: "object"
+                                                            description:
+                                                              type: "string"
+                                                            id:
+                                                              type: "string"
+                                                            name:
+                                                              type: "string"
+                                                            parentId:
+                                                              type: "string"
+                                                            path:
+                                                              type: "string"
+                                                            realmRoles:
+                                                              items:
+                                                                type: "string"
+                                                              type: "array"
+                                                            subGroupCount:
+                                                              type: "integer"
+                                                            subGroups:
+                                                              items:
+                                                                properties:
+                                                                  access:
+                                                                    additionalProperties:
+                                                                      type: "boolean"
+                                                                    type: "object"
+                                                                  attributes:
+                                                                    additionalProperties:
+                                                                      items:
+                                                                        type: "string"
+                                                                      type: "array"
+                                                                    type: "object"
+                                                                  clientRoles:
+                                                                    additionalProperties:
+                                                                      items:
+                                                                        type: "string"
+                                                                      type: "array"
+                                                                    type: "object"
+                                                                  description:
+                                                                    type: "string"
+                                                                  id:
+                                                                    type: "string"
+                                                                  name:
+                                                                    type: "string"
+                                                                  parentId:
+                                                                    type: "string"
+                                                                  path:
+                                                                    type: "string"
+                                                                  realmRoles:
+                                                                    items:
+                                                                      type: "string"
+                                                                    type: "array"
+                                                                  subGroupCount:
+                                                                    type: "integer"
+                                                                  subGroups:
+                                                                    items:
+                                                                      properties:
+                                                                        access:
+                                                                          additionalProperties:
+                                                                            type: "boolean"
+                                                                          type: "object"
+                                                                        attributes:
+                                                                          additionalProperties:
+                                                                            items:
+                                                                              type: "string"
+                                                                            type: "array"
+                                                                          type: "object"
+                                                                        clientRoles:
+                                                                          additionalProperties:
+                                                                            items:
+                                                                              type: "string"
+                                                                            type: "array"
+                                                                          type: "object"
+                                                                        description:
+                                                                          type: "string"
+                                                                        id:
+                                                                          type: "string"
+                                                                        name:
+                                                                          type: "string"
+                                                                        parentId:
+                                                                          type: "string"
+                                                                        path:
+                                                                          type: "string"
+                                                                        realmRoles:
+                                                                          items:
+                                                                            type: "string"
+                                                                          type: "array"
+                                                                        subGroupCount:
+                                                                          type: "integer"
+                                                                        subGroups:
+                                                                          items:
+                                                                            properties:
+                                                                              access:
+                                                                                additionalProperties:
+                                                                                  type: "boolean"
+                                                                                type: "object"
+                                                                              attributes:
+                                                                                additionalProperties:
+                                                                                  items:
+                                                                                    type: "string"
+                                                                                  type: "array"
+                                                                                type: "object"
+                                                                              clientRoles:
+                                                                                additionalProperties:
+                                                                                  items:
+                                                                                    type: "string"
+                                                                                  type: "array"
+                                                                                type: "object"
+                                                                              description:
+                                                                                type: "string"
+                                                                              id:
+                                                                                type: "string"
+                                                                              name:
+                                                                                type: "string"
+                                                                              parentId:
+                                                                                type: "string"
+                                                                              path:
+                                                                                type: "string"
+                                                                              realmRoles:
+                                                                                items:
+                                                                                  type: "string"
+                                                                                type: "array"
+                                                                              subGroupCount:
+                                                                                type: "integer"
+                                                                              subGroups:
+                                                                                items:
+                                                                                  properties:
+                                                                                    access:
+                                                                                      additionalProperties:
+                                                                                        type: "boolean"
+                                                                                      type: "object"
+                                                                                    attributes:
+                                                                                      additionalProperties:
+                                                                                        items:
+                                                                                          type: "string"
+                                                                                        type: "array"
+                                                                                      type: "object"
+                                                                                    clientRoles:
+                                                                                      additionalProperties:
+                                                                                        items:
+                                                                                          type: "string"
+                                                                                        type: "array"
+                                                                                      type: "object"
+                                                                                    description:
+                                                                                      type: "string"
+                                                                                    id:
+                                                                                      type: "string"
+                                                                                    name:
+                                                                                      type: "string"
+                                                                                    parentId:
+                                                                                      type: "string"
+                                                                                    path:
+                                                                                      type: "string"
+                                                                                    realmRoles:
+                                                                                      items:
+                                                                                        type: "string"
+                                                                                      type: "array"
+                                                                                    subGroupCount:
+                                                                                      type: "integer"
+                                                                                  type: "object"
+                                                                                type: "array"
+                                                                            type: "object"
+                                                                          type: "array"
+                                                                      type: "object"
+                                                                    type: "array"
+                                                                type: "object"
+                                                              type: "array"
+                                                          type: "object"
+                                                        type: "array"
+                                                    type: "object"
+                                                  type: "array"
+                                              type: "object"
+                                            type: "array"
+                                        type: "object"
+                                      type: "array"
+                                  type: "object"
+                                type: "array"
+                            type: "object"
+                          type: "array"
+                      type: "object"
+                    type: "array"
+                  id:
+                    type: "string"
+                  identityProviderMappers:
+                    items:
+                      properties:
+                        config:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        id:
+                          type: "string"
+                        identityProviderAlias:
+                          type: "string"
+                        identityProviderMapper:
+                          type: "string"
+                        name:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  identityProviders:
+                    items:
+                      properties:
+                        addReadTokenRoleOnCreate:
+                          type: "boolean"
+                        alias:
+                          type: "string"
+                        authenticateByDefault:
+                          type: "boolean"
+                        config:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        displayName:
+                          type: "string"
+                        enabled:
+                          type: "boolean"
+                        firstBrokerLoginFlowAlias:
+                          type: "string"
+                        hideOnLogin:
+                          type: "boolean"
+                        internalId:
+                          type: "string"
+                        linkOnly:
+                          type: "boolean"
+                        organizationId:
+                          type: "string"
+                        postBrokerLoginFlowAlias:
+                          type: "string"
+                        providerId:
+                          type: "string"
+                        storeToken:
+                          type: "boolean"
+                        trustEmail:
+                          type: "boolean"
+                        updateProfileFirstLoginMode:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  internationalizationEnabled:
+                    type: "boolean"
+                  keycloakVersion:
+                    type: "string"
+                  localizationTexts:
+                    additionalProperties:
+                      additionalProperties:
+                        type: "string"
+                      type: "object"
+                    type: "object"
+                  loginTheme:
+                    type: "string"
+                  loginWithEmailAllowed:
+                    type: "boolean"
+                  maxDeltaTimeSeconds:
+                    type: "integer"
+                  maxFailureWaitSeconds:
+                    type: "integer"
+                  maxTemporaryLockouts:
+                    type: "integer"
+                  minimumQuickLoginWaitSeconds:
+                    type: "integer"
+                  notBefore:
+                    type: "integer"
+                  oauth2DeviceCodeLifespan:
+                    type: "integer"
+                  oauth2DevicePollingInterval:
+                    type: "integer"
+                  oauthClients:
+                    items:
+                      properties:
+                        access:
+                          additionalProperties:
+                            type: "boolean"
+                          type: "object"
+                        adminUrl:
+                          type: "string"
+                        alwaysDisplayInConsole:
+                          type: "boolean"
+                        attributes:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        authenticationFlowBindingOverrides:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        authorizationServicesEnabled:
+                          type: "boolean"
+                        authorizationSettings:
+                          properties:
+                            allowRemoteResourceManagement:
+                              type: "boolean"
+                            authorizationSchema:
+                              properties:
+                                resourceTypes:
+                                  additionalProperties:
+                                    properties:
+                                      groupType:
+                                        type: "string"
+                                      scopeAliases:
+                                        additionalProperties:
+                                          items:
+                                            type: "string"
+                                          type: "array"
+                                        type: "object"
+                                      scopes:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                      type:
+                                        type: "string"
+                                    type: "object"
+                                  type: "object"
+                              type: "object"
+                            clientId:
+                              type: "string"
+                            decisionStrategy:
+                              enum:
+                              - "AFFIRMATIVE"
+                              - "CONSENSUS"
+                              - "UNANIMOUS"
+                              type: "string"
+                            id:
+                              type: "string"
+                            name:
+                              type: "string"
+                            policies:
+                              items:
+                                properties:
+                                  config:
+                                    additionalProperties:
+                                      type: "string"
+                                    type: "object"
+                                  decisionStrategy:
+                                    enum:
+                                    - "AFFIRMATIVE"
+                                    - "CONSENSUS"
+                                    - "UNANIMOUS"
+                                    type: "string"
+                                  description:
+                                    type: "string"
+                                  id:
+                                    type: "string"
+                                  logic:
+                                    enum:
+                                    - "NEGATIVE"
+                                    - "POSITIVE"
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                  owner:
+                                    type: "string"
+                                  policies:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  resourceType:
+                                    type: "string"
+                                  resources:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  resourcesData:
+                                    items:
+                                      properties:
+                                        _id:
+                                          type: "string"
+                                        attributes:
+                                          additionalProperties:
+                                            items:
+                                              type: "string"
+                                            type: "array"
+                                          type: "object"
+                                        displayName:
+                                          type: "string"
+                                        icon_uri:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                        owner:
+                                          properties:
+                                            id:
+                                              type: "string"
+                                            name:
+                                              type: "string"
+                                          type: "object"
+                                        ownerManagedAccess:
+                                          type: "boolean"
+                                        scopes:
+                                          items:
+                                            properties:
+                                              displayName:
+                                                type: "string"
+                                              iconUri:
+                                                type: "string"
+                                              id:
+                                                type: "string"
+                                              name:
+                                                type: "string"
+                                            type: "object"
+                                          type: "array"
+                                        type:
+                                          type: "string"
+                                        uris:
+                                          items:
+                                            type: "string"
+                                          type: "array"
+                                      type: "object"
+                                    type: "array"
+                                  scopes:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  scopesData:
+                                    items:
+                                      properties:
+                                        displayName:
+                                          type: "string"
+                                        iconUri:
+                                          type: "string"
+                                        id:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                      type: "object"
+                                    type: "array"
+                                  type:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                            policyEnforcementMode:
+                              enum:
+                              - "DISABLED"
+                              - "ENFORCING"
+                              - "PERMISSIVE"
+                              type: "string"
+                            resources:
+                              items:
+                                properties:
+                                  _id:
+                                    type: "string"
+                                  attributes:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  displayName:
+                                    type: "string"
+                                  icon_uri:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                  owner:
+                                    properties:
+                                      id:
+                                        type: "string"
+                                      name:
+                                        type: "string"
+                                    type: "object"
+                                  ownerManagedAccess:
+                                    type: "boolean"
+                                  scopes:
+                                    items:
+                                      properties:
+                                        displayName:
+                                          type: "string"
+                                        iconUri:
+                                          type: "string"
+                                        id:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                      type: "object"
+                                    type: "array"
+                                  type:
+                                    type: "string"
+                                  uris:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                type: "object"
+                              type: "array"
+                            scopes:
+                              items:
+                                properties:
+                                  displayName:
+                                    type: "string"
+                                  iconUri:
+                                    type: "string"
+                                  id:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                          type: "object"
+                        baseUrl:
+                          type: "string"
+                        bearerOnly:
+                          type: "boolean"
+                        claims:
+                          properties:
+                            address:
+                              type: "boolean"
+                            email:
+                              type: "boolean"
+                            gender:
+                              type: "boolean"
+                            locale:
+                              type: "boolean"
+                            name:
+                              type: "boolean"
+                            phone:
+                              type: "boolean"
+                            picture:
+                              type: "boolean"
+                            profile:
+                              type: "boolean"
+                            username:
+                              type: "boolean"
+                            website:
+                              type: "boolean"
+                          type: "object"
+                        clientAuthenticatorType:
+                          type: "string"
+                        clientId:
+                          type: "string"
+                        clientTemplate:
+                          type: "string"
+                        consentRequired:
+                          type: "boolean"
+                        defaultClientScopes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        defaultRoles:
+                          items:
+                            type: "string"
+                          type: "array"
+                        description:
+                          type: "string"
+                        directAccessGrantsEnabled:
+                          type: "boolean"
+                        directGrantsOnly:
+                          type: "boolean"
+                        enabled:
+                          type: "boolean"
+                        frontchannelLogout:
+                          type: "boolean"
+                        fullScopeAllowed:
+                          type: "boolean"
+                        id:
+                          type: "string"
+                        implicitFlowEnabled:
+                          type: "boolean"
+                        name:
+                          type: "string"
+                        nodeReRegistrationTimeout:
+                          type: "integer"
+                        notBefore:
+                          type: "integer"
+                        optionalClientScopes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        origin:
+                          type: "string"
+                        protocol:
+                          type: "string"
+                        protocolMappers:
+                          items:
+                            properties:
+                              config:
+                                additionalProperties:
+                                  type: "string"
+                                type: "object"
+                              consentRequired:
+                                type: "boolean"
+                              consentText:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              protocol:
+                                type: "string"
+                              protocolMapper:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        publicClient:
+                          type: "boolean"
+                        redirectUris:
+                          items:
+                            type: "string"
+                          type: "array"
+                        registeredNodes:
+                          additionalProperties:
+                            type: "integer"
+                          type: "object"
+                        registrationAccessToken:
+                          type: "string"
+                        rootUrl:
+                          type: "string"
+                        secret:
+                          type: "string"
+                        serviceAccountsEnabled:
+                          type: "boolean"
+                        standardFlowEnabled:
+                          type: "boolean"
+                        surrogateAuthRequired:
+                          type: "boolean"
+                        type:
+                          type: "string"
+                        useTemplateConfig:
+                          type: "boolean"
+                        useTemplateMappers:
+                          type: "boolean"
+                        useTemplateScope:
+                          type: "boolean"
+                        webOrigins:
+                          items:
+                            type: "string"
+                          type: "array"
+                      type: "object"
+                    type: "array"
+                  offlineSessionIdleTimeout:
+                    type: "integer"
+                  offlineSessionMaxLifespan:
+                    type: "integer"
+                  offlineSessionMaxLifespanEnabled:
+                    type: "boolean"
+                  organizations:
+                    items:
+                      properties:
+                        alias:
+                          type: "string"
+                        attributes:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        description:
+                          type: "string"
+                        domains:
+                          items:
+                            properties:
+                              name:
+                                type: "string"
+                              verified:
+                                type: "boolean"
+                            type: "object"
+                          type: "array"
+                        enabled:
+                          type: "boolean"
+                        id:
+                          type: "string"
+                        identityProviders:
+                          items:
+                            properties:
+                              addReadTokenRoleOnCreate:
+                                type: "boolean"
+                              alias:
+                                type: "string"
+                              authenticateByDefault:
+                                type: "boolean"
+                              config:
+                                additionalProperties:
+                                  type: "string"
+                                type: "object"
+                              displayName:
+                                type: "string"
+                              enabled:
+                                type: "boolean"
+                              firstBrokerLoginFlowAlias:
+                                type: "string"
+                              hideOnLogin:
+                                type: "boolean"
+                              internalId:
+                                type: "string"
+                              linkOnly:
+                                type: "boolean"
+                              organizationId:
+                                type: "string"
+                              postBrokerLoginFlowAlias:
+                                type: "string"
+                              providerId:
+                                type: "string"
+                              storeToken:
+                                type: "boolean"
+                              trustEmail:
+                                type: "boolean"
+                              updateProfileFirstLoginMode:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        members:
+                          items:
+                            properties:
+                              access:
+                                additionalProperties:
+                                  type: "boolean"
+                                type: "object"
+                              applicationRoles:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              attributes:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              clientConsents:
+                                items:
+                                  properties:
+                                    clientId:
+                                      type: "string"
+                                    createdDate:
+                                      type: "integer"
+                                    grantedClientScopes:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    grantedRealmRoles:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    lastUpdatedDate:
+                                      type: "integer"
+                                  type: "object"
+                                type: "array"
+                              clientRoles:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              createdTimestamp:
+                                type: "integer"
+                              credentials:
+                                items:
+                                  properties:
+                                    algorithm:
+                                      type: "string"
+                                    config:
+                                      additionalProperties:
+                                        items:
+                                          type: "string"
+                                        type: "array"
+                                      type: "object"
+                                    counter:
+                                      type: "integer"
+                                    createdDate:
+                                      type: "integer"
+                                    credentialData:
+                                      type: "string"
+                                    device:
+                                      type: "string"
+                                    digits:
+                                      type: "integer"
+                                    federationLink:
+                                      type: "string"
+                                    hashIterations:
+                                      type: "integer"
+                                    hashedSaltedValue:
+                                      type: "string"
+                                    id:
+                                      type: "string"
+                                    period:
+                                      type: "integer"
+                                    priority:
+                                      type: "integer"
+                                    salt:
+                                      type: "string"
+                                    secretData:
+                                      type: "string"
+                                    temporary:
+                                      type: "boolean"
+                                    type:
+                                      type: "string"
+                                    userLabel:
+                                      type: "string"
+                                    value:
+                                      type: "string"
+                                  type: "object"
+                                type: "array"
+                              disableableCredentialTypes:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              email:
+                                type: "string"
+                              emailVerified:
+                                type: "boolean"
+                              enabled:
+                                type: "boolean"
+                              federatedIdentities:
+                                items:
+                                  properties:
+                                    identityProvider:
+                                      type: "string"
+                                    userId:
+                                      type: "string"
+                                    userName:
+                                      type: "string"
+                                  type: "object"
+                                type: "array"
+                              federationLink:
+                                type: "string"
+                              firstName:
+                                type: "string"
+                              groups:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              id:
+                                type: "string"
+                              lastName:
+                                type: "string"
+                              membershipType:
+                                enum:
+                                - "MANAGED"
+                                - "UNMANAGED"
+                                type: "string"
+                              notBefore:
+                                type: "integer"
+                              origin:
+                                type: "string"
+                              realmRoles:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              requiredActions:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              self:
+                                type: "string"
+                              serviceAccountClientId:
+                                type: "string"
+                              socialLinks:
+                                items:
+                                  properties:
+                                    socialProvider:
+                                      type: "string"
+                                    socialUserId:
+                                      type: "string"
+                                    socialUsername:
+                                      type: "string"
+                                  type: "object"
+                                type: "array"
+                              totp:
+                                type: "boolean"
+                              userProfileMetadata:
+                                properties:
+                                  attributes:
+                                    items:
+                                      properties:
+                                        annotations:
+                                          additionalProperties:
+                                            type: "object"
+                                          type: "object"
+                                        displayName:
+                                          type: "string"
+                                        group:
+                                          type: "string"
+                                        multivalued:
+                                          type: "boolean"
+                                        name:
+                                          type: "string"
+                                        readOnly:
+                                          type: "boolean"
+                                        required:
+                                          type: "boolean"
+                                        validators:
+                                          additionalProperties:
+                                            additionalProperties:
+                                              type: "object"
+                                            type: "object"
+                                          type: "object"
+                                      type: "object"
+                                    type: "array"
+                                  groups:
+                                    items:
+                                      properties:
+                                        annotations:
+                                          additionalProperties:
+                                            type: "object"
+                                          type: "object"
+                                        displayDescription:
+                                          type: "string"
+                                        displayHeader:
+                                          type: "string"
+                                        name:
+                                          type: "string"
+                                      type: "object"
+                                    type: "array"
+                                type: "object"
+                              username:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        name:
+                          type: "string"
+                        redirectUrl:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  organizationsEnabled:
+                    type: "boolean"
+                  otpPolicyAlgorithm:
+                    type: "string"
+                  otpPolicyCodeReusable:
+                    type: "boolean"
+                  otpPolicyDigits:
+                    type: "integer"
+                  otpPolicyInitialCounter:
+                    type: "integer"
+                  otpPolicyLookAheadWindow:
+                    type: "integer"
+                  otpPolicyPeriod:
+                    type: "integer"
+                  otpPolicyType:
+                    type: "string"
+                  otpSupportedApplications:
+                    items:
+                      type: "string"
+                    type: "array"
+                  passwordCredentialGrantAllowed:
+                    type: "boolean"
+                  passwordPolicy:
+                    type: "string"
+                  permanentLockout:
+                    type: "boolean"
+                  privateKey:
+                    type: "string"
+                  protocolMappers:
+                    items:
+                      properties:
+                        config:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        consentRequired:
+                          type: "boolean"
+                        consentText:
+                          type: "string"
+                        id:
+                          type: "string"
+                        name:
+                          type: "string"
+                        protocol:
+                          type: "string"
+                        protocolMapper:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  publicKey:
+                    type: "string"
+                  quickLoginCheckMilliSeconds:
+                    type: "integer"
+                  realm:
+                    type: "string"
+                  refreshTokenMaxReuse:
+                    type: "integer"
+                  registrationAllowed:
+                    type: "boolean"
+                  registrationEmailAsUsername:
+                    type: "boolean"
+                  registrationFlow:
+                    type: "string"
+                  rememberMe:
+                    type: "boolean"
+                  requiredActions:
+                    items:
+                      properties:
+                        alias:
+                          type: "string"
+                        config:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        defaultAction:
+                          type: "boolean"
+                        enabled:
+                          type: "boolean"
+                        name:
+                          type: "string"
+                        priority:
+                          type: "integer"
+                        providerId:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  requiredCredentials:
+                    items:
+                      type: "string"
+                    type: "array"
+                  resetCredentialsFlow:
+                    type: "string"
+                  resetPasswordAllowed:
+                    type: "boolean"
+                  revokeRefreshToken:
+                    type: "boolean"
+                  roles:
+                    properties:
+                      application:
+                        additionalProperties:
+                          items:
+                            properties:
+                              attributes:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              clientRole:
+                                type: "boolean"
+                              composite:
+                                type: "boolean"
+                              composites:
+                                properties:
+                                  application:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  client:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  realm:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                type: "object"
+                              containerId:
+                                type: "string"
+                              description:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              scopeParamRequired:
+                                type: "boolean"
+                            type: "object"
+                          type: "array"
+                        type: "object"
+                      client:
+                        additionalProperties:
+                          items:
+                            properties:
+                              attributes:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              clientRole:
+                                type: "boolean"
+                              composite:
+                                type: "boolean"
+                              composites:
+                                properties:
+                                  application:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  client:
+                                    additionalProperties:
+                                      items:
+                                        type: "string"
+                                      type: "array"
+                                    type: "object"
+                                  realm:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                type: "object"
+                              containerId:
+                                type: "string"
+                              description:
+                                type: "string"
+                              id:
+                                type: "string"
+                              name:
+                                type: "string"
+                              scopeParamRequired:
+                                type: "boolean"
+                            type: "object"
+                          type: "array"
+                        type: "object"
+                      realm:
+                        items:
+                          properties:
+                            attributes:
+                              additionalProperties:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              type: "object"
+                            clientRole:
+                              type: "boolean"
+                            composite:
+                              type: "boolean"
+                            composites:
+                              properties:
+                                application:
+                                  additionalProperties:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  type: "object"
+                                client:
+                                  additionalProperties:
+                                    items:
+                                      type: "string"
+                                    type: "array"
+                                  type: "object"
+                                realm:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                              type: "object"
+                            containerId:
+                              type: "string"
+                            description:
+                              type: "string"
+                            id:
+                              type: "string"
+                            name:
+                              type: "string"
+                            scopeParamRequired:
+                              type: "boolean"
+                          type: "object"
+                        type: "array"
+                    type: "object"
+                  scopeMappings:
+                    items:
+                      properties:
+                        client:
+                          type: "string"
+                        clientScope:
+                          type: "string"
+                        clientTemplate:
+                          type: "string"
+                        roles:
+                          items:
+                            type: "string"
+                          type: "array"
+                        self:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  smtpServer:
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  social:
+                    type: "boolean"
+                  socialProviders:
+                    additionalProperties:
+                      type: "string"
+                    type: "object"
+                  sslRequired:
+                    type: "string"
+                  ssoSessionIdleTimeout:
+                    type: "integer"
+                  ssoSessionIdleTimeoutRememberMe:
+                    type: "integer"
+                  ssoSessionMaxLifespan:
+                    type: "integer"
+                  ssoSessionMaxLifespanRememberMe:
+                    type: "integer"
+                  supportedLocales:
+                    items:
+                      type: "string"
+                    type: "array"
+                  updateProfileOnInitialSocialLogin:
+                    type: "boolean"
+                  userFederationMappers:
+                    items:
+                      properties:
+                        config:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        federationMapperType:
+                          type: "string"
+                        federationProviderDisplayName:
+                          type: "string"
+                        id:
+                          type: "string"
+                        name:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  userFederationProviders:
+                    items:
+                      properties:
+                        changedSyncPeriod:
+                          type: "integer"
+                        config:
+                          additionalProperties:
+                            type: "string"
+                          type: "object"
+                        displayName:
+                          type: "string"
+                        fullSyncPeriod:
+                          type: "integer"
+                        id:
+                          type: "string"
+                        lastSync:
+                          type: "integer"
+                        priority:
+                          type: "integer"
+                        providerName:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  userManagedAccessAllowed:
+                    type: "boolean"
+                  users:
+                    items:
+                      properties:
+                        access:
+                          additionalProperties:
+                            type: "boolean"
+                          type: "object"
+                        applicationRoles:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        attributes:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        clientConsents:
+                          items:
+                            properties:
+                              clientId:
+                                type: "string"
+                              createdDate:
+                                type: "integer"
+                              grantedClientScopes:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              grantedRealmRoles:
+                                items:
+                                  type: "string"
+                                type: "array"
+                              lastUpdatedDate:
+                                type: "integer"
+                            type: "object"
+                          type: "array"
+                        clientRoles:
+                          additionalProperties:
+                            items:
+                              type: "string"
+                            type: "array"
+                          type: "object"
+                        createdTimestamp:
+                          type: "integer"
+                        credentials:
+                          items:
+                            properties:
+                              algorithm:
+                                type: "string"
+                              config:
+                                additionalProperties:
+                                  items:
+                                    type: "string"
+                                  type: "array"
+                                type: "object"
+                              counter:
+                                type: "integer"
+                              createdDate:
+                                type: "integer"
+                              credentialData:
+                                type: "string"
+                              device:
+                                type: "string"
+                              digits:
+                                type: "integer"
+                              federationLink:
+                                type: "string"
+                              hashIterations:
+                                type: "integer"
+                              hashedSaltedValue:
+                                type: "string"
+                              id:
+                                type: "string"
+                              period:
+                                type: "integer"
+                              priority:
+                                type: "integer"
+                              salt:
+                                type: "string"
+                              secretData:
+                                type: "string"
+                              temporary:
+                                type: "boolean"
+                              type:
+                                type: "string"
+                              userLabel:
+                                type: "string"
+                              value:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        disableableCredentialTypes:
+                          items:
+                            type: "string"
+                          type: "array"
+                        email:
+                          type: "string"
+                        emailVerified:
+                          type: "boolean"
+                        enabled:
+                          type: "boolean"
+                        federatedIdentities:
+                          items:
+                            properties:
+                              identityProvider:
+                                type: "string"
+                              userId:
+                                type: "string"
+                              userName:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        federationLink:
+                          type: "string"
+                        firstName:
+                          type: "string"
+                        groups:
+                          items:
+                            type: "string"
+                          type: "array"
+                        id:
+                          type: "string"
+                        lastName:
+                          type: "string"
+                        notBefore:
+                          type: "integer"
+                        origin:
+                          type: "string"
+                        realmRoles:
+                          items:
+                            type: "string"
+                          type: "array"
+                        requiredActions:
+                          items:
+                            type: "string"
+                          type: "array"
+                        self:
+                          type: "string"
+                        serviceAccountClientId:
+                          type: "string"
+                        socialLinks:
+                          items:
+                            properties:
+                              socialProvider:
+                                type: "string"
+                              socialUserId:
+                                type: "string"
+                              socialUsername:
+                                type: "string"
+                            type: "object"
+                          type: "array"
+                        totp:
+                          type: "boolean"
+                        userProfileMetadata:
+                          properties:
+                            attributes:
+                              items:
+                                properties:
+                                  annotations:
+                                    additionalProperties:
+                                      type: "object"
+                                    type: "object"
+                                  displayName:
+                                    type: "string"
+                                  group:
+                                    type: "string"
+                                  multivalued:
+                                    type: "boolean"
+                                  name:
+                                    type: "string"
+                                  readOnly:
+                                    type: "boolean"
+                                  required:
+                                    type: "boolean"
+                                  validators:
+                                    additionalProperties:
+                                      additionalProperties:
+                                        type: "object"
+                                      type: "object"
+                                    type: "object"
+                                type: "object"
+                              type: "array"
+                            groups:
+                              items:
+                                properties:
+                                  annotations:
+                                    additionalProperties:
+                                      type: "object"
+                                    type: "object"
+                                  displayDescription:
+                                    type: "string"
+                                  displayHeader:
+                                    type: "string"
+                                  name:
+                                    type: "string"
+                                type: "object"
+                              type: "array"
+                          type: "object"
+                        username:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  verifiableCredentialsEnabled:
+                    type: "boolean"
+                  verifyEmail:
+                    type: "boolean"
+                  waitIncrementSeconds:
+                    type: "integer"
+                  webAuthnPolicyAcceptableAaguids:
+                    items:
+                      type: "string"
+                    type: "array"
+                  webAuthnPolicyAttestationConveyancePreference:
+                    type: "string"
+                  webAuthnPolicyAuthenticatorAttachment:
+                    type: "string"
+                  webAuthnPolicyAvoidSameAuthenticatorRegister:
+                    type: "boolean"
+                  webAuthnPolicyCreateTimeout:
+                    type: "integer"
+                  webAuthnPolicyExtraOrigins:
+                    items:
+                      type: "string"
+                    type: "array"
+                  webAuthnPolicyPasswordlessAcceptableAaguids:
+                    items:
+                      type: "string"
+                    type: "array"
+                  webAuthnPolicyPasswordlessAttestationConveyancePreference:
+                    type: "string"
+                  webAuthnPolicyPasswordlessAuthenticatorAttachment:
+                    type: "string"
+                  webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister:
+                    type: "boolean"
+                  webAuthnPolicyPasswordlessCreateTimeout:
+                    type: "integer"
+                  webAuthnPolicyPasswordlessExtraOrigins:
+                    items:
+                      type: "string"
+                    type: "array"
+                  webAuthnPolicyPasswordlessPasskeysEnabled:
+                    type: "boolean"
+                  webAuthnPolicyPasswordlessRequireResidentKey:
+                    type: "string"
+                  webAuthnPolicyPasswordlessRpEntityName:
+                    type: "string"
+                  webAuthnPolicyPasswordlessRpId:
+                    type: "string"
+                  webAuthnPolicyPasswordlessSignatureAlgorithms:
+                    items:
+                      type: "string"
+                    type: "array"
+                  webAuthnPolicyPasswordlessUserVerificationRequirement:
+                    type: "string"
+                  webAuthnPolicyRequireResidentKey:
+                    type: "string"
+                  webAuthnPolicyRpEntityName:
+                    type: "string"
+                  webAuthnPolicyRpId:
+                    type: "string"
+                  webAuthnPolicySignatureAlgorithms:
+                    items:
+                      type: "string"
+                    type: "array"
+                  webAuthnPolicyUserVerificationRequirement:
+                    type: "string"
+                type: "object"
+              resources:
+                description: "Compute Resources required by Keycloak container. If\
+                  \ not specified, the value is inherited from the Keycloak CR."
+                properties:
+                  claims:
+                    items:
+                      properties:
+                        name:
+                          type: "string"
+                        request:
+                          type: "string"
+                      type: "object"
+                    type: "array"
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: "integer"
+                      - type: "string"
+                      x-kubernetes-int-or-string: true
+                    type: "object"
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: "integer"
+                      - type: "string"
+                      x-kubernetes-int-or-string: true
+                    type: "object"
+                type: "object"
+            required:
+            - "keycloakCRName"
+            - "realm"
+            type: "object"
+          status:
+            properties:
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      type: "string"
+                    message:
+                      type: "string"
+                    observedGeneration:
+                      type: "integer"
+                    status:
+                      type: "string"
+                    type:
+                      type: "string"
+                  type: "object"
+                type: "array"
+            type: "object"
+        type: "object"
+    served: true
+    storage: true
+    subresources:
+      status: {}
+{{- end }}
