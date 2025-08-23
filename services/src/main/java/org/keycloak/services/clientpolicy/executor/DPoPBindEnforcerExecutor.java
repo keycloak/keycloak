@@ -26,18 +26,14 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
-import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
-import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
 import org.keycloak.services.util.DPoPUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -105,7 +101,7 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
             case BACKCHANNEL_TOKEN_REQUEST:
                 // Codes for processing these requests verifies DPoP.
                 // If this verification is done twice, DPoPReplayCheck fails. Therefore, the executor only checks existence of DPoP Proof
-                if (request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) == null) {
+                if (request.getHttpHeaders().getHeaderString(OAuth2Constants.DPOP_HTTP_HEADER) == null) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_DPOP_PROOF, "DPoP proof is missing");
                 }
                 break;

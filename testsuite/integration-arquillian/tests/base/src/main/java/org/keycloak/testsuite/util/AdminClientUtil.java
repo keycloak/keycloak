@@ -59,18 +59,18 @@ public class AdminClientUtil {
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot) throws Exception {
         return createAdminClient(ignoreUnknownProperties, authServerContextRoot, MASTER, ADMIN, ADMIN,
-            Constants.ADMIN_CLI_CLIENT_ID, null, null);
+            Constants.ADMIN_CLI_CLIENT_ID, null, null, false);
 
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username,
         String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot(), realmName, username, password,
-            clientId, clientSecret, null);
+            clientId, clientSecret, null, false);
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName,
-        String username, String password, String clientId, String clientSecret, String scope)
+        String username, String password, String clientId, String clientSecret, String scope, boolean useDPoP)
         throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
 
         ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
@@ -83,7 +83,9 @@ public class AdminClientUtil {
                 .clientId(clientId)
                 .clientSecret(clientSecret)
                 .resteasyClient(resteasyClient)
-                .scope(scope).build();
+                .scope(scope)
+                .useDPoP(useDPoP)
+                .build();
     }
 
     public static Keycloak createAdminClientWithClientCredentials(String realmName, String clientId, String clientSecret, String scope)
