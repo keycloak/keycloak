@@ -33,7 +33,6 @@ import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -84,10 +83,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
             updateControl = UpdateControl.patchStatus(realm);
         }
 
-        if (status
-                .getConditions()
-                .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !Boolean.TRUE.equals(c.getStatus()))) {
+        if (!status.isDone()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
