@@ -3,7 +3,7 @@ description: Caches Maven artifacts
 
 inputs:
   create-cache-if-it-doesnt-exist:
-    description: > 
+    description: >
       Only those callers which fill the cache with the right contents should set this to true to avoid creating a cache
       which contains too few or too many entries.
     required: false
@@ -24,10 +24,14 @@ runs:
       with:
         # Two asterisks are needed to make the follow-up exclusion work
         # see https://github.com/actions/toolkit/issues/713 for the upstream issue
+        #
+        # Hybrid cache strategy: Use an OS-specific key for writing, but allow fallback to a cross-OS cache for reading.
         path: |
           ~/.m2/repository/*/*
           !~/.m2/repository/org/keycloak
-        key: ${{ steps.weekly-cache-key.outputs.key }}
+        key: mvn-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+        restore-keys: |
+          mvn--${{ steps.weekly-cache-key.outputs.key }}
         # Enable cross-os archive use the cache on both Linux and Windows
         enableCrossOsArchive: true
 
@@ -37,10 +41,13 @@ runs:
       if: inputs.create-cache-if-it-doesnt-exist == 'false'
       with:
         # This needs to repeat the same path pattern as above to find the matching cache
+        # Hybrid cache strategy used again
         path: |
           ~/.m2/repository/*/*
           !~/.m2/repository/org/keycloak
-        key: ${{ steps.weekly-cache-key.outputs.key }}
+        key: mvn-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+        restore-keys: |
+          mvn--${{ steps.weekly-cache-key.outputs.key }}
         enableCrossOsArchive: true
 
     - shell: bash
