@@ -105,8 +105,8 @@ importers:
         specifier: ^7.62.0
         version: 7.62.0(react@18.3.1)
       react-i18next:
-        specifier: ^15.7.1
-        version: 15.7.1(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+        specifier: ^15.7.2
+        version: 15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
       react-router-dom:
         specifier: ^6.30.1
         version: 6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -211,8 +211,8 @@ importers:
         specifier: ^7.62.0
         version: 7.62.0(react@18.3.1)
       react-i18next:
-        specifier: ^15.7.1
-        version: 15.7.1(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+        specifier: ^15.7.2
+        version: 15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
       react-router-dom:
         specifier: ^6.30.1
         version: 6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -399,8 +399,8 @@ importers:
         specifier: 7.62.0
         version: 7.62.0(react@18.3.1)
       react-i18next:
-        specifier: ^15.7.1
-        version: 15.7.1(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+        specifier: ^15.7.2
+        version: 15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
     devDependencies:
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -896,10 +896,6 @@ packages:
 
   '@eslint/eslintrc@3.3.1':
     resolution: {integrity: sha512-gtF186CXhIl1p4pJNGZw8Yc6RlshoePRvE0X91oPGb3vZ8pM3qOS9W9NGPat9LziaBV7XrJWGylNQXkGcnM3IQ==}
-    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@eslint/js@9.33.0':
-    resolution: {integrity: sha512-5K1/mKhWaMfreBGJTwval43JJmkip0RmM+3+IuqupeSKNC/Th2Kc7ucaq5ovTSra/OOKB9c58CGSz3QMVbWt0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/js@9.34.0':
@@ -3539,10 +3535,10 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
-  react-i18next@15.7.1:
-    resolution: {integrity: sha512-o4VsKh30fy7p0z5ACHuyWqB6xu9WpQIQy2/ZcbCqopNnrnTVOPn/nAv9uYP4xYAWg99QMpvZ9Bu/si3eGurzGw==}
+  react-i18next@15.7.2:
+    resolution: {integrity: sha512-xJxq7ibnhUlMvd82lNC4te1GxGUMoM1A05KKyqoqsBXVZtEvZg/fz/fnVzdlY/hhQ3SpP/79qCocZOtICGhd3g==}
     peerDependencies:
-      i18next: '>= 23.4.0'
+      i18next: '>= 25.4.1'
       react: '>= 16.8.0'
       react-dom: '*'
       react-native: '*'
@@ -4806,8 +4802,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@eslint/js@9.33.0': {}
-
   '@eslint/js@9.34.0': {}
 
   '@eslint/object-schema@2.1.6': {}
@@ -4893,7 +4887,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-hook-form: 7.62.0(react@18.3.1)
-      react-i18next: 15.7.1(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+      react-i18next: 15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
       react-router-dom: 6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
@@ -7679,7 +7673,7 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@15.7.1(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2):
+  react-i18next@15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2):
     dependencies:
       '@babel/runtime': 7.28.3
       html-parse-stringify: 3.0.1
