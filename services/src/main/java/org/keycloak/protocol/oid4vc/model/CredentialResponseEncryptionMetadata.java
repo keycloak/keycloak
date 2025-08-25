@@ -74,7 +74,8 @@ public class CredentialResponseEncryptionMetadata {
         return encryptionRequired;
     }
 
-    public void setEncryptionRequired(Boolean encryptionRequired) {
+    public CredentialResponseEncryptionMetadata setEncryptionRequired(Boolean encryptionRequired) {
         this.encryptionRequired = encryptionRequired;
+        return this;
     }
 }

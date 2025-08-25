@@ -590,11 +590,6 @@ public class OID4VCIssuerEndpoint {
         }
         KeyWrapper keyWrapper = matchingKeys.get(0);
 
-        // Validate alg matches key
-        if (!keyWrapper.getType().equals("RSA")) {
-            throw new JWEException("Only RSA keys are supported for encryption");
-        }
-
         // Set the decryption key
         jwe.getKeyStorage().setDecryptionKey(keyWrapper.getPrivateKey());
 

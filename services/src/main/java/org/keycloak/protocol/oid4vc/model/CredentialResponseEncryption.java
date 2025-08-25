@@ -39,7 +39,7 @@ public class CredentialResponseEncryption {
      * OPTIONAL. A string specifying the compression algorithm to be used for compressing the
      * Credential Response prior to encryption.
      */
-    private String zip;  // New field
+    private String zip;
 
     /**
      * REQUIRED if credential_response_encryption is included in the Credential Request.
