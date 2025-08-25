@@ -22,6 +22,8 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.provider.Provider;
 
+import java.util.List;
+
 public interface ProofValidator extends Provider {
 
     @Override
@@ -31,10 +33,10 @@ public interface ProofValidator extends Provider {
     String getProofType();
 
     /**
-     * Validates a client-provided key binding proof.
+     * Validates client-provided key binding proofs.
      *
      * @param vcIssuanceContext the issuance context with credential request and config
-     * @return the JWK to bind to the credential
+     * @return the list of JWKs to bind to credentials (one JWK per credential)
      */
-    JWK validateProof(VCIssuanceContext vcIssuanceContext) throws VCIssuerException;
+    List<JWK> validateProof(VCIssuanceContext vcIssuanceContext) throws VCIssuerException;
 }

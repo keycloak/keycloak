@@ -51,12 +51,11 @@ import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.Claims;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.JwtProof;
-import org.keycloak.protocol.oid4vc.model.Proof;
+import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -116,8 +115,8 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         testingClient
                 .server(TEST_REALM_NAME)
                 .run((session -> {
-                    JwtProof proof = new JwtProof()
-                            .setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+                    Proofs proof = new Proofs()
+                            .setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce)));
 
                     ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
                                                                            ClientScopeRepresentation.class);
@@ -137,8 +136,8 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         try {
             withCausePropagation(() -> {
                 testingClient.server(TEST_REALM_NAME).run((session -> {
-                    JwtProof proof = new JwtProof()
-                            .setJwt(generateInvalidJwtProof(getCredentialIssuer(session), cNonce));
+                    Proofs proof = new Proofs()
+                            .setJwt(List.of(generateInvalidJwtProof(getCredentialIssuer(session), cNonce)));
 
                     ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
                                                                            ClientScopeRepresentation.class);
@@ -148,7 +147,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             });
             Assert.fail("Should have thrown an exception");
         } catch (BadRequestException ex) {
-            Assert.assertEquals("Could not validate provided proof", ex.getMessage());
+            Assert.assertEquals("Could not validate provided jwt proof", ex.getMessage());
         }
     }
 
@@ -167,7 +166,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         String cNonce = cNonceHandler.buildCNonce(null,
                                                                   Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
                                                                          nonceEndpoint));
-                        Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+                        Proofs proof = new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce)));
 
                         ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
                                                                                ClientScopeRepresentation.class);
@@ -197,7 +196,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
                         // creates a cNonce with missing data
                         String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint), null);
-                        Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+                        Proofs proof = new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce)));
 
                         ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
                                                                                ClientScopeRepresentation.class);
@@ -231,7 +230,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                             session.getContext().getRealm().setAttribute(Oid4VciConstants.C_NONCE_LIFETIME_IN_SECONDS, -1);
                             String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint),
                                                                       Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
-                            Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
+                            Proofs proof = new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce)));
 
                             ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
                                                                                    ClientScopeRepresentation.class);
@@ -254,7 +253,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     private static SdJwtVP testRequestTestCredential(KeycloakSession session, ClientScopeRepresentation clientScope,
-                                                     String token, Proof proof)
+                                                     String token, Proofs proof)
             throws VerificationException {
 
         AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
@@ -264,7 +263,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         CredentialRequest credentialRequest = new CredentialRequest()
                 .setCredentialConfigurationId(credentialConfigurationId)
-                .setProof(proof);
+                .setProofs(proof);
 
         Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
         assertEquals("The credential request should be answered successfully.",
