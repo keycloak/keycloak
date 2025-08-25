@@ -90,6 +90,7 @@ import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.TracingOptions;
 import org.keycloak.config.TransactionOptions;
+import org.keycloak.config.database.Database;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -168,6 +169,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
 
+import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
@@ -381,6 +383,12 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(ValidatePersistenceUnitsBuildItem.class)
     void checkPersistenceUnits(List<PersistenceXmlDescriptorBuildItem> descriptors) {
+        if (Database.Vendor.TIDB.isOfKind(Configuration.getConfigValue(DB).getValue())) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.DB_TIDB)){
+                throw new RuntimeException("The feature TiDB is not enabled");
+            }
+        }
+
         List<String> notSetPersistenceUnitsDBKinds = descriptors.stream()
                 .map(PersistenceXmlDescriptorBuildItem::getDescriptor)
                 .filter(descriptor -> !descriptor.getName().equals(DEFAULT_PERSISTENCE_UNIT)) // not default persistence unit
