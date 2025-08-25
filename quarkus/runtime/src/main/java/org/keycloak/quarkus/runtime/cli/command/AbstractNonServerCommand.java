@@ -56,4 +56,9 @@ public abstract class AbstractNonServerCommand extends AbstractStartCommand {
 
     public void onStart(QuarkusKeycloakApplication application) {
     }
+
+    @Override
+    public boolean isServing() {
+        return false;
+    }
 }

@@ -28,13 +28,11 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class DatabasePropertyMappers {
+final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
-    private DatabasePropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getDatabasePropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         var mappers = new PropertyMapper<?>[]{
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::transformDialect)

@@ -9,15 +9,13 @@ import java.nio.file.Path;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class ConfigKeystorePropertyMappers {
+public final class ConfigKeystorePropertyMappers implements PropertyMapperGrouping {
     private static final String SMALLRYE_KEYSTORE_PATH = "smallrye.config.source.keystore.kc-default.path";
     private static final String SMALLRYE_KEYSTORE_PASSWORD = "smallrye.config.source.keystore.kc-default.password";
 
 
-    private ConfigKeystorePropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getConfigKeystorePropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE)
                         .to(SMALLRYE_KEYSTORE_PATH)

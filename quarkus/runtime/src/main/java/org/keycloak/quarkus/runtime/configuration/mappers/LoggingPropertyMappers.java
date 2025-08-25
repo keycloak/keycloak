@@ -32,7 +32,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
-public final class LoggingPropertyMappers {
+public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
@@ -41,10 +41,9 @@ public final class LoggingPropertyMappers {
 
     private final static Map<String, Map<String, String>> rootLogLevels = new HashMap<String, Map<String,String>>();
 
-    private LoggingPropertyMappers() {
-    }
 
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         rootLogLevels.clear(); // reset the cached root log level and categories
         PropertyMapper<?>[] defaultMappers = new PropertyMapper[]{
                 fromOption(LoggingOptions.LOG)

@@ -9,12 +9,11 @@ import org.keycloak.config.SecurityOptions;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
-final class SecurityPropertyMappers {
+final class SecurityPropertyMappers implements PropertyMapperGrouping {
 
-    private SecurityPropertyMappers() {
-    }
 
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(SecurityOptions.FIPS_MODE).transformer(SecurityPropertyMappers::resolveFipsMode)
                         .paramLabel("mode")

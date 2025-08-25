@@ -4,12 +4,10 @@ import org.keycloak.config.VaultOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class VaultPropertyMappers {
+final class VaultPropertyMappers implements PropertyMapperGrouping {
 
-    private VaultPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getVaultPropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(VaultOptions.VAULT)
                         .paramLabel("provider")

@@ -24,21 +24,21 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.Strategy;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.Import;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class ImportPropertyMappers {
+public final class ImportPropertyMappers implements PropertyMapperGrouping {
     private static final String IMPORTER_PROPERTY = "kc.spi-import--importer";
     private static final String SINGLE_FILE = "singleFile";
     private static final String DIR = "dir";
 
-    private ImportPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[]{
                 fromOption(IMPORTER_PLACEHOLDER)
                         .to(IMPORTER_PROPERTY)
@@ -66,8 +66,9 @@ public final class ImportPropertyMappers {
         };
     }
 
-    public static void validateConfig() {
-        if (getOptionalValue(IMPORTER_PROPERTY).isEmpty() && System.getProperty(PROVIDER) == null) {
+    @Override
+    public void validateConfig(Picocli picocli) {
+        if (picocli.getParsedCommand().orElse(null) instanceof Import && getOptionalValue(IMPORTER_PROPERTY).isEmpty() && System.getProperty(PROVIDER) == null) {
             throw new PropertyException("Must specify either --dir or --file options.");
         }
     }
