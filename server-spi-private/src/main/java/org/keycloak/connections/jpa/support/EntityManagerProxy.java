@@ -53,16 +53,27 @@ public class EntityManagerProxy {
     private int changeCount = 0;
 
     public static EntityManager create(KeycloakSession session, EntityManager em) {
+        return create(session, em, true);
+    }
+
+    public static EntityManager create(KeycloakSession session, EntityManager em, boolean nestedEntityManagers) {
         // the alternative to this tracking is to have a method on the session for
         // getting the in use providers - not something that will create all providers
         EntityManagerProxy converter = new EntityManagerProxy(session, em);
+        if (nestedEntityManagers) {
+            retainEntityManagerProxyForUsingNestedEntityManagers(session, converter);
+        }
+        return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, converter::invoke);
+    }
+
+    private static void retainEntityManagerProxyForUsingNestedEntityManagers(KeycloakSession session,
+                                                                             EntityManagerProxy converter) {
         Set<EntityManagerProxy> entityManagerProxies = session.getAttribute(EntityManagers.ENTITY_MANAGER_PROXIES, Set.class);
         if (entityManagerProxies == null) {
             entityManagerProxies = new HashSet<>();
             session.setAttribute(EntityManagers.ENTITY_MANAGER_PROXIES, entityManagerProxies);
         }
         entityManagerProxies.add(converter);
-        return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, converter::invoke);
     }
 
     private EntityManagerProxy(KeycloakSession session, EntityManager em) {
