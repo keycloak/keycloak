@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -57,6 +58,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactor
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -596,5 +598,25 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             assertFalse("Only mappers supported for the requested type should have been evaluated.",
                     credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
         }
+    }
+
+    protected List<AuthorizationDetailResponse> parseAuthorizationDetails(String responseBody) throws IOException {
+        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+        });
+        Object authDetailsObj = responseMap.get("authorization_details");
+        assertNotNull("authorization_details should be present in the response", authDetailsObj);
+        return JsonSerialization.readValue(
+                JsonSerialization.writeValueAsString(authDetailsObj),
+                new TypeReference<List<AuthorizationDetailResponse>>() {
+                }
+        );
+    }
+
+    protected String getAccessToken(String responseBody) throws IOException {
+        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+        });
+        String token = (String) responseMap.get("access_token");
+        assertNotNull("Access token should be present", token);
+        return token;
     }
 }
