@@ -50,7 +50,7 @@ public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev", "--health-enabled=true" })
-    void testHealthEndpoint() {
+    void testHealthEndpoint(KeycloakDistribution distribution) {
         when().get("/health").then()
                 .statusCode(200);
         when().get("/health/live").then()
@@ -62,6 +62,18 @@ public class HealthDistTest {
                 .statusCode(404);
         when().get("/lb-check").then()
                 .statusCode(404);
+
+        // still nothing on main
+        distribution.setRequestPort(8080);
+        when().get("/health/ready").then()
+                .statusCode(404);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--health-enabled=true", "--http-management-health-enabled=false" })
+    void testHealthEndpointOnMain(KeycloakDistribution distribution) {
+        distribution.setRequestPort(8080);
+        when().get("/health/ready").then().statusCode(200);
     }
 
     @Test

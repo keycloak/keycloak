@@ -937,4 +937,11 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-exclude='/realms/my-realm/.*");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
     }
+
+    @Test
+    public void healthEnabledRequired() {
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--http-management-health-enabled=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Available only when health is enabled"));
+    }
 }

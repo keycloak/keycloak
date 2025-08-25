@@ -40,6 +40,10 @@ public class ManagementPropertyMappers {
                         .to("quarkus.management.enabled")
                         .transformer((val, ctx) -> managementEnabledTransformer())
                         .build(),
+                fromOption(ManagementOptions.HTTP_MANAGEMENT_HEALTH_ENABLED)
+                        .to("quarkus.smallrye-health.management.enabled")
+                        .isEnabled(() -> isTrue(HealthOptions.HEALTH_ENABLED), "health is enabled")
+                        .build(),
                 fromOption(ManagementOptions.LEGACY_OBSERVABILITY_INTERFACE)
                         .build(),
                 fromOption(ManagementOptions.HTTP_MANAGEMENT_RELATIVE_PATH)
@@ -122,7 +126,8 @@ public class ManagementPropertyMappers {
         if (isTrue(LEGACY_OBSERVABILITY_INTERFACE)) {
             return false;
         }
-        var isManagementOccupied = isTrue(HealthOptions.HEALTH_ENABLED) || isTrue(MetricsOptions.METRICS_ENABLED);
+        var isManagementOccupied = isTrue(MetricsOptions.METRICS_ENABLED)
+                || (isTrue(HealthOptions.HEALTH_ENABLED) && isTrue(ManagementOptions.HTTP_MANAGEMENT_HEALTH_ENABLED));
         return isManagementOccupied;
     }
 
