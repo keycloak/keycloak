@@ -21,6 +21,10 @@ public class Endpoints {
         return asString(getBase().path(RealmsResource.class).path("{realm}/.well-known/openid-configuration"));
     }
 
+    public String getIssuer() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}"));
+    }
+
     public String getAuthorization() {
         return asString(OIDCLoginProtocolService.authUrl(getBase()));
     }

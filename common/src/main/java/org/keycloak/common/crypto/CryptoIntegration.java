@@ -43,6 +43,10 @@ public class CryptoIntegration {
         }
     }
 
+    public static boolean isInitialised() {
+        return cryptoProvider != null;
+    }
+
     public static CryptoProvider getProvider() {
         if (cryptoProvider == null) {
             throw new IllegalStateException("Illegal state. Please init first before obtaining provider");
