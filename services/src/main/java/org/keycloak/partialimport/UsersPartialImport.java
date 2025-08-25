@@ -41,6 +41,9 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     // so we cache the created id here.
     private final Map<String, String> createdIds = new HashMap<>();
 
+    private static final boolean USE_USER_UUID_V7 = Boolean.parseBoolean(System.getenv("KC_USER_UUID_V7")
+);
+
     @Override
     public List<UserRepresentation> getRepList(PartialImportRepresentation partialImportRep) {
         return partialImportRep.getUsers();
@@ -111,7 +114,11 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     @Override
     public void create(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         if (user.getId() == null) {
-            user.setId(KeycloakModelUtils.generateId());
+            if (USE_USER_UUID_V7) {
+                user.setId(KeycloakModelUtils.generateIdv7());
+            } else {
+                user.setId(KeycloakModelUtils.generateId());
+            }
         }
         UserModel userModel = RepresentationToModel.createUser(session, realm, user);
         if (userModel == null) throw new RuntimeException("Unable to create user " + getName(user));
