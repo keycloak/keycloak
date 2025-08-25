@@ -392,10 +392,7 @@ export const EffectiveMessageBundles = ({
                                 field.onChange("");
                               }}
                             >
-                              {localeToDisplayName(
-                                field.value,
-                                whoAmI.getLocale(),
-                              )}
+                              {localeToDisplayName(field.value, whoAmI.locale)}
                             </Chip>
                           ) : null}
                         </ChipGroup>
@@ -412,7 +409,7 @@ export const EffectiveMessageBundles = ({
                       ].concat(
                         combinedLocales.map((option) => (
                           <SelectOption key={option} value={option}>
-                            {localeToDisplayName(option, whoAmI.getLocale())}
+                            {localeToDisplayName(option, whoAmI.locale)}
                           </SelectOption>
                         )),
                       )}
@@ -509,7 +506,7 @@ export const EffectiveMessageBundles = ({
                         {key === "locale"
                           ? localeToDisplayName(
                               value,
-                              whoAmI.getLocale(),
+                              whoAmI.locale,
                             )?.toLowerCase()
                           : value}
                       </Chip>

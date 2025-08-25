@@ -184,7 +184,7 @@ export default function SessionsTable({
       isOffline: false,
     });
 
-    if (session.userId === whoAmI.getUserId()) {
+    if (session.userId === whoAmI.userId) {
       await keycloak.logout({ redirectUri: "" });
     } else if (isOnUserPage && isLightweightUser(session.userId)) {
       navigate(toUsers({ realm: realm }));
