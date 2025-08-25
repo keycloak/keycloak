@@ -71,7 +71,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
             jwksUrl = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), jwksUrl);
-            JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
+            JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl, config.getJwksAuthToken());
             return JWKSUtils.getKeyWrappersForUse(jwks, keyUse, true);
         } else if (config.isUseJwksString()) {
             JSONWebKeySet jwks = JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class);

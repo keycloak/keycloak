@@ -18,6 +18,7 @@
 package org.keycloak.truststore;
 
 import org.junit.Test;
+import org.keycloak.saml.common.util.SecurityActions;
 
 import java.io.File;
 import java.net.URL;
@@ -69,5 +70,4 @@ public class TruststoreBuilderTest {
         assertThrows(RuntimeException.class, () -> TruststoreBuilder
                 .createMergedTruststore(new String[] { new File(url.getPath()).getAbsolutePath() }, false));
     }
-
 }

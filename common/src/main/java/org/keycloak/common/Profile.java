@@ -93,6 +93,8 @@ public class Profile {
 
         SPIFFE_JWT("SPIFFE JWT SVID Client Authentication", Type.EXPERIMENTAL),
 
+        KUBERNETES_JWKS("Kubernetes JWKS Client Authentication", Type.PREVIEW),
+
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 

@@ -55,20 +55,20 @@ import java.util.List;
  */
 public class JWTClientValidator {
 
-    private static final Logger logger = Logger.getLogger(JWTClientValidator.class);
+    protected static final Logger logger = Logger.getLogger(JWTClientValidator.class);
 
-    private final ClientAuthenticationFlowContext context;
-    private final RealmModel realm;
-    private final int currentTime;
-    private final String clientAuthenticatorProviderId;
+    protected final ClientAuthenticationFlowContext context;
+    protected final RealmModel realm;
+    protected final int currentTime;
+    protected final String clientAuthenticatorProviderId;
 
-    private MultivaluedMap<String, String> params;
-    private String clientAssertion;
+    protected MultivaluedMap<String, String> params;
+    protected String clientAssertion;
     protected JWSInput jws;
     protected JsonWebToken token;
     protected ClientModel client;
 
-    private static final int ALLOWED_CLOCK_SKEW = 15; // sec
+    protected static final int ALLOWED_CLOCK_SKEW = 15; // sec
 
     public JWTClientValidator(ClientAuthenticationFlowContext context, String clientAuthenticatorProviderId) {
         this.context = context;
@@ -250,18 +250,20 @@ public class JWTClientValidator {
     }
 
     public void validateTokenReuse() {
-        if (!isJwtIdRequired() && token.getId() == null) return;
-        if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken reuse");
-        if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
+        if (isTokenReuseCheckRequired()) {
+            if (!isJwtIdRequired() && token.getId() == null) return;
+            if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken reuse");
+            if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
 
-        SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
-        long lifespanInSecs = calculateLifespanInSeconds();
-        if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
-            logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
+            SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
+            long lifespanInSecs = calculateLifespanInSeconds();
+            if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
+                logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
 
-        } else {
-            logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), client.getClientId());
-            throw new RuntimeException("Token reuse detected");
+            } else {
+                logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), client.getClientId());
+                throw new RuntimeException("Token reuse detected");
+            }
         }
     }
 
@@ -325,6 +327,10 @@ public class JWTClientValidator {
     }
 
     protected boolean isJwtIdRequired() {
+        return true;
+    }
+
+    protected boolean isTokenReuseCheckRequired() {
         return true;
     }
 

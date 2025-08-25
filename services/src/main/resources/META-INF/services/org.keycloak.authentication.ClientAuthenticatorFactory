@@ -20,3 +20,4 @@ org.keycloak.authentication.authenticators.client.JWTClientAuthenticator
 org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator
 org.keycloak.authentication.authenticators.client.X509ClientAuthenticator
 org.keycloak.authentication.authenticators.client.SpiffeClientAuthenticator
+org.keycloak.authentication.authenticators.client.KubernetesJWTClientAuthenticator

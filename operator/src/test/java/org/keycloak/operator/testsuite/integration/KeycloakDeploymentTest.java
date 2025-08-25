@@ -70,6 +70,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
@@ -724,6 +725,20 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var limits = resources.getLimits();
         assertThat(limits).isNotNull();
         assertThat(limits.get("memory")).isEqualTo(config.keycloak().resources().limits().memory());
+    }
+
+    @Test
+    public void testTrustedKubernetesCA() {
+        Log.info("Creating new Keycloak CR example");
+        var kc = getTestKeycloakDeployment(true);
+        var deploymentName = kc.getMetadata().getName();
+        deployKeycloak(k8sclient, kc, true);
+
+        Log.info("Gathering logs");
+        var logs = k8sclient.pods().withName(deploymentName + "-0").getLog();
+
+        Log.info("Checking if the default Kubernetes CA is in the truststore");
+        assertTrue(logs.contains("Found the following truststore files under directories specified in the truststore paths [/var/run/secrets/kubernetes.io/serviceaccount/ca.crt]"));
     }
 
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,

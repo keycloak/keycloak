@@ -515,6 +515,15 @@ public class DefaultAuthenticationFlows {
             execution.setAuthenticatorFlow(false);
             realm.addAuthenticatorExecution(execution);
         }
+        if (Profile.isFeatureEnabled(Feature.KUBERNETES_JWKS)) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(clients.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setAuthenticator("kubernetes-jwt");
+            execution.setPriority(60);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
     }
 
     public static void firstBrokerLoginFlow(RealmModel realm, boolean migrate) {

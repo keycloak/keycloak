@@ -158,6 +158,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.JWKS_STRING, jwksString);
     }
 
+    public String getJwksAuthToken() {
+        return getAttribute(OIDCConfigAttributes.JWKS_AUTH_TOKEN);
+    }
+
+    public void setJwksAuthToken(String token) {
+        setAttribute(OIDCConfigAttributes.JWKS_AUTH_TOKEN, token);
+    }
+
     public boolean isExcludeSessionStateFromAuthResponse() {
         String excludeSessionStateFromAuthResponse = getAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE);
         return Boolean.parseBoolean(excludeSessionStateFromAuthResponse);

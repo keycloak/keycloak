@@ -419,7 +419,6 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=97, value="Invalid request")
     void invalidRequest(@Cause Throwable t);
 
-
     @LogMessage(level = WARN)
     @Message(id=99, value="Operation '%s' rejected. %s")
     void clientRegistrationRequestRejected(String opDescription, String detailedMessage);
@@ -472,5 +471,17 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id=111, value="Created initial admin user with username %s")
     void createdInitialAdminUser(String userName);
+
+    @LogMessage(level = WARN)
+    @Message(id=112, value="Kubernetes API Server Access Token doesn't exist. Downloading JWKS might fail. Check if file %s exists.")
+    void noKubernetesAPIServerAccessTokenFile(String accessTokenPath);
+
+    @LogMessage(level = ERROR)
+    @Message(id=113, value="Failed reading Kubernetes API Server Access Token from %s file. Check if the file is readable.")
+    void failedReadingKubernetesAPIServerAccessTokenFile(String accessTokenPath);
+
+    @LogMessage(level = ERROR)
+    @Message(id=114, value="Incorrect Kubernetes JWLS URL configured: %s. It must be %s or empty")
+    void incorrectKubernetesJWKSURL(String jwksUrl, String expectedUrl);
 
 }

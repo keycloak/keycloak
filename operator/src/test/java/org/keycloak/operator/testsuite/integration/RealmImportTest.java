@@ -45,6 +45,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -58,6 +59,7 @@ import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImpor
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurlCommand;
 
 @DisabledIfApiServerTest
 @QuarkusTest
@@ -107,7 +109,7 @@ public class RealmImportTest extends BaseOperatorTest {
 
     @DisabledIfApiServerTest
     @Test
-    public void testWorkingRealmImport() {
+    public void testWorkingRealmImport() throws Exception{
         // Arrange
         var kc = getTestKeycloakDeployment(false);
 
@@ -120,6 +122,7 @@ public class RealmImportTest extends BaseOperatorTest {
 
         // Assert
         assertWorkingRealmImport(kc);
+        assertSignedJWT(kc);
     }
 
     @DisabledIfApiServerTest
@@ -149,6 +152,48 @@ public class RealmImportTest extends BaseOperatorTest {
 
         assertThat(envvars.stream().filter(e -> e.getName().equals("MY_SMTP_PORT")).findAny().get().getValueFrom().getSecretKeyRef().getKey()).isEqualTo("SMTP_PORT");
         assertThat(envvars.stream().filter(e -> e.getName().equals("MY_SMTP_SERVER")).findAny().get().getValueFrom().getSecretKeyRef().getKey()).isEqualTo("SMTP_SERVER");
+    }
+
+    private void assertSignedJWT(Keycloak kc) {
+        var crSelector = k8sclient
+                .resources(KeycloakRealmImport.class)
+                .inNamespace(namespace)
+                .withName("example-count0-kc");
+
+        Awaitility.await()
+                .atMost(5, MINUTES)
+                .pollDelay(1, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    KeycloakRealmImport cr = crSelector.get();
+                    CRAssert.assertKeycloakRealmImportStatusCondition(cr, DONE, true);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(cr, STARTED, false);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(cr, HAS_ERRORS, false);
+                });
+
+        Awaitility.await().atMost(10, MINUTES).ignoreExceptions().untilAsserted(() -> {
+            Log.info("Starting curl Pod to test if Kubernetes Signed JWT is available");
+
+            var curlOutput = inClusterCurlCommand(k8sclient, namespace, Map.of(), "cat", "/var/run/secrets/tokens/test-aud-token");
+            assertThat(curlOutput.exitCode()).isZero();
+            var token = curlOutput.stdout();
+
+            String url =
+                    "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + KEYCLOAK_HTTPS_PORT + "/realms/count0/protocol/openid-connect/token";
+            String[] args = {
+                    "-v", "-k",
+                    "-X", "POST",
+                    url,
+                    "-H", "Content-Type: application/x-www-form-urlencoded",
+                    "--data-urlencode", "grant_type=client_credentials",
+                    "--data-urlencode", "client_id=kubernetes-signed-jwt-test",
+                    "--data-urlencode", "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+                    "--data-urlencode", "client_assertion=" + token + ""
+            };
+            Log.info("Url: '" + url + "'");
+            String clientCredentialsOutput = inClusterCurl(k8sclient, namespace, args);
+            assertThat(clientCredentialsOutput).contains("access_token");
+        });
     }
 
     private List<EnvVar> assertWorkingRealmImport(Keycloak kc) {

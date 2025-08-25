@@ -17,10 +17,15 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
 
@@ -30,8 +35,33 @@ import java.io.IOException;
  */
 public class JWKSHttpUtils {
 
+    /**
+     * Downloads JWKS from given URI
+     * @param session Keycloak session
+     * @param jwksURI URI to download JWKS from
+     * @return JSONWebKeySet instance
+     * @throws IOException in case of network or parsing errors
+     */
     public static JSONWebKeySet sendJwksRequest(KeycloakSession session, String jwksURI) throws IOException {
-        String keySetString = session.getProvider(HttpClientProvider.class).getString(jwksURI);
-        return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
+        return sendJwksRequest(session, jwksURI, null);
+    }
+
+    /**
+     * Downloads JWKS from given URI
+     * @param session Keycloak session
+     * @param jwksURI URI to download JWKS from
+     * @param bearerToken Token for authentication
+     * @return JSONWebKeySet instance
+     * @throws IOException in case of network or parsing errors
+     */
+    public static JSONWebKeySet sendJwksRequest(KeycloakSession session, String jwksURI, String bearerToken) throws IOException {
+        HttpClient client = session.getProvider(HttpClientProvider.class).getHttpClient();
+        HttpGet request = new HttpGet(jwksURI);
+        if (StringUtil.isNotBlank(bearerToken)) {
+            request.setHeader("Authorization", "Bearer " + bearerToken);
+        }
+        HttpResponse response = client.execute(request);
+        String body = new BasicResponseHandler().handleResponse(response);
+        return JsonSerialization.readValue(body, JSONWebKeySet.class);
     }
 }

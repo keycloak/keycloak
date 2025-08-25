@@ -10,7 +10,6 @@ import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
@@ -18,11 +17,9 @@ import org.keycloak.services.ServicesLogger;
 
 import java.security.PublicKey;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
@@ -47,6 +44,8 @@ public abstract class AbstractJWTClientAuthenticator  extends AbstractClientAuth
             JWSInput jws = validator.getJws();
             JsonWebToken token = validator.getToken();
             String clientAssertion = validator.getClientAssertion();
+
+            prepareClient(client);
 
             // Get client key and validate signature
             PublicKey clientPublicKey = getSignatureValidationKey(client, context, jws);
@@ -88,6 +87,18 @@ public abstract class AbstractJWTClientAuthenticator  extends AbstractClientAuth
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
+    }
+
+    protected void prepareClient(ClientModel client) {
+
+    }
+
+    /**
+     * Provides an optional Access Token used for additional authentication against the JWKS endpoint.
+     * @return By default, returns an empty string for no additional authentication needed.
+     */
+    protected String getAuthToken() {
+        return null;
     }
 
     protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {
