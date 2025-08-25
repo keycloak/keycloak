@@ -20,7 +20,7 @@ package org.keycloak.protocol.oid4vc.model;
 
 /**
  * Enum to handle potential errors in issuing credentials with the error types defined in OID4VCI
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html}
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -28,8 +28,8 @@ public enum ErrorType {
 
     INVALID_CREDENTIAL_REQUEST("invalid_credential_request"),
     INVALID_TOKEN("invalid_token"),
-    UNSUPPORTED_CREDENTIAL_TYPE("unsupported_credential_type"),
-    UNSUPPORTED_CREDENTIAL_FORMAT("unsupported_credential_format"),
+    UNKNOWN_CREDENTIAL_CONFIGURATION("unknown_credential_configuration"),
+    UNKNOWN_CREDENTIAL_IDENTIFIER("unknown_credential_identifier"),
     INVALID_PROOF("invalid_proof"),
     INVALID_ENCRYPTION_PARAMETERS("invalid_encryption_parameters"),
     MISSING_CREDENTIAL_CONFIG("missing_credential_config"),
