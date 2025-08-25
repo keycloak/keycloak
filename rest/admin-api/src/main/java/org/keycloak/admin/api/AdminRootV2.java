@@ -3,11 +3,12 @@ package org.keycloak.admin.api;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.admin.AdminCorsPreflightService;
 
-@jakarta.ws.rs.ext.Provider
+@Provider
 @Path("admin/api")
 public class AdminRootV2 {
 
@@ -17,12 +18,12 @@ public class AdminRootV2 {
     @Path("")
     public AdminApi latestAdminApi() {
         // we could return the latest Admin API if no version is specified
-        return new DefaultAdminApi(session);
+        return session.getProvider(AdminApi.class);
     }
 
     @Path("v2")
     public AdminApi adminApi() {
-        return new DefaultAdminApi(session);
+        return session.getProvider(AdminApi.class);
     }
 
     @Path("{any:.*}")
