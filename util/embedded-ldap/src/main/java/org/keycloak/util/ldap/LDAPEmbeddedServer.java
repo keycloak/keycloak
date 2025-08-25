@@ -23,11 +23,17 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
 import org.apache.directory.api.ldap.model.ldif.LdifEntry;
 import org.apache.directory.api.ldap.model.ldif.LdifReader;
+import org.apache.directory.api.ldap.model.name.Dn;
 import org.apache.directory.server.core.api.DirectoryService;
+import org.apache.directory.server.core.api.InterceptorEnum;
+import org.apache.directory.server.core.api.authn.ppolicy.PasswordPolicyConfiguration;
 import org.apache.directory.server.core.api.interceptor.Interceptor;
 import org.apache.directory.server.core.api.partition.Partition;
+import org.apache.directory.server.core.authn.AuthenticationInterceptor;
+import org.apache.directory.server.core.authn.ppolicy.PpolicyConfigContainer;
 import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
 import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.normalization.NormalizationInterceptor;
@@ -69,6 +75,8 @@ public class LDAPEmbeddedServer {
     public static final String PROPERTY_ENABLE_SSL = "enableSSL";
     public static final String PROPERTY_ENABLE_STARTTLS = "enableStartTLS";
     public static final String PROPERTY_SET_CONFIDENTIALITY_REQUIRED = "setConfidentialityRequired";
+    public static final String PROPERTY_PPOLICY_ENABLED = "ppolicy.enabled";
+    public static final String PROPERTY_PPOLICY_MUST_CHANGE = "ppolicy.mustChange";
 
     private static final String DEFAULT_BASE_DN = "dc=keycloak,dc=org";
     private static final String DEFAULT_BIND_HOST = "localhost";
@@ -98,6 +106,8 @@ public class LDAPEmbeddedServer {
     protected boolean setConfidentialityRequired = false;
     protected String keystoreFile;
     protected String certPassword;
+    protected boolean ppolicyEnabled = false;
+    protected boolean ppolicyMustChange = false;
 
     protected DirectoryService directoryService;
     protected LdapServer ldapServer;
@@ -155,6 +165,8 @@ public class LDAPEmbeddedServer {
         this.setConfidentialityRequired = Boolean.valueOf(readProperty(PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "false"));
         this.keystoreFile = readProperty(PROPERTY_KEYSTORE_FILE, null);
         this.certPassword = readProperty(PROPERTY_CERTIFICATE_PASSWORD, null);
+        this.ppolicyEnabled = Boolean.valueOf(readProperty(PROPERTY_PPOLICY_MUST_CHANGE, "false"));
+        this.ppolicyMustChange = Boolean.valueOf(readProperty(PROPERTY_PPOLICY_MUST_CHANGE, "false"));
     }
 
     protected String readProperty(String propertyName, String defaultValue) {
@@ -184,6 +196,11 @@ public class LDAPEmbeddedServer {
 
         log.info("Creating LDAP server..");
         this.ldapServer = createLdapServer();
+
+        if (this.ppolicyEnabled) {
+            log.info("Enabling Password Policy");
+            createDefaultPasswordPolicy();
+        }
     }
 
 
@@ -410,6 +427,21 @@ public class LDAPEmbeddedServer {
         } else {
             log.info("Working LDAP directory not deleted. Delete it manually if you want to start with fresh LDAP data. Directory location: " + instanceDir.getAbsolutePath());
         }
+    }
+
+    protected void createDefaultPasswordPolicy() throws LdapInvalidDnException {
+        AuthenticationInterceptor authenticationInterceptor = (AuthenticationInterceptor) this.directoryService
+                .getInterceptor(InterceptorEnum.AUTHENTICATION_INTERCEPTOR.getName());
+        PasswordPolicyConfiguration policyConfig = new PasswordPolicyConfiguration();
+        policyConfig.setPwdMustChange(true);
+
+        PpolicyConfigContainer policyContainer = new PpolicyConfigContainer();
+        Dn defaultPolicyDn = new Dn( ldapServer.getDirectoryService().getSchemaManager(), "cn=defaultPasswordPolicy" );
+
+        policyContainer.addPolicy( defaultPolicyDn, policyConfig );
+        policyContainer.setDefaultPolicyDn( defaultPolicyDn );
+
+        authenticationInterceptor.setPwdPolicies( policyContainer );
     }
 
 }
