@@ -62,6 +62,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     private static final String IMPERSONATE_SCOPE="impersonate";
     private static final String USER_IMPERSONATED_SCOPE="user-impersonated";
     private static final String MANAGE_GROUP_MEMBERSHIP_SCOPE="manage-group-membership";
+    private static final String RESET_PASSWORD_SCOPE="reset-password";
     private static final String MAP_ROLES_PERMISSION_USERS = "map-roles.permission.users";
     private static final String ADMIN_IMPERSONATING_PERMISSION = "admin-impersonating.permission.users";
     private static final String USER_IMPERSONATED_PERMISSION = "user-impersonated.permission.users";
@@ -434,6 +435,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         map.put("mapRoles", canMapRoles(user));
         map.put("manageGroupMembership", canManageGroupMembership(user));
         map.put("impersonate", canImpersonate(user));
+        map.put("resetPassword", ((UserPermissionEvaluator)this).canResetPassword(user));
         return map;
     }
 
