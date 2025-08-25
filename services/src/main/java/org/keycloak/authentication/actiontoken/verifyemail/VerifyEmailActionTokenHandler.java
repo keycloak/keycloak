@@ -74,13 +74,16 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
         KeycloakSession session = tokenContext.getSession();
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         EventBuilder event = tokenContext.getEvent();
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
 
         event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
 
         if (user.isEmailVerified() && !isVerifyEmailActionSet(user, authSession)) {
             event.user(user).error(Errors.EMAIL_ALREADY_VERIFIED);
-            return session.getProvider(LoginFormsProvider.class)
+
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.EMAIL_VERIFIED_ALREADY_HEADER, user.getEmail()))
                     .setInfo(Messages.EMAIL_VERIFIED_ALREADY, user.getEmail())
                     .setUser(user)
                     .createInfoPage();
@@ -99,8 +102,9 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
                     authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
-            return session.getProvider(LoginFormsProvider.class)
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION_HEADER, user.getEmail()))
                     .setSuccess(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION, user.getEmail())
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .setUser(user)
@@ -125,8 +129,9 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
             AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
             asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
 
-            return session.getProvider(LoginFormsProvider.class)
+            return forms
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", forms.getMessage(Messages.EMAIL_VERIFIED_HEADER, user.getEmail()))
                     .setSuccess(Messages.EMAIL_VERIFIED)
                     .setUser(user)
                     .createInfoPage();
