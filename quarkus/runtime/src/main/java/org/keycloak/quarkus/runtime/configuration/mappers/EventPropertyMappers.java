@@ -11,11 +11,10 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.MetricsProperty
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 
-final class EventPropertyMappers {
+final class EventPropertyMappers implements PropertyMapperGrouping {
 
-    private EventPropertyMappers(){}
-
-    public static PropertyMapper<?>[] getMetricsPropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(USER_EVENT_METRICS_ENABLED)
                         .to("kc.spi-events-listener--micrometer-user-event-metrics--enabled")

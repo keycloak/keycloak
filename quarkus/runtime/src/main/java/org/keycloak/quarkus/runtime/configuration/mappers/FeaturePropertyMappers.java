@@ -12,14 +12,13 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class FeaturePropertyMappers {
+public final class FeaturePropertyMappers implements PropertyMapperGrouping {
 
     private static final Pattern VERSIONED_PATTERN = Pattern.compile("([^:]+):v(\\d+)");
 
-    private FeaturePropertyMappers() {
-    }
 
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(FeatureOptions.FEATURES)
                         .paramLabel("feature")

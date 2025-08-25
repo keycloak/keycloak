@@ -21,7 +21,6 @@ import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.ExportImportConfig;
-import org.keycloak.quarkus.runtime.configuration.mappers.ExportPropertyMappers;
 import picocli.CommandLine.Command;
 
 import java.util.EnumSet;
@@ -39,12 +38,6 @@ public final class Export extends AbstractNonServerCommand {
     }
 
     @Override
-    public void validateConfig() {
-        ExportPropertyMappers.validateConfig();
-        super.validateConfig();
-    }
-
-    @Override
     public String getName() {
         return NAME;
     }
@@ -52,6 +45,11 @@ public final class Export extends AbstractNonServerCommand {
     @Override
     protected EnumSet<OptionCategory> excludedCategories() {
         return EnumSet.of(OptionCategory.IMPORT);
+    }
+
+    @Override
+    public boolean isServing() {
+        return false;
     }
 
 }

@@ -24,7 +24,9 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.UsersExportStrategy;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.Export;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
@@ -32,15 +34,13 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getOption
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isBlank;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class ExportPropertyMappers {
+public final class ExportPropertyMappers implements PropertyMapperGrouping {
     private static final String EXPORTER_PROPERTY = "kc.spi-export--exporter";
     private static final String SINGLE_FILE = "singleFile";
     private static final String DIR = "dir";
 
-    private ExportPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[]{
                 fromOption(EXPORTER_PLACEHOLDER)
                         .to(EXPORTER_PROPERTY)
@@ -88,8 +88,9 @@ public final class ExportPropertyMappers {
         }
     }
 
-    public static void validateConfig() {
-        if (getOptionalValue(EXPORTER_PROPERTY).isEmpty() && System.getProperty(PROVIDER) == null) {
+    @Override
+    public void validateConfig(Picocli picocli) {
+        if (picocli.getParsedCommand().orElse(null) instanceof Export && getOptionalValue(EXPORTER_PROPERTY).isEmpty() && System.getProperty(PROVIDER) == null) {
             throw new PropertyException("Must specify either --dir or --file options.");
         }
     }

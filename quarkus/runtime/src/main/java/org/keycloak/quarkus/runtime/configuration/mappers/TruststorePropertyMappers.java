@@ -4,9 +4,10 @@ import org.keycloak.config.TruststoreOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public class TruststorePropertyMappers {
+public class TruststorePropertyMappers implements PropertyMapperGrouping {
 
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(TruststoreOptions.TRUSTSTORE_PATHS)
                         .paramLabel(TruststoreOptions.TRUSTSTORE_PATHS.getKey())

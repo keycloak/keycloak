@@ -39,14 +39,12 @@ import static org.keycloak.config.TracingOptions.TRACING_SAMPLER_TYPE;
 import static org.keycloak.config.TracingOptions.TRACING_SERVICE_NAME;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public class TracingPropertyMappers {
+public class TracingPropertyMappers implements PropertyMapperGrouping {
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
     private static final String TRACING_ENABLED_MSG = "Tracing is enabled";
 
-    private TracingPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[]{
                 fromOption(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)

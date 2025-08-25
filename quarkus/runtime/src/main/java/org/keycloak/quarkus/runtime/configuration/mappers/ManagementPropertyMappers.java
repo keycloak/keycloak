@@ -27,14 +27,12 @@ import static org.keycloak.config.ManagementOptions.LEGACY_OBSERVABILITY_INTERFA
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public class ManagementPropertyMappers {
+public class ManagementPropertyMappers implements PropertyMapperGrouping {
 
     private static final String HTTP_MANAGEMENT_SCHEME_IS_INHERITED = "http-management-scheme is inherited";
 
-    private ManagementPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getManagementPropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[]{
                 fromOption(ManagementOptions.HTTP_MANAGEMENT_ENABLED)
                         .to("quarkus.management.enabled")

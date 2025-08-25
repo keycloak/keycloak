@@ -5,10 +5,11 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public class HttpAccessLogPropertyMappers {
+public class HttpAccessLogPropertyMappers implements PropertyMapperGrouping {
     public static final String ACCESS_LOG_ENABLED_MSG = "HTTP Access log is enabled";
 
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[]{
                 fromOption(HttpAccessLogOptions.HTTP_ACCESS_LOG_ENABLED)
                         .to("quarkus.http.access-log.enabled")

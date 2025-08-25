@@ -6,11 +6,10 @@ import org.keycloak.config.TransactionOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public class TransactionPropertyMappers {
+public class TransactionPropertyMappers implements PropertyMapperGrouping {
 
-    private TransactionPropertyMappers(){}
-
-    public static PropertyMapper<?>[] getTransactionPropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(TransactionOptions.TRANSACTION_XA_ENABLED)
                         .to("quarkus.datasource.jdbc.transactions")

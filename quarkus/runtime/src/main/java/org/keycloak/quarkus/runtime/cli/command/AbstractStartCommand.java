@@ -35,8 +35,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -149,15 +147,6 @@ public abstract class AbstractStartCommand extends AbstractCommand {
     }
 
     @Override
-    protected void validateConfig() {
-        super.validateConfig(); // we want to run the generic validation here first to check for unknown options
-        if (shouldStart()) { // if not starting, we aren't accepting http requests so no validation needed
-            HttpPropertyMappers.validateConfig();
-            HostnameV2PropertyMappers.validateConfig(picocli);
-        }
-    }
-
-    @Override
     public List<OptionCategory> getOptionCategories() {
         EnumSet<OptionCategory> excludedCategories = excludedCategories();
         return super.getOptionCategories().stream().filter(optionCategory -> !excludedCategories.contains(optionCategory)).collect(Collectors.toList());
@@ -165,6 +154,11 @@ public abstract class AbstractStartCommand extends AbstractCommand {
 
     protected EnumSet<OptionCategory> excludedCategories() {
         return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
+    }
+
+    @Override
+    public boolean isServing() {
+        return shouldStart();
     }
 
 }
