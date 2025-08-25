@@ -31,6 +31,7 @@ public enum ErrorType {
     UNSUPPORTED_CREDENTIAL_TYPE("unsupported_credential_type"),
     UNSUPPORTED_CREDENTIAL_FORMAT("unsupported_credential_format"),
     INVALID_PROOF("invalid_proof"),
+    INVALID_NONCE("invalid_nonce"),
     INVALID_ENCRYPTION_PARAMETERS("invalid_encryption_parameters"),
     MISSING_CREDENTIAL_CONFIG("missing_credential_config"),
     MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID("missing_credential_identifier_and_configuration_id");

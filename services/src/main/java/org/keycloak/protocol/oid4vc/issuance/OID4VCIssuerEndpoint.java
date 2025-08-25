@@ -37,8 +37,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jwe.JWE;
@@ -70,6 +68,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -783,6 +782,13 @@ public class OID4VCIssuerEndpoint {
             Optional.ofNullable(proofValidator.validateProof(vcIssuanceContext))
                     .ifPresent(jwk -> vcIssuanceContext.getCredentialBody().addKeyBinding(jwk));
         } catch (VCIssuerException e) {
+            if (e.getErrorType() == ErrorType.INVALID_NONCE) {
+                throw new ErrorResponseException(
+                        ErrorType.INVALID_NONCE.getValue(),
+                        "The proofs parameter in the Credential Request uses an invalid nonce",
+                        Response.Status.BAD_REQUEST
+                );
+            }
             throw new BadRequestException("Could not validate provided proof", e);
         }
     }
