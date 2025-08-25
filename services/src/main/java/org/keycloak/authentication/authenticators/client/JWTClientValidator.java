@@ -19,10 +19,6 @@
 
 package org.keycloak.authentication.authenticators.client;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -48,6 +44,10 @@ import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Common validation for JWT client authentication with private_key_jwt or with client_secret
  *
@@ -64,9 +64,9 @@ public class JWTClientValidator {
 
     private MultivaluedMap<String, String> params;
     private String clientAssertion;
-    private JWSInput jws;
-    private JsonWebToken token;
-    private ClientModel client;
+    protected JWSInput jws;
+    protected JsonWebToken token;
+    protected ClientModel client;
 
     private static final int ALLOWED_CLOCK_SKEW = 15; // sec
 
@@ -96,9 +96,9 @@ public class JWTClientValidator {
             return false;
         }
 
-        if (!clientAssertionType.equals(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)) {
+        if (!clientAssertionType.equals(getClientAssertionType())) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type has value '"
-                    + clientAssertionType + "' but expected is '" + OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT + "'");
+                    + clientAssertionType + "' but expected is '" + getClientAssertionType() + "'");
             context.challenge(challengeResponse);
             return false;
         }
@@ -132,7 +132,7 @@ public class JWTClientValidator {
             throw new RuntimeException("Can't identify client. Subject missing on JWT token");
         }
 
-        if (!clientId.equals(token.getIssuer())) {
+        if (isClientIssuedTokenRequired() && !clientId.equals(token.getIssuer())) {
             throw new RuntimeException("Issuer mismatch. The issuer should match the subject");
         }
 
@@ -206,7 +206,7 @@ public class JWTClientValidator {
             }
         }
 
-        if (token.getId() == null) {
+        if (isJwtIdRequired() && token.getId() == null) {
             throw new RuntimeException("Missing ID on the token");
         }
     }
@@ -250,6 +250,7 @@ public class JWTClientValidator {
     }
 
     public void validateTokenReuse() {
+        if (!isJwtIdRequired() && token.getId() == null) return;
         if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken reuse");
         if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
 
@@ -321,6 +322,18 @@ public class JWTClientValidator {
 
     public ClientModel getClient() {
         return client;
+    }
+
+    protected boolean isJwtIdRequired() {
+        return true;
+    }
+
+    protected boolean isClientIssuedTokenRequired() {
+        return true;
+    }
+
+    protected String getClientAssertionType() {
+        return OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT;
     }
 
     private boolean isFormDataRequest(HttpRequest request) {
