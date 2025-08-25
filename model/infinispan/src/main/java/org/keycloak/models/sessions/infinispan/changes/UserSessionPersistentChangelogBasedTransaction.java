@@ -29,6 +29,7 @@ import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
@@ -135,6 +136,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         return isScheduledForRemove(getUpdates(offline).get(key));
     }
 
+    public void registerClientSession(String userSessionId, String clientId, UUID clientSessionId, boolean offline) {
+        addTask(userSessionId, new RegisterClientSessionTask(clientId, clientSessionId, offline));
+    }
+
     private static <V extends SessionEntity> boolean isScheduledForRemove(SessionUpdatesList<V> myUpdates) {
         if (myUpdates == null) {
             return false;
@@ -146,4 +151,21 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 .anyMatch(task -> task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE);
     }
 
+    private record RegisterClientSessionTask(String clientUuid, UUID clientSessionId, boolean offline) implements PersistentSessionUpdateTask<UserSessionEntity> {
+
+        @Override
+        public boolean isOffline() {
+            return offline;
+        }
+
+        @Override
+        public void runUpdate(UserSessionEntity entity) {
+            entity.getAuthenticatedClientSessions().put(clientUuid, clientSessionId);
+        }
+
+        @Override
+        public CacheOperation getOperation() {
+            return CacheOperation.REPLACE;
+        }
+    }
 }
