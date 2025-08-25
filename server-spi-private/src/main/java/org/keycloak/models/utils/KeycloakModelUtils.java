@@ -48,6 +48,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
@@ -402,6 +403,11 @@ public final class KeycloakModelUtils {
                     targetSession.getContext().setClient(clientModel);
                 }
             }
+        }
+
+        // Setup clientConnection if necessary
+        if (origContext.getConnection() != null) {
+            targetSession.getContext().setConnection(origContext.getConnection());
         }
 
         // setup auth session model if necessary.
@@ -1244,5 +1250,20 @@ public final class KeycloakModelUtils {
             acceptedClientProtocols = List.of(client.getProtocol());
         }
         return acceptedClientProtocols;
+    }
+
+    /**
+     * @param e exception
+     * @return true if if underlying exception is {@link ModelDuplicateException} or has {@link ModelDuplicateException} as it's cause
+     */
+    public static boolean isModelDuplicateException(Throwable e) {
+        if (e instanceof ModelDuplicateException) return true;
+        if (e.getCause() != null && e.getCause() instanceof ModelDuplicateException) return true;
+        if (e.getSuppressed() != null) {
+            for (Throwable t : e.getSuppressed()) {
+                if (t instanceof ModelDuplicateException) return true;
+            }
+        }
+        return false;
     }
 }
