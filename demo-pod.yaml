@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sa-token-audience-demo
+spec:
+  serviceAccountName: default
+  containers:
+    - name: app
+      image: registry.fedoraproject.org/fedora-toolbox:34
+      command: ["sh", "-c", "sleep infinity"]
+      volumeMounts:
+        - name: aud-token
+          mountPath: /var/run/secrets/tokens
+          readOnly: true
+  volumes:
+    - name: aud-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: "http://example-kc-service:8080/auth/realms/master"
+              expirationSeconds: 600
+              path: test-aud-token

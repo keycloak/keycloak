@@ -22,10 +22,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.EnvUtil;
@@ -181,7 +183,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
-                    boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
+                    // TODO: Revert this when proper CA is present in Kube
+                    boolean disableTrustManager = config.getBoolean("disable-trust-manager", true);
 
                     boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
                     boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);

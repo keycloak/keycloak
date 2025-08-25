@@ -77,7 +77,8 @@ public class HttpClientBuilder {
     protected KeyStore clientKeyStore;
     protected String clientPrivateKeyPassword;
     protected boolean disableTrustManager;
-    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.DEFAULT;
+    //TODO: Revert when deploying on Kube
+    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.ANY;
     protected SSLContext sslContext;
     protected int connectionPoolSize = 128;
     protected int maxPooledPerRoute = 64;

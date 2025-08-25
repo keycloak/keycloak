@@ -109,7 +109,8 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             validator.validateTokenAudience(context, realm, token);
 
             validator.validateToken();
-            validator.validateTokenReuse();
+            // In Kube world we probably don't want to check for reuse
+//            validator.validateTokenReuse();
 
             context.success();
         } catch (Exception e) {
