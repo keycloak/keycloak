@@ -307,7 +307,7 @@ public class KeycloakServer {
    */
   public static String detectDataDirectory() {
 
-        String dataPath = System.getProperty(JBOSS_SERVER_DATA_DIR);
+        String dataPath = "/tmp/keycloak";
 
         if (dataPath != null){
             // we assume jboss.server.data.dir is managed externally so just use it as is.

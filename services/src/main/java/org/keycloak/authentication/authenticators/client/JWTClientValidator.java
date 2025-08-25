@@ -132,13 +132,22 @@ public class JWTClientValidator {
             throw new RuntimeException("Can't identify client. Subject missing on JWT token");
         }
 
-        if (!clientId.equals(token.getIssuer())) {
-            throw new RuntimeException("Issuer mismatch. The issuer should match the subject");
-        }
+        // In case of Kubernetes, the iss is "https://kubernetes.default.svc.cluster.local",
+        // TODO: Introduce a switch to omit this check
+//        if (!clientId.equals(token.getIssuer())) {
+//            throw new RuntimeException("Issuer mismatch. The issuer should match the subject");
+//        }
 
+        // In case of Kubernetes, the sub is "system:serviceaccount:default:default",
+        // TODO: Introduce a switch to omit this check
+//        String clientIdParam = params.getFirst(OAuth2Constants.CLIENT_ID);
+//        if (clientIdParam != null && !clientIdParam.equals(clientId)) {
+//            throw new RuntimeException("client_id parameter not matching with client from JWT token");
+//        }
+        // This block works for Kube
         String clientIdParam = params.getFirst(OAuth2Constants.CLIENT_ID);
-        if (clientIdParam != null && !clientIdParam.equals(clientId)) {
-            throw new RuntimeException("client_id parameter not matching with client from JWT token");
+        if (clientIdParam != null) {
+            clientId = clientIdParam;
         }
 
         context.getEvent().client(clientId);
@@ -237,7 +246,13 @@ public class JWTClientValidator {
             if (token.getIat() - ALLOWED_CLOCK_SKEW > currentTime) {
                 throw new RuntimeException("Token was issued in the future");
             }
-            final int maxExp = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningMaxExp();
+            int maxExp = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningMaxExp();
+
+            // Kube API Server won't let us create tokens shorter than 10 minutes
+            if (maxExp < 10*60) {
+                maxExp = 10*60;
+            }
+
             final long lifespan = Math.min(token.getExp() - currentTime, maxExp);
             if (lifespan <= 0) {
                 throw new RuntimeException("Token is not active");
