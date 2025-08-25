@@ -28,15 +28,14 @@ import org.infinispan.client.hotrod.MetadataValue;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
-import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.common.util.Retry;
-import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
+import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 
 /**
  * A {@link KeycloakTransaction} implementation that keeps track of changes made to entities stored in a Infinispan
@@ -46,7 +45,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFac
  * @param <V> The type of the Infinispan cache value.
  * @param <T> The type of the {@link Updater} implementation.
  */
-public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends ConditionalRemover<K, V>> extends AbstractKeycloakTransaction {
+public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends ConditionalRemover<K, V>> implements NonBlockingTransaction {
 
     private static final RetryOperationSuccess<?, ?, ?> TO_NULL = (ignored1, ignored2, ignored3) -> CompletableFutures.completedNull();
 
@@ -63,32 +62,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
     }
 
     @Override
-    protected void commitImpl() {
-        try {
-            var stage = CompletionStages.aggregateCompletionStage();
-            doCommit(stage);
-            CompletionStages.join(stage.freeze());
-        } finally {
-            entityChanges.clear();
-        }
-    }
-
-    @Override
-    protected void rollbackImpl() {
-        entityChanges.clear();
-    }
-
-    public void commitAsync(AggregateCompletionStage<Void> stage) {
-        if (state != TransactionState.STARTED) {
-            throw new IllegalStateException("Transaction in illegal state for commit: " + state);
-        }
-
-        doCommit(stage);
-
-        state = TransactionState.FINISHED;
-    }
-
-    private void doCommit(AggregateCompletionStage<Void> stage) {
+    public void asyncCommit(AggregateCompletionStage<Void> stage) {
         conditionalRemover.executeRemovals(getCache(), stage);
 
         for (var updater : entityChanges.values()) {
@@ -120,6 +94,12 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
             stage.dependsOn(commitCompute(updater, expiration));
         }
     }
+
+    @Override
+    public void asyncRollback(AggregateCompletionStage<Void> stage) {
+        entityChanges.clear();
+    }
+
 
     /**
      * @return The {@link RemoteCache} tracked by the transaction.

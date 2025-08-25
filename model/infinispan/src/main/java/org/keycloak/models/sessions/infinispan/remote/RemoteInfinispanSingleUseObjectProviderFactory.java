@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.core.Completable;
@@ -37,8 +38,10 @@ import org.keycloak.models.session.RevokedToken;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.SingleUseObjectTransaction;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
@@ -142,9 +145,15 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
         }
     }
 
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanTransactionProvider.class);
+    }
+
     private SingleUseObjectTransaction createAndEnlistTransaction(KeycloakSession session) {
+        var provider = session.getProvider(InfinispanTransactionProvider.class);
         var tx = new SingleUseObjectTransaction(cache);
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        provider.registerTransaction(tx);
         return tx;
     }
 
