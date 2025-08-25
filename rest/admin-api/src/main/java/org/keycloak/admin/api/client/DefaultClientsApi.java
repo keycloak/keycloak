@@ -1,9 +1,12 @@
 package org.keycloak.admin.api.client;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
 import jakarta.validation.groups.ConvertGroup;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
@@ -24,9 +27,9 @@ public class DefaultClientsApi implements ClientsApi {
     private final HttpResponse response;
     private final ClientService clientService;
 
-    public DefaultClientsApi(KeycloakSession session, RealmModel realm) {
+    public DefaultClientsApi(KeycloakSession session) {
         this.session = session;
-        this.realm = realm;
+        this.realm = Objects.requireNonNull(session.getContext().getRealm());
         this.clientService = session.services().clients();
         this.response = session.getContext().getHttpResponse();
     }
@@ -50,7 +53,9 @@ public class DefaultClientsApi implements ClientsApi {
 
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
-        return new DefaultClientApi(session, clientId);
+        var client = Optional.ofNullable(session.clients().getClientByClientId(realm, clientId)).orElseThrow(() -> new NotFoundException("Client cannot be found"));
+        session.getContext().setClient(client);
+        return session.getProvider(ClientApi.class);
     }
 
     @Override
