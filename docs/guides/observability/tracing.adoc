@@ -26,6 +26,8 @@ The default service name is `keycloak`, specified via the `tracing-service-name`
 
 For more information about resource attributes that can be provided via the `tracing-resource-attributes` property, see the https://quarkus.io/guides/opentelemetry#resource[Quarkus OpenTelemetry Resource] guide.
 
+WARNING: Properties `tracing-service-name` and `tracing-resource-attributes` are *deprecated*, and you should use the `telemetry-service-name` and `telemetry-resource-attributes`, respectively.
+
 NOTE: Tracing can be enabled only when the `opentelemetry` feature is *enabled* (by default).
 
 For more tracing settings, see all possible configurations below.
