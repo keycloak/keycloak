@@ -438,7 +438,8 @@ public class UsersResource {
             if (emailVerified != null) {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
-
+            // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
@@ -478,7 +479,8 @@ public class UsersResource {
                 parameters.put(UserModel.EXACT, exact.toString());
             }
             parameters.putAll(searchAttributes);
-
+            // search /users equivalent to this does include service-accounts so we should be explicit
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
@@ -488,13 +490,18 @@ public class UsersResource {
                     return session.users().getUsersCount(realm, parameters);
                 }
             }
-        } else if (userPermissionEvaluator.canView()) {
-            return session.users().getUsersCount(realm);
         } else {
-            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-                return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
+            Map<String, String> parameters = new HashMap<>();
+            // list /users equivalent to this doesn't include service-accounts so counting shouldn't as well
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
+            if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(realm, parameters);
             } else {
-                return session.users().getUsersCount(realm);
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
+                }
             }
         }
     }
