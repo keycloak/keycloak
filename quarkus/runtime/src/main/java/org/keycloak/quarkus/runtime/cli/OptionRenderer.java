@@ -25,7 +25,6 @@ import picocli.CommandLine.Help.IParamLabelRenderer;
 import picocli.CommandLine.Model.OptionSpec;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
-import static org.keycloak.utils.StringUtil.removeSuffix;
 import static picocli.CommandLine.Help.Ansi.OFF;
 
 public class OptionRenderer implements CommandLine.Help.IOptionRenderer {
@@ -63,7 +62,7 @@ public class OptionRenderer implements CommandLine.Help.IOptionRenderer {
     }
 
     private Text createLongName(OptionSpec option, ColorScheme scheme) {
-        Text name = scheme.optionText(undecorateDuplicitOptionName(option.longestName()));
+        Text name = scheme.optionText(option.longestName());
         String paramLabel = formatParamLabel(option);
 
         if (StringUtil.isNotBlank(paramLabel) && !NO_PARAM_LABEL.equals(paramLabel) && !option.usageHelp() && !option.versionHelp()) {
@@ -83,11 +82,4 @@ public class OptionRenderer implements CommandLine.Help.IOptionRenderer {
         return "<" + label + ">";
     }
 
-    public static String decorateDuplicitOptionName(String name) {
-        return name + DUPLICIT_OPTION_SUFFIX;
-    }
-
-    public static String undecorateDuplicitOptionName(String name) {
-        return removeSuffix(name, DUPLICIT_OPTION_SUFFIX);
-    }
 }
