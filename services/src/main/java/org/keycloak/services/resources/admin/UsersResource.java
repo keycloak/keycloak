@@ -80,6 +80,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -98,6 +99,11 @@ public class UsersResource {
 
     private static final Logger logger = Logger.getLogger(UsersResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
+    
+    // Pattern to match UUID/GUID formats (standard UUID, with hyphens, case-sensitive)
+    private static final Pattern UUID_PATTERN = Pattern.compile(
+        "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    );
 
     protected final RealmModel realm;
 
@@ -273,7 +279,7 @@ public class UsersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
     public Stream<UserRepresentation> getUsers(
-            @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
+            @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search. You can also search by using the GUID of a user.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
             @Parameter(description = "A String contained in firstName, or the complete firstName, if param \"exact\" is true") @QueryParam("firstName") String first,
             @Parameter(description = "A String contained in email, or the complete email, if param \"exact\" is true") @QueryParam("email") String email,
@@ -301,10 +307,23 @@ public class UsersResource {
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                // Explicit ID search with "id:" prefix
                 String[] userIds = search.substring(SEARCH_ID_PARAMETER.length()).trim().split("\\s+");
                 userModels = Arrays.stream(userIds).map(id -> session.users().getUserById(realm, id)).filter(Objects::nonNull);
                 if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
                     userModels = userModels.filter(userPermissionEvaluator::canView);
+                }
+            } else if (looksLikeUuid(search)) {
+                // Auto-detected UUID/GUID search (without "id:" prefix)
+                UserModel userModel = session.users().getUserById(realm, search.trim());
+                if (userModel != null) {
+                    if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                        if (userPermissionEvaluator.canView(userModel)) {
+                            userModels = Stream.of(userModel);
+                        }
+                    } else {
+                        userModels = Stream.of(userModel);
+                    }
                 }
             } else {
                 Map<String, String> attributes = new HashMap<>();
@@ -425,7 +444,12 @@ public class UsersResource {
                 : SearchQueryUtils.getFields(searchQuery);
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                // Explicit ID search with "id:" prefix
                 UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
+            } else if (looksLikeUuid(search)) {
+                // Auto-detected UUID/GUID search (without "id:" prefix)
+                UserModel userModel = session.users().getUserById(realm, search.trim());
                 return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
             }
 
@@ -544,5 +568,19 @@ public class UsersResource {
                     userRep.setAccess(usersEvaluator.getAccessForListing(user));
                     return userRep;
                 });
+    }
+
+    /**
+     * Checks if the given search term looks like a UUID/GUID pattern.
+     * This supports standard UUID formats with or without hyphens.
+     * 
+     * @param searchTerm the search term to check
+     * @return true if the search term matches UUID/GUID pattern, false otherwise
+     */
+    private static boolean looksLikeUuid(String searchTerm) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return false;
+        }
+        return UUID_PATTERN.matcher(searchTerm.trim()).matches();
     }
 }

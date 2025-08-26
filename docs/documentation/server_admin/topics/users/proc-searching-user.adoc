@@ -5,7 +5,7 @@
 [id="proc-searching-user_{context}"]
 = Searching for a user
 
-Search for a user to view detailed information about the user, such as the user's groups and roles. 
+Search for a user to view detailed information about the user, such as the user's groups and roles. You can search by name, email, attributes, or user ID. 
 
 .Prerequisite
 * You are in the realm where the user exists.
@@ -21,6 +21,26 @@ The criteria used to match users depends on the syntax used on the search box:
 .. `"somevalue"` -> performs exact search of the string `"somevalue"`;
 .. `\*somevalue*` -> performs infix search, akin to a `LIKE '%somevalue%'` DB query;
 .. `somevalue*` or `somevalue` -> performs prefix search, akin to a `LIKE 'somevalue%'` DB query.
+
+== ID search
+
+You can search for users by their unique user ID using either explicit syntax or automatic GUID detection.
+
+.Procedure
+. Click *Users* in the main menu. This *Users* page is displayed.
+. Use one of the following methods to search by user ID:
++
+.. **Explicit ID search**: Type `id:` followed by the user ID. For example: `id:f47ac10b-58cc-4372-a567-0e02b2c3d479`
+.. **Automatic GUID detection**: Simply paste or type a UUID/GUID directly in the search box. {project_name} will automatically recognize standard UUID formats and treat them as ID searches. For example: `f47ac10b-58cc-4372-a567-0e02b2c3d479`
++
+The search returns the specific user with that ID.
+
+[NOTE]
+====
+The automatic GUID detection only supports the standard UUID format e.g. `f47ac10b-58cc-4372-a567-0e02b2c3d479`.
+
+You can also search for multiple user IDs using the explicit syntax by separating them with spaces: `id:uuid1 uuid2 uuid3`
+====
 
 == Attribute search
 
