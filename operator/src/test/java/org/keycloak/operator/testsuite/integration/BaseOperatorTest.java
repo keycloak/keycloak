@@ -540,17 +540,21 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
    * @return
    */
   public static Keycloak getTestKeycloakDeployment(boolean disableProbes) {
-      Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
-      kc.getMetadata().setNamespace(getCurrentNamespace());
-      String image = getTestCustomImage();
-      if (image != null) {
-          kc.getSpec().setImage(image);
-      }
-      if (disableProbes) {
-          return disableProbes(kc);
-      }
-      return kc;
+      return getTestKeycloakDeployment(disableProbes, true);
   }
+
+    public static Keycloak getTestKeycloakDeployment(boolean disableProbes, boolean setCustomImage) {
+        Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc.getMetadata().setNamespace(getCurrentNamespace());
+        String image = getTestCustomImage();
+        if (setCustomImage && image != null) {
+            kc.getSpec().setImage(image);
+        }
+        if (disableProbes) {
+            return disableProbes(kc);
+        }
+        return kc;
+    }
 
   public static Keycloak disableProbes(Keycloak keycloak) {
       KeycloakSpecBuilder specBuilder = new KeycloakSpecBuilder(keycloak.getSpec());

@@ -56,6 +56,11 @@
             <artifactId>kubernetes-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>openshift-model-monitoring</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Quarkus -->
         <dependency>
