@@ -140,6 +140,8 @@ public class Profile {
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
 
+        DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */
