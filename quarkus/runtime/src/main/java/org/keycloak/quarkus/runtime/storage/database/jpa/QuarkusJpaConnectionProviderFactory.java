@@ -40,8 +40,6 @@ import io.quarkus.arc.Arc;
 import org.jboss.logging.Logger;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
-import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
@@ -72,18 +70,12 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     private Map<String, String> operationalInfo;
 
     @Override
-    public JpaConnectionProvider create(KeycloakSession session) {
-        logger.trace("Create QuarkusJpaConnectionProvider");
-        return new DefaultJpaConnectionProvider(createEntityManager(entityManagerFactory, session));
-    }
-
-    @Override
     public String getId() {
         return "quarkus";
     }
 
     private void addSpecificNamedQueries(KeycloakSession session) {
-        EntityManager em = createEntityManager(entityManagerFactory, session);
+        EntityManager em = createEntityManager(entityManagerFactory, session, false);
 
         try {
             Map<String, Object> unitProperties = entityManagerFactory.getProperties();
