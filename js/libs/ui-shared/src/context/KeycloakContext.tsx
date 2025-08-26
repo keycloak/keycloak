@@ -67,7 +67,7 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
 
     const init = () =>
       keycloak.init({
-        onLoad: "check-sso",
+        onLoad: "login-required",
         pkceMethod: "S256",
         responseMode: "query",
       });
