@@ -79,7 +79,6 @@ export const UserForm = ({
   const isManager = hasAccess("manage-users");
   const canViewFederationLink = hasAccess("view-realm");
   const { whoAmI } = useWhoAmI();
-  const currentLocale = whoAmI.getLocale();
 
   const { handleSubmit, setValue, control, reset, formState } = form;
   const { errors } = formState;
@@ -246,7 +245,7 @@ export const UserForm = ({
               userProfileMetadata={userProfileMetadata}
               hideReadOnly={!user}
               supportedLocales={realm.supportedLocales || []}
-              currentLocale={currentLocale}
+              currentLocale={whoAmI.locale}
               t={
                 ((key: unknown, params) =>
                   t(key as string, params as any)) as TFunction
