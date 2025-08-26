@@ -137,7 +137,22 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     }
 
     public void registerClientSession(String userSessionId, String clientId, UUID clientSessionId, boolean offline) {
-        addTask(userSessionId, new RegisterClientSessionTask(clientId, clientSessionId, offline));
+        addTask(userSessionId, new PersistentSessionUpdateTask<>() {
+            @Override
+            public boolean isOffline() {
+                return offline;
+            }
+
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                entity.getAuthenticatedClientSessions().put(clientId, clientSessionId);
+            }
+
+            @Override
+            public CacheOperation getOperation() {
+                return CacheOperation.REPLACE;
+            }
+        });
     }
 
     private static <V extends SessionEntity> boolean isScheduledForRemove(SessionUpdatesList<V> myUpdates) {
@@ -149,23 +164,5 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         return myUpdates.getUpdateTasks()
                 .stream()
                 .anyMatch(task -> task.getOperation() == SessionUpdateTask.CacheOperation.REMOVE);
-    }
-
-    private record RegisterClientSessionTask(String clientUuid, UUID clientSessionId, boolean offline) implements PersistentSessionUpdateTask<UserSessionEntity> {
-
-        @Override
-        public boolean isOffline() {
-            return offline;
-        }
-
-        @Override
-        public void runUpdate(UserSessionEntity entity) {
-            entity.getAuthenticatedClientSessions().put(clientUuid, clientSessionId);
-        }
-
-        @Override
-        public CacheOperation getOperation() {
-            return CacheOperation.REPLACE;
-        }
     }
 }

@@ -302,7 +302,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
      */
     public SessionEntityWrapper<V> importSession(RealmModel realmModel, K key, SessionEntityWrapper<V> session, boolean offline, long lifespan, long maxIdle) {
         var updates = getUpdates(offline);
-        var updatesList = getUpdates(offline).get(key);
+        var updatesList = updates.get(key);
         if (updatesList != null) {
             // exists in transaction, avoid import operation
             return updatesList.getEntityWrapper();
@@ -313,7 +313,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 existing = getCache(offline).putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
             }
         } catch (RuntimeException exception) {
-            // debug level, it the import fail the transaction can continue with the data from the database.
+            // If the import fails, the transaction can continue with the data from the database.
             LOG.debugf(exception, "Failed to import session %s", session);
         }
         if (existing == null) {
@@ -362,7 +362,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             }
             var future = cache.putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS)
                     .exceptionally(throwable -> {
-                        // debug level, it the import fail the transaction can continue with the data from the database.
+                        // If the import fails, the transaction can continue with the data from the database.
                         LOG.debugf(throwable, "Failed to import session %s", session);
                         return null;
                     });
