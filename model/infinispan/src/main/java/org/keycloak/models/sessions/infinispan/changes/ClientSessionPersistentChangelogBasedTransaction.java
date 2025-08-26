@@ -125,9 +125,8 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
         SessionEntityWrapper<AuthenticatedClientSessionEntity> authenticatedClientSessionEntitySessionEntityWrapper = importClientSession(realm, client, userSession, clientSession, clientSessionId);
         if (authenticatedClientSessionEntitySessionEntityWrapper == null) {
-            LOG.debugf("Client-session not imported from persister. It is going to be removed. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
+            LOG.debugf("Client-session not imported from persister. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                     userSession.getId(), clientSessionId, client.getId(), offline);
-            persister.removeClientSession(userSession.getId(), client.getId(), offline);
         }
 
         return authenticatedClientSessionEntitySessionEntityWrapper;
