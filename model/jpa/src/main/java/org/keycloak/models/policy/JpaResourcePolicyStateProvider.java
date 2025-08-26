@@ -90,6 +90,20 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
     }
 
     @Override
+    public List<ScheduledAction> getScheduledActionsByPolicy(ResourcePolicy policy) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<ResourcePolicyStateEntity> query = cb.createQuery(ResourcePolicyStateEntity.class);
+        Root<ResourcePolicyStateEntity> stateRoot = query.from(ResourcePolicyStateEntity.class);
+
+        Predicate byPolicy = cb.equal(stateRoot.get("policyId"), policy.getId());
+        query.where(byPolicy);
+
+        return em.createQuery(query).getResultStream()
+                .map(s -> new ScheduledAction(s.getPolicyId(), s.getScheduledActionId(), s.getResourceId()))
+                .toList();
+    }
+
+    @Override
     public List<ScheduledAction> getScheduledActionsByResource(String resourceId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ResourcePolicyStateEntity> query = cb.createQuery(ResourcePolicyStateEntity.class);
@@ -101,21 +115,6 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
         return em.createQuery(query).getResultStream()
                 .map(s -> new ScheduledAction(s.getPolicyId(), s.getScheduledActionId(), s.getResourceId()))
                 .toList();
-    }
-
-    @Override
-    public List<String> findResourceIdsByScheduledAction(String policyId, String scheduledActionId) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<String> query = cb.createQuery(String.class);
-        Root<ResourcePolicyStateEntity> stateRoot = query.from(ResourcePolicyStateEntity.class);
-
-        Predicate policyPredicate = cb.equal(stateRoot.get("policyId"), policyId);
-        Predicate actionPredicate = cb.equal(stateRoot.get("scheduledActionId"), scheduledActionId);
-
-        query.select(stateRoot.get("resourceId"));
-        query.where(cb.and(policyPredicate, actionPredicate));
-
-        return em.createQuery(query).getResultList();
     }
 
     @Override

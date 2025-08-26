@@ -18,22 +18,19 @@
 package org.keycloak.tests.admin.model.policy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.BadRequestException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -42,7 +39,6 @@ import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourceAction;
 import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
-import org.keycloak.models.policy.ResourcePolicyStateEntity;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
 import org.keycloak.models.policy.UserActionBuilder;
 import org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory;
@@ -54,6 +50,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
@@ -130,82 +127,6 @@ public class ResourcePolicyManagementTest {
         //    em.flush();
         // }
 
-        runOnServer.run(session -> {
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-
-            RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
-            UserModel user = session.users().addUser(realm, "test");
-
-            // Create a policy with two actions
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
-            ResourceAction notify = UserActionBuilder.builder(NotifyUserActionProviderFactory.ID).after(Duration.ofDays(5)).build();
-            ResourceAction disable = UserActionBuilder.builder(DisableUserActionProviderFactory.ID).after(Duration.ofDays(10)).build();
-            manager.updateActions(policy, List.of(notify, disable));
-
-            // Get the created actions to access their IDs
-            List<ResourceAction> createdActions = manager.getActions(policy);
-            ResourceAction createdNotifyAction = createdActions.get(0);
-            ResourceAction createdDisableAction = createdActions.get(1);
-
-            // --- SIMULATE USER PROGRESS ---
-            // Manually set the user's state to have completed 'notify'
-            stateProvider.update(policy.getId(), policy.getProviderId(), List.of(user.getId()), createdNotifyAction.getId());
-            ResourcePolicyStateEntity.PrimaryKey pk = new ResourcePolicyStateEntity.PrimaryKey(user.getId(), policy.getId());
-            assertNotNull(em.find(ResourcePolicyStateEntity.class, pk), "State should exist before the update.");
-
-            // Admin deletes 'notify' by updating the policy with only 'disable'
-            manager.updateActions(policy, List.of(createdDisableAction));
-
-            //need to flush and clear the persistance context cache to get correct result in next call
-            em.flush();
-            em.clear();
-
-            // The user's state record should have been deleted because its last_completed_action (notify) no longer exists.
-            assertNull(em.find(ResourcePolicyStateEntity.class, pk), "State record should be deleted when its completed action is removed.");
-        });
-    }
-
-    @Test
-    public void testPolicyDoesNotFallThroughActionsInSingleRun() {
-        runOnServer.run(session -> {
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-
-            RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            UserModel user = session.users().addUser(realm, "testuser");
-            user.setEnabled(true);
-
-            // Create a policy with notify (5 days) and disable (10 days) actions
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
-            ResourceAction notifyAction = UserActionBuilder.builder(NotifyUserActionProviderFactory.ID).after(Duration.ofDays(5)).build();
-            ResourceAction disableAction = UserActionBuilder.builder(DisableUserActionProviderFactory.ID).after(Duration.ofDays(10)).build();
-            manager.updateActions(policy, List.of(notifyAction, disableAction));
-
-            ResourceAction createdNotifyAction = manager.getActions(policy).get(0);
-
-            try {
-                // Simulate the user being 12 days old, making them eligible for both actions' time conditions.
-                Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
-                manager.runPolicies();
-
-                user = session.users().getUserById(realm, user.getId());
-
-                // Verify that ONLY the first action (notify) was executed.
-                assertNotNull(user.getAttributes().get("message"), "The first action (notify) should have run.");
-                assertTrue(user.isEnabled(), "The second action (disable) should NOT have run.");
-
-                // Verify that the user's state is correctly paused after the first action.
-                ResourcePolicyStateEntity.PrimaryKey pk = new ResourcePolicyStateEntity.PrimaryKey(user.getId(), policy.getId());
-                ResourcePolicyStateEntity state = em.find(ResourcePolicyStateEntity.class, pk);
-
-                assertNotNull(state, "A state record should have been created for the user.");
-                assertEquals(createdNotifyAction.getId(), state.getScheduledActionId(), "The user's state should be at the first action.");
-            } finally {
-                Time.setOffset(0);
-            }
-        });
     }
 
     @Test
@@ -227,6 +148,173 @@ public class ResourcePolicyManagementTest {
                 manager.updateActions(policy, List.of(action1, action2));
                 fail("Expected exception was not thrown");
             } catch (BadRequestException expected) {}
+        });
+    }
+
+    @Test
+    public void testPolicyDoesNotFallThroughActionsInSingleRun() {
+        // register policy to notify user in 5 days and disable in 10 days
+        runOnServer.run((RunOnServer) session -> {
+            configureSessionContext(session);
+            PolicyBuilder.create()
+                    .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                    .withActions(
+                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
+                                    .after(Duration.ofDays(5))
+                                    .build(),
+                            UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
+                                    .after(Duration.ofDays(10))
+                                    .build()
+                    ).build(session);
+        });
+
+        // create a new user - should bind the user to the policy and setup the first action
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
+
+        runOnServer.run((RunOnServer) session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+            UserModel user = session.users().getUserByUsername(realm,"testuser");
+
+            List<ResourcePolicy> registeredPolicies = manager.getPolicies();
+            assertEquals(1, registeredPolicies.size());
+
+            ResourcePolicy policy = registeredPolicies.get(0);
+            assertEquals(2, manager.getActions(policy).size());
+            ResourceAction notifyAction = manager.getActions(policy).get(0);
+
+            ResourcePolicyStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(ResourcePolicyStateProvider.class).create(session);
+            ResourcePolicyStateProvider.ScheduledAction scheduledAction = stateProvider.getScheduledAction(policy.getId(), user.getId());
+            assertNotNull(scheduledAction, "An action should have been scheduled for the user " + user.getUsername());
+            assertEquals(notifyAction.getId(), scheduledAction.actionId());
+
+            try {
+                // Simulate the user being 12 days old, making them eligible for both actions' time conditions.
+                Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
+                manager.runScheduledTasks();
+
+                user = session.users().getUserById(realm, user.getId());
+                // Verify that ONLY the first action (notify) was executed.
+                assertNotNull(user.getAttributes().get("message"), "The first action (notify) should have run.");
+                assertTrue(user.isEnabled(), "The second action (disable) should NOT have run.");
+
+                // Verify that the next action was scheduled for the user
+                ResourceAction disableAction = manager.getActions(policy).get(1);
+                scheduledAction = stateProvider.getScheduledAction(policy.getId(), user.getId());
+                assertNotNull(scheduledAction, "An action should have been scheduled for the user " + user.getUsername());
+                assertEquals(disableAction.getId(), scheduledAction.actionId(), "The second action should have been scheduled");
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+    }
+
+    @Test
+    public void testAssignPolicyToExistingResources() {
+        // create some realm users
+        for (int i = 0; i < 10; i++) {
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build());
+        }
+
+        // create some users associated with a federated identity
+        for (int i = 0; i < 10; i++) {
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("idp-user-" + i)
+                    .federatedLink("someidp", UUID.randomUUID().toString(), "idp-user-" + i).build());
+        }
+
+        // register a policy to notify user in 5 days
+        runOnServer.run((RunOnServer) session -> {
+            configureSessionContext(session);
+            PolicyBuilder.create()
+                    .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                    .withConfig("broker-aliases", "someidp")
+                    .withActions(
+                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
+                                    .after(Duration.ofDays(5))
+                                    .build(),
+                            UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
+                                    .after(Duration.ofDays(10))
+                                    .build()
+                    ).build(session);
+        });
+
+        // now with the policy in place, let's create a couple more idp users - these will be attached to the policy on
+        // creation.
+        for (int i = 0; i < 3; i++) {
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("new-idp-user-" + i)
+                    .federatedLink("someidp", UUID.randomUUID().toString(), "new-idp-user-" + i).build());
+        }
+
+        // new realm users created after the policy - these should not be attached to the policy because they are not idp users.
+        for (int i = 0; i < 3; i++) {
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("new-user-" + i).build());
+        }
+
+        runOnServer.run((RunOnServer) session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager policyManager = new ResourcePolicyManager(session);
+            List<ResourcePolicy> registeredPolicies = policyManager.getPolicies();
+            assertEquals(1, registeredPolicies.size());
+            ResourcePolicy policy = registeredPolicies.get(0);
+
+            assertEquals(2, policyManager.getActions(policy).size());
+            ResourceAction notifyAction = policyManager.getActions(policy).get(0);
+
+            // check no policies are yet attached to the previous users, only to the ones created after the policy was in place
+            ResourcePolicyStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(ResourcePolicyStateProvider.class).create(session);
+            List<ResourcePolicyStateProvider.ScheduledAction> scheduledActions = stateProvider.getScheduledActionsByPolicy(policy);
+            assertEquals(3, scheduledActions.size());
+            scheduledActions.forEach(scheduledAction -> {
+                assertEquals(notifyAction.getId(), scheduledAction.actionId());
+                UserModel user = session.users().getUserById(realm, scheduledAction.resourceId());
+                assertNotNull(user);
+                assertTrue(user.getUsername().startsWith("new-idp-user-"));
+            });
+
+            try {
+                // let's run the schedule actions for the new users so they transition to the next one.
+                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
+                policyManager.runScheduledTasks();
+
+                // check the same users are now scheduled to run the second action.
+                ResourceAction disableAction = policyManager.getActions(policy).get(1);
+                scheduledActions = stateProvider.getScheduledActionsByPolicy(policy);
+                assertEquals(3, scheduledActions.size());
+                scheduledActions.forEach(scheduledAction -> {
+                    assertEquals(disableAction.getId(), scheduledAction.actionId());
+                    UserModel user = session.users().getUserById(realm, scheduledAction.resourceId());
+                    assertNotNull(user);
+                    assertTrue(user.getUsername().startsWith("new-idp-user-"));
+                });
+
+                // assign the policy to the eligible users - i.e. only users from the same idp who are not yet assigned to the policy.
+                policyManager.scheduleAllEligibleResources(policy);
+
+                // check policy was correctly assigned to the old users, not affecting users already associated with the policy.
+                scheduledActions = stateProvider.getScheduledActionsByPolicy(policy);
+                assertEquals(13, scheduledActions.size());
+
+                List<ResourcePolicyStateProvider.ScheduledAction> scheduledToNotify = scheduledActions.stream()
+                        .filter(action -> notifyAction.getId().equals(action.actionId())).toList();
+                assertEquals(10, scheduledToNotify.size());
+                scheduledToNotify.forEach(scheduledAction -> {
+                    UserModel user = session.users().getUserById(realm, scheduledAction.resourceId());
+                    assertNotNull(user);
+                    assertTrue(user.getUsername().startsWith("idp-user-"));
+                });
+
+                List<ResourcePolicyStateProvider.ScheduledAction> scheduledToDisable = scheduledActions.stream()
+                        .filter(action -> disableAction.getId().equals(action.actionId())).toList();
+                assertEquals(3, scheduledToDisable.size());
+                scheduledToDisable.forEach(scheduledAction -> {
+                    UserModel user = session.users().getUserById(realm, scheduledAction.resourceId());
+                    assertNotNull(user);
+                    assertTrue(user.getUsername().startsWith("new-idp-user-"));
+                });
+
+            } finally {
+                Time.setOffset(0);
+            }
         });
     }
 
