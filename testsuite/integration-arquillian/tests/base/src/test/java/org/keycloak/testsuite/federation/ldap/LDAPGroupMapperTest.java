@@ -639,6 +639,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
             LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), ctx.getRealm(), ldapFedProvider.getLdapIdentityStore().getConfig(), "alice");
+            Assert.assertNull(session.users().getUserByUsername(ctx.getRealm(), "alice"));
         });
     }
 
@@ -680,6 +681,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
             LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), ctx.getRealm(), ldapFedProvider.getLdapIdentityStore().getConfig(), "alice");
+            Assert.assertNull(session.users().getUserByUsername(ctx.getRealm(), "alice"));
         });
     }
 
