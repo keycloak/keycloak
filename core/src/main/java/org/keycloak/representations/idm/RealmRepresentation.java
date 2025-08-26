@@ -98,6 +98,7 @@ public class RealmRepresentation {
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
     protected Long quickLoginCheckMilliSeconds;
+    protected String excludedAMRs;
     protected Integer maxDeltaTimeSeconds;
     protected Integer failureFactor;
     //--- end brute force settings
@@ -833,6 +834,14 @@ public class RealmRepresentation {
 
     public void setQuickLoginCheckMilliSeconds(Long quickLoginCheckMilliSeconds) {
         this.quickLoginCheckMilliSeconds = quickLoginCheckMilliSeconds;
+    }
+
+    public String getExcludedAMRs() {
+        return excludedAMRs;
+    }
+
+    public void setExcludedAMRs(String excludedAMRs) {
+        this.excludedAMRs = excludedAMRs;
     }
 
     public Integer getMaxDeltaTimeSeconds() {

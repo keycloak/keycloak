@@ -179,6 +179,8 @@ public interface RealmModel extends RoleContainerModel {
     void setMinimumQuickLoginWaitSeconds(int val);
     long getQuickLoginCheckMilliSeconds();
     void setQuickLoginCheckMilliSeconds(long val);
+    String getExcludedAMRs();
+    void setExcludedAMRs(String excludedAMRs);
     int getMaxDeltaTimeSeconds();
     void setMaxDeltaTimeSeconds(int val);
     int getFailureFactor();

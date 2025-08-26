@@ -216,6 +216,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getMinimumQuickLoginWaitSeconds() != null) newRealm.setMinimumQuickLoginWaitSeconds(checkNonNegativeNumber(rep.getMinimumQuickLoginWaitSeconds(),"Minimum quick login wait seconds"));
         if (rep.getWaitIncrementSeconds() != null) newRealm.setWaitIncrementSeconds(checkNonNegativeNumber(rep.getWaitIncrementSeconds(),"Wait increment seconds"));
         if (rep.getQuickLoginCheckMilliSeconds() != null) newRealm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
+        if (rep.getExcludedAMRs() != null) newRealm.setExcludedAMRs(rep.getExcludedAMRs());
         if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
         if (rep.getFailureFactor() != null) newRealm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
         if (rep.isEventsEnabled() != null) newRealm.setEventsEnabled(rep.isEventsEnabled());
@@ -811,6 +812,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getMinimumQuickLoginWaitSeconds() != null) realm.setMinimumQuickLoginWaitSeconds(checkNonNegativeNumber(rep.getMinimumQuickLoginWaitSeconds(),"Minimum quick login wait seconds"));
         if (rep.getWaitIncrementSeconds() != null) realm.setWaitIncrementSeconds(checkNonNegativeNumber(rep.getWaitIncrementSeconds(),"Wait increment seconds"));
         if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
+        if (rep.getExcludedAMRs() != null) realm.setExcludedAMRs(rep.getExcludedAMRs());
         if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
         if (rep.getFailureFactor() != null) realm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());

@@ -252,6 +252,13 @@ wait time will never reach the value you have set to `Max wait`.
 `count` does not increment when a temporarily disabled account commits a login failure.
 ====
 
+==== Exclude specific {project_name} authenticator from participating in brute force detection
+
+When authentication flow contains public key based authenticator such as Passkey(WebAuthn) or WebAuthn it might be not desirable to unlock user account and let the brute force attack continue.
+
+An authenticator could be excluded from brute force detection via setting AMR (authentication method reference) on the authenticator and using brute force detection setting `Excluded AMRs`.
+If more authenticators need to be excluded use comma separated list their AMRs. This setting is valid for all brute force modes.
+
 ==== Downside of {project_name} brute force detection
 
 The downside of {project_name} brute force detection is that the server becomes vulnerable to denial of service attacks. When implementing a denial of service attack, an attacker can attempt to log in by guessing passwords for any accounts it knows and eventually causing {project_name} to disable the accounts.

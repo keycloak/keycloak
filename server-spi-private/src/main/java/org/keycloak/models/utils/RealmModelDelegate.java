@@ -240,6 +240,14 @@ public class RealmModelDelegate implements RealmModel {
         delegate.setQuickLoginCheckMilliSeconds(val);
     }
 
+    public String getExcludedAMRs() {
+        return delegate.getExcludedAMRs();
+    }
+
+    public void setExcludedAMRs(String val) {
+        delegate.setExcludedAMRs(val);
+    }
+
     public int getMaxDeltaTimeSeconds() {
         return delegate.getMaxDeltaTimeSeconds();
     }

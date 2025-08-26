@@ -411,6 +411,16 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public String getExcludedAMRs() {
+            return "";
+        }
+
+        @Override
+        public void setExcludedAMRs(String val) {
+
+        }
+
+        @Override
         public int getMaxDeltaTimeSeconds() {
             return 0;
         }
