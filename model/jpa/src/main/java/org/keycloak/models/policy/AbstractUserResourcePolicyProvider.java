@@ -23,6 +23,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.keycloak.component.ComponentModel;
@@ -31,6 +33,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 
 public abstract class AbstractUserResourcePolicyProvider implements ResourcePolicyProvider {
@@ -39,67 +42,65 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
     private final EntityManager em;
     private final KeycloakSession session;
 
+    private static final String BROKER_ALIASES = "broker-aliases";
+
     public AbstractUserResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
         this.policyModel = model;
         this.em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         this.session = session;
     }
 
-    public abstract Predicate timePredicate(long time, CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> userRoot);
-
-    // For each user row, a subquery is executed to check if a corresponding record exists in
-    // the state table. If no record is found, the condition is met -> user is eligible for initial action
-
     @Override
-    public List<String> getEligibleResourcesForInitialAction(long time) {
+    public List<String> getEligibleResourcesForInitialAction() {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<String> query = cb.createQuery(String.class);
         Root<UserEntity> userRoot = query.from(UserEntity.class);
+        List<Predicate> predicates = new ArrayList<>();
 
         // Subquery will find if a state record exists for the user and policy
         // SELECT 1 FROM ResourcePolicyStateEntity s WHERE s.resourceId = userRoot.id AND s.policyId = :policyId
         Subquery<Integer> subquery = query.subquery(Integer.class);
         Root<ResourcePolicyStateEntity> stateRoot = subquery.from(ResourcePolicyStateEntity.class);
-        subquery.select(cb.literal(1)); // Select 1 for existence check
+        subquery.select(cb.literal(1));
         subquery.where(
             cb.and(
                 cb.equal(stateRoot.get("resourceId"), userRoot.get("id")),
                 cb.equal(stateRoot.get("policyId"), policyModel.getId())
             )
         );
-
-        // Time-based condition
-        Predicate timePredicate = timePredicate(time, cb, query, userRoot);
-
-        // NOT EXISTS condition
         Predicate notExistsPredicate = cb.not(cb.exists(subquery));
+        predicates.add(notExistsPredicate);
 
-        query.where(cb.and(timePredicate, notExistsPredicate));
-        query.select(userRoot.get("id"));
-
-        return em.createQuery(query).getResultList();
-    }
-    @Override
-    public List<String> filterEligibleResources(List<String> candidateResourceIds, long time) {
-        // If there are no candidates, return an empty list
-        if (candidateResourceIds == null || candidateResourceIds.isEmpty()) {
-            return Collections.emptyList();
+        // origin-based condition
+        Predicate originPredicate = buildOriginPredicate(cb, query, userRoot);
+        if (originPredicate != null) {
+            predicates.add(originPredicate);
         }
 
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<String> query = cb.createQuery(String.class);
-        Root<UserEntity> userRoot = query.from(UserEntity.class);
+        // todo: add relationship predicates (groups, roles, perhaps user attribute?)
 
-        // Time-based condition
-        Predicate timePredicate = timePredicate(time, cb, query, userRoot);
-
-        // IN clause with candidateResourceIds
-        Predicate inClausePredicate = userRoot.get("id").in(candidateResourceIds);
-
-        query.where(cb.and(timePredicate, inClausePredicate));
-        query.select(userRoot.get("id"));
-
+        query.select(userRoot.get("id")).where(predicates);
         return em.createQuery(query).getResultList();
+    }
+
+    protected Predicate buildOriginPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> userRoot) {
+        // As of now we check only if there are broker aliases configured for the policy. More complete approach should check
+        // a "origin" attribute for the origin type, and add the predicate accordingly
+        // e.g. "origin" = "broker", check broker aliases; "origin" = "any" no need to filter anything; "origin" = "fed-provider", check "fed-providers", etc
+        if (!this.getBrokerAliases().isEmpty()) {
+            Subquery<Integer> subquery = query.subquery(Integer.class);
+            Root<FederatedIdentityEntity> from = subquery.from(FederatedIdentityEntity.class);
+
+            subquery.select(cb.literal(1));
+            subquery.where(
+                cb.and(
+                    cb.equal(from.get("user").get("id"), userRoot.get("id")),
+                    from.get("identityProvider").in(getBrokerAliases())
+                )
+            );
+            return cb.exists(subquery);
+        }
+        return null;
     }
 
     /**
@@ -172,6 +173,6 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
     }
 
     protected List<String> getBrokerAliases() {
-        return getModel().getConfig().getOrDefault("broker-aliases", List.of());
+        return getModel().getConfig().getOrDefault(BROKER_ALIASES, List.of());
     }
 }
