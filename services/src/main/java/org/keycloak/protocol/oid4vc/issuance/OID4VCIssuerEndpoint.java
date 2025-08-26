@@ -525,7 +525,8 @@ public class OID4VCIssuerEndpoint {
                 .addCredential(theCredential)
                 .setNotificationId(generateNotificationId());
 
-        if (encryptionParams != null) {
+        // Encrypt all responses if encryption parameters are provided, except for error credential responses
+        if (encryptionParams != null && !(theCredential instanceof ErrorResponse)) {
             String jwe = encryptCredentialResponse(responseVO, encryptionParams);
             return Response.ok()
                     .type(MediaType.APPLICATION_JWT)
@@ -732,12 +733,15 @@ public class OID4VCIssuerEndpoint {
                     .algorithm(selectedAlg)
                     .encryptionAlgorithm(enc)
                     .compressionAlgorithm(zip)
+                    .keyId(jwk.getKeyId())
                     .build();
 
             JWE jwe = new JWE()
                     .header(header)
                     .content(content);
             jwe.getKeyStorage().setEncryptionKey(publicKey);
+
+
             return jwe.encodeJwe();
         } catch (IOException e) {
             LOGGER.errorf("Serialization failed: %s", e.getMessage());
