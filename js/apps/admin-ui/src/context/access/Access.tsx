@@ -3,7 +3,7 @@ import {
   createNamedContext,
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren } from "react";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 
@@ -22,13 +22,7 @@ export const useAccess = () => useRequiredContext(AccessContext);
 export const AccessContextProvider = ({ children }: PropsWithChildren) => {
   const { whoAmI } = useWhoAmI();
   const { realm } = useRealm();
-  const [access, setAccess] = useState<readonly AccessType[]>([]);
-
-  useEffect(() => {
-    if (whoAmI.realm_access[realm]) {
-      setAccess(whoAmI.realm_access[realm]);
-    }
-  }, [whoAmI, realm]);
+  const access = whoAmI.realm_access[realm] ?? [];
 
   const hasAccess = (...types: AccessType[]): boolean => {
     return types.every(
