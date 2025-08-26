@@ -999,7 +999,7 @@ public class AuthenticationManager {
                                                   Set<String> ignoredActions) {
         Response requiredAction = actionRequired(session, authSession, request, event, ignoredActions);
         if (requiredAction != null) return requiredAction;
-        return finishedRequiredActions(session, authSession, null, clientConnection, request, uriInfo, event);
+        return finishedRequiredActions(session, authSession, null, clientConnection, request, uriInfo, event, false);
 
     }
 
@@ -1034,7 +1034,7 @@ public class AuthenticationManager {
 
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,
-                                                   ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
+                                                   ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event, boolean createUserSessionInDedicatedTransaction) {
         String actionTokenKeyToInvalidate = authSession.getAuthNote(INVALIDATE_ACTION_TOKEN);
         if (actionTokenKeyToInvalidate != null) {
             SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
@@ -1065,7 +1065,7 @@ public class AuthenticationManager {
         }
         RealmModel realm = authSession.getRealm();
 
-        ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, userSession, session, realm, clientConnection, event);
+        ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, userSession, session, realm, clientConnection, event, createUserSessionInDedicatedTransaction);
         userSession = clientSessionCtx.getClientSession().getUserSession();
 
         event.event(EventType.LOGIN);
