@@ -101,6 +101,9 @@ public final class KeycloakModelUtils {
 
     private static final Logger logger = Logger.getLogger(KeycloakModelUtils.class);
 
+    // Pattern to match UUID/GUID formats (standard UUID, with hyphens, case-sensitive)
+    public static final Pattern UUID_PATTERN = Pattern.compile("[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}");
+
     public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
 
@@ -173,6 +176,19 @@ public final class KeycloakModelUtils {
         } catch (IllegalArgumentException e) {
             return false;
         }
+    }
+
+    /**
+     * Checks if the given search term looks like a UUID/GUID pattern.
+     * 
+     * @param searchTerm the search term to check
+     * @return true if the search term matches UUID/GUID pattern, false otherwise
+     */
+    public static boolean hasUUIDFormat(String uuid) {
+        if (uuid == null || uuid.trim().isEmpty()) {
+            return false;
+        }
+        return UUID_PATTERN.matcher(uuid.trim()).matches();
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
