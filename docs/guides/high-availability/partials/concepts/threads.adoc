@@ -1,22 +1,24 @@
 [#${parent}-quarkus-executor-pool]
 === Quarkus executor pool
 
-{project_name} requests, as well as blocking probes, are handled by an executor pool. Depending on the available CPU cores, it has a maximum size of 50 or more threads.
+{project_name} requests, as well as blocking probes, are handled by an executor pool. 
+The work performed by this pool is not always CPU bound and may require waiting on resources or IO operations.
+It has a default maximum size of 50 or more threads depending on the available CPU cores.
 Threads are created as needed, and will end when no longer needed, so the system will scale up and down automatically.
 {project_name} allows configuring the maximum thread pool size by the link:{links_server_all-config_url}?q=http-pool-max-threads[`http-pool-max-threads`] configuration option.
 
-When running on {kubernetes}, adjust the number of worker threads to avoid creating more load than what the CPU limit allows for the Pod to avoid throttling, which would lead to congestion.
-When running on physical machines, adjust the number of worker threads to avoid creating more load than the node can handle to avoid congestion.
-Congestion would result in longer response times and an increased memory usage, and eventually an unstable system.
-
+There are benefits to using the smallest maximum pool size that meets your throughput needs.
+Fewer threads will reduce the amount of stack space usage, allow for fewer connections in your database and LDAP connection pools, and minimize thread context switching overhead.
 Ideally, you should start with a low limit of threads and adjust it accordingly to the target throughput and response time.
-When the load and the number of threads increases, the database connections can also become a bottleneck.
+
+Under load database connections may become a bottleneck if there is a mismatch between the executor pool maximum size and the connection pool size.
+The number of database connections defaults to 100. The database connection pool is configured via the link:{links_server_all-config_url}?q=db-pool[`Database` settings `db-pool-initial-size`, `db-pool-min-size` and `db-pool-max-size`] respectively.
 Once a request cannot acquire a database connection within 5 seconds, it will fail with a message in the log like `Unable to acquire JDBC Connection`.
 The caller will receive a response with a 5xx HTTP status code indicating a server side error.
+To avoid seeing this error, you will generally want more database connections than executor pool threads as some requests can use more than one connection and timed or other async work may also use connections.
 
-If you increase the number of database connections and the number of threads too much, the system will be congested under a high load with requests queueing up, which leads to a bad performance.
-The number of database connections is configured via the link:{links_server_all-config_url}?q=db-pool[`Database` settings `db-pool-initial-size`, `db-pool-min-size` and `db-pool-max-size`] respectively.
-Low numbers ensure fast response times for all clients, even if there is an occasionally failing request when there is a load spike.
+NOTE: `argon2` password hashing is limited to the number of available processors by default.
+Increasing the executor pool maximum size beyond the number of threads needed to maintain a concurrent workload of this size will have no effect on the rate at which password hashes can be performed.
 
 [#${parent}-load-shedding]
 === Load Shedding
