@@ -422,13 +422,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             return null;
         }
 
-        AuthenticatedClientSessionAdapter clientAdapter = importClientSession((UserSessionAdapter) userSession, clientSession, getTransaction(offline),
+        return importClientSession((UserSessionAdapter) userSession, clientSession, getTransaction(offline),
                 getClientSessionTransaction(offline), offline, true);
-
-        if (clientAdapter == null) {
-            persister.removeClientSession(userSession.getId(), client.getId(), offline);
-        }
-        return clientAdapter;
     }
 
     private AuthenticatedClientSessionEntity getClientSessionEntity(UUID id, boolean offline) {
