@@ -95,6 +95,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
@@ -107,7 +108,6 @@ import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
@@ -119,6 +119,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
+import org.keycloak.quarkus.runtime.services.health.KeycloakClusterReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -234,7 +235,10 @@ class KeycloakProcessor {
     @BuildStep
     @Produce(ConfigBuildItem.class)
     void initConfig(KeycloakRecorder recorder) {
+        // other buildsteps directly use the Config
+        // so directly init it
         Config.init(new MicroProfileConfigProvider());
+        // also init in byte code for the actual server start
         recorder.initConfig();
     }
 
@@ -382,7 +386,7 @@ class KeycloakProcessor {
                 .filter(descriptor -> !descriptor.getName().equals(DEFAULT_PERSISTENCE_UNIT)) // not default persistence unit
                 .map(KeycloakProcessor::getDatasourceNameFromPersistenceXml)
                 .filter(this::missingDbKind)
-                .map(datasourceName -> DatabaseOptions.getNamedKey(DatabaseOptions.DB, datasourceName).orElseThrow()).toList();
+                .map(datasourceName -> DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB, datasourceName).orElseThrow()).toList();
 
         if (!notSetPersistenceUnitsDBKinds.isEmpty()) {
             throwConfigError("Detected additional named datasources without a DB kind set, please specify: %s".formatted(String.join(",", notSetPersistenceUnitsDBKinds)));
@@ -400,7 +404,7 @@ class KeycloakProcessor {
      * </ol>
      */
     private boolean missingDbKind(String datasourceName) {
-        String key = NS_KEYCLOAK_PREFIX.concat(DatabaseOptions.getNamedKey(DatabaseOptions.DB, datasourceName).orElseThrow());
+        String key = NS_KEYCLOAK_PREFIX.concat(DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB, datasourceName).orElseThrow());
         PropertyMappingInterceptor.disable();
         try {
             var from = Configuration.getConfigValue(key);
@@ -542,6 +546,16 @@ class KeycloakProcessor {
                     .formatted(PersistenceUnitTransactionType.JTA.name()));
         }
 
+        // db-dialect
+        DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB_DIALECT, datasourceName)
+                .flatMap(Configuration::getOptionalKcValue)
+                .ifPresent(dialect -> unitProperties.setProperty(AvailableSettings.DIALECT, dialect));
+
+        // db-schema
+        DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB_SCHEMA, datasourceName)
+                .flatMap(Configuration::getOptionalKcValue)
+                .ifPresent(schema -> unitProperties.setProperty(AvailableSettings.DEFAULT_SCHEMA, schema));
+
         unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
         descriptor.setTransactionType(PersistenceUnitTransactionType.JTA);
 
@@ -549,11 +563,13 @@ class KeycloakProcessor {
         unitProperties.setProperty(JdbcSettings.JAKARTA_JTA_DATASOURCE,datasourceName);
         unitProperties.setProperty(AvailableSettings.DATASOURCE, datasourceName); // for backward compatibility
 
-        DatabaseOptions.getNamedKey(DatabaseOptions.DB_SQL_JPA_DEBUG, datasourceName)
+        // db-debug-jpql
+        DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB_SQL_JPA_DEBUG, datasourceName)
                 .filter(Configuration::isKcPropertyTrue)
                 .ifPresent(f -> unitProperties.put(AvailableSettings.USE_SQL_COMMENTS, "true"));
 
-        DatabaseOptions.getNamedKey(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES, datasourceName)
+        // db-log-slow-queries-threshold
+        DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES, datasourceName)
                 .flatMap(Configuration::getOptionalKcValue)
                 .ifPresent(threshold -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, threshold));
     }
@@ -617,6 +633,7 @@ class KeycloakProcessor {
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
+    @Consume(ConfigBuildItem.class)
     @Consume(CryptoProviderInitBuildItem.class)
     @Produce(KeycloakSessionFactoryPreInitBuildItem.class)
     void configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
@@ -772,12 +789,29 @@ class KeycloakProcessor {
 
     @BuildStep
     void disableHealthCheckBean(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
-        if (!isHealthEnabled() || !isMetricsEnabled()) {
-            // disables the single check we provide which depends on metrics enabled
-            ClassInfo disabledBean = index.getIndex()
-                    .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
-            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
+        if (isHealthDisabled()) {
+            disableReadyHealthCheck(removeBeans, index);
+            disableClusterHealthCheck(removeBeans, index);
+            return;
         }
+        if (isMetricsDisabled()) {
+            // disables the single check we provide which depends on metrics enabled.
+            disableReadyHealthCheck(removeBeans, index);
+        }
+        if (InfinispanUtils.isRemoteInfinispan()) {
+            // no cluster when the remote infinispan is used.
+            disableClusterHealthCheck(removeBeans, index);
+        }
+    }
+
+    private static void disableClusterHealthCheck(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        ClassInfo clusterHealth = index.getIndex().getClassByName(DotName.createSimple(KeycloakClusterReadyHealthCheck.class));
+        removeBeans.produce(new BuildTimeConditionBuildItem(clusterHealth.asClass(), false));
+    }
+
+    private static void disableReadyHealthCheck(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        ClassInfo disabledBean = index.getIndex().getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
+        removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
     }
 
     @BuildStep
@@ -871,7 +905,6 @@ class KeycloakProcessor {
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
             Map<String, ProviderFactory> preConfiguredProviders) {
-        Config.init(new MicroProfileConfigProvider());
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         ProviderManager pm = getProviderManager(classLoader);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
@@ -1091,12 +1124,12 @@ class KeycloakProcessor {
         }
     }
 
-    private boolean isMetricsEnabled() {
-        return Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
+    private static boolean isMetricsDisabled() {
+        return !Configuration.isTrue(MetricsOptions.METRICS_ENABLED);
     }
 
-    private boolean isHealthEnabled() {
-        return Configuration.isTrue(HealthOptions.HEALTH_ENABLED);
+    private static boolean isHealthDisabled() {
+        return !Configuration.isTrue(HealthOptions.HEALTH_ENABLED);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {

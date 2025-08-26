@@ -1,14 +1,14 @@
-import { Page, test } from "@playwright/test";
+import { type Page, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertSwitchIsChecked, switchToggle } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { assertSwitchIsChecked, switchToggle } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   goToClientScopes,
   goToRealm,
   goToRealmSettings,
-} from "../utils/sidebar";
-import { goToLoginTab } from "./login";
+} from "../utils/sidebar.ts";
+import { goToLoginTab } from "./login.ts";
 
 test.describe("Realm settings tabs tests", () => {
   const realmName = `realm-settings_${uuid()}`;

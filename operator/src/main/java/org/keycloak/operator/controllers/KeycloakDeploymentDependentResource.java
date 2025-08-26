@@ -87,8 +87,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
-    private static final String ZONE_KEY = "topology.kubernetes.io/zone";
-
     private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
     private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
 
@@ -415,25 +413,25 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             }
         }
 
-        // set defaults if nothing was specified by the user
-        // - server pods will have an affinity for the same zone as to avoid stretch clusters
-        // - server pods will have a stronger anti-affinity for the same node
-
-        if (!specBuilder.hasAffinity()) {
-            specBuilder.editOrNewAffinity().withNewPodAffinity().addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                    .withWeight(10).withNewPodAffinityTerm().withNewLabelSelector().withMatchLabels(labels)
-                    .endLabelSelector().withTopologyKey(ZONE_KEY).endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAffinity().endAffinity();
-
-            specBuilder.editOrNewAffinity().withNewPodAntiAffinity()
-                    .addNewPreferredDuringSchedulingIgnoredDuringExecution().withWeight(50).withNewPodAffinityTerm()
-                    .withNewLabelSelector().withMatchLabels(labels).endLabelSelector()
-                    .withTopologyKey("kubernetes.io/hostname").endPodAffinityTerm()
-                    .endPreferredDuringSchedulingIgnoredDuringExecution().endPodAntiAffinity().endAffinity();
+        if (!specBuilder.hasTopologySpreadConstraints()) {
+            specBuilder.addNewTopologySpreadConstraint()
+                    .withMaxSkew(1)
+                    .withTopologyKey("topology.kubernetes.io/zone")
+                    .withWhenUnsatisfiable("ScheduleAnyway")
+                    .withNewLabelSelector()
+                    .withMatchLabels(labels)
+                    .endLabelSelector()
+                    .endTopologySpreadConstraint()
+                    .addNewTopologySpreadConstraint()
+                    .withMaxSkew(1)
+                    .withTopologyKey("kubernetes.io/hostname")
+                    .withWhenUnsatisfiable("ScheduleAnyway")
+                    .withNewLabelSelector()
+                    .withMatchLabels(labels)
+                    .endLabelSelector()
+                    .endTopologySpreadConstraint();
         }
-
     }
-
 
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
         var distConfigurator = ContextUtils.getDistConfigurator(context);
@@ -441,10 +439,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR);
 
-        var env = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
+        var unsupportedEnv = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
-        // accumulate the env vars in priority order - unsupported, first class, additional
-        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(env.stream(), firstClasssEnvVars.stream()), additionalEnvVars.stream())
+        var env = keycloakCR.getSpec().getEnv().stream().map(this::toEnvVar);
+
+        // accumulate the env vars in priority order - unsupported, first class, additional, env
+        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
         String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
@@ -499,6 +499,18 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .filter(entry -> entry.contains("="))
                 .map(entry -> entry.split("=", 2))
                 .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1]));
+    }
+
+    private EnvVar toEnvVar(ValueOrSecret v) {
+        var envBuilder = new EnvVarBuilder().withName(v.getName());
+        var secret = v.getSecret();
+        if (secret != null) {
+            envBuilder.withValueFrom(
+                    new EnvVarSourceBuilder().withSecretKeyRef(secret).build());
+        } else {
+            envBuilder.withValue(v.getValue());
+        }
+        return envBuilder.build();
     }
 
     private List<EnvVar> getDefaultAndAdditionalEnvVars(Keycloak keycloakCR) {

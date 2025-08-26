@@ -1,15 +1,21 @@
-import { test, expect } from "@playwright/test";
-import { login } from "./login";
+import { expect, test } from "@playwright/test";
+import groupsRealm from "./realms/groups-realm.json" with { type: "json" };
+import { login } from "./support/actions.ts";
+import { createTestBed } from "./support/testbed.ts";
 
-test.describe("Groups page", () => {
-  test("List my groups", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", "groups");
+test.describe("Groups", () => {
+  test("lists groups", async ({ page }) => {
+    const realm = await createTestBed(groupsRealm);
+
+    await login(page, realm);
     await page.getByTestId("groups").click();
     await expect(page.getByTestId("group[1].name")).toHaveText("three");
   });
 
-  test("List direct and indirect groups", async ({ page }) => {
-    await login(page, "alice", "alice", "groups");
+  test("lists direct and indirect groups", async ({ page }) => {
+    const realm = await createTestBed(groupsRealm);
+
+    await login(page, realm, "alice", "alice");
     await page.getByTestId("groups").click();
 
     await expect(

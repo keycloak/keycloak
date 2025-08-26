@@ -1,15 +1,15 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { switchOff, switchOn } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal";
-import { goToClients } from "../utils/sidebar";
-import { clickTableRowItem } from "../utils/table";
-import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced";
+import adminClient from "../utils/AdminClient.ts";
+import { switchOff, switchOn } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal.ts";
+import { goToClients } from "../utils/sidebar.ts";
+import { clickTableRowItem } from "../utils/table.ts";
+import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
-  assertCertificate,
+  assertCertificates,
   assertEncryptionAlgorithm,
   assertEncryptionKeyAlgorithm,
   assertEncryptionDigestMethod,
@@ -34,7 +34,7 @@ import {
   selectEncryptionDigestMethodInput,
   selectEncryptionMaskGenerationFunctionInput,
   setTermsOfServiceUrl,
-} from "./saml";
+} from "./saml.ts";
 
 test.describe("Fine Grain SAML Endpoint Configuration", () => {
   const clientName = `saml-advanced-tab-${uuid()}`;
@@ -121,7 +121,7 @@ test.describe("Clients SAML tests", () => {
     await clickClientSignature(page);
     await assertModalTitle(page, 'Disable "Client signature required"');
     await cancelModal(page);
-    await assertCertificate(page, false);
+    await assertCertificates(page);
   });
 
   test("should disable client signature", async ({ page }) => {
@@ -130,7 +130,7 @@ test.describe("Clients SAML tests", () => {
     await assertModalTitle(page, 'Disable "Client signature required"');
     await confirmModal(page);
     await assertNotificationMessage(page, "Client successfully updated");
-    await assertCertificate(page);
+    await assertCertificates(page);
   });
 
   test("should enable Encryption keys config", async ({ page }) => {
@@ -143,7 +143,7 @@ test.describe("Clients SAML tests", () => {
       "New key pair and certificate generated successfully",
     );
     await confirmModal(page);
-    await assertCertificate(page, false);
+    await assertCertificates(page);
 
     // assert encryption algorithms can be modified
     await goToClientSettingsTab(page);
@@ -212,18 +212,20 @@ test.describe("Clients SAML tests", () => {
   test("should check access settings", async ({ page }) => {
     const validUrl =
       "http://localhost:8180/realms/master/protocol/" + clientId + "/clients/";
-    const invalidUrlError =
+    const invalidUrlErrorRoot =
       "Client could not be updated: invalid_inputRoot URL is not a valid URL";
+    const invalidUrlErrorBase =
+      "Client could not be updated: invalid_inputBase URL is not a valid URL";
 
     await page.getByTestId("rootUrl").fill("Invalid URL");
     await saveSamlSettings(page);
-    await assertNotificationMessage(page, invalidUrlError);
+    await assertNotificationMessage(page, invalidUrlErrorRoot);
     await page.getByTestId("rootUrl").clear();
 
     await page.getByTestId("baseUrl").fill("Invalid URL");
     await saveSamlSettings(page);
 
-    await assertNotificationMessage(page, invalidUrlError);
+    await assertNotificationMessage(page, invalidUrlErrorBase);
     await page.getByTestId("baseUrl").clear();
 
     await page.getByTestId("rootUrl").fill(validUrl);

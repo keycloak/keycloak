@@ -38,6 +38,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
@@ -575,7 +576,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public SubjectCredentialManager credentialManager() {
         return new UserCredentialManager(session, realm, this);
     }
-
 
     @Override
     public boolean equals(Object o) {

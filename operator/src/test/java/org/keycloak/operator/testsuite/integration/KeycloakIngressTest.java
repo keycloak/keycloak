@@ -109,6 +109,34 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .anyMatch(e -> "KC_PROXY_HEADERS".equals(e.getName()) && "xforwarded".equals(e.getValue()));
     }
 
+    @DisabledIfApiServerTest
+    @Test
+    public void testIngressTLSTermination() {
+        var kc = getTestKeycloakDeployment(false);
+        var hostnameSpecBuilder = new HostnameSpecBuilder()
+                .withStrict(false)
+                .withStrictBackchannel(false);
+        if (isOpenShift) {
+            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
+        }
+        kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
+        String secret = kc.getSpec().getHttpSpec().getTlsSecret();
+        kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        kc.getSpec().getHttpSpec().setTlsSecret(null);
+        kc.getSpec().setIngressSpec(new IngressSpecBuilder().withTlsSecret(secret).build());
+
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        String testHostname;
+        if (isOpenShift) {
+            testHostname = k8sclient.resource(kc).get().getSpec().getHostnameSpec().getHostname();
+        } else {
+            testHostname = kubernetesIp;
+        }
+
+        testIngressURLs("https://" + testHostname + ":443");
+    }
+
     private void testIngressURLs(String baseUrl) {
         Awaitility.await()
                 .ignoreExceptions()

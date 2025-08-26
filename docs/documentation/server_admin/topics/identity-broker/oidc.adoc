@@ -81,6 +81,10 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 |Validating Public Key Id
 |This setting applies if *Use JWKS URL* is *OFF*. This setting specifies the ID of the public key in PEM format. Because there is no standard way for computing key ID from the key, external identity providers can use different algorithms from what {project_name} uses. If this field's value is not specified, {project_name} uses the validating public key for all requests, regardless of the key ID sent by the external IDP. When *ON*, this field's value is the key ID used by {project_name} for validating signatures from providers and must match the key ID specified by the IDP.
 
+|Forwarded query parameters
+| Define the query parameters to be forwarded to an external AS from the initial authorization request sent to the authorization endpoint. Multiple parameters can be entered, separated by comma (,). The parameters available
+to forward are any non OpenID Connect/OAuth standard parameter or standard parameters that are available as a client note from the authentication session.
+
 |===
 
 You can import all this configuration data by providing a URL or file that points to OpenID Provider Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>{kc_realms_path}/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.

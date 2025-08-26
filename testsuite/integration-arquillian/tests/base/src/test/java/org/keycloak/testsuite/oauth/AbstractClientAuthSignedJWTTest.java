@@ -37,9 +37,11 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,6 +64,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -373,7 +377,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         }
     }
 
-    protected void testClientWithGeneratedKeys(String format) throws Exception {
+    protected void testClientWithGeneratedKeys(String format, Integer keySize, Integer validity) throws Exception {
         ClientRepresentation client = app3;
         UserRepresentation user = defaultUser;
         final String keyAlias = "somekey";
@@ -389,8 +393,12 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         keyStoreConfig.setKeyPassword(keyPassword);
         keyStoreConfig.setStorePassword(storePassword);
         keyStoreConfig.setKeyAlias(keyAlias);
-        keyStoreConfig.setKeySize(4096);
-        keyStoreConfig.setValidity(3);
+        if (keySize != null) {
+            keyStoreConfig.setKeySize(keySize);
+        }
+        if (validity != null) {
+            keyStoreConfig.setValidity(validity);
+        }
 
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
         final String certOld = client.getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
@@ -408,6 +416,12 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
         assertCertificate(client, certOld,
                 KeycloakModelUtils.getPemFromCertificate(x509Cert));
+        MatcherAssert.assertThat(x509Cert.getPublicKey(), Matchers.instanceOf(RSAKey.class));
+        Assert.assertEquals(keySize == null ? 4096 : keySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, validity == null ? 3 : validity);
+        MatcherAssert.assertThat(x509Cert.getNotAfter().getTime(), Matchers.allOf(
+                Matchers.greaterThan(calendar.getTime().getTime() - 5000), Matchers.lessThan(calendar.getTime().getTime() + 5000)));
 
 
         // Try to login with the new keys

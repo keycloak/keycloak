@@ -122,7 +122,7 @@ public class LoginEventsTest {
         badLogin();
         Assertions.assertEquals(0, events().size());
 
-        managedRealm.updateWithCleanup(r -> r.overwriteEnabledEventTypes("LOGIN_ERROR"));
+        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes("LOGIN_ERROR"));
 
         badLogin();
         Assertions.assertEquals(1, events().size());

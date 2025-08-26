@@ -1,19 +1,23 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { switchToggle } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
-import { assertRowExists, clickRowKebabItem, searchItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { switchToggle } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
+import {
+  assertRowExists,
+  clickRowKebabItem,
+  searchItem,
+} from "../utils/table.ts";
 import {
   assertPriority,
   goToAddProviders,
   goToDetails,
   goToKeys,
   switchToFilter,
-} from "./keys";
+} from "./keys.ts";
 
 test.describe("Realm Settings - Keys", () => {
   const realmName = `events-realm-settings-${uuid()}`;

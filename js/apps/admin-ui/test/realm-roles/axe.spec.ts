@@ -1,10 +1,10 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertAxeViolations } from "../utils/masthead";
-import { goToRealm, goToRealmRoles } from "../utils/sidebar";
-import { clickTableRowItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertAxeViolations } from "../utils/masthead.ts";
+import { goToRealm, goToRealmRoles } from "../utils/sidebar.ts";
+import { clickTableRowItem } from "../utils/table.ts";
 
 test.describe("Accessibility tests for realm roles", () => {
   const realmName = "role-a11y-" + uuid();

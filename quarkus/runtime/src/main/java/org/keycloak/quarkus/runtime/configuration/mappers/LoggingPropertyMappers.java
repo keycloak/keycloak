@@ -86,7 +86,7 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_COLOR)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
-                        .to("quarkus.log.console.color")
+                        .to("quarkus.console.color")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))

@@ -34,6 +34,22 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== Cache configuration removed from cache-ispn.xml
+
+The `conf/cache-ispn.xml` file no longer contains the default cache configurations.
+It is still possible to overwrite the cache configurations used by {project_name} in this file, however {project_name} will log a warning if the `--cache-config-mutate=true` option is not set.
+Custom caches can still be added without setting this option.
+
+When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
+and use the `+--cache-...+` options to make changes for example to the cache sizes.
+
+=== Operator default affinity configuration changed
+
+The default affinity strategy has been updated so that a `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rule
+is created for both zones and nodes in order to increase availability in the presence of failures. Previously the default
+preferred that all nodes were deployed to the same availability zone. See the link:{highavailabilityguide_link}[{highavailabilityguide_name}]
+for more details.
+
 === JGroups system properties replaced with CLI options
 
 Until now it was necessary to configure JGroups network addresses and ports using the `+jgroups.bind.*+` and `+jgroups.external_*+`
@@ -47,6 +63,14 @@ properties will still function as before, but we recommend to change to the CLI 
 When using the `+/realms/{realm-name}/broker/{provider_alias}/token+` endpoint for an OAuth 2.0 IDPs that provides refresh tokens and JSON responses or for OIDC IDPs, the tokens will be automatically refreshed each time they are retrieved via the endpoint if the access token has expired and the IDP provided a refresh token.
 
 When using GitHub as an IDP, you can now enable JSON responses to leverage the token refresh for this endpoint.
+
+== Required field in User Session note mapper
+
+The name of the session note is now shown as a required field in the Admin UI.
+
+== Required field in OIDC attribute mapper
+
+The name of the token claim is now shown as a required field in the Admin UI.
 
 === Volatile user sessions affecting offline session memory requirements
 
@@ -86,12 +110,45 @@ In order to maintain backwards compatibility, {project_name}'s upgrade will modi
 
 For more information about client configuration, please see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] chapter in the {adminguide_name}.
 
+=== Validate email action
+
+When validating an email address as a required action or an application initiated action, a user can resend the verification email by default only every 30 seconds, while in earlier versions there was no limitation in re-sending the email.
+
+Administrators can configure the interval per realm in the Verify Email required action in the Authentication section of the realmm.
+
 === Tracing extended for embedded Infinispan caches
 
 When tracing is enabled, now also calls to other nodes of a {project_name} cluster will create spans in the traces.
 
 To disable this kind of tracing, set the option `tracing-infinispan-enabled` to `false`.
 
+=== LDAP Connection Timeout Default
+
+If no value is specified either on the LDAP configuration as the connectionTimeout or via the `com.sun.jndi.ldap.connect.timeout` system property, the default timeout
+will be 5 seconds. This will ensure that requests will see errors rather than indefinite waits in obtaining an LDAP connection from the pool or when making a connection to the LDAP server.
+
+=== Login theme optimized for OTP and recovery code entry
+
+The input fields  in the login theme for OTP and recovery codes and have been optimized:
+
+* The input mode is now `numeric`, which will ease the input on mobile devices.
+* The auto-complete is set to `one-time-code` to avoid interference with password managers.
+
+=== UTF-8 management in the email sender
+
+Since this release, {project_name} adds a new option `allowutf8` for the realm SMTP configuration (*Allow UTF-8* field inside the *Email* tab in the *Realm settings* section of the Admin Console).
+For more information about email configuration, see the link:{adminguide_link}#_email[Configuring email for a realm] chapter in the {adminguide_name}.
+
+Enabling the option encodes email addresses in UTF-8 when sending them, but it depends on the SMTP server to also supports UTF-8 via the SMTPUTF8 extension.
+If *Allow UTF-8* is disabled, {project_name} will encode the domain part of the email address (second part after `@`) using punycode if non-ASCII characters are used, and will reject email addresses that use non-ASCII characters in the local part. The built-in User Profile email validator also checks that the local part of the address contains only ASCII characters when this option is disabled, avoiding the registration of emails that cannot be used by the SMTP configuration.
+
+If you have an SMTP server configured for your realm, perform the following migration after the upgrade:
+
+* If your SMTP server supports SMTPUTF8:
+. Enable the *Allow UTF-8* option.
+* If your SMTP server does not support SMTPUTF8:
+. Keep the *Allow UTF-8* option disabled.
+. Verify that no email addresses of users have non-ASCII characters in the local part of the email address. If you detect emails with non-ascii characters in the local part you can use the Verify Profile action to force the user to modify the email after the upgrade.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -117,6 +174,18 @@ The authenticator *Passkeys Conditional UI Authenticator*, which was deprecated 
 This allows administrator to start the server and re-configure authentication flows for passkeys authentication in a recommended way as described
 in the link:{adminguide_link}#passkeys_server_administration_guide[Passkeys] chapter in the {adminguide_name}. In the future major version, we plan to remove the feature
 as well as the *Passkeys Conditional UI Authenticator* as already announced.
+
+=== Modifying default cache configurations in the cache config file
+
+All {project_name} default cache configurations have been removed from `conf/cache-ispn.xml`.
+Configuration of the default cache configurations in `conf/cache-ispn.xml`, or in a custom file via `--cache-config-file`, without specifying `--cache-config-mutate=true` is now deprecated and will log a warning.
+
+In a future major release, the start-up will fail if default cache configurations are stated in those files and the option is not specified.
+
+
+=== Welcome Page changes
+
+The Welcome Page creates regular Admin users instead of temporary ones.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

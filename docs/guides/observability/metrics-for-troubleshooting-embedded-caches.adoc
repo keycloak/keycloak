@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Embedded Infinispan metrics for single site deployments"
+title="Embedded Infinispan metrics for single cluster deployments"
 summary="Use metrics to monitor caching health and cluster replication."
 tileVisible="false"
 >

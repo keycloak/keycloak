@@ -67,6 +67,10 @@ public class KeycloakSpec {
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> additionalOptions = new ArrayList<ValueOrSecret>(); // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
+    @JsonPropertyDescription("Environment variables for the Keycloak server.\n" +
+            "Values can be either direct values or references to secrets. Use additionalOptions for first-class options rather than KC_ values here.")
+    private List<ValueOrSecret> env = new ArrayList<ValueOrSecret>();
+
     @JsonProperty("http")
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
     private HttpSpec httpSpec;
@@ -139,7 +143,6 @@ public class KeycloakSpec {
     @JsonProperty("readinessProbe")
     @JsonPropertyDescription("Configuration for readiness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
     private ProbeSpec readinessProbeSpec;
-
 
     @JsonProperty("livenessProbe")
     @JsonPropertyDescription("Configuration for liveness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
@@ -243,6 +246,14 @@ public class KeycloakSpec {
             this.additionalOptions = new ArrayList<>();
         }
         return additionalOptions;
+    }
+
+    public List<ValueOrSecret> getEnv() {
+        return env;
+    }
+
+    public void setEnv(List<ValueOrSecret> env) {
+        this.env = env;
     }
 
     public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {

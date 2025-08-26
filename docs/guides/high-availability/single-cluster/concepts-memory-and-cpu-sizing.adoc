@@ -1,0 +1,27 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for sizing CPU and memory resources"
+summary="Understand concepts for avoiding resource exhaustion and congestion."
+tileVisible="false" >
+
+Use this as a starting point to size a product environment.
+Adjust the values for your environment as needed based on your load tests.
+
+[#single-cluster-performance-recommendations]
+== Performance recommendations
+
+include::../partials/concepts/perf_recommendations.adoc[]
+
+[#single-cluster-measture-running-instance]
+=== Measuring the activity of a running {project_name} instance
+
+<#include "/high-availability/partials/concepts/perf_measuring_running_instance.adoc" />
+
+[#single-cluster-single-site-calculation]
+=== Calculation example (single cluster)
+
+include::../partials/concepts/perf_single_cluster_calculation.adoc[]
+
+</@tmpl.guide>

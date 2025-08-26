@@ -4,6 +4,7 @@ import com.google.common.base.CaseFormat;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Option<T> {
@@ -18,8 +19,11 @@ public class Option<T> {
     private final boolean strictExpectedValues;
     private final boolean caseInsensitiveExpectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
+    private final Set<String> connectedOptions;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues, DeprecatedMetadata deprecatedMetadata) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description,
+                  Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues,
+                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -31,6 +35,7 @@ public class Option<T> {
         this.strictExpectedValues = strictExpectedValues;
         this.caseInsensitiveExpectedValues = caseInsensitiveExpectedValues;
         this.deprecatedMetadata = deprecatedMetadata;
+        this.connectedOptions = connectedOptions;
     }
 
     public Class<T> getType() {
@@ -85,6 +90,14 @@ public class Option<T> {
 
     public Option<T> withRuntimeSpecificDefault(T defaultValue) {
         return toBuilder().defaultValue(defaultValue).build();
+    }
+
+    /**
+     * Get connected options that have a certain relationship with the current option.
+     * Usually when the current option is set, the connected options should be set as well.
+     */
+    public Set<String> getConnectedOptions() {
+        return connectedOptions;
     }
 
     public OptionBuilder<T> toBuilder() {

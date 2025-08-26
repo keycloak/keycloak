@@ -101,10 +101,10 @@ public class DatabaseOptions {
             .defaultValue(10000)
             .build();
 
-    public static final Option<Boolean> DB_ACTIVE_DATASOURCE = new OptionBuilder<>("db-active-<datasource>", Boolean.class)
+    public static final Option<Boolean> DB_ENABLED_DATASOURCE = new OptionBuilder<>("db-enabled-<datasource>", Boolean.class)
             .category(OptionCategory.DATABASE_DATASOURCES)
             .defaultValue(true)
-            .description("Deactivate specific named datasource <datasource>.")
+            .description("If the named datasource <datasource> should be enabled at runtime.")
             .build();
 
     public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-postgres-target-server-type", String.class)
@@ -112,99 +112,104 @@ public class DatabaseOptions {
             .hidden()
             .build();
 
-    /**
-     * Options that have their sibling for a named datasource
-     * Example: for `db-dialect`, `db-dialect-<datasource>` is created
-     */
-    public static final List<Option<?>> OPTIONS_DATASOURCES = List.of(
-            DB_DIALECT,
-            DB_DRIVER,
-            DB,
-            DB_URL,
-            DB_URL_HOST,
-            DB_URL_DATABASE,
-            DB_URL_PORT,
-            DB_URL_PROPERTIES,
-            DB_USERNAME,
-            DB_PASSWORD,
-            DB_SCHEMA,
-            DB_POOL_INITIAL_SIZE,
-            DB_POOL_MIN_SIZE,
-            DB_POOL_MAX_SIZE,
-            DB_SQL_JPA_DEBUG,
-            DB_SQL_LOG_SLOW_QUERIES
-            );
+    public static final class Datasources {
+        /**
+         * Options that have their sibling for a named datasource
+         * Example: for `db-dialect`, `db-dialect-<datasource>` is created
+         */
+        public static final List<Option<?>> OPTIONS_DATASOURCES = List.of(
+                DB_DIALECT,
+                DB_DRIVER,
+                DB,
+                DB_URL,
+                DB_URL_HOST,
+                DB_URL_DATABASE,
+                DB_URL_PORT,
+                DB_URL_PROPERTIES,
+                DB_USERNAME,
+                DB_PASSWORD,
+                DB_SCHEMA,
+                DB_POOL_INITIAL_SIZE,
+                DB_POOL_MIN_SIZE,
+                DB_POOL_MAX_SIZE,
+                DB_SQL_JPA_DEBUG,
+                DB_SQL_LOG_SLOW_QUERIES
+        );
 
-    /**
-     * In order to avoid ambiguity, we need to have unique option names for wildcard options.
-     * This map controls overriding option name to be unique for wildcard option.
-     */
-    private static final Map<String, String> DATASOURCES_OVERRIDES_SUFFIX = Map.of(
-            DatabaseOptions.DB.getKey(), "-kind", // db-kind
-            DatabaseOptions.DB_URL.getKey(), "-full"  // db-url-full
-    );
+        /**
+         * In order to avoid ambiguity, we need to have unique option names for wildcard options.
+         * This map controls overriding option name to be unique for wildcard option.
+         */
+        private static final Map<String, String> DATASOURCES_OVERRIDES_SUFFIX = Map.of(
+                DatabaseOptions.DB.getKey(), "-kind", // db-kind
+                DatabaseOptions.DB_URL.getKey(), "-full"  // db-url-full
+        );
 
-    /**
-     * You can override some {@link OptionBuilder} methods for additional datasources in this map
-     */
-    private static final Map<Option<?>, Consumer<OptionBuilder<?>>> DATASOURCES_OVERRIDES_OPTIONS = Map.of(
-            DatabaseOptions.DB, builder -> builder.defaultValue(Optional.empty()) // no default value for DB kind for datasources
-    );
+        /**
+         * You can override some {@link OptionBuilder} methods for additional datasources in this map
+         */
+        private static final Map<Option<?>, Consumer<OptionBuilder<?>>> DATASOURCES_OVERRIDES_OPTIONS = Map.of(
+                DatabaseOptions.DB, builder -> builder
+                        .defaultValue(Optional.empty()) // no default value for DB kind for datasources
+                        .connectedOptions(
+                                getDatasourceOption(DatabaseOptions.DB_URL).orElseThrow(),
+                                TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE
+                        )
+        );
 
-    private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
+        private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
 
-
-    /**
-     * Get datasource option containing named datasource mapped to parent DB options.
-     * <p>
-     * We map DB options to named datasource options like:
-     * <ul>
-     *     <li>{@code db-url-host --> db-url-host-<datasource>}</li>
-     *     <li>{@code db-username --> db-username-<datasource>}</li>
-     *     <li>{@code db --> db-kind-<datasource>}</li>
-     * </ul>
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Optional<Option<T>> getDatasourceOption(Option<T> parentOption) {
-        if (!OPTIONS_DATASOURCES.contains(parentOption)) {
-            return Optional.empty();
-        }
-
-        var key = getKeyForDatasource(parentOption);
-        if (key.isEmpty()) {
-            return Optional.empty();
-        }
-
-        // check if we already created the same option and return it from the cache
-        Option<?> option = cachedDatasourceOptions.get(key.get());
-
-        if (option == null) {
-            var builder = parentOption.toBuilder()
-                    .key(key.get())
-                    .category(OptionCategory.DATABASE_DATASOURCES);
-
-            if (!parentOption.isHidden()) {
-                builder.description("Used for named <datasource>. " + parentOption.getDescription());
+        /**
+         * Get datasource option containing named datasource mapped to parent DB options.
+         * <p>
+         * We map DB options to named datasource options like:
+         * <ul>
+         *     <li>{@code db-url-host --> db-url-host-<datasource>}</li>
+         *     <li>{@code db-username --> db-username-<datasource>}</li>
+         *     <li>{@code db --> db-kind-<datasource>}</li>
+         * </ul>
+         */
+        @SuppressWarnings("unchecked")
+        public static <T> Optional<Option<T>> getDatasourceOption(Option<T> parentOption) {
+            if (!OPTIONS_DATASOURCES.contains(parentOption)) {
+                return Optional.empty();
             }
 
-            // override some settings for options
-            var override = DATASOURCES_OVERRIDES_OPTIONS.get(parentOption);
-            if (override != null) {
-                override.accept(builder);
+            var key = getKeyForDatasource(parentOption);
+            if (key.isEmpty()) {
+                return Optional.empty();
             }
 
-            option = builder.build();
-            cachedDatasourceOptions.put(key.get(), option);
-        }
-        return Optional.of((Option<T>) option);
-    }
+            // check if we already created the same option and return it from the cache
+            Option<?> option = cachedDatasourceOptions.get(key.get());
 
-    /**
-     * Get mapped datasource key based on DB option {@param option}
-     */
-    public static Optional<String> getKeyForDatasource(Option<?> option) {
-        return getKeyForDatasource(option.getKey());
-    }
+            if (option == null) {
+                var builder = parentOption.toBuilder()
+                        .key(key.get())
+                        .category(OptionCategory.DATABASE_DATASOURCES);
+
+                if (!parentOption.isHidden()) {
+                    builder.description("Used for named <datasource>. " + parentOption.getDescription());
+                }
+
+                // override some settings for options
+                var override = DATASOURCES_OVERRIDES_OPTIONS.get(parentOption);
+                if (override != null) {
+                    override.accept(builder);
+                }
+
+                option = builder.build();
+                cachedDatasourceOptions.put(key.get(), option);
+            }
+            return Optional.of((Option<T>) option);
+        }
+
+        /**
+         * Get mapped datasource key based on DB option {@param option}
+         */
+        public static Optional<String> getKeyForDatasource(Option<?> option) {
+            return getKeyForDatasource(option.getKey());
+        }
 
     /**
      * Get mapped datasource key based on DB option {@param option}
@@ -216,17 +221,18 @@ public class DatabaseOptions {
                 .map(key -> key.concat("-<datasource>"));
     }
 
-    /**
-     * Returns datasource option based on DB option {@code option} with actual wildcard value.
-     * It replaces the {@code <datasource>} with actual value in {@code namedProperty}.
-     * <p>
-     * f.e. Consider {@code option}={@link DatabaseOptions#DB_DRIVER}, and {@code namedProperty}=my-store.
-     * <p>
-     * Result: {@code db-driver-my-store}
-     */
-    public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
-        return getKeyForDatasource(option)
-                .map(key -> key.substring(0, key.indexOf("<")))
-                .map(key -> key.concat(namedProperty));
+        /**
+         * Returns datasource option based on DB option {@code option} with actual wildcard value.
+         * It replaces the {@code <datasource>} with actual value in {@code namedProperty}.
+         * <p>
+         * f.e. Consider {@code option}={@link DatabaseOptions#DB_DRIVER}, and {@code namedProperty}=my-store.
+         * <p>
+         * Result: {@code db-driver-my-store}
+         */
+        public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
+            return getKeyForDatasource(option)
+                    .map(key -> key.substring(0, key.indexOf("<")))
+                    .map(key -> key.concat(namedProperty));
+        }
     }
 }

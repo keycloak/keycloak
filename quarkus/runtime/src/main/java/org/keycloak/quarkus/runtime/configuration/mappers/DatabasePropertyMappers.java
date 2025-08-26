@@ -21,10 +21,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.keycloak.config.DatabaseOptions.DB;
-import static org.keycloak.config.DatabaseOptions.OPTIONS_DATASOURCES;
-import static org.keycloak.config.DatabaseOptions.getDatasourceOption;
-import static org.keycloak.config.DatabaseOptions.getKeyForDatasource;
+import static org.keycloak.config.DatabaseOptions.Datasources.OPTIONS_DATASOURCES;
+import static org.keycloak.config.DatabaseOptions.Datasources.getDatasourceOption;
+import static org.keycloak.config.DatabaseOptions.Datasources.getKeyForDatasource;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class DatabasePropertyMappers {
@@ -100,7 +101,7 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
                         .paramLabel("milliseconds")
                         .build(),
-                fromOption(DatabaseOptions.DB_ACTIVE_DATASOURCE)
+                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
                         .to("quarkus.datasource.\"<datasource>\".active")
                         .build(),
                 fromOption(DB_URL_PATH)
@@ -180,67 +181,68 @@ final class DatabasePropertyMappers {
         return isDevModeDatabase(database) ? "1" : getParentPoolMinSize.get();
     }
 
-    // Datasources
+    public static final class Datasources {
 
-    /**
-     * Automatically create mappers for datasource options
-     */
-    private static PropertyMapper<?>[] appendDatasourceMappers(PropertyMapper<?>[] mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
-        List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.length);
+        /**
+         * Automatically create mappers for datasource options
+         */
+        static PropertyMapper<?>[] appendDatasourceMappers(PropertyMapper<?>[] mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
+            List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.length);
 
-        for (var parent : mappers) {
-            var parentOption = parent.getOption();
+            for (var parent : mappers) {
+                var parentOption = parent.getOption();
 
-            var datasourceOption = getDatasourceOption(parentOption);
-            if (datasourceOption.isEmpty()) {
-                log.debugf("No datasource option found for '%s'", parentOption.getKey());
-                continue;
+                var datasourceOption = getDatasourceOption(parentOption);
+                if (datasourceOption.isEmpty()) {
+                    log.debugf("No datasource option found for '%s'", parentOption.getKey());
+                    continue;
+                }
+
+                var created = fromOption(datasourceOption.get())
+                        .isMasked(parent.isMask())
+                        .transformer(parent.getMapper());
+
+                if (parent.getMapFrom() != null) {
+                    var wildcardMapFromOption = getKeyForDatasource(parent.getMapFrom())
+                            .orElseThrow(() -> new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.get().getKey())));
+                    created.wildcardMapFrom(wildcardMapFromOption, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
+                }
+
+                if (parent.getParamLabel() != null) {
+                    created.paramLabel(parent.getParamLabel());
+                }
+
+                var transformedTo = transformDatasourceTo(parent.getTo());
+                if (transformedTo != null) {
+                    created.to(transformedTo);
+                }
+
+                var customTransformer = transformDatasourceMappers.get(parent.getOption());
+                if (customTransformer != null) {
+                    customTransformer.accept(created);
+                }
+
+                datasourceMappers.add(created.build());
             }
 
-            var created = fromOption(datasourceOption.get())
-                    .isMasked(parent.isMask())
-                    .transformer(parent.getMapper());
+            datasourceMappers.addAll(List.of(mappers));
 
-            if (parent.getMapFrom() != null) {
-                var wildcardMapFromOption = getKeyForDatasource(parent.getMapFrom())
-                        .orElseThrow(() -> new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.get().getKey())));
-                created.wildcardMapFrom(wildcardMapFromOption, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
-            }
-
-            if (parent.getParamLabel() != null) {
-                created.paramLabel(parent.getParamLabel());
-            }
-
-            var transformedTo = transformDatasourceTo(parent.getTo());
-            if (transformedTo != null) {
-                created.to(transformedTo);
-            }
-
-            var customTransformer = transformDatasourceMappers.get(parent.getOption());
-            if (customTransformer != null) {
-                customTransformer.accept(created);
-            }
-
-            datasourceMappers.add(created.build());
+            return datasourceMappers.toArray(new PropertyMapper[0]);
         }
 
-        datasourceMappers.addAll(List.of(mappers));
+        private static String transformDatasourceTo(String to) {
+            if (StringUtil.isBlank(to)) {
+                return null;
+            }
 
-        return datasourceMappers.toArray(new PropertyMapper[0]);
-    }
-
-    private static String transformDatasourceTo(String to) {
-        if (StringUtil.isBlank(to)) {
-            return null;
+            if (to.startsWith("quarkus.datasource.")) {
+                return to.replaceFirst("quarkus\\.datasource\\.", "quarkus.datasource.\"<datasource>\".");
+            } else if (to.startsWith("kc.db-")) {
+                return to.concat("-<datasource>");
+            } else {
+                log.warnf("Cannot determine how to map datasource option to '%s'", to);
+            }
+            return to;
         }
-
-        if (to.startsWith("quarkus.datasource.")) {
-            return to.replaceFirst("quarkus\\.datasource\\.", "quarkus.datasource.\"<datasource>\".");
-        } else if (to.startsWith("kc.db-")) {
-            return to.concat("-<datasource>");
-        } else {
-            log.warnf("Cannot determine how to map datasource option to '%s'", to);
-        }
-        return to;
     }
 }

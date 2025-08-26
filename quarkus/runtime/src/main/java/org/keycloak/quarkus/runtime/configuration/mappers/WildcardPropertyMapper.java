@@ -7,6 +7,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.config.LoggingOptions;
@@ -83,7 +84,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     @Override
     public PropertyMapper<?> forKey(String key) {
-        String wildcardValue = extractWildcardValue(key).orElseThrow();
+        String wildcardValue = extractWildcardValue(key).orElseThrow(() -> new IllegalArgumentException("Invalid wildcard value"));
         String to = getTo(wildcardValue);
         String from = getFrom(wildcardValue);
         String mapFrom = getMapFrom();
@@ -96,7 +97,17 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
                 wildcardMapFrom == null ? null : (name, v, context) -> wildcardMapFrom.map(wildcardValue, v, context));
     }
 
-    private Optional<String> extractWildcardValue(String key) {
+    /**
+     * Get connected options mapped to use the wildcard value
+     */
+    public Set<String> getConnectedOptions(String key) {
+        return option.getConnectedOptions().stream().map(option -> {
+            var index = option.indexOf(WildcardPropertyMapper.WILDCARD_FROM_START);
+            return index != 1 ? option.substring(0, index).concat(key) : option;
+        }).collect(Collectors.toSet());
+    }
+
+    public Optional<String> extractWildcardValue(String key) {
         String result = null;
         if (key.startsWith(fromPrefix)) {
             result = key.substring(fromPrefix.length());

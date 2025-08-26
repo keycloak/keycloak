@@ -12,8 +12,10 @@ import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -97,7 +99,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertConfig("db-dialect-store", H2Dialect.class.getName());
         // XA datasource is the default
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.driver", JdbcDataSource.class.getName());
-        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
+        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2-store/keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-mem");
@@ -139,13 +141,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     public void datasourceEnabled() {
         ConfigArgsConfigSource.setCliArgs("");
         initConfig();
-        assertConfig("db-active-store", "true");
+        assertConfig("db-enabled-store", "true");
         assertExternalConfig("quarkus.datasource.\"store\".active", "true");
         onAfter();
 
-        ConfigArgsConfigSource.setCliArgs("--db-active-store=false");
+        ConfigArgsConfigSource.setCliArgs("--db-enabled-store=false");
         initConfig();
-        assertConfig("db-active-store", "false");
+        assertConfig("db-enabled-store", "false");
         assertExternalConfig("quarkus.datasource.\"store\".active", "false");
     }
 
@@ -229,7 +231,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertConfig("db-dialect-clients", H2Dialect.class.getName());
         assertExternalConfig(Map.of(
-                "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
+                "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2-clients/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
                 "quarkus.datasource.\"clients\".jdbc.transactions", "xa"
         ));
 
@@ -470,5 +472,33 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "db-debug-jpql-my-store", "true",
                 "db-log-slow-queries-threshold-my-store","5000"
         ));
+    }
+
+    @Test
+    public void propagatedPropertyNames() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mysql");
+
+        var config = createConfig();
+        Iterable<String> propertyNames = config.getPropertyNames();
+
+        assertThat(propertyNames, hasItems(
+                "kc.db-kind-user-store",
+                "quarkus.datasource.\"user-store\".db-kind",
+                "quarkus.datasource.\"user-store\".jdbc.url",
+                "quarkus.datasource.\"user-store\".jdbc.transactions"
+        ));
+
+        // verify the db-kind is there only once
+        long quarkusDbKindCount = StreamSupport.stream(propertyNames.spliterator(), false)
+                .filter("quarkus.datasource.\"user-store\".jdbc.url"::equals)
+                .count();
+        assertThat(quarkusDbKindCount, is(1L));
+
+        assertThat(propertyNames, not(hasItems(
+                "kc.db-dialect-user-store",
+                "quarkus.datasource.\"user-store\".username",
+                "quarkus.datasource.\"user-store\".password",
+                "quarkus.datasource.\"user-store\".jdbc.driver"
+        )));
     }
 }

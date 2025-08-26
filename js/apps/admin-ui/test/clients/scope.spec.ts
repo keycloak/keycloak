@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import { selectChangeType } from "../client-scope/main";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { assertModalTitle, confirmModal } from "../utils/modal";
-import { goToClients, goToRealm } from "../utils/sidebar";
+import { selectChangeType } from "../client-scope/main.ts";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { assertModalTitle, confirmModal } from "../utils/modal.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   assertRowExists,
@@ -17,7 +17,7 @@ import {
   clickTableToolbarItem,
   getTableData,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   assertHasAccessTokenGenerated,
   assertHasIdTokenGenerated,
@@ -32,7 +32,7 @@ import {
   goToClientScopesTab,
   goToGenerateAccessTokenTab,
   selectUser,
-} from "./scope";
+} from "./scope.ts";
 
 type ClientScope = {
   name: string;
