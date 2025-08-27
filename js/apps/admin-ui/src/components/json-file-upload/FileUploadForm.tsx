@@ -46,7 +46,6 @@ export const FileUploadForm = ({
   helpText = "helpFileUpload",
   unWrap = false,
   language,
-  extension,
   ...rest
 }: FileUploadFormProps) => {
   const { t } = useTranslation();
@@ -82,7 +81,7 @@ export const FileUploadForm = ({
           onClose={removeDialog}
           actions={[
             <Button
-              key="confirm"
+              key="confirm" 
               variant="primary"
               data-testid="clear-button"
               onClick={() => {
