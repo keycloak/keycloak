@@ -107,7 +107,10 @@ public class ProtocolMappersResource {
     @Path("protocol/{protocol}")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
-    @Operation(summary = "Get mappers by name for a specific protocol")
+    @Operation(
+            summary = "Get mappers by name for a specific protocol",
+            operationId = "getMappersPerProtocol"
+    )
     public Stream<ProtocolMapperRepresentation> getMappersPerProtocol(@PathParam("protocol") String protocol) {
         viewPermission.require();
 
@@ -126,7 +129,7 @@ public class ProtocolMappersResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
-    @Operation(summary = "Create a mapper")
+    @Operation(summary = "Create a mapper", operationId = "createMapper")
     public Response createMapper(ProtocolMapperRepresentation rep) {
         managePermission.require();
 
@@ -152,7 +155,7 @@ public class ProtocolMappersResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
-    @Operation(summary = "Create multiple mappers")
+    @Operation(summary = "Create multiple mappers", operationId = "createMapper")
     @APIResponse(responseCode = "204", description = "No Content")
     public void createMapper(List<ProtocolMapperRepresentation> reps) {
         managePermission.require();
@@ -176,7 +179,7 @@ public class ProtocolMappersResource {
     @Path("models")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
-    @Operation(summary = "Get mappers")
+    @Operation(summary = "Get mappers", operationId = "getMappers")
     public Stream<ProtocolMapperRepresentation> getMappers() {
         viewPermission.require();
 
@@ -196,7 +199,7 @@ public class ProtocolMappersResource {
     @Path("models/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
-    @Operation(summary = "Get mapper by id")
+    @Operation(summary = "Get mapper by id", operationId = "getMapperById")
     public ProtocolMapperRepresentation getMapperById(@Parameter(description = "Mapper id") @PathParam("id") String id) {
         viewPermission.require();
 
@@ -227,7 +230,7 @@ public class ProtocolMappersResource {
     @Path("models/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
-    @Operation(summary = "Update the mapper")
+    @Operation(summary = "Update the mapper", operationId = "updateMapper")
     public void update(@Parameter(description = "Mapper id") @PathParam("id") String id, ProtocolMapperRepresentation rep) {
         managePermission.require();
 
@@ -250,7 +253,7 @@ public class ProtocolMappersResource {
     @NoCache
     @Path("models/{id}")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
-    @Operation(summary = "Delete the mapper")
+    @Operation(summary = "Delete the mapper", operationId = "deleteMapper")
     public void delete(@Parameter(description = "Mapper id") @PathParam("id") String id) {
         managePermission.require();
 

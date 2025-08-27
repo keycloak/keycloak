@@ -66,7 +66,7 @@ public class ClientProfilesResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "getProfiles")
     public ClientProfilesRepresentation getProfiles(@QueryParam("include-global-profiles") boolean includeGlobalProfiles) {
         auth.realm().requireViewRealm();
 
@@ -80,7 +80,7 @@ public class ClientProfilesResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation()
+    @Operation(operationId = "updateProfiles")
     public Response updateProfiles(final ClientProfilesRepresentation clientProfiles) {
         auth.realm().requireManageRealm();
 

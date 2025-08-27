@@ -111,7 +111,10 @@ public class RealmsAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Get accessible realms Returns a list of accessible realms. The list is filtered based on what realms the caller is allowed to view.")
+    @Operation(
+        summary = "Get accessible realms Returns a list of accessible realms. The list is filtered based on what realms the caller is allowed to view.",
+        operationId = "getRealms"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = RealmRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden")
@@ -143,7 +146,11 @@ public class RealmsAdminResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Operation(summary = "Import a realm. Imports a realm from a full representation of that realm.", description = "Realm name must be unique.")
+    @Operation(
+        summary = "Import a realm. Imports a realm from a full representation of that realm.",
+        description = "Realm name must be unique.",
+        operationId = "importRealm"
+    )
     @APIResponses(value = {
         @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),

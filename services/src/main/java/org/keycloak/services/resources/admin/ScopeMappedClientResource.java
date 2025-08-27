@@ -92,7 +92,10 @@ public class ScopeMappedClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get the roles associated with a client's scope Returns roles for the client.")
+    @Operation(
+            summary = "Get the roles associated with a client's scope Returns roles for the client.",
+            operationId = "getClientScopeMappings"
+    )
     public Stream<RoleRepresentation> getClientScopeMappings() {
         viewPermission.require();
 
@@ -112,7 +115,10 @@ public class ScopeMappedClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "The available client-level roles Returns the roles for the client that can be associated with the client's scope")
+    @Operation(
+            summary = "The available client-level roles Returns the roles for the client that can be associated with the client's scope",
+            operationId = "getAvailableClientScopeMappings"
+    )
     public Stream<RoleRepresentation> getAvailableClientScopeMappings() {
         viewPermission.require();
 
@@ -136,7 +142,10 @@ public class ScopeMappedClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Get effective client roles Returns the roles for the client that are associated with the client's scope.")
+    @Operation(
+            summary = "Get effective client roles Returns the roles for the client that are associated with the client's scope.",
+            operationId = "getCompositeClientScopeMappings"
+    )
     public Stream<RoleRepresentation> getCompositeClientScopeMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
@@ -155,7 +164,10 @@ public class ScopeMappedClientResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Add client-level roles to the client's scope")
+    @Operation(
+            summary = "Add client-level roles to the client's scope",
+            operationId = "addClientScopeMapping"
+    )
     @APIResponse(responseCode = "204", description = "No Content")
     public void addClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
@@ -179,7 +191,10 @@ public class ScopeMappedClientResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
-    @Operation(summary = "Remove client-level roles from the client's scope.")
+    @Operation(
+            summary = "Remove client-level roles from the client's scope.",
+            operationId = "deleteClientScopeMapping"
+    )
     public void deleteClientScopeMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
