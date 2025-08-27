@@ -124,7 +124,7 @@ export const FileUploadForm = ({
           }
           isLoading={fileUpload.isLoading}
           dropzoneProps={{
-            accept: { "application/text": [extension] },
+            accept: { "application/json": [".json"] },
           }}
         />
       )}
@@ -149,6 +149,9 @@ export const FileUploadForm = ({
             }
             isLoading={fileUpload.isLoading}
             hideDefaultPreview
+            dropzoneProps={{
+              accept: { "application/json": [".json"] },
+            }}
           >
             {!rest.hideDefaultPreview && (
               <CodeEditor
