@@ -5,7 +5,7 @@ import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.testframework.cache.CacheType;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -29,6 +29,8 @@ public class KeycloakServerConfigBuilder {
     private final LogBuilder log = new LogBuilder();
     private final Set<Dependency> dependencies = new HashSet<>();
     private final Set<Path> configFiles = new HashSet<>();
+    private CacheType cacheType = CacheType.LOCAL;
+    private boolean externalCache = false;
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -48,8 +50,29 @@ public class KeycloakServerConfigBuilder {
                 .option("bootstrap-admin-password", password);
     }
 
-    public KeycloakServerConfigBuilder cache(String cache) {
-        return option("cache", cache);
+    public KeycloakServerConfigBuilder setCache(CacheType cacheType) {
+        this.cacheType = cacheType;
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder cache() {
+        option("cache", cacheType.name().toLowerCase());
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder enableExternalCache(boolean enabled) {
+        if (enabled) {
+            this.externalCache = true;
+            setCache(CacheType.ISPN);
+        } else {
+            this.externalCache = false;
+            setCache(CacheType.LOCAL);
+        }
+        return this;
+    }
+
+    public boolean isExternalCacheEnabled() {
+        return this.externalCache;
     }
 
     public LogBuilder log() {

@@ -1155,6 +1155,43 @@ jobs:
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
+  new-external-infinispan-tests:
+    name: New External Infinispan IT
+    needs: [ build, conditional ]
+    if: needs.conditional.outputs.ci-store == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      matrix:
+        testsuite: [ "ClusterlessTestSuite,MultisiteTestSuite" ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run tests
+        run: ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.testsuite }} 2>&1 | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: New External Infinispan IT
+
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: new-external-infinispan-tests-${{ matrix.testsuite }}
+
   check:
     name: Status Check - Keycloak CI
     if: always()
@@ -1182,6 +1219,7 @@ jobs:
       - test-framework
       - base-new-integration-tests
       - mixed-cluster-compatibility-tests
+      - new-external-infinispan-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

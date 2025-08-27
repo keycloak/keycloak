@@ -1,7 +1,10 @@
 package org.keycloak.testframework.server;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.cache.CacheDeployment;
+import org.keycloak.testframework.cache.CacheType;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.injection.AbstractInterceptorHelper;
@@ -21,7 +24,6 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
         KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
-                .cache(cache())
                 .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
                 .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
@@ -48,6 +50,11 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         if (getLogger().isDebugEnabled()) {
             getLogger().debugv("Startup command and options: \n\t{0}", String.join("\n\t", command.toArgs()));
         }
+
+        if (command.isExternalCacheEnabled()) {
+            instanceContext.getDependency(CacheDeployment.class);
+        }
+        command.cache();
 
         long start = System.currentTimeMillis();
 
@@ -79,10 +86,6 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     public abstract boolean requiresDatabase();
 
     public abstract Logger getLogger();
-
-    protected String cache() {
-        return "local";
-    }
 
     @Override
     public int order() {
