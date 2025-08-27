@@ -114,7 +114,6 @@ export const LocalizationTab = ({
                     key: l,
                     value: localeToDisplayName(l, whoAmI.locale) || l,
                   }))}
-               
                 />
                 <SelectControl
                   name="defaultLocale"
@@ -133,7 +132,6 @@ export const LocalizationTab = ({
                     key: l,
                     value: localeToDisplayName(l, whoAmI.locale) || l,
                   }))}
-                 
                 />
               </>
             )}
