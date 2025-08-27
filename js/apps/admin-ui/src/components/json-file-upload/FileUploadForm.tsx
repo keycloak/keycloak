@@ -81,7 +81,7 @@ export const FileUploadForm = ({
           onClose={removeDialog}
           actions={[
             <Button
-              key="confirm" 
+              key="confirm"
               variant="primary"
               data-testid="clear-button"
               onClick={() => {
