@@ -15,7 +15,7 @@ export type UserFormFields = Omit<
 type FieldError = {
   field: string;
   errorMessage: string;
-  params?: string[];
+  params?: any[];
 };
 
 type ErrorArray = { errors?: FieldError[] };
@@ -24,7 +24,11 @@ export type UserProfileError = {
   responseData: ErrorArray | FieldError;
 };
 
-const isBundleKey = (displayName?: string) => displayName?.includes("${");
+const isBundleKey = (displayName?: any) => {
+  return displayName && typeof displayName === "string"
+    ? displayName.includes("${")
+    : false;
+};
 const unWrap = (key: string) => key.substring(2, key.length - 1);
 
 export const label = (
