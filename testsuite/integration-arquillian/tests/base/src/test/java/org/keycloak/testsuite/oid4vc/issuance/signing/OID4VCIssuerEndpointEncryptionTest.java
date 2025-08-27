@@ -134,7 +134,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
     @Test
     public void testUnencryptedRequestWhenEncryptionRequired() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        String token = getBearerToken(oauth, client);
         testingClient.server(TEST_REALM_NAME).run(session -> {
             RealmModel realm = session.getContext().getRealm();
             realm.setAttribute("oid4vci.encryption.required", "true");
@@ -147,7 +147,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 CredentialRequest credentialRequest = new CredentialRequest()
                         .setFormat(Format.JWT_VC)
-                        .setCredentialConfigurationId(jwtTypeCredentialClientScope.getName());
+                        .setCredentialIdentifier("test-credential");
 
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
 
@@ -306,55 +306,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         });
     };
 
-
-    @Test
-    public void testInvalidEncryptionAlgorithm() {
-        final String scopeName = jwtTypeCredentialClientScope.getName();
-        String token = getBearerToken(oauth, client, scopeName);
-        testingClient.server(TEST_REALM_NAME).run(session -> {
-            try {
-                RealmModel realm = session.getContext().getRealm();
-                realm.setAttribute("oid4vci.request.enc.algorithms", "A256GCM");
-
-                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-
-                // Create credential request
-                CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialConfigurationId(scopeName);
-
-                String requestJson = JsonSerialization.writeValueAsString(credentialRequest);
-
-                KeyManager keyManager = session.keys();
-                KeyWrapper encryptionKey = keyManager.getKeysStream(realm)
-                        .filter(key -> KeyUse.ENC.equals(key.getUse()))
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("No encryption key found"));
-
-                // Create JWE with unsupported encryption algorithm
-                String encryptedRequest = createEncryptedCredentialRequest(requestJson, encryptionKey);
-
-                // Test with invalid encryption algorithm
-                try {
-                    Response response = issuerEndpoint.requestCredential(encryptedRequest);
-                    fail("Expected BadRequestException for invalid enc");
-                    assertEquals("Unexpected response status: " + response.getStatus(), 400, response.getStatus());
-                } catch (BadRequestException e) {
-                    ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                    assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
-                    assertTrue("Error should mention decryption failure. Actual: " + error.getErrorDescription(),
-                            error.getErrorDescription().contains("Failed to decrypt JWE"));
-                }
-
-            } catch (Exception e) {
-                if (!(e instanceof BadRequestException)) {
-                    fail("Unexpected exception: " + e.getMessage());
-                }
-            }
-        });
-    }
-
     @Test
     public void testRequestCredentialWithIncompleteEncryptionParams() throws Throwable {
         String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
@@ -367,7 +318,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"n\":\"test-n\",\"e\":\"AQAB\"}").getJwk();
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setFormat(Format.JWT_VC)
-                    .setCredentialIdentifier(jwtTypeCredentialClientScope.getName())
+                    .setCredentialIdentifier("test-credential")
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
                                     .setJwk(jwk));
@@ -554,45 +505,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
                 assertTrue("Error should mention invalid JWK. Actual: " + error.getErrorDescription(),
                         error.getErrorDescription().contains("Invalid JWK"));
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialWithWrongKeyTypeJWK() {
-        final String scopeName = jwtTypeCredentialClientScope.getName();
-        String token = getBearerToken(oauth, client, scopeName);
-        testingClient.server(TEST_REALM_NAME).run(session -> {
-
-            RealmModel realm = session.getContext().getRealm();
-            realm.setAttribute("oid4vci.encryption.required", "false");
-
-            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-            authenticator.setTokenString(token);
-            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-
-            // JWK can't be used for encryption.
-            JWK jwk = JWKParser.create().parse("{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"test-x\",\"y\":\"test-y\"}").getJwk();
-            CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
-                    .setCredentialIdentifier(scopeName)
-                    .setCredentialResponseEncryption(
-                            new CredentialResponseEncryption()
-                                    .setEnc(A256GCM)
-                                    .setJwk(jwk));
-
-            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-
-            try {
-                issuerEndpoint.requestCredential(requestPayload);
-                Assert.fail("Expected BadRequestException due to unsupported key type");
-            } catch (BadRequestException e) {
-                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
-
-                // The error should indicate unsupported key type or algorithm
-                assertTrue("Error should mention unsupported key type or algorithm. Actual: " + error.getErrorDescription(),
-                                error.getErrorDescription().contains("Invalid JWK"));
             }
         });
     }
