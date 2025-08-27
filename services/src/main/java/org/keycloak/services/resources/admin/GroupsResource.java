@@ -185,8 +185,10 @@ public class GroupsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @APIResponses(value = {
-            @APIResponse(responseCode = "201", description = "Created"),
-            @APIResponse(responseCode = "204", description = "No Content")
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "409", description = "Conflict")
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
     @Operation( summary = "create or add a top level realm groupSet or create child.",
