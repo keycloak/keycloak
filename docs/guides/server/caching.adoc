@@ -203,6 +203,55 @@ For these use case, the CLI options `cache-remote-tls-enabled` disables the encr
 The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the {jdgserver_name} server without presenting any credentials.
 If the {jdgserver_name} server has authentication enabled, {project_name} will fail to start.
 
+[[cache-topology]]
+== Topology Aware Data Availability
+
+Configuring the topology information of your cluster increases the data availability in case of hardware failure.
+The hardware where the {project_name} instance runs is necessary to compute this topology information.
+This section is more relevant for bare-metal users, who have control over the hardware and where it is running.
+
+[NOTE]
+====
+By default, user and client sessions are safely stored in the database, and they are not affected by these settings.
+The remaining distributed caches are affected by this configuration.
+====
+
+The following topology information is available to configure:
+
+Site name::
+If your {project_name} cluster is deployed between different datacenters (stretched cluster), use this option to ensure the data replicas are stored in a different datacenter.
+It prevents data loss if a datacenter goes offline or fails.
++
+Use the SPI option `spi-cache-embedded--default--site-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__SITE_NAME`).
+The value itself is not important, but each datacenter must have a unique value.
++
+For example: `--spi-cache-embedded--default--site-name=site-1`
+
+Rack name::
+If your {project_name} cluster is running in different racks on your datacenter, set this option to ensure the data replicas are stored in a different physical rack.
+It prevents data loss if a rack is suddenly disconnected or fails.
++
+Use the SPI option `spi-cache-embedded--default--rack-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__RACK_NAME`).
+The value itself is not important, but each rack must have a unique value.
++
+For example: `--spi-cache-embedded--default--rack-name=rack-1`
+
+Machine name::
+If you have multiple {project_name} instances running on the same physical machine (using virtual machines or containers for example), use this option to ensure the data replicas are stored in different physical machines.
+It prevents data loss against a physical machine failure.
++
+Use the SPI option `spi-cache-embedded--default--machine-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__MACHINE_NAME`).
+The value itself is not important, but each machine must have a unique value.
++
+For example: `--spi-cache-embedded--default--machine-name=machine-1`
++
+[NOTE]
+====
+The {project_name} Operator automatically configure the machine name based on the Kubernetes node.
+It ensures if Pods are scheduled in the same node, the data is safely replicated into another node.
+We recommend to set up anti-affinity rules and/or topology spread constraints to prevent multiple Pods from being scheduled on the same node, further reducing the risk of a single node failure incur a data loss.
+====
+
 == Transport stacks
 
 Transport stacks ensure that {project_name} nodes in a cluster communicate in a reliable fashion.

@@ -560,9 +560,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // Both status.hostIP or spec.nodeName would be fine here.
         // In theory, status.hostIP is a smaller value and, as this value is tagged in all JGroups messages, it should have a lower overhead.
-        // Note: the value (IP) is shown in the log, hopefully it is fine.
+        // Using spec.nodeName to avoid exposing the IP addresses in the logs.
         envVars.add(new EnvVarBuilder().withName(HOST_IP_SPI_OPTION).withNewValueFrom().withNewFieldRef()
-                .withFieldPath("status.hostIP").withApiVersion("v1").endFieldRef().endValueFrom().build());
+                .withFieldPath("spec.nodeName").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
         return envVars;
     }
