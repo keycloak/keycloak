@@ -386,6 +386,12 @@ public class OID4VCIssuerEndpoint {
     public Response requestCredential(String requestPayload) {
         LOGGER.debugf("Received credentials request with payload: %s", requestPayload);
 
+        if (requestPayload == null || requestPayload.trim().isEmpty()) {
+            String errorMessage = "Request payload is null or empty.";
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+        }
+
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
