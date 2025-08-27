@@ -139,8 +139,8 @@ importers:
         specifier: ^7.1.3
         version: 7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1)
       vite-plugin-checker:
-        specifier: ^0.10.2
-        version: 0.10.2(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
+        specifier: ^0.10.3
+        version: 0.10.3(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@24.3.0)(rollup@4.48.1)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
@@ -278,8 +278,8 @@ importers:
         specifier: ^7.1.3
         version: 7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1)
       vite-plugin-checker:
-        specifier: ^0.10.2
-        version: 0.10.2(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
+        specifier: ^0.10.3
+        version: 0.10.3(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@24.3.0)(rollup@4.48.1)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
@@ -421,8 +421,8 @@ importers:
         specifier: ^7.1.3
         version: 7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1)
       vite-plugin-checker:
-        specifier: ^0.10.2
-        version: 0.10.2(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
+        specifier: ^0.10.3
+        version: 0.10.3(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@24.3.0)(rollup@4.48.1)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1))
@@ -1881,8 +1881,8 @@ packages:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
 
-  ansi-regex@6.1.0:
-    resolution: {integrity: sha512-7HSX4QQb4CspciLpVFwyRe79O3xsIZDDLER21kERQ71oaPodF8jL725AgJMFAYbooIqolJoRLuM81SpeUkpkvA==}
+  ansi-regex@6.2.0:
+    resolution: {integrity: sha512-TKY5pyBkHyADOPYlRT9Lx6F544mPl0vS5Ew7BJ45hA08Q+t3GjbueLliBWN3sMICk6+y7HdyxSzC4bWS8baBdg==}
     engines: {node: '>=12'}
 
   ansi-styles@4.3.0:
@@ -4126,8 +4126,8 @@ packages:
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
 
-  vite-plugin-checker@0.10.2:
-    resolution: {integrity: sha512-FX9U8TnIS6AGOlqmC6O2YmkJzcZJRrjA03UF7FOhcUJ7it3HmCoxcIPMcoHliBP6EFOuNzle9K4c0JL4suRPow==}
+  vite-plugin-checker@0.10.3:
+    resolution: {integrity: sha512-f4sekUcDPF+T+GdbbE8idb1i2YplBAoH+SfRS0e/WRBWb2rYb1Jf5Pimll0Rj+3JgIYWwG2K5LtBPCXxoibkLg==}
     engines: {node: '>=14.16'}
     peerDependencies:
       '@biomejs/biome': '>=1.7'
@@ -5876,7 +5876,7 @@ snapshots:
 
   ansi-regex@5.0.1: {}
 
-  ansi-regex@6.1.0: {}
+  ansi-regex@6.2.0: {}
 
   ansi-styles@4.3.0:
     dependencies:
@@ -8125,7 +8125,7 @@ snapshots:
 
   strip-ansi@7.1.0:
     dependencies:
-      ansi-regex: 6.1.0
+      ansi-regex: 6.2.0
 
   strip-indent@3.0.0:
     dependencies:
@@ -8427,7 +8427,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-checker@0.10.2(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1)):
+  vite-plugin-checker@0.10.3(eslint@9.34.0)(optionator@0.9.4)(typescript@5.9.2)(vite@7.1.3(@types/node@24.3.0)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.1)):
     dependencies:
       '@babel/code-frame': 7.27.1
       chokidar: 4.0.3
