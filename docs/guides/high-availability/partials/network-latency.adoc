@@ -1,0 +1,7 @@
+// See https://www.cloudping.co/ for an overview of AWS latencies between AZs
+
+A P50 round-trip latency of less than 5 ms is suggested and below 10 ms is strongly recommended, together with a full ownership of the network between the zones.
+
+Network latency and latency spikes amplify in the response time of the service and can lead to queued requests, timeouts, and failed requests.
+This can trigger downtimes until the failure detection isolates problematic nodes.
+

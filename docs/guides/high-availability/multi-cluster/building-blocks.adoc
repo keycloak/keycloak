@@ -21,6 +21,8 @@ include::../partials/blueprint-disclaimer.adoc[]
 
 Ensures that synchronous replication is available for both the database and the external {jdgserver_name}.
 
+include::../partials/network-latency.adoc[]
+
 *Suggested setup:* Two AWS Availability Zones within the same AWS Region.
 
 *Not considered:* Two regions on the same or different continents, as it would increase the latency and the likelihood of network failures.
