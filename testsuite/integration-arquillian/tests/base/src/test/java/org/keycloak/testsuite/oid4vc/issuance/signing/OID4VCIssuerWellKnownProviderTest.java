@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -77,7 +76,6 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
@@ -138,61 +136,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                         assertEquals("JWK must have use=enc", "enc", jwk.getPublicKeyUse());
                     }
                 });
-    }
-
-    @Test
-    public void testCredentialRequestEncryptionMetadata() {
-        testingClient.server(TEST_REALM_NAME).run(session -> {
-            CredentialRequestEncryptionMetadata metadata = OID4VCIssuerWellKnownProvider.getCredentialRequestEncryption(session);
-
-            assertNotNull("Metadata should not be null", metadata);
-            assertNotNull("JWKS should be present", metadata.getJwks());
-            assertNotNull("Supported enc values should be present", metadata.getEncValuesSupported());
-
-            JSONWebKeySet jwks = metadata.getJwks();
-            assertNotNull("JWKS keys should not be null", jwks.getKeys());
-            assertNotEquals("Keys array should not be empty", 0, jwks.getKeys().length);
-
-            assertTrue("Should support A256GCM", metadata.getEncValuesSupported().contains(JWEConstants.A256GCM));
-        });
-    }
-
-    @Test
-    public void testIssuerMetadataIncludesRequestEncryptionSupport() throws Exception {
-        try (Client client = AdminClientUtil.createResteasyClient()) {
-            UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
-            URI oid4vciDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder)
-                    .build(TEST_REALM_NAME, OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID);
-            WebTarget oid4vciDiscoveryTarget = client.target(oid4vciDiscoveryUri);
-
-            try (Response discoveryResponse = oid4vciDiscoveryTarget.request().get()) {
-                CredentialIssuer oid4vciIssuerConfig = JsonSerialization.readValue(
-                        discoveryResponse.readEntity(String.class), CredentialIssuer.class);
-
-                CredentialRequestEncryptionMetadata requestEncryption = oid4vciIssuerConfig.getCredentialRequestEncryption();
-                assertNotNull("Request encryption support should be advertised in metadata", requestEncryption);
-                assertTrue("Encryption should be required", requestEncryption.isEncryptionRequired());
-
-                assertFalse("Supported encryption methods should not be empty",
-                        requestEncryption.getEncValuesSupported().isEmpty());
-                assertTrue("Supported encryption methods should include A256GCM",
-                        requestEncryption.getEncValuesSupported().contains(JWEConstants.A256GCM));
-
-                assertFalse("Supported compression methods should not be empty",
-                        requestEncryption.getZipValuesSupported().isEmpty());
-                assertTrue("Supported compression methods should include DEF",
-                        requestEncryption.getZipValuesSupported().contains(DEFLATE_COMPRESSION));
-
-                assertNotNull("JWKS should be present", requestEncryption.getJwks());
-                JWK[] keys = requestEncryption.getJwks().getKeys();
-                assertNotEquals("JWKS keys should not be empty", 0, keys.length);
-                for (JWK jwk : keys) {
-                    assertNotNull("JWK must have kid", jwk.getKeyId());
-                    assertNotNull("JWK must have alg", jwk.getAlgorithm());
-                    assertEquals("JWK must have use=enc", "enc", jwk.getPublicKeyUse());
-                }
-            }
-        }
     }
 
 

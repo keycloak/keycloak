@@ -42,7 +42,6 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
@@ -112,10 +111,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
-
-import static org.keycloak.jose.jwk.ECPublicJWK.EC;
-import static org.keycloak.jose.jwk.OKPPublicJWK.OKP;
-import static org.keycloak.jose.jwk.RSAPublicJWK.RSA;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -389,7 +384,7 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
     public Response requestCredential(String requestPayload) {
-        LOGGER.debugf("Received credentials request with Content-Type: %s, payload: %s", requestPayload);
+        LOGGER.debugf("Received credentials request with payload: %s", requestPayload);
 
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
@@ -429,11 +424,6 @@ public class OID4VCIssuerEndpoint {
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
         } else {
-            if (requestPayload == null || requestPayload.trim().isEmpty()) {
-                String errorMessage = "Request payload is null or empty.";
-                LOGGER.debug(errorMessage);
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
             try {
                 credentialRequestVO = JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
             } catch (JsonProcessingException e) {
@@ -549,12 +539,6 @@ public class OID4VCIssuerEndpoint {
         JWE jwe = new JWE(jweString);
         JWEHeader header = (JWEHeader) jwe.getHeader();
 
-        // Validate typ header
-        if (!"jwt".equalsIgnoreCase(header.getType())) {
-            LOGGER.debugf("Invalid typ header: %s", header.getType());
-            throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
-        }
-
         // Validate alg and enc against supported values
         String enc = header.getEncryptionAlgorithm();
         if (!metadata.getEncValuesSupported().contains(enc)) {
@@ -624,6 +608,7 @@ public class OID4VCIssuerEndpoint {
      * @return The decompressed content
      * @throws JWEException If decompression fails
      */
+    // TODO handle compression/decompression transparently at the JWE software layer.
     private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
         if ("DEF".equals(zipAlgorithm)) {
             try {
@@ -763,6 +748,7 @@ public class OID4VCIssuerEndpoint {
     /**
      * Compress content using the specified algorithm
      */
+    // TODO handle compression/decompression transparently at the JWE software layer.
     private byte[] compressContent(byte[] content, String zipAlgorithm) throws IOException {
         if ("DEF".equals(zipAlgorithm)) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();

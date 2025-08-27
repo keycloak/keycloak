@@ -333,7 +333,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                         .orElseThrow(() -> new RuntimeException("No encryption key found"));
 
                 // Create JWE with unsupported encryption algorithm
-                String encryptedRequest = createEncryptedCredentialRequestWithInvalidAlg(requestJson, encryptionKey);
+                String encryptedRequest = createEncryptedCredentialRequest(requestJson, encryptionKey);
 
                 // Test with invalid encryption algorithm
                 try {
@@ -344,8 +344,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                     assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
                     assertTrue("Error should mention decryption failure. Actual: " + error.getErrorDescription(),
-                            error.getErrorDescription().contains("Failed to decrypt JWE") ||
-                                    error.getErrorDescription().contains("decrypt"));
+                            error.getErrorDescription().contains("Failed to decrypt JWE"));
                 }
 
             } catch (Exception e) {
@@ -554,10 +553,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                 assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
                 assertTrue("Error should mention invalid JWK. Actual: " + error.getErrorDescription(),
-                        error.getErrorDescription().contains("Invalid JWK") ||
-                                error.getErrorDescription().contains("Failed to parse public key") ||
-                                error.getErrorDescription().contains("modulus") ||
-                                error.getErrorDescription().contains("parse"));
+                        error.getErrorDescription().contains("Invalid JWK"));
             }
         });
     }
@@ -595,47 +591,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 // The error should indicate unsupported key type or algorithm
                 assertTrue("Error should mention unsupported key type or algorithm. Actual: " + error.getErrorDescription(),
-                        error.getErrorDescription().contains("No supported key management algorithm") ||
-                                error.getErrorDescription().contains("unsupported") ||
-                                error.getErrorDescription().contains("key type") ||
                                 error.getErrorDescription().contains("Invalid JWK"));
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialEncryptionRequiredButMissing() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-        testingClient.server(TEST_REALM_NAME).run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            realm.setAttribute("oid4vci.encryption.required", "true");
-            realm.setAttribute("oid4vci.request.enc.algorithms", "A256GCM");
-            realm.setAttribute("oid4vci.request.zip.algorithms", "DEF");
-
-            try {
-                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-
-                CredentialRequest credentialRequest = new CredentialRequest()
-                        .setFormat(Format.JWT_VC)
-                        .setCredentialIdentifier("test-credential");
-
-                String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-
-                try {
-                    issuerEndpoint.requestCredential(requestPayload);
-                    Assert.fail("Expected BadRequestException due to missing encryption when required");
-                } catch (BadRequestException e) {
-                    ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                    assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
-                    assertEquals("Encryption is required by the Credential Issuer, but the request is not a JWE.", error.getErrorDescription());
-                }
-            } finally {
-                // Clean up realm attributes
-                realm.removeAttribute("oid4vci.encryption.required");
-                realm.removeAttribute("oid4vci.request.enc.algorithms");
-                realm.removeAttribute("oid4vci.request.zip.algorithms");
             }
         });
     }

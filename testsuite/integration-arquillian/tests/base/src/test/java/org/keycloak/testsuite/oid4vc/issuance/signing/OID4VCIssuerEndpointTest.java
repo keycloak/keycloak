@@ -438,23 +438,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return jwe.encodeJwe();
     }
 
-    public static String createEncryptedCredentialRequestWithInvalidAlg(String payload, KeyWrapper encryptionKey) throws Exception {
-        byte[] content = payload.getBytes(StandardCharsets.UTF_8);
-
-        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
-                .keyId(encryptionKey.getKid())
-                .algorithm(encryptionKey.getAlgorithm())
-                .encryptionAlgorithm(A128GCM)
-                .type(JWT)
-                .build();
-
-        JWE jwe = new JWE()
-                .header(header)
-                .content(content);
-        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
-        return jwe.encodeJwe();
-    }
-
     public static byte[] compressPayload(byte[] payload) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (DeflaterOutputStream deflater = new DeflaterOutputStream(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true))) {

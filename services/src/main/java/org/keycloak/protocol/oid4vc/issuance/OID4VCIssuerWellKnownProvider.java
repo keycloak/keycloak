@@ -19,13 +19,11 @@ package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -38,20 +36,18 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.jboss.logging.Logger;
 
-import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.keycloak.crypto.KeyType.RSA;
-import static org.keycloak.jose.jwk.ECPublicJWK.EC;
-import static org.keycloak.jose.jwk.OKPPublicJWK.OKP;
 
 /**
  * {@link WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
@@ -209,51 +205,16 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     private static JSONWebKeySet buildJwks(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        KeyManager keyManager = session.keys();
-
-        JWK[] jwkArray = keyManager.getKeysStream(realm)
-                .filter(key -> KeyUse.ENC.equals(key.getUse()) && Arrays.asList(RSA, EC, OKP).contains(key.getType()))
-                .map(key -> {
-                    try {
-                        JWKBuilder builder = JWKBuilder.create()
-                                .kid(key.getKid())
-                                .algorithm(key.getAlgorithm());
-                        PublicKey publicKey = (PublicKey) key.getPublicKey();
-                        String keyType = key.getType();
-                        KeyUse keyUse = key.getUse();
-
-                        if (key.getAlgorithm() == null || key.getAlgorithm().isEmpty()) {
-                            LOGGER.warnf("Key %s has no algorithm specified", key.getKid());
-                            return null;
-                        }
-
-                        if (KeyType.RSA.equals(keyType)) {
-                            return builder.rsa(publicKey, keyUse);
-                        } else if (KeyType.EC.equals(keyType)) {
-                            return builder.ec(publicKey, keyUse);
-                        } else if (KeyType.OKP.equals(keyType)) {
-                            return builder.okp(publicKey, keyUse);
-                        } else {
-                            LOGGER.warnf("Unsupported key type %s for kid %s", keyType, key.getKid());
-                            return null;
-                        }
-                    } catch (Exception e) {
-                        LOGGER.warnf("Failed to convert key %s to JWK: %s", key.getKid(), e.getMessage());
-                        return null;
-                    }
-                })
-                .filter(jwk -> jwk != null)
+        JSONWebKeySet jwks = JWKSServerUtils.getRealmJwks(session, realm);
+        // Filter for encryption keys only
+        JWK[] encKeys = Arrays.stream(jwks.getKeys())
+                .filter(jwk -> JWK.Use.ENCRYPTION.asString().equals(jwk.getPublicKeyUse()))
                 .toArray(JWK[]::new);
-
-        JSONWebKeySet jwks = new JSONWebKeySet();
-        jwks.setKeys(jwkArray);
+        jwks.setKeys(encKeys);
         return jwks;
     }
 
 
-    /**
-     * Returns the supported compression methods.
-     */
     /**
      * Returns supported zip algorithms from realm attributes (optional).
      */
