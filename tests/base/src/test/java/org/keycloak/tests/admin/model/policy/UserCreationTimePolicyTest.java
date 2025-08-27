@@ -8,16 +8,16 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourcePolicyManager;
-import org.keycloak.models.policy.UserActionBuilder;
 import org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -55,19 +55,16 @@ public class UserCreationTimePolicyTest {
 
     @Test
     public void testDisableUserBasedOnCreationDate() {
-        runOnServer.run((RunOnServer) session -> {
-            configureSessionContext(session);
-            PolicyBuilder.create()
-                    .of(UserCreationTimeResourcePolicyProviderFactory.ID)
-                    .withActions(
-                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(5))
-                                    .build(),
-                            UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(10))
-                                    .build()
-                    ).build(session);
-        });
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
 
         // create a new user - this will trigger the association with the policy
         managedRealm.admin().users().create(
