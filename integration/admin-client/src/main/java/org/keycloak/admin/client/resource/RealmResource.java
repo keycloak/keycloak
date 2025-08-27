@@ -420,4 +420,7 @@ public interface RealmResource {
 
     @Path("client-types")
     ClientTypesResource clientTypes();
+
+    @Path("resources")
+    RealmResourcesResource resources();
 }
