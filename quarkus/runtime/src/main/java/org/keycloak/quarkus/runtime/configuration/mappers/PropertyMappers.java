@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import io.smallrye.config.Expressions;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.CollectionUtil;
@@ -83,9 +84,10 @@ public final class PropertyMappers {
         //
         // The special handling of log properties is because some logging runtime properties are requested during build time
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
+        // If however expressions are not enabled that means quarkus is specifically looking for runtime defaults, and we should not provide a value
         // See https://github.com/quarkusio/quarkus/pull/42157
         if (isRebuild() && isKeycloakRuntime(name, mapper)
-                && !NestedPropertyMappingInterceptor.getResolvingRoot().orElse(name).startsWith("quarkus.log.")) {
+                && (!NestedPropertyMappingInterceptor.getResolvingRoot().orElse(name).startsWith("quarkus.log.") || !Expressions.isEnabled())) {
             return ConfigValue.builder().withName(name).build();
         }
 

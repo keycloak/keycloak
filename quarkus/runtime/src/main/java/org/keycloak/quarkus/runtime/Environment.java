@@ -231,4 +231,8 @@ public final class Environment {
     public static void removeHomeDir() {
         System.getProperties().remove(KC_HOME_DIR);
     }
+
+    public static void setRebuild() {
+        System.setProperty("quarkus.launch.rebuild", "true");
+    }
 }
