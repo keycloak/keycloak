@@ -1,6 +1,7 @@
 package org.keycloak.testframework.database;
 
 import org.jboss.logging.Logger;
+import org.keycloak.testframework.util.JavaPropertiesUtil;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -13,7 +14,9 @@ class MySQLTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new MySQLContainer<>(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor(NAME));
+        String containerName = JavaPropertiesUtil.getContainerImageName("database.properties", NAME);;
+
+        return new MySQLContainer<>(DockerImageName.parse(containerName).asCompatibleSubstituteFor(NAME));
     }
 
     @Override

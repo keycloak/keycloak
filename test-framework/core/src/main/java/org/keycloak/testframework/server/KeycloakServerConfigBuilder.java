@@ -5,7 +5,7 @@ import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.testframework.infinispan.CacheType;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -29,6 +29,8 @@ public class KeycloakServerConfigBuilder {
     private final LogBuilder log = new LogBuilder();
     private final Set<Dependency> dependencies = new HashSet<>();
     private final Set<Path> configFiles = new HashSet<>();
+    private CacheType cacheType = CacheType.LOCAL;
+    private boolean externalInfinispan = false;
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -48,8 +50,29 @@ public class KeycloakServerConfigBuilder {
                 .option("bootstrap-admin-password", password);
     }
 
-    public KeycloakServerConfigBuilder cache(String cache) {
-        return option("cache", cache);
+    public KeycloakServerConfigBuilder setCache(CacheType cacheType) {
+        this.cacheType = cacheType;
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder cache() {
+        option("cache", cacheType.name().toLowerCase());
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder enableExternalInfinispan(boolean enabled) {
+        if (enabled) {
+            this.externalInfinispan = true;
+            setCache(CacheType.ISPN);
+        } else {
+            this.externalInfinispan = false;
+            setCache(CacheType.LOCAL);
+        }
+        return this;
+    }
+
+    public boolean isExternalInfinispanEnabled() {
+        return this.externalInfinispan;
     }
 
     public LogBuilder log() {
@@ -190,7 +213,11 @@ public class KeycloakServerConfigBuilder {
         List<String> args = new LinkedList<>();
         args.add(command);
         for (Map.Entry<String, String> e : options.entrySet()) {
-            args.add("--" + e.getKey() + "=" + e.getValue());
+            if (e.getKey().startsWith("-D")) {
+                args.add(e.getKey() + "=" + e.getValue());
+            } else {
+                args.add("--" + e.getKey() + "=" + e.getValue());
+            }
         }
         if (!features.isEmpty()) {
             args.add("--features=" + String.join(",", features));

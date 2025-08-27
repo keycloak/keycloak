@@ -2,6 +2,7 @@ package org.keycloak.testframework.database;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
+import org.keycloak.testframework.util.JavaPropertiesUtil;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.tidb.TiDBContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -14,7 +15,9 @@ class TiDBTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new TiDBContainer(DockerImageName.parse(DatabaseProperties.getContainerImageName(NAME)).asCompatibleSubstituteFor("pingcap/tidb")){
+        String containerName = JavaPropertiesUtil.getContainerImageName("database.properties", NAME);;
+
+        return new TiDBContainer(DockerImageName.parse(containerName).asCompatibleSubstituteFor("pingcap/tidb")){
             @Override
             public TiDBContainer withDatabaseName(String databaseName) {
                 if(StringUtils.equals(this.getDatabaseName(), databaseName)) {

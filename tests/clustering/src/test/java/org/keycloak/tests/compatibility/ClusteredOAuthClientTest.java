@@ -8,19 +8,22 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.keycloak.testframework.annotations.InjectLoadBalancer;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.infinispan.CacheType;
 import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ClusteredOAuthClientTest.ClusteredKeycloakServerConfig.class)
 public class ClusteredOAuthClientTest {
 
     @InjectUser(config = OAuthUserConfig.class)
@@ -87,6 +90,16 @@ public class ClusteredOAuthClientTest {
             return user.username("myuser").name("First", "Last")
                   .email("test@local")
                   .password("password");
+        }
+    }
+
+    public static class ClusteredKeycloakServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            config.setCache(CacheType.ISPN);
+
+            return config;
         }
     }
 }
