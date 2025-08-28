@@ -19,6 +19,7 @@ package org.keycloak.operator.testsuite.unit;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -26,6 +27,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
@@ -591,6 +593,8 @@ public class PodTemplateTest {
                 .filter(v -> v.getName().equals(KeycloakDeploymentDependentResource.CACHE_CONFIG_FILE_MOUNT_NAME))
                 .findFirst().orElseThrow();
         assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
+
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -794,7 +798,7 @@ public class PodTemplateTest {
         envVar = env.get("SECRET");
         assertEquals("key", envVar.getValueFrom().getSecretKeyRef().getKey());
 
-        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
     }
 
 }
