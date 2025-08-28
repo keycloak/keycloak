@@ -101,7 +101,7 @@ export { FormAccess } from "./components/form/FormAccess";
 export { GroupPath } from "./components/group/GroupPath";
 export { GroupPickerDialog } from "./components/group/GroupPickerDialog";
 export { HelpHeader } from "./components/help-enabler/HelpHeader";
-export { FileUploadForm } from "./components/json-file-upload/FileUploadForm";
+export { FileUploadForm } from "./components/json-file-upload/JsonFileUpload";
 export { JsonFileUpload } from "./components/json-file-upload/JsonFileUpload";
 export { AttributesForm } from "./components/key-value-form/AttributeForm";
 export { KeySelect } from "./realm-settings/user-profile/attribute/KeySelect";

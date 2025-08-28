@@ -14,7 +14,7 @@ import { FormSubmitButton, TextControl } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
-import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
+import { FileUploadForm } from "../../components/json-file-upload/JsonFileUpload";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
