@@ -125,6 +125,8 @@ You are able to use placeholders to resolve values from environment variables fo
 
 In the example above, the value set to the `MY_REALM_NAME` environment variable is going to be used to set the `realm` property.
 
+NOTE: there are currently no restrictions on what environment variables may be referenced. When environment variables are used to convey sensitive information, take care to ensure placeholders references do not inappropriately expose sensitive environment variable values.
+
 == Importing a Realm during Startup
 
 You are also able to import realms when the server is starting by using the `--import-realm` option.
