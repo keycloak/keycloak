@@ -2,6 +2,7 @@ package org.keycloak.testframework.server;
 
 import org.jboss.logging.Logger;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.cache.InfinispanCache;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.injection.AbstractInterceptorHelper;
@@ -20,8 +21,10 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         KeycloakIntegrationTest annotation = instanceContext.getAnnotation();
         KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
+        InfinispanCache cache = instanceContext.getDependency(InfinispanCache.class);
+
         KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
-                .cache(cache())
+                .cache(cache.getCacheName())
                 .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
                 .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
@@ -79,10 +82,6 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     public abstract boolean requiresDatabase();
 
     public abstract Logger getLogger();
-
-    protected String cache() {
-        return "local";
-    }
 
     @Override
     public int order() {
