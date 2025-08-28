@@ -31,7 +31,7 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.util.ResolveRelative;
-import org.keycloak.services.validation.Validation;
+import org.keycloak.utils.StringUtil;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -181,6 +181,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     // TODO Before adding more validation consider using a library for validation
     @Override
     public ValidationResult validate(ValidationContext<ClientModel> context) {
+        validateClientId(context);
         validateUrls(context);
         validatePairwiseInClientModel(context);
         new CibaClientValidation(context).validate();
@@ -193,6 +194,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
 
     @Override
     public ValidationResult validate(ClientValidationContext.OIDCContext context) {
+        validateClientId(context);
         validateUrls(context);
         validatePairwiseInOIDCClient(context);
         new CibaClientValidation(context).validate();
@@ -200,6 +202,13 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateMinimumAcrValue(context);
 
         return context.toResult();
+    }
+
+    private void validateClientId(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (StringUtil.isBlank(client.getClientId())) {
+            context.addError("Client ID cannot be blank");
+        }
     }
 
     private void validateUrls(ValidationContext<ClientModel> context) {
