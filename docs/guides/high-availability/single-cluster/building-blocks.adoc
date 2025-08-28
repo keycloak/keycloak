@@ -22,7 +22,9 @@ include::../partials/blueprint-disclaimer.adoc[]
 [#single-cluster-blocks-low-latency]
 == Multiple availability-zones with low-latency connection
 
-Ensures that synchronous replication is available for both the database and {project_name} clustering.
+{project_name} requires a low latency network connection for the synchronous replication of data by the database and {project_name} clustering.
+
+include::../partials/network-latency.adoc[]
 
 *Suggested setup:* A {kubernetes} cluster consisting of two or more AWS Availability Zones within the same AWS Region.
 
