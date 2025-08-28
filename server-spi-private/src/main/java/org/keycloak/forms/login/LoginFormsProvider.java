@@ -131,6 +131,10 @@ public interface LoginFormsProvider extends Provider {
 
     LoginFormsProvider addError(FormMessage errorMessage);
 
+    LoginFormsProvider addError(FormMessage errorMessage, Object ... parameters);
+    LoginFormsProvider addError(String field, String messageKey, Object... parameters);
+    LoginFormsProvider addError(String messageKey, Object... parameters);
+
     /**
      * Add a success message to the form
      *

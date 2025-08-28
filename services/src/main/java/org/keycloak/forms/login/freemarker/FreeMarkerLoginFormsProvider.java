@@ -882,6 +882,40 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public LoginFormsProvider addError(FormMessage errorMessage, Object... parameters) {
+        return null;
+    }
+
+    @Override
+    public LoginFormsProvider addError(String field, String messageKey, Object... parameters) {
+        if (this.messageType != MessageType.ERROR) {
+            this.messageType = null;
+            this.messages = null;
+        }
+        if (messages == null) {
+            this.messageType = MessageType.ERROR;
+            this.messages = new LinkedList<>();
+        }
+        this.messages.add(new FormMessage(field, messageKey, parameters));
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider addError(String messageKey, Object... parameters) {
+        if (this.messageType != MessageType.ERROR) {
+            this.messageType = null;
+            this.messages = null;
+        }
+        if (messages == null) {
+            this.messageType = MessageType.ERROR;
+            this.messages = new LinkedList<>();
+        }
+        this.messages.add(new FormMessage(null, messageKey, parameters));
+        return this;
+    }
+
+
+    @Override
     public LoginFormsProvider addSuccess(FormMessage errorMessage) {
         if (this.messageType != MessageType.SUCCESS) {
             this.messageType = null;

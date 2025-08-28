@@ -70,7 +70,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         LoginFormsProvider form = context.form()
                 .setExecution(context.getExecution().getId());
         if (error != null) {
-            if (field != null) {
+            if (error.equalsIgnoreCase(Messages.ACCOUNT_TEMPORARILY_DISABLED)) {
+                int maxAttempts = context.getRealm().getFailureFactor();   // số lần nhập sai tối đa
+                int waitSeconds = context.getRealm().getWaitIncrementSeconds(); // thời gian chờ (giây)
+
+                // Gọi bằng key đã định nghĩa trong messages.properties
+                form.addError("accountTemporarilyDisabledMessage", maxAttempts, waitSeconds*maxAttempts);
+            } else if (field != null) {
                 form.addError(new FormMessage(field, error));
             } else {
                 form.setError(error);
