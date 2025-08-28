@@ -88,6 +88,54 @@
   </@group>
 </#macro>
 
+<#macro clipboard name label value="" readonly=true>
+  <@group name=name label=label>
+    <div class="pf-v5-c-clipboard-copy" id="${name}-clipboard">
+      <div class="pf-v5-c-clipboard-copy__group">
+        <div class="${properties.kcInputGroup}">
+          <div class="${properties.kcInputGroupItemClass}">
+            <button 
+              class="${properties.kcFormPasswordVisibilityButtonClass}" 
+              type="button" 
+              aria-label="Show content"
+              aria-expanded="false"
+              aria-controls="${name}-content"
+              id="${name}-toggle"
+            >
+              <i class="fas fa-angle-right" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
+            <span class="${properties.kcInputClass} <#if readonly>${properties.kcFormReadOnlyClass}</#if>">
+              <input
+                id="${name}"
+                name="${name}"
+                value="${value}"
+                type="text"
+                <#if readonly>readonly</#if>
+                aria-label="${label}"
+              />
+            </span>
+          </div>
+          <div class="${properties.kcInputGroupItemClass}">
+            <button
+              class="${properties.kcFormPasswordVisibilityButtonClass}"
+              type="button"
+              aria-label="${msg("recovery-codes-copy")}"
+              id="${name}-copy-button"
+            >
+              <i class="fas fa-copy" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="pf-v5-c-clipboard-copy__expandable-content" id="${name}-content" hidden>
+        <pre><code>${value}</code></pre>
+      </div>
+    </div>
+  </@group>
+</#macro>
+
 <#macro checkbox name label value=false required=false>
   <div class="${properties.kcCheckboxClass}">
     <label for="${name}" class="${properties.kcCheckboxClass}">
