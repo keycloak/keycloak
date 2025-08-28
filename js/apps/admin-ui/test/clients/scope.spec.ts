@@ -132,6 +132,7 @@ test.describe("Client details - Client scopes subtab", () => {
     await clickAddScope(page, "Optional");
     await assertNotificationMessage(page, "Scope mapping updated");
     await searchItem(page, placeHolder, clientScopeNameOptionalType);
+    await assertTableRowsLength(page, tableName, 1);
     await assertRowExists(page, clientScopeNameOptionalType);
     await assertTableCellDropdownValue(page, "Optional");
   });
@@ -141,6 +142,7 @@ test.describe("Client details - Client scopes subtab", () => {
     page,
   }) => {
     await searchItem(page, placeHolder, itemName);
+    await assertTableRowsLength(page, tableName, 1);
     await clickSelectRow(page, tableName, itemName);
     await selectChangeType(page, "Default");
     await assertNotificationMessage(page, "Scope mapping updated");
@@ -171,11 +173,13 @@ test.describe("Client details - Client scopes subtab", () => {
     const itemName1 = clientScopeName + 1;
     const itemName2 = clientScopeName + 2;
     await searchItem(page, placeHolder, clientScopeName);
+    await assertTableRowsLength(page, tableName, 5);
     await clickSelectRow(page, tableName, itemName1);
     await clickSelectRow(page, tableName, itemName2);
     await clickTableToolbarItem(page, "Remove", true);
     await assertNotificationMessage(page, msgScopeMappingRemoved);
     await searchItem(page, placeHolder, clientScopeName);
+    await assertTableRowsLength(page, tableName, 3);
     await assertRowExists(page, itemName1, false);
     await assertRowExists(page, itemName2, false);
   });
