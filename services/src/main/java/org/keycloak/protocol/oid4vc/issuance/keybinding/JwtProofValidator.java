@@ -219,8 +219,8 @@ public class JwtProofValidator extends AbstractProofValidator {
         KeycloakContext keycloakContext = keycloakSession.getContext();
         CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
         cNonceHandler.verifyCNonce(proofPayload.getNonce(),
-                                   List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
-                                   Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
-                                          OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
+                List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                        OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
     }
 }

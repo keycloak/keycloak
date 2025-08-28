@@ -37,8 +37,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jwe.JWE;
@@ -73,11 +71,13 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.Proof;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
@@ -383,6 +383,7 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+
         // Authenticate first to fail fast on auth errors
         AuthenticationManager.AuthResult authResult = getAuthResult();
 
@@ -443,16 +444,34 @@ public class OID4VCIssuerEndpoint {
 
         checkScope(requestedCredential);
 
+        // Validate proof exclusivity
+        if (credentialRequestVO.getProof() != null && credentialRequestVO.getProofs() != null) {
+            LOGGER.debugf("Both single proof and multiple proofs provided");
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+        }
+
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, requestedCredential);
 
-        Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
+        // Get the list of all proofs (handles single proof, multiple proofs, or none)
+        List<Proof> allProofs = getAllProofs(credentialRequestVO);
 
-        // Generate credential response
+        if (allProofs.isEmpty()) {
+            allProofs.add(null); // Placeholder for single issuance without proof
+        }
+
         CredentialResponse responseVO = new CredentialResponse();
-        responseVO
-                .addCredential(theCredential)
-                .setNotificationId(generateNotificationId());
+        responseVO.setNotificationId(generateNotificationId());
+
+        // Issue credentials for each proof (or one if no proofs)
+        Proof originalProof = credentialRequestVO.getProof();
+        for (Proof currentProof : allProofs) {
+            credentialRequestVO.setProof(currentProof);
+            Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
+            responseVO.addCredential(theCredential);
+        }
+
+        credentialRequestVO.setProof(originalProof);
 
         if (encryptionParams != null) {
             String jwe = encryptCredentialResponse(responseVO, encryptionParams);
@@ -463,6 +482,31 @@ public class OID4VCIssuerEndpoint {
         }
 
         return Response.ok().entity(responseVO).build();
+    }
+
+    private List<Proof> getAllProofs(CredentialRequest credentialRequestVO) {
+        List<Proof> allProofs = new ArrayList<>();
+        Proof singleProof = credentialRequestVO.getProof();
+        Proofs multiProofs = credentialRequestVO.getProofs();
+
+        if (singleProof != null) {
+            allProofs.add(singleProof);
+        } else if (multiProofs != null) {
+            int typeCount = 0;
+            if (multiProofs.getJwt() != null && !multiProofs.getJwt().isEmpty()) {
+                typeCount++;
+                for (String jwtStr : multiProofs.getJwt()) {
+                    JwtProof jwtProof = new JwtProof();
+                    jwtProof.setJwt(jwtStr);
+                    allProofs.add(jwtProof);
+                }
+            }
+            if (typeCount != 1) {
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF,
+                        "The 'proofs' object must contain exactly one proof type with non-empty array."));
+            }
+        }
+        return allProofs;
     }
 
     /**
@@ -629,7 +673,8 @@ public class OID4VCIssuerEndpoint {
      */
     private Object getCredential(AuthenticationManager.AuthResult authResult,
                                  SupportedCredentialConfiguration credentialConfig,
-                                 CredentialRequest credentialRequestVO) {
+                                 CredentialRequest credentialRequestVO
+    ) {
 
         // Get the client scope model from the credential configuration
         CredentialScopeModel credentialScopeModel = getClientScopeModel(credentialConfig);
@@ -765,6 +810,7 @@ public class OID4VCIssuerEndpoint {
      * Enforce key binding: Validate proof and bind associated key to credential in issuance context.
      */
     private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext) {
+        // Check for single proof first
         Proof proof = vcIssuanceContext.getCredentialRequest().getProof();
         if (proof == null) {
             LOGGER.debugf("No proof provided, skipping key binding");
@@ -772,13 +818,11 @@ public class OID4VCIssuerEndpoint {
         }
 
         String proofType = proof.getProofType();
-
         ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
             throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
         }
 
-        // Validate proof and bind public key to credential
         try {
             Optional.ofNullable(proofValidator.validateProof(vcIssuanceContext))
                     .ifPresent(jwk -> vcIssuanceContext.getCredentialBody().addKeyBinding(jwk));
