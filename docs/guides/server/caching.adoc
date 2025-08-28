@@ -204,11 +204,10 @@ The CLI options `cache-remote-username` and `cache-remote-password` are optional
 If the {jdgserver_name} server has authentication enabled, {project_name} will fail to start.
 
 [[cache-topology]]
-== Topology Aware Data Availability
+== Topology aware data distribution
 
-Configuring the topology information of your cluster increases the data availability in case of hardware failure.
-The hardware where the {project_name} instance runs is necessary to compute this topology information.
-This section is more relevant for bare-metal users, who have control over the hardware and where it is running.
+Configuring {project_name} to be aware of your network topology, increases data availability in the presence of hardware failures, as Infinispan is able to ensure that data is distributed correctly.
+For example, if `num_owners=2` is configured for a cache, it will ensure that the two owners are not stored on the same node when possible.
 
 [NOTE]
 ====
@@ -248,8 +247,8 @@ For example: `--spi-cache-embedded--default--machine-name=machine-1`
 [NOTE]
 ====
 The {project_name} Operator automatically configure the machine name based on the Kubernetes node.
-It ensures if Pods are scheduled in the same node, the data is safely replicated into another node.
-We recommend to set up anti-affinity rules and/or topology spread constraints to prevent multiple Pods from being scheduled on the same node, further reducing the risk of a single node failure incur a data loss.
+It ensures that if multiple pods are scheduled on the same node, data replicas are still replicated across distinct nodes when possible.
+We recommend to set up anti-affinity rules and/or topology spread constraints to prevent multiple Pods from being scheduled on the same node, further reducing the risk of a single node failure causing data loss.
 ====
 
 == Transport stacks
