@@ -4,10 +4,7 @@ import java.util.List;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import org.keycloak.Config;
-import org.keycloak.config.MetricsOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -31,21 +28,12 @@ public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresenta
         return PROVIDER_ID;
     }
 
-    @SuppressWarnings("NullableProblems")
     @Override
     public void init(Config.Scope config) {
-        Caffeine<Object, Object> builder = Caffeine.newBuilder()
+        cache = Caffeine.newBuilder()
                 .maximumSize(config.getInt(CACHE_SIZE, DEFAULT_CACHE_SIZE))
-                .softValues();
-
-        if (config.root().getBoolean(MetricsOptions.METRICS_ENABLED.getKey(), Boolean.FALSE)) {
-            var stats = new CaffeineStatsCounter(Metrics.globalRegistry, "user-agent");
-            builder.recordStats(() -> stats);
-            cache = builder.build(UA_PARSER::parse);
-            stats.registerSizeMetric(cache);
-        } else {
-            cache = builder.build(UA_PARSER::parse);
-        }
+                .softValues()
+                .build(UA_PARSER::parse);
     }
 
     @Override
