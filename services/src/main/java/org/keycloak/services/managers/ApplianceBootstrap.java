@@ -63,7 +63,7 @@ public class ApplianceBootstrap {
     public boolean isNoMasterUser() {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
-        return session.users().getUsersCount(realm) == 0;
+        return session.users().getUsersCount(realm, true) == 0;
     }
 
     public boolean createMasterRealm() {
@@ -128,7 +128,7 @@ public class ApplianceBootstrap {
         username = StringUtil.isBlank(username) ? BootstrapAdminOptions.DEFAULT_TEMP_ADMIN_USERNAME : username;
         //expriationMinutes = expriationMinutes == null ? DEFAULT_TEMP_ADMIN_EXPIRATION : expriationMinutes;
 
-        if (initialUser && session.users().getUsersCount(realm) > 0) {
+        if (initialUser && session.users().getUsersCount(realm, true) > 0) {
             ServicesLogger.LOGGER.addAdminUserFailedUsersExist(Config.getAdminRealm());
             return false;
         }

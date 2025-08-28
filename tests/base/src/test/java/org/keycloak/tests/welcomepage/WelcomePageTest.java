@@ -1,22 +1,6 @@
 package org.keycloak.tests.welcomepage;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testframework.ui.page.WelcomePage;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -27,9 +11,44 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-@KeycloakIntegrationTest
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.WelcomePage;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+@KeycloakIntegrationTest(config = WelcomePageTest.WelcomePageTestConfig.class)
 @TestMethodOrder(OrderAnnotation.class)
 public class WelcomePageTest {
+
+    // force the creation of a new server
+    static class WelcomePageTestConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config;
+        }
+    }
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @InjectWebDriver
     WebDriver driver;
@@ -45,11 +64,13 @@ public class WelcomePageTest {
 
     @Test
     @Order(1)
-    public void localAccessNoAdmin() {
-        // get rid of the bootstrap admin added for db compatibility with the older test framework
-        // it will get added by in subsequent tests
+    public void localAccessNoAdminNorServiceAccount() {
+        // get rid of the bootstrap admin user and client
+        // it will get added back in subsequent tests
         var users = adminClient.realms().realm("master").users();
-        users.searchByUsername("admin", true).stream().findFirst().ifPresent(admin -> users.delete(admin.getId()));
+        users.searchByUsername(Config.getAdminUsername(), true).stream().findFirst().ifPresent(admin -> users.delete(admin.getId()));
+        var clients = adminClient.realms().realm("master").clients();
+        clients.findByClientId(Config.getAdminClientId()).stream().findFirst().ifPresent(client -> clients.delete(client.getId()));
 
         welcomePage.navigateTo();
 
@@ -72,12 +93,18 @@ public class WelcomePageTest {
     @Order(3)
     public void createAdminUser() {
         welcomePage.navigateTo();
-        welcomePage.fillRegistration("admin", "admin");
+        welcomePage.fillRegistration(Config.getAdminUsername(), Config.getAdminPassword());
         welcomePage.submit();
 
         Assertions.assertTrue(welcomePage.getPageAlert().contains("User created"));
 
-        List<UserRepresentation> users = adminClient.realm("master").users().search("admin", true);
+        // re-establish the service account so that the admin client will work
+        assertTrue(runOnServer.fetch(session -> new ApplianceBootstrap(session)
+                .createTemporaryMasterRealmAdminService(Config.getAdminClientId(), Config.getAdminClientSecret()), Boolean.class));
+
+        adminClient.tokenManager().refreshToken();
+
+        List<UserRepresentation> users = adminClient.realm("master").users().search(Config.getAdminUsername(), true);
         Assertions.assertEquals(1, users.size());
     }
 
@@ -86,7 +113,7 @@ public class WelcomePageTest {
     public void localAccessWithAdmin() {
         welcomePage.navigateTo();
 
-        assertOnAdminConsole();
+        assertOnAdminConsole(driver);
     }
 
     @Test
@@ -94,7 +121,7 @@ public class WelcomePageTest {
     public void remoteAccessWithAdmin() throws Exception {
         driver.get(getPublicServerUrl().toString());
 
-        assertOnAdminConsole();
+        assertOnAdminConsole(driver);
     }
 
     @Test
@@ -107,10 +134,10 @@ public class WelcomePageTest {
             driver.navigate().to(getFakeLoginRedirect());
         }
 
-        loginPage.fillLogin("admin", "admin");
+        loginPage.fillLogin(Config.getAdminUsername(), Config.getAdminPassword());
         loginPage.submit();
 
-        Assertions.assertEquals(driver.getTitle(), "Keycloak Administration Console");
+        Assertions.assertEquals("Keycloak Administration Console", driver.getTitle());
     }
 
     /**
@@ -120,7 +147,7 @@ public class WelcomePageTest {
      * @return
      * @throws Exception
      */
-    private String getFloatingIpAddress() throws Exception {
+    private static String getFloatingIpAddress() throws Exception {
         Enumeration<NetworkInterface> netInterfaces = NetworkInterface.getNetworkInterfaces();
         for (NetworkInterface ni : Collections.list(netInterfaces)) {
             Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
@@ -133,7 +160,7 @@ public class WelcomePageTest {
         return null;
     }
 
-    private URL getPublicServerUrl() throws Exception {
+    static URL getPublicServerUrl() throws Exception {
         String floatingIp = getFloatingIpAddress();
         if (floatingIp == null) {
             throw new RuntimeException("Could not determine floating IP address.");
@@ -141,7 +168,7 @@ public class WelcomePageTest {
         return new URL("http", floatingIp, 8080, "");
     }
 
-    private void assertOnAdminConsole() {
+    static void assertOnAdminConsole(WebDriver driver) {
         new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> driver.getTitle().equals("Keycloak Administration Console") || driver.getTitle().equals("Sign in to Keycloak"));
     }
 
