@@ -191,9 +191,9 @@ public class ResourcePolicyManager {
                 // compare current with the previous action in the list
                 if (currentAction.getAfter() < previousAction.getAfter()) {
                     throw new BadRequestException(
-                        String.format("Validation Error: The 'after' duration for action #%d (%s) cannot be less than the duration of the preceding action #%d (%s).",
-                            i + 1, formatDuration(currentAction.getAfter()),
-                            i, formatDuration(previousAction.getAfter()))
+                            String.format("Validation Error: The 'after' duration for action #%d (%s) cannot be less than the duration of the preceding action #%d (%s).",
+                                    i + 1, formatDuration(currentAction.getAfter()),
+                                    i, formatDuration(previousAction.getAfter()))
                     );
                 }
             }
@@ -237,19 +237,19 @@ public class ResourcePolicyManager {
         policies.stream()
                 .filter(policy -> !getActions(policy).isEmpty())
                 .forEach(policy -> {
-                            ResourcePolicyProvider provider = getPolicyProvider(policy);
-                            if (!currentlyAssignedPolicies.contains(policy.getId())) {
-                                // if policy is not assigned, check if the provider allows assigning based on the event
-                                if (provider.scheduleOnEvent(event)) {
-                                    policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
-                                }
-                            } else {
-                                if (provider.resetOnEvent(event)) {
-                                    policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
-                                }
-                                // TODO add a removeOnEvent to allow policies to detach from resources on specific events (e.g. unlinking an identity)
-                            }
-                        });
+                    ResourcePolicyProvider provider = getPolicyProvider(policy);
+                    if (!currentlyAssignedPolicies.contains(policy.getId())) {
+                        // if policy is not assigned, check if the provider allows assigning based on the event
+                        if (provider.scheduleOnEvent(event)) {
+                            policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                        }
+                    } else {
+                        if (provider.resetOnEvent(event)) {
+                            policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                        }
+                        // TODO add a removeOnEvent to allow policies to detach from resources on specific events (e.g. unlinking an identity)
+                    }
+                });
     }
 
     public void runScheduledTasks() {
@@ -267,7 +267,7 @@ public class ResourcePolicyManager {
                         if (actions.size() > i + 1) {
                             // schedule the next action using the time offset difference between the actions.
                             ResourceAction nextAction = actions.get(i + 1);
-                            policyStateProvider.scheduleAction(policy, nextAction,nextAction.getAfter() - currentAction.getAfter(), scheduled.resourceId());
+                            policyStateProvider.scheduleAction(policy, nextAction, nextAction.getAfter() - currentAction.getAfter(), scheduled.resourceId());
                         } else {
                             policyStateProvider.remove(policy.getId(), scheduled.resourceId());
                         }
@@ -275,5 +275,35 @@ public class ResourcePolicyManager {
                 }
             }
         }
+    }
+
+    public void removePolicy(String id) {
+        RealmModel realm = getRealm();
+        realm.getComponentsStream(realm.getId(), ResourcePolicyProvider.class.getName())
+                .filter(policy -> policy.getId().equals(id))
+                .forEach(policy -> {
+                    realm.getComponentsStream(policy.getId(), ResourceActionProvider.class.getName()).forEach(realm::removeComponent);
+                    realm.removeComponent(policy);
+                });
+    }
+
+    public ResourcePolicy getPolicy(String id) {
+        return new ResourcePolicy(getPolicyComponent(id));
+    }
+
+    public void updatePolicy(ResourcePolicy policy, MultivaluedHashMap<String, String> config) {
+        ComponentModel component = getPolicyComponent(policy.getId());
+        component.setConfig(config);
+        getRealm().updateComponent(component);
+    }
+
+    private ComponentModel getPolicyComponent(String id) {
+        ComponentModel component = getRealm().getComponent(id);
+
+        if (component == null || !ResourcePolicyProvider.class.getName().equals(component.getProviderType())) {
+            throw new BadRequestException("Not a valid resource policy: " + id);
+        }
+
+        return component;
     }
 }

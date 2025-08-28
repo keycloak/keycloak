@@ -17,19 +17,21 @@
 
 package org.keycloak.tests.admin.model.policy;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import jakarta.ws.rs.BadRequestException;
-import org.junit.jupiter.api.Disabled;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.resource.RealmResourcePolicies;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -40,8 +42,10 @@ import org.keycloak.models.policy.ResourceAction;
 import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
-import org.keycloak.models.policy.UserActionBuilder;
 import org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory;
+import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
+import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -69,104 +73,133 @@ public class ResourcePolicyManagementTest {
     private ManagedUser userAlice;
 
     @Test
-    public void testCreatePolicy() {
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+    public void testCreate() {
+        List<ResourcePolicyRepresentation> expectedPolicies = ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build();
 
-            ResourcePolicy created = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
-            assertNotNull(created.getId());
+        RealmResourcePolicies policies = managedRealm.admin().resources().policies();
 
-            List<ResourcePolicy> policies = manager.getPolicies();
+        try (Response response = policies.create(expectedPolicies)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
 
-            assertEquals(1, policies.size());
+        List<ResourcePolicyRepresentation> actualPolicies = policies.list();
+        assertThat(actualPolicies, Matchers.hasSize(1));
 
-            ResourcePolicy policy = policies.get(0);
-
-            assertNotNull(policy.getId());
-            assertEquals(created.getId(), policy.getId());
-            assertNotNull(realm.getComponent(policy.getId()));
-            assertEquals(UserCreationTimeResourcePolicyProviderFactory.ID, policy.getProviderId());
-        });
+        assertThat(actualPolicies.get(0).getProviderId(), is(UserCreationTimeResourcePolicyProviderFactory.ID));
+        assertThat(actualPolicies.get(0).getActions(), Matchers.hasSize(2));
+        assertThat(actualPolicies.get(0).getActions().get(0).getProviderId(), is(NotifyUserActionProviderFactory.ID));
+        assertThat(actualPolicies.get(0).getActions().get(1).getProviderId(), is(DisableUserActionProviderFactory.ID));
     }
 
     @Test
-    public void testCreateAction() {
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicy policy = manager.addPolicy(new ResourcePolicy(UserCreationTimeResourcePolicyProviderFactory.ID));
+    public void testDelete() {
+        List<ResourcePolicyRepresentation> expectedPolicies = ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build())
+                .build();
 
-            int expectedActionsSize = 5;
+        RealmResourcePolicies policies = managedRealm.admin().resources().policies();
 
-            List<ResourceAction> expectedActions = new ArrayList<>();
-            for (int i = 0; i < expectedActionsSize; i++) {
-                expectedActions.add(UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
-                        .after(Duration.ofDays(i + 1))
-                        .build());
-            }
-            manager.updateActions(policy, expectedActions);
+        try (Response response = policies.create(expectedPolicies)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
 
-            List<ResourceAction> actions = manager.getActions(policy);
+        List<ResourcePolicyRepresentation> actualPolicies = policies.list();
+        assertThat(actualPolicies, Matchers.hasSize(2));
 
-            assertEquals(expectedActionsSize, actions.size());
-
-            ResourceAction action = actions.get(0);
-
-            assertNotNull(action.getId());
-            assertNotNull(realm.getComponent(action.getId()));
-            assertEquals(DisableUserActionProviderFactory.ID, action.getProviderId());
-        });
+        ResourcePolicyRepresentation policy = actualPolicies.get(0);
+        managedRealm.admin().resources().policies().policy(policy.getId()).delete().close();
+        actualPolicies = policies.list();
+        assertThat(actualPolicies, Matchers.hasSize(1));
     }
 
     @Test
-    @Disabled("We need to flush component removals to make this test pass. For that, we need to evaluate a flush as per the TODO in the body of this method")
-    public void testDeleteActionResetsOrphanedState() {
-        //TODO: Evaluate and change org.keycloak.models.jpa.RealmAdapter.removeComponents to flush changes in the persistence context:
-        // if (getEntity().getComponents().removeIf(sameParent)) {
-        //    em.flush();
-        // }
+    public void testUpdate() {
+        List<ResourcePolicyRepresentation> expectedPolicies = ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .name("test-policy")
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build();
 
+        RealmResourcePolicies policies = managedRealm.admin().resources().policies();
+
+        try (Response response = policies.create(expectedPolicies)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        List<ResourcePolicyRepresentation> actualPolicies = policies.list();
+        assertThat(actualPolicies, Matchers.hasSize(1));
+        ResourcePolicyRepresentation policy = actualPolicies.get(0);
+        assertThat(policy.getName(), is("test-policy"));
+
+        policy.setName("changed");
+        managedRealm.admin().resources().policies().policy(policy.getId()).update(policy).close();
+        actualPolicies = policies.list();
+        policy = actualPolicies.get(0);
+        assertThat(policy.getName(), is("changed"));
     }
 
     @Test
     public void testTimeVsPriorityConflictingActions() {
-        runOnServer.run(session -> {
-            configureSessionContext(session);
-            ResourcePolicyManager manager = new ResourcePolicyManager(session);
-            ResourcePolicy policy = manager.addPolicy(UserCreationTimeResourcePolicyProviderFactory.ID);
+        List<ResourcePolicyRepresentation> expectedPolicies = ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build();
 
-            ResourceAction action1 = UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
-                    .after(Duration.ofDays(10))
-                    .build();
+        RealmResourcePolicies policies = managedRealm.admin().resources().policies();
 
-            ResourceAction action2 = UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
-                    .after(Duration.ofDays(5))
-                    .build();
-
-            try {
-                manager.updateActions(policy, List.of(action1, action2));
-                fail("Expected exception was not thrown");
-            } catch (BadRequestException expected) {}
-        });
+        try (Response response = policies.create(expectedPolicies)) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+        }
     }
 
     @Test
     public void testPolicyDoesNotFallThroughActionsInSingleRun() {
-        // register policy to notify user in 5 days and disable in 10 days
-        runOnServer.run((RunOnServer) session -> {
-            configureSessionContext(session);
-            PolicyBuilder.create()
-                    .of(UserCreationTimeResourcePolicyProviderFactory.ID)
-                    .withActions(
-                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(5))
-                                    .build(),
-                            UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(10))
-                                    .build()
-                    ).build(session);
-        });
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
 
         // create a new user - should bind the user to the policy and setup the first action
         managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
@@ -222,21 +255,17 @@ public class ResourcePolicyManagementTest {
                     .federatedLink("someidp", UUID.randomUUID().toString(), "idp-user-" + i).build());
         }
 
-        // register a policy to notify user in 5 days
-        runOnServer.run((RunOnServer) session -> {
-            configureSessionContext(session);
-            PolicyBuilder.create()
-                    .of(UserCreationTimeResourcePolicyProviderFactory.ID)
-                    .withConfig("broker-aliases", "someidp")
-                    .withActions(
-                            UserActionBuilder.builder(NotifyUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(5))
-                                    .build(),
-                            UserActionBuilder.builder(DisableUserActionProviderFactory.ID)
-                                    .after(Duration.ofDays(10))
-                                    .build()
-                    ).build(session);
-        });
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withConfig("broker-aliases", "someidp")
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build());
 
         // now with the policy in place, let's create a couple more idp users - these will be attached to the policy on
         // creation.

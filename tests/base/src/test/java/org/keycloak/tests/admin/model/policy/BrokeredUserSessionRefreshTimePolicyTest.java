@@ -35,11 +35,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.DeleteUserActionProviderFactory;
 import org.keycloak.models.policy.ResourcePolicyManager;
-import org.keycloak.models.policy.UserActionBuilder;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -112,17 +113,14 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
 
     @Test
     public void tesRunActionOnFederatedUser() {
-        runOnServer.run((session -> {
-                    configureSessionContext(session);
-                    PolicyBuilder.create()
-                            .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
-                            .withConfig("broker-aliases", IDP_OIDC_ALIAS)
-                            .withActions(
-                                    UserActionBuilder.builder(DeleteUserActionProviderFactory.ID)
-                                            .after(Duration.ofDays(1))
-                                            .build()
-                            ).build(session);
-                }));
+        consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .withConfig("broker-aliases", IDP_OIDC_ALIAS)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(1))
+                                .build()
+                ).build()).close();
 
         consumerRealmOAuth.openLoginForm();
         loginPage.clickSocial(IDP_OIDC_ALIAS);
