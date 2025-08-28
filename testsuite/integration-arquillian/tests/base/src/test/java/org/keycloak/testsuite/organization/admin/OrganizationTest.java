@@ -21,6 +21,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -30,6 +32,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -39,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
@@ -464,6 +468,69 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertFalse(existing.getDomains().isEmpty());
         assertEquals(1, existing.getDomains().size());
         assertNotNull(existing.getDomain("acme.com"));
+    }
+
+    @Test
+    public void testWithoutDomains() {
+        // test create organization without any domains
+        OrganizationRepresentation orgWithoutDomains = new OrganizationRepresentation();
+        orgWithoutDomains.setName("no-domain-org");
+        orgWithoutDomains.setAlias("no-domain-org");
+        orgWithoutDomains.setDescription("Organization without domains");
+
+        String orgWithoutDomainsId;
+        try (Response response = testRealm().organizations().create(orgWithoutDomains)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            orgWithoutDomainsId = ApiUtil.getCreatedId(response);
+        }
+
+        OrganizationRepresentation created = testRealm().organizations().get(orgWithoutDomainsId).toRepresentation();
+        assertEquals("no-domain-org", created.getName());
+        assertEquals("no-domain-org", created.getAlias());
+        assertThat(created.getDomains() == null || created.getDomains().isEmpty(), is(true));
+
+        // verify that the organization can be retrieved
+        OrganizationRepresentation orgWithDomains = createRepresentation("org-with-domains", "example.com");
+        String orgWithDomainsId;
+        try (Response response = testRealm().organizations().create(orgWithDomains)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            orgWithDomainsId = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            List<OrganizationRepresentation> allOrgs = testRealm().organizations().list(-1, -1);
+            assertThat(allOrgs.size(), greaterThanOrEqualTo(2));
+            
+            Optional<OrganizationRepresentation> foundOrgWithDomains = allOrgs.stream()
+                    .filter(org -> org.getId().equals(orgWithDomainsId))
+                    .findFirst();
+            Optional<OrganizationRepresentation> foundOrgWithoutDomains = allOrgs.stream()
+                    .filter(org -> org.getId().equals(orgWithoutDomainsId))
+                    .findFirst();
+            
+            assertTrue("Organization with domains should be in the list", foundOrgWithDomains.isPresent());
+            assertTrue("Organization without domains should be in the list", foundOrgWithoutDomains.isPresent());
+            
+            assertThat("Organization with domains should have domains", 
+                    foundOrgWithDomains.get().getDomains(), is(notNullValue()));
+            assertThat("Organization with domains should have at least one domain", 
+                    foundOrgWithDomains.get().getDomains().size(), greaterThan(0));
+            
+            assertThat("Organization without domains should have no domains", 
+                    foundOrgWithoutDomains.get().getDomains() == null || 
+                    foundOrgWithoutDomains.get().getDomains().isEmpty(), is(true));
+
+            List<OrganizationRepresentation> search = testRealm().organizations().search("with-domains", false, -1, -1);
+
+            assertThat(search, hasSize(1));
+
+            search = testRealm().organizations().search("no-domain", false, -1, -1);
+
+            assertThat(search, hasSize(1));
+        } finally {
+            testRealm().organizations().get(orgWithDomainsId).delete().close();
+            testRealm().organizations().get(orgWithoutDomainsId).delete().close();
+        }
     }
 
     @Test

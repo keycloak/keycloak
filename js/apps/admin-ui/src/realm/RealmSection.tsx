@@ -209,7 +209,7 @@ export default function RealmSection() {
           toolbarItem={
             <>
               <ToolbarItem>
-                {whoAmI.canCreateRealm() && (
+                {whoAmI.createRealm && (
                   <Button
                     onClick={() => setOpenNewRealm(true)}
                     data-testid="add-realm"

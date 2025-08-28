@@ -352,10 +352,7 @@ export const RealmSettingsTokensTab = ({
               <HelperText>
                 <HelperTextItem>
                   {t("recommendedSsoTimeout", {
-                    time: toHumanFormat(
-                      ssoSessionIdleTimeout!,
-                      whoAmI.getLocale(),
-                    ),
+                    time: toHumanFormat(ssoSessionIdleTimeout!, whoAmI.locale),
                   })}
                 </HelperTextItem>
               </HelperText>

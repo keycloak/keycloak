@@ -424,7 +424,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user) throws MessagingException, IOException {
-        acceptInvitation(organization, user, "Sign in to");
+        acceptInvitation(organization, user, "Account Management");
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user, String pageTitle) throws MessagingException, IOException {
