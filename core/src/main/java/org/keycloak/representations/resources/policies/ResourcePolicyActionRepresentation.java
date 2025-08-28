@@ -53,10 +53,14 @@ public class ResourcePolicyActionRepresentation {
     }
 
     public void setConfig(String key, String value) {
+        setConfig(key, Collections.singletonList(value));
+    }
+
+    public void setConfig(String key, List<String> values) {
         if (this.config == null) {
             this.config = new HashMap<>();
         }
-        this.config.put(key, Collections.singletonList(value));
+        this.config.put(key, values);
     }
 
     private void setAfter(long ms) {
@@ -79,6 +83,11 @@ public class ResourcePolicyActionRepresentation {
 
         public Builder withConfig(String key, String value) {
             action.setConfig(key, value);
+            return this;
+        }
+
+        public Builder withConfig(String key, List<String> values) {
+            action.setConfig(key, values);
             return this;
         }
 
