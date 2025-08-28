@@ -1,0 +1,8 @@
+= Role members including groups
+
+The Admin REST API endpoints `GET /{realm}/roles/{role-name}/users` and `GET /{realm}/clients/{client-id}/roles/{role-name}/users`
+now support the query parameter `includeGroups`.
+
+When `includeGroups=true`, the response contains not only users directly assigned the role
+but also users that inherit the role from a group or any of its sub-groups. Pagination is applied
+after combining direct and group-derived users to avoid duplicate entries.

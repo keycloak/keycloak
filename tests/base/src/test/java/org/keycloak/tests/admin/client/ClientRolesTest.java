@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
@@ -37,8 +38,10 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
@@ -391,6 +394,50 @@ public class ClientRolesTest {
 
         List<RoleRepresentation> roles = rolesRsc.list();
         roles.forEach(role -> assertNull(role.getAttributes()));
+    }
+
+    @Test
+    public void getUsersInRoleIncludingGroups() {
+        String roleName = "group-role";
+        RoleRepresentation role = RoleConfigBuilder.create().name(roleName).build();
+        rolesRsc.create(role);
+        managedClient.cleanup().add(c -> c.roles().deleteRole(roleName));
+
+        GroupRepresentation parent = GroupConfigBuilder.create().name("parent").build();
+        Response response = managedRealm.admin().groups().add(parent);
+        String parentId = ApiUtil.getCreatedId(response);
+        response.close();
+        managedRealm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        GroupRepresentation child = GroupConfigBuilder.create().name("child").build();
+        response = managedRealm.admin().groups().group(parentId).subGroup(child);
+        String childId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        UserRepresentation user1 = UserConfigBuilder.create().username("user1").build();
+        response = managedRealm.admin().users().create(user1);
+        String user1Id = ApiUtil.getCreatedId(response);
+        response.close();
+        managedRealm.cleanup().add(r -> r.users().get(user1Id).remove());
+
+        UserRepresentation user2 = UserConfigBuilder.create().username("user2").build();
+        response = managedRealm.admin().users().create(user2);
+        String user2Id = ApiUtil.getCreatedId(response);
+        response.close();
+        managedRealm.cleanup().add(r -> r.users().get(user2Id).remove());
+
+        managedRealm.admin().users().get(user1Id).joinGroup(parentId);
+        managedRealm.admin().users().get(user2Id).joinGroup(childId);
+
+        RoleRepresentation roleRep = rolesRsc.get(roleName).toRepresentation();
+        managedRealm.admin().groups().group(parentId).roles().clientLevel(clientDbId).add(Collections.singletonList(roleRep));
+
+        List<UserRepresentation> direct = rolesRsc.get(roleName).getUserMembers();
+        assertThat(direct, hasSize(0));
+
+        List<UserRepresentation> members = rolesRsc.get(roleName).getUserMembers(null, null, null, true);
+        assertThat(members, hasSize(2));
+        Assert.assertNames(members, "user1", "user2");
     }
 
     private static class ClientRolesClientConfig implements ClientConfig {

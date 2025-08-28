@@ -151,6 +151,24 @@ public interface RoleResource {
             @QueryParam("max") Integer maxResults);
 
     /**
+     * Get role members.
+     * <p>Returns users that have the given role, optionally including users that inherit the role from a group.</p>
+     *
+     * @param briefRepresentation If the user should be returned in brief or full representation. Parameter available since Keycloak server 26. Will be ignored on older Keycloak versions with the default value false.
+     * @param firstResult Pagination offset
+     * @param maxResults Pagination size
+     * @param includeGroups If true, users that inherit the role from a group are also returned
+     * @return a list of users with the given role
+     */
+    @GET
+    @Path("users")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> getUserMembers(@QueryParam("briefRepresentation") Boolean briefRepresentation,
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("includeGroups") Boolean includeGroups);
+
+    /**
      * Get role groups.
      * <p>Returns groups that have the given role.</p>
      *
