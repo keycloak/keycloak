@@ -128,6 +128,21 @@ hr {
     }
 }
 
+/* Code display styling */
+#kc-code-input {
+    padding: 12px;
+    font-family: monospace, Consolas;
+    font-size: 14px;
+    background-color: #f8f9fa;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    word-break: break-all;
+    line-height: 1.5;
+    color: #374151;
+    cursor: text;
+    user-select: all;
+}
+
 @media (min-width: 768px) {
     div.pf-v5-c-login__main-header {
         grid-template-columns: 70% 30%;
