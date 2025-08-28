@@ -42,9 +42,9 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
         DeviceRepresentation current;
         try {
             Client client = cache.get(userAgent);
-            if (client == null) {
-                return null;
-            }
+            // To avoid IDEA warning about NullPointerException
+            // It should never be null as the parser never returns a null client.
+            assert client != null;
             current = new DeviceRepresentation();
 
             current.setDevice(client.device.family);

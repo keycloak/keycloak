@@ -47,7 +47,7 @@ public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresenta
                 .property()
                 .name(CACHE_SIZE)
                 .type(ProviderConfigProperty.INTEGER_TYPE)
-                .helpText("Sets the maximum number of cached parsed user-agent value.")
+                .helpText("Sets the maximum number of parsed user-agent values in the local cache.")
                 .defaultValue(DEFAULT_CACHE_SIZE)
                 .add()
                 .build();
