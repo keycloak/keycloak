@@ -48,6 +48,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
@@ -82,6 +83,9 @@ import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.co
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
+
+    public static final String HTTP_MANAGEMENT_HEALTH_ENABLED = "http-management-health-enabled";
+    public static final String HTTP_MANAGEMENT_SCHEME = "http-management-scheme";
 
     public static final String POD_IP = "POD_IP";
 
@@ -326,9 +330,20 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // Set bind address as this is required for JGroups to form a cluster in IPv6 envionments
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
+        boolean tls = isTlsConfigured(keycloakCR);
+        String protocol = tls ? "HTTPS" : "HTTP";
+        int port = -1;
+
+        if (readConfigurationValue(HTTP_MANAGEMENT_HEALTH_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(true)) {
+            port = HttpManagementSpec.managementPort(keycloakCR);
+            if (readConfigurationValue(HTTP_MANAGEMENT_SCHEME, keycloakCR, context).filter("http"::equals).isPresent()) {
+                protocol = "HTTP";
+            }
+        } else {
+            port = tls ? HttpSpec.httpsPort(keycloakCR) : HttpSpec.httpPort(keycloakCR);
+        }
+
         // probes
-        var protocol = isManagementHttps(keycloakCR) ? "HTTPS" : "HTTP";
-        var port = HttpManagementSpec.managementPort(keycloakCR);
         var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
         var livenessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getLivenessProbeSpec());
         var startupOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getStartupProbeSpec());
@@ -389,11 +404,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
             .endPort()
             .endContainer().endSpec().endTemplate().endSpec().build();
-    }
-
-    private boolean isManagementHttps(Keycloak keycloakCR) {
-        return isTlsConfigured(keycloakCR) && keycloakCR.getSpec().getAdditionalOptions().stream()
-                .noneMatch(v -> "http-management-scheme".equals(v.getName()) && "http".equals(v.getValue()));
     }
 
     private void handleScheduling(Keycloak keycloakCR, Map<String, String> labels, PodSpecFluent<?> specBuilder) {

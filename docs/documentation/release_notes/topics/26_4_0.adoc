@@ -14,6 +14,11 @@ For more information, see the link:{adminguide_link}#_update-email-workflow[Upda
 
 There's a new option `http-management-scheme` that may be set to `http` to force the management interface to use HTTP rather than inheriting the HTTPS settings of the main interface.
 
+= Option to expose health endpoints on the main HTTP(S) ports
+
+With `health-enabled` set to true, you may set the `http-management-health-enabled` to `false` to indicate that health endpoints should be exposed on the main HTTP(s) ports instead of the
+management port. When this option is `false` you should block unwanted external traffic to `/health` at your proxy.
+
 = Additional context information for log messages (preview)
 
 You can now add context information to each log message like the realm or the client that initiated the request.
@@ -31,6 +36,7 @@ In order to support basic TLS termination (edge) deployments via the operator, y
 While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring.
 
 For more information, see the https://www.keycloak.org/server/logging[Logging guide].
+
 
 = Supported passkeys
 
