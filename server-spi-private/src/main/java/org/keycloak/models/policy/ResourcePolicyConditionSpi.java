@@ -17,15 +17,31 @@
 
 package org.keycloak.models.policy;
 
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-public interface ResourcePolicyProviderFactory<P extends ResourcePolicyProvider> extends ComponentFactory<P, ResourcePolicyProvider>, EnvironmentDependentProviderFactory {
+public class ResourcePolicyConditionSpi implements Spi {
+
+    public static final String NAME = "rlm-policy-condition";
 
     @Override
-    default boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.RESOURCE_LIFECYCLE);
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ResourcePolicyConditionProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ResourcePolicyConditionProviderFactory.class;
     }
 }
