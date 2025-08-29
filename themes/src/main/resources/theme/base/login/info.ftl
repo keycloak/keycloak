@@ -4,7 +4,7 @@
         <#if messageHeader??>
             ${kcSanitize(msg("${messageHeader}"))?no_esc}
         <#else>
-        ${message.summary}
+            ${message.summary}
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
