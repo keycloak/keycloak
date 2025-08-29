@@ -31,7 +31,9 @@ public class UserCreationTimeResourcePolicyProvider extends AbstractUserResource
     }
 
     @Override
-    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
-        return List.of(CREATE);
+    protected List<ResourceOperationType> getSupportedOperationsForActivation() {
+        return new java.util.ArrayList<>(super.getSupportedOperationsForActivation()) {{
+            add(CREATE);
+        }};
     }
 }

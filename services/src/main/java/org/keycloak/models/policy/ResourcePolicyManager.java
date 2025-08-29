@@ -241,15 +241,17 @@ public class ResourcePolicyManager {
                 .forEach(policy -> {
                     ResourcePolicyProvider provider = getPolicyProvider(policy);
                     if (!currentlyAssignedPolicies.contains(policy.getId())) {
-                        // if policy is not assigned, check if the provider allows assigning based on the event
-                        if (provider.scheduleOnEvent(event)) {
+                        // if policy is not active for the resource, check if the provider allows activating based on the event
+                        if (provider.activateOnEvent(event)) {
+                            // TODO run actions for immediate policies right away and do not schedule them
                             policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
                         }
                     } else {
                         if (provider.resetOnEvent(event)) {
                             policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                        } else if (provider.deactivateOnEvent(event)) {
+                            policyStateProvider.remove(policy.getId(), event.getResourceId());
                         }
-                        // TODO add a removeOnEvent to allow policies to detach from resources on specific events (e.g. unlinking an identity)
                     }
                 });
     }
