@@ -219,12 +219,14 @@ public class ResourcePolicyManager {
     }
 
     public void scheduleAllEligibleResources(ResourcePolicy policy) {
-        ResourcePolicyProvider provider = getPolicyProvider(policy);
-        ResourceAction firstAction = getFirstAction(policy);
-        provider.getEligibleResourcesForInitialAction().forEach(resourceId -> {
-            // TODO run each scheduling task in a separate tx as other txs might schedule an action while this is running.
-            this.policyStateProvider.scheduleAction(policy, firstAction, resourceId);
-        });
+        if (policy.isEnabled()) {
+            ResourcePolicyProvider provider = getPolicyProvider(policy);
+            ResourceAction firstAction = getFirstAction(policy);
+            provider.getEligibleResourcesForInitialAction().forEach(resourceId -> {
+                // TODO run each scheduling task in a separate tx as other txs might schedule an action while this is running.
+                this.policyStateProvider.scheduleAction(policy, firstAction, resourceId);
+            });
+        }
     }
 
     public void processEvent(ResourcePolicyEvent event) {
@@ -235,7 +237,7 @@ public class ResourcePolicyManager {
 
         // iterate through the policies, and for those not yet assigned to the user check if they can be assigned
         policies.stream()
-                .filter(policy -> !getActions(policy).isEmpty())
+                .filter(policy -> policy.isEnabled() && !getActions(policy).isEmpty())
                 .forEach(policy -> {
                     ResourcePolicyProvider provider = getPolicyProvider(policy);
                     if (!currentlyAssignedPolicies.contains(policy.getId())) {
@@ -253,7 +255,7 @@ public class ResourcePolicyManager {
     }
 
     public void runScheduledTasks() {
-        for (ResourcePolicy policy : getPolicies()) {
+        this.getPolicies().stream().filter(ResourcePolicy::isEnabled).forEach(policy -> {
 
             for (ScheduledAction scheduled : policyStateProvider.getDueScheduledActions(policy)) {
                 List<ResourceAction> actions = getActions(policy);
@@ -274,7 +276,7 @@ public class ResourcePolicyManager {
                     }
                 }
             }
-        }
+        });
     }
 
     public void removePolicy(String id) {

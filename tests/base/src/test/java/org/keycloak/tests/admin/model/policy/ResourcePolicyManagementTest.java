@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.model.policy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -341,6 +342,114 @@ public class ResourcePolicyManagementTest {
                     assertTrue(user.getUsername().startsWith("new-idp-user-"));
                 });
 
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+    }
+
+    @Test
+    public void testDisableResourcePolicy() {
+        // create a test policy
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .name("test-policy")
+                .withConfig("enabled", "true")
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
+
+        RealmResourcePolicies policies = managedRealm.admin().resources().policies();
+        List<ResourcePolicyRepresentation> actualPolicies = policies.list();
+        assertThat(actualPolicies, Matchers.hasSize(1));
+        ResourcePolicyRepresentation policy = actualPolicies.get(0);
+        assertThat(policy.getName(), is("test-policy"));
+
+        // create a new user - should bind the user to the policy and setup the first action
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
+
+        runOnServer.run((RunOnServer) session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                // Advance time so the user is eligible for the first action, then run the scheduled actions so they transition to the next one.
+                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
+                manager.runScheduledTasks();
+
+                UserModel user = session.users().getUserByUsername(realm, "testuser");
+                // Verify that ONLY the first action (notify) was executed.
+                assertNotNull(user.getAttributes().get("message"), "The first action (notify) should have run.");
+                assertTrue(user.isEnabled(), "The second action (disable) should NOT have run.");
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // disable the policy - scheduled actions should be paused and policy should not activate for new users
+        policy.getConfig().putSingle("enabled", "false");
+        managedRealm.admin().resources().policies().policy(policy.getId()).update(policy).close();
+
+        // create another user - should NOT bind the user to the policy as it is disabled
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("anotheruser").build());
+
+        runOnServer.run((RunOnServer) session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            List<ResourcePolicy> registeredPolicies = manager.getPolicies();
+            assertEquals(1, registeredPolicies.size());
+            ResourcePolicyStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(ResourcePolicyStateProvider.class).create(session);
+            List<ResourcePolicyStateProvider.ScheduledAction> scheduledActions = stateProvider.getScheduledActionsByPolicy(registeredPolicies.get(0));
+
+            // verify that there's only one scheduled action, for the first user
+            assertEquals(1, scheduledActions.size());
+            UserModel scheduledActionUser = session.users().getUserById(realm, scheduledActions.get(0).resourceId());
+            assertNotNull(scheduledActionUser);
+            assertTrue(scheduledActionUser.getUsername().startsWith("testuser"));
+
+            try {
+                // Advance time so the first user would be eligible for the second action, then run the scheduled actions.
+                Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
+                manager.runScheduledTasks();
+
+                UserModel user = session.users().getUserByUsername(realm, "testuser");
+                // Verify that the action was NOT executed as the policy is disabled.
+                assertTrue(user.isEnabled(), "The second action (disable) should NOT have run as the policy is disabled.");
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // re-enable the policy - scheduled actions should resume and new users should be bound to the policy
+        policy.getConfig().putSingle("enabled", "true");
+        managedRealm.admin().resources().policies().policy(policy.getId()).update(policy).close();
+
+        // create a third user - should bind the user to the policy as it is enabled again
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("thirduser").build());
+
+        runOnServer.run((RunOnServer) session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                // Advance time so the first user would be eligible for the second action, and third user would be eligible for the first action, then run the scheduled actions.
+                Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
+                manager.runScheduledTasks();
+
+                UserModel user = session.users().getUserByUsername(realm, "testuser");
+                // Verify that the action was executed as the policy was re-enabled.
+                assertFalse(user.isEnabled(), "The second action (disable) should have run as the policy was re-enabled.");
+
+                // Verify that the third user was bound to the policy and had the first action executed.
+                user = session.users().getUserByUsername(realm, "thirduser");
+                assertNotNull(user.getAttributes().get("message"), "The first action (notify) should have run.");
+                assertTrue(user.isEnabled(), "The second action (disable) should NOT have run");
             } finally {
                 Time.setOffset(0);
             }
