@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
@@ -79,6 +80,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.utils.AmrUtils;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
@@ -108,8 +110,8 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1675,11 +1677,37 @@ public class AuthenticationManager {
         RealmModel realm = session.getContext().getRealm();
         if (realm.isBruteForceProtected()) {
             UserModel user = lookupUserForBruteForceLog(session, realm, authSession);
-            if (user != null) {
+            if (user != null && reportSuccessfulLoginInBruteForceProtector(authSession)) {
                 BruteForceProtector bruteForceProtector = session.getProvider(BruteForceProtector.class);
                 bruteForceProtector.successfulLogin(realm, user, session.getContext().getConnection(), session.getContext().getHttpRequest().getUri());
             }
         }
+    }
+
+    /**
+     * Check whether to report successful login in brute force protector.
+     *
+     * If authentication session contains configures amr return false, otherwise true.
+     * amr is configured based on Authentication Methods References (RFC 8176).
+     *
+     * @param authSession authentication session to consider in this check
+     * @return true or false depending on configuration of authenticators taking part in authentication executions in this session
+     */
+    private static boolean reportSuccessfulLoginInBruteForceProtector(AuthenticationSessionModel authSession) {
+
+        Map<String, Integer> executions = AuthenticatorUtils.parseCompletedExecutions(authSession.getUserSessionNotes().get(Constants.AUTHENTICATORS_COMPLETED));
+        logger.debugf("Bruteforce Protection found the following completed authentication executions: %s", executions.toString());
+        List<String> refs = AmrUtils.getAuthenticationExecutionReferences(executions, authSession.getRealm());
+        logger.debugf("Bruteforce Protection evaluated following amr %s", refs);
+
+        // TODO: use proper configuration parameter
+        List<String> excludeAmrsFromBruteForceSuccessfulLogin = Arrays.asList("hwk", "face");
+
+        for (String amr: excludeAmrsFromBruteForceSuccessfulLogin) {
+            if (refs.contains(amr))
+                return false;
+        }
+        return true;
     }
 
     public static UserModel lookupUserForBruteForceLog(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authenticationSession) {
