@@ -113,15 +113,18 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 exceptions.forEach(ex::addSuppressed);
                 throw ex;
             }
-            changes.clear();
+            clear();
         }
     }
 
     public void applyChangesSynchronously(KeycloakSession session) {
         if (!changes.isEmpty()) {
             changes.forEach(persistentUpdate -> persistentUpdate.perform(session));
-            changes.clear();
         }
+    }
+
+    public void clear() {
+        changes.clear();
     }
 
     private void processClientSessionUpdate(KeycloakSession innerSession, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
@@ -348,7 +351,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     @Override
                     public void setNotes(Map<String, String> notes) {
                         clientSessionModel.getNotes().keySet().forEach(clientSessionModel::removeNote);
-                        notes.forEach((k, v) -> clientSessionModel.setNote(k, v));
+                        notes.forEach(clientSessionModel::setNote);
                     }
 
                     @Override
@@ -647,7 +650,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                     @Override
                     public void setNotes(Map<String, String> notes) {
                         userSessionModel.getNotes().keySet().forEach(userSessionModel::removeNote);
-                        notes.forEach((k, v) -> userSessionModel.setNote(k, v));
+                        notes.forEach(userSessionModel::setNote);
                     }
 
                     @Override

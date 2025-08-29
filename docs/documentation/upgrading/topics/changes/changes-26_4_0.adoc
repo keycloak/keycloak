@@ -64,6 +64,11 @@ When using the `+/realms/{realm-name}/broker/{provider_alias}/token+` endpoint f
 
 When using GitHub as an IDP, you can now enable JSON responses to leverage the token refresh for this endpoint.
 
+=== Persistent User Session Batching Disabled
+
+The batching of persistent user session updates has been turned off by default because it negatively impacts performance with some database vendors, which offset the benefits with other database vendors.
+It can be enabled using the CLI option `--spi-user-sessions--infinispan--use-batches=true`, but users are encouraged to load test their environment to verify performance improvements.
+
 == Required field in User Session note mapper
 
 The name of the session note is now shown as a required field in the Admin UI.

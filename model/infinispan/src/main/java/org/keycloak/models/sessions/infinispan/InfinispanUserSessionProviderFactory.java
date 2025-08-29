@@ -35,7 +35,6 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
@@ -59,9 +58,12 @@ import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory<UserSessionProvider>, ServerInfoAwareProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -77,20 +79,18 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String CONFIG_USE_CACHES = "useCaches";
     private static final boolean DEFAULT_USE_CACHES = true;
     public static final String CONFIG_USE_BATCHES = "useBatches";
-    private static final boolean DEFAULT_USE_BATCHES = true;
+    private static final boolean DEFAULT_USE_BATCHES = false;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
     private long offlineClientSessionCacheEntryLifespanOverride;
 
-    private Config.Scope config;
-
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private InfinispanKeyGenerator keyGenerator;
-    SerializeExecutionsByKey<String> serializerSession = new SerializeExecutionsByKey<>();
-    SerializeExecutionsByKey<String> serializerOfflineSession = new SerializeExecutionsByKey<>();
-    SerializeExecutionsByKey<UUID> serializerClientSession = new SerializeExecutionsByKey<>();
-    SerializeExecutionsByKey<UUID> serializerOfflineClientSession = new SerializeExecutionsByKey<>();
+    final SerializeExecutionsByKey<String> serializerSession = new SerializeExecutionsByKey<>();
+    final SerializeExecutionsByKey<String> serializerOfflineSession = new SerializeExecutionsByKey<>();
+    final SerializeExecutionsByKey<UUID> serializerClientSession = new SerializeExecutionsByKey<>();
+    final SerializeExecutionsByKey<UUID> serializerOfflineClientSession = new SerializeExecutionsByKey<>();
     ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate;
     private PersistentSessionsWorker persistentSessionsWorker;
     private int maxBatchSize;
@@ -106,10 +106,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         if (useCaches) {
             InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-            cache = connections.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-            offlineSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
-            clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
-            offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
+            cache = connections.getCache(USER_SESSION_CACHE_NAME);
+            offlineSessionsCache = connections.getCache(OFFLINE_USER_SESSION_CACHE_NAME);
+            clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME);
+            offlineClientSessionsCache = connections.getCache(OFFLINE_CLIENT_SESSION_CACHE_NAME);
         }
 
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
@@ -146,7 +146,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public void init(Config.Scope config) {
-        this.config = config;
         offlineSessionCacheEntryLifespanOverride = config.getInt(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, -1);
         if (offlineSessionCacheEntryLifespanOverride != -1) {
             // to be removed in KC 27
@@ -168,11 +167,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public void postInit(final KeycloakSessionFactory factory) {
-        factory.register(new ProviderEventListener() {
-
-            @Override
-            public void onEvent(ProviderEvent event) {
-                if (event instanceof PostMigrationEvent) {
+        factory.register(event -> {
+            if (event instanceof PostMigrationEvent) {
                 if (!useCaches) {
                     keyGenerator = new InfinispanKeyGenerator() {
                         @Override
@@ -191,22 +187,20 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                     });
                 }
 
-                } else if (event instanceof UserModel.UserRemovedEvent) {
-                    UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
+            } else if (event instanceof UserModel.UserRemovedEvent userRemovedEvent) {
 
-                    UserSessionProvider provider1 = userRemovedEvent.getKeycloakSession().getProvider(UserSessionProvider.class, getId());
-                    if (provider1 instanceof InfinispanUserSessionProvider) {
-                        ((InfinispanUserSessionProvider) provider1).onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
-                    } else if (provider1 instanceof PersistentUserSessionProvider) {
-                        ((PersistentUserSessionProvider) provider1).onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
-                    } else {
-                        throw new IllegalStateException("Unknown provider type: " + provider1.getClass());
-                    }
+                UserSessionProvider provider1 = userRemovedEvent.getKeycloakSession().getProvider(UserSessionProvider.class, getId());
+                if (provider1 instanceof InfinispanUserSessionProvider) {
+                    ((InfinispanUserSessionProvider) provider1).onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+                } else if (provider1 instanceof PersistentUserSessionProvider) {
+                    ((PersistentUserSessionProvider) provider1).onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+                } else {
+                    throw new IllegalStateException("Unknown provider type: " + provider1.getClass());
+                }
 
-                } else if (event instanceof ResetTimeOffsetEvent) {
-                    if (persisterLastSessionRefreshStore != null) {
-                        persisterLastSessionRefreshStore.reset();
-                    }
+            } else if (event instanceof ResetTimeOffsetEvent) {
+                if (persisterLastSessionRefreshStore != null) {
+                    persisterLastSessionRefreshStore.reset();
                 }
             }
         });
@@ -219,13 +213,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                // Initialize persister for periodically doing bulk DB updates of lastSessionRefresh timestamps of refreshed sessions
-                persisterLastSessionRefreshStore = new PersisterLastSessionRefreshStoreFactory().createAndInit(session, true);
-            }
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+            // Initialize persister for periodically doing bulk DB updates of lastSessionRefresh timestamps of refreshed sessions
+            persisterLastSessionRefreshStore = new PersisterLastSessionRefreshStoreFactory().createAndInit(session, true);
         });
     }
 
