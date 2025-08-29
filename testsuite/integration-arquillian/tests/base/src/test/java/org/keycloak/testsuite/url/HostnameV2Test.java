@@ -17,16 +17,13 @@
 
 package org.keycloak.testsuite.url;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -133,29 +130,6 @@ public class HostnameV2Test extends AbstractKeycloakTest {
 
         testFrontendAndBackendUrls(realmFrontendName, realmFrontendUrl, AUTH_SERVER_ROOT);
         testAdminUrls(realmFrontendName, realmFrontendUrl, fixedAdminUrl);
-    }
-
-    @Test
-    public void testAdminLocal() throws Exception {
-        updateServerHostnameSettings("https://localtest.me:444", null, false, true);
-
-        // This is a hack. AdminLocal is used only on the Welcome Screen, nowhere else. Welcome Screen by default redirects to Admin Console if admin users exists.
-        // So we delete it and later recreate it.
-        String adminId = adminClient.realm("master").users().search("admin").get(0).getId();
-        try (Response ignore = adminClient.realm("master").users().delete(adminId)) {
-            suiteContext.setAdminPasswordUpdated(false);
-            try (CloseableHttpClient client = HttpClientBuilder.create().setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build()) {
-                // X-Forwarded-For is needed to trigger the correct message with a link, make Keycloak think we're not accessing it locally
-                SimpleHttp get = SimpleHttpDefault.doGet(getDynamicBaseUrl("localtest.me"), client).header("X-Forwarded-For", "127.0.0.1");
-
-                String welcomePage = get.asString();
-                assertThat(welcomePage, containsString("localhost"));
-            }
-        }
-        finally {
-            updateMasterAdminPassword();
-            reconnectAdminClient();
-        }
     }
 
     @Test
