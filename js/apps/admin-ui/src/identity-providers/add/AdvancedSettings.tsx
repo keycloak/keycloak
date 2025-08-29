@@ -122,6 +122,9 @@ export const AdvancedSettings = ({
   const claimFilterRequired = filteredByClaim === "true";
   const isFeatureEnabled = useIsFeatureEnabled();
   const isTransientUsersEnabled = isFeatureEnabled(Feature.TransientUsers);
+  const isClientAuthFederatedEnabled = isFeatureEnabled(
+    Feature.ClientAuthFederated,
+  );
   const transientUsers = useWatch({
     control,
     name: "config.doNotStoreUsers",
@@ -311,6 +314,18 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
+      {isClientAuthFederatedEnabled && isOIDC && (
+        <>
+          <SwitchField
+            field="config.supportsClientAssertions"
+            label="supportsClientAssertions"
+          />
+          <SwitchField
+            field="config.supportsClientAssertionReuse"
+            label="supportsClientAssertionReuse"
+          />
+        </>
+      )}
     </>
   );
 };

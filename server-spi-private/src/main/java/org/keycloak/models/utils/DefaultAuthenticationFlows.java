@@ -506,6 +506,15 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        if (Profile.isFeatureEnabled(Feature.CLIENT_AUTH_FEDERATED)) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(clients.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setAuthenticator("federated-jwt");
+            execution.setPriority(50);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
     }
 
     public static void firstBrokerLoginFlow(RealmModel realm, boolean migrate) {

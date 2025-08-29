@@ -133,7 +133,8 @@ public class JWTClientValidator {
         }
 
         if (!clientId.equals(token.getIssuer())) {
-            throw new RuntimeException("Issuer mismatch. The issuer should match the subject");
+            logger.debug("Token not issued by client, ignoring.");
+            return false;
         }
 
         String clientIdParam = params.getFirst(OAuth2Constants.CLIENT_ID);
