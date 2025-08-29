@@ -17,6 +17,7 @@
 
 package org.keycloak.models.policy;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
@@ -32,8 +33,11 @@ public class UserSessionRefreshTimeResourcePolicyProvider extends AbstractUserRe
     }
 
     @Override
-    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
-        return List.of(CREATE, LOGIN);
+    protected List<ResourceOperationType> getSupportedOperationsForActivation() {
+        return new ArrayList<>(super.getSupportedOperationsForActivation()) {{
+            add(CREATE);
+            add(LOGIN);
+        }};
     }
 
     @Override

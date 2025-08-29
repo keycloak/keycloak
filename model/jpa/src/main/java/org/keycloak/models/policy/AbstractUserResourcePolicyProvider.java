@@ -130,9 +130,9 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
     }
 
     @Override
-    public boolean scheduleOnEvent(ResourcePolicyEvent event) {
+    public boolean activateOnEvent(ResourcePolicyEvent event) {
         return this.supports(event.getResourceType())
-                && this.getSupportedOperationsForScheduling().contains(event.getOperation())
+                && this.getSupportedOperationsForActivation().contains(event.getOperation())
                 && this.isResourceInScope(event.getResourceId());
     }
 
@@ -143,17 +143,31 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
                 && this.isResourceInScope(event.getResourceId());
     }
 
+    public boolean deactivateOnEvent(ResourcePolicyEvent event) {
+        return this.supports(event.getResourceType())
+                && this.getSupportedOperationsForDeactivation().contains(event.getOperation())
+                && !this.isResourceInScope(event.getResourceId());
+    }
+
     @Override
     public void close() {
         // no-op
     }
 
-    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
-        return List.of();
+    protected List<ResourceOperationType> getSupportedOperationsForActivation() {
+        return this.getBrokerAliases().isEmpty()
+                    ? Collections.emptyList()
+                    : List.of(ResourceOperationType.ADD_FEDERATED_IDENTITY);
     }
 
     protected List<ResourceOperationType> getSupportedOperationsForResetting() {
-        return List.of();
+        return Collections.emptyList();
+    }
+
+    protected List<ResourceOperationType> getSupportedOperationsForDeactivation() {
+        return this.getBrokerAliases().isEmpty()
+                    ? Collections.emptyList()
+                    : List.of(ResourceOperationType.REMOVE_FEDERATED_IDENTITY);
     }
 
     protected EntityManager getEntityManager() {
