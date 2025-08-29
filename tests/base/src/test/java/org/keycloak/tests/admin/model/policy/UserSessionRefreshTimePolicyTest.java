@@ -112,7 +112,7 @@ public class UserSessionRefreshTimePolicyTest {
             assertNull(user.getAttributes().get("message"));
 
             // running the scheduled tasks now shouldn't pick up any action as none are due to run yet
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
@@ -120,7 +120,7 @@ public class UserSessionRefreshTimePolicyTest {
             try {
                 // set offset to 6 days - notify action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(5).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
                 assertNotNull(user.getAttributes().get("message"));
@@ -138,7 +138,7 @@ public class UserSessionRefreshTimePolicyTest {
                 RealmModel realm = configureSessionContext(session);
                 Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
                 ResourcePolicyManager manager = new ResourcePolicyManager(session);
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
             } finally {
@@ -150,7 +150,7 @@ public class UserSessionRefreshTimePolicyTest {
                 RealmModel realm = configureSessionContext(session);
                 Time.setOffset(Math.toIntExact(Duration.ofDays(17).toSeconds()));
                 ResourcePolicyManager manager = new ResourcePolicyManager(session);
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, username);
                 // second action should have run and the user should be disabled now
                 assertFalse(user.isEnabled());
@@ -196,7 +196,7 @@ public class UserSessionRefreshTimePolicyTest {
 
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = users.getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
                 assertNotNull(user.getFirstAttribute("notifier1"));
@@ -208,7 +208,7 @@ public class UserSessionRefreshTimePolicyTest {
 
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = users.getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
                 assertNotNull(user.getFirstAttribute("notifier2"));
@@ -219,7 +219,7 @@ public class UserSessionRefreshTimePolicyTest {
             }
 
             try {
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 assertNull(user.getFirstAttribute("notifier1"));
                 assertNull(user.getFirstAttribute("notifier2"));
             } finally {
