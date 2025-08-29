@@ -22,6 +22,7 @@ import org.keycloak.rar.AuthorizationRequestContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,6 +55,8 @@ public class AuthorizationEndpointRequest {
     String dpopJkt;
 
     String acr;
+
+    Set<String> resources;
 
     AuthorizationRequestContext authorizationRequestContext;
 
@@ -161,5 +164,13 @@ public class AuthorizationEndpointRequest {
 
     public void setAuthorizationRequestContext(AuthorizationRequestContext authorizationRequestContext) {
         this.authorizationRequestContext = authorizationRequestContext;
+    }
+
+    public Set<String> getResources() {
+        return resources;
+    }
+
+    public void setResources(Set<String> resources) {
+        this.resources = resources;
     }
 }
