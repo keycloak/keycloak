@@ -102,4 +102,12 @@ class BuildCommandDistTest {
         cliResult.assertError(String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver));
         cliResult.assertNoBuild();
     }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @WithEnvVars({"KC_LOG_LEVEL", "${KEYCLOAK_LOG_LEVEL:INFO},org.keycloak.events:DEBUG"})
+    @Launch({"build", "--db=dev-file"})
+    void logLevelExpressionWithDefault(CLIResult cliResult) {
+        cliResult.assertBuild();
+    }
 }
