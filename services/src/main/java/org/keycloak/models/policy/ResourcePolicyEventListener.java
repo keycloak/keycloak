@@ -14,8 +14,11 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 
-public class ResourcePolicyEventListener implements EventListenerProvider {
+public class ResourcePolicyEventListener implements EventListenerProvider, ProviderEventListener {
 
     private final KeycloakSession session;
 
@@ -33,6 +36,17 @@ public class ResourcePolicyEventListener implements EventListenerProvider {
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
         ResourcePolicyEvent policyEvent = ResourceType.USERS.toEvent(event);
         trySchedule(policyEvent);
+    }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        RealmModel realm = session.getContext().getRealm();
+
+        if (realm == null) {
+            return;
+        }
+
+        trySchedule(ResourceType.USERS.toEvent(event));
     }
 
     private void trySchedule(ResourcePolicyEvent event) {

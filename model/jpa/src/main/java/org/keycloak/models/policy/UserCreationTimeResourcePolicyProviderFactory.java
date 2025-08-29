@@ -30,11 +30,6 @@ public class UserCreationTimeResourcePolicyProviderFactory implements ResourcePo
     public static final String ID = "user-creation-time-resource-policy";
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
-    }
-
-    @Override
     public UserCreationTimeResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
         return new UserCreationTimeResourcePolicyProvider(session, model);
     }

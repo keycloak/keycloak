@@ -30,11 +30,6 @@ public class UserSessionRefreshTimeResourcePolicyProviderFactory implements Reso
     public static final String ID = "user-refresh-time-resource-policy";
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
-    }
-
-    @Override
     public UserSessionRefreshTimeResourcePolicyProvider create(KeycloakSession session, ComponentModel model) {
         return new UserSessionRefreshTimeResourcePolicyProvider(session, model);
     }
