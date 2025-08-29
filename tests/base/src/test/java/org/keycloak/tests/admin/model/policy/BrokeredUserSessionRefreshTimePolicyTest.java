@@ -136,14 +136,14 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
             RealmModel realm = configureSessionContext(session);
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user);
             assertTrue(user.isEnabled());
 
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, username);
                 assertNull(user);
             } finally {
@@ -163,7 +163,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
             // run the scheduled tasks - bob should not be affected.
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             UserModel user = session.users().getUserByUsername(realm, "bob");
             assertNotNull(user);
             assertTrue(user.isEnabled());
@@ -171,7 +171,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
             try {
                 // run with a time offset - bob should still not be affected.
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, "bob");
                 assertNotNull(user);
             } finally {
@@ -218,7 +218,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
             try {
                 // run with a time offset - alice should not be deleted as she is no longer associated with the IDP and thus the policy
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, "alice");
                 assertNotNull(user, "User alice should not be deleted as she is no longer associated with the IDP and thus the policy.");
             } finally {
@@ -240,7 +240,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
             try {
                 // run with a time offset - bob should be deleted as he is now associated with the IDP and thus with the policy
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, "bob");
                 assertNull(user);
             } finally {
