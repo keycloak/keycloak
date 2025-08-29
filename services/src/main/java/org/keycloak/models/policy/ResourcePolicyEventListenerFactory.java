@@ -23,7 +23,9 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderEvent;
 
 public class ResourcePolicyEventListenerFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -44,7 +46,25 @@ public class ResourcePolicyEventListenerFactory implements EventListenerProvider
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        factory.register(event -> {
+            KeycloakSession session = event.getKeycloakSession();
 
+            if (session != null) {
+                // try first running within the session/transaction the event was fired
+                onEvent(event, session);
+                return;
+            }
+
+            // fallback to running in a new session/transaction
+            KeycloakModelUtils.runJobInTransaction(factory, s -> {
+                onEvent(event, s);
+            });
+        });
+    }
+
+    private void onEvent(ProviderEvent event, KeycloakSession session) {
+        ResourcePolicyEventListener provider = (ResourcePolicyEventListener) session.getProvider(EventListenerProvider.class, getId());
+        provider.onEvent(event);
     }
 
     @Override
