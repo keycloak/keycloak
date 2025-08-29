@@ -459,7 +459,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         em.persist(entity);
         em.flush();
         em.detach(entity);
-        GroupMemberJoinEvent.fire(group, session);
+        GroupMemberJoinEvent.fire(group, this, session);
     }
 
     @Override

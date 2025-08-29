@@ -21,6 +21,7 @@ public class ResourcePolicyRepresentation {
     private String providerId;
     private MultivaluedHashMap<String, String> config;
     private List<ResourcePolicyActionRepresentation> actions;
+    private List<ResourcePolicyConditionRepresentation> conditions;
 
     public ResourcePolicyRepresentation() {
         // reflection
@@ -67,6 +68,14 @@ public class ResourcePolicyRepresentation {
         this.config.putSingle("name", name);
     }
 
+    public void setConditions(List<ResourcePolicyConditionRepresentation> conditions) {
+        this.conditions = conditions;
+    }
+
+    public List<ResourcePolicyConditionRepresentation> getConditions() {
+        return conditions;
+    }
+
     public void setActions(List<ResourcePolicyActionRepresentation> actions) {
         this.actions = actions;
     }
@@ -89,6 +98,7 @@ public class ResourcePolicyRepresentation {
     public static class Builder {
         private String providerId;
         private Map<String, List<String>> config = new HashMap<>();
+        private List<ResourcePolicyConditionRepresentation> conditions = new ArrayList<>();
         private final Map<String, List<ResourcePolicyActionRepresentation>> actions = new HashMap<>();
         private List<Builder> builders = new ArrayList<>();
 
@@ -104,6 +114,22 @@ public class ResourcePolicyRepresentation {
             Builder builder = new Builder(providerId, builders);
             builders.add(builder);
             return builder;
+        }
+
+        public Builder onEvent(String operation) {
+            List<String> events = config.computeIfAbsent("events", k -> new ArrayList<>());
+
+            events.add(operation);
+
+            return this;
+        }
+
+        public Builder onCoditions(ResourcePolicyConditionRepresentation... condition) {
+            if (conditions == null) {
+                conditions = new ArrayList<>();
+            }
+            conditions.addAll(Arrays.asList(condition));
+            return this;
         }
 
         public Builder withActions(ResourcePolicyActionRepresentation... actions) {
@@ -133,6 +159,7 @@ public class ResourcePolicyRepresentation {
                     ResourcePolicyRepresentation policy = new ResourcePolicyRepresentation(entry.getKey(), builder.config);
 
                     policy.setActions(entry.getValue());
+                    policy.setConditions(builder.conditions);
 
                     policies.add(policy);
                 }

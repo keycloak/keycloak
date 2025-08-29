@@ -2,6 +2,8 @@ package org.keycloak.realm.resources.policies.admin.resource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -18,6 +20,7 @@ import org.keycloak.models.policy.ResourceAction;
 import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyConditionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 
 class RealmResourcePoliciesResource {
@@ -65,7 +68,18 @@ class RealmResourcePoliciesResource {
 
     private ResourcePolicy createPolicy(ResourcePolicyRepresentation rep) {
         ResourcePolicyManager manager = new ResourcePolicyManager(session);
-        ResourcePolicy policy = manager.addPolicy(rep.getProviderId(), rep.getConfig());
+        MultivaluedHashMap<String, String> config = Optional.ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
+
+        for (ResourcePolicyConditionRepresentation condition : rep.getConditions()) {
+            String conditionProviderId = condition.getProviderId();
+            config.computeIfAbsent("conditions", key -> new ArrayList<>()).add(conditionProviderId);
+
+            for (Entry<String, List<String>> configEntry : condition.getConfig().entrySet()) {
+                config.put(conditionProviderId + "." + configEntry.getKey(), configEntry.getValue());
+            }
+        }
+
+        ResourcePolicy policy = manager.addPolicy(rep.getProviderId(), config);
         List<ResourceAction> actions = new ArrayList<>();
 
         for (ResourcePolicyActionRepresentation actionRep : rep.getActions()) {

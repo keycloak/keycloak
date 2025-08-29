@@ -17,10 +17,13 @@
 
 package org.keycloak.models.policy;
 
+import static org.keycloak.models.policy.ResourceOperationType.toOperationType;
+
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.provider.ProviderEvent;
 
 import java.util.List;
 import java.util.Objects;
@@ -66,19 +69,19 @@ public enum ResourceType {
         return null;
     }
 
-    private ResourceOperationType toOperationType(OperationType operation) {
-        return switch (operation) {
-            case CREATE -> ResourceOperationType.CREATE;
-            default -> null;
-        };
-    }
+    public ResourcePolicyEvent toEvent(ProviderEvent event) {
+        ResourceOperationType resourceOperationType = toOperationType(event.getClass());
 
-    private ResourceOperationType toOperationType(EventType type) {
-        return switch (type) {
-            case REGISTER -> ResourceOperationType.CREATE;
-            case LOGIN -> ResourceOperationType.LOGIN;
-            default -> null;
-        };
-    }
+        if (resourceOperationType == null) {
+            return null;
+        }
 
+        String resourceId = resourceOperationType.getResourceId(event);
+
+        if (resourceId == null) {
+            return null;
+        }
+
+        return new ResourcePolicyEvent(this, resourceOperationType, resourceId);
+    }
 }
