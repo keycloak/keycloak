@@ -102,6 +102,9 @@ public class EntityManagers {
         // create a localized entitymanager with a shared transaction coordinator, so nothing is left behind
         if (nestedEntityManagers) {
             getEntityManagerProxies(session).forEach(p -> {
+                if (!p.getEntityManager().isOpen()) {
+                    return;
+                }
                 Session em = p.getEntityManager().unwrap(Session.class);
                 Session derived = em.sessionWithOptions().connection().openSession();
                 previous.put(p, em);

@@ -89,10 +89,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         logger.trace("Create JpaConnectionProvider");
         lazyInit(session);
 
-        return new DefaultJpaConnectionProvider(createEntityManager(session));
+        return new DefaultJpaConnectionProvider(createEntityManager(session, true));
     }
 
-    private EntityManager createEntityManager(KeycloakSession session) {
+    private EntityManager createEntityManager(KeycloakSession session, boolean sessionManaged) {
         EntityManager em;
         if (!jtaEnabled) {
             logger.trace("enlisting EntityManager in JpaKeycloakTransaction");
@@ -101,7 +101,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
-        em = EntityManagerProxy.create(session, em);
+        em = EntityManagerProxy.create(session, em, sessionManaged);
         if (!jtaEnabled) {
             session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         }
@@ -111,7 +111,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
         EntityManager em = null;
         try {
-            em = createEntityManager(session);
+            em = createEntityManager(session, false);
             String dbKind = getDatabaseType(connection.getMetaData().getDatabaseProductName());
             for (Map.Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
                 String queryName = query.getKey().toString();

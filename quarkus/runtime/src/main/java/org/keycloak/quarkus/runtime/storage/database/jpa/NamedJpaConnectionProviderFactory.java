@@ -28,11 +28,6 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
     private String unitName;
 
     @Override
-    public JpaConnectionProvider create(KeycloakSession session) {
-        return new DefaultJpaConnectionProvider(createEntityManager(entityManagerFactory, session));
-    }
-
-    @Override
     protected EntityManagerFactory getEntityManagerFactory() {
         return getEntityManagerFactory(unitName).orElseThrow(new Supplier<IllegalStateException>() {
             @Override
