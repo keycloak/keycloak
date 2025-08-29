@@ -40,6 +40,7 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -856,8 +857,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 assertEquals(400, response.getStatus());
                 String errorJson = response.readEntity(String.class);
                 assertNotNull("Error response should not be null", errorJson);
-                assertTrue("Error response should mention UNSUPPORTED_CREDENTIAL_TYPE or scope",
-                        errorJson.contains("UNSUPPORTED_CREDENTIAL_TYPE") || errorJson.contains("scope"));
+                assertTrue("Error response should mention UNKNOWN_CREDENTIAL_CONFIGURATION or scope",
+                        errorJson.contains("UNKNOWN_CREDENTIAL_CONFIGURATION") || errorJson.contains("scope"));
             }
         };
 
@@ -1048,5 +1049,86 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             credentialConfigurationId,
                             jwtVcConfig.getDisplay().get(0).getName());
                 }));
+    }
+
+
+    /**
+     * Test that unknown_credential_identifier error is returned when credential_identifier is not recognized
+     */
+    @Test
+    public void testRequestCredentialWithUnknownCredentialIdentifier() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialIdentifier("unknown-credential-identifier");
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to unknown credential identifier");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER, error.getError());
+            }
+        });
+    }
+
+    /**
+     * Test that unknown_credential_configuration error is returned when the requested credential_configuration_id does not exist
+     */
+    @Test
+    public void testRequestCredentialWithUnknownCredentialConfigurationId() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            // Create a credential request with a non-existent configuration ID
+            // This will test the unknown_credential_configuration error
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialConfigurationId("unknown-configuration-id");
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to unknown credential configuration");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+            }
+        });
+    }
+
+    /**
+     * Test that unknown_credential_configuration error is returned when a credential configuration exists
+     * but there is no credential builder registered for its format.
+     */
+    @Test
+    public void testRequestCredentialWhenNoCredentialBuilderForFormat() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            // Prepare endpoint with no credential builders to simulate missing builder for the configured format
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
+
+            // Use the known configuration id for the JWT VC test scope
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialConfigurationId(jwtTypeCredentialConfigurationIdName);
+
+            try {
+                issuerEndpoint.requestCredential(credentialRequest);
+                Assert.fail("Expected BadRequestException due to missing credential builder for format");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+            }
+        });
     }
 }
