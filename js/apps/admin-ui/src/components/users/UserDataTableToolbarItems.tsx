@@ -96,7 +96,7 @@ export function UserDataTableToolbarItems({
 
   const defaultSearchInput = () => {
     return (
-      <ToolbarItem>
+      <ToolbarItem style={{ width: "15vw", maxWidth: "300px" }}>
         <SearchInput
           data-testid="table-search-input"
           placeholder={t("searchForUser")}

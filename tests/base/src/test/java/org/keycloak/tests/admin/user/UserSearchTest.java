@@ -506,6 +506,21 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    public void searchByIdWithoutPrefix() {
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
+        List<UserRepresentation> users = managedRealm.admin().users().search(expectedUserId, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+
+        users = managedRealm.admin().users().search("   " + expectedUserId + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+    }
+
+    @Test
     public void infixSearch() {
         List<String> userIds = createUsers();
 
