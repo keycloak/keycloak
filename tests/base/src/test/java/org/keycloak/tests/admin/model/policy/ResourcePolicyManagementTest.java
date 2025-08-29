@@ -224,7 +224,7 @@ public class ResourcePolicyManagementTest {
             try {
                 // Simulate the user being 12 days old, making them eligible for both actions' time conditions.
                 Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
 
                 user = session.users().getUserById(realm, user.getId());
                 // Verify that ONLY the first action (notify) was executed.
@@ -265,7 +265,7 @@ public class ResourcePolicyManagementTest {
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(10))
                                 .build()
-                ).build());
+                ).build()).close();
 
         // now with the policy in place, let's create a couple more idp users - these will be attached to the policy on
         // creation.
@@ -303,7 +303,7 @@ public class ResourcePolicyManagementTest {
             try {
                 // let's run the schedule actions for the new users so they transition to the next one.
                 Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                policyManager.runScheduledTasks();
+                policyManager.runScheduledActions();
 
                 // check the same users are now scheduled to run the second action.
                 ResourceAction disableAction = policyManager.getActions(policy).get(1);
@@ -341,6 +341,51 @@ public class ResourcePolicyManagementTest {
                     assertTrue(user.getUsername().startsWith("new-idp-user-"));
                 });
 
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+    }
+
+    @Test
+    public void testRecurringPolicy() {
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withConfig("recurring", "true")
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build()).close();
+
+        // create a new user - should bind the user to the policy and setup the only action in the policy
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
+
+        runOnServer.run((RunOnServer) session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
+                manager.runScheduledActions();
+
+                UserModel user = session.users().getUserByUsername(realm,"testuser");
+                // Verify that the action (notify) was executed.
+                assertNotNull(user.getAttributes().get("message"), "The action (notify) should have run.");
+                user.removeAttribute("message");
+                ResourcePolicy policy = manager.getPolicies().get(0);
+                ResourceAction action = manager.getActions(policy).get(0);
+
+                // Verify that the action was scheduled again for the user
+                ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
+                ResourcePolicyStateProvider.ScheduledAction scheduledAction = stateProvider.getScheduledAction(policy.getId(), user.getId());
+                assertNotNull(scheduledAction, "An action should have been scheduled for the user " + user.getUsername());
+                assertEquals(action.getId(), scheduledAction.actionId(), "The action should have been scheduled again");
+
+                Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
+                manager.runScheduledActions();
+                user = session.users().getUserByUsername(realm,"testuser");
+                assertNotNull(user.getAttributes().get("message"), "The action (notify) should have run again.");
             } finally {
                 Time.setOffset(0);
             }

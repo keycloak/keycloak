@@ -80,7 +80,7 @@ public class UserCreationTimePolicyTest {
             assertNull(user.getAttributes().get("message"));
 
             // running the scheduled tasks now shouldn't pick up any action as none are due to run yet
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             user = session.users().getUserByUsername(realm, "alice");
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
@@ -88,7 +88,7 @@ public class UserCreationTimePolicyTest {
             try {
                 // set offset to 7 days - notify action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, "alice");
                 assertTrue(user.isEnabled());
                 assertNotNull(user.getAttributes().get("message"));
@@ -111,7 +111,7 @@ public class UserCreationTimePolicyTest {
             try {
                 // set offset to 11 days - disable action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, "alice");
                 assertFalse(user.isEnabled());
                 assertNotNull(user.getAttributes().get("message"));
