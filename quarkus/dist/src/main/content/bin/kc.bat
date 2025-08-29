@@ -207,9 +207,6 @@ set KC_HOME_DIR=%KC_HOME_DIR:\=/%
 rem The property 'java.util.concurrent.ForkJoinPool.common.threadFactory' is set here, as a Java Agent or enabling JMX might initialize the factory before Quarkus can set the property in JDK21+.
 set JAVA_RUN_OPTS=-Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory %JAVA_OPTS% -Dkc.home.dir="%KC_HOME_DIR%" -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
 
-set OPTIMIZED_OPTION=--optimized
-set HELP_LONG_OPTION=--help
-set BUILD_OPTION=build
 set IS_HELP_SHORT=false
 
 echo %CONFIG_ARGS% | findstr /r "\<-h\>" > nul
@@ -225,16 +222,14 @@ if "%PRINT_ENV%" == "true" (
 
 set START_SERVER=true
 
-if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
+"%JAVA%" !JAVA_RUN_OPTS!
 
-    "%JAVA%" -Dkc.config.build-and-exit=true !JAVA_RUN_OPTS!
-
-    if not !errorlevel! == 0 (
-        set START_SERVER=false
-    )
-
-    set JAVA_RUN_OPTS=-Dkc.config.built=true !JAVA_RUN_OPTS!
+rem only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed
+if not !errorlevel! == 10 (
+    set START_SERVER=false
 )
+
+set JAVA_RUN_OPTS=-Dkc.config.built=true !JAVA_RUN_OPTS!
 
 if "%START_SERVER%" == "true" (
     "%JAVA%" !JAVA_RUN_OPTS!

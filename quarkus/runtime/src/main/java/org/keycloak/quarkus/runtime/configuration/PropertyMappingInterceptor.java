@@ -28,7 +28,6 @@ import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.IteratorUtils;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -95,7 +94,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         // come from kc.log - but via a map from, not to.
         // so we'd need additional logic like the getWildcardMappedFrom case for that
 
-        boolean filterRuntime = isRebuild() || Environment.isRebuildCheck();
+        boolean filterRuntime = isRebuild();
 
         var baseStream = StreamSupport.stream(iterable.spliterator(), false).flatMap(name -> {
             final PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
