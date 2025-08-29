@@ -256,8 +256,8 @@ public class ResourcePolicyManager {
                 });
     }
 
-    public void runScheduledTasks() {
-        this.getPolicies().stream().filter(ResourcePolicy::isEnabled).forEach(policy -> {
+    public void runScheduledActions() {
+            this.getPolicies().stream().filter(ResourcePolicy::isEnabled).forEach(policy -> {
 
             for (ScheduledAction scheduled : policyStateProvider.getDueScheduledActions(policy)) {
                 List<ResourceAction> actions = getActions(policy);
@@ -273,7 +273,14 @@ public class ResourcePolicyManager {
                             ResourceAction nextAction = actions.get(i + 1);
                             policyStateProvider.scheduleAction(policy, nextAction, nextAction.getAfter() - currentAction.getAfter(), scheduled.resourceId());
                         } else {
-                            policyStateProvider.remove(policy.getId(), scheduled.resourceId());
+                            // this was the last action, check if the policy is recurring - i.e. if we need to schedule the first action again
+                            if (policy.isRecurring()) {
+                                ResourceAction firstAction = getFirstAction(policy);
+                                policyStateProvider.scheduleAction(policy, firstAction, scheduled.resourceId());
+                            } else {
+                                // not recurring, remove the state record
+                                policyStateProvider.remove(policy.getId(), scheduled.resourceId());
+                            }
                         }
                     }
                 }
