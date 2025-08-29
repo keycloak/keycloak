@@ -8,11 +8,10 @@ import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ClassLoaderPropertyMappers {
+final class ClassLoaderPropertyMappers implements PropertyMapperGrouping {
 
-    private ClassLoaderPropertyMappers(){}
-
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(ClassLoaderOptions.IGNORE_ARTIFACTS)
                         .to(QUARKUS_REMOVED_ARTIFACTS_PROPERTY)

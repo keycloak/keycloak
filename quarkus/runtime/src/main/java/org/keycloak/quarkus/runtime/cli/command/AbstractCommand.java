@@ -137,4 +137,11 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return Environment.PROD_PROFILE_VALUE;
     }
 
+    /**
+     * @return true if the command results in a server
+     */
+    public boolean isServing() {
+        return false;
+    }
+
 }

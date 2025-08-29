@@ -10,7 +10,9 @@ import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +24,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getOption
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class HttpPropertyMappers {
+public final class HttpPropertyMappers implements PropertyMapperGrouping {
     private static final int MIN_MAX_THREADS = 50;
     private static final String QUARKUS_HTTPS_CERT_FILES = "quarkus.http.ssl.certificate.files";
     private static final String QUARKUS_HTTPS_CERT_KEY_FILES = "quarkus.http.ssl.certificate.key-files";
@@ -30,8 +32,6 @@ public final class HttpPropertyMappers {
     private static final String QUARKUS_HTTPS_TRUST_STORE_FILE = "quarkus.http.ssl.certificate.trust-store-file";
     public static final String QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.trust-store-file-type";
     private static final String QUARKUS_HTTPS_KEY_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.key-store-file-type";
-
-    private HttpPropertyMappers(){}
 
     // Transform runtime exceptions obtained from Quarkus to ours with a relevant message
     private static void setCustomExceptionTransformer() {
@@ -53,7 +53,8 @@ public final class HttpPropertyMappers {
         });
     }
 
-    public static PropertyMapper<?>[] getHttpPropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         setCustomExceptionTransformer();
         return new PropertyMapper[] {
                 fromOption(HttpOptions.HTTP_ENABLED)
@@ -156,10 +157,13 @@ public final class HttpPropertyMappers {
         };
     }
 
-    public static void validateConfig() {
-        boolean enabled = isHttpEnabled(getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
-        if (!enabled && !isHttpsEnabled()) {
-            throw new PropertyException(Messages.httpsConfigurationNotSet());
+    @Override
+    public void validateConfig(Picocli picocli) {
+        if (picocli.getParsedCommand().filter(AbstractCommand::isServing).isPresent()) {
+            boolean enabled = isHttpEnabled(getOptionalKcValue(HttpOptions.HTTP_ENABLED.getKey()).orElse(null));
+            if (!enabled && !isHttpsEnabled()) {
+                throw new PropertyException(Messages.httpsConfigurationNotSet());
+            }
         }
     }
 
