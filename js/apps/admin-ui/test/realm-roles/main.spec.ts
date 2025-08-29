@@ -29,6 +29,7 @@ import {
   assertEmptyTable,
   assertNoResults,
   assertRowExists,
+  assertTableRowsLength,
   clickRowKebabItem,
   clickTableRowItem,
   searchItem,
@@ -61,6 +62,8 @@ test.describe("Realm roles test", () => {
     await fillRoleData(page, "admin");
     await clickSaveButton(page);
     await clickCancelButton(page);
+
+    await assertTableRowsLength(page, "Role list", 4);
 
     await clickCreateRoleButton(page);
     await fillRoleData(page, "admin");
