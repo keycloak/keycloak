@@ -21,7 +21,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -65,6 +64,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -165,21 +165,17 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         final String nonceEndpoint = OID4VCIssuerWellKnownProvider.getNonceEndpoint(session.getContext());
                         // creates a cNonce with missing data
                         String cNonce = cNonceHandler.buildCNonce(null,
-                                                                  Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
-                                                                         nonceEndpoint));
+                                Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                                        nonceEndpoint));
                         Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
                         ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                                                                               ClientScopeRepresentation.class);
+                                ClientScopeRepresentation.class);
                         testRequestTestCredential(session, clientScope, token, proof);
                     })));
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException ex) {
-            Assert.assertEquals("""
-                                        c_nonce: expected 'aud' to be equal to \
-                                        '[https://localhost:8543/auth/realms/test/protocol/oid4vc/credential]' but \
-                                        actual value was '[]'""",
-                                ExceptionUtils.getRootCause(ex).getMessage());
+        } catch (ErrorResponseException ex) {
+            Assert.assertEquals("invalid_nonce", ex.getMessage());
         }
     }
 
@@ -200,16 +196,12 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
                         ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                                                                               ClientScopeRepresentation.class);
+                                ClientScopeRepresentation.class);
                         testRequestTestCredential(session, clientScope, token, proof);
                     })));
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException ex) {
-            Assert.assertEquals("""
-                                        c_nonce: expected 'source_endpoint' to be equal to \
-                                        'https://localhost:8543/auth/realms/test/protocol/oid4vc/nonce' but \
-                                        actual value was 'null'""",
-                                ExceptionUtils.getRootCause(ex).getMessage());
+        } catch (ErrorResponseException ex) {
+            Assert.assertEquals("invalid_nonce", ex.getMessage());
         }
     }
 
@@ -230,11 +222,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                             // make the exp-value negative to set the exp-time in the past
                             session.getContext().getRealm().setAttribute(Oid4VciConstants.C_NONCE_LIFETIME_IN_SECONDS, -1);
                             String cNonce = cNonceHandler.buildCNonce(List.of(credentialsEndpoint),
-                                                                      Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
+                                    Map.of(JwtCNonceHandler.SOURCE_ENDPOINT, nonceEndpoint));
                             Proof proof = new JwtProof().setJwt(generateJwtProof(getCredentialIssuer(session), cNonce));
 
                             ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
-                                                                                   ClientScopeRepresentation.class);
+                                    ClientScopeRepresentation.class);
                             testRequestTestCredential(session, clientScope, token, proof);
                         } finally {
                             // make sure other tests are not affected by the changed realm-attribute
@@ -242,10 +234,8 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         }
                     })));
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException ex) {
-            String message = ExceptionUtils.getRootCause(ex).getMessage();
-            Assert.assertTrue(String.format("Message '%s' should match regular expression", message),
-                              message.matches("c_nonce not valid: \\d+\\(exp\\) < \\d+\\(now\\)"));
+        } catch (ErrorResponseException ex) {
+            Assert.assertEquals("invalid_nonce", ex.getMessage());
         }
     }
 
