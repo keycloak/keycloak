@@ -31,6 +31,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -43,8 +44,10 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -86,6 +89,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -103,14 +107,19 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.jose.jwe.JWEConstants.A128GCM;
+import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
+import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
 /**
@@ -120,6 +129,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected static final TimeProvider TIME_PROVIDER = new OID4VCTest.StaticTimeProvider(1000);
     protected static final String sdJwtCredentialVct = "https://credentials.example.com/SD-JWT-Credential";
+
+    private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
     protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
     protected static ClientScopeRepresentation jwtTypeCredentialClientScope;
@@ -380,7 +391,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         return result;
     }
 
-    protected static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
+    public static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
         assertNotNull("Encrypted response should not be null", encryptedResponse);
         assertEquals("Response should be a JWE", 5, encryptedResponse.split("\\.").length);
 
@@ -389,6 +400,50 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         jwe.verifyAndDecodeJwe();
         byte[] decryptedContent = jwe.getContent();
         return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
+    }
+
+    public static String createEncryptedCredentialRequest(String payload, KeyWrapper encryptionKey) throws Exception {
+        byte[] content = payload.getBytes(StandardCharsets.UTF_8);
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                .keyId(encryptionKey.getKid())
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm(A256GCM)
+                .type(JWT)
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public static String createEncryptedCredentialRequestWithCompression(String payload, KeyWrapper encryptionKey) throws Exception {
+        byte[] content = compressPayload(payload.getBytes(StandardCharsets.UTF_8));
+        LOGGER.debugf("Compressed payload size: %d bytes", content.length);
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                .keyId(encryptionKey.getKid())
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm(A256GCM)
+                .compressionAlgorithm("DEF")
+                .type(JWT)
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public static byte[] compressPayload(byte[] payload) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (DeflaterOutputStream deflater = new DeflaterOutputStream(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true))) {
+            deflater.write(payload);
+        }
+        return out.toByteArray();
     }
 
     void setClientOid4vciEnabled(String clientId, boolean enabled) {
@@ -531,7 +586,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Client with ID " + clientId + " not found in realm"));
 
-        // Add role to existing client
+        // Add a role to an existing client
         if (testRealm.getRoles() != null) {
             Map<String, List<RoleRepresentation>> clientRoles = testRealm.getRoles().getClient();
             clientRoles.merge(

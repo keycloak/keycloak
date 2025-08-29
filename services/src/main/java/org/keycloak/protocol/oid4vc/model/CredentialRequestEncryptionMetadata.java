@@ -15,24 +15,26 @@
  * limitations under the License.
  */
 
+
 package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 
 import java.util.List;
 
 /**
- * Represents the credential_response_encryption metadata for an OID4VCI Credential Issuer.
+ * Represents the credential_request_encryption metadata for an OID4VCI Credential Issuer.
  * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p
  *
  * @author <a href="mailto:Bertrand.Ogen@adorsys.com">Bertrand Ogen</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CredentialResponseEncryptionMetadata {
+public class CredentialRequestEncryptionMetadata {
 
-    @JsonProperty("alg_values_supported")
-    private List<String> algValuesSupported;
+    @JsonProperty("jwks")
+    private JSONWebKeySet jwks;
 
     @JsonProperty("enc_values_supported")
     private List<String> encValuesSupported;
@@ -43,12 +45,12 @@ public class CredentialResponseEncryptionMetadata {
     @JsonProperty("encryption_required")
     private Boolean encryptionRequired;
 
-    public List<String> getAlgValuesSupported() {
-        return algValuesSupported;
+    public JSONWebKeySet getJwks() {
+        return jwks;
     }
 
-    public CredentialResponseEncryptionMetadata setAlgValuesSupported(List<String> algValuesSupported) {
-        this.algValuesSupported = algValuesSupported;
+    public CredentialRequestEncryptionMetadata setJwks(JSONWebKeySet jwks) {
+        this.jwks = jwks;
         return this;
     }
 
@@ -56,7 +58,7 @@ public class CredentialResponseEncryptionMetadata {
         return encValuesSupported;
     }
 
-    public CredentialResponseEncryptionMetadata setEncValuesSupported(List<String> encValuesSupported) {
+    public CredentialRequestEncryptionMetadata setEncValuesSupported(List<String> encValuesSupported) {
         this.encValuesSupported = encValuesSupported;
         return this;
     }
@@ -65,16 +67,16 @@ public class CredentialResponseEncryptionMetadata {
         return zipValuesSupported;
     }
 
-    public CredentialResponseEncryptionMetadata setZipValuesSupported(List<String> zipValuesSupported) {
+    public CredentialRequestEncryptionMetadata setZipValuesSupported(List<String> zipValuesSupported) {
         this.zipValuesSupported = zipValuesSupported;
         return this;
     }
 
-    public Boolean getEncryptionRequired() {
+    public Boolean isEncryptionRequired() {
         return encryptionRequired;
     }
 
-    public CredentialResponseEncryptionMetadata setEncryptionRequired(Boolean encryptionRequired) {
+    public CredentialRequestEncryptionMetadata setEncryptionRequired(Boolean encryptionRequired) {
         this.encryptionRequired = encryptionRequired;
         return this;
     }
