@@ -164,6 +164,9 @@ nodes/availability-zones in your {kubernetes} cluster.
 See the Operator <@links.operator id="advanced-configuration" anchor="_scheduling" /> details of how to configure custom
 anti-affinity `topologySpreadConstraints` policies.
 
+. The Operator does not configure the site's name (see <@links.server id="caching" anchor="cache-topology" />) in the Pods as its value is not available via the https://kubernetes.io/docs/concepts/workloads/pods/downward-api/[Downward API].
+The machine name option is configured using the `spec.nodeName` from the node where the Pod is scheduled.
+
 == Next steps
 
 Continue reading in the <@links.ha id="single-cluster-building-blocks" /> {section} to find blueprints for the different building blocks.
