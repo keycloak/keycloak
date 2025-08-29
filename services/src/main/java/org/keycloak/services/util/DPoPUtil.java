@@ -147,43 +147,28 @@ public class DPoPUtil {
     }
 
     /**
-     * checks the current request if a DPoP HTTP Header is present and returns it if it is present.
+     * If DPoP feature is enabled and either the client requires it or the current request contains a DPoP header,
+     * this method validates the proof and stores it in the session.
      */
-    public static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
-                                                             OIDCAdvancedConfigWrapper clientConfig,
-                                                             EventBuilder event,
-                                                             Cors cors) {
-        return retrieveDPoPHeaderIfPresent(keycloakSession, event, cors, ()-> {
-            HttpRequest request = keycloakSession.getContext().getHttpRequest();
-            final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
-            final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
-            return !isClientRequiresDpop && !isDpopHeaderPresent;
-        });
-    }
-
-    public static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
-                                                             EventBuilder event,
-                                                             Cors cors) {
-        return retrieveDPoPHeaderIfPresent(keycloakSession, event, cors, ()-> {
-            HttpRequest request = keycloakSession.getContext().getHttpRequest();
-            final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
-            return !isDpopHeaderPresent;
-        });
-    }
-
-    private static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
-                                                              EventBuilder event,
-                                                              Cors cors,
-                                                              BooleanSupplier isDPoPNotApplicableRequest) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.DPOP) || isDPoPNotApplicableRequest.getAsBoolean()) {
-            return Optional.empty();
+    public static void handleDPoPHeader(KeycloakSession keycloakSession,
+                                        EventBuilder event,
+                                        Cors cors,
+                                        OIDCAdvancedConfigWrapper clientConfig) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            return;
         }
 
         HttpRequest request = keycloakSession.getContext().getHttpRequest();
+        final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
+        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
+
+        if (!isClientRequiresDpop && !isDpopHeaderPresent) {
+            return;
+        }
+
         try {
             DPoP dPoP = new DPoPUtil.Validator(keycloakSession).request(request).uriInfo(keycloakSession.getContext().getUri()).validate();
             keycloakSession.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-            return Optional.of(dPoP);
         } catch (VerificationException ex) {
             event.detail(Details.REASON, ex.getMessage());
             event.error(Errors.INVALID_DPOP_PROOF);
@@ -284,9 +269,6 @@ public class DPoPUtil {
                             }
                             DPoP dPoP = validator.validate();
                             DPoPUtil.validateBinding(token, dPoP);
-                            if (!Objects.equals(token.getConfirmation().getKeyThumbprint(), dPoP.getThumbprint())) {
-                                throw new VerificationException("DPoP Proof public key thumbprint does not match dpop_jkt");
-                            }
                         }
                         return true;
                     });
