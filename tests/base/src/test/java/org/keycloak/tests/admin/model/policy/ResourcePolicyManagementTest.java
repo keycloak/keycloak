@@ -216,7 +216,7 @@ public class ResourcePolicyManagementTest {
             assertEquals(2, manager.getActions(policy).size());
             ResourceAction notifyAction = manager.getActions(policy).get(0);
 
-            ResourcePolicyStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(ResourcePolicyStateProvider.class).create(session);
+            ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
             ResourcePolicyStateProvider.ScheduledAction scheduledAction = stateProvider.getScheduledAction(policy.getId(), user.getId());
             assertNotNull(scheduledAction, "An action should have been scheduled for the user " + user.getUsername());
             assertEquals(notifyAction.getId(), scheduledAction.actionId());
