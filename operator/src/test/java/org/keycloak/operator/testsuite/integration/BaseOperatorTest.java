@@ -63,6 +63,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -345,9 +346,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           logEvents();
           savePodLogs();
           // provide some helpful entries in the main log as well
-          logFailedKeycloaks();
-          k8sclient.resources(Keycloak.class).list().getItems()
-                  .forEach(keycloak -> Log.infof("Keycloak '%s' status:%n%s", keycloak.getMetadata().getName(), Serialization.asYaml(keycloak.getStatus())));
+          logKeycloaks();
+          logKeycloakRealmImports();
           if (operatorDeployment == OperatorDeployment.remote) {
               log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
           }
@@ -395,26 +395,43 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
       log(resource, statusExtractor, true);
   }
 
-  private void logFailedKeycloaks() {
-      k8sclient.resources(Keycloak.class).list().getItems().stream()
-              .filter(kc -> !Optional.ofNullable(kc.getStatus()).map(KeycloakStatus::isReady).orElse(false))
-              .forEach(kc -> {
-                  Log.warnf("Keycloak failed to become ready \"%s\" %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
-                  var statefulSet = k8sclient.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(kc)).get();
-                  if (statefulSet != null) {
-                      Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
-                      k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
-                              .getItems().stream().map(pod -> k8sclient.pods().resource(pod)).forEach(p -> {
-                                  logFailed(p, Pod::getStatus);
-                                  threadDump(p);
-                              });
+  private void logKeycloakRealmImports() {
+      k8sclient.resources(KeycloakRealmImport.class).list().getItems().stream()
+              .forEach(kcri -> {
+                  if (Optional.ofNullable(kcri.getStatus()).map(KeycloakRealmImportStatus::isDone).orElse(false)) {
+                      Log.infof("Keycloak realm import '%s' status: %s", kcri.getMetadata().getName(), Serialization.asYaml(kcri.getStatus()));
+                  } else {
+                      Log.warnf("Keycloak realm import failed to be done \"%s\": %s", kcri.getMetadata().getName(), Serialization.asYaml(kcri.getStatus()));
+
+                      Keycloak kc = k8sclient.resources(Keycloak.class).withName(kcri.getSpec().getKeycloakCRName()).get();
+
+                      var job = k8sclient.batch().v1().jobs()
+                              .inNamespace(kcri.getMetadata().getNamespace())
+                              .withName(KeycloakUpdateJobDependentResource.jobName(kc))
+                              .get();
+                      if (job != null) {
+                          Log.warnf("Keycloak Update Job \"%s\" %s", job.getMetadata().getName(), Serialization.asYaml(job.getStatus()));
+                      }
                   }
-                  var job = k8sclient.batch().v1().jobs()
-                          .inNamespace(kc.getMetadata().getNamespace())
-                          .withName(KeycloakUpdateJobDependentResource.jobName(kc))
-                          .get();
-                  if (job != null) {
-                      Log.warnf("Keycloak Update Job \"%s\" %s", job.getMetadata().getName(), Serialization.asYaml(job.getStatus()));
+              });
+  }
+
+  private void logKeycloaks() {
+      k8sclient.resources(Keycloak.class).list().getItems().stream()
+              .forEach(kc -> {
+                  if (Optional.ofNullable(kc.getStatus()).map(KeycloakStatus::isReady).orElse(false)) {
+                      Log.infof("Keycloak '%s' status: %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
+                  } else {
+                      Log.warnf("Keycloak failed to become ready \"%s\": %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
+                      var statefulSet = k8sclient.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(kc)).get();
+                      if (statefulSet != null) {
+                          Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
+                          k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
+                                  .getItems().stream().map(pod -> k8sclient.pods().resource(pod)).forEach(p -> {
+                                      logFailed(p, Pod::getStatus);
+                                      threadDump(p);
+                                  });
+                      }
                   }
               });
   }
