@@ -84,7 +84,7 @@ public final class ImportPropertyMappers {
     }
 
     private static boolean isDirProvider() {
-        return isProvider(DIR);
+        return !isSingleFileProvider();
     }
 
     private static boolean isProvider(String provider) {

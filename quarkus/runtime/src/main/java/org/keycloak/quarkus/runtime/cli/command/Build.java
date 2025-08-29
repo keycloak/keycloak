@@ -151,4 +151,9 @@ public final class Build extends AbstractCommand {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public HelpAllMixin getHelpAllMixin() {
+        return helpAllMixin;
+    }
 }

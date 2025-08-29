@@ -22,7 +22,6 @@ import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
-import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -55,7 +54,9 @@ import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.HelpAllMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -156,18 +157,26 @@ public class Picocli {
                 addHelp(currentSpec);
             }
 
-            AbstractCommand currentCommand = null;
+            AbstractCommand currentCommand = null; // this is the command that will be used in the next parsing pass
+            CommandLine commandLine = null;
             if (currentSpec != null) {
-                CommandLine commandLine = currentSpec.commandLine();
-                addCommandOptions(cliArgs, commandLine);
+                commandLine = currentSpec.commandLine();
 
                 if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
                     currentCommand = ac;
                 }
             }
-            initConfig(currentCommand);
+            // init the config before adding options to properly sanitize mappers
+            boolean allHelpOptions = false;
+            if (commandLineList.size() > 1 && commandLineList.get(commandLineList.size() - 1).getCommand() instanceof AbstractCommand ac) {
+                allHelpOptions = Optional.ofNullable(ac.getHelpAllMixin()).map(HelpAllMixin::isAllOptions).orElse(false);
+            }
+            initConfig(allHelpOptions, currentCommand);
+            if (currentSpec != null) {
+                addCommandOptions(cliArgs, commandLine);
+            }
 
-            if (isRebuildCheck()) {
+            if (isRebuildCheck() && currentCommand instanceof AbstractStartCommand) {
                 // build command should be available when running re-aug
                 addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
             }
@@ -391,9 +400,10 @@ public class Picocli {
 
             // only check build-time for a rebuild, we'll check the runtime later
             if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
-                if (PropertyMapper.isCliOption(configValue)) {
-                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
-                } else {
+                // some cli options may be directly on the command and not
+                // backed by a property mapper - if they are disabled that should have already been handled as
+                // an unrecognized arg
+                if (!PropertyMapper.isCliOption(configValue)) {
                     handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
                 }
             }
@@ -656,8 +666,6 @@ public class Picocli {
     private void addOptionsToCli(CommandLine commandLine, IncludeOptions includeOptions) {
         final Map<OptionCategory, List<PropertyMapper<?>>> mappers = new EnumMap<>(OptionCategory.class);
 
-        // Since we can't run sanitizeDisabledMappers sooner, PropertyMappers.getRuntime|BuildTimeMappers() at this point
-        // contain both enabled and disabled mappers. Actual filtering is done later (help command, validations etc.).
         if (includeOptions.includeRuntime) {
             mappers.putAll(PropertyMappers.getRuntimeMappers());
         }
@@ -696,21 +704,12 @@ public class Picocli {
                     .order(category.getOrder())
                     .validate(false);
 
-            final Set<String> alreadyPresentArgs = new HashSet<>();
-
             for (PropertyMapper<?> mapper : mappersInCategory) {
                 String name = mapper.getCliFormat();
-                // Picocli doesn't allow to have multiple options with the same name. We need this in help-all which also prints
-                // currently disabled options which might have a duplicate among enabled options. This is to register the disabled
-                // options with a unique name in Picocli. To keep it simple, it adds just a suffix to the options, i.e. there cannot
-                // be more that 1 disabled option with a unique name.
-                if (cSpec.optionsMap().containsKey(name)) {
-                    name = decorateDuplicitOptionName(name);
-                }
 
-                if (cSpec.optionsMap().containsKey(name) || alreadyPresentArgs.contains(name)) {
-                    //when key is already added, don't add.
-                    continue;
+                if (cSpec.optionsMap().containsKey(name)) {
+                    // we should not have this situation
+                    throw new IllegalStateException("PropertyMapper conflicts with option on command");
                 }
 
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
@@ -740,8 +739,6 @@ public class Picocli {
                 } else {
                     optBuilder.type(String.class);
                 }
-
-                alreadyPresentArgs.add(name);
 
                 argGroupBuilder.addArg(optBuilder.build());
             }
@@ -909,7 +906,7 @@ public class Picocli {
         QuarkusEntryPoint.main();
     }
 
-    public void initConfig(AbstractCommand command) {
+    public void initConfig(boolean allHelpOptions, AbstractCommand command) {
         if (Configuration.isInitialized()) {
             throw new IllegalStateException("Config should not be initialized until profile is determined");
         }
@@ -920,7 +917,9 @@ public class Picocli {
                         .orElse(Environment.PROD_PROFILE_VALUE));
 
         Environment.setProfile(profile);
-        parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        if (!allHelpOptions) {
+            parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        }
     }
 
 }

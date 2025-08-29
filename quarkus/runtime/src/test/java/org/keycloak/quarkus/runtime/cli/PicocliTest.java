@@ -102,9 +102,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        public void initConfig(AbstractCommand command) {
+        public void initConfig(boolean allHelpOptions, AbstractCommand command) {
             KeycloakConfigSourceProvider.reload();
-            super.initConfig(command);
+            super.initConfig(allHelpOptions, command);
             config = Configuration.getConfig();
         }
 
@@ -481,7 +481,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void wrongLevelForCategory() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak=wrong");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak", "wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.getErrString().contains("Invalid log level: wrong. Possible values are: warn, trace, debug, error, fatal, info."));
     }
@@ -802,13 +802,12 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(logHandlerOptionsName)));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-%s-async-queue-length'. Available only when %s is activated and asynchronous logging is enabled".formatted(logHandlerOptionsName, logHandlerFullName)));
 
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=768".formatted(logHandlerOptionsName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-%s-async-queue-length'. Available only when %s is activated and asynchronous logging is enabled".formatted(logHandlerOptionsName, logHandlerFullName)));
-
     }
 
     @Test
@@ -878,6 +877,20 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility","check");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Missing required argument: --file"));
+    }
+
+    @Test
+    public void testNoKcDirWarning() {
+        putEnvVar("KC_DIR", "dir");
+        putEnvVar("KC_LOG_LEVEL", "debug");
+        var picocli = build("build", "--db=dev-file");
+        assertFalse(picocli.getOutString().contains("kc.dir"));
+    }
+
+    @Test
+    public void testUpdatesFileValidation() {
+        NonRunningPicocli picocli = pseudoLaunch("update-compatibility","check", "--file=not-found");
+        assertTrue(picocli.getErrString().contains("Incorrect argument --file."));
     }
 
     @Test
