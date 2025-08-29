@@ -239,4 +239,11 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Return the authorization servers from the issuer configuration.
+     */
+    public static List<String> getAuthorizationServers(KeycloakSession session) {
+        return List.of(getIssuer(session.getContext()));
+    }
+
 }
