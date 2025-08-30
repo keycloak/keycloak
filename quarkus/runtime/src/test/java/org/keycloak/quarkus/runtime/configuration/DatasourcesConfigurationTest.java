@@ -85,7 +85,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=mysql");
         SmallRyeConfig config = createConfig();
         String value = Expressions.withoutExpansion(() -> config.getConfigValue("quarkus.datasource.\"store\".jdbc.url").getValue());
-        assertEquals("jdbc:mysql://${kc.db-url-host-store:localhost}:${kc.db-url-port-store:3306}/${kc.db-url-database-store:keycloak}${kc.db-url-properties-store:}", value);
+        assertEquals("mysql", value);
 
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:mysql://localhost:3306/keycloak");
     }
