@@ -19,6 +19,7 @@ package org.keycloak.operator.testsuite.unit;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -26,6 +27,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
@@ -391,7 +394,7 @@ public class PodTemplateTest {
     @Test
     public void testHttpManagment() {
         var result = getDeployment(null, new StatefulSet(),
-                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-management-scheme", "http")))
+                spec -> spec.withAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.HTTP_MANAGEMENT_SCHEME, "http")))
                 .getSpec()
                 .getTemplate()
                 .getSpec()
@@ -399,6 +402,21 @@ public class PodTemplateTest {
                 .get(0);
 
         assertEquals("HTTP", result.getReadinessProbe().getHttpGet().getScheme());
+        assertEquals(9000, result.getReadinessProbe().getHttpGet().getPort().getIntVal());
+    }
+
+    @Test
+    public void testHealthOnMain() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.HTTP_MANAGEMENT_HEALTH_ENABLED, "false")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTPS", result.getReadinessProbe().getHttpGet().getScheme());
+        assertEquals(8443, result.getReadinessProbe().getHttpGet().getPort().getIntVal());
     }
 
     @Test
@@ -469,30 +487,29 @@ public class PodTemplateTest {
         assertThat(startup.getPath()).isEqualTo("/health/started");
         assertThat(startup.getPort().getIntVal()).isEqualTo(Constants.KEYCLOAK_MANAGEMENT_PORT);
 
-        var affinity = podTemplate.getSpec().getAffinity();
-        assertNotNull(affinity);
-        assertThat(Serialization.asYaml(affinity)).isEqualTo("""
+        var topologySpreadConstraints = podTemplate.getSpec().getTopologySpreadConstraints();
+        assertNotNull(topologySpreadConstraints);
+        assertThat(topologySpreadConstraints).hasSize(2);
+        assertThat(Serialization.asYaml(topologySpreadConstraints)).isEqualTo("""
                 ---
-                podAntiAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchLabels:
-                          app: "keycloak"
-                          app.kubernetes.io/managed-by: "keycloak-operator"
-                          app.kubernetes.io/instance: "instance"
-                          app.kubernetes.io/component: "server"
-                      topologyKey: "topology.kubernetes.io/zone"
-                    weight: 100
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchLabels:
-                          app: "keycloak"
-                          app.kubernetes.io/managed-by: "keycloak-operator"
-                          app.kubernetes.io/instance: "instance"
-                          app.kubernetes.io/component: "server"
-                      topologyKey: "kubernetes.io/hostname"
-                    weight: 90
+                - labelSelector:
+                    matchLabels:
+                      app: "keycloak"
+                      app.kubernetes.io/managed-by: "keycloak-operator"
+                      app.kubernetes.io/instance: "instance"
+                      app.kubernetes.io/component: "server"
+                  maxSkew: 1
+                  topologyKey: "topology.kubernetes.io/zone"
+                  whenUnsatisfiable: "ScheduleAnyway"
+                - labelSelector:
+                    matchLabels:
+                      app: "keycloak"
+                      app.kubernetes.io/managed-by: "keycloak-operator"
+                      app.kubernetes.io/instance: "instance"
+                      app.kubernetes.io/component: "server"
+                  maxSkew: 1
+                  topologyKey: "kubernetes.io/hostname"
+                  whenUnsatisfiable: "ScheduleAnyway"
                 """);
     }
 
@@ -576,6 +593,8 @@ public class PodTemplateTest {
                 .filter(v -> v.getName().equals(KeycloakDeploymentDependentResource.CACHE_CONFIG_FILE_MOUNT_NAME))
                 .findFirst().orElseThrow();
         assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
+
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -761,6 +780,25 @@ public class PodTemplateTest {
                 });
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
+    }
+
+    @Test
+    public void testEnvVars() {
+        var statefulSet = getDeployment(null, null, builder -> builder.addNewEnv("JAVA_OPTS", "my opts")
+                .addToEnv(new ValueOrSecret("SECRET", new SecretKeySelector("key", "my-secret", null))));
+
+        var env = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+                .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
+
+        // make sure the raw value is present
+        var envVar = env.get("JAVA_OPTS");
+        assertEquals("my opts", envVar.getValue());
+
+        // make sure the secret is there, and is watched
+        envVar = env.get("SECRET");
+        assertEquals("key", envVar.getValueFrom().getSecretKeyRef().getKey());
+
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
     }
 
 }

@@ -432,7 +432,7 @@ public class RepresentationToModel {
 
         updateClientProperties(resource, rep, false);
 
-        if ("saml".equals(rep.getProtocol())
+        if (newClientId != null && "saml".equals(rep.getProtocol())
                 && (rep.getAttributes() == null
                 || !rep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
             resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(newClientId));
@@ -1541,9 +1541,8 @@ public class RepresentationToModel {
             Map<String, List<String>> attributes = resource.getAttributes();
 
             if (attributes != null) {
-                Set<String> existingAttrNames = existing.getAttributes().keySet();
 
-                for (String name : existingAttrNames) {
+                for (String name : existing.getAttributes().keySet()) {
                     if (attributes.containsKey(name)) {
                         existing.setAttribute(name, attributes.get(name));
                         attributes.remove(name);
@@ -1552,8 +1551,8 @@ public class RepresentationToModel {
                     }
                 }
 
-                for (String name : attributes.keySet()) {
-                    existing.setAttribute(name, attributes.get(name));
+                for (var entry : attributes.entrySet()) {
+                    existing.setAttribute(entry.getKey(), entry.getValue());
                 }
             }
 

@@ -34,6 +34,7 @@ import org.keycloak.securityprofile.SecurityProfileProviderFactory;
 import org.keycloak.services.clientpolicy.ClientPoliciesUtil;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.FileUtils;
 
 /**
  * The default implementation for the security profile. It reads the configuration
@@ -89,16 +90,7 @@ public class DefaultSecurityProfileProviderFactory implements SecurityProfilePro
                 SecurityProfileConfiguration conf;
                 final String file = name + ".json";
                 try {
-                    // first try to read the json configuration file from classpath
-                    InputStream tmp = getClass().getResourceAsStream("/" + file);
-                    if (tmp == null) {
-                        Path path = Paths.get(System.getProperty("jboss.server.config.dir")).resolve(file);
-                        if (!Files.isReadable(path)) {
-                            throw new IOException(String.format("File %s does not exists in the conf folder", file));
-                        }
-                        tmp = Files.newInputStream(path);
-                    }
-                    try (InputStream is = tmp) {
+                    try (InputStream is = FileUtils.getJsonFileFromClasspathOrConfFolder(file)) {
                         conf = JsonSerialization.readValue(is, SecurityProfileConfiguration.class);
                     }
                     // read the list of client profiles and policies validated

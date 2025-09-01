@@ -28,12 +28,11 @@ import java.util.concurrent.TimeUnit;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
-import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
-import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
+import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 
-class RemoteInfinispanKeycloakTransaction<K, V, R extends ConditionalRemover<K, V>> extends AbstractKeycloakTransaction {
+class RemoteInfinispanKeycloakTransaction<K, V, R extends ConditionalRemover<K, V>> implements NonBlockingTransaction {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -47,19 +46,16 @@ class RemoteInfinispanKeycloakTransaction<K, V, R extends ConditionalRemover<K, 
     }
 
     @Override
-    protected void commitImpl() {
-        AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
+    public void asyncCommit(AggregateCompletionStage<Void> stage) {
         conditionalRemover.executeRemovals(cache, stage);
         tasks.values().stream()
                 .filter(this::shouldCommitOperation)
                 .map(this::commitOperation)
                 .forEach(stage::dependsOn);
-        CompletionStages.join(stage.freeze());
-        tasks.clear();
     }
 
     @Override
-    protected void rollbackImpl() {
+    public void asyncRollback(AggregateCompletionStage<Void> stage) {
         tasks.clear();
     }
 

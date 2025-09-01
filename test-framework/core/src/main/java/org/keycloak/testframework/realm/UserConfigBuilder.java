@@ -8,9 +8,6 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 
 public class UserConfigBuilder {
 
@@ -56,8 +53,8 @@ public class UserConfigBuilder {
         return this;
     }
 
-    public UserConfigBuilder emailVerified() {
-        rep.setEmailVerified(true);
+    public UserConfigBuilder emailVerified(boolean verified) {
+        rep.setEmailVerified(verified);
         return this;
     }
 
@@ -72,13 +69,12 @@ public class UserConfigBuilder {
     }
 
     public UserConfigBuilder clientRoles(String client, String... roles) {
-        if (rep.getClientRoles() == null) {
-            rep.setClientRoles(new HashMap<>());
-        }
-        if (!rep.getClientRoles().containsKey(client)) {
-            rep.getClientRoles().put(client, new LinkedList<>());
-        }
-        rep.getClientRoles().get(client).addAll(List.of(roles));
+        rep.setClientRoles(Collections.combine(rep.getClientRoles(), client, roles));
+        return this;
+    }
+
+    public UserConfigBuilder requiredActions(String... requiredActions) {
+        rep.setRequiredActions(Collections.combine(rep.getRequiredActions(), requiredActions));
         return this;
     }
 

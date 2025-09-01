@@ -41,7 +41,7 @@ public interface KeycloakSession extends AutoCloseable {
     /**
      * Get dedicated provider instance of provider type clazz that was created for this session.  If one hasn't been created yet,
      * find the factory and allocate by calling ProviderFactory.create(KeycloakSession).  The provider to use is determined
-     * by the "provider" config entry in keycloak-server boot configuration. (keycloak-server.json)
+     * by the "provider" config entry in keycloak-server boot configuration. See the <a href="https://www.keycloak.org/docs/latest/server_development/index.html#_use_available_providers">Server developer guide</a> for the details.
      *
      *
      *

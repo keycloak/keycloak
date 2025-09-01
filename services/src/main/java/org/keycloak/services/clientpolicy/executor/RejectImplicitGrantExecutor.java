@@ -17,9 +17,11 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -29,6 +31,8 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static org.keycloak.OAuth2Constants.CODE;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -79,6 +83,11 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
                 autoConfigure(clientUpdateContext.getProposedClientRepresentation());
                 validate(clientUpdateContext.getProposedClientRepresentation());
                 break;
+            case PUSHED_AUTHORIZATION_REQUEST:
+                PushedAuthorizationRequestContext pushedAuthorizationRequestContext = (PushedAuthorizationRequestContext)context;
+                executeOnPushedAuthorizationRequest(pushedAuthorizationRequestContext.getRequest(),
+                        pushedAuthorizationRequestContext.getRequestParameters());
+                break;
             case AUTHORIZATION_REQUEST:
                 AuthorizationRequestContext authorizationRequestContext = (AuthorizationRequestContext)context;
                 executeOnAuthorizationRequest(authorizationRequestContext.getparsedResponseType(),
@@ -108,6 +117,17 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
         // Before client policies operation, Authorization Endpoint logic has already checked whether implicit/hybrid flow is activated for a client.
         // This method rejects implicit grant regardless of client setting for allowing implicit grant.
         if (parsedResponseType.isImplicitOrHybridFlow()) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Implicit/Hybrid flow is prohibited.");
+        }
+    }
+
+    private void executeOnPushedAuthorizationRequest(
+            AuthorizationEndpointRequest request,
+            MultivaluedMap<String, String> requestParameters) throws ClientPolicyException {
+        if (request.getResponseType() == null || request.getResponseType().isEmpty()) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "No response type.");
+        }
+        if (!CODE.equals(request.getResponseType())) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Implicit/Hybrid flow is prohibited.");
         }
     }

@@ -82,7 +82,7 @@ include::partials/histogram_note_http.adoc[]
 
 Return back to the <@links.observability id="metrics-for-troubleshooting"/> or,
 
-* For single site deployments proceed to <@links.observability id="metrics-for-troubleshooting-clustering-and-network"/>,
-* and for multiple sites deployments proceed to <@links.observability id="metrics-for-troubleshooting-embedded-caches-multi-site"/>
+* For single cluster deployments proceed to <@links.observability id="metrics-for-troubleshooting-clustering-and-network"/>,
+* and for multi cluster deployments proceed to <@links.observability id="metrics-for-troubleshooting-embedded-caches-multi-cluster"/>
 
 </@tmpl.guide>

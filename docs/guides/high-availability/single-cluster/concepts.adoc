@@ -23,31 +23,30 @@ The behaviour and high-availability guarantees of the {project_name} deployment 
 the {kubernetes} cluster. Typically, {kubernetes} clusters are deployed on a single availability-zone, however in order to
 increase fault-tolerance, it is possible to https://kubernetes.io/docs/setup/best-practices/multiple-zones/[deploy the cluster across multiple availability-zones].
 
-The {project_name} Operator defines the following anti-affinity strategy by default to prefer that {project_name} pods are
+The {project_name} Operator defines the following topology spread constraints by default to prefer that {project_name} pods are
 deployed on distinct nodes and distinct availability-zones when possible:
 
 [source,yaml]
 ----
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: keycloak
-                  app.kubernetes.io/managed-by: keycloak-operator
-                  app.kubernetes.io/component: server
-                  app.kubernetes.io/instance: keycloak
-              topologyKey: topology.kubernetes.io/zone
-          - weight: 90
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: keycloak
-                  app.kubernetes.io/managed-by: keycloak-operator
-                  app.kubernetes.io/component: server
-                  app.kubernetes.io/instance: keycloak
-              topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: "ScheduleAnyway"
+          labelSelector:
+            matchLabels:
+              app: "keycloak"
+              app.kubernetes.io/managed-by: "keycloak-operator"
+              app.kubernetes.io/instance: "keycloak"
+              app.kubernetes.io/component: "server"
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: "ScheduleAnyway"
+          labelSelector:
+            matchLabels:
+              app: "keycloak"
+              app.kubernetes.io/managed-by: "keycloak-operator"
+              app.kubernetes.io/instance: "keycloak"
+              app.kubernetes.io/component: "server"
 ----
 
 [IMPORTANT]
@@ -145,17 +144,25 @@ The {project_name} will eventually remove the unreachable pods from its local vi
 This can be overcome for patch releases by enabling <@links.server id="update-compatibility" anchor="rolling-updates-for-patch-releases" />.
 +
 . Multiple node failures can result in a loss of entries from the `authenticationSessions`, `loginFailures`
-and `actionTokens` caches if the number of node failures is greater than or equal to the cache's configured `num_owners`.
+and `actionTokens` caches if the number of node failures is greater than or equal to the cache's configured `num_owners`,
+which by default is 2.
 +
-. Deployments using the default `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rules,
-may experience data-loss on node/availability-zone failure if multiple pods are scheduled on the failed node/zone.
+. Deployments using the default `topologySpreadConstraints` with `whenUnsatisfiable: ScheduleAnyway`, may experience
+data-loss on node/availability-zone failure if multiple pods are scheduled on the failed node/zone.
 +
-Users can prevent this scenario by explicitly configuring anti-affinity strategies with `requiredDuringSchedulingIgnoredDuringExecution`
-to ensure that pods are always provisioned on distinct nodes or zones. However, this comes at the expense of
-flexibility as the {project_name} will not scale up to the expected number of pods if the defined rules cannot be satisfied.
+Users can mitigate against this scenario by defining `topologySpreadConstraints` with `whenUnsatisfiable: DoNotSchedule`,
+to ensure that pods are always evenly scheduled across zones and nodes. However, this can result in some {project_name}
+instances not being deployed if the constraints cannot be satisfied.
++
+As Infinispan is unaware of the network topology when distributing cache entries, it is still possible for data-loss to
+occur on node/availability-zone failure if all `num_owner` copies of cached data are stored in the failed node/zone.
+You can restrict the total number of {project_name} instances to the number of nodes or availability-zones available by
+defining a `requiredDuringSchedulingIgnoredDuringExecution` for nodes and zones. However, this comes at the expense of
+scalability as the number of {project_name} instances that can be provisioned will be restricted to the number of
+nodes/availability-zones in your {kubernetes} cluster.
 +
 See the Operator <@links.operator id="advanced-configuration" anchor="_scheduling" /> details of how to configure custom
-anti-affinity strategies.
+anti-affinity `topologySpreadConstraints` policies.
 
 == Next steps
 

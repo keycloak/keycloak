@@ -72,10 +72,10 @@ public class StringPropertyReplacerTest {
     public void testEnvironmentVariables() throws NoSuchAlgorithmException {
         Map<String, String> env = System.getenv();
 
-        for (String key : env.keySet()) {
-            String value = env.get(key);
+        for (Map.Entry<String, String> entry : env.entrySet()) {
+            String value = entry.getValue();
             if ( !(value == null || "".equals(value)) ) {
-                Assert.assertEquals("foo-" + value, replaceProperties("foo-${env." + key + "}"));
+                Assert.assertEquals("foo-" + value, replaceProperties("foo-${env." + entry.getKey() + "}"));
                 break;
             }
         }

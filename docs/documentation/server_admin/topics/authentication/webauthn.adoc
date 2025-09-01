@@ -222,7 +222,7 @@ Set up WebAuthn Loginless support as follows:
 
 . (If not already done) Check the required action for *WebAuthn Register Passwordless* is enabled. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>, but using *WebAuthn Register Passwordless* instead of *WebAuthn Register*.
 
-. Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* when you configure the policy for loginless scenario. Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
+. Configure the `WebAuthn Passwordless Policy` if needed. Perform the configuration in the Admin Console, `Authentication` section,  in the `Policies` ->  `WebAuthn Passwordless Policy` tab. By default, {project_name} sets *User Verification Requirement* to *required* and *Require Discoverable Credential* to *Yes* for the passwordless scenario to work properly. Storage capacity is usually very limited on Passkeys meaning that you won't be able to store many discoverable credentials on your Passkey.
 
 . Configure the authentication flow. Create a new authentication flow, add the "WebAuthn Passwordless" execution and set the Requirement setting of the execution to *Required*
 

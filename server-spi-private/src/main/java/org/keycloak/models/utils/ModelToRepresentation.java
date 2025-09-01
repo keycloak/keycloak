@@ -719,6 +719,9 @@ public class ModelToRepresentation {
 
         rep.setCredential(ModelToRepresentation.toRepresentation(credentialMetadata.getCredentialModel()));
         rep.setInfoMessage(toLocalizedMessage(credentialMetadata.getInfoMessage()));
+        rep.setInfoProperties(credentialMetadata.getInfoProperties() == null ? null : credentialMetadata.getInfoProperties().stream()
+                .map(ModelToRepresentation::toLocalizedMessage)
+                .toList());
         rep.setWarningMessageDescription(toLocalizedMessage(credentialMetadata.getWarningMessageDescription()));
         rep.setWarningMessageTitle(toLocalizedMessage(credentialMetadata.getWarningMessageTitle()));
         return rep;

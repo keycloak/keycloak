@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
@@ -36,6 +37,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -511,6 +513,7 @@ public class UserResource {
     @Path("federated-identity/{provider}")
     @POST
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Add a social login provider to the user")
     @APIResponses(value = {
@@ -809,8 +812,21 @@ public class UserResource {
         auth.users().requireView(user);
 
         return user.credentialManager().getCredentials()
+                .map(this::decorateCredentialForPresentation)
                 .map(ModelToRepresentation::toRepresentation)
                 .peek(credentialRepresentation -> credentialRepresentation.setSecretData(null));
+    }
+
+    private CredentialModel decorateCredentialForPresentation(CredentialModel credential) {
+        CredentialProvider credentialProvider = AuthenticatorUtil.getCredentialProviders(session)
+                .filter(p -> p.supportsCredentialType(credential.getType()))
+                .findFirst().orElse(null);
+        if (credentialProvider == null) {
+            logger.warnf("Credential Provider not found for credential of type '%s'", credential.getType());
+            return credential;
+        }
+
+        return credentialProvider.getCredentialForPresentationFromModel(credential);
     }
 
     /**

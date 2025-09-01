@@ -345,7 +345,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     // Completely logout from realm and confirm logout if present
     protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String idTokenHint, String clientId, String redirectUri) {
-        final String defaultRedirectUri = redirectUri != null ? redirectUri : getAccountUrl(contextRoot, realm);
+        final String defaultRedirectUri = redirectUri != null ? redirectUri : oauth.loginForm().build();
         final String defaultClientId = (idTokenHint == null && clientId == null) ? "test-app" : clientId;
 
         executeLogoutFromRealm(contextRoot, realm, initiatingIdp, idTokenHint, defaultClientId, defaultRedirectUri);

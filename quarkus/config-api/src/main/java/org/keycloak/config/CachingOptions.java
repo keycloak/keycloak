@@ -7,6 +7,7 @@ import com.google.common.base.CaseFormat;
 public class CachingOptions {
 
     public static final String CACHE_CONFIG_FILE_PROPERTY = "cache-config-file";
+    public static final String CACHE_CONFIG_MUTATE_PROPERTY = "cache-config-mutate";
 
     public static final String CACHE_EMBEDDED_PREFIX = "cache-embedded";
     private static final String CACHE_EMBEDDED_MTLS_PREFIX = CACHE_EMBEDDED_PREFIX + "-mtls";
@@ -76,6 +77,12 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description("Defines the file from which cache configuration should be loaded from. "
                     + "The configuration file is relative to the 'conf/' directory.")
+            .build();
+
+    public static final Option<Boolean> CACHE_CONFIG_MUTATE = new OptionBuilder<>(CACHE_CONFIG_MUTATE_PROPERTY, Boolean.class)
+            .category(OptionCategory.CACHE)
+            .description("Determines whether changes to the default cache configurations are allowed. This is only recommended for advanced use-cases where the default cache configurations are proven to be problematic. The only supported way to change the default cache configurations is via the other 'cache-...' options.")
+            .defaultValue(Boolean.FALSE)
             .build();
 
     public static final Option<Boolean> CACHE_EMBEDDED_MTLS_ENABLED = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY, Boolean.class)

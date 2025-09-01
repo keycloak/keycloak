@@ -539,6 +539,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                   .user(userId)
                   .assertEvent();
 
+                setTimeOffset(40);
                 verifyEmailPage.clickResendEmail();
                 verifyEmailPage.assertCurrent();
 
@@ -567,6 +568,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             // test that timestamp is current with 10s tollerance
             // test user info is set from form
+        } finally {
+            setTimeOffset(0);
         }
     }
 

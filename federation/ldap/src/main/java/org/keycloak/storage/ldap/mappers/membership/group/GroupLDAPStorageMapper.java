@@ -767,7 +767,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public boolean isMemberOf(GroupModel group) {
-            return isGroupInGroupPath(realm, group) && RoleUtils.isDirectMember(getGroupsStream(),group);
+            if (!isGroupInGroupPath(realm, group)) {
+                // this mapper doesn't manage the group - delegate to the next mapper or the JPA store.
+                return super.isMemberOf(group);
+            }
+            return RoleUtils.isDirectMember(getGroupsStream(),group);
         }
 
         protected Stream<GroupModel> getLDAPGroupMappingsConverted() {
