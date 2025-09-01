@@ -26,10 +26,6 @@ GET /admin/realms/{realm}/users?exact=false&q=myattribute:
 
 The {project_name} Admin Client is also updated with a new method to search users by attribute using the `exact` request parameter.
 
-=== Framework updates
-
-This version upgraded to Quarkus 3.26, which also updated several transitive dependencies.
-
 === Automatic database connection properties for the PostgreSQL driver
 
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.

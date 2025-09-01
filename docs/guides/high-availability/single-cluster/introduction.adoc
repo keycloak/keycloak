@@ -3,11 +3,12 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Single cluster deployments"
+title="Single-cluster deployments"
 summary="Deploy a single Keycloak cluster, optionally stretched across multiple availability-zones" >
 
-== When to use a single cluster setup
-The {project_name} single cluster architecture is targeted at use cases that:
+== When to use a single-cluster setup
+
+The {project_name} single-cluster setup is targeted at use cases that:
 
 * Deploy to an infrastructure with transparent networking, like for example a single {kubernetes} cluster.
 * Are constrained to a single
