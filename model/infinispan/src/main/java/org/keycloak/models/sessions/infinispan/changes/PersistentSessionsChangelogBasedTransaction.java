@@ -23,6 +23,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
@@ -148,7 +149,15 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 public void applyChanges() {
                     Retry.executeWithBackoff(
                             iteration -> KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(), super::applyChangesSynchronously),
-                            PersistentSessionsWorker.UPDATE_TIMEOUT, PersistentSessionsWorker.UPDATE_BASE_INTERVAL_MILLIS);
+                            (iteration, t) -> {
+                                if (t instanceof ModelDuplicateException ex) {
+                                    // duplicate exceptions are unlikely to succeed on a retry,
+                                    throw ex;
+                                } else if (iteration > 20) {
+                                    // never retry more than 20 times
+                                    throw new RuntimeException("Maximum number of retries reached", t);
+                                }
+                            }, PersistentSessionsWorker.UPDATE_TIMEOUT, PersistentSessionsWorker.UPDATE_BASE_INTERVAL_MILLIS);
                     clear();
                 }
             });
