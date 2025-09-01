@@ -24,7 +24,7 @@ export type UserProfileError = {
   responseData: ErrorArray | FieldError;
 };
 
-const isBundleKey = (displayName?: any) => {
+const isBundleKey = (displayName: unknown) => {
   return displayName && typeof displayName === "string"
     ? displayName.includes("${")
     : false;
