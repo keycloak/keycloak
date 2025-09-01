@@ -31,6 +31,7 @@ public class InviteOrgActionToken extends DefaultActionToken {
 
     private static final String JSON_FIELD_REDIRECT_URI = "reduri";
     private static final String JSON_ORG_ID = "org_id";
+    private static final String JSON_INVITATION_ID = "invitation_id";
 
     @JsonProperty(JSON_FIELD_REDIRECT_URI)
     private String redirectUri;
@@ -38,6 +39,9 @@ public class InviteOrgActionToken extends DefaultActionToken {
 
     @JsonProperty(JSON_ORG_ID)
     private String orgId;
+
+    @JsonProperty(JSON_INVITATION_ID)
+    private String invitationId;
 
     public InviteOrgActionToken(String userId, int absoluteExpirationInSecs, String email, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
@@ -62,5 +66,13 @@ public class InviteOrgActionToken extends DefaultActionToken {
 
     public void setOrgId(String orgId) {
         this.orgId = orgId;
+    }
+
+    public String getInvitationId() {
+        return invitationId;
+    }
+
+    public void setInvitationId(String invitationId) {
+        this.invitationId = invitationId;
     }
 }

@@ -128,6 +128,11 @@ public class OrganizationResource {
         return new OrganizationMemberResource(session, organization, adminEvent);
     }
 
+    @Path("invitations")
+    public OrganizationInvitationResource invitations() {
+        return new OrganizationInvitationResource(session, organization, adminEvent);
+    }
+
     @Path("identity-providers")
     public OrganizationIdentityProvidersResource identityProvider() {
         return new OrganizationIdentityProvidersResource(session, organization, adminEvent);
