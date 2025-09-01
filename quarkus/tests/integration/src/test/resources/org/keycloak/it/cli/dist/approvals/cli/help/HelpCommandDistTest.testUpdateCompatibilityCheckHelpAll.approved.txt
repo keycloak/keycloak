@@ -142,8 +142,8 @@ Database:
 
 --db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
                        deprecated, you should explicitly specify the db instead. Possible values
-                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
-                       dev-file.
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
+                       Default: dev-file.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
@@ -196,7 +196,7 @@ Database - additional datasources (Preview):
                      Preview: Used for named <datasource>. The database vendor. In production mode
                        the default value of 'dev-file' is deprecated, you should explicitly specify
                        the db instead. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres.
+                       mysql, oracle, postgres, tidb.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
                      Preview: Used for named <datasource>. Log SQL statements slower than the
                        configured threshold with logger org.hibernate.SQL_SLOW and log-level info.
@@ -366,6 +366,10 @@ Health:
 
 Management:
 
+--http-management-health-enabled <true|false>
+                     If health endpoints should be exposed on the management interface. If false,
+                       health endpoints will be exposed on the main interface. Default: true.
+                       Available only when health is enabled.
 --http-management-port <port>
                      Port of the management interface. Relevant only when something is exposed on
                        the management interface - see the guide for details. Default: 9000.

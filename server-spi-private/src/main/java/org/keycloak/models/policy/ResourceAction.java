@@ -37,6 +37,11 @@ public class ResourceAction implements Comparable<ResourceAction> {
         this.providerId = providerId;
     }
 
+    public ResourceAction(String providerId, MultivaluedHashMap<String, String> config) {
+        this.providerId = providerId;
+        this.config = config;
+    }
+
     public ResourceAction(ComponentModel model) {
         this.id = model.getId();
         this.providerId = model.getProviderId();

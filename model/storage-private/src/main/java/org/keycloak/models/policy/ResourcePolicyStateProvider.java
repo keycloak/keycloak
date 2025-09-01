@@ -27,11 +27,6 @@ import java.util.Set;
 public interface ResourcePolicyStateProvider extends Provider {
 
     /**
-     * Finds resource IDs scheduled to run the specified action within a policy.
-     */
-    List<String> findResourceIdsByScheduledAction(String policyId, String scheduledActionId);
-
-    /**
      * Updates the state for a list of resources that have just completed a new action.
      * This will perform an update for existing states or an insert for new states.
      */
@@ -70,6 +65,8 @@ public interface ResourcePolicyStateProvider extends Provider {
     ScheduledAction getScheduledAction(String policyId, String resourceId);
 
     List<ScheduledAction> getScheduledActionsByResource(String resourceId);
+
+    List<ScheduledAction> getScheduledActionsByPolicy(ResourcePolicy policy);
 
     List<ScheduledAction> getDueScheduledActions(ResourcePolicy policy);
 

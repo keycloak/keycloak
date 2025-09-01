@@ -16,9 +16,8 @@ runs:
         node-version: ${{ inputs.node-version }}
         check-latest: true
 
-    - name: Enable Corepack
-      shell: bash
-      run: corepack enable
+    - name: Setup Corepack
+      uses: ./.github/actions/corepack-setup
 
     - name: PNPM store cache
       uses: ./.github/actions/pnpm-store-cache
