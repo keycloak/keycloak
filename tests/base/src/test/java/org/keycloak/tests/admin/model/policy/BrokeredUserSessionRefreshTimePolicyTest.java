@@ -34,6 +34,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.DeleteUserActionProviderFactory;
+import org.keycloak.models.policy.ResourceOperationType;
 import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
@@ -119,6 +120,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
     public void tesRunActionOnFederatedUser() {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
                 .onCoditions(ResourcePolicyConditionRepresentation.create()
                         .of(IdentityProviderPolicyConditionFactory.ID)
                         .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
@@ -189,6 +191,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
     public void testAddRemoveFedIdentityAffectsPolicyAssociation() {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.toString())
                 .onCoditions(ResourcePolicyConditionRepresentation.create()
                         .of(IdentityProviderPolicyConditionFactory.ID)
                         .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
