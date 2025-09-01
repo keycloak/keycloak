@@ -50,7 +50,7 @@ public enum ResourceType {
 
             ResourceOperationType resourceOperationType = toOperationType(event.getOperationType());
             if (resourceOperationType != null) {
-                return new ResourcePolicyEvent(this, resourceOperationType, event.getResourceId());
+                return new ResourcePolicyEvent(this, resourceOperationType, event.getResourceId(), event);
             }
         }
         return null;
@@ -63,7 +63,7 @@ public enum ResourceType {
                 case USERS -> event.getUserId();
             };
             if (resourceOperationType != null && resourceId != null) {
-                return new ResourcePolicyEvent(this, resourceOperationType, event.getUserId());
+                return new ResourcePolicyEvent(this, resourceOperationType, event.getUserId(), event);
             }
         }
         return null;
@@ -82,6 +82,6 @@ public enum ResourceType {
             return null;
         }
 
-        return new ResourcePolicyEvent(this, resourceOperationType, resourceId);
+        return new ResourcePolicyEvent(this, resourceOperationType, resourceId, event);
     }
 }

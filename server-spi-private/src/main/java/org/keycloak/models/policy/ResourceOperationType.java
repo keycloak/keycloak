@@ -15,19 +15,27 @@ public enum ResourceOperationType {
 
     CREATE(OperationType.CREATE, EventType.REGISTER),
     LOGIN(EventType.LOGIN),
-    ADD_FEDERATED_IDENTITY(FederatedIdentityCreatedEvent.class),
+    ADD_FEDERATED_IDENTITY(new Class[] {FederatedIdentityCreatedEvent.class}, new Class[] {FederatedIdentityRemovedEvent.class}),
     REMOVE_FEDERATED_IDENTITY(FederatedIdentityRemovedEvent.class),
     GROUP_MEMBERSHIP_JOIN(GroupMemberJoinEvent.class);
 
     private final List<Object> types;
+    private final List<Object> deactivationTypes;
 
     ResourceOperationType(Enum<?>... types) {
         this.types = List.of(types);
+        this.deactivationTypes = List.of();
     }
 
     @SafeVarargs
     ResourceOperationType(Class<? extends ProviderEvent>... types) {
         this.types = List.of(types);
+        this.deactivationTypes = List.of();
+    }
+
+    ResourceOperationType(Class<? extends ProviderEvent>[] types, Class<? extends ProviderEvent>[] deactivationTypes) {
+        this.types = List.of(types);
+        this.deactivationTypes = List.of(deactivationTypes);
     }
 
     public static ResourceOperationType toOperationType(Enum<?> from) {
@@ -45,24 +53,11 @@ public enum ResourceOperationType {
             }
             for (Object type : value.types) {
                 if (type instanceof Class<?> cls && cls.isAssignableFrom((Class<?>) from)) {
-//                    factory.register(fired -> {
-//                        ResourcePolicyEvent rpe = null;
-//                        if (fired instanceof FederatedIdentityModel.FederatedIdentityCreatedEvent event) {
-//                            rpe = new ResourcePolicyEvent(ResourceType.USERS, ResourceOperationType.ADD_FEDERATED_IDENTITY,
-//                                    event.getUser().getId(), Map.of("provider", event.getFederatedIdentity().getIdentityProvider()));
-//                            ResourcePolicyManager manager = new ResourcePolicyManager(event.getKeycloakSession());
-//                            manager.processEvent(rpe);
-//                        } else if (fired instanceof FederatedIdentityModel.FederatedIdentityRemovedEvent event) {
-//                            rpe =  new ResourcePolicyEvent(ResourceType.USERS, ResourceOperationType.REMOVE_FEDERATED_IDENTITY,
-//                                    event.getUser().getId(), Map.of("provider", event.getFederatedIdentity().getIdentityProvider()));
-//                            ResourcePolicyManager manager = new ResourcePolicyManager(event.getKeycloakSession());
-//                            manager.processEvent(rpe);
-//                        }
-//                    });
                     return value;
                 }
             }
         }
+
         return null;
     }
 
@@ -77,5 +72,14 @@ public enum ResourceOperationType {
             return fie.getUser().getId();
         }
         return null;
+    }
+
+    public boolean isDeactivationEvent(Class<?> eventType) {
+        for (Object deactivationType : deactivationTypes) {
+            if (deactivationType instanceof Class<?> cls && cls.isAssignableFrom(eventType)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

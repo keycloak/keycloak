@@ -58,7 +58,6 @@ public class UserCreationTimePolicyTest {
     public void testDisableUserBasedOnCreationDate() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
-                .onEvent(ResourceOperationType.CREATE.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(5))

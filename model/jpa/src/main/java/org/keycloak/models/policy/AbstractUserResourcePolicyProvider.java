@@ -32,8 +32,6 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.UserEntity;
-import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory;
-import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionProvider;
 
 public abstract class AbstractUserResourcePolicyProvider extends EventBasedResourcePolicyProvider {
 
@@ -105,36 +103,13 @@ public abstract class AbstractUserResourcePolicyProvider extends EventBasedResou
         return evaluate(event);
     }
 
-    public boolean deactivateOnEvent(ResourcePolicyEvent event) {
-        boolean b = this.supports(event.getResourceType())
-                && this.getSupportedOperationsForDeactivation().contains(event.getOperation());
-
-        if (!b) {
-            return false;
-        }
-
-        return !evaluate(event);
-    }
-
     @Override
     public void close() {
         // no-op
     }
 
-    protected List<ResourceOperationType> getSupportedOperationsForActivation() {
-        return this.getBrokerAliases().isEmpty()
-                    ? Collections.emptyList()
-                    : List.of(ResourceOperationType.ADD_FEDERATED_IDENTITY);
-    }
-
     protected List<ResourceOperationType> getSupportedOperationsForResetting() {
         return Collections.emptyList();
-    }
-
-    protected List<ResourceOperationType> getSupportedOperationsForDeactivation() {
-        return this.getBrokerAliases().isEmpty()
-                    ? Collections.emptyList()
-                    : List.of(ResourceOperationType.REMOVE_FEDERATED_IDENTITY);
     }
 
     protected EntityManager getEntityManager() {
@@ -143,19 +118,5 @@ public abstract class AbstractUserResourcePolicyProvider extends EventBasedResou
 
     protected RealmModel getRealm() {
         return getSession().getContext().getRealm();
-    }
-
-    protected List<String> getBrokerAliases() {
-        List<String> conditions = getModel().getConfig().getOrDefault("conditions", List.of());
-
-        for (String providerId : conditions) {
-            ResourcePolicyConditionProvider condition = resolveCondition(providerId);
-
-            if (condition instanceof IdentityProviderPolicyConditionProvider) {
-                return getModel().getConfig().getOrDefault(providerId + "." + IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, List.of());
-            }
-        }
-
-        return List.of();
     }
 }
