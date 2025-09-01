@@ -15,7 +15,7 @@ export type UserFormFields = Omit<
 type FieldError = {
   field: string;
   errorMessage: string;
-  params?: any[];
+  params?: unknown[];
 };
 
 type ErrorArray = { errors?: FieldError[] };
