@@ -13,11 +13,17 @@ package org.keycloak.models.policy.conditions;
 import java.util.List;
 import java.util.stream.Stream;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.policy.ResourcePolicyConditionProvider;
 import org.keycloak.models.policy.ResourcePolicyEvent;
 import org.keycloak.models.policy.ResourceType;
@@ -46,6 +52,22 @@ public class IdentityProviderPolicyConditionProvider implements ResourcePolicyCo
         return federatedIdentities
                 .map(FederatedIdentityModel::getIdentityProvider)
                 .anyMatch(expectedAliases::contains);
+    }
+
+    @Override
+    public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> path) {
+        Subquery<Integer> subquery = query.subquery(Integer.class);
+        Root<FederatedIdentityEntity> from = subquery.from(FederatedIdentityEntity.class);
+
+        subquery.select(cb.literal(1));
+        subquery.where(
+                cb.and(
+                        cb.equal(from.get("user").get("id"), path.get("id")),
+                        from.get("identityProvider").in(expectedAliases)
+                )
+        );
+
+        return cb.exists(subquery);
     }
 
     @Override

@@ -40,6 +40,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourceAction;
+import org.keycloak.models.policy.ResourceOperationType;
 import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
@@ -260,6 +261,7 @@ public class ResourcePolicyManagementTest {
 
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.name())
                 .onCoditions(ResourcePolicyConditionRepresentation.create()
                         .of(IdentityProviderPolicyConditionFactory.ID)
                         .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, "someidp")
