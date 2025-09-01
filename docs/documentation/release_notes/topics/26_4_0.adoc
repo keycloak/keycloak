@@ -98,4 +98,4 @@ See the https://www.keycloak.org/server/logging[Logging guide] for more informat
 = Supported OAuth standards listed on one page
 
 There is now a new guide listing https://www.keycloak.org/securing-apps/specifications[all implemented OpenID Connect related specifications].
-Thank you to https://github.com/SferaDev[@tnorminat] for contributing this.
+Thank you to https://github.com/tnorimat[@tnorimat] for contributing this.
