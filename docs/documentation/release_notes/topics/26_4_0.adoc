@@ -85,7 +85,7 @@ If you want to volunteer to maintain an existing or a new translation via Weblat
 = Setting up OTP can enfore set up of recovery codes
 
 If you have enabled OTPs and recovery codes as a second factor for authentication, you can configure the OTP required action to ask users to set up recovery codes once they set up an OTP.
-Thank you to https://github.com/SferaDev[@dasninko] for contributing this.
+Thank you to https://github.com/dasniko[@dasniko] for contributing this.
 
 = MDC logging to correlate messages with realms and clients
 
