@@ -33,6 +33,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
+import org.keycloak.models.policy.ResourceOperationType;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
@@ -86,6 +87,7 @@ public class UserSessionRefreshTimePolicyTest {
     public void testDisabledUserAfterInactivityPeriod() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -164,12 +166,14 @@ public class UserSessionRefreshTimePolicyTest {
     public void testMultiplePolicies() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(5))
                                 .withConfig("message_key", "notifier1")
                                 .build()
                 ).of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(10))

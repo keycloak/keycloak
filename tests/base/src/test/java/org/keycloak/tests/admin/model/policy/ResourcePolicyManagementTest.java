@@ -196,6 +196,7 @@ public class ResourcePolicyManagementTest {
     public void testPolicyDoesNotFallThroughActionsInSingleRun() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.CREATE.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -360,6 +361,7 @@ public class ResourcePolicyManagementTest {
         // create a test policy
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.CREATE.toString())
                 .name("test-policy")
                 .withConfig("enabled", "true")
                 .withActions(
@@ -467,6 +469,7 @@ public class ResourcePolicyManagementTest {
     public void testRecurringPolicy() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.CREATE.toString())
                 .withConfig("recurring", "true")
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)

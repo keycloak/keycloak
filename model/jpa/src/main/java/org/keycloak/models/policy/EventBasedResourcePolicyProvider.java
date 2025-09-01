@@ -31,6 +31,10 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
 
     @Override
     public boolean activateOnEvent(ResourcePolicyEvent event) {
+        if (!supports(event.getResourceType())) {
+            return false;
+        }
+
         List<String> events = model.getConfig().getOrDefault("events", List.of());
         ResourceOperationType operation = event.getOperation();
 
@@ -38,7 +42,34 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
             return false;
         }
 
-        List<String> conditions = model.getConfig().getOrDefault("conditions", List.of());
+        return evaluate(event);
+    }
+
+    @Override
+    public boolean deactivateOnEvent(ResourcePolicyEvent event) {
+        if (!supports(event.getResourceType())) {
+            return false;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean resetOnEvent(ResourcePolicyEvent event) {
+        if (!supports(event.getResourceType())) {
+            return false;
+        }
+
+        return false;
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+    protected boolean evaluate(ResourcePolicyEvent event) {
+        List<String> conditions = getModel().getConfig().getOrDefault("conditions", List.of());
 
         for (String providerId : conditions) {
             ResourcePolicyConditionProvider condition = resolveCondition(providerId);
@@ -51,22 +82,7 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
         return true;
     }
 
-    @Override
-    public boolean deactivateOnEvent(ResourcePolicyEvent event) {
-        return false;
-    }
-
-    @Override
-    public boolean resetOnEvent(ResourcePolicyEvent event) {
-        return false;
-    }
-
-    @Override
-    public void close() {
-
-    }
-
-    private ResourcePolicyConditionProvider resolveCondition(String providerId) {
+    protected ResourcePolicyConditionProvider resolveCondition(String providerId) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         ResourcePolicyConditionProviderFactory<ResourcePolicyConditionProvider> providerFactory = (ResourcePolicyConditionProviderFactory<ResourcePolicyConditionProvider>) sessionFactory.getProviderFactory(ResourcePolicyConditionProvider.class, providerId);
 
@@ -89,5 +105,13 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
         }
 
         return condition;
+    }
+
+    protected ComponentModel getModel() {
+        return model;
+    }
+
+    protected KeycloakSession getSession() {
+        return session;
     }
 }
