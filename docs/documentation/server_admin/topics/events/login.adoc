@@ -184,7 +184,7 @@ To change the log level used by the Logging Event listener, add the following:
 
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-events-listener-jboss-logging-success-level=info --spi-events-listener--jboss-logging--error-level=error
+bin/kc.[sh|bat] start --spi-events-listener--jboss-logging--success-level=info --spi-events-listener--jboss-logging--error-level=error
 ----
 
 The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal`.
