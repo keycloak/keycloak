@@ -17,6 +17,7 @@
 
 package org.keycloak.models.policy;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config;
@@ -61,11 +62,23 @@ public class NotifyUserActionProviderFactory implements ResourceActionProviderFa
 
     @Override
     public String getHelpText() {
-        return "";
+        return "Sends email notifications to users based on configurable templates";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return List.of();
+        return Arrays.asList(
+            new ProviderConfigProperty("reason", "Reason", 
+                "Reason for the action (inactivity, policy violation, compliance requirement)", 
+                ProviderConfigProperty.STRING_TYPE, ""),
+
+            new ProviderConfigProperty("custom_subject_key", "Custom Subject Message Key", 
+                "Override default subject with custom message property key (optional)", 
+                ProviderConfigProperty.STRING_TYPE, ""),
+
+            new ProviderConfigProperty("custom_message", "Custom Message", 
+                "Override default message with custom text (optional)", 
+                ProviderConfigProperty.TEXT_TYPE, "")
+        );
     }
 }
