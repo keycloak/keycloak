@@ -26,23 +26,28 @@ import jakarta.persistence.criteria.Subquery;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory;
+import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionProvider;
 
 public abstract class AbstractUserResourcePolicyProvider implements ResourcePolicyProvider {
 
     private final ComponentModel policyModel;
     private final EntityManager em;
     private final KeycloakSession session;
-
-    private static final String BROKER_ALIASES = "broker-aliases";
 
     public AbstractUserResourcePolicyProvider(KeycloakSession session, ComponentModel model) {
         this.policyModel = model;
@@ -187,6 +192,41 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
     }
 
     protected List<String> getBrokerAliases() {
-        return getModel().getConfig().getOrDefault(BROKER_ALIASES, List.of());
+        List<String> conditions = policyModel.getConfig().getOrDefault("conditions", List.of());
+
+        for (String providerId : conditions) {
+            ResourcePolicyConditionProvider condition = resolveCondition(providerId);
+
+            if (condition instanceof IdentityProviderPolicyConditionProvider) {
+                return getModel().getConfig().getOrDefault(providerId + "." + IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, List.of());
+            }
+        }
+
+        return List.of();
+    }
+
+    private ResourcePolicyConditionProvider resolveCondition(String providerId) {
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        ResourcePolicyConditionProviderFactory<ResourcePolicyConditionProvider> providerFactory = (ResourcePolicyConditionProviderFactory<ResourcePolicyConditionProvider>) sessionFactory.getProviderFactory(ResourcePolicyConditionProvider.class, providerId);
+
+        if (providerFactory == null) {
+            throw new IllegalStateException("Could not find condition provider: " + providerId);
+        }
+
+        Map<String, List<String>> config = new HashMap<>();
+
+        for (Entry<String, List<String>> configEntry : policyModel.getConfig().entrySet()) {
+            if (configEntry.getKey().startsWith(providerId)) {
+                config.put(configEntry.getKey().substring(providerId.length() + 1), configEntry.getValue());
+            }
+        }
+
+        ResourcePolicyConditionProvider condition = providerFactory.create(session, config);
+
+        if (condition == null) {
+            throw new IllegalStateException("Factory " + providerFactory.getClass() + " returned a null provider");
+        }
+
+        return condition;
     }
 }
