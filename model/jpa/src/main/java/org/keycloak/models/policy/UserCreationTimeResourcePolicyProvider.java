@@ -31,9 +31,7 @@ public class UserCreationTimeResourcePolicyProvider extends AbstractUserResource
     }
 
     @Override
-    protected List<ResourceOperationType> getSupportedOperationsForActivation() {
-        return new java.util.ArrayList<>(super.getSupportedOperationsForActivation()) {{
-            add(CREATE);
-        }};
+    protected boolean isActivationEvent(ResourcePolicyEvent event) {
+        return super.isActivationEvent(event) || CREATE.equals(event.getOperation());
     }
 }

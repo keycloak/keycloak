@@ -35,14 +35,22 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
             return false;
         }
 
-        List<String> events = model.getConfig().getOrDefault("events", List.of());
-        ResourceOperationType operation = event.getOperation();
-
-        if (!events.contains(operation.name())) {
+        if (!isActivationEvent(event)) {
             return false;
         }
 
         return evaluate(event);
+    }
+
+    protected boolean isActivationEvent(ResourcePolicyEvent event) {
+        List<String> events = model.getConfig().getOrDefault("events", List.of());
+        ResourceOperationType operation = event.getOperation();
+
+        if (events.contains(operation.name())) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -51,6 +59,16 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
             return false;
         }
 
+        List<String> events = model.getConfig().getOrDefault("events", List.of());
+
+        for (String activationEvent : events) {
+            ResourceOperationType a = ResourceOperationType.valueOf(activationEvent);
+
+            if (a.isDeactivationEvent(event.getEvent().getClass())) {
+                return !evaluate(event);
+            }
+        }
+        
         return false;
     }
 
