@@ -17,13 +17,6 @@
 
 package org.keycloak.models.policy;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,14 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory;
 import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionProvider;
@@ -76,57 +72,32 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
         Predicate notExistsPredicate = cb.not(cb.exists(subquery));
         predicates.add(notExistsPredicate);
 
-        // origin-based condition
-        Predicate originPredicate = buildOriginPredicate(cb, query, userRoot);
-        if (originPredicate != null) {
-            predicates.add(originPredicate);
-        }
-
-        // todo: add relationship predicates (groups, roles, perhaps user attribute?)
+        predicates.addAll(getConditionsPredicate(cb, query, userRoot));
 
         query.select(userRoot.get("id")).where(predicates);
+
         return em.createQuery(query).getResultList();
     }
 
-    protected Predicate buildOriginPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> userRoot) {
-        // As of now we check only if there are broker aliases configured for the policy. More complete approach should check
-        // a "origin" attribute for the origin type, and add the predicate accordingly
-        // e.g. "origin" = "broker", check broker aliases; "origin" = "any" no need to filter anything; "origin" = "fed-provider", check "fed-providers", etc
-        if (!this.getBrokerAliases().isEmpty()) {
-            Subquery<Integer> subquery = query.subquery(Integer.class);
-            Root<FederatedIdentityEntity> from = subquery.from(FederatedIdentityEntity.class);
+    private List<Predicate> getConditionsPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> path) {
+        List<String> conditions = policyModel.getConfig().getOrDefault("conditions", List.of());
 
-            subquery.select(cb.literal(1));
-            subquery.where(
-                cb.and(
-                    cb.equal(from.get("user").get("id"), userRoot.get("id")),
-                    from.get("identityProvider").in(getBrokerAliases())
-                )
-            );
-            return cb.exists(subquery);
+        if (conditions.isEmpty()) {
+            return List.of();
         }
-        return null;
-    }
 
-    /**
-     * Indicates whether the specified resource is in the scope of this policy. For example, a policy associated with a
-     * broker is applicable only to users with a federated identity associated with the same broker.
-     *
-     * @param resourceId the id of the resource being checked.
-     * @return {@code true} if the resource is in the policy scope; {@code false} otherwise.
-     */
-    protected boolean isResourceInScope(String resourceId) {
-        UserModel user = this.getSession().users().getUserById(this.getRealm(), resourceId);
-        if (user != null) {
-            List<String> brokerAliases = this.getBrokerAliases();
-            if (!brokerAliases.isEmpty()) {
-                return session.users().getFederatedIdentitiesStream(this.getRealm(), user)
-                        .map(FederatedIdentityModel::getIdentityProvider)
-                        .anyMatch(brokerAliases::contains);
+        List<Predicate> predicates = new ArrayList<>();
+
+        for (String providerId : conditions) {
+            ResourcePolicyConditionProvider condition = resolveCondition(providerId);
+            Predicate predicate = condition.toPredicate(cb, query, path);
+
+            if (predicate != null) {
+                predicates.add(predicate);
             }
-            return true;
         }
-        return false;
+
+        return predicates;
     }
 
     @Override
@@ -136,22 +107,51 @@ public abstract class AbstractUserResourcePolicyProvider implements ResourcePoli
 
     @Override
     public boolean activateOnEvent(ResourcePolicyEvent event) {
-        return this.supports(event.getResourceType())
-                && this.getSupportedOperationsForActivation().contains(event.getOperation())
-                && this.isResourceInScope(event.getResourceId());
+        boolean b = this.supports(event.getResourceType())
+                && this.getSupportedOperationsForActivation().contains(event.getOperation());
+
+        if (!b) {
+            return false;
+        }
+
+        return evaluate(event);
     }
 
     @Override
     public boolean resetOnEvent(ResourcePolicyEvent event) {
-        return this.supports(event.getResourceType())
-                && this.getSupportedOperationsForResetting().contains(event.getOperation())
-                && this.isResourceInScope(event.getResourceId());
+        boolean b = this.supports(event.getResourceType())
+                && this.getSupportedOperationsForResetting().contains(event.getOperation());
+
+        if (!b) {
+            return false;
+        }
+
+        return evaluate(event);
     }
 
     public boolean deactivateOnEvent(ResourcePolicyEvent event) {
-        return this.supports(event.getResourceType())
-                && this.getSupportedOperationsForDeactivation().contains(event.getOperation())
-                && !this.isResourceInScope(event.getResourceId());
+        boolean b = this.supports(event.getResourceType())
+                && this.getSupportedOperationsForDeactivation().contains(event.getOperation());
+
+        if (!b) {
+            return false;
+        }
+
+        return !evaluate(event);
+    }
+
+    private boolean evaluate(ResourcePolicyEvent event) {
+        List<String> conditions = policyModel.getConfig().getOrDefault("conditions", List.of());
+
+        for (String providerId : conditions) {
+            ResourcePolicyConditionProvider condition = resolveCondition(providerId);
+
+            if (!condition.evaluate(event)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
