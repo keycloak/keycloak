@@ -3,11 +3,12 @@ package org.keycloak.tests.admin.model.policy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.keycloak.tests.admin.model.policy.ResourcePolicyManagementTest.findEmailByRecipient;
 
 import java.time.Duration;
 import java.util.List;
 
+import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,8 @@ import org.keycloak.representations.resources.policies.ResourcePolicyRepresentat
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
@@ -44,6 +47,9 @@ public class GroupMembershipJoinPolicyTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
+
+    @InjectMailServer
+    private MailServer mailServer;
 
     @Test
     public void testEventsOnGroupMembershipJoin() {
@@ -77,7 +83,7 @@ public class GroupMembershipJoinPolicyTest {
         String userId;
 
         try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
-                .username("generic-user").build())) {
+                .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
 
@@ -88,18 +94,21 @@ public class GroupMembershipJoinPolicyTest {
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
             UserModel user = session.users().getUserById(realm, userId);
-            assertNull(user.getAttributes().get("message"));
 
             try {
                 // set offset to 7 days - notify action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
                 manager.runScheduledActions();
-                user = session.users().getUserById(realm, userId);
-                assertNotNull(user.getAttributes().get("message"));
             } finally {
                 Time.setOffset(0);
             }
         }));
+
+        // Verify that the notify action was executed by checking email was sent
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "generic-user@example.com");
+        assertNotNull(testUserMessage, "The first action (notify) should have sent an email.");
+
+        mailServer.runCleanup();
     }
 
     private static RealmModel configureSessionContext(KeycloakSession session) {
