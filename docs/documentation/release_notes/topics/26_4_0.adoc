@@ -71,7 +71,7 @@ This release renamed multi-az to multi-cluster.
 It adds a separate guide for single-cluster setups, which includes details of how {project_name} clusters can be optionally "stretched" across multiple availability-zones for increased availability.
 The {project_name} Operator now deploys {project_name} across multiple availability zones within a Kubernetes cluster by default. {project_name} also detects split-brains within a cluster.
 
-This should provide better availability for users who are running {project_name} in {kubernetes} clusters that span multiple availability zones.
+This should provide better availability for users who are running {project_name} in Kubernetes clusters that span multiple availability zones.
 
 = Translations managed via Weblate
 
