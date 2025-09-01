@@ -91,7 +91,7 @@ Thank you to https://github.com/dasniko[@dasniko] for contributing this.
 
 As a new preview feature, you can include in all log messages in the MDC of each message realm name, client ID and other information.
 This helps you to correlate error messages to a specific realm or client.
-Thank you to https://github.com/SferaDev[@eicki] for contributing this.
+Thank you to https://github.com/eicki[@eicki] for contributing this.
 
 See the https://www.keycloak.org/server/logging[Logging guide] for more information.
 
