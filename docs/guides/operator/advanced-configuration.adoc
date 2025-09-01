@@ -555,6 +555,8 @@ spec:
       app: keycloak
       app.kubernetes.io/instance: example-kc # <2>
       app.kubernetes.io/managed-by: keycloak-operator
+  scrapeProtocols:
+    - OpenMetricsText1.0.0
 ----
 <1> The `ServiceMonitor` is created with the same name as the Keycloak CR.
 <2> The `ServiceMonitor` is always deployed to the same namespace as the Keycloak CR and will only match a Service

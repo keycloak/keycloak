@@ -60,6 +60,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 .withNewSelector()
                   .addToMatchLabels(Utils.allInstanceLabels(primary))
                 .endSelector()
+                .withScrapeProtocols("OpenMetricsText1.0.0")
                 .addNewEndpoint()
                   .withInterval(spec.getInterval())
                   .withPath(metricsPath)
