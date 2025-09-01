@@ -33,6 +33,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -66,6 +67,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -565,8 +567,8 @@ public class RoleContainerResource extends RoleResource {
     public Stream<UserRepresentation> getUsersInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
                                                     @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                                     @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
-                                                    @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults) {
-        
+                                                    @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults,
+                                                    @Parameter(description = "If true, also include users that inherit the role from a group") @QueryParam("includeGroups") @DefaultValue("false") boolean includeGroups) {
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
@@ -579,8 +581,39 @@ public class RoleContainerResource extends RoleResource {
         final Function<UserModel, UserRepresentation> toRepresentation = briefRepresentation != null && briefRepresentation
                 ? ModelToRepresentation::toBriefRepresentation
                 : user -> ModelToRepresentation.toRepresentation(session, realm, user);
-        return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
-                .map(toRepresentation);
+
+        Stream<UserModel> usersStream;
+        if (includeGroups) {
+            List<UserModel> combined = new ArrayList<>();
+            Set<String> userIds = new LinkedHashSet<>();
+
+            session.users().getRoleMembersStream(realm, role)
+                    .forEach(user -> addUser(user, userIds, combined));
+
+            session.groups().getGroupsByRoleStream(realm, role)
+                    .forEach(group -> collectGroupUsers(group, userIds, combined));
+
+            usersStream = combined.stream()
+                    .skip(firstResult)
+                    .limit(maxResults);
+        } else {
+            usersStream = session.users()
+                    .getRoleMembersStream(realm, role, firstResult, maxResults);
+        }
+
+        return usersStream.map(toRepresentation);
+    }
+
+    private void addUser(UserModel user, Set<String> ids, List<UserModel> users) {
+        if (ids.add(user.getId())) {
+            users.add(user);
+        }
+    }
+
+    private void collectGroupUsers(GroupModel group, Set<String> ids, List<UserModel> users) {
+        session.users().getGroupMembersStream(realm, group)
+                .forEach(user -> addUser(user, ids, users));
+        group.getSubGroupsStream().forEach(sub -> collectGroupUsers(sub, ids, users));
     }
     
     /**
