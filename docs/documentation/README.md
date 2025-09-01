@@ -42,7 +42,7 @@ By default, an archive version of the documentation is built. To build the lates
 
 You can then view the documentation by opening `docs/documentation/GUIDE_DIR/target/generated-docs/index.html`.
 
-To build the REST API documentation and the javadoc:
+To build the REST API documentation and the Javadoc:
 
 - Export the `JAVA_HOME` variable, for example:
   ```
