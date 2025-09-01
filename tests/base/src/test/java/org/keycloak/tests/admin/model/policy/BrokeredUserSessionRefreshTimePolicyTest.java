@@ -38,10 +38,12 @@ import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
+import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyConditionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -117,7 +119,10 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
     public void tesRunActionOnFederatedUser() {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
-                .withConfig("broker-aliases", IDP_OIDC_ALIAS)
+                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                        .of(IdentityProviderPolicyConditionFactory.ID)
+                        .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
+                        .build())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(1))
@@ -184,7 +189,10 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
     public void testAddRemoveFedIdentityAffectsPolicyAssociation() {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
-                .withConfig("broker-aliases", IDP_OIDC_ALIAS)
+                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                        .of(IdentityProviderPolicyConditionFactory.ID)
+                        .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
+                        .build())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(1))

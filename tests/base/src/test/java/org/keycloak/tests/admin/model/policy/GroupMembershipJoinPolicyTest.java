@@ -34,7 +34,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.EventBasedResourcePolicyProviderFactory;
-import org.keycloak.models.policy.GroupMembershipPolicyConditionFactory;
+import org.keycloak.models.policy.conditions.GroupMembershipPolicyConditionFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourceOperationType;
 import org.keycloak.models.policy.ResourcePolicyManager;
@@ -110,7 +110,7 @@ public class GroupMembershipJoinPolicyTest {
             try {
                 // set offset to 7 days - notify action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserById(realm, userId);
                 assertNotNull(user.getAttributes().get("message"));
             } finally {

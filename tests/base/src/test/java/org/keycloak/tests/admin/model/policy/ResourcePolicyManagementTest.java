@@ -45,7 +45,9 @@ import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.ResourcePolicyStateProvider;
 import org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
+import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyConditionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -258,7 +260,10 @@ public class ResourcePolicyManagementTest {
 
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
-                .withConfig("broker-aliases", "someidp")
+                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                        .of(IdentityProviderPolicyConditionFactory.ID)
+                        .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, "someidp")
+                        .build())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(5))

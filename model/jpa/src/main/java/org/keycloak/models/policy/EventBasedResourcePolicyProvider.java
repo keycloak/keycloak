@@ -30,7 +30,7 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
     }
 
     @Override
-    public boolean scheduleOnEvent(ResourcePolicyEvent event) {
+    public boolean activateOnEvent(ResourcePolicyEvent event) {
         List<String> events = model.getConfig().getOrDefault("events", List.of());
         ResourceOperationType operation = event.getOperation();
 
@@ -49,6 +49,11 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
         }
 
         return true;
+    }
+
+    @Override
+    public boolean deactivateOnEvent(ResourcePolicyEvent event) {
+        return false;
     }
 
     @Override
@@ -82,6 +87,7 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
         if (condition == null) {
             throw new IllegalStateException("Factory " + providerFactory.getClass() + " returned a null provider");
         }
+
         return condition;
     }
 }
