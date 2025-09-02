@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * TODO: Remove this and probably also ClientSessionParser. It's uneccessary genericity and abstraction, which is not needed anymore when clientSessionModel was fully removed.
+ * TODO: Remove this and probably also ClientSessionParser. It's unnecessary genericity and abstraction, which is not needed anymore when clientSessionModel was fully removed.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
