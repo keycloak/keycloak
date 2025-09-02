@@ -2,7 +2,7 @@ const SESSION_POLLING_INTERVAL = 2000;
 const AUTH_SESSION_TIMEOUT_MILLISECS = 1000;
 const initialSession = getSession();
 const forms = Array.from(document.forms);
-let timeout;
+let timeout, eventListener;
 
 // Stop polling for a session when a form is submitted to prevent unexpected redirects.
 // This is required as Safari does not support the 'beforeunload' event properly.
@@ -21,6 +21,17 @@ globalThis.addEventListener("beforeunload", () => stopSessionPolling());
 export function startSessionPolling(redirectUrl) {
   if (initialSession) {
     // We started with a session, so there is nothing to do, exit.
+    return;
+  }
+
+  if (!eventListener) {
+    eventListener = () => startSessionPolling(redirectUrl);
+    window.addEventListener("focus", eventListener);
+    window.addEventListener("blur", eventListener);
+  }
+
+  if (document.hidden) {
+    // Wait until the user activates this tab
     return;
   }
 
@@ -46,6 +57,11 @@ function stopSessionPolling() {
   if (timeout) {
     clearTimeout(timeout);
     timeout = undefined;
+  }
+  if (eventListener) {
+    window.removeEventListener("focus", eventListener);
+    window.removeEventListener("blur", eventListener);
+    eventListener = undefined;
   }
 }
 
