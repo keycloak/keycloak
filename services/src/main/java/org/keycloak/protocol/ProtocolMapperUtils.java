@@ -44,6 +44,7 @@ public class ProtocolMapperUtils {
     public static final String USER_ROLE = "user.role";
     public static final String USER_ATTRIBUTE = "user.attribute";
     public static final String USER_SESSION_NOTE = "user.session.note";
+    public static final String CLIENT_SESSION_NOTE = "client.session.note";
     public static final String MULTIVALUED = "multivalued";
     public static final String AGGREGATE_ATTRS = "aggregate.attrs";
     public static final String USER_MODEL_PROPERTY_LABEL = "usermodel.prop.label";
@@ -64,7 +65,9 @@ public class ProtocolMapperUtils {
     public static final String USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX_HELP_TEXT = "usermodel.realmRoleMapping.rolePrefix.tooltip";
 
     public static final String USER_SESSION_MODEL_NOTE_LABEL = "userSession.modelNote.label";
+    public static final String CLIENT_SESSION_MODEL_NOTE_LABEL = "clientSession.modelNote.label";
     public static final String USER_SESSION_MODEL_NOTE_HELP_TEXT = "userSession.modelNote.tooltip";
+    public static final String CLIENT_SESSION_MODEL_NOTE_HELP_TEXT = "clientSession.modelNote.tooltip";
     public static final String MULTIVALUED_LABEL = "multivalued.label";
     public static final String AGGREGATE_ATTRS_LABEL = "aggregate.attrs.label";
     public static final String MULTIVALUED_HELP_TEXT = "multivalued.tooltip";
