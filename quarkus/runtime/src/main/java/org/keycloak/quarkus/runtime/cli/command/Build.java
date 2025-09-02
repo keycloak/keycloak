@@ -80,7 +80,7 @@ public final class Build extends AbstractCommand implements Runnable {
             validateConfig();
             return null;
         });
-        System.setProperty("quarkus.launch.rebuild", "true");
+        Environment.setRebuild();
 
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 
