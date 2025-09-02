@@ -1,0 +1,59 @@
+name: Create Azure SQL Database
+description: Create Azure SQL Database
+
+inputs:
+  name:
+    description: 'The name prefix for the Azure SQL resources'
+    required: true
+  region:
+    description: 'The Azure region used to host the SQL server'
+    required: true
+  subscription:
+    description: 'Azure subscription id'
+    required: true
+  admin-password:
+    description: 'The admin password for the SQL server'
+    required: false
+  db-password:
+    description: 'The password for the keycloak DB user'
+    required: false
+
+outputs:
+  endpoint:
+    description: 'The Endpoint URL for SQL clients to connect to'
+    value: ${{ steps.create.outputs.endpoint }}
+  db:
+    description: 'Database name'
+    value: ${{ steps.create.outputs.db }}
+  username:
+    description: 'DB user principal'
+    value: ${{ steps.create.outputs.username }}
+  password:
+    description: 'DB password'
+    value: ${{ steps.create.outputs.password }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install sqlcmd (mssql-tools)
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo ACCEPT_EULA=Y apt-get install -y curl apt-transport-https gnupg
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+        sudo apt-get update
+        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools unixodbc-dev
+        echo "/opt/mssql-tools/bin" >> $GITHUB_PATH
+
+    - id: create
+      shell: bash
+      run: |
+        ./azure_create.sh
+      working-directory: .github/scripts/azure/sql
+      env:
+        AZURE_NAME: ${{ inputs.name }}
+        AZURE_REGION: ${{ inputs.region }}
+        AZURE_SUBSCRIPTION: ${{ inputs.subscription }}
+        AZURE_ADMIN_PASSWORD: ${{ inputs.admin-password }}
+        AZURE_DB_PASSWORD: ${{ inputs.db-password }}
