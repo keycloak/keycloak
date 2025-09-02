@@ -69,7 +69,8 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, cache, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS, serializer);
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
-        session.getTransactionManager().enlistAfterCompletion(sessionTx);
+        // TODO: If we bind ourselves to the transaction manager of Quarkus and use the embedded caches, we should perform all tasks in the prepare phase (to be verified)
+        session.getTransactionManager().enlistPrepare(sessionTx);
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
     }
 

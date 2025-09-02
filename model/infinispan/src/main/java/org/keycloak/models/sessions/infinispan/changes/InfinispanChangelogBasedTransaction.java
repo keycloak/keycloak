@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -131,6 +132,13 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             SessionEntityWrapper<V> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
                 return null;
+            }
+
+            /* TODO: Let's find out if this is really necessary, or just implicit if we specify PESSIMISTIC locking - maybe it is necessary if we switch to OPTIMISTIC locking? */
+            if (cache.getAdvancedCache().getTransactionManager() != null) {
+                if (!cache.getAdvancedCache().lock(Set.of(key))) {
+                    throw new RuntimeException("Unable to acquire lock for key " + key);
+                }
             }
 
             RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
