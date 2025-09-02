@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -34,9 +35,12 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.hasUUIDFormat;
+
 public class BruteForceUsersResource {
     private static final Logger logger = Logger.getLogger(BruteForceUsersResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
+    
     private final KeycloakSession session;
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -88,8 +92,15 @@ public class BruteForceUsersResource {
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                // Explicit ID search with "id:" prefix
                 UserModel userModel =
                         session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                if (userModel != null) {
+                    userModels = Stream.of(userModel);
+                }
+            } else if (hasUUIDFormat(search)) {
+                // Auto-detected UUID/GUID search (without "id:" prefix)
+                UserModel userModel = session.users().getUserById(realm, search.trim());
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
                 }

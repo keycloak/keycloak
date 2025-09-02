@@ -118,7 +118,7 @@ test.describe("User creation", () => {
   });
 
   test.describe("Existing users", () => {
-    const placeHolder = "Search user";
+    const placeHolder = "Search by name, email or id";
     const existingUserId = `existing_user-${uuid()}`;
     const existingUserId2 = `existing_user2-${uuid()}`;
 
