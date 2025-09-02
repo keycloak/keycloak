@@ -88,7 +88,7 @@ public class InfinispanKeyGenerator {
 
         @Override
         public UUID getKey() {
-            return UUID.randomUUID();
+            return SecretGenerator.getInstance().generateSecureUUID();
         }
     }
 
