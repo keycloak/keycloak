@@ -37,7 +37,7 @@ public class UserSessionRefreshTimeResourcePolicyProvider extends AbstractUserRe
     }
 
     @Override
-    protected List<ResourceOperationType> getSupportedOperationsForResetting() {
-        return List.of(LOGIN);
+    protected boolean isResetEvent(ResourcePolicyEvent event) {
+        return LOGIN.equals(event.getOperation());
     }
 }

@@ -68,17 +68,18 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
                 return !evaluate(event);
             }
         }
-        
+
         return false;
     }
 
     @Override
     public boolean resetOnEvent(ResourcePolicyEvent event) {
-        if (!supports(event.getResourceType())) {
-            return false;
-        }
+        return isResetEvent(event) && evaluate(event);
+    }
 
-        return false;
+    protected boolean isResetEvent(ResourcePolicyEvent event) {
+        boolean resetEventEnabled = Boolean.parseBoolean(getModel().getConfig().getFirstOrDefault("reset-event-enabled", Boolean.FALSE.toString()));
+        return resetEventEnabled && isActivationEvent(event);
     }
 
     @Override

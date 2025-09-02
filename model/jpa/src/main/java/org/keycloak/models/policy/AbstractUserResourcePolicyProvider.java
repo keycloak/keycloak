@@ -18,7 +18,6 @@
 package org.keycloak.models.policy;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import jakarta.persistence.EntityManager;
@@ -92,24 +91,8 @@ public abstract class AbstractUserResourcePolicyProvider extends EventBasedResou
     }
 
     @Override
-    public boolean resetOnEvent(ResourcePolicyEvent event) {
-        boolean b = this.supports(event.getResourceType())
-                && this.getSupportedOperationsForResetting().contains(event.getOperation());
-
-        if (!b) {
-            return false;
-        }
-
-        return evaluate(event);
-    }
-
-    @Override
     public void close() {
         // no-op
-    }
-
-    protected List<ResourceOperationType> getSupportedOperationsForResetting() {
-        return Collections.emptyList();
     }
 
     protected EntityManager getEntityManager() {
