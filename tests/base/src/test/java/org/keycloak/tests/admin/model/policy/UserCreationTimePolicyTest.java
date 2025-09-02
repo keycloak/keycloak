@@ -7,7 +7,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
-import org.keycloak.models.policy.ResourceOperationType;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
