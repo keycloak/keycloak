@@ -205,7 +205,10 @@ test.describe
   });
 
   test("Should view authorization tab", async ({ page }) => {
-    await login(page, "test-view-authz-user", "password");
+    await login(page, {
+      username: "test-view-authz-user",
+      password: "password",
+    });
 
     await goToRealm(page, "realm-view-authz");
     await page.reload();

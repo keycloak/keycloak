@@ -1,6 +1,7 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
+import { DEFAULT_REALM } from "../utils/constants.ts";
 import { assertRequiredFieldError, switchOff } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import {
@@ -46,7 +47,7 @@ test.describe.serial("Realm tests", () => {
     await page.getByTestId("create").click();
     await assertRequiredFieldError(page, "realm");
 
-    await fillRealmName(page, "master");
+    await fillRealmName(page, DEFAULT_REALM);
     await clickCreateRealmForm(page);
 
     await assertNotificationMessage(

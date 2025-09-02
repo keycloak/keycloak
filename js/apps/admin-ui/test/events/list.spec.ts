@@ -85,12 +85,11 @@ test.describe.serial("Events tests", () => {
     });
 
     test.beforeEach(async ({ page }) => {
-      await login(
-        page,
-        eventsTestUser.userRepresentation.username,
-        eventsTestUser.userRepresentation.credentials[0].value,
-        realmName,
-      );
+      await login(page, {
+        realm: realmName,
+        username: eventsTestUser.userRepresentation.username,
+        password: eventsTestUser.userRepresentation.credentials[0].value,
+      });
       await goToEvents(page);
     });
 
