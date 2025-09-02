@@ -353,7 +353,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
-        // Set bind address as this is required for JGroups to form a cluster in IPv6 envionments
+        // Set bind address as this is required for JGroups to form a cluster in IPv6 environments
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
         boolean tls = isTlsConfigured(keycloakCR);
