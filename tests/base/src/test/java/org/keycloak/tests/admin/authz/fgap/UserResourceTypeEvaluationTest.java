@@ -27,6 +27,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import java.util.List;
@@ -40,6 +41,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -423,5 +425,43 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
             users.get(userAlice.getId()).update(userAlice.admin().toRepresentation());
             fail("Expected Exception wasn't thrown.");
         } catch (ForbiddenException expected) {}
+    }
+
+    @Test
+    public void testResetPassword() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation notAllowMyAdminPermission = createUserPolicy(Logic.NEGATIVE, realm, client, "Not Allow My Admin User Policy", myadmin.getId());
+
+        // allow my admin to see alice only
+        ScopePermissionRepresentation managePermission = createPermission(client, userAlice.admin().toRepresentation().getId(), usersType, Set.of(VIEW, MANAGE), allowMyAdminPermission);
+        ScopePermissionRepresentation resetPasswordPermission = createPermission(client, userAlice.admin().toRepresentation().getId(), usersType, Set.of(RESET_PASSWORD), notAllowMyAdminPermission);
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(1, search.size());
+        assertEquals(userAlice.getUsername(), search.get(0).getUsername());
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("password");
+
+        try {
+            UsersResource users = realmAdminClient.realm(realm.getName()).users();
+            users.get(search.get(0).getId()).resetPassword(credential);
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {
+        }
+
+        String permissionId = getScopePermissionsResource(client).findByName(resetPasswordPermission.getName()).getId();
+        getScopePermissionsResource(client).findById(permissionId).remove();
+        createPermission(client, userAlice.admin().toRepresentation().getId(), usersType, Set.of(RESET_PASSWORD), allowMyAdminPermission);
+
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+        users.get(search.get(0).getId()).resetPassword(credential);
+
+        permissionId = getScopePermissionsResource(client).findByName(managePermission.getName()).getId();
+        getScopePermissionsResource(client).findById(permissionId).remove();
+        createPermission(client, userAlice.admin().toRepresentation().getId(), usersType, Set.of(VIEW), allowMyAdminPermission);
+
+        users.get(search.get(0).getId()).resetPassword(credential);
     }
 }

@@ -34,4 +34,5 @@ public interface PermissionEvaluator {
 
     <D extends Decision> D evaluate(D decision);
     Collection<Permission> evaluate(ResourceServer resourceServer, AuthorizationRequest request);
+    <D extends Decision<?>> D getDecision(ResourceServer resourceServer, AuthorizationRequest request, Class<D> decisionType);
 }
