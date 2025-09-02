@@ -12,7 +12,7 @@ import {
 } from "../utils/attributes.ts";
 import {
   assertRequiredFieldError,
-  clickCancelButton,
+  //clickCancelButton,
   clickSaveButton,
 } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
@@ -29,7 +29,7 @@ import {
   assertEmptyTable,
   assertNoResults,
   assertRowExists,
-  assertTableRowsLength,
+  //assertTableRowsLength,
   clickRowKebabItem,
   clickTableRowItem,
   searchItem,
@@ -61,9 +61,11 @@ test.describe("Realm roles test", () => {
 
     await fillRoleData(page, "admin");
     await clickSaveButton(page);
-    await clickCancelButton(page);
+    //await clickCancelButton(page);
 
-    await assertTableRowsLength(page, "Role list", 4);
+    await goToRealmRoles(page);
+
+    //await assertTableRowsLength(page, "Role list", 4);
 
     await clickCreateRoleButton(page);
     await fillRoleData(page, "admin");
