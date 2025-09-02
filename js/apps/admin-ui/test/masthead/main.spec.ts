@@ -15,12 +15,12 @@ import {
   toggleUsernameDropdown,
 } from "./main.ts";
 
-test.describe("Masthead tests", () => {
+test.describe.serial("Masthead tests", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  test.describe("Desktop view", () => {
+  test.describe.serial("Desktop view", () => {
     test("Go to account console and back to admin console", async ({
       page,
     }) => {
@@ -65,7 +65,7 @@ test.describe("Masthead tests", () => {
     });
   });
 
-  test.describe("Login works for unprivileged users", () => {
+  test.describe.serial("Login works for unprivileged users", () => {
     const realmName = `test-realm-${uuid()}`;
     const username = `test-user-${uuid()}`;
 
@@ -98,7 +98,7 @@ test.describe("Masthead tests", () => {
     });
   });
 
-  test.describe("Mobile view", () => {
+  test.describe.serial("Mobile view", () => {
     test.beforeEach(async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 640 });
     });

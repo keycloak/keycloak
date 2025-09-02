@@ -36,7 +36,7 @@ import {
   goToRolesTab,
 } from "./role.ts";
 
-test.describe("Roles tab test", () => {
+test.describe.serial("Roles tab test", () => {
   const realmName = `clients-realm-${uuid()}`;
   const itemId = `client-crud-${uuid()}`;
   const updatableItem = `role-name-${uuid()}`;

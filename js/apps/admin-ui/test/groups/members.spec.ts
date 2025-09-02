@@ -18,7 +18,7 @@ import {
 } from "./members.ts";
 import { goToChildGroupsTab } from "./util.ts";
 
-test.describe("Members", () => {
+test.describe.serial("Members", () => {
   const predefinedGroups = ["level", "level1", "level2", "level3"];
   const emptyGroup = "empty-group";
   const users: { id: string; username: string }[] = [];

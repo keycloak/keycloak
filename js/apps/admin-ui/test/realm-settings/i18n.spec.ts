@@ -71,7 +71,7 @@ async function addLocalization(locale: string, key: string, value: string) {
   );
 }
 
-test.describe("i18n tests", () => {
+test.describe.serial("i18n tests", () => {
   // Constants for test assertions
   const texts = {
     realmLocalizationEn: "realmSettings en",

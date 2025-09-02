@@ -24,7 +24,7 @@ import {
   setIntervalInput,
 } from "./policies-ciba.ts";
 
-test.describe("Authentication - Policies - CIBA", () => {
+test.describe.serial("Authentication - Policies - CIBA", () => {
   const realmName = `authentication-policies-${uuidv4()}`;
 
   test.beforeAll(async () => {

@@ -21,7 +21,7 @@ import {
   save,
 } from "./utils.ts";
 
-test.describe("Clients test", () => {
+test.describe.serial("Clients test", () => {
   const realmName = `clients-realm-${uuid()}`;
   const clientId = `clientId`;
   const placeHolder = "Search for client";
@@ -119,7 +119,7 @@ test.describe("Clients test", () => {
     await expect(getRowByCellText(page, "account")).toBeVisible();
   });
 
-  test.describe("Clients import", () => {
+  test.describe.serial("Clients import", () => {
     test.beforeAll(() =>
       adminClient.createClient({
         clientId: "identical",

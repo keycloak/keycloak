@@ -30,7 +30,7 @@ import {
 let groupName = "group";
 let groupsList: string[] = [];
 
-test.describe("User creation", () => {
+test.describe.serial("User creation", () => {
   const realmName = `users-${uuid()}`;
 
   const userId = `user_crud-${uuid()}`;
@@ -117,7 +117,7 @@ test.describe("User creation", () => {
     await confirmModal(page);
   });
 
-  test.describe("Existing users", () => {
+  test.describe.serial("Existing users", () => {
     const placeHolder = "Search user";
     const existingUserId = `existing_user-${uuid()}`;
     const existingUserId2 = `existing_user2-${uuid()}`;

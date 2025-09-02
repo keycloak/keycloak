@@ -22,7 +22,7 @@ import {
   setUrl,
 } from "./main.ts";
 
-test.describe("OIDC identity provider test", () => {
+test.describe.serial("OIDC identity provider test", () => {
   const oidcProviderName = "oidc";
   const secret = "123";
 
@@ -71,7 +71,7 @@ test.describe("OIDC identity provider test", () => {
   });
 });
 
-test.describe("Edit OIDC Provider", () => {
+test.describe.serial("Edit OIDC Provider", () => {
   const oidcProviderName = "OpenID Connect v1.0";
   const alias = `edit-oidc-${uuid()}`;
 

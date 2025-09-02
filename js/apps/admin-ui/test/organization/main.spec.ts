@@ -21,7 +21,7 @@ import {
   goToCreate,
 } from "./main.ts";
 
-test.describe("Organization CRUD", () => {
+test.describe.serial("Organization CRUD", () => {
   const realmName = `organization-${uuid()}`;
 
   test.beforeAll(() =>
@@ -48,7 +48,7 @@ test.describe("Organization CRUD", () => {
     await assertNotificationMessage(page, "Organization successfully saved.");
   });
 
-  test.describe("Existing organization", () => {
+  test.describe.serial("Existing organization", () => {
     const orgName = `org-edit-${uuid()}`;
     const delOrgName = `org-del-${uuid()}`;
     const delOrgName2 = `org-del-${uuid()}`;

@@ -16,7 +16,7 @@ import {
   goToIdentityProviders,
 } from "./idp.ts";
 
-test.describe("Identity providers", () => {
+test.describe.serial("Identity providers", () => {
   const realmName = `organization-idp-${uuid()}`;
 
   test.beforeAll(async () => {

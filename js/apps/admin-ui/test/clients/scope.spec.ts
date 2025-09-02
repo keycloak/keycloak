@@ -46,7 +46,7 @@ type ClientScope = {
   };
 };
 
-test.describe("Client details - Client scopes subtab", () => {
+test.describe.serial("Client details - Client scopes subtab", () => {
   const clientId = "client-scopes-subtab-test";
   const clientScopeName = "client-scope-test";
   const clientScopeNameDefaultType = "client-scope-test-default-type";
@@ -185,7 +185,7 @@ test.describe("Client details - Client scopes subtab", () => {
   });
 });
 
-test.describe("Client scopes evaluate subtab", () => {
+test.describe.serial("Client scopes evaluate subtab", () => {
   const clientName = "testClient";
   const userName = "admin-a";
   const realmName = `clients-realm-${uuid()}`;
