@@ -1,4 +1,4 @@
-# Ansible Role `mvn_ec2_runner`
+# Ansible Role `mvn_remote_runner`
 
 Ansible role for executing `mvn` commands against a Keycloak src on a remote node.
 
