@@ -86,6 +86,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         }
 
         String clientUsername = clientUser.getUsername();
+        event.detail(Details.USERNAME, clientUsername);
         event.user(clientUser);
 
         if (!clientUser.isEnabled()) {
