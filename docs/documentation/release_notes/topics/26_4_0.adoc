@@ -56,3 +56,44 @@ It is now possible to change which identity providers are shown in the account c
 the `Show in Account console` setting. You can choose to show only those linked with a user or not show them at all.
 
 For more information, please see link:{adminguide_link}#_general-idp-config[General configuration] section in the {adminguide_name}.
+
+= Email domain for organizations is now optional
+
+In earlier versions, each organization required at least one email domain, which was a limitation for some scenarios.
+Starting with this release, an email domain is optional.
+Thank you to https://github.com/SferaDev[@SferaDev] for contributing this.
+
+When no domain is specified, organization members will not be validated against domain restrictions during authentication and profile validation.
+
+= Enhancements for single-cluster and multi-cluster setups
+
+This release renamed multi-az to multi-cluster.
+It adds a separate guide for single-cluster setups, which includes details of how {project_name} clusters can be optionally "stretched" across multiple availability-zones for increased availability.
+The {project_name} Operator now deploys {project_name} across multiple availability zones within a Kubernetes cluster by default. {project_name} also detects split-brains within a cluster.
+
+This should provide better availability for users who are running {project_name} in Kubernetes clusters that span multiple availability zones.
+
+= Translations managed via Weblate
+
+The {project_name} distribution now includes 35 community translations. With Kazakh, Azerbaijani and Slovenian added in this release.
+Community volunteers now maintain some of the translations in https://hosted.weblate.org/projects/keycloak/[Weblate] to keep them up to date.
+
+If you want to volunteer to maintain an existing or a new translation via Weblate, you can find the necessary steps in the https://github.com/keycloak/keycloak/blob/main/docs/translation.md[translation guide].
+
+= Setting up OTP can enfore set up of recovery codes
+
+If you have enabled OTPs and recovery codes as a second factor for authentication, you can configure the OTP required action to ask users to set up recovery codes once they set up an OTP.
+Thank you to https://github.com/dasniko[@dasniko] for contributing this.
+
+= MDC logging to correlate messages with realms and clients
+
+As a new preview feature, you can include in all log messages in the mapped diagnostic context (MDC) of each message realm name, client ID and other information.
+This helps you to correlate error messages to a specific realm or client.
+Thank you to https://github.com/eicki[@eicki] for contributing this.
+
+See the https://www.keycloak.org/server/logging[Logging guide] for more information.
+
+= Supported OAuth standards listed on one page
+
+There is now a new guide listing https://www.keycloak.org/securing-apps/specifications[all implemented OpenID Connect related specifications].
+Thank you to https://github.com/tnorimat[@tnorimat] for contributing this.
