@@ -18,7 +18,7 @@ import {
 } from "./general.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
-test.describe("Realm settings general tab tests", () => {
+test.describe.serial("Realm settings general tab tests", () => {
   const realmName = `general-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));

@@ -36,7 +36,7 @@ const hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
 const roleLdapMapper = "role-ldap-mapper";
 const hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
-test.describe("User Fed LDAP mapper tests", () => {
+test.describe.serial("User Fed LDAP mapper tests", () => {
   const realmName = `user-federation-kerberos_${uuid()}`;
 
   test.beforeAll(async () => {

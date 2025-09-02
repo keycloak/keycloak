@@ -26,7 +26,7 @@ import {
 import { clickTableRowItem } from "../utils/table.ts";
 import { confirmModal } from "../utils/modal.ts";
 
-test.describe("Realm settings client profiles tab tests", () => {
+test.describe.serial("Realm settings client profiles tab tests", () => {
   const profileName = "Test";
   const realmName = `client-profiles-${uuid()}`;
 
@@ -63,7 +63,7 @@ test.describe("Realm settings client profiles tab tests", () => {
     await searchNonExistingClientProfile(page, "nonExistentProfile");
   });
 
-  test.describe("Edit client profile", () => {
+  test.describe.serial("Edit client profile", () => {
     const editedProfileName = "Edit";
     test.beforeAll(() =>
       adminClient.createClientProfile(

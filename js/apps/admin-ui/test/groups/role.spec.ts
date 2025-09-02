@@ -19,7 +19,7 @@ import {
 } from "../utils/table.ts";
 import { goToRoleMappingTab } from "./role.ts";
 
-test.describe("Role mappings", () => {
+test.describe.serial("Role mappings", () => {
   const predefinedGroup = "group1";
   const predefinedGroup1 = "group2";
 

@@ -12,7 +12,7 @@ import {
   selectKeyForCodeExchangeInput,
 } from "./details.ts";
 
-test.describe("Clients details test", () => {
+test.describe.serial("Clients details test", () => {
   const realmName = `clients-details-realm-${uuid()}`;
   const clientId = `client-details-${uuid()}`;
 

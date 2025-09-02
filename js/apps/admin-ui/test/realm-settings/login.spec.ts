@@ -10,7 +10,7 @@ import {
 } from "../utils/sidebar.ts";
 import { goToLoginTab } from "./login.ts";
 
-test.describe("Realm settings tabs tests", () => {
+test.describe.serial("Realm settings tabs tests", () => {
   const realmName = `realm-settings_${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));

@@ -35,7 +35,7 @@ import {
   setPolicy,
 } from "./authorization.ts";
 
-test.describe("Client authentication subtab", () => {
+test.describe.serial("Client authentication subtab", () => {
   const clientId = `client-authentication-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
@@ -172,7 +172,8 @@ test.describe("Client authentication subtab", () => {
   });
 });
 
-test.describe("Client authorization tab access for view-realm-authorization", () => {
+test.describe
+  .serial("Client authorization tab access for view-realm-authorization", () => {
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
@@ -224,7 +225,7 @@ test.describe("Client authorization tab access for view-realm-authorization", ()
   });
 });
 
-test.describe("Accessibility tests for client authorization", () => {
+test.describe.serial("Accessibility tests for client authorization", () => {
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
   test.beforeAll(() =>
     adminClient.createClient({

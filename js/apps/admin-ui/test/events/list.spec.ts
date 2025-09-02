@@ -20,7 +20,7 @@ import {
   goToEventsConfig,
 } from "./list.ts";
 
-test.describe("Events tests", () => {
+test.describe.serial("Events tests", () => {
   const tableName = "Events";
   const realmName = `events-realm-${uuid()}`;
 
@@ -53,7 +53,7 @@ test.describe("Events tests", () => {
 
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
-  test.describe("User events list empty", () => {
+  test.describe.serial("User events list empty", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToRealm(page, realmName);
@@ -67,7 +67,7 @@ test.describe("Events tests", () => {
     });
   });
 
-  test.describe("User events with events", () => {
+  test.describe.serial("User events with events", () => {
     let page: Page;
     test.beforeAll(async ({ browser }) => {
       page = await browser.newPage();

@@ -6,7 +6,7 @@ import { assertAxeViolations } from "../utils/masthead.ts";
 import { goToRealm, goToRealmRoles } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 
-test.describe("Accessibility tests for realm roles", () => {
+test.describe.serial("Accessibility tests for realm roles", () => {
   const realmName = "role-a11y-" + uuid();
   const defaultRolesMaster = "default-roles-" + realmName;
 

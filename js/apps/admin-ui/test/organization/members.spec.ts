@@ -12,7 +12,7 @@ import {
 } from "../utils/table.ts";
 import { clickAddRealmUser, goToMembersTab } from "./members.ts";
 
-test.describe("Members", () => {
+test.describe.serial("Members", () => {
   const realmName = `organization-members-${uuid()}`;
 
   test.beforeAll(async () => {

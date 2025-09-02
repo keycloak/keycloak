@@ -24,7 +24,7 @@ import {
   goToClientRegistrationTab,
 } from "./registration-policies.ts";
 
-test.describe("Client registration policies tab", () => {
+test.describe.serial("Client registration policies tab", () => {
   const tabName = "Client registration";
   const realmName = `clients-details-realm-${uuid()}`;
 
@@ -38,7 +38,7 @@ test.describe("Client registration policies tab", () => {
     await goToClientRegistrationTab(page);
   });
 
-  test.describe("Anonymous client policies subtab", () => {
+  test.describe.serial("Anonymous client policies subtab", () => {
     const policyName = "newAnonymPolicy1";
     const policyNameUpdated = "policy2";
 
@@ -86,7 +86,7 @@ test.describe("Client registration policies tab", () => {
     });
   });
 
-  test.describe("Authenticated client policies subtab", () => {
+  test.describe.serial("Authenticated client policies subtab", () => {
     const policyName = "newAuthPolicy1";
     const policyNameUpdated = "policy3";
 
@@ -140,7 +140,8 @@ test.describe("Client registration policies tab", () => {
   });
 });
 
-test.describe("Accessibility tests for client registration policies", () => {
+test.describe
+  .serial("Accessibility tests for client registration policies", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToClients(page);

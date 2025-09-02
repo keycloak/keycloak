@@ -39,7 +39,7 @@ import {
   goToAssociatedRolesTab,
 } from "./main.ts";
 
-test.describe("Realm roles test", () => {
+test.describe.serial("Realm roles test", () => {
   const realmName = `realm-roles-${uuid()}`;
   const prefix = "realm_role_crud";
   const searchPlaceHolder = "Search role by name";
@@ -244,7 +244,7 @@ test.describe("Realm roles test", () => {
     await assertNotificationMessage(page, "Role mapping updated");
   });
 
-  test.describe("edit role details", () => {
+  test.describe.serial("edit role details", () => {
     const editRoleName = "going to edit";
     const description = "some description";
     const updateDescription = "updated description";
