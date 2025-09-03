@@ -10,11 +10,7 @@ import {
   fillAttributeData,
   goToAttributesTab,
 } from "../utils/attributes.ts";
-import {
-  assertRequiredFieldError,
-  clickCancelButton,
-  clickSaveButton,
-} from "../utils/form.ts";
+import { assertRequiredFieldError, clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
@@ -60,7 +56,7 @@ test.describe.serial("Realm roles test", () => {
 
     await fillRoleData(page, "admin");
     await clickSaveButton(page);
-    await clickCancelButton(page);
+    await goToRealmRoles(page);
 
     await clickCreateRoleButton(page);
     await fillRoleData(page, "admin");
