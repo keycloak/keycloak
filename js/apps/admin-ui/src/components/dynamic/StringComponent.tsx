@@ -6,6 +6,8 @@ export const StringComponent = ({
   name,
   label,
   helpText,
+  readOnly,
+  isDisabled = readOnly ?? false,
   convertToName,
   ...props
 }: ComponentProps) => {
@@ -24,6 +26,7 @@ export const StringComponent = ({
         },
       }}
       {...props}
+      isDisabled={isDisabled}
     />
   );
 };
