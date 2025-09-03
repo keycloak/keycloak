@@ -43,6 +43,28 @@ Custom caches can still be added without setting this option.
 When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
 and use the `+--cache-...+` options to make changes for example to the cache sizes.
 
+=== RFC8414 compliant lookup of metadata
+
+{project_name} now exposes an RFC8414-compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata by the issuer URL.
+
+Previously information was exposed via:
+
+[source]
+----
+https://keycloak.example.com/realms/{realm}/.well-known/oauth-authorization-server
+----
+
+It is now available in addition to the legacy URL via:
+
+[source]
+----
+https://keycloak.example.com/.well-known/oauth-authorization-server/realms/{realm}
+----
+
+To benefit from this, expose the path `/.well-known/` in your reverse proxy configuration.
+
+NOTE: If a `http-relative-path` is configured, configure a reverse proxy to map the `/.well-known/` path to the path with the prefix on the server.
+
 === Operator default affinity configuration changed
 
 The default affinity strategy has been updated so that a `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rule
