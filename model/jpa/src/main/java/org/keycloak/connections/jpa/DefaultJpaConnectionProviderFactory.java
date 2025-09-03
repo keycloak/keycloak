@@ -421,7 +421,15 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     private void migrateModel(KeycloakSession session) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), MigrationModelManager::migrate);
+        // Using a lock to prevent concurrent migration in concurrently starting nodes
+        DBLockManager dbLockManager = new DBLockManager(session);
+        DBLockProvider dbLock = dbLockManager.getDBLock();
+        dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), MigrationModelManager::migrate);
+        } finally {
+            dbLock.releaseLock();
+        }
     }
 
     /**

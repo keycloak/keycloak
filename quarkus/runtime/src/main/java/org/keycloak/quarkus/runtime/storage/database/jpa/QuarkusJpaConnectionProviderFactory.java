@@ -199,10 +199,14 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     }
 
     private void migrateModel(KeycloakSession session) {
+        // Using a lock to prevent concurrent migration in concurrently starting nodes
+        DBLockManager dbLockManager = new DBLockManager(session);
+        DBLockProvider dbLock = dbLockManager.getDBLock();
+        dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
         try {
             MigrationModelManager.migrate(session);
-        } catch (Exception e) {
-            throw e;
+        } finally {
+            dbLock.releaseLock();
         }
     }
 
