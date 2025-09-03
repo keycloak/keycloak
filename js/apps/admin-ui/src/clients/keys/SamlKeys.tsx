@@ -77,6 +77,7 @@ type KeySectionProps = {
   onChanged: (key: KeyTypes) => void;
   onGenerate: (key: KeyTypes, regenerate: boolean) => void;
   onImport: (key: KeyTypes) => void;
+  save: () => void;
 };
 
 const KeySection = ({
@@ -86,6 +87,7 @@ const KeySection = ({
   onChanged,
   onGenerate,
   onImport,
+  save,
 }: KeySectionProps) => {
   const { t } = useTranslation();
   const { control, watch } = useFormContext<FormFields>();
@@ -96,6 +98,14 @@ const KeySection = ({
   const [showImportDialog, toggleImportDialog] = useToggle();
 
   const section = watch(name as keyof FormFields);
+
+  const useMetadataDescriptorUrl = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.saml.useMetadataDescriptorUrl",
+    ),
+    "false",
+  );
+
   return (
     <>
       {showImportDialog && (
@@ -131,7 +141,10 @@ const KeySection = ({
                   isChecked={field.value === "true"}
                   onChange={(_event, value) => {
                     const v = value.toString();
-                    if (v === "true") {
+                    if (v === "true" && useMetadataDescriptorUrl === "true") {
+                      field.onChange(v);
+                      save();
+                    } else if (v === "true") {
                       onChanged(attr);
                       field.onChange(v);
                     } else {
@@ -145,29 +158,31 @@ const KeySection = ({
           </FormGroup>
         </FormAccess>
       </FormPanel>
-      {keyInfo?.certificate && section === "true" && (
-        <Card isFlat>
-          <CardBody className="kc-form-panel__body">
-            <Form isHorizontal>
-              <Certificate keyInfo={keyInfo} />
-              <ActionGroup>
-                <Button
-                  variant="secondary"
-                  onClick={() => onGenerate(attr, true)}
-                >
-                  {t("regenerate")}
-                </Button>
-                <Button variant="secondary" onClick={() => onImport(attr)}>
-                  {t("importKey")}
-                </Button>
-                <Button variant="tertiary" onClick={toggleImportDialog}>
-                  {t("export")}
-                </Button>
-              </ActionGroup>
-            </Form>
-          </CardBody>
-        </Card>
-      )}
+      {useMetadataDescriptorUrl !== "true" &&
+        keyInfo?.certificate &&
+        section === "true" && (
+          <Card isFlat>
+            <CardBody className="kc-form-panel__body">
+              <Form isHorizontal>
+                <Certificate keyInfo={keyInfo} />
+                <ActionGroup>
+                  <Button
+                    variant="secondary"
+                    onClick={() => onGenerate(attr, true)}
+                  >
+                    {t("regenerate")}
+                  </Button>
+                  <Button variant="secondary" onClick={() => onImport(attr)}>
+                    {t("importKey")}
+                  </Button>
+                  <Button variant="tertiary" onClick={toggleImportDialog}>
+                    {t("export")}
+                  </Button>
+                </ActionGroup>
+              </Form>
+            </CardBody>
+          </Card>
+        )}
     </>
   );
 };
@@ -297,6 +312,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
               }
             }}
             onImport={() => setImportOpen(attr)}
+            save={save}
           />
         </Fragment>
       ))}

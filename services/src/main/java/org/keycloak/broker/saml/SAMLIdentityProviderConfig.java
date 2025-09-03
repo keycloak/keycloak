@@ -67,6 +67,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
+    public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -426,6 +427,29 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public boolean isUseMetadataDescriptorUrl() {
         return Boolean.parseBoolean(getConfig().get(USE_METADATA_DESCRIPTOR_URL));
+    }
+
+    public Long getDescriptorCacheSeconds() {
+        String descriptorCacheSeconds = getConfig().get(DESCRIPTOR_CACHE_SECONDS);
+        if (descriptorCacheSeconds != null && !descriptorCacheSeconds.isEmpty()) {
+            try {
+                Long descriptorCacheSecondsLong = Long.valueOf(descriptorCacheSeconds);
+                if (descriptorCacheSecondsLong > 0) {
+                    return descriptorCacheSecondsLong;
+                }
+            } catch (NumberFormatException e) {
+                // ignore it and use null
+            }
+        }
+        return null;
+    }
+
+    public void setDescriptorCacheSeconds(Long descriptorCacheSeconds) {
+        if (descriptorCacheSeconds == null || descriptorCacheSeconds <= 0) {
+            getConfig().remove(DESCRIPTOR_CACHE_SECONDS);
+        } else {
+            getConfig().put(DESCRIPTOR_CACHE_SECONDS, String.valueOf(descriptorCacheSeconds));
+        }
     }
 
     @Override
