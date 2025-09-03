@@ -18,6 +18,7 @@ package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -35,11 +36,15 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import org.keycloak.operator.Config;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ImportSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.keycloak.operator.Utils.addResources;
@@ -53,7 +58,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
     }
 
     @Override
-    protected Job desired(KeycloakRealmImport primary, Context<KeycloakRealmImport> context) {
+    public Job desired(KeycloakRealmImport primary, Context<KeycloakRealmImport> context) {
         Config config = ContextUtils.getOperatorConfig(context);
         StatefulSet existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElseThrow();
         Map<String, Placeholder> placeholders = primary.getSpec().getPlaceholders();
@@ -73,6 +78,9 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         // The Job should not be selected with app=keycloak
         labels.put("app", "keycloak-realm-import");
+
+        var kc = ContextUtils.getKeycloak(context);
+        handleJobScheduling(kc, Optional.ofNullable(kc.getSpec().getImportSpec()).map(ImportSpec::getSchedulingSpec), keycloakPodTemplate.getSpec());
 
         var envvars = keycloakPodTemplate
                 .getSpec()
@@ -161,5 +169,15 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
         keycloakContainer.setStartupProbe(null);
 
         addResources(keycloakRealmImport.getSpec().getResourceRequirements(), config, keycloakContainer);
+    }
+
+    static void handleJobScheduling(Keycloak keycloak, Optional<SchedulingSpec> schedulingSpec, PodSpec spec) {
+        if (schedulingSpec.isPresent() || keycloak.getSpec().getSchedulingSpec() == null) {
+            spec.setPriorityClassName(schedulingSpec.map(SchedulingSpec::getPriorityClassName).orElse(null));
+            spec.setAffinity(schedulingSpec.map(SchedulingSpec::getAffinity).orElse(null));
+            spec.setTolerations(schedulingSpec.map(SchedulingSpec::getTolerations).orElse(null));
+            spec.setTopologySpreadConstraints(schedulingSpec.map(SchedulingSpec::getTopologySpreadConstraints).orElse(null));
+        }
+        // else use the parent values
     }
 }
