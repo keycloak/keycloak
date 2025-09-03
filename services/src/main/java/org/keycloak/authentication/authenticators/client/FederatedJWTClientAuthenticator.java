@@ -10,11 +10,13 @@ import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.ClientAssertionContext;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.spiffe.SpiffeConstants;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
@@ -37,7 +39,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
             new ProviderConfigProperty(JWT_CREDENTIAL_ISSUER_KEY, "Identity provider", "Issuer of the client assertion", ProviderConfigProperty.STRING_TYPE, null)
     );
 
-    private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT);
+    private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT, SpiffeConstants.CLIENT_ASSERTION_TYPE);
 
     @Override
     public String getId() {
@@ -69,7 +71,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
 
             ClientAssertionIdentityProvider identityProvider = lookupIdentityProvider(context, client);
 
-            ClientAssertionContext clientAssertionContext = new DefaultClientAssertionContext(client, clientAssertionType, jws, token);
+            ClientAssertionContext clientAssertionContext = new DefaultClientAssertionContext(context.getRealm(), client, clientAssertionType, jws, token);
             if (identityProvider.verifyClientAssertion(clientAssertionContext)) {
                 context.success();
             } else {
@@ -155,17 +157,29 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
 
     private static class DefaultClientAssertionContext implements ClientAssertionContext {
 
+        private final RealmModel realm;
         private final ClientModel client;
         private final String assertionType;
         private final JWSInput jwsInput;
         private final JsonWebToken token;
         private String error;
 
-        public DefaultClientAssertionContext(ClientModel client, String assertionType, JWSInput jwsInput, JsonWebToken token) {
+        public DefaultClientAssertionContext(RealmModel realm, ClientModel client, String assertionType, JWSInput jwsInput, JsonWebToken token) {
+            this.realm = realm;
             this.client = client;
             this.assertionType = assertionType;
             this.jwsInput = jwsInput;
             this.token = token;
+        }
+
+        @Override
+        public RealmModel getRealm() {
+            return realm;
+        }
+
+        @Override
+        public ClientModel getClient() {
+            return client;
         }
 
         @Override
@@ -181,11 +195,6 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         @Override
         public JsonWebToken getToken() {
             return token;
-        }
-
-        @Override
-        public ClientModel getClient() {
-            return client;
         }
 
         @Override

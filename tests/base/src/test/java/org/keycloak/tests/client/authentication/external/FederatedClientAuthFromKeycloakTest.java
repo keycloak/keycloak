@@ -23,6 +23,8 @@ import java.util.List;
 @KeycloakIntegrationTest(config = ClientAuthIdpServerConfig.class)
 public class FederatedClientAuthFromKeycloakTest {
 
+    private static final String IDP_ALIAS = "keycloak-idp";
+
     @InjectRealm(config = InternalRealmConfig.class)
     ManagedRealm internalRealm;
 
@@ -50,7 +52,7 @@ public class FederatedClientAuthFromKeycloakTest {
             return realm.identityProvider(
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
-                            .alias("external")
+                            .alias(IDP_ALIAS)
                             .setAttribute("issuer", "http://localhost:8080/realms/external")
                             .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true")
                             .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
@@ -67,7 +69,7 @@ public class FederatedClientAuthFromKeycloakTest {
             return client.clientId("myclient")
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, "external");
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS);
         }
     }
 

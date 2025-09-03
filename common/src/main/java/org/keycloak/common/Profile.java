@@ -93,6 +93,8 @@ public class Profile {
 
         CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.EXPERIMENTAL),
 
+        SPIFFE("SPIFFE trust relationship provider", Type.EXPERIMENTAL),
+
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 
