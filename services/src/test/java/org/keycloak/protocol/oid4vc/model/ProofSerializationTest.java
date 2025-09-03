@@ -20,6 +20,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.util.List;
 
 /**
  *
@@ -27,10 +30,12 @@ import static org.junit.Assert.assertEquals;
  */
 public class ProofSerializationTest {
     @Test
-    public void testSerializeProof() throws JsonProcessingException {
+    public void testSerializeProofs() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
-        String proofStr = " { \"proof_type\": \"jwt\", \"jwt\": \"ewogICJhbGciOiAiRVMyNTYiLAogICJ0eXAiOiAib3BlbmlkNHZjaS1wcm9vZitqd3QiLAogICJqd2siOiB7CiAgICAia3R5IjogIkVDIiwKICAgICJjcnYiOiAiUC0yNTYiLAogICAgIngiOiAiWEdkNU9GU1pwc080VkRRTUZrR3Z0TDVHU2FXWWE3SzBrNGhxUUdLbFBjWSIsCiAgICAieSI6ICJiSXFDaGhoVDdfdnYtYmhuRmVuREljVzVSUjRKTS1nME5sUi1qZGlHemNFIgogIH0KfQo.ewogICJpc3MiOiAib2lkNHZjaS1jbGllbnQiLAogICJhdWQiOiAiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9tYXN0ZXIiLAogICJpYXQiOiAxNzE4OTU5MzY5LAogICJub25jZSI6ICJOODAxTEpVam1qQ1FDMUpzTm5lTllXWFpqZHQ2UEZSd01pNkpoTTU1OF9JIgp9Cg.mKKrkRkG1BfOzgsKwcZhop74EHflzHslO_NFOloKPnZ-ms6t0SnsTNDQjM_o4FBQAgtv_fnFEWRgnkNIa34gvQ\" } ";
-        Proof proof = objectMapper.readValue(proofStr, JwtProof.class);
-        assertEquals(ProofType.JWT, proof.getProofType());
+        String proofsStr = " { \"jwt\": [\"ewogICJhbGciOiAiRVMyNTYiLAogICJ0eXAiOiAib3BlbmlkNHZjaS1wcm9vZitqd3QiLAogICJqd2siOiB7CiAgICAia3R5IjogIkVDIiwKICAgICJjcnYiOiAiUC0yNTYiLAogICAgIngiOiAiWEdkNU9GU1pwc080VkRRTUZrR3Z0TDVHU2FXWWE3SzBrNGhxUUdLbFBjWSIsCiAgICAieSI6ICJiSXFDaGhoVDdfdnYtYmhuRmVuREljVzVSUjRKTS1nME5sUi1qZGlHemNFIgogIH0KfQo.ewogICJpc3MiOiAib2lkNHZjaS1jbGllbnQiLAogICJhdWQiOiAiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9tYXN0ZXIiLAogICJpYXQiOiAxNzE4OTU5MzY5LAogICJub25jZSI6ICJOODAxTEpVam1qQ1FDMUpzTm5lTllXWFpqZHQ2UEZSd01pNkpoTTU1OF9JIgp9Cg.mKKrkRkG1BfOzgsKwcZhop74EHflzHslO_NFOloKPnZ-ms6t0SnsTNDQjM_o4FBQAgtv_fnFEWRgnkNIa34gvQ\"] } ";
+        Proofs proofs = objectMapper.readValue(proofsStr, Proofs.class);
+        assertNotNull("Proofs should not be null", proofs);
+        assertNotNull("JWT proofs should not be null", proofs.getJwt());
+        assertEquals("Should have one JWT proof", 1, proofs.getJwt().size());
     }
 }
