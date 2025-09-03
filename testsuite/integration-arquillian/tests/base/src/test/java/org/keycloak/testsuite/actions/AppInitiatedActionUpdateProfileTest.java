@@ -182,7 +182,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         assertKcActionStatus(SUCCESS);
 
-        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
+        events.expectLogin().detail(Details.USERNAME, "new").user(userId).assertEvent();
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");
