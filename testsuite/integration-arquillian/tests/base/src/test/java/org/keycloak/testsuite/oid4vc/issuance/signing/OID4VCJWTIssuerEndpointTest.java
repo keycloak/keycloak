@@ -936,7 +936,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             Format.JWT_VC,
                             jwtVcConfig.getFormat());
 
-                    Claims jwtVcClaims = jwtVcConfig.getClaims();
+                    Claims jwtVcClaims = jwtVcConfig.getCredentialMetadata() != null ? jwtVcConfig.getCredentialMetadata().getClaims() : null;
                     assertNotNull("The jwt_vc-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
@@ -1047,7 +1047,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                                     .contains("RS256"));
                     assertEquals("The jwt_vc-credential should display as Test Credential",
                             credentialConfigurationId,
-                            jwtVcConfig.getDisplay().get(0).getName());
+                            jwtVcConfig.getCredentialMetadata() != null && jwtVcConfig.getCredentialMetadata().getDisplay() != null ?
+                                    jwtVcConfig.getCredentialMetadata().getDisplay().get(0).getName() : null);
                 }));
     }
 
