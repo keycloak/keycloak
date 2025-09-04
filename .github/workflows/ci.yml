@@ -38,6 +38,7 @@ jobs:
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
       ci-compatibility-matrix: ${{ steps.version-compatibility.outputs.matrix }}
+      ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
     permissions:
       contents: read
       pull-requests: read
@@ -57,6 +58,15 @@ jobs:
             RUN_AURORADB_TESTS=true
           fi
           echo "run-aurora-tests=$RUN_AURORADB_TESTS" >> $GITHUB_OUTPUT
+
+      - name: Additional DBs conditional check
+        id: additional-dbs-tests
+        run: |
+          RUN_ADDITIONAL_DBS_TESTS=false
+          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${{ secrets.PRIVATE_DBS_QUAY_USERNAME }}" && -n "${{ secrets.PRIVATE_DBS_QUAY_TOKEN }}" ]]; then
+            RUN_ADDITIONAL_DBS_TESTS=true
+          fi
+          echo "run-additional-dbs-tests=$RUN_ADDITIONAL_DBS_TESTS" >> $GITHUB_OUTPUT
 
       - name: Version Compatibility Matrix
         id: version-compatibility
@@ -571,72 +581,37 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-
-      - name: Run new base tests
-        run: |
-          KC_TEST_DATABASE=${{ matrix.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkeycloak.distribution.start.timeout=360
-
-      - name: Database container port
-        run: |
-          # The Ryuk container process exists temporarily after the JVM terminates, wait for only the database container to remain
-          while [ "$(docker ps -q | wc -l)" -ne 1 ]; do
-            docker ps
-            sleep 10
-          done
-          DATABASE_PORT=$(docker ps -l --format '{{ .ID }}' | xargs docker port | cut -d ':' -f 2)
-          echo "DATABASE_PORT=$DATABASE_PORT" >> $GITHUB_ENV 
-
-      - name: Run base tests
-        run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-          echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} \
-            -Pauth-server-quarkus -Pdb-${{ matrix.db }} \
-            "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
-            -Dtest=$TESTS \
-            -Ddocker.database.skip=true \
-            -Ddocker.database.port=$DATABASE_PORT \
-            -Ddocker.container.testdb.ip=localhost \
-            -Dkeycloak.distribution.start.timeout=360 \
-            -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
-
-      - name: Run cluster JDBC_PING2 UDP smoke test
-        run: |
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} \
-            -Pauth-server-cluster-quarkus \
-            -Pdb-${{ matrix.db }} \
-            -Dtest=RealmInvalidationClusterTest \
-            -Dsession.cache.owners=2 \
-            -Dauth.server.quarkus.cluster.stack=jdbc-ping-udp \
-            -Ddocker.database.skip=true \
-            -Ddocker.database.port=$DATABASE_PORT \
-            -Ddocker.container.testdb.ip=localhost \
-            -pl testsuite/integration-arquillian/tests/base \
-            2>&1 | misc/log/trimmer.sh
-
-      - name: Run cluster JDBC_PING2 TCP smoke test
-        run: |
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} \
-            -Pauth-server-cluster-quarkus \
-            -Pdb-${{ matrix.db }} \
-            -Dtest=RealmInvalidationClusterTest \
-            -Dsession.cache.owners=2 \
-            -Dauth.server.quarkus.cluster.stack=jdbc-ping \
-            -Ddocker.database.skip=true \
-            -Ddocker.database.port=$DATABASE_PORT \
-            -Ddocker.container.testdb.ip=localhost \
-            -pl testsuite/integration-arquillian/tests/base \
-            2>&1 | misc/log/trimmer.sh
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - id: run-store-tests
+        name: Run Store Integration Tests - ${{ matrix.db }}
+        uses: ./.github/actions/run-store-tests
         with:
-          job-name: Store IT
+            db: ${{ matrix.db }}
+
+  store-integration-tests-additional:
+    name: Store IT (additional)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    if: needs.conditional.outputs.ci-additional-dbs == 'true'
+    strategy:
+      matrix:
+        db: [edb]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Login to Quay.io
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          username: ${{ secrets.PRIVATE_DBS_QUAY_USERNAME }}
+          password: ${{ secrets.PRIVATE_DBS_QUAY_TOKEN }}
+          registry: quay.io
+
+      - id: run-store-tests
+        name: Run Store Integration Tests - ${{ matrix.db }}
+        uses: ./.github/actions/run-store-tests
+        with:
+          db: ${{ matrix.db }}
 
   store-model-tests:
     name: Store Model Tests

@@ -481,6 +481,28 @@
             </properties>
         </profile>
         <profile>
+            <id>db-edb</id>
+            <properties>
+                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}:${docker.database.port}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${postgresql-jdbc.version}</jdbc.mvn.version>
+                <docker.database.image>${edb.container}</docker.database.image>
+                <docker.database.port>5432</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>./init-and-start-db.sh</docker.database.cmd>
+                <docker.database.wait-for-log-regex>Database keycloak created.</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
             <id>db-mariadb</id>
             <properties>
                 <keycloak.storage.connections.vendor>mariadb</keycloak.storage.connections.vendor>

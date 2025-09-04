@@ -168,4 +168,10 @@ Simply set the backup site name (e.g., availability zone) using the following op
 --cache-remote-backup-sites=<name>
 ----
 
-When this option is set, Infinispan will automatically replicate the cache data to the specified location.
+When this option is set, Infinispan will automatically replicate the cache data to the specified location.¨
+
+= Support for additional databases
+
+With this release, we added support for the following new database vendors:
+
+* EnterpriseDB (EDB) Advanced 17.6

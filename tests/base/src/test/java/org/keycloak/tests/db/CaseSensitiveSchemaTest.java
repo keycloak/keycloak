@@ -5,6 +5,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
+import org.keycloak.testframework.database.EnterpriseDbDatabaseSupplier;
+import org.keycloak.testframework.database.EnterpriseDbTestDatabase;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -25,7 +27,8 @@ public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
 
             return switch (dbType()) {
                 // DBs that convert unquoted to lower-case by default
-                case PostgresTestDatabase.NAME -> config.option("db-schema", "KEYCLOAK");
+                case PostgresTestDatabase.NAME, EnterpriseDbTestDatabase.NAME
+                        -> config.option("db-schema", "KEYCLOAK");
                 // DBs that convert unquoted to upper-case by default
                 case "dev-file", "dev-mem" ->
                         config.option("db-url-properties", ";INIT=CREATE SCHEMA IF NOT EXISTS keycloak").option("db-schema", "keycloak");
@@ -37,7 +40,7 @@ public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
     public static class CaseSensitiveDatabaseConfig implements DatabaseConfig {
         @Override
         public DatabaseConfigBuilder configure(DatabaseConfigBuilder database) {
-            if (PostgresTestDatabase.NAME.equals(dbType())) {
+            if (PostgresTestDatabase.NAME.equals(dbType()) || EnterpriseDbTestDatabase.NAME.equals(dbType())) {
                 database.initScript("org/keycloak/tests/db/case-sensitive-schema-postgres.sql");
             }
             return database;
