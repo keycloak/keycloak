@@ -17,6 +17,8 @@
 
 package org.keycloak.models.policy;
 
+import static org.keycloak.models.policy.ResourceAction.AFTER_KEY;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -132,8 +134,8 @@ public class NotifyUserActionProvider implements ResourceActionProvider {
             return 0;
         }
         
-        String currentAfter = actionModel.get("after");
-        String nextAfter = nextAction.get("after");
+        String currentAfter = actionModel.get(AFTER_KEY);
+        String nextAfter = nextAction.get(AFTER_KEY);
         
         if (currentAfter == null || nextAfter == null) {
             return 0;
@@ -194,6 +196,6 @@ public class NotifyUserActionProvider implements ResourceActionProvider {
 
     @Override
     public boolean isRunnable() {
-        return actionModel.get("after") != null;
+        return actionModel.get(AFTER_KEY) != null;
     }
 }
