@@ -233,8 +233,8 @@ public class ResourcePolicyManagementTest {
             assertEquals(1, registeredPolicies.size());
 
             ResourcePolicy policy = registeredPolicies.get(0);
-            assertEquals(2, manager.getActions(policy).size());
-            ResourceAction notifyAction = manager.getActions(policy).get(0);
+            assertEquals(2, manager.getActions(policy.getId()).size());
+            ResourceAction notifyAction = manager.getActions(policy.getId()).get(0);
 
             ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
             ResourcePolicyStateProvider.ScheduledAction scheduledAction = stateProvider.getScheduledAction(policy.getId(), user.getId());
@@ -249,7 +249,7 @@ public class ResourcePolicyManagementTest {
                 user = session.users().getUserById(realm, user.getId());
 
                 // Verify that the next action was scheduled for the user
-                ResourceAction disableAction = manager.getActions(policy).get(1);
+                ResourceAction disableAction = manager.getActions(policy.getId()).get(1);
                 scheduledAction = stateProvider.getScheduledAction(policy.getId(), user.getId());
                 assertNotNull(scheduledAction, "An action should have been scheduled for the user " + user.getUsername());
                 assertEquals(disableAction.getId(), scheduledAction.actionId(), "The second action should have been scheduled");
@@ -313,8 +313,8 @@ public class ResourcePolicyManagementTest {
             assertEquals(1, registeredPolicies.size());
             ResourcePolicy policy = registeredPolicies.get(0);
 
-            assertEquals(2, policyManager.getActions(policy).size());
-            ResourceAction notifyAction = policyManager.getActions(policy).get(0);
+            assertEquals(2, policyManager.getActions(policy.getId()).size());
+            ResourceAction notifyAction = policyManager.getActions(policy.getId()).get(0);
 
             // check no policies are yet attached to the previous users, only to the ones created after the policy was in place
             ResourcePolicyStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(ResourcePolicyStateProvider.class).create(session);
@@ -333,7 +333,7 @@ public class ResourcePolicyManagementTest {
                 policyManager.runScheduledActions();
 
                 // check the same users are now scheduled to run the second action.
-                ResourceAction disableAction = policyManager.getActions(policy).get(1);
+                ResourceAction disableAction = policyManager.getActions(policy.getId()).get(1);
                 scheduledActions = stateProvider.getScheduledActionsByPolicy(policy);
                 assertEquals(3, scheduledActions.size());
                 scheduledActions.forEach(scheduledAction -> {
@@ -516,7 +516,7 @@ public class ResourcePolicyManagementTest {
 
                 UserModel user = session.users().getUserByUsername(realm, "testuser");
                 ResourcePolicy policy = manager.getPolicies().get(0);
-                ResourceAction action = manager.getActions(policy).get(0);
+                ResourceAction action = manager.getActions(policy.getId()).get(0);
 
                 // Verify that the action was scheduled again for the user
                 ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
