@@ -151,6 +151,14 @@ public class ResourcePolicyRepresentation {
             return withConfig("name", name);
         }
 
+        public Builder immediate() {
+            return withConfig("scheduled", "false");
+        }
+
+        public Builder recurring() {
+            return withConfig("recurring", "true");
+        }
+
         public List<ResourcePolicyRepresentation> build() {
             List<ResourcePolicyRepresentation> policies = new ArrayList<>();
 
