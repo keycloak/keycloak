@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportConfig;
@@ -58,7 +59,7 @@ public abstract class KeycloakApplication extends Application {
         try {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
-
+            Profile.getInstance().logUnsupportedFeatures();
             loadConfig();
 
             platform.onStartup(this::startup);
