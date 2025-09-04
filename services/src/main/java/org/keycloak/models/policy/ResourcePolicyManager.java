@@ -17,14 +17,20 @@
 
 package org.keycloak.models.policy;
 
-import jakarta.ws.rs.BadRequestException;
+import static java.util.Optional.ofNullable;
+
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -35,12 +41,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.policy.ResourcePolicyStateProvider.ScheduledAction;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyConditionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 
 public class ResourcePolicyManager {
 
     private static final Logger log = Logger.getLogger(ResourcePolicyManager.class);
 
-    private ResourcePolicyStateProvider policyStateProvider;
+    private final ResourcePolicyStateProvider policyStateProvider;
 
     public static boolean isFeatureEnabled() {
         return Profile.isFeatureEnabled(Feature.RESOURCE_LIFECYCLE);
@@ -101,7 +110,7 @@ public class ResourcePolicyManager {
                 .collect(Collectors.toSet());
 
         // get the stable IDs of the old actions
-        List<ResourceAction> oldActions = getActions(policy);
+        List<ResourceAction> oldActions = getActions(policy.getId());
         Set<String> oldActionIds = oldActions.stream()
                 .map(ResourceAction::getId)
                 .collect(Collectors.toSet());
@@ -126,14 +135,23 @@ public class ResourcePolicyManager {
             // assign priority based on index.
             action.setPriority(i + 1);
 
+            List<ResourceAction> subActions = Optional.ofNullable(action.getActions()).orElse(List.of());
+
             // persist the new action component.
-            addAction(policy, action);
+            action = addAction(policy.getId(), action);
+
+            for (int j = 0; j < subActions.size(); j++) {
+                ResourceAction subAction = subActions.get(j);
+                // assign priority based on index.
+                subAction.setPriority(j + 1);
+                addAction(action.getId(), subAction);
+            }
         }
     }
 
-    private ResourceAction addAction(ResourcePolicy policy, ResourceAction action) {
+    private ResourceAction addAction(String parentId, ResourceAction action) {
         RealmModel realm = getRealm();
-        ComponentModel policyModel = realm.getComponent(policy.getId());
+        ComponentModel policyModel = realm.getComponent(parentId);
         ComponentModel actionModel = new ComponentModel();
 
         actionModel.setId(action.getId());//need to keep stable UUIDs not to break a link in state table
@@ -151,14 +169,37 @@ public class ResourcePolicyManager {
                 .map(ResourcePolicy::new).toList();
     }
 
-    public List<ResourceAction> getActions(ResourcePolicy policy) {
-        RealmModel realm = getRealm();
-        return realm.getComponentsStream(policy.getId(), ResourceActionProvider.class.getName())
-                .map(ResourceAction::new).sorted().toList();
+    public List<ResourceAction> getActions(String policyId) {
+        return getActionsStream(policyId).toList();
+    }
+
+    public Stream<ResourceAction> getActionsStream(String parentId) {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getComponentsStream(parentId, ResourceActionProvider.class.getName())
+                .map(this::toResourceAction).sorted();
+    }
+
+    private ResourceAction toResourceAction(ComponentModel model) {
+        ResourceAction action = new ResourceAction(model);
+
+        action.setActions(getActions(action.getId()));
+
+        return action;
+    }
+
+    public ResourceAction getActionById(KeycloakSession session, String id) {
+        RealmModel realm = session.getContext().getRealm();
+        ComponentModel component = realm.getComponent(id);
+
+        if (component == null) {
+            return null;
+        }
+
+        return toResourceAction(component);
     }
 
     private ResourceAction getFirstAction(ResourcePolicy policy) {
-        return getActions(policy).get(0);
+        return getActions(policy.getId()).get(0);
     }
 
     private ResourcePolicyProvider getPolicyProvider(ResourcePolicy policy) {
@@ -167,10 +208,11 @@ public class ResourcePolicyManager {
         return (ResourcePolicyProvider) factory.create(session, getRealm().getComponent(policy.getId()));
     }
 
-    private ResourceActionProvider getActionProvider(ResourceAction action) {
+    public ResourceActionProvider getActionProvider(ResourceAction action) {
+        RealmModel realm = session.getContext().getRealm();
         ComponentFactory<?, ?> actionFactory = (ComponentFactory<?, ?>) session.getKeycloakSessionFactory()
                 .getProviderFactory(ResourceActionProvider.class, action.getProviderId());
-        return (ResourceActionProvider) actionFactory.create(session, getRealm().getComponent(action.getId()));
+        return (ResourceActionProvider) actionFactory.create(session, realm.getComponent(action.getId()));
     }
 
     private RealmModel getRealm() {
@@ -238,7 +280,7 @@ public class ResourcePolicyManager {
 
         // iterate through the policies, and for those not yet assigned to the user check if they can be assigned
         policies.stream()
-                .filter(policy -> policy.isEnabled() && !getActions(policy).isEmpty())
+                .filter(policy -> policy.isEnabled() && !getActions(policy.getId()).isEmpty())
                 .forEach(policy -> {
                     ResourcePolicyProvider provider = getPolicyProvider(policy);
                     if (!currentlyAssignedPolicies.contains(policy.getId())) {
@@ -254,7 +296,7 @@ public class ResourcePolicyManager {
                                 log.debugf("Running all actions of policy %s for resource %s based on event %s",
                                         policy.getId(), event.getResourceId(), event.getOperation());
                                 KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), s -> {
-                                    getActions(policy).forEach(action -> getActionProvider(action).run(List.of(event.getResourceId())));
+                                    getActions(policy.getId()).forEach(action -> getActionProvider(action).run(List.of(event.getResourceId())));
                                 });
                             }
                         }
@@ -272,7 +314,7 @@ public class ResourcePolicyManager {
             this.getPolicies().stream().filter(ResourcePolicy::isEnabled).forEach(policy -> {
 
             for (ScheduledAction scheduled : policyStateProvider.getDueScheduledActions(policy)) {
-                List<ResourceAction> actions = getActions(policy);
+                List<ResourceAction> actions = getActions(policy.getId());
 
                 for (int i = 0; i < actions.size(); i++) {
                     ResourceAction currentAction = actions.get(i);
@@ -328,5 +370,55 @@ public class ResourcePolicyManager {
         }
 
         return component;
+    }
+
+    public ResourcePolicyRepresentation toRepresentation(ResourcePolicy policy) {
+        ResourcePolicyRepresentation rep = new ResourcePolicyRepresentation(policy.getId(), policy.getProviderId(), policy.getConfig());
+
+        for (ResourceAction action : getActions(policy.getId())) {
+            rep.addAction(toRepresentation(action));
+        }
+
+        return rep;
+    }
+
+    private ResourcePolicyActionRepresentation toRepresentation(ResourceAction action) {
+        List<ResourcePolicyActionRepresentation> actions = action.getActions().stream().map(this::toRepresentation).toList();
+        return new ResourcePolicyActionRepresentation(action.getId(), action.getProviderId(), action.getConfig(), actions);
+    }
+
+    public ResourcePolicy toModel(ResourcePolicyRepresentation rep) {
+        ResourcePolicyManager manager = new ResourcePolicyManager(session);
+        MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
+
+        for (ResourcePolicyConditionRepresentation condition : rep.getConditions()) {
+            String conditionProviderId = condition.getProviderId();
+            config.computeIfAbsent("conditions", key -> new ArrayList<>()).add(conditionProviderId);
+
+            for (Entry<String, List<String>> configEntry : condition.getConfig().entrySet()) {
+                config.put(conditionProviderId + "." + configEntry.getKey(), configEntry.getValue());
+            }
+        }
+
+        ResourcePolicy policy = manager.addPolicy(rep.getProviderId(), config);
+        List<ResourceAction> actions = new ArrayList<>();
+
+        for (ResourcePolicyActionRepresentation actionRep : rep.getActions()) {
+            actions.add(toModel(actionRep));
+        }
+
+        manager.updateActions(policy, actions);
+
+        return policy;
+    }
+
+    private ResourceAction toModel(ResourcePolicyActionRepresentation rep) {
+        List<ResourceAction> subActions = new ArrayList<>();
+
+        for (ResourcePolicyActionRepresentation subAction : ofNullable(rep.getActions()).orElse(List.of())) {
+            subActions.add(toModel(subAction));
+        }
+
+        return new ResourceAction(rep.getProviderId(), rep.getConfig(), subActions);
     }
 }
