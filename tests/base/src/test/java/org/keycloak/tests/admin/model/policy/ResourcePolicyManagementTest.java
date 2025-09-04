@@ -19,24 +19,32 @@ package org.keycloak.tests.admin.model.policy;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.hamcrest.Matchers;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import java.io.IOException;
+
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RealmResourcePolicies;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.policy.DeleteUserActionProviderFactory;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourceAction;
@@ -52,6 +60,8 @@ import org.keycloak.representations.resources.policies.ResourcePolicyConditionRe
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -61,6 +71,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.utils.MailUtils;
 
 @KeycloakIntegrationTest(config = RLMServerConfig.class)
 public class ResourcePolicyManagementTest {
@@ -75,6 +86,9 @@ public class ResourcePolicyManagementTest {
 
     @InjectUser(ref = "alice", config = DefaultUserConfig.class, lifecycle = LifeCycle.METHOD)
     private ManagedUser userAlice;
+
+    @InjectMailServer
+    private MailServer mailServer;
 
     @Test
     public void testCreate() {
@@ -207,7 +221,7 @@ public class ResourcePolicyManagementTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the policy and setup the first action
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build());
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -232,9 +246,6 @@ public class ResourcePolicyManagementTest {
                 manager.runScheduledActions();
 
                 user = session.users().getUserById(realm, user.getId());
-                // Verify that ONLY the first action (notify) was executed.
-                assertNotNull(user.getAttributes().get("message"), "The first action (notify) should have run.");
-                assertTrue(user.isEnabled(), "The second action (disable) should NOT have run.");
 
                 // Verify that the next action was scheduled for the user
                 ResourceAction disableAction = manager.getActions(policy).get(1);
@@ -245,6 +256,12 @@ public class ResourcePolicyManagementTest {
                 Time.setOffset(0);
             }
         });
+
+        // Verify that the first action (notify) was executed by checking email was sent
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "testuser@example.com");
+        assertNotNull(testUserMessage, "The first action (notify) should have sent an email.");
+        
+        mailServer.runCleanup();
     }
 
     @Test
@@ -380,7 +397,7 @@ public class ResourcePolicyManagementTest {
         assertThat(policy.getName(), is("test-policy"));
 
         // create a new user - should bind the user to the policy and setup the first action
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build());
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -392,13 +409,17 @@ public class ResourcePolicyManagementTest {
                 manager.runScheduledActions();
 
                 UserModel user = session.users().getUserByUsername(realm, "testuser");
-                // Verify that ONLY the first action (notify) was executed.
-                assertNotNull(user.getAttributes().get("message"), "The first action (notify) should have run.");
                 assertTrue(user.isEnabled(), "The second action (disable) should NOT have run.");
             } finally {
                 Time.setOffset(0);
             }
         });
+
+        // Verify that the first action (notify) was executed by checking email was sent
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "testuser@example.com");
+        assertNotNull(testUserMessage, "The first action (notify) should have sent an email.");
+
+        mailServer.runCleanup();
 
         // disable the policy - scheduled actions should be paused and policy should not activate for new users
         policy.getConfig().putSingle("enabled", "false");
@@ -440,7 +461,7 @@ public class ResourcePolicyManagementTest {
         managedRealm.admin().resources().policies().policy(policy.getId()).update(policy).close();
 
         // create a third user - should bind the user to the policy as it is enabled again
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("thirduser").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("thirduser").email("thirduser@example.com").build());
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -455,14 +476,19 @@ public class ResourcePolicyManagementTest {
                 // Verify that the action was executed as the policy was re-enabled.
                 assertFalse(user.isEnabled(), "The second action (disable) should have run as the policy was re-enabled.");
 
-                // Verify that the third user was bound to the policy and had the first action executed.
+                // Verify that the third user was bound to the policy
                 user = session.users().getUserByUsername(realm, "thirduser");
-                assertNotNull(user.getAttributes().get("message"), "The first action (notify) should have run.");
                 assertTrue(user.isEnabled(), "The second action (disable) should NOT have run");
             } finally {
                 Time.setOffset(0);
             }
         });
+
+        // Verify that the first action (notify) was executed by checking email was sent
+        testUserMessage = findEmailByRecipient(mailServer, "thirduser@example.com");
+        assertNotNull(testUserMessage, "The first action (notify) should have sent an email.");
+
+        mailServer.runCleanup();
     }
 
     @Test
@@ -478,7 +504,7 @@ public class ResourcePolicyManagementTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the policy and setup the only action in the policy
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build());
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -489,9 +515,6 @@ public class ResourcePolicyManagementTest {
                 manager.runScheduledActions();
 
                 UserModel user = session.users().getUserByUsername(realm, "testuser");
-                // Verify that the action (notify) was executed.
-                assertNotNull(user.getAttributes().get("message"), "The action (notify) should have run.");
-                user.removeAttribute("message");
                 ResourcePolicy policy = manager.getPolicies().get(0);
                 ResourceAction action = manager.getActions(policy).get(0);
 
@@ -503,18 +526,288 @@ public class ResourcePolicyManagementTest {
 
                 Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
                 manager.runScheduledActions();
-                user = session.users().getUserByUsername(realm, "testuser");
-                assertNotNull(user.getAttributes().get("message"), "The action (notify) should have run again.");
             } finally {
                 Time.setOffset(0);
             }
         });
+
+        // Verify that there should be two emails sent
+        assertEquals(2, findEmailsByRecipient(mailServer, "testuser@example.com").size());
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testNotifyUserActionSendsEmailWithDefaultDisableMessage() {
+        // Create policy: disable at 10 days, notify 3 days before (at day 7)
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("test@example.com").name("John", "").build());
+
+        runOnServer.run(session -> {
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                // Simulate user being 7 days old (eligible for notify action)
+                Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
+
+                manager.runScheduledActions();
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // Verify email was sent to our test user
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "test@example.com");
+        assertNotNull(testUserMessage, "No email found for test@example.com");
+        verifyEmailContent(testUserMessage, "test@example.com", "Disable", "John", "3", "inactivity");
+
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testNotifyUserActionSendsEmailWithDefaultDeleteMessage() {
+        // Create policy: delete at 30 days, notify 15 days before (at day 15)
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(15))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(30))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser2").email("test2@example.com").name("Jane", "").build());
+
+        runOnServer.run(session -> {
+
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                // Simulate user being 15 days old
+                Time.setOffset(Math.toIntExact(Duration.ofDays(15).toSeconds()));
+                manager.runScheduledActions();
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // Verify email was sent to our test user
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "test2@example.com");
+        assertNotNull(testUserMessage, "No email found for test2@example.com");
+        verifyEmailContent(testUserMessage, "test2@example.com", "Deletion", "Jane", "15", "inactivity", "permanently deleted");
+
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testNotifyUserActionWithCustomMessageOverride() {
+        // Create policy: disable at 7 days, notify 2 days before (at day 5) with custom message
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .withConfig("reason", "compliance requirement")
+                                .withConfig("custom_message", "Your account requires immediate attention due to new compliance policies.")
+                                .withConfig("custom_subject_key", "customComplianceSubject")
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(7))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser3").email("test3@example.com").name("Bob", "").build());
+
+        runOnServer.run(session -> {
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                // Simulate user being 5 days old
+                Time.setOffset(Math.toIntExact(Duration.ofDays(5).toSeconds()));
+                manager.runScheduledActions();
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // Verify email was sent to our test user
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "test3@example.com");
+        assertNotNull(testUserMessage, "No email found for test3@example.com");
+        verifyEmailContent(testUserMessage, "test3@example.com", "", "Bob", "2", "immediate attention due to new compliance policies");
+
+        mailServer.runCleanup();
+    }
+
+    @Test
+    public void testNotifyUserActionSkipsUsersWithoutEmailButLogsWarning() {
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser4").name("NoEmail", "").build());
+
+        runOnServer.run(session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                Time.setOffset(Math.toIntExact(Duration.ofDays(5).toSeconds()));
+                manager.runScheduledActions();
+
+                // But should still create state record for the policy flow
+                UserModel user = session.users().getUserByUsername(realm, "testuser4");
+                ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
+                var scheduledActions = stateProvider.getScheduledActionsByResource(user.getId());
+                assertEquals(1, scheduledActions.size());
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // Should NOT send email to user without email address
+        MimeMessage testUserMessage = findEmailByRecipientContaining("testuser4");
+        assertNull(testUserMessage, "No email should be sent to user without email address");
+    }
+
+    @Test
+    public void testCompleteUserLifecycleWithMultipleNotifications() {
+        // Create policy: just disable at 30 days with one notification before
+        managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(15))
+                                .withConfig("reason", "inactivity")
+                                .build(),
+                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(30))
+                                .build()
+                ).build()).close();
+
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser5").email("testuser5@example.com").name("TestUser5", "").build());
+
+        runOnServer.run(session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+            UserModel user = session.users().getUserByUsername(realm, "testuser5");
+
+            try {
+                // Day 15: First notification - this should run the notify action and schedule the disable action
+                Time.setOffset(Math.toIntExact(Duration.ofDays(15).toSeconds()));
+                manager.runScheduledActions();
+
+                // Check that user is still enabled after notification
+                user = session.users().getUserById(realm, user.getId());
+                assertTrue(user.isEnabled(), "User should still be enabled after notification");
+
+                // Day 30 + 15 minutes: Disable user - run 15 minutes after the scheduled time to ensure it's due
+                Time.setOffset(Math.toIntExact(Duration.ofDays(30).toSeconds()) + Math.toIntExact(Duration.ofMinutes(15).toSeconds()));
+                manager.runScheduledActions();
+
+                // Verify user is disabled
+                user = session.users().getUserById(realm, user.getId());
+                assertNotNull(user, "User should still exist after disable");
+                assertFalse(user.isEnabled(), "User should be disabled");
+
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // Verify notification was sent
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "testuser5@example.com");
+        assertNotNull(testUserMessage, "No email found for testuser5@example.com");
+        verifyEmailContent(testUserMessage, "testuser5@example.com", "Disable", "TestUser5", "15", "inactivity");
+
+        mailServer.runCleanup();
+    }
+
+    public static List<MimeMessage> findEmailsByRecipient(MailServer mailServer, String expectedRecipient) {
+        return Arrays.stream(mailServer.getReceivedMessages())
+                .filter(msg -> {
+                    try {
+                        return MailUtils.getRecipient(msg).equals(expectedRecipient);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .toList();
+    }
+
+    public static MimeMessage findEmailByRecipient(MailServer mailServer, String expectedRecipient) {
+        return Arrays.stream(mailServer.getReceivedMessages())
+                .filter(msg -> {
+                    try {
+                        return MailUtils.getRecipient(msg).equals(expectedRecipient);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .findFirst()
+                .orElse(null);
+    }
+
+    private MimeMessage findEmailByRecipientContaining(String recipientPart) {
+        return Arrays.stream(mailServer.getReceivedMessages())
+                .filter(msg -> {
+                    try {
+                        return MailUtils.getRecipient(msg).contains(recipientPart);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     private static RealmModel configureSessionContext(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(REALM_NAME);
         session.getContext().setRealm(realm);
         return realm;
+    }
+
+    public static void verifyEmailContent(MimeMessage message, String expectedRecipient, String subjectContains,
+                                           String... contentContains) {
+        try {
+            assertEquals(expectedRecipient, MailUtils.getRecipient(message));
+            assertTrue(message.getSubject().contains(subjectContains),
+                    "Subject should contain '" + subjectContains + "'");
+
+            MailUtils.EmailBody body = MailUtils.getBody(message);
+            String textContent = body.getText();
+            String htmlContent = body.getHtml();
+
+            for (String expectedContent : contentContains) {
+                boolean foundInText = textContent.contains(expectedContent);
+                boolean foundInHtml = htmlContent.contains(expectedContent);
+                assertTrue(foundInText || foundInHtml,
+                        "Email content should contain: " + expectedContent +
+                                "\nText: " + textContent +
+                                "\nHTML: " + htmlContent);
+            }
+        } catch (MessagingException | IOException e) {
+            fail("Failed to read email message: " + e.getMessage());
+        }
     }
 
     private static class DefaultUserConfig implements UserConfig {

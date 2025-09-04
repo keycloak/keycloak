@@ -11,6 +11,7 @@ summary="Deploy a single Keycloak cluster, optionally stretched across multiple 
 The {project_name} single-cluster setup is targeted at use cases that:
 
 * Deploy to an infrastructure with transparent networking, like for example a single {kubernetes} cluster.
+* Desire all healthy {project_name} instances to handle user requests.
 * Are constrained to a single
 <@profile.ifProduct>
 AWS Region.

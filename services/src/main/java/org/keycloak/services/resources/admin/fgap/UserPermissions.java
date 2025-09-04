@@ -434,6 +434,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         map.put("mapRoles", canMapRoles(user));
         map.put("manageGroupMembership", canManageGroupMembership(user));
         map.put("impersonate", canImpersonate(user));
+        map.put("resetPassword", ((UserPermissionEvaluator)this).canResetPassword(user));
         return map;
     }
 
