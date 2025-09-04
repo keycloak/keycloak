@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Single-cluster deployments"
-summary="Deploy a single Keycloak cluster, optionally stretched across multiple availability-zones" >
+summary="Deploy a single Keycloak cluster, optionally across multiple availability-zones in the same region" >
 
 == When to use a single-cluster setup
 
