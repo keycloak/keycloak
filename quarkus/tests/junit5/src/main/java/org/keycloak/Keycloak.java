@@ -60,6 +60,7 @@ public class Keycloak {
 
     static {
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        System.setProperty(Environment.KC_CONFIG_BUILT, "true");
         System.setProperty("quarkus.http.test-port", "${kc.http-port}");
         System.setProperty("quarkus.http.test-ssl-port", "${kc.https-port}");
         System.setProperty("java.util.concurrent.ForkJoinPool.common.threadFactory", QuarkusForkJoinWorkerThreadFactory.class.getName());
