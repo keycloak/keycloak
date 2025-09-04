@@ -17,6 +17,7 @@
 
 package org.keycloak.models.policy;
 
+import static org.keycloak.keys.Attributes.PRIORITY_KEY;
 import static org.keycloak.models.policy.ResourceAction.AFTER_KEY;
 
 import java.util.List;
@@ -54,7 +55,7 @@ public class SetUserAttributeActionProvider implements ResourceActionProvider {
                 for (Entry<String, List<String>> entry : actionModel.getConfig().entrySet()) {
                     String key = entry.getKey();
 
-                    if (!key.startsWith(AFTER_KEY)) {
+                    if (!key.startsWith(AFTER_KEY) && !key.startsWith(PRIORITY_KEY)) {
                         log.debugv("Setting attribute {0} to user {1})", key, user.getId());
                         user.setAttribute(key, entry.getValue());
                     }

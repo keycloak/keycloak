@@ -71,4 +71,8 @@ public class ResourcePolicy {
     public boolean isRecurring() {
         return config != null && Boolean.parseBoolean(config.getFirst("recurring"));
     }
+
+    public boolean isScheduled() {
+        return config != null && Boolean.parseBoolean(config.getFirstOrDefault("scheduled", "true"));
+    }
 }

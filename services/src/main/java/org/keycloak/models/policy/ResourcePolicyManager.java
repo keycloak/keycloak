@@ -34,6 +34,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.policy.ResourcePolicyStateProvider.ScheduledAction;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 public class ResourcePolicyManager {
 
@@ -243,8 +244,19 @@ public class ResourcePolicyManager {
                     if (!currentlyAssignedPolicies.contains(policy.getId())) {
                         // if policy is not active for the resource, check if the provider allows activating based on the event
                         if (provider.activateOnEvent(event)) {
-                            // TODO run actions for immediate policies right away and do not schedule them
-                            policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                            if (policy.isScheduled()) {
+                                // policy is scheduled, so we schedule the first action
+                                log.debugf("Scheduling first action of policy %s for resource %s based on event %s",
+                                        policy.getId(), event.getResourceId(), event.getOperation());
+                                policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                            } else {
+                                // policy is not scheduled, so we run all actions immediately
+                                log.debugf("Running all actions of policy %s for resource %s based on event %s",
+                                        policy.getId(), event.getResourceId(), event.getOperation());
+                                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), s -> {
+                                    getActions(policy).forEach(action -> getActionProvider(action).run(List.of(event.getResourceId())));
+                                });
+                            }
                         }
                     } else {
                         if (provider.resetOnEvent(event)) {
