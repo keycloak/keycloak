@@ -88,7 +88,12 @@ public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientR
         if (realm == null) {
             return Collections.emptyList();
         } else {
-            return realm.getClientScopesStream().map(ClientScopeModel::getName).collect(Collectors.toList());
+            List<String> scopes = realm.getClientScopesStream().map(ClientScopeModel::getName).collect(Collectors.toList());
+            //add openid scope if not exists
+            if (!scopes.contains("openid")) {
+                scopes.add("openid");
+            }
+            return scopes;
         }
     }
 
