@@ -197,6 +197,24 @@ public class ClientTest {
     }
 
     @Test
+    public void testCreateClientWithBlankClientId() {
+        ClientRepresentation rep = ClientConfigBuilder.create()
+                .clientId("")
+                .description("blank")
+                .enabled(true)
+                .publicClient(true)
+                .build();
+        try (Response response = managedRealm.admin().clients().create(rep)) {
+            if (response.getStatus() != 400) {
+                response.bufferEntity();
+                String body = response.readEntity(String.class);
+                fail("expect 400 Bad request response code but receive: " + response.getStatus() + "\n" + body);
+            }
+        }
+    }
+
+
+    @Test
     public void testInvalidLengthClientIdValidation() {
         ClientRepresentation rep = ClientConfigBuilder.create()
                 .id("test-long-invalid-client-id-validation-400-bad-request")

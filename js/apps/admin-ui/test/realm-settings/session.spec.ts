@@ -14,7 +14,7 @@ import {
   populateSessionsPage,
 } from "./sessions.ts";
 
-test.describe("Sessions", () => {
+test.describe.serial("Sessions", () => {
   const realmName = `sessions-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));

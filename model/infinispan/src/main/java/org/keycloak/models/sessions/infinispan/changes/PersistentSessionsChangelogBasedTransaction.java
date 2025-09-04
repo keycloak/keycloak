@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.changes;
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -145,8 +146,15 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             changesPerformers.add(new JpaChangesPerformer<>(cacheName, null) {
                 @Override
                 public void applyChanges() {
-                    KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(),
-                            super::applyChangesSynchronously);
+                    Retry.executeWithBackoff(
+                            iteration -> KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(), super::applyChangesSynchronously),
+                            (iteration, t) -> {
+                                if (iteration > 20) {
+                                    // never retry more than 20 times
+                                    throw new RuntimeException("Maximum number of retries reached", t);
+                                }
+                            }, PersistentSessionsWorker.UPDATE_TIMEOUT, PersistentSessionsWorker.UPDATE_BASE_INTERVAL_MILLIS);
+                    clear();
                 }
             });
         }

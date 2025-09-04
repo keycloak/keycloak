@@ -125,7 +125,7 @@ public class KeycloakSpec {
     private SchedulingSpec schedulingSpec;
 
     @JsonProperty("bootstrapAdmin")
-    @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for inital cluster creation.")
+    @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for initial cluster creation.")
     private BootstrapAdminSpec bootstrapAdminSpec;
 
     @JsonProperty("networkPolicy")

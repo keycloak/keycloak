@@ -26,7 +26,7 @@ const editedRealmName = `Edited-Test-realm-${uuid()}`;
 const testDisabledName = `Test-Disabled-${uuid()}`;
 const specialCharsName = `%22-${uuid()}`;
 
-test.describe("Realm tests", () => {
+test.describe.serial("Realm tests", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await clickCreateRealm(page);

@@ -17,13 +17,18 @@
 
 package org.keycloak.tests.admin.model.policy;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.tests.admin.model.policy.ResourcePolicyManagementTest.findEmailByRecipient;
+import static org.keycloak.tests.admin.model.policy.ResourcePolicyManagementTest.findEmailsByRecipient;
+import static org.keycloak.tests.admin.model.policy.ResourcePolicyManagementTest.verifyEmailContent;
 
 import java.time.Duration;
+import java.util.List;
 
+import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
@@ -33,6 +38,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.policy.DisableUserActionProviderFactory;
 import org.keycloak.models.policy.NotifyUserActionProviderFactory;
+import org.keycloak.models.policy.ResourceOperationType;
 import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
@@ -41,6 +47,8 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -77,15 +85,24 @@ public class UserSessionRefreshTimePolicyTest {
     @InjectOAuthClient
     OAuthClient oauth;
 
+    @InjectMailServer
+    private MailServer mailServer;
+
     @BeforeEach
     public void onBefore() {
         oauth.realm("default");
+
+        runOnServer.run(session -> {
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+            manager.removePolicies();
+        });
     }
 
     @Test
     public void testDisabledUserAfterInactivityPeriod() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -109,25 +126,28 @@ public class UserSessionRefreshTimePolicyTest {
 
             UserModel user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
-            assertNull(user.getAttributes().get("message"));
 
             // running the scheduled tasks now shouldn't pick up any action as none are due to run yet
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             user = session.users().getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
-            assertNull(user.getAttributes().get("message"));
 
             try {
                 // set offset to 6 days - notify action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(5).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
-                assertNotNull(user.getAttributes().get("message"));
             } finally {
                 Time.setOffset(0);
             }
         }));
+
+        // Verify that the notify action was executed by checking email was sent
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "master-admin@email.org");
+        assertNotNull(testUserMessage, "The first action (notify) should have sent an email.");
+
+        mailServer.runCleanup();
 
         // trigger a login event that should reset the flow of the policy
         oauth.openLoginForm();
@@ -138,7 +158,7 @@ public class UserSessionRefreshTimePolicyTest {
                 RealmModel realm = configureSessionContext(session);
                 Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
                 ResourcePolicyManager manager = new ResourcePolicyManager(session);
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
             } finally {
@@ -150,7 +170,7 @@ public class UserSessionRefreshTimePolicyTest {
                 RealmModel realm = configureSessionContext(session);
                 Time.setOffset(Math.toIntExact(Duration.ofDays(17).toSeconds()));
                 ResourcePolicyManager manager = new ResourcePolicyManager(session);
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, username);
                 // second action should have run and the user should be disabled now
                 assertFalse(user.isEnabled());
@@ -164,16 +184,20 @@ public class UserSessionRefreshTimePolicyTest {
     public void testMultiplePolicies() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(5))
-                                .withConfig("message_key", "notifier1")
+                                .withConfig("custom_subject_key", "notifier1_subject")
+                                .withConfig("custom_message", "notifier1_message")
                                 .build()
                 ).of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(10))
-                                .withConfig("message_key", "notifier2")
+                                .withConfig("custom_subject_key", "notifier2_subject")
+                                .withConfig("custom_message", "notifier2_message")
                                 .build())
                 .build()).close();
 
@@ -191,42 +215,47 @@ public class UserSessionRefreshTimePolicyTest {
             UserProvider users = session.users();
             UserModel user = users.getUserByUsername(realm, username);
             assertTrue(user.isEnabled());
-            assertNull(user.getFirstAttribute("notifier1"));
-            assertNull(user.getFirstAttribute("notifier2"));
 
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(7).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = users.getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
-                assertNotNull(user.getFirstAttribute("notifier1"));
-                assertNull(user.getFirstAttribute("notifier2"));
-                user.removeAttribute("notifier1");
             } finally {
                 Time.setOffset(0);
             }
+        });
 
+        // Verify that the first notify action was executed by checking email was sent
+        List<MimeMessage> testUserMessages = findEmailsByRecipient(mailServer, "master-admin@email.org");
+        // Only one notify message should be sent
+        assertEquals(1, testUserMessages.size());
+        assertNotNull(testUserMessages.get(0), "The first action (notify) should have sent an email.");
+        verifyEmailContent(testUserMessages.get(0), "master-admin@email.org", "notifier1_subject", "notifier1_message");
+
+        mailServer.runCleanup();
+
+        runOnServer.run(session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            UserModel user = session.users().getUserByUsername(realm, username);
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
-                manager.runScheduledTasks();
-                user = users.getUserByUsername(realm, username);
+                manager.runScheduledActions();
+                user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
-                assertNotNull(user.getFirstAttribute("notifier2"));
-                assertNull(user.getFirstAttribute("notifier1"));
-                user.removeAttribute("notifier2");
             } finally {
                 Time.setOffset(0);
             }
-
-            try {
-                manager.runScheduledTasks();
-                assertNull(user.getFirstAttribute("notifier1"));
-                assertNull(user.getFirstAttribute("notifier2"));
-            } finally {
-                Time.setOffset(0);
-            }
-
         });
+
+        // Verify that the second notify action was executed by checking email was sent
+        testUserMessages = findEmailsByRecipient(mailServer, "master-admin@email.org");
+        // Only one notify message should be sent
+        assertEquals(1, testUserMessages.size());
+        assertNotNull(testUserMessages.get(0), "The second action (notify) should have sent an email.");
+        verifyEmailContent(testUserMessages.get(0), "master-admin@email.org", "notifier2_subject", "notifier2_message");
     }
 
     private static RealmModel configureSessionContext(KeycloakSession session) {

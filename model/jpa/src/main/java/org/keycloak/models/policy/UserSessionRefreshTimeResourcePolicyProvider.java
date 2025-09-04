@@ -17,13 +17,13 @@
 
 package org.keycloak.models.policy;
 
+import static org.keycloak.models.policy.ResourceOperationType.CREATE;
+import static org.keycloak.models.policy.ResourceOperationType.LOGIN;
+
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-
-import static org.keycloak.models.policy.ResourceOperationType.CREATE;
-import static org.keycloak.models.policy.ResourceOperationType.LOGIN;
 
 public class UserSessionRefreshTimeResourcePolicyProvider extends AbstractUserResourcePolicyProvider {
 
@@ -32,12 +32,12 @@ public class UserSessionRefreshTimeResourcePolicyProvider extends AbstractUserRe
     }
 
     @Override
-    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
-        return List.of(CREATE, LOGIN);
+    protected boolean isActivationEvent(ResourcePolicyEvent event) {
+        return super.isActivationEvent(event) || List.of(CREATE, LOGIN).contains(event.getOperation());
     }
 
     @Override
-    protected List<ResourceOperationType> getSupportedOperationsForResetting() {
-        return List.of(LOGIN);
+    protected boolean isResetEvent(ResourcePolicyEvent event) {
+        return LOGIN.equals(event.getOperation());
     }
 }

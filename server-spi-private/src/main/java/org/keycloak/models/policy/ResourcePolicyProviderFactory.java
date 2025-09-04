@@ -24,8 +24,6 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public interface ResourcePolicyProviderFactory<P extends ResourcePolicyProvider> extends ComponentFactory<P, ResourcePolicyProvider>, EnvironmentDependentProviderFactory {
 
-    ResourceType getType();
-
     @Override
     default boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RESOURCE_LIFECYCLE);

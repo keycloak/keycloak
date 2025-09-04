@@ -60,7 +60,7 @@ const savedSuccessMessage = "User federation provider successfully saved";
 const validatePasswordPolicyFailMessage =
   "User federation provider could not be saved: Validate Password Policy is applicable only with WRITABLE edit mode";
 
-test.describe("User Federation LDAP tests", () => {
+test.describe.serial("User Federation LDAP tests", () => {
   const realmName = `user-federation-ldap-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -101,7 +101,7 @@ test.describe("User Federation LDAP tests", () => {
     await goToUserFederation(page);
   });
 
-  test.describe("Edit provider", () => {
+  test.describe.serial("Edit provider", () => {
     test.beforeAll(() =>
       adminClient.createUserFederation(realmName, {
         providerId: provider,

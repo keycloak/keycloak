@@ -15,7 +15,7 @@ import {
   goToSecurityDefensesTab,
 } from "./security-defenses.ts";
 
-test.describe("Security defenses", () => {
+test.describe.serial("Security defenses", () => {
   const realmName = `security-defenses-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));

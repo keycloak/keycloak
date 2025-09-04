@@ -24,6 +24,7 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderEvent;
 
 public class ResourcePolicyEventListenerFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -39,17 +40,26 @@ public class ResourcePolicyEventListenerFactory implements EventListenerProvider
 
     @Override
     public void init(Scope config) {
-
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        factory.register(event -> {
+            KeycloakSession session = event.getKeycloakSession();
 
+            if (session != null) {
+                onEvent(event, session);
+            }
+        });
+    }
+
+    private void onEvent(ProviderEvent event, KeycloakSession session) {
+        ResourcePolicyEventListener provider = (ResourcePolicyEventListener) session.getProvider(EventListenerProvider.class, getId());
+        provider.onEvent(event);
     }
 
     @Override
     public void close() {
-
     }
 
     @Override

@@ -31,7 +31,7 @@ public class UserCreationTimeResourcePolicyProvider extends AbstractUserResource
     }
 
     @Override
-    protected List<ResourceOperationType> getSupportedOperationsForScheduling() {
-        return List.of(CREATE);
+    protected boolean isActivationEvent(ResourcePolicyEvent event) {
+        return super.isActivationEvent(event) || CREATE.equals(event.getOperation());
     }
 }

@@ -34,12 +34,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.DeleteUserActionProviderFactory;
+import org.keycloak.models.policy.ResourceOperationType;
+import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
+import org.keycloak.models.policy.ResourcePolicyStateProvider;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
+import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
+import org.keycloak.representations.resources.policies.ResourcePolicyConditionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -115,23 +120,18 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
     public void tesRunActionOnFederatedUser() {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
-                .withConfig("broker-aliases", IDP_OIDC_ALIAS)
+                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                        .of(IdentityProviderPolicyConditionFactory.ID)
+                        .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
+                        .build())
                 .withActions(
                         ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
                                 .after(Duration.ofDays(1))
                                 .build()
                 ).build()).close();
 
-        consumerRealmOAuth.openLoginForm();
-        loginPage.clickSocial(IDP_OIDC_ALIAS);
-
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/realms/" + providerRealm.getName() + "/"), "Driver should be on the provider realm page right now");
-        loginPage.fillLogin(aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
-        loginPage.submit();
-        consentPage.waitForPage();
-        consentPage.assertCurrent();
-        consentPage.confirm();
-        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        loginBrokeredUser();
 
         UsersResource users = consumerRealm.admin().users();
         String username = aliceFromProviderRealm.getUsername();
@@ -143,14 +143,14 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
             RealmModel realm = configureSessionContext(session);
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user);
             assertTrue(user.isEnabled());
 
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, username);
                 assertNull(user);
             } finally {
@@ -165,12 +165,12 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
         loginPage.submit();
         assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
-        runOnServer.run((session -> {
+        runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
 
             // run the scheduled tasks - bob should not be affected.
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             UserModel user = session.users().getUserByUsername(realm, "bob");
             assertNotNull(user);
             assertTrue(user.isEnabled());
@@ -178,16 +178,104 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
             try {
                 // run with a time offset - bob should still not be affected.
                 Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, "bob");
                 assertNotNull(user);
             } finally {
                 Time.setOffset(0);
             }
-        }));
+        });
     }
 
-    private static IdentityProviderRepresentation setUpIdentityProvider() {
+    @Test
+    public void testAddRemoveFedIdentityAffectsPolicyAssociation() {
+        consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.toString())
+                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                        .of(IdentityProviderPolicyConditionFactory.ID)
+                        .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
+                        .build())
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(1))
+                                .build()
+                ).build()).close();
+
+        loginBrokeredUser();
+
+        runOnServer.run(session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+            ResourcePolicy policy = manager.getPolicies().get(0);
+            UserModel alice = session.users().getUserByUsername(realm, "alice");
+            assertNotNull(alice);
+
+            // alice should be associated with the policy
+            ResourcePolicyStateProvider stateProvider = session.getProvider(ResourcePolicyStateProvider.class);
+            ResourcePolicyStateProvider.ScheduledAction scheduledAction = stateProvider.getScheduledAction(policy.getId(), alice.getId());
+            assertNotNull(scheduledAction, "An action should have been scheduled for the user " + alice.getUsername());
+        });
+
+        // remove the federated identity - alice should be disassociated from the policy and thus not deleted
+        UserRepresentation aliceInConsumerRealm = consumerRealm.admin().users().search(aliceFromProviderRealm.getUsername()).get(0);
+        assertNotNull(aliceInConsumerRealm);
+        consumerRealm.admin().users().get(aliceInConsumerRealm.getId()).removeFederatedIdentity(IDP_OIDC_ALIAS);
+
+        runOnServer.run(session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                // run with a time offset - alice should not be deleted as she is no longer associated with the IDP and thus the policy
+                Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
+                manager.runScheduledActions();
+                UserModel user = session.users().getUserByUsername(realm, "alice");
+                assertNotNull(user, "User alice should not be deleted as she is no longer associated with the IDP and thus the policy.");
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+        // add a federated identity for user bob - bob should now be associated with the policy and thus deleted when the scheduled tasks run
+        FederatedIdentityRepresentation federatedIdentityRepresentation = new FederatedIdentityRepresentation();
+        federatedIdentityRepresentation.setIdentityProvider(IDP_OIDC_ALIAS);
+        federatedIdentityRepresentation.setUserId("bob-federated-id");
+        federatedIdentityRepresentation.setUserName("bob-federated-usewrname");
+        consumerRealm.admin().users().get(bobFromConsumerRealm.getId()).addFederatedIdentity(IDP_OIDC_ALIAS, federatedIdentityRepresentation).close();
+
+        runOnServer.run(session -> {
+            RealmModel realm = configureSessionContext(session);
+            ResourcePolicyManager manager = new ResourcePolicyManager(session);
+
+            try {
+                // run with a time offset - bob should be deleted as he is now associated with the IDP and thus with the policy
+                Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
+                manager.runScheduledActions();
+                UserModel user = session.users().getUserByUsername(realm, "bob");
+                assertNull(user);
+            } finally {
+                Time.setOffset(0);
+            }
+        });
+
+    }
+
+    private void loginBrokeredUser() {
+        consumerRealmOAuth.openLoginForm();
+        loginPage.clickSocial(IDP_OIDC_ALIAS);
+
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/realms/" + providerRealm.getName() + "/"), "Driver should be on the provider realm page right now");
+        loginPage.fillLogin(aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
+        loginPage.submit();
+        consentPage.waitForPage();
+        consentPage.assertCurrent();
+        consentPage.confirm();
+        assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+    }
+
+
+        private static IdentityProviderRepresentation setUpIdentityProvider() {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
         Map<String, String> config = idp.getConfig();

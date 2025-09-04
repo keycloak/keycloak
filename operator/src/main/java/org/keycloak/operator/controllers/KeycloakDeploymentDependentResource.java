@@ -87,6 +87,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     public static final String HTTP_MANAGEMENT_SCHEME = "http-management-scheme";
 
     public static final String POD_IP = "POD_IP";
+    public static final String HOST_IP_SPI_OPTION = "KC_SPI_CACHE_EMBEDDED_DEFAULT_MACHINE_NAME";
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
@@ -184,8 +185,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         baseDeployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION, ContextUtils.getUpdateReason(context));
 
         return switch (updateType.get()) {
-            case ROLLING -> handleRollingUpdate(baseDeployment, context, primary);
-            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, kcContainer, context);
+            case ROLLING -> handleRollingUpdate(baseDeployment);
+            case RECREATE -> handleRecreateUpdate(existingDeployment, baseDeployment, kcContainer);
         };
     }
 
@@ -352,7 +353,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         && (customImage.isPresent() || operatorConfig.keycloak().startOptimized())) {
             containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
-        // Set bind address as this is required for JGroups to form a cluster in IPv6 envionments
+        // Set bind address as this is required for JGroups to form a cluster in IPv6 environments
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
         boolean tls = isTlsConfigured(keycloakCR);
@@ -592,6 +593,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         envVars.add(new EnvVarBuilder().withName(POD_IP).withNewValueFrom().withNewFieldRef()
                 .withFieldPath("status.podIP").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
+        // Both status.hostIP or spec.nodeName would be fine here.
+        // In theory, status.hostIP is a smaller value and, as this value is tagged in all JGroups messages, it should have a lower overhead.
+        // Using spec.nodeName to avoid exposing the IP addresses in the logs.
+        envVars.add(new EnvVarBuilder().withName(HOST_IP_SPI_OPTION).withNewValueFrom().withNewFieldRef()
+                .withFieldPath("spec.nodeName").withApiVersion("v1").endFieldRef().endValueFrom().build());
+
         return envVars;
     }
 
@@ -620,15 +627,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }));
     }
 
-    private static StatefulSet handleRollingUpdate(StatefulSet desired, Context<Keycloak> context, Keycloak primary) {
+    private static StatefulSet handleRollingUpdate(StatefulSet desired) {
         // return the desired stateful set since Kubernetes does a rolling in-place update by default.
         Log.debug("Performing a rolling update");
         desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, Boolean.FALSE.toString());
         return desired;
     }
 
-    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired, Container kcContainer,
-            Context<Keycloak> context) {
+    private static StatefulSet handleRecreateUpdate(StatefulSet actual, StatefulSet desired, Container kcContainer) {
         desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_RECREATE_UPDATE_ANNOTATION, Boolean.TRUE.toString());
 
         if (Optional.ofNullable(actual.getStatus().getReplicas()).orElse(0) == 0) {

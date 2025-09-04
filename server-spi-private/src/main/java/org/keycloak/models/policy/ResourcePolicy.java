@@ -63,4 +63,12 @@ public class ResourcePolicy {
     public MultivaluedHashMap<String, String> getConfig() {
         return config;
     }
+
+    public boolean isEnabled() {
+        return config != null && Boolean.parseBoolean(config.getFirstOrDefault("enabled", "true"));
+    }
+
+    public boolean isRecurring() {
+        return config != null && Boolean.parseBoolean(config.getFirst("recurring"));
+    }
 }

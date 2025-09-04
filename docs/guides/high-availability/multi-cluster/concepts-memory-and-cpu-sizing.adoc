@@ -24,7 +24,7 @@ include::../partials/concepts/perf_recommendations.adoc[]
 
 include::../partials/concepts/perf_single_cluster_calculation.adoc[]
 
-=== Sizing a multi cluster setup
+=== Sizing a multi-cluster setup
 
 To create the sizing an active-active Keycloak setup with two AZs in one AWS region, following these steps:
 

@@ -22,7 +22,7 @@ import {
 } from "./main.ts";
 import { fillPolicyForm, goToPolicies } from "./policy.ts";
 
-test.describe("Permissions section tests", () => {
+test.describe.serial("Permissions section tests", () => {
   const realmName = `permissions-${uuid()}`;
 
   test.beforeAll(async () => {
@@ -116,7 +116,7 @@ test.describe("Permissions section tests", () => {
     );
   });
 
-  test.describe("evaluate permissions", () => {
+  test.describe.serial("evaluate permissions", () => {
     test.beforeAll(async () => {
       await adminClient.createUser({
         realm: realmName,
@@ -173,7 +173,7 @@ test.describe("Permissions section tests", () => {
     });
   });
 
-  test.describe("permission search", () => {
+  test.describe.serial("permission search", () => {
     test.beforeAll(async () => {
       for (let i = 0; i < 5; i++) {
         await adminClient.createPermission({

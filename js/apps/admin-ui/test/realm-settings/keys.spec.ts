@@ -19,7 +19,7 @@ import {
   switchToFilter,
 } from "./keys.ts";
 
-test.describe("Realm Settings - Keys", () => {
+test.describe.serial("Realm Settings - Keys", () => {
   const realmName = `events-realm-settings-${uuid()}`;
   const searchPlaceholder = "Search key";
 

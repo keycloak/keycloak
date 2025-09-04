@@ -15,7 +15,7 @@ import {
   assertEmailPageWithTokenAuth,
 } from "./email.ts";
 
-test.describe("Email", () => {
+test.describe.serial("Email", () => {
   const realmName = `email-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));

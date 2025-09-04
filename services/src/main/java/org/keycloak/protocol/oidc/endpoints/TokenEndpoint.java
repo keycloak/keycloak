@@ -142,9 +142,7 @@ public class TokenEndpoint {
          * authorization_code and refresh_token grant types and extension grants such as the JWT
          * authorization grant [RFC7523])
          */
-        DPoPUtil.retrieveDPoPHeaderIfPresent(session, clientConfig, event, cors).ifPresent(dPoP -> {
-            session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-        });
+        DPoPUtil.handleDPoPHeader(session, event, cors, clientConfig);
 
         OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes,
                                                                       formParams, event, cors, tokenManager);

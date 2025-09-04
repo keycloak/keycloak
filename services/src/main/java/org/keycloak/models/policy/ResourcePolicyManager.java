@@ -219,12 +219,14 @@ public class ResourcePolicyManager {
     }
 
     public void scheduleAllEligibleResources(ResourcePolicy policy) {
-        ResourcePolicyProvider provider = getPolicyProvider(policy);
-        ResourceAction firstAction = getFirstAction(policy);
-        provider.getEligibleResourcesForInitialAction().forEach(resourceId -> {
-            // TODO run each scheduling task in a separate tx as other txs might schedule an action while this is running.
-            this.policyStateProvider.scheduleAction(policy, firstAction, resourceId);
-        });
+        if (policy.isEnabled()) {
+            ResourcePolicyProvider provider = getPolicyProvider(policy);
+            ResourceAction firstAction = getFirstAction(policy);
+            provider.getEligibleResourcesForInitialAction().forEach(resourceId -> {
+                // TODO run each scheduling task in a separate tx as other txs might schedule an action while this is running.
+                this.policyStateProvider.scheduleAction(policy, firstAction, resourceId);
+            });
+        }
     }
 
     public void processEvent(ResourcePolicyEvent event) {
@@ -235,25 +237,27 @@ public class ResourcePolicyManager {
 
         // iterate through the policies, and for those not yet assigned to the user check if they can be assigned
         policies.stream()
-                .filter(policy -> !getActions(policy).isEmpty())
+                .filter(policy -> policy.isEnabled() && !getActions(policy).isEmpty())
                 .forEach(policy -> {
                     ResourcePolicyProvider provider = getPolicyProvider(policy);
                     if (!currentlyAssignedPolicies.contains(policy.getId())) {
-                        // if policy is not assigned, check if the provider allows assigning based on the event
-                        if (provider.scheduleOnEvent(event)) {
+                        // if policy is not active for the resource, check if the provider allows activating based on the event
+                        if (provider.activateOnEvent(event)) {
+                            // TODO run actions for immediate policies right away and do not schedule them
                             policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
                         }
                     } else {
                         if (provider.resetOnEvent(event)) {
                             policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                        } else if (provider.deactivateOnEvent(event)) {
+                            policyStateProvider.remove(policy.getId(), event.getResourceId());
                         }
-                        // TODO add a removeOnEvent to allow policies to detach from resources on specific events (e.g. unlinking an identity)
                     }
                 });
     }
 
-    public void runScheduledTasks() {
-        for (ResourcePolicy policy : getPolicies()) {
+    public void runScheduledActions() {
+            this.getPolicies().stream().filter(ResourcePolicy::isEnabled).forEach(policy -> {
 
             for (ScheduledAction scheduled : policyStateProvider.getDueScheduledActions(policy)) {
                 List<ResourceAction> actions = getActions(policy);
@@ -269,12 +273,19 @@ public class ResourcePolicyManager {
                             ResourceAction nextAction = actions.get(i + 1);
                             policyStateProvider.scheduleAction(policy, nextAction, nextAction.getAfter() - currentAction.getAfter(), scheduled.resourceId());
                         } else {
-                            policyStateProvider.remove(policy.getId(), scheduled.resourceId());
+                            // this was the last action, check if the policy is recurring - i.e. if we need to schedule the first action again
+                            if (policy.isRecurring()) {
+                                ResourceAction firstAction = getFirstAction(policy);
+                                policyStateProvider.scheduleAction(policy, firstAction, scheduled.resourceId());
+                            } else {
+                                // not recurring, remove the state record
+                                policyStateProvider.remove(policy.getId(), scheduled.resourceId());
+                            }
                         }
                     }
                 }
             }
-        }
+        });
     }
 
     public void removePolicy(String id) {

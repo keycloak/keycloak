@@ -89,7 +89,7 @@ Use the option `log-mdc-enabled` to enable it.
 
 .Example output
 ----
-2025-06-20 14:13:01,772 {kc.clientId=security-admin-console, kc.realm=master} INFO ...
+2025-06-20 14:13:01,772 {kc.clientId=security-admin-console, kc.realmName=master} INFO ...
 ----
 
 Specify which keys to be added by setting the configuration option `log-mdc-keys`.

@@ -12,7 +12,7 @@ import {
   goToPolicies,
 } from "./policy.ts";
 
-test.describe("Policy section tests", () => {
+test.describe.serial("Policy section tests", () => {
   const realmName = `permissions-policy-${uuid()}`;
 
   test.beforeAll(() =>
