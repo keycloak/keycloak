@@ -77,6 +77,15 @@ public class ResourcePolicyActionRepresentation {
             return this;
         }
 
+        public Builder before(ResourcePolicyActionRepresentation targetAction, Duration timeBeforeTarget) {
+            // Calculate absolute time: targetAction.after - timeBeforeTarget
+            String targetAfter = targetAction.getConfig().get(AFTER_KEY).get(0);
+            long targetTime = Long.parseLong(targetAfter);
+            long thisTime = targetTime - timeBeforeTarget.toMillis();
+            action.setAfter(thisTime);
+            return this;
+        }
+
         public Builder withConfig(String key, String value) {
             action.setConfig(key, value);
             return this;

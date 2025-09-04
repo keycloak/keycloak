@@ -27,6 +27,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
@@ -323,11 +324,15 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         return evaluatePermission(permission, resourceServer, new DefaultEvaluationContext(identity, session));
     }
 
-    public Collection<Permission> evaluatePermission(List<ResourcePermission> permission, ResourceServer resourceServer) {
-        return evaluatePermission(permission, resourceServer, new DefaultEvaluationContext(identity, session));
+    public DecisionPermissionCollector getDecision(ResourcePermission permission, ResourceServer resourceServer) {
+        return evaluatePermission(List.of(permission), resourceServer, new DefaultEvaluationContext(identity, session));
     }
 
     public Collection<Permission> evaluatePermission(ResourcePermission permission, ResourceServer resourceServer, EvaluationContext context) {
+        return evaluatePermission(Arrays.asList(permission), resourceServer, context).results();
+    }
+
+    public DecisionPermissionCollector getDecision(ResourcePermission permission, ResourceServer resourceServer, EvaluationContext context) {
         return evaluatePermission(Arrays.asList(permission), resourceServer, context);
     }
 
@@ -337,14 +342,14 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public boolean evaluatePermission(Resource resource, ResourceServer resourceServer, EvaluationContext context, Scope... scope) {
-        return !evaluatePermission(Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), resourceServer)), resourceServer, context).isEmpty();
+        return !evaluatePermission(Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), resourceServer)), resourceServer, context).results().isEmpty();
     }
 
-    public Collection<Permission> evaluatePermission(List<ResourcePermission> permissions, ResourceServer resourceServer, EvaluationContext context) {
+    public DecisionPermissionCollector evaluatePermission(List<ResourcePermission> permissions, ResourceServer resourceServer, EvaluationContext context) {
         RealmModel oldRealm = session.getContext().getRealm();
         try {
             session.getContext().setRealm(realm);
-            return authz.evaluators().from(permissions, resourceServer, context).evaluate(resourceServer, null);
+            return authz.evaluators().from(permissions, resourceServer, context).getDecision(resourceServer, null, DecisionPermissionCollector.class);
         } finally {
             session.getContext().setRealm(oldRealm);
         }

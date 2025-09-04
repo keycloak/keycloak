@@ -19,8 +19,6 @@ package org.keycloak.models.policy;
 
 import java.time.Duration;
 
-import org.keycloak.common.util.KeycloakUriBuilder;
-
 public class UserActionBuilder {
 
     private final ResourceAction action;
