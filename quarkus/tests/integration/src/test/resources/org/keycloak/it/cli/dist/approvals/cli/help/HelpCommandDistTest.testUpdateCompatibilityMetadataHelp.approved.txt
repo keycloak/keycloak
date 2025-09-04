@@ -441,6 +441,9 @@ Logging:
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when Console log
                        handler is activated.
+--log-export-enabled <true|false>
+                     PREVIEW. Enables exporting logs to a destination handling telemetry data
+                       (OpenTelemetry Logs). Default: false.
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
