@@ -21,6 +21,15 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import jakarta.ws.rs.core.UriBuilder;
 import org.junit.Assert;
 import org.junit.Test;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.TokenVerifier;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
@@ -87,4 +96,37 @@ public class NonceEndpointTest extends OID4VCIssuerEndpointTest {
         });
     }
 
+    @Test
+    public void testDPoPNonceHeaderPresent() throws Exception {
+        UriBuilder uriBuilder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+        URI oid4vcBaseUri = RealmsResource.protocolUrl(uriBuilder).build(AbstractTestRealmKeycloakTest.TEST_REALM_NAME,
+                OID4VCLoginProtocolFactory.PROTOCOL_ID);
+        String nonceEndpointUrl = String.format("%s/%s", oid4vcBaseUri, OID4VCIssuerEndpoint.NONCE_PATH);
+
+        // Create HTTP client and make request to nonce endpoint
+        try (Client httpClient = AdminClientUtil.createResteasyClient()) {
+            WebTarget target = httpClient.target(nonceEndpointUrl);
+            Invocation.Builder requestBuilder = target.request(MediaType.APPLICATION_JSON_TYPE);
+
+            try (Response response = requestBuilder.post(null)) {
+                // Verify successful response
+                Assert.assertEquals("Nonce endpoint should return 200 OK",
+                        Response.Status.OK.getStatusCode(), response.getStatus());
+
+                // Verify DPoP-Nonce header is present and non-empty
+                String dpopNonceHeader = response.getHeaderString(OAuth2Constants.DPOP_NONCE_HEADER);
+                Assert.assertNotNull("DPoP-Nonce header must be present", dpopNonceHeader);
+                Assert.assertFalse("DPoP-Nonce header must not be empty", dpopNonceHeader.trim().isEmpty());
+
+                // Verify that DPoP nonce is different from body nonce (separate generation)
+                String responseBody = response.readEntity(String.class);
+                NonceResponse nonceResponse = JsonSerialization.readValue(responseBody, NonceResponse.class);
+                Assert.assertNotNull("Response body should contain valid nonce response", nonceResponse);
+                Assert.assertNotNull("c_nonce in response body should not be null", nonceResponse.getNonce());
+
+                Assert.assertNotEquals("DPoP-Nonce header should be different from c_nonce in body",
+                        nonceResponse.getNonce(), dpopNonceHeader);
+            }
+        }
+    }
 }

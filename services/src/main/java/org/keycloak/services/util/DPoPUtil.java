@@ -160,7 +160,7 @@ public class DPoPUtil {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
-    
+
     private static DPoP validateDPoP(KeycloakSession session, URI uri, String method, String token, String accessToken, int lifetime, int clockSkew) throws VerificationException {
 
         if (token == null || token.trim().isEmpty()) {
