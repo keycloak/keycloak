@@ -32,8 +32,6 @@ import picocli.CommandLine;
 
 public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
 
-    private static final int FEATURE_DISABLED_EXIT_CODE = 4;
-
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin = new OptimizedMixin();
 

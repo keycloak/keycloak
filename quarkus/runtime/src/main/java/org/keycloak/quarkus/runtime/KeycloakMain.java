@@ -97,9 +97,6 @@ public class KeycloakMain implements QuarkusApplication {
         }
 
         if (cliArgs.isEmpty()) {
-            if (Environment.isRebuildCheck()) {
-                return; // nothing to do - not currently caught by the shell scripts
-            }
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
