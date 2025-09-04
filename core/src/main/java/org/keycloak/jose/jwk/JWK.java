@@ -45,9 +45,14 @@ public class JWK {
 
     public static final String SHA256_509_THUMBPRINT = "x5t#S256";
 
+    /**
+     * This duplicates {@link org.keycloak.crypto.KeyUse}, which should be used instead when possible
+     */
+    @Deprecated
     public enum Use {
         SIG("sig"),
-        ENCRYPTION("enc");
+        ENCRYPTION("enc"),
+        JWT_SVID("jwt-svid");
 
         private String str;
 

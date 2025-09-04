@@ -9,7 +9,6 @@ import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -22,14 +21,18 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
+import java.util.HashMap;
+import java.util.Map;
 
 public class OAuthIdentityProvider {
 
     private final HttpServer httpServer;
 
     private final OAuthIdentityProviderKeys keys;
+    private final OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config;
 
-    public OAuthIdentityProvider(HttpServer httpServer) {
+    public OAuthIdentityProvider(HttpServer httpServer, OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
+        this.config = config;
         if (!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
@@ -37,7 +40,7 @@ public class OAuthIdentityProvider {
         this.httpServer = httpServer;
         httpServer.createContext("/idp/jwks", new JwksHttpHandler());
 
-        keys = new OAuthIdentityProviderKeys();
+        keys = new OAuthIdentityProviderKeys(config);
     }
 
     public String encodeToken(JsonWebToken token) {
@@ -49,7 +52,7 @@ public class OAuthIdentityProvider {
     }
 
     public OAuthIdentityProviderKeys createKeys() {
-        return new OAuthIdentityProviderKeys();
+        return new OAuthIdentityProviderKeys(config);
     }
 
     public void close() {
@@ -75,19 +78,29 @@ public class OAuthIdentityProvider {
 
         private final String jwksString;
 
-        public OAuthIdentityProviderKeys() {
+        public OAuthIdentityProviderKeys(OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
             try {
+                KeyUse keyUse = config.spiffe() ? KeyUse.JWT_SVID : KeyUse.SIG;
+
                 KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
                 ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
                 keyPairGenerator.initialize(ecSpec);
                 KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
                 JWK jwk = JWKBuilder.create().ec(keyPair.getPublic());
-                jwk.setAlgorithm("ES256");
-                jwk.setPublicKeyUse(KeyUse.SIG.getSpecName());
+                if (!config.spiffe()) {
+                    jwk.setAlgorithm("ES256");
+                }
+                jwk.setPublicKeyUse(keyUse.getSpecName());
 
-                JSONWebKeySet jwks = new JSONWebKeySet();
-                jwks.setKeys(new JWK[] { jwk });
+                Map<String, Object> jwks = new HashMap<>();
+                jwks.put("keys", new JWK[] { jwk });
+
+                if (config.spiffe()) {
+                    jwks.put("spiffe_sequence", 1);
+                    jwks.put("spiffe_refresh_hint", 300);
+                }
+
                 jwksString = JsonSerialization.writeValueAsString(jwks);
 
                 keyWrapper = new KeyWrapper();

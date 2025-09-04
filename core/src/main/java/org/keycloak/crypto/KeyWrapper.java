@@ -16,25 +16,13 @@
  */
 package org.keycloak.crypto;
 
-import java.util.HashMap;
-import java.util.List;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.List;
 
 public class KeyWrapper {
-
-    /**
-     * A repository for the default algorithms by key type.
-     */
-    private static final Map<String, String> DEFAULT_ALGORITHM_BY_TYPE = new HashMap<>();
-
-    static {
-        //backwards compatibility: RSA keys without "alg" field set are considered RS256
-        DEFAULT_ALGORITHM_BY_TYPE.put(KeyType.RSA, Algorithm.RS256);
-    }
 
     private String providerId;
     private long providerPriority;
@@ -85,18 +73,34 @@ public class KeyWrapper {
     }
 
     /**
-     * <p>Returns the value of the optional {@code alg} claim. If not defined, a default is returned depending on the
-     * key type as per {@code kty} claim.
+     * <p>Returns the value of the optional {@code alg} claim. If not defined, a default is
+     * inferred for some algorithms.
      *
      * <p>For keys of type {@link KeyType#RSA}, the default algorithm is {@link Algorithm#RS256} as this is the default
      * algorithm recommended by OIDC specs.
      *
+     * <p>For keys of type {@link KeyType#EC}, {@link Algorithm#ES256}, {@link Algorithm#ES384}, or {@link Algorithm#ES512}
+     * is returned based on the curve
      *
      * @return the algorithm set or a default based on the key type.
      */
     public String getAlgorithmOrDefault() {
-        if (algorithm == null) {
-            return DEFAULT_ALGORITHM_BY_TYPE.get(type);
+        if (algorithm == null && type != null) {
+            switch (type) {
+                case KeyType.EC:
+                    if (curve != null) {
+                        switch (curve) {
+                            case "P-256":
+                                return Algorithm.ES256;
+                            case "P-384":
+                                return Algorithm.ES384;
+                            case "P-512":
+                                return Algorithm.ES512;
+                        }
+                    }
+                case KeyType.RSA:
+                    return Algorithm.RS256;
+            }
         }
         return algorithm;
     }
