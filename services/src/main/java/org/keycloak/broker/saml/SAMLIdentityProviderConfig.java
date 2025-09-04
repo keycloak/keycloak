@@ -251,7 +251,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public boolean isPostBindingLogout() {
         String postBindingLogout = getConfig().get(POST_BINDING_LOGOUT);
         if (postBindingLogout == null) {
-            // To maintain unchanged behavior when adding this field, we set the inital value to equal that
+            // To maintain unchanged behavior when adding this field, we set the initial value to equal that
             // of the binding for the response:
             return isPostBindingResponse();
         }

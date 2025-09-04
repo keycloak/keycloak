@@ -56,6 +56,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,6 +168,31 @@ public class SimpleHttp {
         return null;
     }
 
+    public Map<String, String> getHeaders() {
+        if (headers == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(headers);
+    }
+
+    public String getParam(String name) {
+        if (params == null) {
+            return null;
+        }
+        return params.get(name);
+    }
+
+    public Map<String, String> getParams() {
+        if (params == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(params);
+    }
+
+    public Object getEntity() {
+        return entity;
+    }
+
     public SimpleHttp json(Object entity) {
         this.entity = entity;
         return this;
@@ -174,6 +200,11 @@ public class SimpleHttp {
 
     public SimpleHttp entity(HttpEntity entity) {
         this.entity = entity;
+        return this;
+    }
+
+    public SimpleHttp params(Map<String, String> params) {
+        this.params = params;
         return this;
     }
 

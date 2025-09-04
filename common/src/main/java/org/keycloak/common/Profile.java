@@ -91,6 +91,8 @@ public class Profile {
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
 
+        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.EXPERIMENTAL),
+
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 
@@ -124,7 +126,7 @@ public class Profile {
 
         ORGANIZATION("Organization support within realms", Type.DEFAULT),
 
-        PASSKEYS("Passkeys", Type.PREVIEW, Feature.WEB_AUTHN),
+        PASSKEYS("Passkeys", Type.DEFAULT, Feature.WEB_AUTHN),
         PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR("Passkeys conditional UI authenticator", Type.DEPRECATED, FeatureUpdatePolicy.ROLLING_NO_UPGRADE, Feature.PASSKEYS),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
@@ -136,7 +138,11 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
+        RESOURCE_LIFECYCLE("Resource lifecycle management", Type.EXPERIMENTAL),
+
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
+
+        DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
@@ -487,8 +493,9 @@ public class Profile {
     }
 
     private static void verifyConfig(Map<Feature, Boolean> features) {
-        for (Feature f : features.keySet()) {
-            if (features.get(f) && f.getDependencies() != null) {
+        for (Map.Entry<Feature, Boolean> entry : features.entrySet()) {
+            Feature f = entry.getKey();
+            if (entry.getValue() && f.getDependencies() != null) {
                 for (Feature d : f.getDependencies()) {
                     if (!features.get(d)) {
                         throw new ProfileException("Feature " + f.getKey() + " depends on disabled feature " + d.getKey());

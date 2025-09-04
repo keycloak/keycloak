@@ -26,7 +26,7 @@ import {
   goToInitialAccessTokenTab,
 } from "./initial-access.ts";
 
-test.describe("Client initial access tokens", () => {
+test.describe.serial("Client initial access tokens", () => {
   const tableName = "Initial access token";
   const placeHolder = "Search token";
   const countCellNumber = 3;

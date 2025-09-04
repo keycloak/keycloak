@@ -223,9 +223,9 @@ public class DefaultMigrationManager implements MigrationManager {
 
     public static ModelVersion convertRHSSOVersionToKeycloakVersion(String version) {
         // look for the keycloakVersion pattern to identify it as RH SSO
-        for (Pattern pattern : PATTERN_MATCHER.keySet()) {
-            if (pattern.matcher(version).find()) {
-                return PATTERN_MATCHER.get(pattern);
+        for (var entry : PATTERN_MATCHER.entrySet()) {
+            if (entry.getKey().matcher(version).find()) {
+                return entry.getValue();
             }
         }
         // chceck if the version is in format for CD releases, e.g.: "keycloakVersion": "6"

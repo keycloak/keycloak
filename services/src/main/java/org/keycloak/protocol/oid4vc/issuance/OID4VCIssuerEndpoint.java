@@ -37,8 +37,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jwe.JWE;
@@ -77,7 +75,8 @@ import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.Proof;
+import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
@@ -358,7 +357,7 @@ public class OID4VCIssuerEndpoint {
                                 "scope in access token = %s.",
                         requestedCredential.getName(), accessToken.getScope());
                 throw new CorsErrorResponseException(cors,
-                        ErrorType.UNSUPPORTED_CREDENTIAL_TYPE.toString(),
+                        ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.toString(),
                         "Scope check failure",
                         Response.Status.BAD_REQUEST);
             } else {
@@ -438,7 +437,16 @@ public class OID4VCIssuerEndpoint {
         // Find the requested credential scope
         CredentialScopeModel requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
             LOGGER.debugf("Credential for request '%s' not found.", credentialRequestVO.toString());
-            return new BadRequestException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE));
+            
+            // Determine the appropriate error type based on what was requested
+            ErrorType errorType;
+            if (credentialRequestVO.getCredentialConfigurationId() != null) {
+                errorType = ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
+            } else {
+                errorType = ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER;
+            }
+            
+            return new BadRequestException(getErrorResponse(errorType));
         });
 
         checkScope(requestedCredential);
@@ -664,9 +672,13 @@ public class OID4VCIssuerEndpoint {
                         vcIssuanceContext.getCredentialBody(),
                         credentialConfig.getCredentialBuildConfig()
                 ))
-                .orElseThrow(() -> new BadRequestException(
-                        String.format("No signer found for format '%s'.", credentialConfig.getFormat())
-                ));
+                .orElseThrow(() -> {
+                    String message = String.format("No signer found for format '%s'.", credentialConfig.getFormat());
+                    return new BadRequestException(
+                            message,
+                            getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message)
+                    );
+                });
     }
 
     private CredentialScopeModel getClientScopeModel(SupportedCredentialConfiguration credentialConfig) {
@@ -765,25 +777,33 @@ public class OID4VCIssuerEndpoint {
      * Enforce key binding: Validate proof and bind associated key to credential in issuance context.
      */
     private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext) {
-        Proof proof = vcIssuanceContext.getCredentialRequest().getProof();
-        if (proof == null) {
-            LOGGER.debugf("No proof provided, skipping key binding");
+        Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
+        if (proofs == null) {
+            LOGGER.debugf("No proofs provided, skipping key binding");
             return;
         }
 
-        String proofType = proof.getProofType();
+        // Validate each JWT proof if present
+        if (proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
+            validateProofs(vcIssuanceContext, ProofType.JWT);
+        }
+    }
 
+    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType) {
         ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
             throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
         }
 
-        // Validate proof and bind public key to credential
+        // Validate proof and bind public keys to credential
         try {
-            Optional.ofNullable(proofValidator.validateProof(vcIssuanceContext))
-                    .ifPresent(jwk -> vcIssuanceContext.getCredentialBody().addKeyBinding(jwk));
+            List<JWK> jwks = proofValidator.validateProof(vcIssuanceContext);
+            if (jwks != null && !jwks.isEmpty()) {
+                // Bind the first JWK to the credential
+                vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
+            }
         } catch (VCIssuerException e) {
-            throw new BadRequestException("Could not validate provided proof", e);
+            throw new BadRequestException(String.format("Could not validate provided %s proof", proofType), e);
         }
     }
 
@@ -792,7 +812,8 @@ public class OID4VCIssuerEndpoint {
         CredentialBuilder credentialBuilder = credentialBuilders.get(format);
 
         if (credentialBuilder == null) {
-            throw new BadRequestException(String.format("No credential builder found for format %s", format));
+            String message = String.format("No credential builder found for format %s", format);
+            throw new BadRequestException(message, getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, message));
         }
 
         return credentialBuilder;

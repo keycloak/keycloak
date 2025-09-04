@@ -16,7 +16,7 @@ import {
   setWebAuthnPolicyCreateTimeout,
 } from "./policies.ts";
 
-test.describe("OTP policies tab", () => {
+test.describe.serial("OTP policies tab", () => {
   const realmName = `policies-otp-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -52,7 +52,7 @@ test.describe("OTP policies tab", () => {
   });
 });
 
-test.describe("Webauthn policies tabs", () => {
+test.describe.serial("Webauthn policies tabs", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToAuthentication(page);

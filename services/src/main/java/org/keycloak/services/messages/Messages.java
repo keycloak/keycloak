@@ -119,12 +119,19 @@ public class Messages {
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
 
+    public static final String COOLDOWN_VERIFICATION_EMAIL = "emailVerifySendCooldown";
+
     public static final String UPDATE_EMAIL = "updateEmailMessage";
 
     public static final String LINK_IDP = "linkIdpMessage";
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
+
+    public static final String EMAIL_VERIFIED_HEADER = "emailVerifiedMessageHeader";
+
     public static final String EMAIL_VERIFIED_ALREADY = "emailVerifiedAlreadyMessage";
+
+    public static final String EMAIL_VERIFIED_ALREADY_HEADER = "emailVerifiedAlreadyMessageHeader";
 
     public static final String EMAIL_SENT = "emailSentMessage";
 
@@ -218,6 +225,8 @@ public class Messages {
     public static final String CONFIRM_ACCOUNT_LINKING_BODY = "confirmAccountLinkingBody";
 
     public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION = "confirmEmailAddressVerification";
+
+    public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION_HEADER = "confirmEmailAddressVerificationHeader";
 
     public static final String CONFIRM_EXECUTION_OF_ACTIONS = "confirmExecutionOfActions";
 

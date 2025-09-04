@@ -1,25 +1,19 @@
 import { expect, test } from "@playwright/test";
-import {
-  getUserByUsername,
-  getCredentials,
-  deleteCredential,
-  deleteRealm,
-  importRealm,
-} from "../admin-client.ts";
-import { login } from "../login.ts";
-import groupsRealm from "../realms/groups-realm.json" with { type: "json" };
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
+import { login } from "../support/actions.ts";
+import { adminClient, findUserByUsername } from "../support/admin-client.ts";
+import { DEFAULT_USER } from "../support/common.ts";
+import { createTestBed } from "../support/testbed.ts";
 
-const realm = "groups";
 test.describe("Signing in", () => {
-  // Tests for keycloak account console, section Signing in in Account security
-  test("Should see only password", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", "groups");
+  test("shows password and OTP credentials", async ({ page }) => {
+    const realm = await createTestBed();
 
+    // Log in and navigate to the signing in section.
+    await login(page, realm);
     await page.getByTestId("accountSecurity").click();
-    await expect(page.getByTestId("account-security/signing-in")).toBeVisible();
     await page.getByTestId("account-security/signing-in").click();
 
+    // Verify the password credential is configured, and it is not possible to create a new one.
     await expect(
       page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toHaveCount(1);
@@ -28,54 +22,48 @@ test.describe("Signing in", () => {
     ).toContainText("My password");
     await expect(page.getByTestId("password/create")).toBeHidden();
 
+    // Verify the OTP credential not configured, and it is possible to create a new one.
     await expect(
       page.getByTestId("otp/credential-list").getByRole("listitem"),
     ).toHaveCount(1);
     await expect(
       page.getByTestId("otp/credential-list").getByRole("listitem"),
-    ).toContainText("not set up");
-    await expect(page.getByTestId("otp/create")).toBeVisible();
-
+    ).toContainText("Authenticator application is not set up.");
     await page.getByTestId("otp/create").click();
     await expect(page.locator("#kc-page-title")).toContainText(
       "Mobile Authenticator Setup",
     );
   });
-});
 
-test.describe("Signing in 2", () => {
-  test.afterAll(async () => {
-    await deleteRealm(realm);
-    await importRealm(groupsRealm as RealmRepresentation);
-  });
-  test("Password removal", async ({ page }) => {
-    const jdoeUser = await getUserByUsername("jdoe", realm);
+  test("allows setting a password credential if none exists", async ({
+    page,
+  }) => {
+    const realm = await createTestBed();
+    const user = await findUserByUsername(realm, DEFAULT_USER.username);
 
-    await login(page, "jdoe", "jdoe", "groups");
+    // Log in and delete the password credential of the user.
+    await login(page, realm);
+    const credentials = await adminClient.users.getCredentials({
+      realm,
+      id: user.id as string,
+    });
+    await adminClient.users.deleteCredential({
+      realm,
+      id: user.id as string,
+      credentialId: credentials[0].id as string,
+    });
 
-    const credentials = await getCredentials(jdoeUser!.id!, realm);
-    await deleteCredential(jdoeUser!.id!, credentials![0].id!, realm);
-
+    // Navigate to the signing in section.
     await page.getByTestId("accountSecurity").click();
-    await expect(page.getByTestId("account-security/signing-in")).toBeVisible();
     await page.getByTestId("account-security/signing-in").click();
 
+    // Verify the password credential is not configured, and it is possible to create a new one.
     await expect(
       page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toHaveCount(1);
     await expect(
       page.getByTestId("password/credential-list").getByRole("listitem"),
     ).toContainText("not set up");
-    await expect(page.getByTestId("password/create")).toBeVisible();
-
-    await expect(
-      page.getByTestId("otp/credential-list").getByRole("listitem"),
-    ).toHaveCount(1);
-    await expect(
-      page.getByTestId("otp/credential-list").getByRole("listitem"),
-    ).toContainText("not set up");
-    await expect(page.getByTestId("otp/create")).toBeVisible();
-
     await page.getByTestId("password/create").click();
     await expect(page.locator("#kc-page-title")).toContainText(
       "Update password",

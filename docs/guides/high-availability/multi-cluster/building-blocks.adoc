@@ -19,7 +19,9 @@ include::../partials/blueprint-disclaimer.adoc[]
 
 == Two sites with low-latency connection
 
-Ensures that synchronous replication is available for both the database and the external {jdgserver_name}.
+{project_name} requires a low latency network connection for the synchronous replication of data by the database and the external {jdgserver_name}.
+
+include::../partials/network-latency.adoc[]
 
 *Suggested setup:* Two AWS Availability Zones within the same AWS Region.
 

@@ -20,7 +20,7 @@ import {
 } from "./mappers.ts";
 import adminClient from "../utils/AdminClient.ts";
 
-test.describe("Mappers tab test", () => {
+test.describe.serial("Mappers tab test", () => {
   const placeHolderClientScope = "Search for client scope";
   const placeHolder = "Search for mapper";
 

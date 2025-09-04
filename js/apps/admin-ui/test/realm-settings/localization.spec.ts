@@ -22,7 +22,7 @@ import {
   switchInternationalization,
 } from "./localization.ts";
 
-test.describe("Go to localization tab", () => {
+test.describe.serial("Go to localization tab", () => {
   const realmName = `localization-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -43,13 +43,24 @@ test.describe("Go to localization tab", () => {
     await assertNotificationMessage(page, "Realm successfully updated");
   });
 
-  test.describe("Locales tab - CRUD bundle", () => {
+  test.describe.serial("Locales tab - CRUD bundle", () => {
     test.beforeAll(() =>
       adminClient.updateRealm(realmName, { internationalizationEnabled: true }),
     );
 
     test.beforeEach(async ({ page }) => {
       await goToRealmOverridesSubTab(page);
+    });
+
+    test("Realm Overrides - Search function", async ({ page }) => {
+      await addBundle(page, "search", "321");
+      await clickCreateButton(page);
+
+      await searchItem(page, "Search for translation", "321");
+      await assertRowExists(page, "search");
+
+      await searchItem(page, "Search for translation", "not-found");
+      await assertRowExists(page, "not-found", false);
     });
 
     test("Realm Overrides - Add and delete bundle", async ({ page }) => {
@@ -70,17 +81,6 @@ test.describe("Go to localization tab", () => {
         page,
         "Successfully removed translation(s).",
       );
-    });
-
-    test("Realm Overrides - Search for and delete bundle", async ({ page }) => {
-      await addBundle(page, "search", "321");
-      await clickCreateButton(page);
-
-      await searchItem(page, "Search for translation", "321");
-      await assertRowExists(page, "search");
-
-      await searchItem(page, "Search for translation", "not-found");
-      await assertRowExists(page, "not-found", false);
     });
 
     test("Realm Overrides - Edit and cancel edit message bundle", async ({

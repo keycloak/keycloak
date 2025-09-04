@@ -17,7 +17,7 @@ import {
 } from "./localization.ts";
 import { goToLoginTab } from "./login.ts";
 
-test.describe("Accessibility tests for realm settings", () => {
+test.describe.serial("Accessibility tests for realm settings", () => {
   const realmName = `realm-settings-accessibility-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));

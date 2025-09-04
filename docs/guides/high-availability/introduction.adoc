@@ -14,7 +14,7 @@ for your deployments.
 
 The following architectures are supported by {project_name}.
 
-=== Single cluster
+=== Single-cluster deployments
 
 Deploy {project_name} in a single cluster, optionally "stretched" across multiple availability-zones, using <@links.ha id="single-cluster-introduction" />.
 
@@ -27,7 +27,7 @@ Disadvantages::
 * {kubernetes} cluster is a single point of failure:
 ** Control-plane failures could impact all {project_name} pods
 
-=== Multi cluster
+=== Multi-cluster deployments
 
 Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones to increase availability using <@links.ha id="multi-cluster-introduction" />.
 

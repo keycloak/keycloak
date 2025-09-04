@@ -19,14 +19,11 @@ package org.keycloak.services.util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -73,7 +70,9 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
@@ -81,6 +80,8 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.TokenUtil;
 
+import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
+import static org.keycloak.OAuth2Constants.DPOP_HTTP_HEADER;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 
 /**
@@ -99,22 +100,6 @@ public class DPoPUtil {
         OPTIONAL,
         DISABLED
     }
-
-    public static final String DPOP_HTTP_HEADER = "DPoP";
-    private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
-    public static final String DPOP_ATH_ALG = "RS256";
-
-    public static final Set<String> DPOP_SUPPORTED_ALGS = Stream.of(
-        Algorithm.ES256,
-        Algorithm.ES384,
-        Algorithm.ES512,
-        Algorithm.PS256,
-        Algorithm.PS384,
-        Algorithm.PS512,
-        Algorithm.RS256,
-        Algorithm.RS384,
-        Algorithm.RS512
-    ).collect(Collectors.toSet());
 
     private static URI normalize(URI uri) {
         return UriBuilder.fromUri(uri).replaceQuery("").build();
@@ -147,43 +132,28 @@ public class DPoPUtil {
     }
 
     /**
-     * checks the current request if a DPoP HTTP Header is present and returns it if it is present.
+     * If DPoP feature is enabled and either the client requires it or the current request contains a DPoP header,
+     * this method validates the proof and stores it in the session.
      */
-    public static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
-                                                             OIDCAdvancedConfigWrapper clientConfig,
-                                                             EventBuilder event,
-                                                             Cors cors) {
-        return retrieveDPoPHeaderIfPresent(keycloakSession, event, cors, ()-> {
-            HttpRequest request = keycloakSession.getContext().getHttpRequest();
-            final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
-            final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
-            return !isClientRequiresDpop && !isDpopHeaderPresent;
-        });
-    }
-
-    public static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
-                                                             EventBuilder event,
-                                                             Cors cors) {
-        return retrieveDPoPHeaderIfPresent(keycloakSession, event, cors, ()-> {
-            HttpRequest request = keycloakSession.getContext().getHttpRequest();
-            final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null;
-            return !isDpopHeaderPresent;
-        });
-    }
-
-    private static Optional<DPoP> retrieveDPoPHeaderIfPresent(KeycloakSession keycloakSession,
-                                                              EventBuilder event,
-                                                              Cors cors,
-                                                              BooleanSupplier isDPoPNotApplicableRequest) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.DPOP) || isDPoPNotApplicableRequest.getAsBoolean()) {
-            return Optional.empty();
+    public static void handleDPoPHeader(KeycloakSession keycloakSession,
+                                        EventBuilder event,
+                                        Cors cors,
+                                        OIDCAdvancedConfigWrapper clientConfig) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            return;
         }
 
         HttpRequest request = keycloakSession.getContext().getHttpRequest();
+        final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
+        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER) != null;
+
+        if (!isClientRequiresDpop && !isDpopHeaderPresent) {
+            return;
+        }
+
         try {
             DPoP dPoP = new DPoPUtil.Validator(keycloakSession).request(request).uriInfo(keycloakSession.getContext().getUri()).validate();
             keycloakSession.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-            return Optional.of(dPoP);
         } catch (VerificationException ex) {
             event.detail(Details.REASON, ex.getMessage());
             event.error(Errors.INVALID_DPOP_PROOF);
@@ -212,7 +182,7 @@ public class DPoPUtil {
 
         String algorithm = header.getAlgorithm().name();
 
-        if (!DPOP_SUPPORTED_ALGS.contains(algorithm)) {
+        if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
             throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
         }
 
@@ -284,9 +254,6 @@ public class DPoPUtil {
                             }
                             DPoP dPoP = validator.validate();
                             DPoPUtil.validateBinding(token, dPoP);
-                            if (!Objects.equals(token.getConfirmation().getKeyThumbprint(), dPoP.getThumbprint())) {
-                                throw new VerificationException("DPoP Proof public key thumbprint does not match dpop_jkt");
-                            }
                         }
                         return true;
                     });
@@ -354,6 +321,26 @@ public class DPoPUtil {
             }
         }
 
+    }
+
+    private static List<String> getSupportedAlgorithms(KeycloakSession session, Class<? extends Provider> clazz, boolean includeNone) {
+        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
+                .map(ProviderFactory::getId);
+
+        if (includeNone) {
+            supportedAlgorithms = Stream.concat(supportedAlgorithms, Stream.of("none"));
+        }
+        return supportedAlgorithms.collect(Collectors.toList());
+    }
+
+    public static List<String> getDPoPSupportedAlgorithms(KeycloakSession session) {
+        return getSupportedAlgorithms(session, SignatureProvider.class, false).stream()
+                .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
+                .filter(entry -> entry.getValue() != null)
+                .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
+                .filter(entry -> !entry.getKey().equals(Algorithm.EdDSA))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     private static class DPoPHTTPCheck implements TokenVerifier.Predicate<DPoP> {
@@ -452,7 +439,7 @@ public class DPoPUtil {
         private final String hash;
 
         public DPoPAccessTokenHashCheck(String tokenString) {
-            hash = HashUtils.accessTokenHash(DPOP_ATH_ALG, tokenString, true);
+            hash = HashUtils.accessTokenHash(OAuth2Constants.DPOP_DEFAULT_ALGORITHM.toString(), tokenString, true);
         }
 
         @Override

@@ -24,12 +24,10 @@ When you start {project_name} in development mode, by using the `start-dev` comm
 The `local` cache mode is intended only for development and testing purposes.
 
 == Configuring caches
-{project_name} provides a cache configuration file with sensible defaults located at `conf/cache-ispn.xml`.
+{project_name} provides a regular {infinispan_configuring_docs}[Infinispan configuration file] located at `conf/cache-ispn.xml`.
+This file contains the default configuration used for the cache-container and JGroups transport.
 
-The cache configuration is a regular {infinispan_configuring_docs}[Infinispan configuration file].
-
-The following table gives an overview of the specific caches {project_name} uses.
-You configure these caches in `conf/cache-ispn.xml`:
+The following table gives an overview of the specific caches {project_name} uses:
 
 [%autowidth]
 |===
@@ -127,6 +125,8 @@ This cache is needed for the Brute Force Protection feature to work in a multi-n
 Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
 The `actionTokens` distributed cache is used to track metadata about action tokens.
 
+TIP: You can see the applied Infinispan configuration in the logs by configuring `--log-level=info,org.keycloak.connections.infinispan:debug`.
+
 === Volatile user sessions
 
 By default, regular user sessions are stored in the database and loaded on-demand to the cache.
@@ -172,6 +172,21 @@ To specify your own cache configuration file, enter this command:
 
 The configuration file is relative to the `conf/` directory.
 
+=== Modifying cache configuration defaults
+
+{project_name} automatically creates all required caches with the expected configurations. You can add additional caches or override the default cache configurations in `conf/cache-ispn.xml` or in your own file provided via `--cache-config-file`.
+
+[WARNING]
+====
+While overriding the default cache configurations via XML is technically possible, it is not supported.
+This is only recommended for advanced use-cases where the default cache configurations are proven to be problematic.
+The only supported way to change the default cache configurations is via the `+cache-...+` options.
+====
+
+In order to prevent a warning being logged when a modified default cache configuration is detected, add the following option:
+
+<@kc.start parameters="--cache-config-mutate=true"/>
+
 === CLI options for remote server
 
 For configuration of {project_name} server for high availability and multi-node clustered setup there was introduced following CLI options `cache-remote-host`, `cache-remote-port`, `cache-remote-username` and `cache-remote-password` simplifying configuration within the XML file.
@@ -187,6 +202,54 @@ For these use case, the CLI options `cache-remote-tls-enabled` disables the encr
 
 The CLI options `cache-remote-username` and `cache-remote-password` are optional and, if not set, {project_name} will connect to the {jdgserver_name} server without presenting any credentials.
 If the {jdgserver_name} server has authentication enabled, {project_name} will fail to start.
+
+[[cache-topology]]
+== Topology aware data distribution
+
+Configuring {project_name} to be aware of your network topology, increases data availability in the presence of hardware failures, as Infinispan is able to ensure that data is distributed correctly.
+For example, if `num_owners=2` is configured for a cache, it will ensure that the two owners are not stored on the same node when possible.
+
+[NOTE]
+====
+By default, user and client sessions are safely stored in the database, and they are not affected by these settings.
+The remaining distributed caches are affected by this configuration.
+====
+
+The following topology information is available to configure:
+
+Site name::
+If your {project_name} cluster is deployed between different datacenters (stretched cluster), use this option to ensure the data replicas are stored in a different datacenter.
+It prevents data loss if a datacenter goes offline or fails.
++
+Use the SPI option `spi-cache-embedded--default--site-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__SITE_NAME`).
+The value itself is not important, but each datacenter must have a unique value.
++
+For example: `--spi-cache-embedded--default--site-name=site-1`
+
+Rack name::
+If your {project_name} cluster is running in different racks on your datacenter, set this option to ensure the data replicas are stored in a different physical rack.
+It prevents data loss if a rack is suddenly disconnected or fails.
++
+Use the SPI option `spi-cache-embedded--default--rack-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__RACK_NAME`).
+The value itself is not important, but each rack must have a unique value.
++
+For example: `--spi-cache-embedded--default--rack-name=rack-1`
+
+Machine name::
+If you have multiple {project_name} instances running on the same physical machine (using virtual machines or containers for example), use this option to ensure the data replicas are stored in different physical machines.
+It prevents data loss against a physical machine failure.
++
+Use the SPI option `spi-cache-embedded--default--machine-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__MACHINE_NAME`).
+The value itself is not important, but each machine must have a unique value.
++
+For example: `--spi-cache-embedded--default--machine-name=machine-1`
++
+[NOTE]
+====
+The {project_name} Operator automatically configure the machine name based on the Kubernetes node.
+It ensures that if multiple pods are scheduled on the same node, data replicas are still replicated across distinct nodes when possible.
+We recommend to set up anti-affinity rules and/or topology spread constraints to prevent multiple Pods from being scheduled on the same node, further reducing the risk of a single node failure causing data loss.
+====
 
 == Transport stacks
 
@@ -290,7 +353,7 @@ As an alternative, to disable the mTLS communication, and rely on the service me
 * Set the option `cache-embedded-mtls-enabled` to `false`.
 * Configure your service mesh to authorize only traffic from other {project_name} Pods for the data transmission port (default: 7800).
 
-=== Proving your own keys and certificates
+=== Providing your own keys and certificates
 
 Although not recommended for standard setups, if it is essential in a specific setup, you can configure the keystore with the certificate for the transport stack manually. `cache-embedded-mtls-key-store-file` sets the path to the keystore, and `cache-embedded-mtls-key-store-password` sets the password to decrypt it.
 The truststore contains the valid certificates to accept connection from, and it can be configured with `cache-embedded-mtls-trust-store-file` (path to the truststore), and `cache-embedded-mtls-trust-store-password` (password to decrypt it).

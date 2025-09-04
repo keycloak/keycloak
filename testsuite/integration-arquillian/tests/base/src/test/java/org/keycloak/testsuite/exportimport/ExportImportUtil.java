@@ -525,8 +525,8 @@ public class ExportImportUtil {
         Map<String, ClientMappingsRepresentation> clientRoles = client.getScopeMappings().getAll().getClientMappings();
         if (clientRoles == null) return clientScopeMappings;
 
-        for (String clientKey : clientRoles.keySet()) {
-            List<RoleRepresentation> clientRoleScopeMappings = clientRoles.get(clientKey).getMappings();
+        for (ClientMappingsRepresentation clientMappingsRepresentation : clientRoles.values()) {
+            List<RoleRepresentation> clientRoleScopeMappings = clientMappingsRepresentation.getMappings();
             if (clientRoleScopeMappings != null) clientScopeMappings.addAll(clientRoleScopeMappings);
         }
 
@@ -538,8 +538,8 @@ public class ExportImportUtil {
         Map<String, ClientMappingsRepresentation> clientRoles = client.getScopeMappings().getAll().getClientMappings();
         if (clientRoles == null) return clientScopeMappings;
 
-        for (String clientKey : clientRoles.keySet()) {
-            List<RoleRepresentation> clientRoleScopeMappings = clientRoles.get(clientKey).getMappings();
+        for (ClientMappingsRepresentation clientMappingsRepresentation : clientRoles.values()) {
+            List<RoleRepresentation> clientRoleScopeMappings = clientMappingsRepresentation.getMappings();
             if (clientRoleScopeMappings != null) clientScopeMappings.addAll(clientRoleScopeMappings);
         }
 

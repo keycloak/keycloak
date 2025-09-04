@@ -9,7 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>Server Developer</name>
+    <name>Server Developer Guide</name>
+    <description>Server Developer Guide</description>
+
     <artifactId>server-development</artifactId>
     <packaging>pom</packaging>
 

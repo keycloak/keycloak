@@ -59,8 +59,6 @@
                                 </requireProperty>
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.password</property>
-                                    <regex>^(?!\s*$).+</regex>
-                                    <regexMessage>"keycloak.connectionsJpa.password" property cannot be empty string!</regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.url</property>

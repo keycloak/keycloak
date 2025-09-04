@@ -145,11 +145,6 @@
             <artifactId>maven-resolver-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>jandex</artifactId>
-            <version>${smallrye.jandex.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.github.stefanbirkner</groupId>
             <artifactId>system-rules</artifactId>
             <version>${systemrules.version}</version>

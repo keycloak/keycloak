@@ -17,16 +17,27 @@
 package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ClientAssertionContext;
+import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -50,6 +61,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -59,6 +71,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -67,16 +80,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
-
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -90,7 +93,7 @@ import java.util.Optional;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String SCOPE_OPENID = "openid";
@@ -1031,6 +1034,82 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return null;
         }
 
-        return (Boolean) token.getOtherClaims().get(IDToken.EMAIL_VERIFIED);
+        Object emailVerified = token.getOtherClaims().get(IDToken.EMAIL_VERIFIED);
+
+        if (emailVerified == null) {
+            return null;
+        }
+
+        return Boolean.valueOf(emailVerified.toString());
     }
+
+    @Override
+    public boolean verifyClientAssertion(ClientAssertionContext context) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
+            return false;
+        }
+
+        if (!getConfig().isSupportsClientAssertions()) {
+            return context.failure("Issuer does not support client assertions");
+        }
+
+        if (!getConfig().isValidateSignature()) {
+            return context.failure("Signature validation not enabled for issuer");
+        }
+
+        if (!context.getAssertionType().equals(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)) {
+            return false;
+        }
+
+        JWSInput jws = context.getJwsInput();
+        JsonWebToken token = context.getToken();
+        ClientModel client = context.getClient();
+
+        if (!verify(jws)) {
+            return context.failure("Invalid signature");
+        }
+
+        if (token.getIssuer() == null) {
+            return context.failure("Token issuer required");
+        }
+
+        if (!token.getIssuer().equals(getConfig().getIssuer())) {
+            return context.failure("Invalid token issuer");
+        }
+
+        String expectedAudience = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName());
+        int allowedClockSkew = getConfig().getAllowedClockSkew();
+
+        if (token.getExp() == null || token.getExp() <= 0) {
+            return context.failure("Token does not contain an expiration");
+        }
+
+        if (!(token.getAudience().length == 1 && token.getAudience()[0].equals(expectedAudience))) {
+            return context.failure("Invalid audience");
+        }
+
+        if (!token.isActive(allowedClockSkew)) {
+            return context.failure("Token not active");
+        }
+        if (token.getIat() != null && token.getIat() > 0 && token.getIat() - allowedClockSkew > Time.currentTime()) {
+            return context.failure("Token was issued in the future");
+        }
+
+        if (!(getConfig().isSupportsClientAssertionReuse())) {
+            if (token.getId() == null) {
+                return context.failure("Token id required");
+            }
+            SingleUseObjectProvider singeUseCache = session.singleUseObjects();
+            long lifespanInSecs = token.getExp() + allowedClockSkew - Time.currentTime();
+            if (singeUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
+                logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
+            } else {
+                logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), client.getClientId());
+                return context.failure("Token already used");
+            }
+        }
+
+        return true;
+    }
+
 }

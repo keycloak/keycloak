@@ -179,11 +179,12 @@ The LDAP connection pool configuration is configured using the following system 
 |Description
 | `com.sun.jndi.ldap.connect.pool.authentication` | A list of space-separated authentication types of connections that may be pooled. Valid types are "none", "simple", and "DIGEST-MD5"
 | `com.sun.jndi.ldap.connect.pool.initsize` | The string representation of an integer that represents the number of connections per connection identity to create when initially creating a connection for the identity
-| `com.sun.jndi.ldap.connect.pool.maxsize` | The string representation of an integer that represents the maximum number of connections per connection identity that can be maintained concurrently
+| `com.sun.jndi.ldap.connect.pool.maxsize` | The string representation of an integer that represents the maximum number of connections per connection identity that can be maintained concurrently. Note setting this value too low may cause contention in obtaining LDAP connections. See also `com.sun.jndi.ldap.connect.timeout`. 
 | `com.sun.jndi.ldap.connect.pool.prefsize` | The string representation of an integer that represents the preferred number of connections per connection identity that should be maintained concurrently
 | `com.sun.jndi.ldap.connect.pool.timeout` | The string representation of an integer that represents the number of milliseconds that an idle connection may remain in the pool without being closed and removed from the pool
 | `com.sun.jndi.ldap.connect.pool.protocol` | A list of space-separated protocol types of connections that may be pooled. Valid types are "plain" and "ssl"
 | `com.sun.jndi.ldap.connect.pool.debug` | A string that indicates the level of debug output to produce. Valid values are "fine" (trace connection creation and removal) and "all" (all debugging information)
+| `com.sun.jndi.ldap.connect.timeout` | The string representation of an integer that represents how long in milliseconds obtaining a connection should take. This is also applicable to wait times due to connection pool contention. Effectively defaults to 5000.
 |===
 
 By default, connection pooling is enabled for both `plain` and `ssl` protocols.

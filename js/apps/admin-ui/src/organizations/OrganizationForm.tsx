@@ -68,14 +68,12 @@ export const OrganizationForm = ({
             fieldLabelId="domain"
           />
         }
-        isRequired
       >
         <MultiLineInput
           id="domain"
           name="domains"
           aria-label={t("domain")}
           addButtonLabel="addDomain"
-          isRequired
         />
         {errors?.["domains"]?.message && (
           <FormErrorText message={errors["domains"].message.toString()} />

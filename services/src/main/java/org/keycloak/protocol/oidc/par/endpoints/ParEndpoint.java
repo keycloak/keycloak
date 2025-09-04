@@ -102,9 +102,7 @@ public class ParEndpoint extends AbstractParEndpoint {
         }
 
         // https://datatracker.ietf.org/doc/html/rfc9449#section-10.1
-        DPoPUtil.retrieveDPoPHeaderIfPresent(session, event, cors).ifPresent(dPoP -> {
-            session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-        });
+        DPoPUtil.handleDPoPHeader(session, event, cors, null);
 
         try {
             authorizationRequest = ParEndpointRequestParserProcessor.parseRequest(event, session, client, decodedFormParameters);

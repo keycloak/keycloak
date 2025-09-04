@@ -1,4 +1,5 @@
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useAccess } from "../context/access/Access";
 
 export enum Feature {
   AdminFineGrainedAuthz = "ADMIN_FINE_GRAINED_AUTHZ",
@@ -16,17 +17,28 @@ export enum Feature {
   QuickTheme = "QUICK_THEME",
   StandardTokenExchangeV2 = "TOKEN_EXCHANGE_STANDARD_V2",
   Passkeys = "PASSKEYS",
+  ClientAuthFederated = "CLIENT_AUTH_FEDERATED",
 }
 
 export default function useIsFeatureEnabled() {
   const { features } = useServerInfo();
+  const { hasAccess } = useAccess();
+
+  const hasFeatureAccess = (feature: Feature) => {
+    switch (feature) {
+      case Feature.Organizations:
+        return hasAccess("manage-realm");
+      default:
+        return true;
+    }
+  };
 
   return function isFeatureEnabled(feature: Feature) {
     if (!features) {
       return false;
     }
     return features
-      .filter((f) => f.enabled)
+      .filter((f) => f.enabled && hasFeatureAccess(f.name as Feature))
       .map((f) => f.name)
       .includes(feature);
   };

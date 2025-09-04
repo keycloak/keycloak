@@ -9,7 +9,7 @@ import { goToClients } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
-  assertCertificate,
+  assertCertificates,
   assertEncryptionAlgorithm,
   assertEncryptionKeyAlgorithm,
   assertEncryptionDigestMethod,
@@ -36,7 +36,7 @@ import {
   setTermsOfServiceUrl,
 } from "./saml.ts";
 
-test.describe("Fine Grain SAML Endpoint Configuration", () => {
+test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
   const clientName = `saml-advanced-tab-${uuid()}`;
 
   test.beforeAll(() =>
@@ -84,7 +84,7 @@ test.describe("Fine Grain SAML Endpoint Configuration", () => {
   });
 });
 
-test.describe("Clients SAML tests", () => {
+test.describe.serial("Clients SAML tests", () => {
   const clientId = "saml";
 
   const clientName = `saml-settings-${uuid()}`;
@@ -121,7 +121,7 @@ test.describe("Clients SAML tests", () => {
     await clickClientSignature(page);
     await assertModalTitle(page, 'Disable "Client signature required"');
     await cancelModal(page);
-    await assertCertificate(page, false);
+    await assertCertificates(page);
   });
 
   test("should disable client signature", async ({ page }) => {
@@ -130,7 +130,7 @@ test.describe("Clients SAML tests", () => {
     await assertModalTitle(page, 'Disable "Client signature required"');
     await confirmModal(page);
     await assertNotificationMessage(page, "Client successfully updated");
-    await assertCertificate(page);
+    await assertCertificates(page);
   });
 
   test("should enable Encryption keys config", async ({ page }) => {
@@ -143,7 +143,7 @@ test.describe("Clients SAML tests", () => {
       "New key pair and certificate generated successfully",
     );
     await confirmModal(page);
-    await assertCertificate(page, false);
+    await assertCertificates(page);
 
     // assert encryption algorithms can be modified
     await goToClientSettingsTab(page);

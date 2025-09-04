@@ -17,13 +17,14 @@
 
 package org.keycloak.email;
 
-import jakarta.mail.internet.MimeUtility;
 import org.jboss.logging.Logger;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
+import org.keycloak.utils.EmailValidationUtil;
+import org.keycloak.utils.SMTPUtil;
 
 import jakarta.mail.Address;
 import jakarta.mail.MessagingException;
@@ -36,6 +37,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeUtility;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.UnsupportedEncodingException;
@@ -74,16 +76,20 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     @Override
     public void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException {
-        Session session = Session.getInstance(buildEmailProperties(config));
+        final boolean allowutf8 = isAllowUTF8(config);
+        final String convertedAddress = checkUserAddress(address, allowutf8);
+        final String from = checkFromAddress(config.get("from"), allowutf8);
 
-        Message message = buildMessage(session, address, subject, config, buildMultipartBody(textBody, htmlBody));
+        Session session = Session.getInstance(buildEmailProperties(config, from));
+
+        Message message = buildMessage(session, convertedAddress, from, subject, config, buildMultipartBody(textBody, htmlBody));
 
         try(Transport transport = session.getTransport("smtp")) {
 
             EmailAuthenticator selectedAuthenticator = selectAuthenticatorBasedOnConfig(config);
             selectedAuthenticator.connect(this.session, config, transport);
 
-            transport.sendMessage(message, new InternetAddress[]{new InternetAddress(address)});
+            transport.sendMessage(message, new InternetAddress[]{new InternetAddress(convertedAddress)});
 
         } catch (Exception e) {
             ServicesLogger.LOGGER.failedToSendEmail(e);
@@ -91,7 +97,13 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         }
     }
 
-    private Properties buildEmailProperties(Map<String, String> config) throws EmailException {
+    @Override
+    public void validate(Map<String, String> config) throws EmailException {
+        // just static configuration checking here, not really testing email
+        checkFromAddress(config.get("from"), isAllowUTF8(config));
+    }
+
+    private Properties buildEmailProperties(Map<String, String> config, String from) throws EmailException {
         Properties props = new Properties();
 
         if (config.containsKey("host")) {
@@ -137,9 +149,9 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.setProperty("mail.smtp.from", envelopeFrom);
         }
 
-        String from = config.get("from");
-        if (from == null) {
-            throw new EmailException("No sender address configured in the realm settings for emails");
+        final boolean allowutf8 = isAllowUTF8(config);
+        if (allowutf8) {
+            props.setProperty("mail.mime.allowutf8", "true");
         }
 
         // Specify 'mail.from' as InternetAddress.getLocalAddress() would otherwise do a InetAddress.getCanonicalHostName
@@ -150,12 +162,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         return props;
     }
 
-    private Message buildMessage(Session session, String address, String subject, Map<String, String> config, Multipart multipart) throws EmailException {
+    private Message buildMessage(Session session, String address, String from, String subject, Map<String, String> config, Multipart multipart) throws EmailException {
 
-        String from = config.get("from");
-        if (from == null) {
-            throw new EmailException("No sender address configured in the realm settings for emails");
-        }
         String fromDisplayName = config.get("fromDisplayName");
         String replyTo = config.get("replyTo");
         String replyToDisplayName = config.get("replyToDisplayName");
@@ -224,6 +232,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         return "true".equals(config.get("ssl"));
     }
 
+    private static boolean isAllowUTF8(Map<String, String> config) {
+        return "true".equals(config.get(CONFIG_ALLOW_UTF8));
+    }
+
     private static boolean isDebugEnabled(Map<String, String> config) {
         return "true".equals(config.get("debug"));
     }
@@ -236,6 +248,42 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         return "token".equals(config.get("authType"));
     }
 
+    private static String checkUserAddress(String address, boolean allowutf8) throws EmailException {
+        final String convertedAddress = convertEmail(address, allowutf8);
+        if (convertedAddress == null) {
+            throw new EmailException(String.format("Invalid address '%s'. If the address contains UTF-8 characters in the local part please ensure the SMTP server supports the SMTPUTF8 extension and enable 'Allow UTF-8' in the email realm configuration.", address));
+        }
+        return convertedAddress;
+    }
+
+    private static String checkFromAddress(String from, boolean allowutf8) throws EmailException {
+        final String covertedFrom = convertEmail(from, allowutf8);
+        if (from == null) {
+            throw new EmailException(String.format("Invalid sender address '%s'. If the address contains UTF-8 characters in the local part please ensure the SMTP server supports the SMTPUTF8 extension and enable 'Allow UTF-8' in the email realm configuration.",
+                    from));
+        }
+        return covertedFrom;
+    }
+
+    private static String convertEmail(String email, boolean allowutf8) throws EmailException {
+        if (!EmailValidationUtil.isValidEmail(email)) {
+            return null;
+        }
+
+        if (allowutf8) {
+            // if allowutf8 the extension will manage both parts
+            return email;
+        }
+
+        // if no allowutf8, do the IDN conversion over the domain part
+        final String convertedEmail = SMTPUtil.convertIDNEmailAddress(email);
+        if (convertedEmail == null || !convertedEmail.chars().allMatch(c -> c < 128)) {
+            // now if there are non-ascii characters, we should send an error
+            return null;
+        }
+
+        return convertedEmail;
+    }
 
     protected InternetAddress toInternetAddress(String email, String displayName) throws UnsupportedEncodingException, AddressException, EmailException {
         if (email == null || "".equals(email.trim())) {

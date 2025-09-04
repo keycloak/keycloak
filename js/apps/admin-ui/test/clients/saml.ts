@@ -66,8 +66,14 @@ export async function clickClientSignature(page: Page) {
   await switchOff(page, "#clientSignature");
 }
 
-export async function assertCertificate(page: Page, exists = true) {
-  await expect(page.getByTestId("certificate")).toHaveCount(exists ? 0 : 1);
+// Assert that the number of certificates enabled matches the number of certificates displayed
+export async function assertCertificates(page: Page) {
+  const certsEnabled = [
+    await page.getByTestId("encryptAssertions").isChecked(),
+    await page.getByTestId("clientSignature").isChecked(),
+  ].filter(Boolean).length;
+
+  await expect(page.getByTestId("certificate")).toHaveCount(certsEnabled);
 }
 
 export async function clickEncryptionAssertions(page: Page) {
@@ -81,7 +87,7 @@ export async function clickOffEncryptionAssertions(page: Page) {
 export async function clickGenerate(page: Page) {
   const responsePromise = page.waitForResponse(
     (res) => res.url().includes("/generate") && res.status() === 200,
-    { timeout: 10000 },
+    { timeout: 60000 },
   );
   await page.getByTestId("generate").click();
   await responsePromise;

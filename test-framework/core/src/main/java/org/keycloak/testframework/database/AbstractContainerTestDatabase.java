@@ -15,14 +15,14 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     protected boolean reuse;
 
     protected JdbcDatabaseContainer<?> container;
-    protected DatabaseConfig config;
+    protected DatabaseConfiguration config;
 
-    public void start(DatabaseConfig config) {
+    public void start(DatabaseConfiguration config) {
         this.config = config;
 
         String reuseProp = Config.getValueTypeFQN(TestDatabase.class, "reuse");
         boolean reuseConfigured = Config.get(reuseProp, false, Boolean.class);
-        if (config.preventReuse() && reuseConfigured) {
+        if (config.isPreventReuse() && reuseConfigured) {
             getLogger().warnf("Ignoring '%s' as test explicitly prevents it", reuseProp);
             this.reuse = false;
         } else {
@@ -33,7 +33,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
         container = container.withStartupTimeout(Duration.ofMinutes(10))
                 .withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.db." + getDatabaseVendor())))
                 .withReuse(reuse)
-                .withInitScript(config.initScript());
+                .withInitScript(config.getInitScript());
         withDatabaseAndUser(getDatabase(), getUsername(), getPassword());
         container.start();
 
@@ -82,7 +82,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     }
 
     public String getDatabase() {
-;        return config.database() == null ? "keycloak" : config.database();
+;        return config.getDatabase() == null ? "keycloak" : config.getDatabase();
     }
 
     public String getUsername() {

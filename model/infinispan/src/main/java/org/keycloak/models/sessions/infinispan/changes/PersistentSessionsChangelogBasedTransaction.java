@@ -18,13 +18,16 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashMap;
@@ -32,6 +35,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEntity> extends AbstractKeycloakTransaction implements SessionsChangelogBasedTransaction<K, V> {
@@ -107,7 +112,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
     }
 
-    public SessionEntityWrapper<V> get(K key, boolean offline){
+    public SessionEntityWrapper<V> get(K key, boolean offline) {
         SessionUpdatesList<V> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = getCache(offline).get(key);
@@ -123,8 +128,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
             return wrappedEntity;
         } else {
-            V entity = myUpdates.getEntityWrapper().getEntity();
-
             // If entity is scheduled for remove, we don't return it.
             boolean scheduledForRemove = myUpdates.getUpdateTasks().stream()
                     .map(SessionUpdateTask::getOperation)
@@ -143,8 +146,15 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             changesPerformers.add(new JpaChangesPerformer<>(cacheName, null) {
                 @Override
                 public void applyChanges() {
-                    KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(),
-                            super::applyChangesSynchronously);
+                    Retry.executeWithBackoff(
+                            iteration -> KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(), super::applyChangesSynchronously),
+                            (iteration, t) -> {
+                                if (iteration > 20) {
+                                    // never retry more than 20 times
+                                    throw new RuntimeException("Maximum number of retries reached", t);
+                                }
+                            }, PersistentSessionsWorker.UPDATE_TIMEOUT, PersistentSessionsWorker.UPDATE_BASE_INTERVAL_MILLIS);
+                    clear();
                 }
             });
         }
@@ -159,7 +169,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
 
         if (offlineCache != null) {
-            changesPerformers.add(new EmbeddedCachesChangesPerformer<>(offlineCache, serializerOffline){
+            changesPerformers.add(new EmbeddedCachesChangesPerformer<>(offlineCache, serializerOffline) {
                 @Override
                 public boolean shouldConsumeChange(V entity) {
                     return entity.isOffline();
@@ -209,11 +219,10 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
     @Override
     public void addTask(K key, SessionUpdateTask<V> originalTask) {
-        if (! (originalTask instanceof PersistentSessionUpdateTask)) {
+        if (!(originalTask instanceof PersistentSessionUpdateTask<V> task)) {
             throw new IllegalArgumentException("Task must be instance of PersistentSessionUpdateTask");
         }
 
-        PersistentSessionUpdateTask<V> task = (PersistentSessionUpdateTask<V>) originalTask;
         SessionUpdatesList<V> myUpdates = getUpdates(task.isOffline()).get(key);
         if (myUpdates == null) {
             // Lookup entity from cache
@@ -253,6 +262,8 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
     }
 
+    // method not currently in use, remove in the next major.
+    @Deprecated(forRemoval = true, since = "26.4")
     public void reloadEntityInCurrentTransaction(RealmModel realm, K key, SessionEntityWrapper<V> entity) {
         if (entity == null) {
             throw new IllegalArgumentException("Null entity not allowed");
@@ -279,4 +290,95 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
     }
 
+    /**
+     * Imports a session from an external source into the {@link Cache}.
+     * <p>
+     * If a session already exists in the cache, this method does not insert the {@code session}. The invoker should use
+     * the session returned by this method invocation. When the session is successfully imported, this method returns
+     * null and the {@code session} can be used by the transaction.
+     * <p>
+     * This transaction will keep track of further changes in the session.
+     *
+     * @param realmModel The {@link RealmModel} where the session belong to.
+     * @param key        The cache's key.
+     * @param session    The session to import.
+     * @param lifespan   How long the session stays cached until it is expired and removed.
+     * @param maxIdle    How long the session can be idle (without reading or writing) before being removed.
+     * @param offline    {@code true} if it is an offline session.
+     * @return The existing cached session. If it returns {@code null}, it means the {@code session} used in the
+     * parameters was cached.
+     */
+    public SessionEntityWrapper<V> importSession(RealmModel realmModel, K key, SessionEntityWrapper<V> session, boolean offline, long lifespan, long maxIdle) {
+        var updates = getUpdates(offline);
+        var updatesList = updates.get(key);
+        if (updatesList != null) {
+            // exists in transaction, avoid import operation
+            return updatesList.getEntityWrapper();
+        }
+        SessionEntityWrapper<V> existing = null;
+        try {
+            if (getCache(offline) != null) {
+                existing = getCache(offline).putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+            }
+        } catch (RuntimeException exception) {
+            // If the import fails, the transaction can continue with the data from the database.
+            LOG.debugf(exception, "Failed to import session %s", session);
+        }
+        if (existing == null) {
+            // keep track of the imported session for updates
+            updates.put(key, new SessionUpdatesList<>(realmModel, session));
+            return null;
+        }
+        updates.put(key, new SessionUpdatesList<>(realmModel, existing));
+        return existing;
+    }
+
+    /**
+     * Imports multiple sessions from an external source into the {@link Cache}.
+     * <p>
+     * If one or more sessions already exist in the {@link Cache}, or is expired, it will not be imported.
+     * <p>
+     * This transaction will keep track of further changes in the sessions.
+     *
+     * @param realmModel The {@link RealmModel} where the sessions belong to.
+     * @param sessions   The {@link Map} with the cache's key/session mapping to be imported.
+     * @param offline    {@code true} if it is an offline session.
+     */
+    public void importSessionsConcurrently(RealmModel realmModel, Map<K, SessionEntityWrapper<V>> sessions, boolean offline) {
+        var cache = getCache(offline);
+        if (sessions.isEmpty() || cache == null) {
+            //nothing to import
+            return;
+        }
+        var stage = CompletionStages.aggregateCompletionStage();
+        var allSessions = new ConcurrentHashMap<K, SessionEntityWrapper<V>>();
+        var updates = getUpdates(offline);
+        var lifespanFunction = getLifespanMsLoader(offline);
+        var maxIdleFunction = getMaxIdleMsLoader(offline);
+        sessions.forEach((key, session) -> {
+            if (updates.containsKey(key)) {
+                //nothing to import, already exists in transaction
+                return;
+            }
+            var clientModel = session.getClientIfNeeded(realmModel);
+            var sessionEntity = session.getEntity();
+            var lifespan = lifespanFunction.apply(realmModel, clientModel, sessionEntity);
+            var maxIdle = maxIdleFunction.apply(realmModel, clientModel, sessionEntity);
+            if (lifespan == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdle == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+                //nothing to import, already expired
+                return;
+            }
+            var future = cache.putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS)
+                    .exceptionally(throwable -> {
+                        // If the import fails, the transaction can continue with the data from the database.
+                        LOG.debugf(throwable, "Failed to import session %s", session);
+                        return null;
+                    });
+            // write result into concurrent hash map because the consumer is invoked in a different thread each time.
+            stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
+        });
+
+        CompletionStages.join(stage.freeze());
+        allSessions.forEach((key, wrapper) -> updates.put(key, new SessionUpdatesList<>(realmModel, wrapper)));
+    }
 }

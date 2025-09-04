@@ -27,8 +27,8 @@ Database:
 
 --db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
                        deprecated, you should explicitly specify the db instead. Possible values
-                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
-                       dev-file.
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
+                       Default: dev-file.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
@@ -67,8 +67,6 @@ Database:
 
 Database - additional datasources (Preview):
 
---db-active-<datasource> <true|false>
-                     Preview: Deactivate specific named datasource <datasource>. Default: true.
 --db-debug-jpql-<datasource> <true|false>
                      Preview: Used for named <datasource>. Add JPQL information as comments to SQL
                        statements to debug JPA SQL statement generation. Default: false.
@@ -76,11 +74,14 @@ Database - additional datasources (Preview):
                      Preview: Used for named <datasource>. The fully qualified class name of the
                        JDBC driver. If not set, a default driver is set accordingly to the chosen
                        database.
+--db-enabled-<datasource> <true|false>
+                     Preview: If the named datasource <datasource> should be enabled at runtime.
+                       Default: true.
 --db-kind-<datasource> <vendor>
                      Preview: Used for named <datasource>. The database vendor. In production mode
                        the default value of 'dev-file' is deprecated, you should explicitly specify
                        the db instead. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres.
+                       mysql, oracle, postgres, tidb.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
                      Preview: Used for named <datasource>. Log SQL statements slower than the
                        configured threshold with logger org.hibernate.SQL_SLOW and log-level info.
@@ -152,6 +153,10 @@ HTTP Access log:
 
 Management:
 
+--http-management-health-enabled <true|false>
+                     If health endpoints should be exposed on the management interface. If false,
+                       health endpoints will be exposed on the main interface. Default: true.
+                       Available only when health is enabled.
 --http-management-port <port>
                      Port of the management interface. Relevant only when something is exposed on
                        the management interface - see the guide for details. Default: 9000.
@@ -311,9 +316,10 @@ Logging:
                        Default: false. Available only when log-mdc preview feature is enabled.
 --log-mdc-keys <keys>
                      Defines which information should be added to the mapped diagnostic context as
-                       a comma-separated list. Possible values are: realm, clientId, userId,
-                       ipAddress, org. Default: realm,org,clientId. Available only when MDC logging
-                       is enabled.
+                       a comma-separated list. Possible values are: realmName, clientId, userId,
+                       ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
+                       Default: realmName,clientId,org,sessionId,authenticationSessionId,
+                       authenticationTabId. Available only when MDC logging is enabled.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.

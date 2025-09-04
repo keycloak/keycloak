@@ -327,8 +327,8 @@ public class LoggingOptions {
 
     public static final Option<List<String>> LOG_MDC_KEYS = OptionBuilder.listOptionBuilder("log-mdc-keys", String.class)
             .category(OptionCategory.LOGGING)
-            .expectedValues(List.of("realm", "clientId", "userId", "ipAddress", "org"))
-            .defaultValue(List.of("realm", "org", "clientId"))
+            .expectedValues(List.of("realmName", "clientId", "userId", "ipAddress", "org", "sessionId", "authenticationSessionId", "authenticationTabId"))
+            .defaultValue(List.of("realmName", "clientId", "org", "sessionId", "authenticationSessionId", "authenticationTabId"))
             .description("Defines which information should be added to the mapped diagnostic context as a comma-separated list.")
             .build();
 

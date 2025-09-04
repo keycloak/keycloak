@@ -12,7 +12,7 @@ import {
   toggleIncludeGroupsAndRoles,
 } from "./export.ts";
 
-test.describe("Partial realm export", () => {
+test.describe.serial("Partial realm export", () => {
   const REALM_NAME = `partial-export-test-${uuid()}`;
 
   test.beforeAll(async () => {

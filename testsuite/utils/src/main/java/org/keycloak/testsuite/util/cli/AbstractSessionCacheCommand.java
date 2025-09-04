@@ -227,13 +227,13 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
-            for (String id : cache.keySet()) {
-                SessionEntity entity = cache.get(id).getEntity();
+            for (var entry : cache.entrySet()) {
+                SessionEntity entity = entry.getValue().getEntity();
                 if (!(entity instanceof UserSessionEntity)) {
                     continue;
                 }
-                UserSessionEntity userSession = (UserSessionEntity) cache.get(id).getEntity();
-                log.info("list: key=" + id + ", value=" + toString(userSession));
+                UserSessionEntity userSession = (UserSessionEntity) entry.getValue().getEntity();
+                log.info("list: key=" + entry.getKey() + ", value=" + toString(userSession));
             }
         }
     }

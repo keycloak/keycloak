@@ -406,6 +406,28 @@ After the first line (<#import ...>), add `<h1>HELLO WORLD!</h1>` as shown here:
 .Additional resources
 * See the https://freemarker.apache.org/docs/index.html[FreeMarker Manual] for details on how to edit templates.
 
+===== Using custom configuration values when rendering identity providers
+
+When rendering identity providers, you can use specific values from the identity provider configuration. These
+values can be used in your custom templates, such as the login form.
+
+The values are available in the `social` object, which is passed to the template context when rendering the login form.
+You can access these values for each identity provider as follows:
+
+[source,html]
+----
+<#list social.providers as provider>
+  <p>${provider.themeConfig["someConfig"]}</p>
+</#list>
+----
+
+The `themeConfig` object contains the theme-related configuration values for the identity provider, which can be set
+using the Admin REST API. For that, you can use the `config` property of the identity provider representation to set
+config values that will be available in the `themeConfig` object.
+The key for the config value must be prefixed with `kcTheme-.` to make it available in the `themeConfig` object.
+
+In the example above, the key for the `someConfig` value would be `kcTheme-someConfig`.
+
 ==== Emails
 
 To edit the subject and contents for emails, for example password recovery email, add a message bundle to the `email` type of your theme. There are three messages for each email. One for the subject, one for the plain text body and one for the html body.

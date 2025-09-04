@@ -192,6 +192,18 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty)),
                 List.of("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
+        TIDB("tidb",
+                "com.mysql.cj.jdbc.MysqlXADataSource",
+                "com.mysql.cj.jdbc.Driver",
+                "org.hibernate.community.dialect.TiDBDialect",
+                // default URL looks like this: "jdbc:mysql://${kc.db-url-host:localhost}:${kc.db-url-port:3306}/${kc.db-url-database:keycloak}${kc.db-url-properties:}"
+                (namedProperty, alias) -> "jdbc:mysql://%s:%s/%s%s".formatted(
+                        getProperty(DatabaseOptions.DB_URL_HOST, namedProperty, "localhost"),
+                        getProperty(DatabaseOptions.DB_URL_PORT, namedProperty, "3306"),
+                        getProperty(DatabaseOptions.DB_URL_DATABASE, namedProperty, "keycloak"),
+                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty)),
+                List.of("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
+        ),
         MARIADB("mariadb",
                 "org.mariadb.jdbc.MariaDbDataSource",
                 "org.mariadb.jdbc.Driver",

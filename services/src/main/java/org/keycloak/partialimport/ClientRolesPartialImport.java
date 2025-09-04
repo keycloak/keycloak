@@ -114,14 +114,15 @@ public class ClientRolesPartialImport {
         Map<String, List<RoleRepresentation>> repList = getRepList(partialImportRep);
         if (repList == null || repList.isEmpty()) return;
 
-        for (String clientId : repList.keySet()) {
+        for (var entry : repList.entrySet()) {
+            String clientId = entry.getKey();
             if (!clientExists(partialImportRep, realm, clientId)) {
                 throw noClientFound(clientId);
             }
 
             toOverwrite.put(clientId, new HashSet<>());
             toSkip.put(clientId, new HashSet<>());
-            for (RoleRepresentation roleRep : repList.get(clientId)) {
+            for (RoleRepresentation roleRep : entry.getValue()) {
                 if (exists(realm, session, clientId, roleRep)) {
                     switch (partialImportRep.getPolicy()) {
                         case SKIP:

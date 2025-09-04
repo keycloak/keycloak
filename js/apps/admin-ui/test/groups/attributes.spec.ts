@@ -13,7 +13,7 @@ import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToGroups } from "../utils/sidebar.ts";
 import { goToGroupDetails } from "./util.ts";
 
-test.describe("Attributes", () => {
+test.describe.serial("Attributes", () => {
   const groupName = `group-${uuid()}`;
 
   test.beforeAll(() => adminClient.createGroup(groupName));

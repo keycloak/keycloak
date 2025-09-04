@@ -924,15 +924,11 @@ public class AuthenticationProcessor {
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
         if (flow.getProviderId() == null || flow.getProviderId().equals(AuthenticationFlow.BASIC_FLOW)) {
-            DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this, flow);
-            return flowExecution;
-
+            return new DefaultAuthenticationFlow(this, flow);
         } else if (flow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
-            FormAuthenticationFlow flowExecution = new FormAuthenticationFlow(this, execution);
-            return flowExecution;
+            return new FormAuthenticationFlow(this, execution);
         } else if (flow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
-            ClientAuthenticationFlow flowExecution = new ClientAuthenticationFlow(this, flow);
-            return flowExecution;
+            return new ClientAuthenticationFlow(this, flow);
         }
         throw new AuthenticationFlowException("Unknown flow provider type", AuthenticationFlowError.INTERNAL_ERROR);
     }

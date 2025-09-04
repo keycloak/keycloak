@@ -163,7 +163,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action to authenticationSession
                 if (user.getRequiredActionsStream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
                     // This usually happens when 532 was returned, which means that "pwdLastSet" is set to some positive value, which is older than MSAD password expiration policy.
-                    AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+                    AuthenticationSessionModel authSession = getSession().getContext().getAuthenticationSession();
                     if (authSession != null) {
                         if (authSession.getRequiredActions().stream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
                             logger.debugf("Adding requiredAction UPDATE_PASSWORD to the authenticationSession of user %s", user.getUsername());
@@ -226,7 +226,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
             return control;
         }
 
-        RealmModel realm = session.getContext().getRealm();
+        RealmModel realm = getSession().getContext().getRealm();
 
         if (realm == null) {
             return control;
@@ -250,7 +250,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     private String getRealmName() {
-        RealmModel realm = session.getContext().getRealm();
+        RealmModel realm = getSession().getContext().getRealm();
         return (realm != null) ? realm.getName() : "null";
     }
 

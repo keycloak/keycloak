@@ -15,7 +15,7 @@ import {
 } from "./main.ts";
 import { editSAMLSettings } from "./saml.ts";
 
-test.describe("SAML identity provider test", () => {
+test.describe.serial("SAML identity provider test", () => {
   const samlProviderName = "saml";
   const samlDisplayName = "saml";
 
@@ -37,7 +37,7 @@ test.describe("SAML identity provider test", () => {
   });
 });
 
-test.describe("SAML identity provider test", () => {
+test.describe.serial("SAML identity provider test", () => {
   const samlProviderName = "SAML v2.0";
   const classRefName = "acClassRef-1";
   const declRefName = "acDeclRef-1";

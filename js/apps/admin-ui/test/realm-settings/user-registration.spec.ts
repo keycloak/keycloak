@@ -18,7 +18,7 @@ import {
 
 const groupName = "The default group";
 
-test.describe("Realm settings - User registration tab", () => {
+test.describe.serial("Realm settings - User registration tab", () => {
   const realmName = `realm-settings-user-registration-${uuid()}`;
   const roleName = "theRole";
 

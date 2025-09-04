@@ -187,7 +187,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
                     attributes.get(TermsAndConditions.USER_ATTRIBUTE));
         }
         assertThat(DroneUtils.getCurrentDriver().getTitle(), equalTo("Account Management"));
-        Assert.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("You need to accept the Terms and Conditions to continue"));
+        Assert.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("Access denied"));
         Assert.assertFalse(DroneUtils.getCurrentDriver().getPageSource().contains("An unexpected error occurred"));
 
         WebElement tryAgainButton = DroneUtils.getCurrentDriver().findElement(By.tagName("button"));
