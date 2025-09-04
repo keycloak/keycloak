@@ -18,11 +18,9 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import liquibase.Scope;
-import liquibase.ScopeManager;
 import liquibase.ThreadLocalScopeManager;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
@@ -30,6 +28,7 @@ import liquibase.resource.ResourceAccessor;
 import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -49,6 +48,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
     public static final String INDEX_CREATION_THRESHOLD_PARAM = "keycloak.indexCreationThreshold";
 
     private int indexCreationThreshold;
+    private Class<? extends Database> liquibaseDatabaseClazz;
 
     private static final AtomicBoolean INITIALIZATION = new AtomicBoolean(false);
     
@@ -92,10 +92,26 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void init(Config.Scope config) {
         indexCreationThreshold = config.getInt("indexCreationThreshold", 300000);
         logger.debugf("indexCreationThreshold is %d", indexCreationThreshold);
+
+        // We need to explicitly handle the default here as Config might not be MicroProfile and hence no actually server config exists
+        String dbAlias = config.root().get(DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().orElseThrow());
+        logger.debugf("dbAlias is %s", dbAlias);
+
+        // We're not using the Liquibase logic to get the DB. That is because we already know which DB class we want to use
+        // for which DB vendor. We don't want to rely on auto-detection in Liquibase as it might make wrong assumptions (e.g. EDB).
+        String liquibaseType = org.keycloak.config.database.Database.getVendor(dbAlias).orElseThrow().getLiquibaseType();
+        logger.debugf("liquibaseType is %s", liquibaseType);
+
+        try {
+            liquibaseDatabaseClazz = (Class<? extends Database>) Class.forName(liquibaseType);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Failed to load Liquibase Database class: " + liquibaseType, e);
+        }
     }
 
     @Override
@@ -114,7 +130,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     @Override
     public KeycloakLiquibase getLiquibase(Connection connection, String defaultSchema) throws LiquibaseException {
-        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        Database database = getLiquibaseDatabase(connection);
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
         }
@@ -130,7 +146,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     @Override
     public KeycloakLiquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
-        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        Database database = getLiquibaseDatabase(connection);
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
         }
@@ -141,6 +157,21 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
 
         return new KeycloakLiquibase(changelogLocation, resourceAccessor, database);
+    }
+
+    // Similarly to Hibernate, we want to enforce Liquibase to use the same DB as configured in Keycloak
+    private Database getLiquibaseDatabase(Connection connection) {
+        Database liquibaseDatabase;
+
+        // Mimic what DatabaseFactory#findCorrectDatabaseImplementation does: create DB instance using reflections
+        try {
+            liquibaseDatabase = liquibaseDatabaseClazz.getConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create instance of " + liquibaseDatabaseClazz.getName());
+        }
+        liquibaseDatabase.setConnection(new JdbcConnection(connection));
+
+        return liquibaseDatabase;
     }
 
 }
