@@ -70,8 +70,8 @@ class EdECUtilsImpl implements EdECUtils {
 
     @Override
     public PublicKey createOKPPublicKey(JWK jwk) {
-        String x = (String) jwk.getOtherClaims().get(OKPPublicJWK.X);
-        String crv = (String) jwk.getOtherClaims().get(OKPPublicJWK.CRV);
+        String x = jwk.getOtherClaim(OKPPublicJWK.X, String.class);
+        String crv = jwk.getOtherClaim(OKPPublicJWK.CRV, String.class);
         // JWK representation "x" of a public key
         int bytesLength = 0;
         if (Algorithm.Ed25519.equals(crv)) {

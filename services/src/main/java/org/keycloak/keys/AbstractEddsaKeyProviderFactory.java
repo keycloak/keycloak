@@ -38,7 +38,7 @@ public abstract class AbstractEddsaKeyProviderFactory implements KeyProviderFact
     protected static final String EDDSA_PRIVATE_KEY_KEY = "eddsaPrivateKey";
     protected static final String EDDSA_PUBLIC_KEY_KEY = "eddsaPublicKey";
     protected static final String EDDSA_ELLIPTIC_CURVE_KEY = "eddsaEllipticCurveKey";
-    protected static final String DEFAULT_EDDSA_ELLIPTIC_CURVE = Algorithm.Ed25519;
+    public static final String DEFAULT_EDDSA_ELLIPTIC_CURVE = Algorithm.Ed25519;
 
     protected static ProviderConfigProperty EDDSA_ELLIPTIC_CURVE_PROPERTY = new ProviderConfigProperty(EDDSA_ELLIPTIC_CURVE_KEY, 
             "Elliptic Curve", "Elliptic Curve used in EdDSA", LIST_TYPE,
