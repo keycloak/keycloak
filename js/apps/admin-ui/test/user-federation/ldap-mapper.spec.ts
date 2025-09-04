@@ -107,6 +107,7 @@ test.describe.serial("User Fed LDAP mapper tests", () => {
   });
 
   test("Create hardcoded attribute mapper", async ({ page }) => {
+    // DELETEME - Meaningless comment for testing
     await clickAddMapper(page);
     await selectItem(page, "#kc-providerId", hcAttMapper);
 
