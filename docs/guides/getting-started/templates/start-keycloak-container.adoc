@@ -9,3 +9,5 @@ From a terminal, enter the following command to start {project_name}:
 
 This command starts {project_name} exposed on the local port 8080 and creates an initial admin user with the username `admin`
 and password `admin`.
+
+Container images are published at https://quay.io/organization/keycloak .
