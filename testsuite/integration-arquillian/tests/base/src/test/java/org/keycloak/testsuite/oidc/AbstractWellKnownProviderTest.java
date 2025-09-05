@@ -389,7 +389,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // DPoP
             Assert.assertNames(oidcConfig.getDpopSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
-                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
+                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.EdDSA);
         } finally {
             client.close();
         }

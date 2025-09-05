@@ -24,8 +24,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedMap;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.utils.MapperTypeSerializer;
@@ -445,7 +447,8 @@ public final class ClientPoliciesUtil {
 
     // DPoP
     public static  JWK createRsaJwk(Key publicKey) {
-        return DPoPGenerator.createRsaJwk(publicKey);
+        return JWKBuilder.create()
+                .rsa(publicKey, KeyUse.SIG);
     }
 
     public static JWK createEcJwk(Key publicKey) {

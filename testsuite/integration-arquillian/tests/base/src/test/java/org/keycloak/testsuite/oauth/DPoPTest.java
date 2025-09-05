@@ -40,7 +40,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
@@ -325,7 +324,6 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         // JWK
         JWKBuilder b = JWKBuilder.create()
-                .kid(KeyUtils.createKeyId(keyPair.getPublic()))
                 .algorithm(Algorithm.EdDSA);
         JWK jwkEd = b.okp(keyPair.getPublic(), KeyUse.SIG);
 
@@ -442,22 +440,9 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPProofWithoutJwk() throws Exception {
-        DPoPGenerator customDPoPGenerator = new DPoPGenerator() {
-
-            @Override
-            protected KeyWrapper getKeyWrapper(JWSHeader jwsHeader, PrivateKey privateKey) {
-                KeyWrapper keyWrapper = new KeyWrapper();
-                keyWrapper.setKid(jwsHeader.getKeyId());
-                keyWrapper.setAlgorithm(jwsHeader.getAlgorithm().toString());
-                keyWrapper.setPrivateKey(privateKey);
-                keyWrapper.setType(privateKey.getAlgorithm());
-                keyWrapper.setUse(KeyUse.SIG);
-                return keyWrapper;
-            }
-
-        };
         JWSHeader jwsHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), null);
-        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.ES256, jwsHeader, ecKeyPair.getPrivate(), null, customDPoPGenerator), "No JWK in DPoP header");
+        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(),
+                Algorithm.ES256, jwsHeader, ecKeyPair.getPrivate(), null, new TestingDPoPGenerator()), "No JWK in DPoP header");
     }
 
     @Test
@@ -474,21 +459,8 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testDPoPProofInvalidSignature() throws Exception {
-        DPoPGenerator customDPoPGenerator = new DPoPGenerator() {
-
-            @Override
-            protected KeyWrapper getKeyWrapper(JWSHeader jwsHeader, PrivateKey privateKey) {
-                KeyWrapper keyWrapper = new KeyWrapper();
-                keyWrapper.setKid(jwsHeader.getKeyId());
-                keyWrapper.setAlgorithm(jwsHeader.getAlgorithm().toString());
-                keyWrapper.setPrivateKey(privateKey);
-                keyWrapper.setType(privateKey.getAlgorithm());
-                keyWrapper.setUse(KeyUse.SIG);
-                return keyWrapper;
-            }
-
-        };
-        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.PS256, jwsEcHeader, rsaKeyPair.getPrivate(), null, customDPoPGenerator), "DPoP verification failure: org.keycloak.exceptions.TokenSignatureInvalidException: Invalid token signature");
+        testDPoPProofFailure(generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) Time.currentTime(),
+                Algorithm.PS256, jwsEcHeader, rsaKeyPair.getPrivate(), null, new TestingDPoPGenerator()), "DPoP verification failure: org.keycloak.exceptions.TokenSignatureInvalidException: Invalid token signature");
     }
 
     @Test
@@ -1181,5 +1153,21 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals(error, response.getErrorDescription());
         oauth.logoutForm().idTokenHint(response.getIdToken()).open();
+    }
+
+    // DPoPGenerator with the ability to inject KeyWrapper. Useful for testing purposes of failure scenarios (EG. when different algorithm is used for JWS and for the underlying key etc)
+    private class TestingDPoPGenerator extends DPoPGenerator {
+
+        @Override
+        protected KeyWrapper getKeyWrapper(JWSHeader jwsHeader, PrivateKey privateKey) {
+            KeyWrapper keyWrapper = new KeyWrapper();
+            keyWrapper.setKid(jwsHeader.getKeyId());
+            keyWrapper.setAlgorithm(jwsHeader.getAlgorithm().toString());
+            keyWrapper.setPrivateKey(privateKey);
+            keyWrapper.setType(privateKey.getAlgorithm());
+            keyWrapper.setUse(KeyUse.SIG);
+            return keyWrapper;
+        }
+
     }
 }
