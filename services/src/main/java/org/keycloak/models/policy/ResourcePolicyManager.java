@@ -18,14 +18,6 @@
 package org.keycloak.models.policy;
 
 import jakarta.ws.rs.BadRequestException;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -35,17 +27,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.policy.ResourcePolicyStateProvider.ScheduledAction;
 
+import java.util.List;
+import java.util.Map;
+
 public class ResourcePolicyManager {
 
-    private static final Logger log = Logger.getLogger(ResourcePolicyManager.class);
-
-    private ResourcePolicyStateProvider policyStateProvider;
+    private final KeycloakSession session;
+    private final ResourcePolicyStateProvider policyStateProvider;
 
     public static boolean isFeatureEnabled() {
         return Profile.isFeatureEnabled(Feature.RESOURCE_LIFECYCLE);
     }
-
-    private final KeycloakSession session;
 
     public ResourcePolicyManager(KeycloakSession session) {
         this.session = session;
@@ -77,48 +69,8 @@ public class ResourcePolicyManager {
         return new ResourcePolicy(realm.addComponentModel(model));
     }
 
-    /*
-        This method takes an ordered list of actions. First action in the list has the highest priority, last action has the lowest priority
-        It is used for both create and update actions
-        ---------------------------------------------------------------------------------------
-        using delete-and-recreate approach for now as it seems more simple and robust solution
-        todo: consider changing it to "diff-and-update" (more complex) approach where we'd need to
-            * keep existing actions
-            * create newly added actions
-            * delete removed actions
-            * reorder existing action according to new order (we may add gaps between priority so that we won't need to update all existing actions)
-                * with the gap approach, it may eventually happen that there won't be any space between the two action, in that case we'd have to trigger recalculation of priorities
-    */
-    public void updateActions(ResourcePolicy policy, List<ResourceAction> actions) {
-
-        validateActions(actions);
-
-        // get the stable IDs of the new actions
-        Set<String> newActionIds = actions.stream()
-                .map(ResourceAction::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        // get the stable IDs of the old actions
-        List<ResourceAction> oldActions = getActions(policy);
-        Set<String> oldActionIds = oldActions.stream()
-                .map(ResourceAction::getId)
-                .collect(Collectors.toSet());
-
-        // find which action IDs were deleted
-        oldActionIds.removeAll(newActionIds); // The remaining IDs are the deleted ones
-
-        // delete orphaned state records - this means that we actually reset the flow for users which completed the action which is being removed
-        // it seems like the best way to handle this
-        if (!oldActionIds.isEmpty()) {
-            policyStateProvider.removeByCompletedActions(policy.getId(), oldActionIds);
-        }
-
-        RealmModel realm = getRealm();
-        // remove all existing actions of the policy
-        realm.removeComponents(policy.getId());
-
-        // add the new actions
+    // This method takes an ordered list of actions. First action in the list has the highest priority, last action has the lowest priority
+    public void createActions(ResourcePolicy policy, List<ResourceAction> actions) {
         for (int i = 0; i < actions.size(); i++) {
             ResourceAction action = actions.get(i);
 
@@ -130,7 +82,7 @@ public class ResourcePolicyManager {
         }
     }
 
-    private ResourceAction addAction(ResourcePolicy policy, ResourceAction action) {
+    private void addAction(ResourcePolicy policy, ResourceAction action) {
         RealmModel realm = getRealm();
         ComponentModel policyModel = realm.getComponent(policy.getId());
         ComponentModel actionModel = new ComponentModel();
@@ -141,7 +93,7 @@ public class ResourcePolicyManager {
         actionModel.setProviderType(ResourceActionProvider.class.getName());
         actionModel.setConfig(action.getConfig());
 
-        return new ResourceAction(realm.addComponentModel(actionModel));
+        realm.addComponentModel(actionModel);
     }
 
     public List<ResourcePolicy> getPolicies() {
@@ -174,40 +126,6 @@ public class ResourcePolicyManager {
 
     private RealmModel getRealm() {
         return session.getContext().getRealm();
-    }
-
-    private void validateActions(List<ResourceAction> actions) {
-        // the list should be in the desired priority order
-        for (int i = 0; i < actions.size(); i++) {
-            ResourceAction currentAction = actions.get(i);
-
-            // check that each action's duration is positive.
-            if (currentAction.getAfter() <= 0) {
-                throw new BadRequestException("Validation Error: 'after' duration must be positive.");
-            }
-
-            if (i > 0) {// skip for initial action
-                ResourceAction previousAction = actions.get(i - 1);
-                // compare current with the previous action in the list
-                if (currentAction.getAfter() < previousAction.getAfter()) {
-                    throw new BadRequestException(
-                            String.format("Validation Error: The 'after' duration for action #%d (%s) cannot be less than the duration of the preceding action #%d (%s).",
-                                    i + 1, formatDuration(currentAction.getAfter()),
-                                    i, formatDuration(previousAction.getAfter()))
-                    );
-                }
-            }
-        }
-    }
-
-    private String formatDuration(long millis) {
-        long days = Duration.ofMillis(millis).toDays();
-        if (days > 0) {
-            return String.format("%d day(s)", days);
-        } else {
-            long hours = Duration.ofMillis(millis).toHours();
-            return String.format("%d hour(s)", hours);
-        }
     }
 
     public void removePolicies() {
