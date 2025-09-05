@@ -37,12 +37,14 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
@@ -1115,7 +1117,7 @@ public class AuthenticationProcessor {
 
     // May create userSession too
     public ClientSessionContext attachSession() {
-        ClientSessionContext clientSessionCtx = attachSession(authenticationSession, userSession, session, realm, connection, event);
+        ClientSessionContext clientSessionCtx = attachSession(authenticationSession, userSession, session, realm, connection, event, false);
 
         if (userSession == null) {
             userSession = clientSessionCtx.getClientSession().getUserSession();
@@ -1125,10 +1127,10 @@ public class AuthenticationProcessor {
     }
 
     // May create new userSession too (if userSession argument is null)
-    public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event) {
-        String username = authSession.getAuthenticatedUser().getUsername();
+    public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm,
+                                                     ClientConnection connection, EventBuilder event, boolean createUserSessionInDedicatedTransaction) {
         String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
-        if (attemptedUsername != null) username = attemptedUsername;
+        String username = (attemptedUsername != null) ? attemptedUsername : authSession.getAuthenticatedUser().getUsername();
         String rememberMe = authSession.getAuthNote(Details.REMEMBER_ME);
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("true");
         String brokerSessionId = authSession.getAuthNote(BROKER_SESSION_ID);
@@ -1138,14 +1140,21 @@ public class AuthenticationProcessor {
 
             userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
             if (userSession == null) {
-                UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
-
-                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
-                        , remember, brokerSessionId, brokerUserId, persistenceState);
-
-                if (isLightweightUser(userSession.getUser())) {
-                    LightweightUserAdapter lua = (LightweightUserAdapter) userSession.getUser();
-                    lua.setOwningUserSessionId(userSession.getId());
+                if (createUserSessionInDedicatedTransaction) {
+                    try {
+                        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (newKcSession) -> {
+                            createUserSession(newKcSession, realm, authSession, username, connection, remember, brokerSessionId, brokerUserId);
+                        });
+                    } catch (Exception e) {
+                        if (KeycloakModelUtils.isModelDuplicateException(e)) {
+                            logger.debugf("Other transaction created userSession '%s' in the realm '%s'. Will just lookup existing user session", authSession.getParentSession().getId(), realm.getName());
+                        } else {
+                            throw e;
+                        }
+                    }
+                    userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
+                } else {
+                    userSession = createUserSession(session, realm, authSession, username, connection, remember, brokerSessionId, brokerUserId);
                 }
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
@@ -1191,6 +1200,20 @@ public class AuthenticationProcessor {
         return clientSessionCtx;
     }
 
+    private static UserSessionModel createUserSession(KeycloakSession kcSession, RealmModel realm, AuthenticationSessionModel authSession, String username,
+                                                      ClientConnection connection, boolean remember, String brokerSessionId, String brokerUserId) {
+        UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
+
+        UserSessionModel userSession = new UserSessionManager(kcSession).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
+                , remember, brokerSessionId, brokerUserId, persistenceState);
+
+        if (isLightweightUser(userSession.getUser())) {
+            LightweightUserAdapter lua = (LightweightUserAdapter) userSession.getUser();
+            lua.setOwningUserSessionId(userSession.getId());
+        }
+        return userSession;
+    }
+
     public void evaluateRequiredActionTriggers() {
         AuthenticationManager.evaluateRequiredActionTriggers(session, authenticationSession, request, event, realm, authenticationSession.getAuthenticatedUser());
     }
@@ -1223,7 +1246,7 @@ public class AuthenticationProcessor {
             return AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
         } else {
             event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
-            return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
+            return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event, false);
         }
     }
 

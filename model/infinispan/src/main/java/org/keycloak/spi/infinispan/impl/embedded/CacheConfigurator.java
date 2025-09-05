@@ -402,8 +402,12 @@ public final class CacheConfigurator {
                 builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
                 return builder;
-            case ACTION_TOKEN_CACHE:
             case AUTHENTICATION_SESSIONS_CACHE_NAME:
+                // Adding a pessimistic transactional cache to allow for locking of entries to prevent concurrent operations on authentication sessions
+                // TODO: Check if pessimistic or optimistic should be used here, and if
+                builder.transaction().lockingMode(LockingMode.PESSIMISTIC);
+                builder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
+            case ACTION_TOKEN_CACHE:
             case LOGIN_FAILURE_CACHE_NAME:
                 builder.clustering().cacheMode(CacheMode.DIST_SYNC);
                 builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
