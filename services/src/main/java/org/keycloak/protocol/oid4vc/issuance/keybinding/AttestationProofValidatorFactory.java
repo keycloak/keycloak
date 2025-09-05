@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +17,28 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 
 import java.util.Map;
 
-public class JwtProofValidatorFactory implements ProofValidatorFactory {
+/**
+ * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
+ */
+public class AttestationProofValidatorFactory implements ProofValidatorFactory {
 
     @Override
     public String getId() {
-        return ProofType.JWT;
+        return ProofType.ATTESTATION;
     }
 
     @Override
     public ProofValidator create(KeycloakSession session) {
         // TODO: Load trusted keys from config, DB, or env
-        AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(Map.of());
+        Map<String, JWK> trustedKeys = Map.of(); // empty for now
 
-        return new JwtProofValidator(session, keyResolver);
+        AttestationKeyResolver resolver = new StaticAttestationKeyResolver(trustedKeys);
+        return new AttestationProofValidator(session, resolver);
     }
 }
