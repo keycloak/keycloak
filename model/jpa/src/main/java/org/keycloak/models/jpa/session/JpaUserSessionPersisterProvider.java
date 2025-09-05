@@ -241,25 +241,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public void removeExpired(RealmModel realm) {
         int expiredOffline = calculateOldestSessionTime(realm, true) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
-        // prefer client session timeout if set
-        int expiredClientOffline = expiredOffline;
-        if (realm.isOfflineSessionMaxLifespanEnabled() && realm.getClientOfflineSessionIdleTimeout() > 0) {
-            expiredClientOffline = Time.currentTime() - realm.getClientOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-        }
-
-        expire(realm, expiredClientOffline, expiredOffline, true);
+        expire(realm, expiredOffline, true);
 
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
 
             int expired = calculateOldestSessionTime(realm, false) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
-            // prefer client session timeout if set
-            int expiredClient = expired;
-            if (realm.getClientSessionIdleTimeout() > 0) {
-                expiredClient = Time.currentTime() - realm.getClientSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-            }
-
-            expire(realm, expiredClient, expired, false);
+            expire(realm, expired, false);
         }
     }
 
@@ -271,20 +259,20 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         }
     }
 
-    private void expire(RealmModel realm, int expiredClientOffline, int expiredOffline, boolean offline) {
+    private void expire(RealmModel realm, int expired, boolean offline) {
         String offlineStr = offlineToString(offline);
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
 
         int cs = em.createNamedQuery("deleteExpiredClientSessions")
                 .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expiredClientOffline)
+                .setParameter("lastSessionRefresh", expired)
                 .setParameter("offline", offlineStr)
                 .executeUpdate();
 
         int us = em.createNamedQuery("deleteExpiredUserSessions")
                 .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expiredOffline)
+                .setParameter("lastSessionRefresh", expired)
                 .setParameter("offline", offlineStr)
                 .executeUpdate();
 
