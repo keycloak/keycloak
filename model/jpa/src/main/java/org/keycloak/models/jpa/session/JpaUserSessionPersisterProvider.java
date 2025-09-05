@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -252,11 +253,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     private int calculateOldestSessionTime(RealmModel realm, boolean offline) {
-        if (offline) {
-            return Time.currentTime() - SessionExpirationUtils.getOfflineSessionIdleTimeout(realm);
-        } else {
-            return Time.currentTime() - Math.max(SessionExpirationUtils.getSsoSessionIdleTimeout(realm), realm.getSsoSessionIdleTimeoutRememberMe());
-        }
+        return Time.currentTime() - (int) TimeUnit.MILLISECONDS.toSeconds(SessionExpirationUtils.calculateUserSessionIdleTimestamp(offline, realm.isRememberMe(), 0, realm));
     }
 
     private void expire(RealmModel realm, int expired, boolean offline) {
