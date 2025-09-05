@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -34,16 +34,16 @@
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
-        
+
         <cache.server.infinispan.home>${containers.home}/${cache.server.infinispan.unpacked.folder.name}</cache.server.infinispan.home>
         <cache.server.infinispan.jdg-transactions-enabled>true</cache.server.infinispan.jdg-transactions-enabled>
         <cache.server.infinispan.config.dir>${cache.server.infinispan.home}/server/conf</cache.server.infinispan.config.dir>
-        
+
         <cache.server.cache-auth-xsl>cache-authentication-disabled.xsl</cache.server.cache-auth-xsl>
     </properties>
 
     <profiles>
-        
+
         <profile>
             <id>cache-auth</id>
             <properties>
@@ -186,10 +186,10 @@
                                     </transformationSets>
                                 </configuration>
                             </execution>
-                            
+
                         </executions>
                     </plugin>
-                    
+
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
@@ -214,8 +214,8 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
-                    
+
+
                     <plugin>
                         <artifactId>maven-antrun-plugin</artifactId>
                         <executions>
@@ -234,7 +234,7 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
+
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
@@ -260,7 +260,7 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
+
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <executions>
@@ -279,11 +279,11 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
+
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
             <id>cache-server-infinispan</id>
             <modules>
@@ -296,7 +296,7 @@
                 <module>datagrid</module>
             </modules>
         </profile>
-        
+
     </profiles>
 
 </project>

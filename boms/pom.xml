@@ -27,7 +27,7 @@
 
     <groupId>org.keycloak.bom</groupId>
     <artifactId>keycloak-bom-parent</artifactId>
-    <version>999.0.0-SNAPSHOT</version>
+    <version>26.3.3</version>
 
     <packaging>pom</packaging>
 
@@ -63,7 +63,7 @@
     <modules>
         <module>spi</module>
     </modules>
-    
+
     <build>
         <pluginManagement>
             <plugins>
@@ -80,7 +80,7 @@
             </plugins>
         </pluginManagement>
     </build>
-    
+
     <profiles>
         <profile>
             <id>gpg</id>

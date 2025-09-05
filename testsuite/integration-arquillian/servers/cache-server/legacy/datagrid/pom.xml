@@ -21,22 +21,22 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server-legacy</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-cache-server-legacy-datagrid</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Arquillian Integration TestSuite - Cache Server - Legacy Datagrid</name>
-    
+
     <properties>
         <cache.server>legacy-datagrid</cache.server>
-        
+
         <cache.server.legacy.groupId>com.redhat</cache.server.legacy.groupId>
         <cache.server.legacy.artifactId>datagrid</cache.server.legacy.artifactId>
         <cache.server.legacy.version>7.3.8</cache.server.legacy.version><!--9.4.18.Final-redhat-00001-->
         <cache.server.legacy.unpacked.folder.name>jboss-datagrid-${cache.server.legacy.version}-server</cache.server.legacy.unpacked.folder.name>
-        
+
         <cache.server.legacy.cache-authorization-disabled>true</cache.server.legacy.cache-authorization-disabled>
         <cache.server.legacy.jdg-transactions-enabled>true</cache.server.legacy.jdg-transactions-enabled>
         <cache.server.worker.io-threads>${cache.default.worker.io-threads}</cache.server.worker.io-threads>

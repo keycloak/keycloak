@@ -14,10 +14,10 @@ Will output a report like:
 ===================================================================================================
 Dependency tree for org.twitter4j:twitter4j-core
 ---------------------------------------------------------------------------------------------------
-org.keycloak:keycloak-services:jar:999.0.0-SNAPSHOT
+org.keycloak:keycloak-services:jar:26.3.3
 \- org.twitter4j:twitter4j-core:jar:4.1.2:compile
-org.keycloak:keycloak-crypto-fips1402:jar:999.0.0-SNAPSHOT
-\- org.keycloak:keycloak-services:jar:999.0.0-SNAPSHOT:compile
+org.keycloak:keycloak-crypto-fips1402:jar:26.3.3
+\- org.keycloak:keycloak-services:jar:26.3.3:compile
    \- org.twitter4j:twitter4j-core:jar:4.1.2:compile
 ...
 ```

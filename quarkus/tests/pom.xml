@@ -24,10 +24,10 @@
     <parent>
         <artifactId>keycloak-quarkus-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    
+
     <name>Keycloak Quarkus Test Parent</name>
     <description>Keycloak Quarkus Test Parent</description>
 

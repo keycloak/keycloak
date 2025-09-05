@@ -21,14 +21,14 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server-legacy</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-cache-server-legacy-infinispan</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Arquillian Integration TestSuite - Cache Server - Legacy Infinispan</name>
-    
+
     <properties>
         <cache.server>legacy-infinispan</cache.server>
 
@@ -36,7 +36,7 @@
         <cache.server.legacy.artifactId>infinispan-server</cache.server.legacy.artifactId>
         <cache.server.legacy.version>9.4.21.Final</cache.server.legacy.version>
         <cache.server.legacy.unpacked.folder.name>${cache.server.legacy.artifactId}-${cache.server.legacy.version}</cache.server.legacy.unpacked.folder.name>
-        
+
         <cache.server.legacy.cache-authorization-disabled>true</cache.server.legacy.cache-authorization-disabled>
         <cache.server.legacy.jdg-transactions-enabled>false</cache.server.legacy.jdg-transactions-enabled>
         <cache.server.worker.io-threads>${cache.default.worker.io-threads}</cache.server.worker.io-threads>

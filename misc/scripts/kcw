@@ -38,7 +38,7 @@ while [ "$1" != "" ]; do
 	else
 		ARGS="$ARGS $1"
 	fi
-  
+
   shift
 done
 
@@ -51,7 +51,7 @@ if [ "$INSTALL" != "" ]; then
 	# Clean current install
 	PID=$(ps -e -wwf | grep java | grep "$KC_DIR" | awk '{ print $2 }')
 	if [ "$PID" != "" ]; then
-		echo ""	
+		echo ""
 		echo "-------------------------------------------------------------------------------------------"
 		echo "Killing existing install"
 		echo "-------------------------------------------------------------------------------------------"
@@ -59,23 +59,23 @@ if [ "$INSTALL" != "" ]; then
 		echo "Killed: $PID"
 	fi
 	if [ -d $KC_DIR ]; then
-		echo ""	
+		echo ""
 		echo "-------------------------------------------------------------------------------------------"
 		echo "Deleting existing install"
 		echo "-------------------------------------------------------------------------------------------"
 		rm -rf $KC_DIR
 		echo "Deleted $KC_DIR"
 	fi
-	
+
 	if [ "$INSTALL" == "dev" ]; then
 		VERSION=$(cat $SRC_DIR/pom.xml | grep '<version>' | head -n 2 | tail -n 1 | cut -d '>' -f 2 | cut -d '<' -f 1)
-		
+
 		if [ "$BUILD" ]; then
-			echo ""	
+			echo ""
 			echo "-------------------------------------------------------------------------------------------"
 			echo "Building"
 			echo "-------------------------------------------------------------------------------------------"
-		
+
 			#mvn -pl quarkus/dist -am -DskipTests -f $SRC_DIR/pom.xml -T 1C --offline clean install
 			cd $SRC_DIR
 			./mvnw -T 1C -Dmaven.build.cache.enabled=true -DskipTests -DskipTestsuite -DskipExamples -DskipAdapters -DskipDocs install
@@ -85,25 +85,25 @@ if [ "$INSTALL" != "" ]; then
 		echo "-------------------------------------------------------------------------------------------"
 		echo "Installing"
 		echo "-------------------------------------------------------------------------------------------"
-		
+
 		cd /tmp/
 		unzip -q $SRC_DIR/quarkus/dist/target/keycloak-$VERSION.zip
 		mv keycloak-$VERSION $KC_DIR
-		
+
 		echo "Built and installed $VERSION from $SRC_DIR"
 	else
 		VERSION=$INSTALL
 		if [ "$INSTALL" == "nightly" ]; then
-            VERSION=999.0.0-SNAPSHOT
+            VERSION=26.3.3
   	    fi
-		
+
 		echo ""
 		echo "-------------------------------------------------------------------------------------------"
 		echo "Installing"
 		echo "-------------------------------------------------------------------------------------------"
 
         cd $DL_DIR
-        
+
         if [ -f keycloak-$VERSION.zip ]; then
             if ( ! md5sum keycloak-$VERSION.zip | grep $(wget -q -O - https://github.com/keycloak/keycloak/releases/download/$INSTALL/keycloak-$VERSION.zip.md5) &>/dev/null ); then
                 echo "Checksum doesn't match deleting keycloak-$VERSION.zip"
@@ -120,7 +120,7 @@ if [ "$INSTALL" != "" ]; then
 		cd /tmp/
 		unzip -q $DL_DIR/keycloak-$VERSION.zip
 		mv keycloak-$VERSION $KC_DIR
-		
+
 		echo "Installed $VERSION"
 	fi
 fi
@@ -130,7 +130,7 @@ if [ "$ARGS" != "" ]; then
 	echo "-------------------------------------------------------------------------------------------"
 	echo "Running: bin/kc.sh$ARGS"
 	echo "-------------------------------------------------------------------------------------------"
-	
+
 	export KC_BOOTSTRAP_ADMIN_USERNAME=admin
 	export KC_BOOTSTRAP_ADMIN_PASSWORD=admin
   export KC_BOOTSTRAP_ADMIN_CLIENT_ID=admin

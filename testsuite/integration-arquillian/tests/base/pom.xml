@@ -21,14 +21,14 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-tests-base</artifactId>
 
     <name>Base TestSuite</name>
-    
+
     <description></description>
 
     <properties>
@@ -47,7 +47,7 @@
         <common.resources>${basedir}/../../servers/auth-server/common</common.resources>
         <auth.server.ipv6>false</auth.server.ipv6>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak.tests</groupId>
@@ -208,7 +208,7 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-    
+
     <build>
         <testResources>
             <testResource>
@@ -429,7 +429,7 @@
     </build>
 
     <profiles>
-    
+
         <profile>
             <id>ipv6</id>
             <activation>
@@ -442,7 +442,7 @@
                 <auth.server.ipv6>true</auth.server.ipv6>
             </properties>
         </profile>
-        
+
         <profile>
             <id>app-server-wildfly</id>
             <activation>

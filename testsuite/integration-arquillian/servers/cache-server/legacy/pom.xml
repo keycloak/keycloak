@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,12 +32,12 @@
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
-        
+
         <cache.server.legacy.home>${containers.home}/${cache.server.legacy.unpacked.folder.name}</cache.server.legacy.home>
 
         <cache.server.legacy.cache-authorization-disabled>true</cache.server.legacy.cache-authorization-disabled>
         <cache.server.legacy.jdg-transactions-enabled>true</cache.server.legacy.jdg-transactions-enabled>
-        
+
     </properties>
 
     <profiles>
@@ -206,7 +206,7 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
+
                     <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
@@ -286,11 +286,11 @@
                             </execution>
                         </executions>
                     </plugin>
-                    
+
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
             <id>cache-server-legacy-infinispan</id>
             <modules>
@@ -303,7 +303,7 @@
                 <module>datagrid</module>
             </modules>
         </profile>
-        
+
     </profiles>
 
 </project>

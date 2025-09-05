@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -1131,15 +1131,15 @@
                                             <copy todir="${cache.server.home}-dc2">
                                                 <fileset dir="${cache.server.home}-dc1"/>
                                             </copy>
-                                            
+
                                             <chmod dir="${cache.server.home}-dc1/bin" perm="ugo+rx" includes="**/*.sh"/>
                                             <chmod dir="${cache.server.home}-dc2/bin" perm="ugo+rx" includes="**/*.sh"/>
-                                            
-                                            <move file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml" 
+
+                                            <move file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml"
                                                   tofile="${cache.server.home}-dc1/server/conf/infinispan-xsite.xml" />
                                             <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-2.xml"/>
-                                            
-                                            <move file="${cache.server.home}-dc2/server/conf/infinispan-xsite-2.xml" 
+
+                                            <move file="${cache.server.home}-dc2/server/conf/infinispan-xsite-2.xml"
                                                   tofile="${cache.server.home}-dc2/server/conf/infinispan-xsite.xml" />
                                             <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml"/>
                                         </target>
@@ -1226,15 +1226,15 @@
                                             <copy todir="${cache.server.home}-dc2">
                                                 <fileset dir="${cache.server.home}-dc1"/>
                                             </copy>
-                                            
+
                                             <chmod dir="${cache.server.home}-dc1/bin" perm="ugo+rx" includes="**/*.sh"/>
                                             <chmod dir="${cache.server.home}-dc2/bin" perm="ugo+rx" includes="**/*.sh"/>
-                                            
-                                            <move file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml" 
+
+                                            <move file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml"
                                                   tofile="${cache.server.home}-dc1/server/conf/infinispan-xsite.xml" />
                                             <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-2.xml"/>
-                                            
-                                            <move file="${cache.server.home}-dc2/server/conf/infinispan-xsite-2.xml" 
+
+                                            <move file="${cache.server.home}-dc2/server/conf/infinispan-xsite-2.xml"
                                                   tofile="${cache.server.home}-dc2/server/conf/infinispan-xsite.xml" />
                                             <delete file="${cache.server.home}-dc1/server/conf/infinispan-xsite-1.xml"/>
                                         </target>
@@ -1907,7 +1907,7 @@
                 <cache.server.auth>true</cache.server.auth>
             </properties>
         </profile>
-        
+
     </profiles>
 
 </project>

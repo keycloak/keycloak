@@ -150,7 +150,7 @@ public final class Constants {
      */
     public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
 
-    public static final String SNAPSHOT_VERSION = "999.0.0-SNAPSHOT";
+    public static final String SNAPSHOT_VERSION = "26.3.3";
 
     // Client Polices Realm Attributes Keys
     public static final String CLIENT_PROFILES = "client-policies.profiles";

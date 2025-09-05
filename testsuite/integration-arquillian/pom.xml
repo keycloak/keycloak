@@ -22,10 +22,10 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    
+
     <groupId>org.keycloak.testsuite</groupId>
     <artifactId>integration-arquillian</artifactId>
     <packaging>pom</packaging>
@@ -215,7 +215,7 @@
 
         </dependencies>
     </dependencyManagement>
-    
+
     <build>
         <pluginManagement>
             <plugins>
@@ -289,14 +289,14 @@
             </plugin>
         </plugins>
     </build>
-    
+
     <modules>
         <module>test-apps</module>
         <module>servers</module>
         <module>tests</module>
         <module>util</module>
     </modules>
-    
+
     <profiles>
         <profile>
             <id>test-70-migration</id>

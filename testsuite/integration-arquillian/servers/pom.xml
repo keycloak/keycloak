@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -65,7 +65,7 @@
                     <family>Windows</family>
                 </os>
             </activation>
-            <properties>        
+            <properties>
                 <script.suffix>bat</script.suffix>
                 <jboss.cli.executable>jboss-cli.ps1</jboss.cli.executable>
             </properties>

@@ -54,7 +54,7 @@ metadata:
   name: keycloak-providers
   namespace: keycloak
 binaryData:
-  keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar: ...
+  keycloak-benchmark-dataset-26.3.3.jar: ...
 ---
 # Source: keycloak/templates/postgres/postgres-exporter-configmap.yaml
 apiVersion: v1
@@ -530,8 +530,8 @@ spec:
             #       - 'true'
             volumeMounts:
               - name: keycloak-providers
-                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
-                subPath: keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-26.3.3.jar
+                subPath: keycloak-benchmark-dataset-26.3.3.jar
                 readOnly: true
         volumes:
           - name: keycloak-providers

@@ -6,7 +6,7 @@ VERSION=$1
 # Ex: 20.0.0
 # Ex: NONE [if no replaces]
 REPLACES_VERSION=$2
-# Ex: keycloak/keycloak-operator:999.0.0-SNAPSHOT
+# Ex: keycloak/keycloak-operator:26.3.3
 OPERATOR_DOCKER_IMAGE=$3
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )

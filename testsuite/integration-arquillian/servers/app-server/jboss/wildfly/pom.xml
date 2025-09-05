@@ -22,18 +22,18 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
+        <version>26.3.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>integration-arquillian-servers-app-server-wildfly</artifactId>
     <packaging>jar</packaging>
     <name>App Server - Wildfly</name>
-    
+
     <properties>
         <wildfly.server.version>29.0.1.Final</wildfly.server.version>
         <app.server.jboss>wildfly</app.server.jboss>
-        
+
         <app.server.jboss.groupId>org.wildfly</app.server.jboss.groupId>
         <app.server.jboss.artifactId>wildfly-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${wildfly.server.version}</app.server.jboss.version>
