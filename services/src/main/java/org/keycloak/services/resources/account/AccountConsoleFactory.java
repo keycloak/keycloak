@@ -13,6 +13,10 @@ import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.models.Constants;
 
+/**
+ * Provides the {@code default} {@link AccountConsole} implementation backed by the
+ * {@code account} management client.
+ */
 public class AccountConsoleFactory implements AccountResourceProviderFactory {
 
   @Override
@@ -25,6 +29,10 @@ public class AccountConsoleFactory implements AccountResourceProviderFactory {
     RealmModel realm = session.getContext().getRealm();
     ClientModel client = getAccountManagementClient(realm);
     Theme theme = getTheme(session);
+    return createAccountConsole(session, client, theme);
+  }
+
+  protected AccountConsole createAccountConsole(KeycloakSession session, ClientModel client, Theme theme) {
     return new AccountConsole(session, client, theme);
   }
 
@@ -37,7 +45,7 @@ public class AccountConsoleFactory implements AccountResourceProviderFactory {
   @Override
   public void close() {}
 
-  static Theme getTheme(KeycloakSession session) {
+  protected Theme getTheme(KeycloakSession session) {
     try {
       return session.theme().getTheme(Theme.Type.ACCOUNT);
     } catch (IOException e) {
@@ -45,7 +53,7 @@ public class AccountConsoleFactory implements AccountResourceProviderFactory {
     }
   }
 
-  static ClientModel getAccountManagementClient(RealmModel realm) {
+  protected  ClientModel getAccountManagementClient(RealmModel realm) {
     ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
     if (client == null || !client.isEnabled()) {
       throw new NotFoundException("account management not enabled");
