@@ -1807,10 +1807,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
     }
 
-    private String getRealmInfoUrl() {
-        return KeycloakUriBuilder.fromUri(UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth").path(ServiceUrlConstants.REALM_INFO_PATH).build(REALM_NAME).toString();
-    }
-
     private AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, Supplier<CloseableHttpClient> httpClientSupplier) {
         try {
             List<NameValuePair> parameters = new LinkedList<>();
