@@ -8,11 +8,10 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ProxyPropertyMappers {
+final class ProxyPropertyMappers implements PropertyMapperGrouping{
 
-    private ProxyPropertyMappers(){}
-
-    public static PropertyMapper<?>[] getProxyPropertyMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(ProxyOptions.PROXY_HEADERS)
                         .to("quarkus.http.proxy.proxy-address-forwarding")

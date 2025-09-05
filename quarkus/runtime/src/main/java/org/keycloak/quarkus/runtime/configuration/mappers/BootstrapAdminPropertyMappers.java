@@ -18,20 +18,19 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.config.BootstrapAdminOptions;
+import org.keycloak.config.OptionCategory;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class BootstrapAdminPropertyMappers {
+public final class BootstrapAdminPropertyMappers implements PropertyMapperGrouping {
 
     private static final String PASSWORD_SET = "bootstrap admin password is set";
     private static final String CLIENT_SECRET_SET = "bootstrap admin client secret is set";
 
-    private BootstrapAdminPropertyMappers() {
-    }
-
     // We prefer validators here to isEnabled so that the options show up in help
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public PropertyMapper<?>[] getPropertyMappers() {
         return new PropertyMapper[]{
                 fromOption(BootstrapAdminOptions.USERNAME)
                         .paramLabel("username")
