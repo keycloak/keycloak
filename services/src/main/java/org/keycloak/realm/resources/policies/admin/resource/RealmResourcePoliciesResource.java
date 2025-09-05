@@ -67,7 +67,6 @@ class RealmResourcePoliciesResource {
     }
 
     private ResourcePolicy createPolicy(ResourcePolicyRepresentation rep) {
-        ResourcePolicyManager manager = new ResourcePolicyManager(session);
         MultivaluedHashMap<String, String> config = Optional.ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
 
         for (ResourcePolicyConditionRepresentation condition : rep.getConditions()) {
@@ -86,7 +85,7 @@ class RealmResourcePoliciesResource {
             actions.add(new ResourceAction(actionRep.getProviderId(), new MultivaluedHashMap<>(actionRep.getConfig())));
         }
 
-        manager.updateActions(policy, actions);
+        manager.createActions(policy, actions);
 
         return policy;
     }
