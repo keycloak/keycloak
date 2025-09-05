@@ -254,10 +254,16 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 .setCredentialConfigurationId(credentialConfigurationId)
                 .setProofs(proof);
 
-        Response credentialResponse = issuerEndpoint.requestCredential(credentialRequest);
+        String requestPayload;
+        try {
+            requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize credential request", e);
+        }
+
+        Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
         assertEquals("The credential request should be answered successfully.",
-                     HttpStatus.SC_OK,
-                     credentialResponse.getStatus());
+                HttpStatus.SC_OK, credentialResponse.getStatus());
         assertNotNull("A credential should be responded.", credentialResponse.getEntity());
         CredentialResponse credentialResponseVO = JsonSerialization.mapper.convertValue(credentialResponse.getEntity(),
                                                                                         CredentialResponse.class);

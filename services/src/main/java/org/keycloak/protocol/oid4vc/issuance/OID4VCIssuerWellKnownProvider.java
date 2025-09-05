@@ -22,6 +22,8 @@ import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -31,17 +33,16 @@ import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.jboss.logging.Logger;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -66,6 +67,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
+    public static final String DEFLATE_COMPRESSION = "DEF";
+    public static final String ATTR_REQUEST_ZIP_ALGS = "oid4vci.request.zip.algorithms";
+
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
     }
@@ -78,7 +82,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     @Override
     public Object getConfig() {
         KeycloakContext context = keycloakSession.getContext();
-        CredentialIssuer issuer = new CredentialIssuer()
+        return new CredentialIssuer()
                 .setCredentialIssuer(getIssuer(context))
                 .setCredentialEndpoint(getCredentialsEndpoint(context))
                 .setNonceEndpoint(getNonceEndpoint(context))
@@ -88,7 +92,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setCredentialResponseEncryption(getCredentialResponseEncryption(keycloakSession))
                 .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
                 .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession));
-        return issuer;
     }
 
     private static String getDeferredCredentialEndpoint(KeycloakContext context) {
@@ -136,33 +139,46 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         CredentialResponseEncryptionMetadata metadata = new CredentialResponseEncryptionMetadata();
 
         // Get supported algorithms from available encryption keys
-        metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(session));
-        metadata.setEncValuesSupported(getSupportedEncryptionMethods());
-        metadata.setZipValuesSupported(getSupportedCompressionMethods());
-        metadata.setEncryptionRequired(isEncryptionRequired(realm));
+        metadata.setAlgValuesSupported(getSupportedEncryptionAlgorithms(session))
+                .setEncValuesSupported(getSupportedEncryptionMethods())
+                .setZipValuesSupported(getSupportedZipAlgorithms(realm))
+                .setEncryptionRequired(isEncryptionRequired(realm));
 
         return metadata;
     }
 
     /**
      * Returns the credential request encryption metadata for the issuer.
-     * Determines supported algorithms from available realm keys.
-     *
-     * @param session The Keycloak session
-     * @return The credential request encryption metadata
+     * Determines supported algorithms and JWK Set from available realm keys
      */
     public static CredentialRequestEncryptionMetadata getCredentialRequestEncryption(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata();
 
-        // Get supported algorithms from available encryption keys
-        metadata.setJwks(getEncryptionJwks(session));
-        metadata.setEncValuesSupported(getSupportedEncryptionMethods());
-        metadata.setZipValuesSupported(getSupportedCompressionMethods());
-        metadata.setEncryptionRequired(isEncryptionRequired(realm));
+        // Build JWKS with public encryption keys
+        JSONWebKeySet jwks = buildJwks(session);
+
+        // If encryption is required but no keys exist → reject unencrypted requests
+        boolean encryptionRequired = isEncryptionRequired(realm);
+        if (jwks.getKeys() == null || jwks.getKeys().length == 0) {
+            if (encryptionRequired) {
+                LOGGER.error("Encryption is required but no valid encryption keys are available.");
+                throw new IllegalStateException("Missing encryption keys for required credential_request_encryption.");
+            } else {
+                LOGGER.warn("No valid encryption keys found; omitting credential_request_encryption metadata.");
+                return null; // Entire object omitted
+            }
+        }
+
+        // Build metadata
+        CredentialRequestEncryptionMetadata metadata = new CredentialRequestEncryptionMetadata()
+                .setJwks(jwks)
+                .setEncValuesSupported(getSupportedEncryptionMethods())
+                .setZipValuesSupported(getSupportedZipAlgorithms(realm))
+                .setEncryptionRequired(encryptionRequired);
 
         return metadata;
     }
+
 
     /**
      * Returns the supported encryption algorithms from realm attributes.
@@ -178,6 +194,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .distinct()
                 .collect(Collectors.toList());
 
+        // Default algorithms if none configured
         if (supportedEncryptionAlgorithms.isEmpty()) {
             boolean hasRsaKeys = keyManager.getKeysStream(realm)
                     .filter(key -> KeyUse.ENC.equals(key.getUse()))
@@ -191,6 +208,37 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
         return supportedEncryptionAlgorithms;
     }
+
+
+    /**
+     * Builds JWKS from realm encryption keys with use=enc.
+     */
+    private static JSONWebKeySet buildJwks(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        JSONWebKeySet jwks = JWKSServerUtils.getRealmJwks(session, realm);
+        // Filter for encryption keys only
+        JWK[] encKeys = Arrays.stream(jwks.getKeys())
+                .filter(jwk -> JWK.Use.ENCRYPTION.asString().equals(jwk.getPublicKeyUse()))
+                .toArray(JWK[]::new);
+        jwks.setKeys(encKeys);
+        return jwks;
+    }
+
+
+    /**
+     * Returns supported zip algorithms from realm attributes (optional).
+     */
+    private static List<String> getSupportedZipAlgorithms(RealmModel realm) {
+        String zipAlgs = realm.getAttribute(ATTR_REQUEST_ZIP_ALGS);
+        if (zipAlgs != null && !zipAlgs.isEmpty()) {
+            return Arrays.stream(zipAlgs.split(","))
+                    .map(String::trim)
+                    .filter(alg -> alg.equals("DEF")) // Only support DEFLATE for now
+                    .collect(Collectors.toList());
+        }
+        return null; // Omit if not configured
+    }
+
 
     /**
      * Returns the supported encryption methods from realm attributes.
@@ -237,6 +285,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         String required = realm.getAttribute(ATTR_ENCRYPTION_REQUIRED);
         return Boolean.parseBoolean(required);
     }
+
 
     /**
      * Return the supported credentials from the current session.
