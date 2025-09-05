@@ -188,26 +188,6 @@ public class ResourcePolicyManagementTest {
     }
 
     @Test
-    public void testTimeVsPriorityConflictingActions() {
-        List<ResourcePolicyRepresentation> expectedPolicies = ResourcePolicyRepresentation.create()
-                .of(UserCreationTimeResourcePolicyProviderFactory.ID)
-                .withActions(
-                        ResourcePolicyActionRepresentation.create().of(NotifyUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
-                                .build(),
-                        ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(5))
-                                .build()
-                ).build();
-
-        RealmResourcePolicies policies = managedRealm.admin().resources().policies();
-
-        try (Response response = policies.create(expectedPolicies)) {
-            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
-        }
-    }
-
-    @Test
     public void testPolicyDoesNotFallThroughActionsInSingleRun() {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)

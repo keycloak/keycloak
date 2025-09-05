@@ -17,9 +17,6 @@
 
 package org.keycloak.models.policy;
 
-import java.util.List;
-import java.util.Set;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
@@ -31,7 +28,8 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+
+import java.util.List;
 
 public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvider {
 
@@ -115,57 +113,6 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
         return em.createQuery(query).getResultStream()
                 .map(s -> new ScheduledAction(s.getPolicyId(), s.getScheduledActionId(), s.getResourceId()))
                 .toList();
-    }
-
-    @Override
-    public void update(String policyId, String policyProviderId, List<String> resourceIds, String newLastCompletedActionId) {
-        for (String resourceId : resourceIds) {
-            ResourcePolicyStateEntity.PrimaryKey pk = new ResourcePolicyStateEntity.PrimaryKey(resourceId, policyId);
-            ResourcePolicyStateEntity entity = em.find(ResourcePolicyStateEntity.class, pk);
-
-            if (entity == null) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.tracev("Initial record for policyId ({0}), new_last_compl_actionId ({1}), userId ({2})", policyId, newLastCompletedActionId, resourceId);
-                }
-                entity = new ResourcePolicyStateEntity();
-                entity.setResourceId(resourceId);
-                entity.setPolicyId(policyId);
-                entity.setPolicyProviderId(policyProviderId);
-                em.persist(entity);
-            } else {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.tracev("Changing record for policyId ({0}), last_compl_actionId ({1}), new_last_compl_actionId ({2}), userId ({3})",
-                            entity.getPolicyId(), entity.getScheduledActionId(), newLastCompletedActionId, resourceId);
-                }
-            }
-
-            entity.setScheduledActionId(newLastCompletedActionId);
-            entity.setScheduledActionTimestamp(Time.currentTimeMillis());
-        }
-    }
-
-    @Override
-    public void removeByCompletedActions(String policyId, Set<String> deletedActionIds) {
-        if (deletedActionIds == null || deletedActionIds.isEmpty()) {
-            return;
-        }
-
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaDelete<ResourcePolicyStateEntity> delete = cb.createCriteriaDelete(ResourcePolicyStateEntity.class);
-        Root<ResourcePolicyStateEntity> stateRoot = delete.from(ResourcePolicyStateEntity.class);
-
-        Predicate policyPredicate = cb.equal(stateRoot.get("policyId"), policyId);
-        Predicate inClausePredicate = stateRoot.get("scheduledActionId").in(deletedActionIds);
-
-        delete.where(cb.and(policyPredicate, inClausePredicate));
-
-        int deletedCount = em.createQuery(delete).executeUpdate();
-
-        if (LOGGER.isTraceEnabled()) {
-            if (deletedCount > 0) {
-                LOGGER.tracev("Deleted {0} orphaned state records for policy {1}", deletedCount, policyId);
-            }
-        }
     }
 
     @Override
