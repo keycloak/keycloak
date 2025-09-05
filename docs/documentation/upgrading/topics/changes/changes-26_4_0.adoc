@@ -45,16 +45,16 @@ and use the `+--cache-...+` options to make changes for example to the cache siz
 
 === RFC8414 compliant lookup of metadata
 
-{project_name} now exposes an RFC8414-compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata by the issuer URL.
+{project_name} now exposes an RFC8414-compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL.
 
-Previously information was exposed via:
+As an example, OAuth 2.0 Authorization Server Metadata information was exposed via:
 
 [source]
 ----
 https://keycloak.example.com/realms/{realm}/.well-known/oauth-authorization-server
 ----
 
-It is now available in addition to the legacy URL via:
+It is now available also via:
 
 [source]
 ----
