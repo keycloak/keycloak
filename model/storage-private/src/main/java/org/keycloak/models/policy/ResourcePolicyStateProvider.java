@@ -18,24 +18,13 @@
 package org.keycloak.models.policy;
 
 import org.keycloak.provider.Provider;
+
 import java.util.List;
-import java.util.Set;
 
 /**
  * Interface serves as state check for policy actions.
  */
 public interface ResourcePolicyStateProvider extends Provider {
-
-    /**
-     * Updates the state for a list of resources that have just completed a new action.
-     * This will perform an update for existing states or an insert for new states.
-     */
-    void update(String policyId, String policyProviderId, List<String> resourceIds, String newLastCompletedActionId);
-
-    /**
-     * Deletes the orphaned state records.
-     */
-    void removeByCompletedActions(String policyId, Set<String> deletedActionIds);
 
     /**
      * Deletes the state records associated with the given {@code resourceId}.
