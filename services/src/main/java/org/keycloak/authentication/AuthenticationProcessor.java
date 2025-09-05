@@ -343,6 +343,7 @@ public class AuthenticationProcessor {
         List<AuthenticationSelectionOption> authenticationSelections;
         String eventDetails;
         String userErrorMessage;
+        Map<Class<?>, Object> state;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
@@ -515,6 +516,22 @@ public class AuthenticationProcessor {
         @Override
         public Map<String, String> getClientAuthAttributes() {
             return AuthenticationProcessor.this.getClientAuthAttributes();
+        }
+
+        @Override
+        public <T> T getState(Class<T> type, ClientAuthenticationFlowContextSupplier<T> supplier) throws Exception {
+            if (state == null) {
+                state = new HashMap<>();
+            }
+
+            T value = type.cast(state.get(type));
+
+            if (value == null) {
+                value = supplier.get(this);
+                state.put(type, value);
+            }
+
+            return value;
         }
 
         @Override

@@ -178,6 +178,7 @@ public class FederatedClientAuthTest {
         token.id(UUID.randomUUID().toString());
         token.issuer("http://127.0.0.1:8500");
         token.audience(oAuthClient.getEndpoints().getIssuer());
+        token.iat((long) Time.currentTime());
         token.exp((long) (Time.currentTime() + 300));
         token.subject(CLIENT_ID);
         return token;
