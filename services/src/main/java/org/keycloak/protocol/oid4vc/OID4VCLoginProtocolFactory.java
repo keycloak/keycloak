@@ -64,7 +64,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public void init(Config.Scope config) {
-        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("client roles"));
+        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("id", "client roles"));
         builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create("subject id", "id"));
         builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
         builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
