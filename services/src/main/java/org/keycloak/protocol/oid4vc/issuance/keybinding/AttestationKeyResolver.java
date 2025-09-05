@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +17,20 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.jose.jwk.JWK;
 
 import java.util.Map;
 
-public class JwtProofValidatorFactory implements ProofValidatorFactory {
-
-    @Override
-    public String getId() {
-        return ProofType.JWT;
-    }
-
-    @Override
-    public ProofValidator create(KeycloakSession session) {
-        // TODO: Load trusted keys from config, DB, or env
-        AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(Map.of());
-
-        return new JwtProofValidator(session, keyResolver);
-    }
+/**
+ * Interface for resolving attestation public keys by kid for JWT attestation validation.
+ * Implementations may use local registries, remote JWKS, or other trusted sources.
+ *
+ * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
+ */
+public interface AttestationKeyResolver {
+    /**
+     * Resolves a JWK for the given kid, header, and payload context.
+     * Returns null if the key cannot be resolved or is not trusted.
+     */
+    JWK resolveKey(String kid, Map<String, Object> header, Map<String, Object> payload);
 }

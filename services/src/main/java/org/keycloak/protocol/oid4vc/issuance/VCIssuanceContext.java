@@ -16,11 +16,14 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.services.managers.AuthenticationManager;
+
+import java.util.List;
 
 /**
  * Holds the verifiable credential to sign and additional context information.
@@ -36,6 +39,9 @@ public class VCIssuanceContext {
     private SupportedCredentialConfiguration credentialConfig;
     private CredentialRequest credentialRequest;
     private AuthenticationManager.AuthResult authResult;
+
+    private List<JWK> attestedKeys;
+
 
     public CredentialBody getCredentialBody() {
         return credentialBody;
@@ -70,6 +76,11 @@ public class VCIssuanceContext {
 
     public VCIssuanceContext setAuthResult(AuthenticationManager.AuthResult authResult) {
         this.authResult = authResult;
+        return this;
+    }
+
+    public VCIssuanceContext setAttestedKeys(List<JWK> attestedKeys) {
+        this.attestedKeys = attestedKeys;
         return this;
     }
 }

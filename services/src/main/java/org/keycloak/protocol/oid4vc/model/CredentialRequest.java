@@ -27,8 +27,6 @@ import org.keycloak.util.JsonSerialization;
 
 import java.util.Map;
 import java.util.Optional;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Represents a CredentialRequest according to OID4VCI
