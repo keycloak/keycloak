@@ -53,6 +53,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
+import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.controllers.WatchedResources;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -62,6 +63,9 @@ import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportSpecBuilder;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.mockito.Mockito;
 
 import java.util.List;
@@ -98,6 +102,9 @@ public class PodTemplateTest {
     @Inject
     KeycloakUpdateJobDependentResource jobResource;
 
+    @Inject
+    KeycloakRealmImportJobDependentResource importJobResource;
+
     @BeforeEach
     protected void setup() {
         this.deployment = new KeycloakDeploymentDependentResource();
@@ -111,7 +118,7 @@ public class PodTemplateTest {
                 .endSelector().endSpec().build();
 
         //noinspection unchecked
-        Context<Keycloak> context = mockContext(existingDeployment);
+        Context context = mockContext(null);
         return deployment.desired(kc, context);
     }
 
@@ -137,7 +144,7 @@ public class PodTemplateTest {
         Context<Keycloak> context = Mockito.mock(Context.class);
         ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext = Mockito.mock(ManagedWorkflowAndDependentResourceContext.class);
         Mockito.when(context.managedWorkflowAndDependentResourceContext()).thenReturn(managedWorkflowAndDependentResourceContext);
-        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(existingDeployment);
+        Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.ofNullable(existingDeployment));
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OPERATOR_CONFIG_KEY, Config.class)).thenReturn(operatorConfig);
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(WATCHED_RESOURCES_KEY, WatchedResources.class)).thenReturn(watchedResources);
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class)).thenReturn(distConfigurator);
@@ -748,12 +755,56 @@ public class PodTemplateTest {
         StatefulSetBuilder desired = getDeployment(null, existingStatefulSet, newSpec).toBuilder();
 
         // setup the mock context
-        Context<Keycloak> context = mockContext(existingStatefulSet);
+        Context<Keycloak> context = mockContext(null);
         var managedWorkflowAndDependentResourceContext = context.managedWorkflowAndDependentResourceContext();
         Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.of(existingStatefulSet));
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(NEW_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(desired.build());
 
         return jobResource.desired(createKeycloak(null, newSpec), context);
+    }
+
+    private Job getImportJob(Consumer<KeycloakSpecBuilder> keycloakSpec, Consumer<KeycloakRealmImportSpecBuilder> realmImportSpec, Consumer<StatefulSetBuilder> existingModifier) {
+        StatefulSetBuilder existingBuilder = getDeployment(null, null, keycloakSpec).toBuilder();
+        existingModifier.accept(existingBuilder);
+        StatefulSet existingStatefulSet = existingBuilder.build();
+
+        Context context = mockContext(existingStatefulSet);
+
+        var builder = new KeycloakRealmImportBuilder();
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("realm");
+        var realmImport = builder.withNewSpec().withKeycloakCRName(existingStatefulSet.getMetadata().getName())
+                .withRealm(rep).endSpec().build();
+        KeycloakRealmImportSpecBuilder specBuilder = new KeycloakRealmImportSpecBuilder(realmImport.getSpec());
+        realmImportSpec.accept(specBuilder);
+        realmImport.setSpec(specBuilder.build());
+
+        return importJobResource.desired(realmImport, context);
+    }
+
+    @Test
+    public void testUpdateJobSchedulingOverride() {
+        Consumer<KeycloakSpecBuilder> addJobScheduling = builder -> {
+            builder.editOrNewSchedulingSpec().withPriorityClassName("priority").endSchedulingSpec();
+            builder.editOrNewUpdateSpec().editOrNewSchedulingSpec().endSchedulingSpec().endUpdateSpec();
+        };
+
+        Job job = getUpdateJob(addJobScheduling, addJobScheduling, builder -> {});
+        assertNull(job.getSpec().getTemplate().getSpec().getPriorityClassName());
+    }
+
+    @Test
+    public void testRealmImportJobSchedulingOverride() {
+        Job job = getImportJob(
+                builder -> builder.editOrNewSchedulingSpec().addNewToleration("NoSchedule", "key", "value", 10L, "in").endSchedulingSpec(),
+                builder -> builder.withNewSchedulingSpec().addNewToleration("NoSchedule", "key1", "value1", 10L, "in").endSchedulingSpec(),
+                builder -> {});
+        assertEquals("---\n"
+                + "effect: \"NoSchedule\"\n"
+                + "key: \"key1\"\n"
+                + "operator: \"value1\"\n"
+                + "tolerationSeconds: 10\n"
+                + "value: \"in\"\n", Serialization.asYaml(job.getSpec().getTemplate().getSpec().getTolerations().get(0)));
     }
 
     @Test

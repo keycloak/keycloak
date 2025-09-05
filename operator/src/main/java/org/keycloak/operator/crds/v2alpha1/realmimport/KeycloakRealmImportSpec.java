@@ -23,6 +23,7 @@ import io.fabric8.generator.annotation.Required;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.sundr.builder.annotations.Buildable;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Map;
@@ -44,6 +45,10 @@ public class KeycloakRealmImportSpec {
 
     @JsonPropertyDescription("Optionally set to replace ENV variable placeholders in the realm import.")
     private Map<String, Placeholder> placeholders;
+
+    @JsonProperty("scheduling")
+    @JsonPropertyDescription("In this section you can configure the import job's scheduling")
+    private SchedulingSpec schedulingSpec;
 
     public String getKeycloakCRName() {
         return keycloakCRName;
@@ -75,5 +80,13 @@ public class KeycloakRealmImportSpec {
 
     public void setPlaceholders(Map<String, Placeholder> placeholders) {
         this.placeholders = placeholders;
+    }
+
+    public SchedulingSpec getSchedulingSpec() {
+        return schedulingSpec;
+    }
+
+    public void setSchedulingSpec(SchedulingSpec schedulingSpec) {
+        this.schedulingSpec = schedulingSpec;
     }
 }
