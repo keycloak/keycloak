@@ -510,23 +510,18 @@ public class OID4VCIssuerEndpoint {
 
     private List<String> getAllProofs(CredentialRequest credentialRequestVO) {
         List<String> allProofs = new ArrayList<>();
+
         Proofs proofs = credentialRequestVO.getProofs();
         if (proofs == null) {
             return allProofs; // No proofs provided
         }
 
-        int typeCount = 0;
-        if (proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
-            typeCount++;
-            for (String jwtStr : proofs.getJwt()) {
-                allProofs.add(jwtStr);
-            }
-        }
-        if (typeCount != 1) {
+        if (proofs.getJwt() == null || proofs.getJwt().isEmpty()) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF,
                     "The 'proofs' object must contain exactly one proof type with non-empty array."));
         }
 
+        allProofs.addAll(proofs.getJwt());
         return allProofs;
     }
 
