@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 max_retries=240

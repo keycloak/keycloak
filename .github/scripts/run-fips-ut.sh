@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 rm -f /etc/system-fips
 dnf install -y java-21-openjdk-devel crypto-policies-scripts

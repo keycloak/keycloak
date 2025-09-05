@@ -1,4 +1,5 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
+set -x
 
 rm -f /etc/system-fips
 dnf install -y java-21-openjdk-devel
