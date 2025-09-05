@@ -160,7 +160,7 @@
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
         <postgresql-jdbc.version>42.7.7</postgresql-jdbc.version>
-        <mariadb.version>11.4</mariadb.version>
+        <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.5.5</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
