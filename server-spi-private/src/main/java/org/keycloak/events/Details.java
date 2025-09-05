@@ -70,6 +70,7 @@ public interface Details {
     String AUDIENCE = "audience";
     String PERMISSION = "permission";
     String SCOPE = "scope";
+    String RESOURCE = "resource";
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
     String REQUESTED_TOKEN_TYPE = "requested_token_type";
