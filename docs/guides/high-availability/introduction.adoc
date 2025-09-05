@@ -16,7 +16,7 @@ The following architectures are supported by {project_name}.
 
 === Single-cluster deployments
 
-Deploy {project_name} in a single cluster, optionally "stretched" across multiple availability-zones, using <@links.ha id="single-cluster-introduction" />.
+Deploy {project_name} in a single cluster, optionally across multiple availability-zones in the same region, using <@links.ha id="single-cluster-introduction" />.
 
 Advantages::
 * No external dependencies

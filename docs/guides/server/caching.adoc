@@ -218,7 +218,7 @@ The remaining distributed caches are affected by this configuration.
 The following topology information is available to configure:
 
 Site name::
-If your {project_name} cluster is deployed between different datacenters (stretched cluster), use this option to ensure the data replicas are stored in a different datacenter.
+If your {project_name} cluster is deployed between different datacenters, use this option to ensure the data replicas are stored in a different datacenter.
 It prevents data loss if a datacenter goes offline or fails.
 +
 Use the SPI option `spi-cache-embedded--default--site-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__SITE_NAME`).
