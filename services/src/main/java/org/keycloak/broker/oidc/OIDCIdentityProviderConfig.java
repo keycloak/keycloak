@@ -16,11 +16,11 @@
  */
 package org.keycloak.broker.oidc;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
-
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
+
+import static org.keycloak.common.util.UriUtils.checkUrl;
 
 /**
  * @author Pedro Igor
@@ -78,6 +78,14 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public void setSendIdTokenOnLogout(boolean value) {
         getConfig().put("sendIdTokenOnLogout", Boolean.valueOf(value).toString());
+    }
+
+    public boolean isSendLogoutHintOnLogout() {
+        return Boolean.parseBoolean(getConfig().getOrDefault("sendLogoutHintOnLogout", Boolean.TRUE.toString()));
+    }
+
+    public void setSendLogoutHintOnLogout(boolean value) {
+        getConfig().put("sendLogoutHintOnLogout", Boolean.valueOf(value).toString());
     }
 
     public String getPublicKeySignatureVerifier() {

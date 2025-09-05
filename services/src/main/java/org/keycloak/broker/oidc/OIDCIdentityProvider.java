@@ -79,6 +79,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import java.io.IOException;
@@ -173,6 +174,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
         String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String loginHint = extractLoginHintFromIdToken(idToken);
         if (getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
@@ -182,6 +184,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     .queryParam("state", sessionId);
             if (getConfig().isSendIdTokenOnLogout() && idToken != null) {
                 logoutUri.queryParam("id_token_hint", idToken);
+            }
+            if (getConfig().isSendLogoutHintOnLogout() && StringUtil.isNotBlank(loginHint)) {
+                logoutUri.queryParam("logout_hint", loginHint);
             }
             if (getConfig().isSendClientIdOnLogout()) {
                 logoutUri.queryParam("client_id", getConfig().getClientId());
@@ -193,6 +198,17 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             logoutUri.queryParam("post_logout_redirect_uri", redirect);
             Response response = Response.status(302).location(logoutUri.build()).build();
             return response;
+        }
+    }
+
+    protected String extractLoginHintFromIdToken(String idToken) {
+        if (StringUtil.isBlank(idToken)) return null;
+        try {
+            JsonNode jsonNode = JsonSerialization.readValue(parseTokenInput(idToken, false), JsonNode.class);
+            return jsonNode.path("login_hint").asText();
+        } catch (IOException | IdentityBrokerException e) {
+            logger.warn("Failed to extract loginHint from id_token.", e);
+            return null;
         }
     }
 

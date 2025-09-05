@@ -52,6 +52,10 @@ export const ExtendedNonDiscoverySettings = () => {
           defaultValue={"true"}
         />
         <SwitchField
+          field="config.sendLogoutHintOnLogout"
+          label="sendLogoutHintOnLogout"
+        />
+        <SwitchField
           field="config.sendClientIdOnLogout"
           label="sendClientIdOnLogout"
         />

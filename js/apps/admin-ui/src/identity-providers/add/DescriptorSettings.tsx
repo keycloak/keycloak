@@ -99,6 +99,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           stringify
         />
         <DefaultSwitchControl
+          name="config.sendLogoutHintOnLogout"
+          label={t("sendLogoutHintOnLogout")}
+          stringify
+        />
+        <DefaultSwitchControl
           name="config.sendClientIdOnLogout"
           label={t("sendClientIdOnLogout")}
           isDisabled={readOnly}
