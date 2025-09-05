@@ -99,7 +99,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         logger.debugf("indexCreationThreshold is %d", indexCreationThreshold);
 
         // We need to explicitly handle the default here as Config might not be MicroProfile and hence no actually server config exists
-        String dbAlias = config.root().get(DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().orElseThrow());
+        String dbAlias = config.root().get(DatabaseOptions.DB.getKey(), "dev-file");
         logger.debugf("dbAlias is %s", dbAlias);
 
         // We're not using the Liquibase logic to get the DB. That is because we already know which DB class we want to use
