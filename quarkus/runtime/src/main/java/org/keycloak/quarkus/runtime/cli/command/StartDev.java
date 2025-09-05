@@ -55,4 +55,9 @@ public final class StartDev extends AbstractStartCommand {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    OptimizedMixin getOptimizedMixin() {
+        return null;
+    }
 }

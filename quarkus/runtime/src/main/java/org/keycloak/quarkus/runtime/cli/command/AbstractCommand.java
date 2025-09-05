@@ -19,8 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
@@ -108,11 +106,8 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return false;
     }
 
-    /**
-     * Returns a list of all option categories which are available for this command.
-     */
-    public List<OptionCategory> getOptionCategories() {
-        return Arrays.asList(OptionCategory.values());
+    public boolean isExcludedCategory(OptionCategory category) {
+        return category == OptionCategory.IMPORT || category == OptionCategory.EXPORT;
     }
 
     protected void validateConfig() {
@@ -136,5 +131,9 @@ public abstract class AbstractCommand implements Callable<Integer> {
     protected String getDefaultProfile() {
         return Environment.PROD_PROFILE_VALUE;
     }
+
+    public abstract boolean isHelpAll();
+
+    public abstract boolean isOptimized();
 
 }

@@ -24,13 +24,10 @@ import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -158,13 +155,15 @@ public abstract class AbstractStartCommand extends AbstractCommand {
     }
 
     @Override
-    public List<OptionCategory> getOptionCategories() {
-        EnumSet<OptionCategory> excludedCategories = excludedCategories();
-        return super.getOptionCategories().stream().filter(optionCategory -> !excludedCategories.contains(optionCategory)).collect(Collectors.toList());
+    public boolean isHelpAll() {
+        return helpAllMixin != null ? helpAllMixin.allOptions : false;
     }
 
-    protected EnumSet<OptionCategory> excludedCategories() {
-        return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
+    abstract OptimizedMixin getOptimizedMixin();
+
+    @Override
+    public boolean isOptimized() {
+        return Optional.ofNullable(getOptimizedMixin()).map(o -> o.optimized).orElse(false);
     }
 
 }

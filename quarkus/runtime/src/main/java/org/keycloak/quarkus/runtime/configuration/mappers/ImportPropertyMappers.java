@@ -25,6 +25,7 @@ import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.Import;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
@@ -48,10 +49,12 @@ public final class ImportPropertyMappers {
                 fromOption(ImportOptions.FILE)
                         .to("kc.spi-import--single-file--file")
                         .paramLabel("file")
+                        .isEnabled(c -> c instanceof Import)
                         .build(),
                 fromOption(ImportOptions.DIR)
                         .to("kc.spi-import--dir--dir")
                         .paramLabel("dir")
+                        .isEnabled(c -> c instanceof Import)
                         .build(),
                 fromOption(ImportOptions.OVERRIDE)
                         .to("kc.spi-import--single-file--strategy")
@@ -84,7 +87,7 @@ public final class ImportPropertyMappers {
     }
 
     private static boolean isDirProvider() {
-        return isProvider(DIR);
+        return !isSingleFileProvider();
     }
 
     private static boolean isProvider(String provider) {

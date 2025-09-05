@@ -25,6 +25,7 @@ import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.Export;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
@@ -50,10 +51,12 @@ public final class ExportPropertyMappers {
                 fromOption(ExportOptions.FILE)
                         .to("kc.spi-export--single-file--file")
                         .paramLabel("file")
+                        .isEnabled(c -> c instanceof Export)
                         .build(),
                 fromOption(ExportOptions.DIR)
                         .to("kc.spi-export--dir--dir")
                         .paramLabel("dir")
+                        .isEnabled(c -> c instanceof Export)
                         .build(),
                 fromOption(ExportOptions.REALM)
                         .to("kc.spi-export--single-file--realm-name")
@@ -106,7 +109,7 @@ public final class ExportPropertyMappers {
     }
 
     private static boolean isDirProvider() {
-        return isProvider(DIR);
+        return !isSingleFileProvider();
     }
 
     private static boolean isProvider(String provider) {

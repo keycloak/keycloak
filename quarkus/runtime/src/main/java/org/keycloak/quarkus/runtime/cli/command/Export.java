@@ -24,8 +24,6 @@ import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.quarkus.runtime.configuration.mappers.ExportPropertyMappers;
 import picocli.CommandLine.Command;
 
-import java.util.EnumSet;
-
 @Command(name = Export.NAME,
         header = "Export data from realms to a file or directory.",
         description = "%nExport data from realms to a file or directory.")
@@ -50,8 +48,11 @@ public final class Export extends AbstractNonServerCommand {
     }
 
     @Override
-    protected EnumSet<OptionCategory> excludedCategories() {
-        return EnumSet.of(OptionCategory.IMPORT);
+    public boolean isExcludedCategory(OptionCategory category) {
+        if (category == OptionCategory.EXPORT) {
+            return false;
+        }
+        return super.isExcludedCategory(category);
     }
 
 }

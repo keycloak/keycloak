@@ -19,8 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-import java.util.List;
-
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.common.profile.ProfileException;
@@ -71,10 +69,16 @@ public final class Start extends AbstractStartCommand {
             start.optimizedMixin.optimized = true;
             start.dryRunMixin.dryRun = dryRun;
             start.setPicocli(picocli);
-            picocli.initConfig(List.of(OPTIMIZED_BUILD_OPTION_LONG), start);
+            picocli.initConfig(start, start);
             picocli.exit(start.call());
         } catch (PropertyException | ProfileException e) {
             picocli.usageException(e.getMessage(), e.getCause());
         }
     }
+
+    @Override
+    OptimizedMixin getOptimizedMixin() {
+        return optimizedMixin;
+    }
+
 }
