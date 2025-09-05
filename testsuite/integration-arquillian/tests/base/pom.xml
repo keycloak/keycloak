@@ -780,7 +780,7 @@
                                     <images>
                                         <image>
                                             <alias>infinispan</alias>
-                                            <name>quay.io/infinispan/server:${infinispan.version}</name>
+                                            <name>${infinispan.container}</name>
                                             <run>
                                                 <ports>
                                                     <port>11222:11222</port>
