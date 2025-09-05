@@ -107,12 +107,10 @@ test.describe.serial("User Fed LDAP mapper tests", () => {
   });
 
   test("Create hardcoded attribute mapper", async ({ page }) => {
-    // DELETEME - Meaningless comment for testing
     await clickAddMapper(page);
+    await page.getByTestId("name").fill(`${hcAttMapper}-test`);
     await selectItem(page, "#kc-providerId", hcAttMapper);
-
     await fillHardwareAttributeMapper(page, {
-      name: `${hcAttMapper}-test`,
       config: {
         "user.model.attribute": ["middleName"],
         "attribute.value": ["test"],

@@ -14,7 +14,7 @@ export async function fillHardwareAttributeMapper(
   page: Page,
   data: ComponentRepresentation,
 ) {
-  await page.getByTestId("name").fill(data.name || "");
+  if (data.name) await page.getByTestId("name").fill(data.name || "");
   if (data.config?.["user.model.attribute"])
     await page
       .getByTestId("config.user🍺model🍺attribute")
