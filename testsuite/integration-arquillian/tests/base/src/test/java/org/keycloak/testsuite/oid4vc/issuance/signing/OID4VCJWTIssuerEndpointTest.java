@@ -40,7 +40,6 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -59,6 +58,7 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
@@ -71,6 +71,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.util.LinkedList;
@@ -91,7 +92,6 @@ import static org.junit.Assert.fail;
  * Test from org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest
  */
 public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
-
     // ----- getCredentialOfferUri
 
     @Test(expected = BadRequestException.class)
@@ -891,6 +891,81 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             assertEquals("The second credential request should be successful.", 200, response2.getStatus());
             CredentialResponse credentialResponse2 = JsonSerialization.mapper.convertValue(response2.getEntity(), CredentialResponse.class);
             assertNotEquals("Notification IDs should be unique", credentialResponse1.getNotificationId(), credentialResponse2.getNotificationId());
+        });
+    }
+
+    /**
+     * This is testing the multiple credential issuance flow in a single call with proofs
+     */
+    @Test
+    public void testRequestMultipleCredentialsWithProofs() {
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+        String token = getBearerToken(oauth, client, scopeName);
+        String cNonce = getCNonce();
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            try {
+                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                authenticator.setTokenString(token);
+                String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+
+                String jwtProof1 = generateJwtProof(issuer, cNonce);
+                String jwtProof2 = generateJwtProof(issuer, cNonce);
+                Proofs proofs = new Proofs().setJwt(Arrays.asList(jwtProof1, jwtProof2));
+
+
+                CredentialRequest request = new CredentialRequest()
+                        .setFormat(Format.JWT_VC)
+                        .setCredentialIdentifier(scopeName)
+                        .setProofs(proofs);
+
+                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
+
+                Response response = endpoint.requestCredential(request);
+                assertEquals("Response status should be OK", Response.Status.OK.getStatusCode(), response.getStatus());
+
+                CredentialResponse credentialResponse = JsonSerialization.mapper
+                        .convertValue(response.getEntity(), CredentialResponse.class);
+                assertNotNull("Credential response should not be null", credentialResponse);
+                assertNotNull("Credentials array should not be null", credentialResponse.getCredentials());
+                assertEquals("Should return 2 credentials due to two proofs", 2, credentialResponse.getCredentials().size());
+
+                // Validate each credential
+                for (CredentialResponse.Credential credential : credentialResponse.getCredentials()) {
+                    assertNotNull("Credential should not be null", credential.getCredential());
+                    JsonWebToken jsonWebToken;
+                    try {
+                        jsonWebToken = TokenVerifier.create((String) credential.getCredential(), JsonWebToken.class).getToken();
+                    } catch (VerificationException e) {
+                        Assert.fail("Failed to verify JWT: " + e.getMessage());
+                        return;
+                    }
+                    assertNotNull("A valid credential string should be returned", jsonWebToken);
+                    assertNotNull("The credentials should include the vc claim", jsonWebToken.getOtherClaims().get("vc"));
+
+                    VerifiableCredential vc = JsonSerialization.mapper.convertValue(
+                            jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                    assertTrue("The scope-name claim should be set",
+                            vc.getCredentialSubject().getClaims().containsKey("scope-name"));
+                    assertEquals("The scope-name claim should match the scope",
+                            scopeName, vc.getCredentialSubject().getClaims().get("scope-name"));
+                    assertTrue("The given_name claim should be set",
+                            vc.getCredentialSubject().getClaims().containsKey("given_name"));
+                    assertEquals("The given_name claim should be John",
+                            "John", vc.getCredentialSubject().getClaims().get("given_name"));
+                    assertTrue("The email claim should be set",
+                            vc.getCredentialSubject().getClaims().containsKey("email"));
+                    assertEquals("The email claim should be john@email.cz",
+                            "john@email.cz", vc.getCredentialSubject().getClaims().get("email"));
+                    assertFalse("Only supported mappers should be evaluated",
+                            vc.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
+
+                }
+
+                assertNotNull("Notification ID should be present", credentialResponse.getNotificationId());
+            } catch (Exception e) {
+                throw new RuntimeException("Test failed due to: " + e.getMessage(), e);
+            }
         });
     }
 
