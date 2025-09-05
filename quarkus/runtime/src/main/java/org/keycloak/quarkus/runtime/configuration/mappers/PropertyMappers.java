@@ -87,7 +87,9 @@ public final class PropertyMappers {
         // If however expressions are not enabled that means quarkus is specifically looking for runtime defaults, and we should not provide a value
         // See https://github.com/quarkusio/quarkus/pull/42157
         if (isRebuild() && isKeycloakRuntime(name, mapper)
-                && (!NestedPropertyMappingInterceptor.getResolvingRoot().orElse(name).startsWith("quarkus.log.") || !Expressions.isEnabled())) {
+                && (NestedPropertyMappingInterceptor.getResolvingRoot().or(() -> Optional.of(name))
+                        .filter(n -> n.startsWith("quarkus.log.") || n.startsWith("quarkus.console.")).isEmpty()
+                        || !Expressions.isEnabled())) {
             return ConfigValue.builder().withName(name).build();
         }
 
