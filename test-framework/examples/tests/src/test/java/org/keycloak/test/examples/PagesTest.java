@@ -2,9 +2,11 @@ package org.keycloak.test.examples;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -15,8 +17,12 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 @KeycloakIntegrationTest
 public class PagesTest {
-    @InjectRealm(ref = "master", attachTo = "master")
-    ManagedRealm masterRealm;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @InjectWebDriver
     WebDriver webDriver;
@@ -29,16 +35,7 @@ public class PagesTest {
 
     @Test
     public void testLoginFromWelcome() {
-        masterRealm.admin().users().searchByUsername("admin", true)
-                .stream().findFirst().ifPresent(admin ->
-                        masterRealm.admin().users().delete(admin.getId()));
-
         welcomePage.navigateTo();
-
-        welcomePage.assertCurrent();
-        welcomePage.fillRegistration("admin", "admin");
-        welcomePage.submit();
-        welcomePage.clickOpenAdminConsole();
 
         if (webDriver instanceof HtmlUnitDriver) {
             String pageId = webDriver.findElement(By.xpath("//body")).getAttribute("data-page-id");
@@ -52,6 +49,7 @@ public class PagesTest {
             loginPage.fillLogin("admin", "admin");
             loginPage.submit();
         }
+
     }
 
 }
