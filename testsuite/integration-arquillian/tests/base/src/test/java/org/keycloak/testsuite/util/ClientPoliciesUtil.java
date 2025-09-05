@@ -24,8 +24,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedMap;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.utils.MapperTypeSerializer;
@@ -445,7 +447,8 @@ public final class ClientPoliciesUtil {
 
     // DPoP
     public static  JWK createRsaJwk(Key publicKey) {
-        return DPoPGenerator.createRsaJwk(publicKey);
+        return JWKBuilder.create()
+                .rsa(publicKey, KeyUse.SIG);
     }
 
     public static JWK createEcJwk(Key publicKey) {
@@ -471,13 +474,16 @@ public final class ClientPoliciesUtil {
     }
 
     public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) throws IOException {
+        return generateSignedDPoPProof(jti, htm, htu, iat, algorithm, jwsHeader, privateKey, accessToken, new DPoPGenerator());
+    }
+
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, String algorithm, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken, DPoPGenerator dpopGenerator) throws IOException {
         if (algorithm.equals(jwsHeader.getAlgorithm().toString())) {
-            return DPoPGenerator.generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, privateKey, accessToken);
+            return dpopGenerator.generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, privateKey, accessToken);
         } else {
             // Ability to test failure scenarios when different algorithms are used for the JWSHeader and for the actual key
-            Algorithm origJwsAlg = jwsHeader.getAlgorithm();
             JWSHeader updatedHeader = new JWSHeader(Algorithm.valueOf(algorithm), jwsHeader.getType(), jwsHeader.getKeyId(), jwsHeader.getKey());
-            String dpop = DPoPGenerator.generateSignedDPoPProof(jti, htm, htu, iat, updatedHeader, privateKey, accessToken);
+            String dpop = dpopGenerator.generateSignedDPoPProof(jti, htm, htu, iat, updatedHeader, privateKey, accessToken);
             String dpopOrigHeader = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
             // Replace header with the original algorithm
             String updatedAlgorithmHeader = dpop.substring(0, dpop.indexOf('.'));

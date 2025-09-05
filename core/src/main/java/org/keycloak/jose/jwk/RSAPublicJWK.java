@@ -17,6 +17,7 @@
 
 package org.keycloak.jose.jwk;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.util.PemUtils;
 
@@ -88,4 +89,22 @@ public class RSAPublicJWK extends JWK {
         return sha256x509Thumbprint;
     }
 
+    @JsonIgnore
+    @Override
+    public <T> T getOtherClaim(String claimName, Class<T> claimType) {
+        Object claim = null;
+        switch (claimName) {
+            case MODULUS:
+                claim = getModulus();
+                break;
+            case PUBLIC_EXPONENT:
+                claim = getPublicExponent();
+                break;
+        }
+        if (claim != null) {
+            return claimType.cast(claim);
+        } else {
+            return super.getOtherClaim(claimName, claimType);
+        }
+    }
 }

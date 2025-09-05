@@ -20,10 +20,8 @@ package org.keycloak.util;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.security.interfaces.RSAPublicKey;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
@@ -31,10 +29,9 @@ import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.SignatureException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.crypto.HashUtils;
@@ -42,7 +39,6 @@ import org.keycloak.representations.dpop.DPoP;
 
 import static org.keycloak.OAuth2Constants.DPOP_DEFAULT_ALGORITHM;
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
-import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 /**
  * Utility for generating signed DPoP proofs
@@ -57,58 +53,61 @@ public class DPoPGenerator {
     public static String generateRsaSignedDPoPProof(KeyPair rsaKeyPair, String httpMethod, String endpointURL, String accessToken) {
         JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         JWSHeader jwsRsaHeader = new JWSHeader(DPOP_DEFAULT_ALGORITHM, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
-        return generateSignedDPoPProof(SecretGenerator.getInstance().generateSecureID(), httpMethod, endpointURL, (long) Time.currentTime(),
+        return new DPoPGenerator().generateSignedDPoPProof(SecretGenerator.getInstance().generateSecureID(), httpMethod, endpointURL, (long) Time.currentTime(),
                 jwsRsaHeader, rsaKeyPair.getPrivate(), accessToken);
     }
 
 
-    public static JWK createRsaJwk(Key publicKey) {
-        RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
-
-        RSAPublicJWK k = new RSAPublicJWK();
-        k.setKeyType(KeyType.RSA);
-        k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
-        k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
-
-        return k;
+    private static JWK createRsaJwk(Key publicKey) {
+        return JWKBuilder.create()
+                .rsa(publicKey, KeyUse.SIG);
     }
 
 
-    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) {
-        try {
-            DPoP dpop = new DPoP();
-            dpop.id(jti);
-            dpop.setHttpMethod(htm);
-            dpop.setHttpUri(htu);
-            dpop.iat(iat);
-            if (accessToken != null) {
-                dpop.setAccessTokenHash(HashUtils.accessTokenHash(OAuth2Constants.DPOP_DEFAULT_ALGORITHM.toString(), accessToken, true));
-            }
+    public String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) {
+        DPoP dpop = generateDPoP(jti, htm, htu, iat, accessToken);
+        KeyWrapper keyWrapper = getKeyWrapper(jwsHeader, privateKey);
+        return sign(jwsHeader, dpop, keyWrapper);
+    }
 
-            KeyWrapper keyWrapper = new KeyWrapper();
-            keyWrapper.setKid(jwsHeader.getKeyId());
-            keyWrapper.setAlgorithm(jwsHeader.getAlgorithm().toString());
-            keyWrapper.setPrivateKey(privateKey);
-            keyWrapper.setType(privateKey.getAlgorithm());
-            keyWrapper.setUse(KeyUse.SIG);
-            SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
-
-            return new JWSBuilder()
-                    .header(jwsHeader)
-                    .jsonContent(dpop)
-                    .sign(sigCtx);
-        } catch (SignatureException e) {
-            throw new RuntimeException(e);
+    private DPoP generateDPoP(String jti, String htm, String htu, Long iat, String accessToken) {
+        DPoP dpop = new DPoP();
+        dpop.id(jti);
+        dpop.setHttpMethod(htm);
+        dpop.setHttpUri(htu);
+        dpop.iat(iat);
+        if (accessToken != null) {
+            dpop.setAccessTokenHash(HashUtils.accessTokenHash(OAuth2Constants.DPOP_DEFAULT_ALGORITHM.toString(), accessToken, true));
         }
+        return dpop;
     }
 
-    private static SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
+    protected KeyWrapper getKeyWrapper(JWSHeader jwsHeader, PrivateKey privateKey) {
+        JWK jwkKey = jwsHeader.getKey();
+        if (jwkKey == null) {
+            throw new IllegalArgumentException("The JWSHeader does not have key in the 'jwk' claim");
+        }
+        KeyWrapper keyWrapper = JWKSUtils.getKeyWrapper(jwkKey, true);
+        keyWrapper.setPrivateKey(privateKey);
+        return keyWrapper;
+    }
+
+    private String sign(JWSHeader jwsHeader, DPoP dpop, KeyWrapper keyWrapper) {
+        SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
+
+        return new JWSBuilder()
+                .header(jwsHeader)
+                .jsonContent(dpop)
+                .sign(sigCtx);
+    }
+
+    private SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
         switch (keyWrapper.getType()) {
-            case KeyType.RSA:
-                return new AsymmetricSignatureSignerContext(keyWrapper);
             case KeyType.EC:
                 return new ECDSASignatureSignerContext(keyWrapper);
-             // TODO: EdDSA?
+            case KeyType.RSA:
+            case KeyType.OKP:
+                return new AsymmetricSignatureSignerContext(keyWrapper);
             default:
                 throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
         }

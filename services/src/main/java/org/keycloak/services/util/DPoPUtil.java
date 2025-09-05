@@ -40,7 +40,6 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -338,7 +337,6 @@ public class DPoPUtil {
                 .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
                 .filter(entry -> entry.getValue() != null)
                 .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
-                .filter(entry -> !entry.getKey().equals(Algorithm.EdDSA))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
