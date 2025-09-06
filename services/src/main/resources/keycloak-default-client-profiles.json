@@ -209,7 +209,7 @@
     },
     {
       "name": "fapi-2-message-signing",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing' specification.",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing Final' specification.",
       "executors": [
         {
           "executor": "confidential-client",
@@ -222,7 +222,7 @@
               "client-jwt",
               "client-x509"
             ],
-             "default-client-authenticator": "client-jwt"
+            "default-client-authenticator": "client-jwt"
           }
         },
         {
@@ -238,7 +238,7 @@
         {
           "executor": "secure-signature-algorithm-signed-jwt",
           "configuration": {
-              "require-client-assertion": false
+            "require-client-assertion": false
           }
         },
         {
@@ -282,6 +282,10 @@
             "available-period": "3600",
             "encryption-required": false
           }
+        },
+        {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
         }
       ]
     },
@@ -449,7 +453,7 @@
     },
     {
       "name": "fapi-2-dpop-message-signing",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing' with DPoP specification.",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing Final' with DPoP specification.",
       "executors": [
         {
           "executor": "confidential-client",
@@ -522,6 +526,10 @@
           "configuration": {
             "auto-configure": "true"
           }
+        },
+        {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
         }
       ]
     },
