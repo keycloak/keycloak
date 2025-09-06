@@ -82,20 +82,12 @@ public class OAuth2CodeParser {
             return result.illegalCode();
         }
 
+        String codeUUID = parsed[0];
         String userSessionId = parsed[1];
         String clientUUID = parsed[2];
 
         event.detail(Details.CODE_ID, userSessionId);
         event.session(userSessionId);
-
-        // Parse UUID
-        String codeUUID;
-        try {
-            codeUUID = parsed[0];
-        } catch (IllegalArgumentException re) {
-            logger.warn("Invalid format of the UUID in the code");
-            return result.illegalCode();
-        }
 
         // Retrieve UserSession
         var userSessionProvider = session.sessions();

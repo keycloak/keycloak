@@ -2,6 +2,7 @@ package org.keycloak.common.util;
 
 import java.security.SecureRandom;
 import java.util.Random;
+import java.util.UUID;
 
 public class SecretGenerator {
 
@@ -112,5 +113,14 @@ public class SecretGenerator {
      */
     public static int equivalentEntropySize(int length, int srcAlphabetLength, int dstAlphabetLeng) {
         return (int) Math.ceil(length * ((Math.log(srcAlphabetLength)) / (Math.log(dstAlphabetLeng))));
+    }
+
+    /**
+     * Returns a pseudo-UUID where all bits are random to have a maximum entropy.
+     *
+     * @return UUID with all bits random
+     */
+    public UUID generateSecureUUID() {
+        return new UUID(random.get().nextLong(), random.get().nextLong());
     }
 }
