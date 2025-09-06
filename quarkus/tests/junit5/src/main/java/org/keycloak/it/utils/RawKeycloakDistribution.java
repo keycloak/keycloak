@@ -398,7 +398,21 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private long getStartTimeout() {
-        return TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
+        
+        String env = System.getenv("KC_TEST_SERVER_STARTUP_TIMEOUT");
+        if (env != null && !env.isBlank()) {
+            try {
+                long seconds = Long.parseLong(env.trim());
+                return TimeUnit.SECONDS.toMillis(seconds);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(
+                "Invalid value for KC_TEST_SERVER_STARTUP_TIMEOUT: " + env, e
+            );
+            }
+        }
+    
+        long secFromProp = Long.getLong("keycloak.distribution.start.timeout", 120L);
+        return TimeUnit.SECONDS.toMillis(secFromProp);
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {
