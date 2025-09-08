@@ -98,11 +98,6 @@ jobs:
           driver: docker
           start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni cilium --cpus=max
 
-      - name: Install ServiceMonitor CRD
-        run: |
-          LATEST=$(curl -s https://api.github.com/repos/prometheus-operator/prometheus-operator/releases/latest | jq -cr .tag_name)
-          curl -sL https://github.com/prometheus-operator/prometheus-operator/releases/download/${LATEST}/stripped-down-crds.yaml | kubectl create -f -
-
       - name: Download keycloak distribution
         id: download-keycloak-dist
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -130,6 +125,22 @@ jobs:
               -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
               --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]}
+
+      - name: Install ServiceMonitor CRD
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/prometheus-operator/prometheus-operator/releases/latest | jq -cr .tag_name)
+          curl -sL https://github.com/prometheus-operator/prometheus-operator/releases/download/${LATEST}/stripped-down-crds.yaml | kubectl create -f -
+
+      - name: Test ServiceMonitor
+        run: |
+          ./mvnw clean install -Poperator -pl :keycloak-operator -am \
+          -Dquarkus.container-image.build=true \
+          -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
+          -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
+          -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
+          -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
+          --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]} \
+          -Dtest=ServiceMonitorTest
 
   test-olm:
     name: Test OLM installation
