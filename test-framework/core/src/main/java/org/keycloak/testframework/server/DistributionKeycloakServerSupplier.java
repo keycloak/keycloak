@@ -3,6 +3,8 @@ package org.keycloak.testframework.server;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
+import java.nio.file.Path;
+
 public class DistributionKeycloakServerSupplier extends AbstractKeycloakServerSupplier {
 
     private static final Logger LOGGER = Logger.getLogger(DistributionKeycloakServerSupplier.class);
@@ -11,8 +13,8 @@ public class DistributionKeycloakServerSupplier extends AbstractKeycloakServerSu
     boolean debug = false;
 
     @Override
-    public KeycloakServer getServer() {
-        return new DistributionKeycloakServer(debug);
+    public KeycloakServer getServer(Path serverKeyStorePath) {
+        return new DistributionKeycloakServer(debug, serverKeyStorePath);
     }
 
     @Override
