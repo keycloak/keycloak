@@ -211,11 +211,7 @@ public class KeycloakServerConfigBuilder {
         List<String> args = new LinkedList<>();
         args.add(command);
         for (Map.Entry<String, String> e : options.entrySet()) {
-            if (e.getKey().startsWith("-D")) {
-                args.add(e.getKey() + "=" + e.getValue());
-            } else {
-                args.add("--" + e.getKey() + "=" + e.getValue());
-            }
+            args.add("--" + e.getKey() + "=" + e.getValue());
         }
         if (!features.isEmpty()) {
             args.add("--features=" + String.join(",", features));
