@@ -1,5 +1,6 @@
 package org.keycloak.models.policy;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -11,6 +12,8 @@ import org.keycloak.timer.ScheduledTask;
  * A {@link ScheduledTask} that runs all the scheduled actions for resources on a per-realm basis.
  */
 final class ResourceActionRunnerScheduledTask implements ScheduledTask {
+
+    private final Logger logger = Logger.getLogger(ResourceActionRunnerScheduledTask.class);
 
     private final KeycloakSessionFactory sessionFactory;
 
@@ -27,13 +30,17 @@ final class ResourceActionRunnerScheduledTask implements ScheduledTask {
 
     private void runScheduledTasksOnRealm(String id) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, (KeycloakSession session) -> {
-            KeycloakContext context = session.getContext();
-            RealmModel realm = session.realms().getRealm(id);
+            try {
+                KeycloakContext context = session.getContext();
+                RealmModel realm = session.realms().getRealm(id);
 
-            context.setRealm(realm);
-            new ResourcePolicyManager(session).runScheduledActions();
+                context.setRealm(realm);
+                new ResourcePolicyManager(session).runScheduledActions();
 
-            sessionFactory.publish(new ResourcePolicyActionRunnerSuccessEvent(session));
+                sessionFactory.publish(new ResourcePolicyActionRunnerSuccessEvent(session));
+            } catch (Exception e) {
+                logger.errorf(e, "Failed to run resource policy actions on realm with id '%s'", id);
+            }
         });
     }
 
