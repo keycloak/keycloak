@@ -192,6 +192,15 @@ If you have an SMTP server configured for your realm, perform the following migr
 . Keep the *Allow UTF-8* option disabled.
 . Verify that no email addresses of users have non-ASCII characters in the local part of the email address. If you detect emails with non-ascii characters in the local part you can use the Verify Profile action to force the user to modify the email after the upgrade.
 
+=== Aligning the count of users with the actual number of users returned from searches
+
+When searching for users in the Admin Console or via the User API, the count of users returned from the
+`/admin/realms/{realm}/users/count` endpoint is now aligned with the actual number of users returned when executing
+searches via `/admin/realms/{realm}/users`.
+
+If you are relying on the users count endpoint, make sure to review your client(s) so that they expect the users count
+to be aligned with the actual number of users returned from searches.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
