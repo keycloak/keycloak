@@ -1185,7 +1185,6 @@ public class AuthenticationProcessor {
         }
 
         event.user(userSession.getUser())
-                .detail(Details.USERNAME, username)
                 .session(userSession);
 
         return clientSessionCtx;
@@ -1206,7 +1205,7 @@ public class AuthenticationProcessor {
     public void validateUser(UserModel authenticatedUser) {
         if (authenticatedUser == null) return;
         if (!authenticatedUser.isEnabled()) {
-            event.user(authenticatedUser).detail(Details.USERNAME, authenticatedUser.getUsername());
+            event.user(authenticatedUser);
             throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
         }
         if (authenticatedUser.getServiceAccountClientLink() != null) throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);

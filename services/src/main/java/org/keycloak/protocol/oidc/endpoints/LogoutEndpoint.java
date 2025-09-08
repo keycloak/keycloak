@@ -280,6 +280,7 @@ public class LogoutEndpoint {
             UserModel user = userSession.getUser();
             logoutSession.setAuthenticatedUser(user);
             loginForm.setUser(user);
+            event.user(userSession.getUser());
         }
 
         // Logout confirmation screen will be displayed to the user in this case
@@ -391,7 +392,6 @@ public class LogoutEndpoint {
                 return session.getProvider(LoginFormsProvider.class).setSuccess(Messages.SUCCESS_LOGOUT).createInfoPage();
             }
         }
-
         LocaleUtil.processLocaleParam(session, realm, logoutSession);
 
         LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
@@ -426,6 +426,7 @@ public class LogoutEndpoint {
                         new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
                     }
                 } else {
+                    event.user(userSession.getUser());
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
                     checkTokenIssuedAt(idTokenIssuedAt, userSession);
                 }

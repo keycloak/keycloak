@@ -172,7 +172,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
-        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("setuptotp", "email@mail.com").assertEvent().getUserId();
 
         totpPage.assertCurrent();
         assertFalse(totpPage.isCancelDisplayed());
@@ -337,7 +337,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "setupTotpRegister@mail.com", "setupTotpRegister", "password", "password");
 
-        String userId = events.expectRegister("setupTotpRegister", "setupTotpRegister@mail.com").assertEvent().getUserId();
+        String userId = events.expectRegister("setuptotpregister", "setupTotpRegister@mail.com").assertEvent().getUserId();
 
         totpPage.assertCurrent();
 
@@ -481,9 +481,9 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             // Register new user
             loginPage.open();
             loginPage.clickRegister();
-            registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
+            registerPage.register("firstName2", "lastName2", "email2@mail.com", "setuptotp2", "password2", "password2");
 
-            String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
+            String userId = events.expectRegister("setuptotp2", "email2@mail.com").assertEvent().getUserId();
 
             // Configure totp
             totpPage.assertCurrent();
@@ -514,7 +514,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
             // Try to login after logout
             loginPage.open();
-            loginPage.login("setupTotp2", "password2");
+            loginPage.login("setuptotp2", "password2");
 
             // Totp is already configured, thus one-time password is needed, login page should be loaded
             String uri = driver.getCurrentUrl();
@@ -525,17 +525,17 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             // Login with one-time password
             loginTotpPage.login(totp.generateTOTP(totpCode));
 
-            loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+            loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
             // Remove google authenticator
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "setupTotp2"));
-            AccountHelper.logout(testRealm(), "setupTotp2");
+            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "setuptotp2"));
+            AccountHelper.logout(testRealm(), "setuptotp2");
 
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
             // Try to login
             loginPage.open();
-            loginPage.login("setupTotp2", "password2");
+            loginPage.login("setuptotp2", "password2");
 
             // Since the authentificator was removed, it has to be set up again
             totpPage.assertCurrent();
@@ -544,18 +544,18 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String sessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
                     .user(userId)
                     .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                    .detail(Details.USERNAME, "setupTotp2").assertEvent()
+                    .detail(Details.USERNAME, "setuptotp2").assertEvent()
                     .getDetails().get(Details.CODE_ID);
             String sessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
                     .user(userId)
                     .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                    .detail(Details.USERNAME, "setupTotp2").assertEvent()
+                    .detail(Details.USERNAME, "setuptotp2").assertEvent()
                     .getDetails().get(Details.CODE_ID);
 
             assertEquals(sessionId1, sessionId2);
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            events.expectLogin().user(userId).session(sessionId1).detail(Details.USERNAME, "setupTotp2").assertEvent();
+            events.expectLogin().user(userId).session(sessionId1).detail(Details.USERNAME, "setuptotp2").assertEvent();
         } finally {
             setOTPAuthRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         }

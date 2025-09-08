@@ -94,7 +94,6 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
         eventBuilder.event(EventType.DELETE_ACCOUNT)
             .client(keycloakContext.getClient())
             .user(user)
-            .detail(Details.USERNAME, user.getUsername())
             .success();
 
         removeAuthenticationSession(context, session);
@@ -107,7 +106,6 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
         eventBuilder.event(EventType.DELETE_ACCOUNT)
             .client(keycloakContext.getClient())
             .user(user)
-            .detail(Details.USERNAME, user.getUsername())
             .error("User could not be deleted");
 
         cleanSession(context, RequiredActionContext.KcActionStatus.ERROR);
