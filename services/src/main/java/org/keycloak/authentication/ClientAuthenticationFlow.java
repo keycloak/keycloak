@@ -29,6 +29,7 @@ import org.keycloak.services.ServicesLogger;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -112,23 +113,19 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
     }
 
     protected List<AuthenticationExecutionModel> findExecutionsToRun() {
-        List<AuthenticationExecutionModel> executionsToRun = new LinkedList<>();
-        List<AuthenticationExecutionModel> finalExecutionsToRun = executionsToRun;
-        Optional<AuthenticationExecutionModel> first = processor.getRealm().getAuthenticationExecutionsStream(flow.getId())
+        List<AuthenticationExecutionModel> alternativeExecutions = new LinkedList<>();
+        Optional<AuthenticationExecutionModel> requiredExecution = processor.getRealm().getAuthenticationExecutionsStream(flow.getId())
                 .filter(e -> {
                     if (e.isRequired()) {
                         return true;
                     } else if (e.isAlternative()){
-                        finalExecutionsToRun.add(e);
+                        alternativeExecutions.add(e);
                         return false;
                     }
                     return false;
                 }).findFirst();
 
-        if (first.isPresent())
-            executionsToRun = Arrays.asList(first.get());
-        else
-            executionsToRun.addAll(finalExecutionsToRun);
+        List<AuthenticationExecutionModel> executionsToRun = requiredExecution.map(Collections::singletonList).orElse(alternativeExecutions);
 
         if (logger.isTraceEnabled()) {
             List<String> exIds = new ArrayList<>();
