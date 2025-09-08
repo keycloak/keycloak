@@ -23,13 +23,12 @@ AWS Region or an equivalent low-latency setup.
 * Fit within a defined user and request count.
 * Can accept the impact of periodic outages.
 
-<@profile.ifCommunity>
 [#single-cluster-tested-configuration]
 == Tested Configuration
 
 We regularly test {project_name} with the following configuration:
 
-* An OpenShift cluster deployed across three availability-zones
+* An OpenShift cluster deployed across three availability zones
 ** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
 using ROSA HCP.
 
@@ -37,25 +36,37 @@ using ROSA HCP.
 ** OpenShift version 4.17.
 
 * Amazon Aurora PostgreSQL database
-** High availability with a primary DB instance in one Availability Zone, and synchronously replicated readers in the other Availability Zones
+** High availability with a primary DB instance in one availability zone, and synchronously replicated readers in the other availability zones
 ** Version ${properties["aurora-postgresql.version"]}
-</@profile.ifCommunity>
+
+[#single-cluster-supported-configuration]
+== Supported Configurations
+
+The following configurations are supported:
 
 <@profile.ifProduct>
-[#single-cluster-supported-configuration]
-== Supported Configuration
 
-* {project_name} deployed on a Openshift cluster
-** OpenShift version 4.17 (or later).
-** Pods can be scheduled across multiple availability-zones within the same cloud-provider region.
-** On-premise deployments require a P50 round-trip latency of less than 10 ms between availability-zones
+* {project_name} deployed on an OpenShift cluster version 4.17 or later
+** Pods can be scheduled across multiple availability zones within the same cloud-provider region.
+
+Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
+
+</@profile.ifProduct>
+
+<@profile.ifCommunity>
+
+* {project_name} deployed on a {kubernetes} cluster
+** Pods can be scheduled across multiple availability zones within the same cloud-provider region.
+* {project_name} deployed on a virtual machines or bare metal
+
+Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
+
+</@profile.ifCommunity>
 
 * Database
 ** For a list of supported databases, see <@links.server id="db"/>.
-** Deployments spanning multiple availability-zones must utilise a database that can tolerate zone failures
+** Deployments spanning multiple availability zones must utilize a database that can tolerate zone failures
 and synchronously replicates data between replicas.
-
-</@profile.ifProduct>
 
 <#include "/high-availability/partials/configuration-disclaimer.adoc" />
 

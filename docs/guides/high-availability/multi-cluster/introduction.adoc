@@ -57,7 +57,7 @@ using ROSA HCP.
 </@profile.ifCommunity>
 
 * Amazon Aurora PostgreSQL database
-** High availability with a primary DB instance in one Availability Zone, and a synchronously replicated reader in the second Availability Zone
+** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone
 ** Version ${properties["aurora-postgresql.version"]}
 * AWS Global Accelerator, sending traffic to both ROSA clusters
 * AWS Lambda
