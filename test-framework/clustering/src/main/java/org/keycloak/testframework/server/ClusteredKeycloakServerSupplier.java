@@ -3,6 +3,8 @@ package org.keycloak.testframework.server;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
+import java.nio.file.Path;
+
 public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSupplier {
 
     private static final Logger LOGGER = Logger.getLogger(ClusteredKeycloakServerSupplier.class);
@@ -14,7 +16,8 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
     String images = ClusteredKeycloakServer.SNAPSHOT_IMAGE;
 
     @Override
-    public KeycloakServer getServer() {
+    public KeycloakServer getServer(Path serverKeyStorePath) {
+        // todo serverKeyStorePath is used for TLS; implement TLS in ClusteredKeycloakServer
         return new ClusteredKeycloakServer(numContainers, images);
     }
 
