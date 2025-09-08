@@ -231,8 +231,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             attributes.put("properties", theme.getProperties());
             attributes.put("realmName", getRealmName());
             attributes.put("user", new ProfileBean(user, session));
-            KeycloakUriInfo uriInfo = session.getContext().getUri();
-            attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
+
+            try {
+                KeycloakUriInfo uriInfo = session.getContext().getUri();
+                attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
+            } catch (Exception e) {
+                // ignore when running without an active request context such as sending emails from an scheduled task
+                // TODO: make it possible to make the URL available to email templates based on the hostname configured in the realm or at the server level
+            }
 
             String subject = new MessageFormat(messages.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
             String textTemplate = String.format("text/%s", template);
