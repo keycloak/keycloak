@@ -58,6 +58,8 @@
 :apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
 :adminguide_email_name: Configuring email for a realm
 :adminguide_email_link: {adminguide_link}#_email
+:allproviderconfigguide_name: All provider configuration Guide
+:allproviderconfigguide_link: https://www.keycloak.org/server/all-provider-config
 :bootstrapadminrecovery_name: Admin Bootstrap and Recovery
 :bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
 :client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
