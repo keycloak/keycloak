@@ -27,18 +27,32 @@ AWS Region or an equivalent low-latency setup.
 * Fit within a defined user and request count.
 * Can accept the impact of periodic outages.
 
-<@profile.ifCommunity>
 [#multi-cluster-tested-configuration]
 == Tested Configuration
 
 We regularly test {project_name} with the following configuration:
-</@profile.ifCommunity>
-<@profile.ifProduct>
-[#multi-cluster-supported-configuration]
-== Supported Configuration
-</@profile.ifProduct>
 
 * Two OpenShift single-AZ clusters, in the same AWS Region
+** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
+using ROSA HCP.
+
+** All worker nodes reside in a single Availability Zone.
+** OpenShift version 4.17.
+
+* Amazon Aurora PostgreSQL database
+** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone
+** Version ${properties["aurora-postgresql.version"]}
+
+* AWS Global Accelerator, sending traffic to both ROSA clusters
+
+* AWS Lambda triggered by ROSA's Prometheus and Alert Manager to automate failover
+
+[#multi-cluster-supported-configuration]
+== Supported Configuration
+
+The following configurations are supported:
+
+* Two {kubernetes} single-AZ clusters, in the same AWS Region
 ** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
 <@profile.ifProduct>
 either ROSA HCP or ROSA classic.
@@ -47,24 +61,22 @@ either ROSA HCP or ROSA classic.
 using ROSA HCP.
 </@profile.ifCommunity>
 
-** Each OpenShift cluster has all its workers in a single Availability Zone.
-** OpenShift version
+** Each {kubernetes} cluster has all its workers in a single Availability Zone.
 <@profile.ifProduct>
+** OpenShift version
 4.17 (or later).
 </@profile.ifProduct>
 <@profile.ifCommunity>
-4.17.
+** Kubernetes version 1.30
 </@profile.ifCommunity>
 
 * Amazon Aurora PostgreSQL database
 ** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone
 ** Version ${properties["aurora-postgresql.version"]}
+
 * AWS Global Accelerator, sending traffic to both ROSA clusters
-* AWS Lambda
-<@profile.ifCommunity>
-triggered by ROSA's Prometheus and Alert Manager
-</@profile.ifCommunity>
-to automate failover
+
+* AWS Lambda to automate failover
 
 <#include "/high-availability/partials/configuration-disclaimer.adoc" />
 
