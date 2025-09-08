@@ -18,6 +18,7 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -210,11 +211,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             this.refreshToken = refreshToken;
         }
 
-        public long getRefreshExpiresIn() {
+        public Long getRefreshExpiresIn() {
             return refreshExpiresIn;
         }
 
-        public void setRefreshExpiresIn(long refreshExpiresIn) {
+        public void setRefreshExpiresIn(Long refreshExpiresIn) {
             this.refreshExpiresIn = refreshExpiresIn;
         }
 
@@ -297,6 +298,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
                 if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
                     newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                }
+                if (newResponse.getRefreshExpiresIn() == null && previousResponse.getRefreshExpiresIn() != null) {
                     newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
                 }
                 if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
