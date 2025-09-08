@@ -64,6 +64,13 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
         subjectPropertyNameConfig.setDefaultValue("roles");
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
+
+		ProviderConfigProperty clientIdPropertyNameConfig = new ProviderConfigProperty();
+		subjectPropertyNameConfig.setName(CLIENT_CONFIG_KEY);
+		subjectPropertyNameConfig.setLabel("Client ID");
+		subjectPropertyNameConfig.setHelpText("Property to configure the client to get the roles from.");
+		subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
+		CONFIG_PROPERTIES.add(clientIdPropertyNameConfig);
     }
 
     private final KeycloakSession keycloakSession;
@@ -98,11 +105,10 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
         return "Map the assigned role to the credential subject, providing the client id as the target.";
     }
 
-    public static ProtocolMapperModel create(String clientId, String name) {
+    public static ProtocolMapperModel create(String name) {
         var mapperModel = new ProtocolMapperModel();
         mapperModel.setName(name);
         Map<String, String> configMap = new HashMap<>();
-		configMap.put(CLIENT_CONFIG_KEY, clientId);
         configMap.put(CLAIM_NAME, DEFAULT_CLAIM_NAME);
         mapperModel.setConfig(configMap);
         mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);

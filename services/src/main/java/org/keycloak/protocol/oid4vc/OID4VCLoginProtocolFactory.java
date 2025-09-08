@@ -49,114 +49,114 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
  */
 public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCEnvironmentProviderFactory {
 
-    private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
+	private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
 
-    private static final String CLIENT_ROLES_MAPPER = "client-roles";
-    private static final String USERNAME_MAPPER = "username";
-    private static final String SUBJECT_ID_MAPPER = "subject-id";
-    private static final String EMAIL_MAPPER = "email";
-    private static final String LAST_NAME_MAPPER = "last-name";
-    private static final String FIRST_NAME_MAPPER = "first-name";
+	private static final String CLIENT_ROLES_MAPPER = "client-roles";
+	private static final String USERNAME_MAPPER = "username";
+	private static final String SUBJECT_ID_MAPPER = "subject-id";
+	private static final String EMAIL_MAPPER = "email";
+	private static final String LAST_NAME_MAPPER = "last-name";
+	private static final String FIRST_NAME_MAPPER = "first-name";
 
-    public static final String PROTOCOL_ID = Oid4VciConstants.OID4VC_PROTOCOL;
+	public static final String PROTOCOL_ID = Oid4VciConstants.OID4VC_PROTOCOL;
 
-    private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
+	private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
-    @Override
-    public void init(Config.Scope config) {
-        builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("id", "client roles"));
-        builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create("subject id", "id"));
-        builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
-        builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
-        builtins.put(FIRST_NAME_MAPPER, OID4VCUserAttributeMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
-        builtins.put(LAST_NAME_MAPPER, OID4VCUserAttributeMapper.create(LAST_NAME_MAPPER, "lastName", "familyName", false));
-    }
+	@Override
+	public void init(Config.Scope config) {
+		builtins.put(CLIENT_ROLES_MAPPER, OID4VCTargetRoleMapper.create("client roles"));
+		builtins.put(SUBJECT_ID_MAPPER, OID4VCSubjectIdMapper.create("subject id", "id"));
+		builtins.put(USERNAME_MAPPER, OID4VCUserAttributeMapper.create(USERNAME_MAPPER, "username", "username", false));
+		builtins.put(EMAIL_MAPPER, OID4VCUserAttributeMapper.create(EMAIL_MAPPER, "email", "email", false));
+		builtins.put(FIRST_NAME_MAPPER, OID4VCUserAttributeMapper.create(FIRST_NAME_MAPPER, "firstName", "firstName", false));
+		builtins.put(LAST_NAME_MAPPER, OID4VCUserAttributeMapper.create(LAST_NAME_MAPPER, "lastName", "familyName", false));
+	}
 
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // no-op
-    }
+	@Override
+	public void postInit(KeycloakSessionFactory factory) {
+		// no-op
+	}
 
-    @Override
-    public void close() {
-        // no-op
-    }
+	@Override
+	public void close() {
+		// no-op
+	}
 
-    @Override
-    public Map<String, ProtocolMapperModel> getBuiltinMappers() {
-        return builtins;
-    }
+	@Override
+	public Map<String, ProtocolMapperModel> getBuiltinMappers() {
+		return builtins;
+	}
 
 
-    @Override
-    public Object createProtocolEndpoint(KeycloakSession keycloakSession, EventBuilder event) {
-        return new OID4VCIssuerEndpoint(keycloakSession);
-    }
+	@Override
+	public Object createProtocolEndpoint(KeycloakSession keycloakSession, EventBuilder event) {
+		return new OID4VCIssuerEndpoint(keycloakSession);
+	}
 
-    @Override
-    public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
-        LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
+	@Override
+	public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
+		LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
 
-        ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
-        if (naturalPersonScope == null) {
-            LOGGER.debug("Add natural person scope");
-            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", Oid4VciConstants.OID4VC_PROTOCOL, "natural_person"));
-            naturalPersonScope.setDescription("OIDC$VP Scope, that adds all properties required for a natural person.");
-            naturalPersonScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
-            naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(CLIENT_ROLES_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
-            naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
-            newRealm.addDefaultClientScope(naturalPersonScope, true);
-        }
-    }
+		ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
+		if (naturalPersonScope == null) {
+			LOGGER.debug("Add natural person scope");
+			naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", Oid4VciConstants.OID4VC_PROTOCOL, "natural_person"));
+			naturalPersonScope.setDescription("OIDC$VP Scope, that adds all properties required for a natural person.");
+			naturalPersonScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
+			naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
+			naturalPersonScope.addProtocolMapper(builtins.get(CLIENT_ROLES_MAPPER));
+			naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
+			naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
+			naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
+			newRealm.addDefaultClientScope(naturalPersonScope, true);
+		}
+	}
 
-    @Override
-    public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
-        //no-op
-    }
+	@Override
+	public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
+		//no-op
+	}
 
-    @Override
-    public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONFIGURATION_ID, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CREDENTIAL_IDENTIFIER,
-                                                    k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TYPES, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONTEXTS, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.VCT, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.ISSUER_DID, k -> clientScope.getName());
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT,
-                                                    k -> CredentialScopeModel.FORMAT_DEFAULT);
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS,
-                                                    k -> CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS,
-                                                    k -> String.valueOf(CredentialScopeModel.SD_JWT_DECOYS_DEFAULT));
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS,
-                                                    k -> CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT);
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM,
-                                                    k -> CredentialScopeModel.HASH_ALGORITHM_DEFAULT);
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE,
-                                                    k -> CredentialScopeModel.TOKEN_TYPE_DEFAULT);
-        clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS,
-                                                    k -> String.valueOf(CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT));
-    }
+	@Override
+	public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONFIGURATION_ID, k -> clientScope.getName());
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CREDENTIAL_IDENTIFIER,
+				k -> clientScope.getName());
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TYPES, k -> clientScope.getName());
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONTEXTS, k -> clientScope.getName());
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.VCT, k -> clientScope.getName());
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.ISSUER_DID, k -> clientScope.getName());
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT,
+				k -> CredentialScopeModel.FORMAT_DEFAULT);
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS,
+				k -> CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS,
+				k -> String.valueOf(CredentialScopeModel.SD_JWT_DECOYS_DEFAULT));
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS,
+				k -> CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT);
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM,
+				k -> CredentialScopeModel.HASH_ALGORITHM_DEFAULT);
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE,
+				k -> CredentialScopeModel.TOKEN_TYPE_DEFAULT);
+		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS,
+				k -> String.valueOf(CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT));
+	}
 
-    @Override
-    public LoginProtocol create(KeycloakSession session) {
-        return null;
-    }
+	@Override
+	public LoginProtocol create(KeycloakSession session) {
+		return null;
+	}
 
-    @Override
-    public String getId() {
-        return Oid4VciConstants.OID4VC_PROTOCOL;
-    }
+	@Override
+	public String getId() {
+		return Oid4VciConstants.OID4VC_PROTOCOL;
+	}
 
-    /**
-     * defines the option-order in the admin-ui
-     */
-    @Override
-    public int order() {
-        return OIDCLoginProtocolFactory.UI_ORDER - 20;
-    }
+	/**
+	 * defines the option-order in the admin-ui
+	 */
+	@Override
+	public int order() {
+		return OIDCLoginProtocolFactory.UI_ORDER - 20;
+	}
 }
