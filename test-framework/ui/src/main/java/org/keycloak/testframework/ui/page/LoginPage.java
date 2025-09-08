@@ -32,4 +32,12 @@ public class LoginPage extends AbstractPage {
     public String getExpectedPageId() {
         return "login-login";
     }
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
+
+    public void clearUsernameInput() {
+        usernameInput.clear();
+    }
 }
