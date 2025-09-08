@@ -75,6 +75,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
@@ -419,7 +420,27 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return role;
     }
 
-    public static class StaticTimeProvider implements TimeProvider {
+	protected String getBearerToken(OAuthClient oAuthClient) {
+		return getBearerToken(oAuthClient, null);
+	}
+
+	protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client) {
+		return getBearerToken(oAuthClient, client, null);
+	}
+
+	protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client, String credentialScopeName) {
+		if (client != null) {
+			oAuthClient.client(client.getClientId(), client.getSecret());
+		}
+		if (credentialScopeName != null) {
+			oAuthClient.scope(credentialScopeName);
+		}
+		AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john",
+				"password");
+		return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode()).getAccessToken();
+	}
+
+	public static class StaticTimeProvider implements TimeProvider {
         private final int currentTimeInS;
 
         public StaticTimeProvider(int currentTimeInS) {
