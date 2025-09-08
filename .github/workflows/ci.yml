@@ -379,6 +379,10 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
+      - name: Run new base tests
+        run: |
+          ./mvnw package -f tests/pom.xml -Dtest=VolatileSessionsTestSuite
+
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
@@ -394,7 +398,7 @@ jobs:
     timeout-minutes: 150
     strategy:
       matrix:
-        variant: [ "clusterless,multi-site" ]
+        variant: [clusterless, multi-site]
       fail-fast: false
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -408,6 +412,11 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+      - name: Run new base tests without cache
+        run: |
+          CLASS_NAME=$(echo ${{ matrix.variant }} | sed 's/\([[:alpha:]]\)/\U\1/' | sed 's/-//')TestSuite
+          ./mvnw package -f tests/pom.xml -Dtest=$CLASS_NAME
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
