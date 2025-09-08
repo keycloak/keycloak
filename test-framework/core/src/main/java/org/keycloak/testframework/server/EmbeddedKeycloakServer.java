@@ -8,6 +8,7 @@ import org.keycloak.platform.Platform;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
@@ -15,10 +16,17 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     private Keycloak keycloak;
     private Path homeDir;
+    private boolean enableTls = false;
+    private final String serverKeyStorePath;
+
+    public EmbeddedKeycloakServer(Path serverKeyStorePath) {
+        this.serverKeyStorePath = serverKeyStorePath == null ? null : serverKeyStorePath.toString();
+    }
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         Keycloak.Builder builder = Keycloak.builder().setVersion(Version.VERSION);
+        enableTls = keycloakServerConfigBuilder.tlsEnabled();
 
         for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
             builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
@@ -47,7 +55,11 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         }
 
         builder.setHomeDir(homeDir);
-        keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
+        List<String> args = keycloakServerConfigBuilder.toArgs();
+        if (enableTls) {
+            args.add("--https-key-store-file=" + serverKeyStorePath);
+        }
+        keycloak = builder.start(args);
     }
 
     @Override
@@ -61,11 +73,24 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        return "http://localhost:8080";
+        if (isTlsEnabled()) {
+            return "https://localhost:8443";
+        } else {
+            return "http://localhost:8080";
+        }
     }
 
     @Override
     public String getManagementBaseUrl() {
-        return "http://localhost:9001";
+        if (isTlsEnabled()) {
+            return "https://localhost:9001";
+        } else {
+            return "http://localhost:9001";
+        }
+    }
+
+    @Override
+    public boolean isTlsEnabled() {
+        return enableTls;
     }
 }

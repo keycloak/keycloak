@@ -2,13 +2,15 @@ package org.keycloak.testframework.server;
 
 import org.jboss.logging.Logger;
 
+import java.nio.file.Path;
+
 public class RemoteKeycloakServerSupplier extends AbstractKeycloakServerSupplier {
 
     private static final Logger LOGGER = Logger.getLogger(RemoteKeycloakServerSupplier.class);
 
     @Override
-    public KeycloakServer getServer() {
-        return new RemoteKeycloakServer();
+    public KeycloakServer getServer(Path serverKeyStorePath) {
+        return new RemoteKeycloakServer(serverKeyStorePath);
     }
 
     @Override

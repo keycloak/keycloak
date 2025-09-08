@@ -3,6 +3,7 @@ package org.keycloak.testframework.server;
 import io.quarkus.maven.dependency.Dependency;
 
 import java.net.ConnectException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Set;
@@ -10,8 +11,16 @@ import java.util.concurrent.TimeUnit;
 
 public class RemoteKeycloakServer implements KeycloakServer {
 
+    private boolean enableTls = false;
+    private final String serverKeyStorePath;
+
+    public RemoteKeycloakServer(Path serverKeyStorePath) {
+        this.serverKeyStorePath = serverKeyStorePath == null ? null : serverKeyStorePath.toString();
+    }
+
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
+        enableTls = keycloakServerConfigBuilder.tlsEnabled();
         if (!verifyRunningKeycloak()) {
             printStartupInstructions(keycloakServerConfigBuilder);
             waitForStartup();
@@ -24,12 +33,25 @@ public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        return "http://localhost:8080";
+        if (isTlsEnabled()) {
+            return "https://localhost:8443";
+        } else {
+            return "http://localhost:8080";
+        }
     }
 
     @Override
     public String getManagementBaseUrl() {
-        return "http://localhost:9000";
+        if (isTlsEnabled()) {
+            return "https://localhost:9000";
+        } else {
+            return "http://localhost:9000";
+        }
+    }
+
+    @Override
+    public boolean isTlsEnabled() {
+        return enableTls;
     }
 
     private void printStartupInstructions(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
@@ -40,6 +62,9 @@ public class RemoteKeycloakServer implements KeycloakServer {
                 .append(", please start Keycloak with:\n\n");
 
         sb.append(String.join(" \\\n", keycloakServerConfigBuilder.toArgs()));
+        if (isTlsEnabled()) {
+            sb.append(" \\\n--https-key-store-file=").append(serverKeyStorePath);
+        }
         sb.append("\n\n");
 
         Set<Dependency> dependencies = keycloakServerConfigBuilder.toDependencies();
