@@ -32,14 +32,16 @@ import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
+import java.util.List;
+
 public final class ImportPropertyMappers implements PropertyMapperGrouping {
     private static final String IMPORTER_PROPERTY = "kc.spi-import--importer";
     private static final String SINGLE_FILE = "singleFile";
     private static final String DIR = "dir";
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[]{
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(IMPORTER_PLACEHOLDER)
                         .to(IMPORTER_PROPERTY)
                         .transformer(ImportPropertyMappers::transformImporter)
@@ -62,8 +64,8 @@ public final class ImportPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-import--dir--strategy")
                         .transformer(ImportPropertyMappers::transformOverride)
                         .isEnabled(ImportPropertyMappers::isDirProvider)
-                        .build(),
-        };
+                        .build()
+        );
     }
 
     @Override

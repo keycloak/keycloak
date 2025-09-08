@@ -2,6 +2,8 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
+import java.util.List;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.FipsMode;
@@ -13,12 +15,12 @@ final class SecurityPropertyMappers implements PropertyMapperGrouping {
 
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[] {
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(SecurityOptions.FIPS_MODE).transformer(SecurityPropertyMappers::resolveFipsMode)
                         .paramLabel("mode")
-                        .build(),
-        };
+                        .build()
+        );
     }
 
     private static String resolveFipsMode(String value, ConfigSourceInterceptorContext context) {

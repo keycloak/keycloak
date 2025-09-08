@@ -20,7 +20,7 @@ package org.keycloak.quarkus.runtime;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
 import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.ArrayList;
 import java.util.List;

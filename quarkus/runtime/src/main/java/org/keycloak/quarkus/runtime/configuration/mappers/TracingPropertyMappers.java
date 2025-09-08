@@ -26,6 +26,7 @@ import org.keycloak.utils.StringUtil;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 
 import static org.keycloak.config.TracingOptions.TRACING_COMPRESSION;
 import static org.keycloak.config.TracingOptions.TRACING_ENABLED;
@@ -44,8 +45,8 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
     private static final String TRACING_ENABLED_MSG = "Tracing is enabled";
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[]{
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
                         .to("quarkus.otel.enabled") // enable/disable whole OTel, tracing is enabled by default
@@ -97,7 +98,7 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-cache-embedded--default--tracing-enabled")
                         .isEnabled(TracingPropertyMappers::isTracingAndEmbeddedInfinispanEnabled, "tracing and embedded Infinispan is enabled")
                         .build()
-        };
+        );
     }
 
     private static void validateEndpoint(String value) {

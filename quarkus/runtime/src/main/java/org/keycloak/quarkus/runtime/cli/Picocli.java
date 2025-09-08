@@ -22,7 +22,7 @@ import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -54,7 +54,7 @@ import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -921,7 +921,7 @@ public class Picocli {
         }
         this.parsedCommand = Optional.ofNullable(command);
 
-        if (!Environment.isRebuilt() && command instanceof AbstractStartCommand
+        if (!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
                 && !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG)) {
             Environment.setRebuildCheck();
         }

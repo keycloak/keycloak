@@ -34,14 +34,16 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getOption
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isBlank;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
+import java.util.List;
+
 public final class ExportPropertyMappers implements PropertyMapperGrouping {
     private static final String EXPORTER_PROPERTY = "kc.spi-export--exporter";
     private static final String SINGLE_FILE = "singleFile";
     private static final String DIR = "dir";
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[]{
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(EXPORTER_PLACEHOLDER)
                         .to(EXPORTER_PROPERTY)
                         .transformer(ExportPropertyMappers::transformExporter)
@@ -75,7 +77,7 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(ExportPropertyMappers::isDirProvider)
                         .paramLabel("number")
                         .build()
-        };
+        );
     }
 
     private static void validateUsersUsage(PropertyMapper<?> mapper, ConfigValue value) {

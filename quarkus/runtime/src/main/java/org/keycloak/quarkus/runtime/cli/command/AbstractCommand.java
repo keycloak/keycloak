@@ -138,7 +138,7 @@ public abstract class AbstractCommand implements Callable<Integer> {
     }
 
     /**
-     * @return true if the command results in a server
+     * @return true if the command starts an http server
      */
     public boolean isServing() {
         return false;

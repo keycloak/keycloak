@@ -4,11 +4,13 @@ import org.keycloak.config.VaultOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
+import java.util.List;
+
 final class VaultPropertyMappers implements PropertyMapperGrouping {
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[] {
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(VaultOptions.VAULT)
                         .paramLabel("provider")
                         .build(),
@@ -28,7 +30,7 @@ final class VaultPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-vault--keystore--type")
                         .paramLabel("type")
                         .build()
-        };
+        );
     }
 
 }

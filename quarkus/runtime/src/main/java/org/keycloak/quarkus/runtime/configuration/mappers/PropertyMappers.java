@@ -239,7 +239,7 @@ public final class PropertyMappers {
 
         private final WildcardMappersConfig wildcardConfig = new WildcardMappersConfig();
 
-        public void addAll(PropertyMapper<?>[] mappers) {
+        public void addAll(List<? extends PropertyMapper<?>> mappers) {
             for (PropertyMapper<?> mapper : mappers) {
                 addMapper(mapper);
 

@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -43,9 +44,9 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
+    public List<PropertyMapper<?>> getPropertyMappers() {
         rootLogLevels.clear(); // reset the cached root log level and categories
-        PropertyMapper<?>[] defaultMappers = new PropertyMapper[]{
+        return List.of(
                 fromOption(LoggingOptions.LOG)
                         .paramLabel("<handler>")
                         .build(),
@@ -257,11 +258,9 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isMdcActive, "MDC logging is enabled")
                         .to("kc.spi-mapped-diagnostic-context--default--mdc-keys")
                         .paramLabel("keys")
-                        .build(),
+                        .build()
 
-        };
-
-        return defaultMappers;
+        );
     }
 
     public static boolean isConsoleEnabled() {

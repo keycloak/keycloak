@@ -6,6 +6,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -15,8 +16,8 @@ public final class ConfigKeystorePropertyMappers implements PropertyMapperGroupi
 
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[] {
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE)
                         .to(SMALLRYE_KEYSTORE_PATH)
                         .transformer(ConfigKeystorePropertyMappers::validatePath)
@@ -32,7 +33,7 @@ public final class ConfigKeystorePropertyMappers implements PropertyMapperGroupi
                         .to("smallrye.config.source.keystore.kc-default.type")
                         .paramLabel("config-keystore-type")
                         .build()
-        };
+        );
     }
 
     private static String validatePath(String option, ConfigSourceInterceptorContext context) {

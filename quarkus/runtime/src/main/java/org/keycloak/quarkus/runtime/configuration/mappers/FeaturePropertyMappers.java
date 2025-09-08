@@ -5,6 +5,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.config.FeatureOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,8 +19,8 @@ public final class FeaturePropertyMappers implements PropertyMapperGrouping {
 
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[] {
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(FeatureOptions.FEATURES)
                         .paramLabel("feature")
                         .validator(FeaturePropertyMappers::validateEnabledFeature)
@@ -27,7 +28,7 @@ public final class FeaturePropertyMappers implements PropertyMapperGrouping {
                 fromOption(FeatureOptions.FEATURES_DISABLED)
                         .paramLabel("feature")
                         .build()
-        };
+        );
     }
 
     public static void validateEnabledFeature(String feature) {

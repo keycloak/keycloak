@@ -41,7 +41,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 
-public abstract class AbstractStartCommand extends AbstractCommand {
+public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
@@ -154,11 +154,6 @@ public abstract class AbstractStartCommand extends AbstractCommand {
 
     protected EnumSet<OptionCategory> excludedCategories() {
         return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
-    }
-
-    @Override
-    public boolean isServing() {
-        return shouldStart();
     }
 
 }

@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
@@ -54,9 +55,9 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     }
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
+    public List<PropertyMapper<?>> getPropertyMappers() {
         setCustomExceptionTransformer();
-        return new PropertyMapper[] {
+        return List.of(
                 fromOption(HttpOptions.HTTP_ENABLED)
                         .to("quarkus.http.insecure-requests")
                         .transformer(HttpPropertyMappers::getHttpEnabledTransformer)
@@ -154,7 +155,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
                         .paramLabel("list of buckets")
                         .build()
-        };
+        );
     }
 
     @Override

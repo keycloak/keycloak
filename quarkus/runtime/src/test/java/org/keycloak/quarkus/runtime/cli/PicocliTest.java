@@ -46,7 +46,7 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -358,7 +358,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=dev-file");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=name", "--http-enabled=true");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("dev", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
@@ -378,7 +378,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         int code = CommandLine.ExitCode.OK;
         if (Stream.of(args).anyMatch("start-dev"::equals)) {
             Environment.setRebuildCheck();
-            code = AbstractStartCommand.REBUILT_EXIT_CODE;
+            code = AbstractAutoBuildCommand.REBUILT_EXIT_CODE;
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
         assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.reaug);
@@ -394,7 +394,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=dev-file");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
     }
 
@@ -403,7 +403,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=dev-file");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 
@@ -421,7 +421,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("start-dev");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--hostname=name", "--http-enabled=true");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
     }
 
@@ -430,7 +430,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("start-dev");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 
@@ -439,7 +439,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("start-dev", "-v");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
@@ -449,7 +449,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=dev-file");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=dev-file", "--features=docker", "--hostname=name", "--http-enabled=true");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("features=<unset> > features=docker"));
         assertTrue(nonRunningPicocli.reaug);
     }
@@ -899,7 +899,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         putEnvVar("KC_SPI_EVENTS_LISTENER_PROVIDER", "new-jboss-logging");
         nonRunningPicocli = pseudoLaunch("start", "--http-enabled=true", "--hostname-strict=false");
-        assertEquals(AbstractStartCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertThat(nonRunningPicocli.getOutString(), containsString("The following SPI options"));
     }

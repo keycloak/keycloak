@@ -24,7 +24,7 @@ public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
     private static final List<String> REMOVED_OPTIONS = Arrays.asList("hostname-admin-url", "hostname-path", "hostname-port", "hostname-strict-backchannel", "hostname-url", "proxy", "hostname-strict-https");
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
+    public List<? extends PropertyMapper<?>> getPropertyMappers() {
         return Stream.of(
                 fromOption(HostnameV2Options.HOSTNAME)
                         .to("kc.spi-hostname--v2--hostname")
@@ -39,7 +39,7 @@ public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
                 fromOption(HostnameV2Options.HOSTNAME_DEBUG)
         )
         .map(b -> b.isEnabled(() -> Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2), "hostname:v2 feature is enabled").build())
-        .toArray(s -> new PropertyMapper<?>[s]);
+        .toList();
     }
 
     @Override

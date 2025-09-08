@@ -20,7 +20,7 @@ package org.keycloak.quarkus.runtime.cli.command;
 import picocli.CommandLine;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 public final class OptimizedMixin {
 

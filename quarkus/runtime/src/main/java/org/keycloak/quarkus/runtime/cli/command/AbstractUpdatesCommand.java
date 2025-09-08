@@ -30,7 +30,7 @@ import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import picocli.CommandLine;
 
-public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
+public abstract class AbstractUpdatesCommand extends AbstractAutoBuildCommand {
 
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin = new OptimizedMixin();

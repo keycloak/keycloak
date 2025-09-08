@@ -50,9 +50,4 @@ public final class Import extends AbstractNonServerCommand {
         return EnumSet.of(OptionCategory.EXPORT);
     }
 
-    @Override
-    public boolean isServing() {
-        return false;
-    }
-
 }

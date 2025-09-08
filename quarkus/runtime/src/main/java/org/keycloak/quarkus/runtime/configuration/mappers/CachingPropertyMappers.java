@@ -33,7 +33,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
 
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
+    public List<PropertyMapper<?>> getPropertyMappers() {
         List<PropertyMapper<?>> staticMappers = List.of(
                 fromOption(CachingOptions.CACHE)
                         .paramLabel("type")
@@ -167,7 +167,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
             mappers.add(maxCountOpt(cache, InfinispanUtils::isEmbeddedInfinispan, "embedded Infinispan clusters configured"));
         }
 
-        return mappers.toArray(new PropertyMapper[0]);
+        return mappers;
     }
 
     private static boolean getDefaultMtlsEnabled() {

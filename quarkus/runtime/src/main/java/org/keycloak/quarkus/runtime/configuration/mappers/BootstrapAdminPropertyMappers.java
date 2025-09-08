@@ -18,10 +18,11 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.config.BootstrapAdminOptions;
-import org.keycloak.config.OptionCategory;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+
+import java.util.List;
 
 public final class BootstrapAdminPropertyMappers implements PropertyMapperGrouping {
 
@@ -30,8 +31,8 @@ public final class BootstrapAdminPropertyMappers implements PropertyMapperGroupi
 
     // We prefer validators here to isEnabled so that the options show up in help
     @Override
-    public PropertyMapper<?>[] getPropertyMappers() {
-        return new PropertyMapper[]{
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(BootstrapAdminOptions.USERNAME)
                         .paramLabel("username")
                         .addValidateEnabled(BootstrapAdminPropertyMappers::isPasswordSet, PASSWORD_SET)
@@ -51,8 +52,8 @@ public final class BootstrapAdminPropertyMappers implements PropertyMapperGroupi
                 fromOption(BootstrapAdminOptions.CLIENT_SECRET)
                         .paramLabel("client secret")
                         .isMasked(true)
-                        .build(),
-        };
+                        .build()
+        );
     }
 
     private static boolean isPasswordSet() {

@@ -29,7 +29,7 @@ import picocli.CommandLine.Command;
         },
         footer = "%nDo NOT start the server using this command when deploying to production.%n%n"
                 + "Use '${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --help-all' to list all available options, including build options.")
-public final class StartDev extends AbstractStartCommand {
+public final class StartDev extends AbstractAutoBuildCommand {
 
     public static final String NAME = "start-dev";
 
@@ -54,5 +54,10 @@ public final class StartDev extends AbstractStartCommand {
     @Override
     public String getName() {
         return NAME;
+    }
+
+    @Override
+    public boolean isServing() {
+        return true;
     }
 }
