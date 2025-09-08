@@ -1,20 +1,16 @@
 package org.keycloak.operator.controllers;
 
+import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.managementEndpoint;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.LEGACY_MANAGEMENT_ENABLED;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.METRICS_ENABLED;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.configuredOptions;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
-
-import java.util.List;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.openshift.api.model.monitoring.v1.NamespaceSelector;
 import io.fabric8.openshift.api.model.monitoring.v1.ServiceMonitor;
 import io.fabric8.openshift.api.model.monitoring.v1.ServiceMonitorBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
@@ -43,10 +39,8 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
 
     @Override
     protected ServiceMonitor desired(Keycloak primary, Context<Keycloak> context) {
-        var opts = configuredOptions(primary);
-        var metricsPath = opts.getOrDefault("http-management-relative-path", "") + "/metrics";
+        var endpoint = managementEndpoint(primary, context);
         var meta = primary.getMetadata();
-        var scheme = isTlsConfigured(primary) ? "https" : "http";
         var spec = ServiceMonitorSpec.get(primary);
         return new ServiceMonitorBuilder()
               .withNewMetadata()
@@ -63,9 +57,9 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 .withScrapeProtocols("OpenMetricsText1.0.0")
                 .addNewEndpoint()
                   .withInterval(spec.getInterval())
-                  .withPath(metricsPath)
+                  .withPath(endpoint.relativePath() + "metrics")
                   .withPort(Constants.KEYCLOAK_MANAGEMENT_PORT_NAME)
-                  .withScheme(scheme)
+                  .withScheme(endpoint.protocol().toLowerCase())
                   .withScrapeTimeout(spec.getScrapeTimeout())
                   .withNewTlsConfig()
                     .withInsecureSkipVerify(true)
