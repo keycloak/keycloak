@@ -70,7 +70,7 @@ yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "OPERATOR_NAME", "value": "keycloak-operator"}]' "$CSV_PATH"
 
 # Remove ServiceMonitors GVK from nativeAPIS to allow CSV installation when CRDs not present
-yq ea -i 'del(.spec.nativeAPIs[] | select(.kind == "ServiceMonitor")) | del(.spec.install.spec.permissions[].rules[] | select(.resources[] == "servicemonitors"))' "$CSV_PATH"
+yq ea -i 'del(.spec.nativeAPIs[] | select(.kind == "ServiceMonitor"))' "$CSV_PATH"
 
 { set +x; } 2>/dev/null
 echo ""

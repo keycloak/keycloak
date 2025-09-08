@@ -31,7 +31,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     @DisabledIfApiServerTest
     public void testServiceMonitorDisabledNoMetrics() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = deployKeycloak();
+        var kc = getTestKeycloakDeployment(true, false);;
         kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("metrics-enabled", "false")));
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
@@ -43,7 +43,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     @DisabledIfApiServerTest
     public void testServiceMonitorCreatedWithMetricsEnabled() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = deployKeycloak();
+        var kc = getTestKeycloakDeployment(true, false);;
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         var sm = getServiceMonitor(kc);
@@ -55,7 +55,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     @DisabledIfApiServerTest
     public void testServiceMonitorDisabledExplicitly() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = deployKeycloak();
+        var kc = getTestKeycloakDeployment(true, false);;
         kc.getSpec().setServiceMonitorSpec(
               new ServiceMonitorSpecBuilder()
                     .withEnabled(false)
@@ -71,7 +71,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     @DisabledIfApiServerTest
     public void testServiceMonitorDisabledLegacyManagement() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = deployKeycloak();
+        var kc = getTestKeycloakDeployment(true, false);;
         kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("legacy-observability-interface", "true")));
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
@@ -83,7 +83,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     @DisabledIfApiServerTest
     public void testServiceMonitorConfigProperties() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = deployKeycloak();
+        var kc = getTestKeycloakDeployment(true, false);;
         kc.getSpec().setServiceMonitorSpec(
               new ServiceMonitorSpecBuilder()
                     .withInterval("1s")
@@ -97,12 +97,6 @@ public class ServiceMonitorTest extends BaseOperatorTest {
         assertThat(sm.getSpec().getEndpoints()).hasSize(1);
         assertThat(sm.getSpec().getEndpoints().get(0).getInterval()).isEqualTo("1s");
         assertThat(sm.getSpec().getEndpoints().get(0).getScrapeTimeout()).isEqualTo("2s");
-    }
-
-    private Keycloak deployKeycloak() {
-        var kc = getTestKeycloakDeployment(true, false);
-        kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("metrics-enabled", "true")));
-        return kc;
     }
 
     private ServiceMonitor getServiceMonitor(Keycloak kc) {
