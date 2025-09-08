@@ -28,33 +28,34 @@ AWS Region or an equivalent low-latency setup.
 == Tested Configuration
 
 We regularly test {project_name} with the following configuration:
-</@profile.ifCommunity>
-<@profile.ifProduct>
-[#single-cluster-supported-configuration]
-== Supported Configuration
-</@profile.ifProduct>
 
 * An OpenShift cluster deployed across three availability-zones
 ** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
-<@profile.ifProduct>
-either ROSA HCP or ROSA classic.
-</@profile.ifProduct>
-<@profile.ifCommunity>
 using ROSA HCP.
-</@profile.ifCommunity>
 
 ** At least one worker node for each availability-zone
-** OpenShift version
-<@profile.ifProduct>
-4.17 (or later).
-</@profile.ifProduct>
-<@profile.ifCommunity>
-4.17.
-</@profile.ifCommunity>
+** OpenShift version 4.17.
 
 * Amazon Aurora PostgreSQL database
 ** High availability with a primary DB instance in one Availability Zone, and synchronously replicated readers in the other Availability Zones
 ** Version ${properties["aurora-postgresql.version"]}
+</@profile.ifCommunity>
+
+<@profile.ifProduct>
+[#single-cluster-supported-configuration]
+== Supported Configuration
+
+* {project_name} deployed on a Openshift cluster
+** OpenShift version 4.17 (or later).
+** Pods can be scheduled across multiple availability-zones within the same cloud-provider region.
+** On-premise deployments require a P50 round-trip latency of less than 10 ms between availability-zones
+
+* Database
+** For a list of supported databases, see <@links.server id="db"/>.
+** Deployments spanning multiple availability-zones must utilise a database that can tolerate zone failures
+and synchronously replicates data between replicas.
+
+</@profile.ifProduct>
 
 <#include "/high-availability/partials/configuration-disclaimer.adoc" />
 
