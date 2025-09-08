@@ -49,8 +49,6 @@ The following configurations are supported:
 * {project_name} deployed on an OpenShift cluster version 4.17 or later
 ** Pods can be scheduled across multiple availability zones within the same cloud-provider region.
 
-Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
-
 </@profile.ifProduct>
 
 <@profile.ifCommunity>
@@ -59,9 +57,9 @@ Deployments require a P50 round-trip latency of less than 10 ms between {project
 ** Pods can be scheduled across multiple availability zones within the same cloud-provider region.
 * {project_name} deployed on a virtual machines or bare metal
 
-Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
-
 </@profile.ifCommunity>
+
+Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
 
 * Database
 ** For a list of supported databases, see <@links.server id="db"/>.
