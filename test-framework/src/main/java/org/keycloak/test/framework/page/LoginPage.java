@@ -28,4 +28,12 @@ public class LoginPage extends AbstractPage {
         submitButton.click();
     }
 
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
+
+    public void clearUsernameInput() {
+        usernameInput.clear();
+    }
 }

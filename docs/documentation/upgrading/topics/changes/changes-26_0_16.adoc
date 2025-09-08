@@ -1,0 +1,14 @@
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Maximum length of the parameters in the OIDC authentication request
+
+When the OIDC authentication request (or OAuth2 authorization request) is sent, there is now limit for the maximum length of every standard OIDC/OAuth2 parameter. The maximum length of each standard parameter is 4000 characters,
+which is very big number and can be lowered in the future releases. For now, it is kept big for the backwards compatibility. The only exception is the `login_hint` parameter, which is limited
+to the maximum length of 255 characters. This is aligned with the maximum length for the `username` and `email` attributes configured in the default user profile configuration.
+
+If you want to make those number higher or lower, you can start the server with the option `req-params-default-max-size` for the default maximum length of the standard
+OIDC/OAuth2 parameters or you can use something like `req-params-max-size` for one specific parameter. See the `login-protocol` provider configuration
+of the link:{allproviderconfigguide_link}[{allproviderconfigguide_name}] for more details.

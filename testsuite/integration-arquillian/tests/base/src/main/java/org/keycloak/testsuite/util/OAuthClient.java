@@ -176,6 +176,8 @@ public class OAuthClient {
 
     private String clientSessionHost;
 
+    private String loginHint;
+
     private String maxAge;
 
     private String prompt;
@@ -289,6 +291,7 @@ public class OAuthClient {
         responseType = OAuth2Constants.CODE;
         responseMode = null;
         nonce = null;
+        loginHint = null;
         request = null;
         requestUri = null;
         claims = null;
@@ -1543,6 +1546,9 @@ public class OAuthClient {
         if (nonce != null) {
             b.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
         }
+        if (loginHint != null) {
+            b.queryParam(LOGIN_HINT_PARAM, loginHint);
+        }
 
         String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
         if (scopeParam != null && !scopeParam.isEmpty()) {
@@ -1766,6 +1772,11 @@ public class OAuthClient {
 
     public OAuthClient clientSessionHost(String client_session_host) {
         this.clientSessionHost = client_session_host;
+        return this;
+    }
+
+    public OAuthClient loginHint(String loginHint) {
+        this.loginHint = loginHint;
         return this;
     }
 
