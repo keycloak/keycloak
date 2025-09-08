@@ -1,7 +1,12 @@
 import RequiredActionConfigInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionConfigInfoRepresentation";
 import RequiredActionConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionConfigRepresentation";
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
-import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
+import {
+  isUserProfileError,
+  setUserProfileServerError,
+  useAlerts,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   AlertVariant,
@@ -90,7 +95,19 @@ export const RequiredActionConfigModal = ({
       addAlert(t("configSaveSuccess"), AlertVariant.success);
       onClose();
     } catch (error) {
-      addError("configSaveError", error);
+      if (isUserProfileError(error)) {
+        setUserProfileServerError(
+          error,
+          (name: string | number, error: unknown) => {
+            // TODO: Does not set set the error message to the field, yet.
+            // Still, this will do all front end replacement and translation of keys.
+            addError("configSaveError", (error as any).message);
+          },
+          t,
+        );
+      } else {
+        addError("configSaveError", error);
+      }
     }
   };
 
