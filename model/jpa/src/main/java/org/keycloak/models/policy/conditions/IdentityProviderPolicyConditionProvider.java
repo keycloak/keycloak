@@ -10,12 +10,12 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.policy.ResourcePolicyConditionProvider;
 import org.keycloak.models.policy.ResourcePolicyEvent;
+import org.keycloak.models.policy.ResourcePolicyInvalidStateException;
 import org.keycloak.models.policy.ResourceType;
 
 public class IdentityProviderPolicyConditionProvider implements ResourcePolicyConditionProvider {
@@ -66,7 +66,7 @@ public class IdentityProviderPolicyConditionProvider implements ResourcePolicyCo
     public void validate() {
         expectedAliases.forEach(alias -> {
             if (session.identityProviders().getByAlias(alias) == null) {
-                throw new ModelValidationException(String.format("Identity provider %s does not exist.", alias));
+                throw new ResourcePolicyInvalidStateException(String.format("Identity provider %s does not exist.", alias));
             }
         });
     }

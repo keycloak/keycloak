@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.ResourcePolicyConditionProvider;
 import org.keycloak.models.policy.ResourcePolicyEvent;
+import org.keycloak.models.policy.ResourcePolicyInvalidStateException;
 import org.keycloak.models.policy.ResourceType;
 
 public class GroupMembershipPolicyConditionProvider implements ResourcePolicyConditionProvider {
@@ -48,7 +48,7 @@ public class GroupMembershipPolicyConditionProvider implements ResourcePolicyCon
     public void validate() {
         expectedGroups.forEach(id -> {
             if (session.groups().getGroupById(session.getContext().getRealm(), id) == null) {
-                throw new ModelValidationException(String.format("Group with id %s does not exist.", id));
+                throw new ResourcePolicyInvalidStateException(String.format("Group with id %s does not exist.", id));
             }
         });
     }

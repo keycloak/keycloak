@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.EventBasedResourcePolicyProviderFactory;
+import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
 import org.keycloak.models.policy.SetUserAttributeActionProviderFactory;
 import org.keycloak.models.policy.conditions.GroupMembershipPolicyConditionFactory;

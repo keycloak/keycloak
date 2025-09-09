@@ -14,5 +14,5 @@ public interface ResourcePolicyConditionProvider extends Provider {
         return null;
     }
 
-    void validate();
+    void validate() throws ResourcePolicyInvalidStateException;
 }

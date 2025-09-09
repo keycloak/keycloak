@@ -34,7 +34,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.policy.ResourcePolicyStateProvider.ScheduledAction;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -229,7 +228,7 @@ public class ResourcePolicyManager {
                                 policyStateProvider.remove(policy.getId(), event.getResourceId());
                             }
                         }
-                    } catch (ModelValidationException e) {
+                    } catch (ResourcePolicyInvalidStateException e) {
                         policy.getConfig().putSingle("enabled", "false");
                         policy.getConfig().putSingle("validation_error", e.getMessage());
                         updatePolicy(policy, policy.getConfig());

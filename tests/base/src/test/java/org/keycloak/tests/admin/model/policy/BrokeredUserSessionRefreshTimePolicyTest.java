@@ -124,7 +124,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
     private static final String CLIENT_SECRET = "secret";
 
     @Test
-    public void testRemoveAssociatedIdp() {
+    public void testInvalidatePolicyOnIdentityProviderRemoval() {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
                 .onEvent(ResourceOperationType.LOGIN.toString())
