@@ -17,29 +17,29 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
 import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Retry;
-import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
+import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-
-abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEntity> extends AbstractKeycloakTransaction implements SessionsChangelogBasedTransaction<K, V> {
+abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEntity> implements SessionsChangelogBasedTransaction<K, V>, NonBlockingTransaction {
 
     private static final Logger LOG = Logger.getLogger(PersistentSessionsChangelogBasedTransaction.class);
     protected final KeycloakSession kcSession;
@@ -55,6 +55,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
     private final SerializeExecutionsByKey<K> serializerOnline;
     private final SerializeExecutionsByKey<K> serializerOffline;
+    private final BlockingManager blockingManager;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
@@ -66,7 +67,8 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                                                        SessionFunction<V> offlineMaxIdleTimeMsLoader,
                                                        ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                        SerializeExecutionsByKey<K> serializerOnline,
-                                                       SerializeExecutionsByKey<K> serializerOffline) {
+                                                       SerializeExecutionsByKey<K> serializerOffline,
+                                                       BlockingManager blockingManager) {
         kcSession = session;
         this.cacheName = cacheName;
         this.cache = cache;
@@ -78,9 +80,10 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         this.batchingQueue = batchingQueue;
         this.serializerOnline = serializerOnline;
         this.serializerOffline = serializerOffline;
+        this.blockingManager = blockingManager;
     }
 
-    protected Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
+    public Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
         if (offline) {
             return offlineCache;
         } else {
@@ -137,52 +140,13 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
     }
 
-    List<SessionChangesPerformer<K, V>> prepareChangesPerformers() {
-        List<SessionChangesPerformer<K, V>> changesPerformers = new LinkedList<>();
-
-        if (batchingQueue != null) {
-            changesPerformers.add(new JpaChangesPerformer<>(cacheName, batchingQueue));
-        } else {
-            changesPerformers.add(new JpaChangesPerformer<>(cacheName, null) {
-                @Override
-                public void applyChanges() {
-                    Retry.executeWithBackoff(
-                            iteration -> KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(), super::applyChangesSynchronously),
-                            (iteration, t) -> {
-                                if (iteration > 20) {
-                                    // Never retry more than 20 times.
-                                    throw new RuntimeException("Maximum number of retries reached", t);
-                                }
-                            }, PersistentSessionsWorker.UPDATE_TIMEOUT, PersistentSessionsWorker.UPDATE_BASE_INTERVAL_MILLIS);
-                    clear();
-                }
-            });
-        }
-
-        if (cache != null) {
-            changesPerformers.add(new EmbeddedCachesChangesPerformer<>(cache, serializerOnline) {
-                @Override
-                public boolean shouldConsumeChange(V entity) {
-                    return !entity.isOffline();
-                }
-            });
-        }
-
-        if (offlineCache != null) {
-            changesPerformers.add(new EmbeddedCachesChangesPerformer<>(offlineCache, serializerOffline) {
-                @Override
-                public boolean shouldConsumeChange(V entity) {
-                    return entity.isOffline();
-                }
-            });
-        }
-
-        return changesPerformers;
+    private JpaChangesPerformer<K, V> prepareChangesPerformers() {
+        return new JpaChangesPerformer<>(cacheName, batchingQueue);
     }
 
     @Override
-    protected void commitImpl() {
-        List<SessionChangesPerformer<K, V>> changesPerformers = null;
+    public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
+        SessionChangesPerformer<K, V> persister = null;
         for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
             if (sessionUpdates.getUpdateTasks().isEmpty()) {
@@ -203,18 +167,32 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                if (changesPerformers == null) {
-                    changesPerformers = prepareChangesPerformers();
+                var c = entity.isOffline() ? offlineCache : cache;
+                if (c != null) {
+                    // Update cache. It is non-blocking.
+                    var serializer = entity.isOffline() ? serializerOffline : serializerOnline;
+                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, serializer, blockingManager, LOG);
                 }
-                changesPerformers.stream()
-                        .filter(performer -> performer.shouldConsumeChange(entity))
-                        .forEach(p -> p.registerChange(entry, merged));
+
+                if (persister == null) {
+                    persister = prepareChangesPerformers();
+                    if (!persister.isNonBlocking()) {
+                        databaseUpdates.accept(persister::write);
+                    }
+                }
+                if (persister.isNonBlocking()) {
+                    persister.asyncWrite(stage, entry, merged);
+                } else {
+                    persister.registerChange(entry, merged);
+                }
             }
         }
+    }
 
-        if (changesPerformers != null) {
-            changesPerformers.forEach(SessionChangesPerformer::applyChanges);
-        }
+    @Override
+    public void asyncRollback(AggregateCompletionStage<Void> stage) {
+        updates.clear();
+        offlineUpdates.clear();
     }
 
     @Override
@@ -283,11 +261,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
 
         getUpdates(entity.getEntity().isOffline()).put(key, newUpdates);
-    }
-
-    @Override
-    protected void rollbackImpl() {
-
     }
 
     /**

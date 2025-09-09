@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -39,10 +40,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
+import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.PersistentSessionsWorker;
 import org.keycloak.models.sessions.infinispan.changes.PersistentUpdate;
 import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.changes.UserSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -50,12 +54,14 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
@@ -99,48 +105,26 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     @Override
     public UserSessionProvider create(KeycloakSession session) {
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = null;
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = null;
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = null;
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = null;
-
-        if (useCaches) {
-            InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-            cache = connections.getCache(USER_SESSION_CACHE_NAME);
-            offlineSessionsCache = connections.getCache(OFFLINE_USER_SESSION_CACHE_NAME);
-            clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME);
-            offlineClientSessionsCache = connections.getCache(OFFLINE_CLIENT_SESSION_CACHE_NAME);
-        }
-
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+            var tx = createPersistentTransaction(session);
             return new PersistentUserSessionProvider(
                     session,
                     keyGenerator,
-                    cache,
-                    offlineSessionsCache,
-                    clientSessionCache,
-                    offlineClientSessionsCache,
-                    asyncQueuePersistentUpdate,
-                    serializerSession,
-                    serializerOfflineSession,
-                    serializerClientSession,
-                    serializerOfflineClientSession
+                    tx.userTx,
+                    tx.clientTx
             );
         }
+        var tx = createVolatileTransaction(session);
         return new InfinispanUserSessionProvider(
                 session,
                 persisterLastSessionRefreshStore,
                 keyGenerator,
-                cache,
-                offlineSessionsCache,
-                clientSessionCache,
-                offlineClientSessionsCache,
+                tx.sessionTx,
+                tx.offlineSessionTx,
+                tx.clientSessionTx,
+                tx.offlineClientSessionTx,
                 this::deriveOfflineSessionCacheEntryLifespanMs,
-                this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs,
-                serializerSession,
-                serializerOfflineSession,
-                serializerClientSession,
-                serializerOfflineClientSession
+                this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
         );
     }
 
@@ -362,6 +346,82 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         return builder.build();
     }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
+    }
+
+    private VolatileTransactions createVolatileTransaction(KeycloakSession session) {
+        var connections = session.getProvider(InfinispanConnectionProvider.class);
+        var blockingManager = connections.getBlockingManager();
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache = connections.getCache(OFFLINE_USER_SESSION_CACHE_NAME);
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME);
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache = connections.getCache(OFFLINE_CLIENT_SESSION_CACHE_NAME);
+
+        var sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCache, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, serializerSession, blockingManager);
+        var offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCache, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs, serializerOfflineSession, blockingManager);
+        var clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCache, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs, serializerClientSession, blockingManager);
+        var offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCache, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs, serializerOfflineClientSession, blockingManager);
+
+        var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
+        transactionProvider.registerTransaction(sessionTx);
+        transactionProvider.registerTransaction(offlineSessionTx);
+        transactionProvider.registerTransaction(clientSessionTx);
+        transactionProvider.registerTransaction(offlineClientSessionTx);
+        return new VolatileTransactions(sessionTx, offlineSessionTx, clientSessionTx, offlineClientSessionTx);
+    }
+
+    private PersistentTransaction createPersistentTransaction(KeycloakSession session) {
+        var connections = session.getProvider(InfinispanConnectionProvider.class);
+        var blockingManager = connections.getBlockingManager();
+
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = null;
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache = null;
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = null;
+        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache = null;
+        if (useCaches) {
+            sessionCache = connections.getCache(USER_SESSION_CACHE_NAME);
+            offlineSessionCache = connections.getCache(OFFLINE_USER_SESSION_CACHE_NAME);
+            clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME);
+            offlineClientSessionCache = connections.getCache(OFFLINE_CLIENT_SESSION_CACHE_NAME);
+        }
+
+        var sessionTx = new UserSessionPersistentChangelogBasedTransaction(session,
+                sessionCache, offlineSessionCache,
+                SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs,
+                SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs,
+                asyncQueuePersistentUpdate,
+                serializerSession,
+                serializerOfflineSession,
+                blockingManager);
+
+        var clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
+                clientSessionCache, offlineClientSessionCache,
+                SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs,
+                SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs,
+                sessionTx,
+                asyncQueuePersistentUpdate,
+                serializerClientSession,
+                serializerOfflineClientSession,
+                blockingManager);
+
+        var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
+        // Order matters!
+        // We have to update the client sessions before the user sessions.
+        // The user session update may modify the client session table and, when the client session updates is executed, it will throw a StaleObjectStateException.
+        transactionProvider.registerTransaction(clientSessionTx);
+        transactionProvider.registerTransaction(sessionTx);
+        return new PersistentTransaction(sessionTx, clientSessionTx);
+    }
+
+    private record VolatileTransactions(InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
+                                        InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
+                                        InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionTx,
+                                        InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> offlineClientSessionTx) {}
+
+    private record PersistentTransaction(UserSessionPersistentChangelogBasedTransaction userTx, ClientSessionPersistentChangelogBasedTransaction clientTx) {}
 
 }
 

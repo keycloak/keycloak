@@ -20,9 +20,11 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.infinispan.Cache;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
@@ -32,21 +34,25 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
+import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,9 +61,10 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
 
-    private InfinispanKeyGenerator keyGenerator;
+    private final InfinispanKeyGenerator keyGenerator = new InfinispanKeyGenerator();
 
     private volatile Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> authSessionsCache;
+    private volatile BlockingManager blockingManager;
 
     private int authSessionsLimit;
 
@@ -69,7 +76,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     public static final String REALM_REMOVED_AUTHSESSION_EVENT = "REALM_REMOVED_EVENT_AUTHSESSIONS";
 
-    SerializeExecutionsByKey<String> serializer = new SerializeExecutionsByKey<>();
+    private final SerializeExecutionsByKey<String> serializer = new SerializeExecutionsByKey<>();
     
     @Override
     public void init(Config.Scope config) {
@@ -84,16 +91,9 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        keyGenerator = new InfinispanKeyGenerator();
-        factory.register(new ProviderEventListener() {
-
-            @Override
-            public void onEvent(ProviderEvent event) {
-                if (event instanceof PostMigrationEvent) {
-                    KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
-                        registerClusterListeners(session);
-                    });
-                }
+        factory.register(event -> {
+            if (event instanceof PostMigrationEvent) {
+                KeycloakModelUtils.runJobInTransaction(factory, this::registerClusterListeners);
             }
         });
     }
@@ -129,10 +129,13 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public InfinispanAuthenticationSessionProvider create(KeycloakSession session) {
-        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        Cache<String, SessionEntityWrapper<RootAuthenticationSessionEntity>> cache = connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
-        this.authSessionsCache = cache;
-        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, cache, authSessionsLimit, serializer);
+        initializeCache(session);
+        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, createTransaction(session), authSessionsLimit);
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {
@@ -194,5 +197,20 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public boolean isSupported(Config.Scope config) {
         return InfinispanUtils.isEmbeddedInfinispan();
+    }
+
+    private void initializeCache(KeycloakSession session) {
+        if (authSessionsCache != null) {
+            return;
+        }
+        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+        blockingManager = connections.getBlockingManager();
+        authSessionsCache = connections.getCache(AUTHENTICATION_SESSIONS_CACHE_NAME);
+    }
+
+    private InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> createTransaction(KeycloakSession session) {
+        var tx = new InfinispanChangelogBasedTransaction<>(session, authSessionsCache, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS, serializer, blockingManager);
+        session.getProvider(InfinispanTransactionProvider.class).registerTransaction(tx);
+        return tx;
     }
 }

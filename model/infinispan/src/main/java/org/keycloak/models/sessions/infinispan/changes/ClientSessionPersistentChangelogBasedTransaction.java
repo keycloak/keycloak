@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
+import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -54,8 +55,9 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                                                             UserSessionPersistentChangelogBasedTransaction userSessionTx,
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                             SerializeExecutionsByKey<UUID> serializerOnline,
-                                                            SerializeExecutionsByKey<UUID> serializerOffline) {
-        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+                                                            SerializeExecutionsByKey<UUID> serializerOffline,
+                                                            BlockingManager blockingManager) {
+        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline, blockingManager);
         this.userSessionTx = userSessionTx;
     }
 

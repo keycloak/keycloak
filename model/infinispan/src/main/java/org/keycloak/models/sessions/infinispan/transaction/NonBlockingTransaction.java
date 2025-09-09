@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.transaction;
 
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 
@@ -36,9 +37,10 @@ public interface NonBlockingTransaction {
      * The implementation should not block the thread and add any (or none) {@link CompletionStage} into the
      * {@code stage}.
      *
-     * @param stage The {@link AggregateCompletionStage} to collect the {@link CompletionStage}.
+     * @param stage           The {@link AggregateCompletionStage} to collect the {@link CompletionStage}.
+     * @param databaseUpdates
      */
-    void asyncCommit(AggregateCompletionStage<Void> stage);
+    void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates);
 
     /**
      * Asynchronously rollbacks the transaction.
