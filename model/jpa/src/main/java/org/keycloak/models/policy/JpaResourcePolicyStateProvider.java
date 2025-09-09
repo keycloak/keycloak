@@ -28,6 +28,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.utils.StringUtil;
 
 import java.util.List;
 
@@ -88,12 +89,16 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
     }
 
     @Override
-    public List<ScheduledAction> getScheduledActionsByPolicy(ResourcePolicy policy) {
+    public List<ScheduledAction> getScheduledActionsByPolicy(String id) {
+        if (StringUtil.isBlank(id)) {
+            return List.of();
+        }
+
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ResourcePolicyStateEntity> query = cb.createQuery(ResourcePolicyStateEntity.class);
         Root<ResourcePolicyStateEntity> stateRoot = query.from(ResourcePolicyStateEntity.class);
 
-        Predicate byPolicy = cb.equal(stateRoot.get("policyId"), policy.getId());
+        Predicate byPolicy = cb.equal(stateRoot.get("policyId"), id);
         query.where(byPolicy);
 
         return em.createQuery(query).getResultStream()
@@ -136,6 +141,22 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
         ResourcePolicyStateEntity entity = em.find(ResourcePolicyStateEntity.class, pk);
         if (entity != null) {
             em.remove(entity);
+        }
+    }
+
+    @Override
+    public void remove(String policyId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaDelete<ResourcePolicyStateEntity> delete = cb.createCriteriaDelete(ResourcePolicyStateEntity.class);
+        Root<ResourcePolicyStateEntity> root = delete.from(ResourcePolicyStateEntity.class);
+        delete.where(cb.equal(root.get("policyId"), policyId));
+        int deletedCount = em.createQuery(delete).executeUpdate();
+
+        if (LOGGER.isTraceEnabled()) {
+            if (deletedCount > 0) {
+                RealmModel realm = session.getContext().getRealm();
+                LOGGER.tracev("Deleted {0} state records for realm {1}", deletedCount, realm.getId());
+            }
         }
     }
 

@@ -41,6 +41,12 @@ public interface ResourcePolicyStateProvider extends Provider {
     void remove(String policyId, String resourceId);
 
     /**
+     * Removes any record identified by the specified {@code policyId}.
+     * @param policyId the id of the policy.
+     */
+    void remove(String policyId);
+
+    /**
      * Deletes all state records associated with the current realm bound to the session.
      */
     void removeAll();
@@ -55,7 +61,15 @@ public interface ResourcePolicyStateProvider extends Provider {
 
     List<ScheduledAction> getScheduledActionsByResource(String resourceId);
 
-    List<ScheduledAction> getScheduledActionsByPolicy(ResourcePolicy policy);
+    List<ScheduledAction> getScheduledActionsByPolicy(String policy);
+
+    default List<ScheduledAction> getScheduledActionsByPolicy(ResourcePolicy policy) {
+        if (policy == null) {
+            return List.of();
+        }
+
+        return getScheduledActionsByPolicy(policy.getId());
+    }
 
     List<ScheduledAction> getDueScheduledActions(ResourcePolicy policy);
 
