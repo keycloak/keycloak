@@ -141,6 +141,8 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
         updateUserSessionFromClientAuth(userSession);
 
+        updateResourceIndicatorsInClientSession(clientSessionCtx);
+
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .generateAccessToken();
 
