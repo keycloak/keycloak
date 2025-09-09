@@ -194,11 +194,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             this.token = token;
         }
 
-        public long getExpiresIn() {
+        public Long getExpiresIn() {
             return expiresIn;
         }
 
-        public void setExpiresIn(long expiresIn) {
+        public void setExpiresIn(Long expiresIn) {
             this.expiresIn = expiresIn;
         }
 
