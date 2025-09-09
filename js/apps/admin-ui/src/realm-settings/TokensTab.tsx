@@ -1,19 +1,20 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
-  FormPanel,
   HelpItem,
   KeycloakSelect,
   SelectVariant,
+  ScrollForm,
+  useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
+  AlertVariant,
   Button,
   FormGroup,
   FormHelperText,
   HelperText,
   HelperTextItem,
   NumberInput,
-  PageSection,
   SelectOption,
   Switch,
   Text,
@@ -45,6 +46,7 @@ export const RealmSettingsTokensTab = ({
   save,
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation();
+  const { addAlert } = useAlerts();
   const serverInfo = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
   const { whoAmI } = useWhoAmI();
@@ -58,6 +60,11 @@ export const RealmSettingsTokensTab = ({
 
   const { control, register, reset, formState, handleSubmit, setValue } =
     useFormContext<RealmRepresentation>();
+
+  // Show a global error notification if validation fails
+  const onError = () => {
+    addAlert(t("formValidationError"), AlertVariant.danger);
+  };
 
   const offlineSessionMaxEnabled = useWatch({
     control,
@@ -97,9 +104,10 @@ export const RealmSettingsTokensTab = ({
     }
   }, [realm.attributes, setValue]);
 
-  return (
-    <PageSection variant="light">
-      <FormPanel title={t("general")} className="kc-sso-session-template">
+  const sections = [
+    {
+      title: t("general"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -256,11 +264,11 @@ export const RealmSettingsTokensTab = ({
             </>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        title={t("refreshTokens")}
-        className="kc-client-session-template"
-      >
+      ),
+    },
+    {
+      title: t("refreshTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -328,11 +336,11 @@ export const RealmSettingsTokensTab = ({
             </FormGroup>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        title={t("accessTokens")}
-        className="kc-offline-session-template"
-      >
+      ),
+    },
+    {
+      title: t("accessTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -457,11 +465,11 @@ export const RealmSettingsTokensTab = ({
             </FormGroup>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        className="kc-login-settings-template"
-        title={t("actionTokens")}
-      >
+      ),
+    },
+    {
+      title: t("actionTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -638,18 +646,34 @@ export const RealmSettingsTokensTab = ({
               )}
             />
           </FormGroup>
+          {!isFeatureEnabled(Feature.OpenId4VCI) && (
+            <ActionGroup>
+              <Button
+                variant="primary"
+                type="submit"
+                data-testid="tokens-tab-save"
+                isDisabled={!formState.isDirty}
+              >
+                {t("save")}
+              </Button>
+              <Button variant="link" onClick={() => reset(realm)}>
+                {t("revert")}
+              </Button>
+            </ActionGroup>
+          )}
         </FormAccess>
-      </FormPanel>
-      {isFeatureEnabled(Feature.OpenId4VCI) && (
+      ),
+    },
+    {
+      title: t("oid4vciAttributes"),
+      isHidden: !isFeatureEnabled(Feature.OpenId4VCI),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
           className="pf-v5-u-mt-lg"
-          onSubmit={handleSubmit(save)}
+          onSubmit={handleSubmit(save, onError)}
         >
-          <Text className="kc-oid4vci-subtitle" component={TextVariants.h1}>
-            {t("oid4vciAttributes")}
-          </Text>
           <FormGroup
             label={t("oid4vciNonceLifetime")}
             fieldId="oid4vciNonceLifetime"
@@ -718,7 +742,15 @@ export const RealmSettingsTokensTab = ({
             </Button>
           </ActionGroup>
         </FormAccess>
-      )}
-    </PageSection>
+      ),
+    },
+  ];
+
+  return (
+    <ScrollForm
+      label={t("jumpToSection")}
+      className="pf-v5-u-px-lg pf-v5-u-pb-lg"
+      sections={sections}
+    />
   );
 };

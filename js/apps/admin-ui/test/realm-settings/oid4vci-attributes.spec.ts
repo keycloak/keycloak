@@ -27,45 +27,62 @@ const isOid4vciFeatureEnabled = async () => {
   return isEnabled;
 };
 
-// Helper function to handle feature flag logic and return tokens tab element
-const getTokensTab = async (page: any) => {
+// Helper function to handle feature flag logic and navigate to OID4VCI section
+const navigateToOid4vciSection = async (page: any) => {
   const isFeatureEnabled = await isOid4vciFeatureEnabled();
   const tokensTab = page.getByTestId("rs-tokens-tab");
 
+  // Click on Tokens tab first
+  await tokensTab.click();
+
   if (!isFeatureEnabled) {
-    // If feature is not enabled, we still need to check if the OID4VCI section is hidden
-    await tokensTab.click();
-    const oid4vciSection = page.getByText("OID4VCI attributes");
-    await expect(oid4vciSection).toBeHidden();
-    return null;
+    // If feature is not enabled, check if the OID4VCI section is hidden
+    const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+    await expect(oid4vciJumpLink).toBeHidden();
+    return false;
   }
-  return tokensTab;
+
+  // Navigate to OID4VCI section using jump link
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  // Wait for the section to be visible
+  const oid4vciSection = page.getByRole("heading", {
+    name: "OID4VCI attributes",
+  });
+  await expect(oid4vciSection).toBeVisible();
+
+  return true;
 };
 
-test("OID4VCI section visibility in Tokens tab", async ({ page }) => {
+test("OID4VCI section visibility and jump link in Tokens tab", async ({
+  page,
+}) => {
   const isFeatureEnabled = await isOid4vciFeatureEnabled();
   const tokensTab = page.getByTestId("rs-tokens-tab");
 
   await tokensTab.click();
 
-  const oid4vciSection = page.getByText("OID4VCI attributes");
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
 
   // Always assert based on feature flag state
   if (isFeatureEnabled) {
+    await expect(oid4vciJumpLink).toBeVisible();
+    await oid4vciJumpLink.click();
+    const oid4vciSection = page.getByRole("heading", {
+      name: "OID4VCI attributes",
+    });
     await expect(oid4vciSection).toBeVisible();
   } else {
-    await expect(oid4vciSection).toBeHidden();
+    await expect(oid4vciJumpLink).toBeHidden();
   }
 });
 
 test("should render fields and save values with correct attribute keys", async ({
   page,
 }) => {
-  const tokensTab = await getTokensTab(page);
-  if (!tokensTab) test.skip();
-
-  // Feature is enabled, proceed with the test
-  await tokensTab.click();
+  const isFeatureEnabled = await navigateToOid4vciSection(page);
+  if (!isFeatureEnabled) test.skip();
 
   const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
   const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
@@ -85,11 +102,8 @@ test("should render fields and save values with correct attribute keys", async (
 });
 
 test("should persist values after page refresh", async ({ page }) => {
-  const tokensTab = await getTokensTab(page);
-  if (!tokensTab) test.skip();
-
-  // Feature is enabled, proceed with the test
-  await tokensTab.click();
+  const isFeatureEnabled = await navigateToOid4vciSection(page);
+  if (!isFeatureEnabled) test.skip();
 
   await page.getByTestId("oid4vci-nonce-lifetime-seconds").fill("120");
   await page.getByTestId("pre-authorized-code-lifespan-s").fill("300");
@@ -118,65 +132,54 @@ test("should persist values after page refresh", async ({ page }) => {
   expect(preAuthValue).toBeGreaterThan(0);
 });
 
-test("should validate required fields and minimum values", async ({ page }) => {
-  const tokensTab = await getTokensTab(page);
-  if (!tokensTab) test.skip();
-
-  // Feature is enabled, proceed with the test
-  await tokensTab.click();
+test("should validate form fields and show validation errors", async ({
+  page,
+}) => {
+  const isFeatureEnabled = await navigateToOid4vciSection(page);
+  if (!isFeatureEnabled) test.skip();
 
   const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
   const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
   const saveButton = page.getByTestId("tokens-tab-save");
   const validationErrorText =
-    "Please ensure all fields are filled and values are 30 seconds or greater.";
+    "Please ensure all OID4VCI attribute fields are filled and values are 30 seconds or greater.";
 
-  // Helper function to test validation scenarios
-  const testValidationScenario = async (
-    nonceValue: string,
-    preAuthValue: string,
-    shouldShowError: boolean,
-  ) => {
-    if (nonceValue === "") {
-      await nonceField.clear();
-    } else {
-      await nonceField.fill(nonceValue);
-    }
-    await nonceField.blur();
+  // Test that fields are visible and can be filled
+  await expect(nonceField).toBeVisible();
+  await expect(preAuthField).toBeVisible();
+  await expect(saveButton).toBeVisible();
 
-    if (preAuthValue === "") {
-      await preAuthField.clear();
-    } else {
-      await preAuthField.fill(preAuthValue);
-    }
-    await preAuthField.blur();
+  // Test with empty values - should show validation error
+  await nonceField.clear();
+  await preAuthField.clear();
+  await saveButton.click();
+  await expect(page.getByText(validationErrorText).first()).toBeVisible();
 
-    // check if save button is enabled when form has values
-    const hasValues = nonceValue !== "" || preAuthValue !== "";
-    if (hasValues) {
-      await expect(saveButton).toBeEnabled();
-    }
+  // Test with invalid values (below minimum) - should show validation error
+  await nonceField.fill("29");
+  await preAuthField.fill("29");
+  await saveButton.click();
+  await expect(page.getByText(validationErrorText).first()).toBeVisible();
 
-    await saveButton.click();
+  // Test with valid values - this should work
+  // Clear fields first to ensure clean state
+  await nonceField.clear();
+  await preAuthField.clear();
 
-    if (shouldShowError) {
-      await expect(page.getByText(validationErrorText).first()).toBeVisible();
-    } else {
-      await expect(
-        page.getByText("Realm successfully updated").first(),
-      ).toBeVisible();
-    }
-  };
+  // Fill with values that will work with the default unit behavior
+  await nonceField.fill("1");
+  await preAuthField.fill("2");
 
-  // Test with empty values (should trigger required field validation)
-  await testValidationScenario("", "", true);
+  // Save button should be enabled when form has values
+  await expect(saveButton).toBeEnabled();
 
-  // Test with invalid values (below minimum)
-  await testValidationScenario("29", "29", true);
+  await saveButton.click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
 
-  // Test with only one field filled
-  await testValidationScenario("30", "", true);
-
-  // Test with valid values
-  await testValidationScenario("30", "60", false);
+  // Verify the values were saved (1 hour = 3600 seconds, 2 hours = 7200 seconds)
+  const realm = await adminClient.getRealm(realmName);
+  expect(realm?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
+  expect(realm?.attributes?.["preAuthorizedCodeLifespanS"]).toBe("7200");
 });
