@@ -25,25 +25,42 @@ import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
-import org.infinispan.util.concurrent.BlockingManager;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.util.concurrent.ActionSequencer;
 import org.jboss.logging.Logger;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
+import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
-class InfinispanChangesUtils {
+public class InfinispanChangesUtils {
 
     private InfinispanChangesUtils() {
     }
 
+    public static <K, V extends SessionEntity> CacheInfo<K, V> createWithCache(KeycloakSession session,
+                                                                               String cacheName,
+                                                                               SessionFunction<V> lifespanFunction,
+                                                                               SessionFunction<V> maxIdleFunction) {
+        var connections = session.getProvider(InfinispanConnectionProvider.class);
+        var cache = connections.<K, SessionEntityWrapper<V>>getCache(cacheName);
+        var sequencer = new ActionSequencer(connections.getExecutor(cacheName + "Replace"), false, null);
+        return new CacheInfo<>(cache, sequencer, lifespanFunction, maxIdleFunction);
+    }
+
+    public static <K, V extends SessionEntity> CacheInfo<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
+                                                                                  SessionFunction<V> maxIdleFunction) {
+        return new CacheInfo<>(null, null, lifespanFunction, maxIdleFunction);
+    }
+
     public static <K, V extends SessionEntity> void runOperationInCluster(
-            Cache<K, SessionEntityWrapper<V>> cache,
+            CacheInfo<K, V> cacheInfo,
             K key,
             MergedUpdate<V> task,
             SessionEntityWrapper<V> sessionWrapper,
             AggregateCompletionStage<Void> stage,
-            SerializeExecutionsByKey<K> serializer,
-            BlockingManager blockingManager,
             Logger logger
     ) {
         SessionUpdateTask.CacheOperation operation = task.getOperation();
@@ -54,23 +71,23 @@ class InfinispanChangesUtils {
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                stage.dependsOn(CacheDecorators.ignoreReturnValues(cache).removeAsync(key));
+                stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheInfo.cache()).removeAsync(key));
                 break;
             case ADD:
-                CompletableFuture<?> future = CacheDecorators.ignoreReturnValues(cache)
+                CompletableFuture<?> future = CacheDecorators.ignoreReturnValues(cacheInfo.cache())
                         .putAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
                 if (logger.isTraceEnabled()) {
-                    future = future.thenRun(() -> logger.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs()));
+                    future = future.thenRun(() -> logger.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheInfo.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs()));
                 }
                 stage.dependsOn(future);
                 break;
             case ADD_IF_ABSENT:
-                CompletableFuture<Void> putIfAbsentFuture = cache.putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
-                        .thenCompose(existing -> handlePutIfAbsentResponse(cache, existing, key, task, serializer, blockingManager, logger));
+                CompletableFuture<Void> putIfAbsentFuture = cacheInfo.cache().putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
+                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheInfo, existing, key, task, logger));
                 stage.dependsOn(putIfAbsentFuture);
                 break;
             case REPLACE:
-                stage.dependsOn(replace(cache, key, task, sessionWrapper, task.getLifespanMs(), task.getMaxIdleTimeMs(), serializer, blockingManager, logger));
+                stage.dependsOn(replace(cacheInfo, key, task, sessionWrapper, logger));
                 break;
             default:
                 throw new IllegalStateException("Unsupported state " + operation);
@@ -79,16 +96,15 @@ class InfinispanChangesUtils {
     }
 
     private static <K, V extends SessionEntity> CompletionStage<Void> handlePutIfAbsentResponse(
-            Cache<K, SessionEntityWrapper<V>> cache,
+            CacheInfo<K, V> cacheInfo,
             SessionEntityWrapper<V> existing,
             K key,
             MergedUpdate<V> task,
-            SerializeExecutionsByKey<K> serializer,
-            BlockingManager blockingManager, Logger logger
+            Logger logger
     ) {
         if (existing == null) {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cache.getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                logger.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheInfo.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
             }
             return CompletableFutures.completedNull();
         }
@@ -99,69 +115,52 @@ class InfinispanChangesUtils {
         // Apply updates on the existing entity and replace it
         task.runUpdate(existing.getEntity());
 
-        return replace(cache, key, task, existing, task.getLifespanMs(), task.getMaxIdleTimeMs(), serializer, blockingManager, logger);
+        return replace(cacheInfo, key, task, existing, logger);
     }
 
     private static <K, V extends SessionEntity> CompletionStage<Void> replace(
-            Cache<K, SessionEntityWrapper<V>> cache,
+            CacheInfo<K, V> cacheInfo,
             K key,
             MergedUpdate<V> task,
             SessionEntityWrapper<V> oldVersionEntity,
-            long lifespanMs,
-            long maxIdleTimeMs,
-            SerializeExecutionsByKey<K> serializer,
-            BlockingManager blockingManager,
             Logger logger) {
-        // Ugly!! We cannot have a full non-blocking implementation without getting rid of "serializer".
-        // It may have a negative impact in low core count instances.
-        // TODO see org.infinispan.util.concurrent.ActionSequencer
-        return blockingManager.runBlocking(() -> serialReplace(cache, key, task, oldVersionEntity, lifespanMs, maxIdleTimeMs, serializer, logger), "replace");
+        return cacheInfo.sequencer().orderOnKey(key, () -> replaceAsync(cacheInfo.cache(), key, task, null, oldVersionEntity, 0, logger));
     }
 
-    private static <K, V extends SessionEntity> void serialReplace(
+    private static <K, V extends SessionEntity> CompletionStage<Void> replaceAsync(
             Cache<K, SessionEntityWrapper<V>> cache,
             K key,
             MergedUpdate<V> task,
-            SessionEntityWrapper<V> oldVersionEntity,
-            long lifespanMs,
-            long maxIdleTimeMs,
-            SerializeExecutionsByKey<K> serializer,
+            SessionEntityWrapper<V> previousSession,
+            SessionEntityWrapper<V> expectedSession,
+            int iteration,
             Logger logger
     ) {
-        serializer.runSerialized(key, () -> {
-            SessionEntityWrapper<V> oldVersion = oldVersionEntity;
-            SessionEntityWrapper<V> returnValue = null;
-            int iteration = 0;
-            V session = oldVersion.getEntity();
-            while (iteration++ < InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
-
-                if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
-                    logger.debugf("Entity %s removed after evaluation", key);
-                    CacheDecorators.ignoreReturnValues(cache).remove(key);
-                    return;
-                }
-
-                SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersion.getLocalMetadata());
-                returnValue = cache.computeIfPresent(key, new ReplaceFunction<>(oldVersion.getVersion(), newVersionEntity), lifespanMs, TimeUnit.MILLISECONDS, maxIdleTimeMs, TimeUnit.MILLISECONDS);
-
-                if (returnValue == null) {
-                    logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
-                    return;
-                }
-
-                if (returnValue.getVersion().equals(newVersionEntity.getVersion())) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, oldVersion.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
-                    }
-                    return;
-                }
-
-                oldVersion = returnValue;
-                session = oldVersion.getEntity();
-                task.runUpdate(session);
+        if (iteration >= InfinispanUtil.MAXIMUM_REPLACE_RETRIES) {
+            logger.warnf("Failed to replace entity '%s' in cache '%s'. Expected: %s, Current: %s", key, cache.getName(), previousSession, expectedSession);
+            return CompletableFutures.completedNull();
+        }
+        V session = expectedSession.getEntity();
+        if (session.shouldEvaluateRemoval() && task.shouldRemove(session)) {
+            logger.debugf("Entity %s removed after evaluation", key);
+            return CacheDecorators.ignoreReturnValues(cache).removeAsync(key).thenRun(CompletionStages.NO_OP_RUNNABLE);
+        }
+        SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, expectedSession.getLocalMetadata());
+        CompletionStage<SessionEntityWrapper<V>> stage = cache.computeIfPresentAsync(key, new ReplaceFunction<>(expectedSession.getVersion(), newVersionEntity), task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
+        return stage.thenCompose(rv -> {
+            if (rv == null) {
+                logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
+                return CompletableFutures.completedNull();
             }
 
-            logger.warnf("Failed to replace entity '%s' in cache '%s'. Expected: %s, Current: %s", key, cache.getName(), oldVersion, returnValue);
+            if (rv.getVersion().equals(newVersionEntity.getVersion())) {
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, expectedSession.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                }
+                return CompletableFutures.completedNull();
+            }
+            task.runUpdate(rv.getEntity());
+            return replaceAsync(cache, key, task, expectedSession, rv, iteration + 1, logger);
         });
     }
 

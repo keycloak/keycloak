@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -46,23 +45,12 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     public static final Logger logger = Logger.getLogger(InfinispanChangelogBasedTransaction.class);
 
     protected final KeycloakSession kcSession;
-    protected final Cache<K, SessionEntityWrapper<V>> cache;
-
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
+    protected final CacheInfo<K, V> cacheInfo;
 
-    protected final SessionFunction<V> lifespanMsLoader;
-    protected final SessionFunction<V> maxIdleTimeMsLoader;
-    private final SerializeExecutionsByKey<K> serializer;
-    private final BlockingManager blockingManager;
-
-    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache,
-                                               SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader, SerializeExecutionsByKey<K> serializer, BlockingManager blockingManager) {
+    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, CacheInfo<K, V> cacheInfo) {
         this.kcSession = kcSession;
-        this.cache = cache;
-        this.lifespanMsLoader = lifespanMsLoader;
-        this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
-        this.serializer = serializer;
-        this.blockingManager = blockingManager;
+        this.cacheInfo = cacheInfo;
     }
 
 
@@ -71,7 +59,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
             // Lookup entity from cache
-            SessionEntityWrapper<V> wrappedEntity = cache.get(key);
+            SessionEntityWrapper<V> wrappedEntity = cacheInfo.cache().get(key);
             if (wrappedEntity == null) {
                 logger.tracef("Not present cache item for key %s", key);
                 return;
@@ -114,7 +102,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             throw new IllegalArgumentException("Null entity not allowed");
         }
 
-        SessionEntityWrapper<V> latestEntity = cache.get(key);
+        SessionEntityWrapper<V> latestEntity = cacheInfo.cache().get(key);
         if (latestEntity == null) {
             return;
         }
@@ -133,7 +121,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     public SessionEntityWrapper<V> get(K key) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
-            SessionEntityWrapper<V> wrappedEntity = cache.get(key);
+            SessionEntityWrapper<V> wrappedEntity = cacheInfo.cache().get(key);
             if (wrappedEntity == null) {
                 return null;
             }
@@ -177,14 +165,14 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
             RealmModel realm = sessionUpdates.getRealm();
 
-            long lifespanMs = lifespanMsLoader.apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
-            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
+            long lifespanMs = cacheInfo.lifespanFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
+            long maxIdleTimeMs = cacheInfo.maxIdleFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
 
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
                 // Now run the operation in our cluster
-                InfinispanChangesUtils.runOperationInCluster(cache, entry.getKey(), merged, sessionWrapper, stage, serializer, blockingManager, logger);
+                InfinispanChangesUtils.runOperationInCluster(cacheInfo, entry.getKey(), merged, sessionWrapper, stage, logger);
             }
         }
     }
@@ -198,7 +186,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
      * @return The {@link Cache} backing up this transaction.
      */
     public Cache<K, SessionEntityWrapper<V>> getCache() {
-        return cache;
+        return cacheInfo.cache();
     }
 
     /**
@@ -224,7 +212,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             // exists in transaction, avoid cache operation
             return updatesList.getEntityWrapper().getEntity();
         }
-        SessionEntityWrapper<V> existing = cache.putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+        SessionEntityWrapper<V> existing = cacheInfo.cache().putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
         if (existing == null) {
             // keep track of the imported session for updates
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
@@ -271,7 +259,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
                 //nothing to import, already expired
                 return;
             }
-            var future = cache.putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+            var future = cacheInfo.cache().putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
             stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
         });

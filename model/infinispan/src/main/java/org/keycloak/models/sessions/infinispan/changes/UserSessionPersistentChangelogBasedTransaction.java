@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -26,7 +25,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
-import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
@@ -40,17 +38,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
 
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> cache,
-                                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineCache,
-                                                          SessionFunction<UserSessionEntity> lifespanMsLoader,
-                                                          SessionFunction<UserSessionEntity> maxIdleTimeMsLoader,
-                                                          SessionFunction<UserSessionEntity> offlineLifespanMsLoader,
-                                                          SessionFunction<UserSessionEntity> offlineMaxIdleTimeMsLoader,
                                                           ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                          SerializeExecutionsByKey<String> serializerOnline,
-                                                          SerializeExecutionsByKey<String> serializerOffline,
-                                                          BlockingManager blockingManager) {
-        super(session, USER_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline, blockingManager);
+                                                          CacheInfo<String, UserSessionEntity> cacheInfo,
+                                                          CacheInfo<String, UserSessionEntity> offlineCacheInfo) {
+        super(session, USER_SESSION_CACHE_NAME, batchingQueue, cacheInfo, offlineCacheInfo);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {

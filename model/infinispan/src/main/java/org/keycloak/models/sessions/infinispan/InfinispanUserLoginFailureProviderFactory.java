@@ -28,8 +28,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.sessions.infinispan.changes.CacheInfo;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
+import org.keycloak.models.sessions.infinispan.changes.InfinispanChangesUtils;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
@@ -55,7 +56,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
     public static final String REMOVE_ALL_LOGIN_FAILURES_EVENT = "REMOVE_ALL_LOGIN_FAILURES_EVENT";
 
-    SerializeExecutionsByKey<LoginFailureKey> serializer = new SerializeExecutionsByKey<>();
+    private CacheInfo<LoginFailureKey, LoginFailureEntity> cacheInfo;
 
     @Override
     public InfinispanUserLoginFailureProvider create(KeycloakSession session) {
@@ -69,6 +70,9 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     @Override
     public void postInit(final KeycloakSessionFactory factory) {
         factory.register(this);
+        try (var session = factory.create()) {
+            cacheInfo = InfinispanChangesUtils.createWithCache(session, LOGIN_FAILURE_CACHE_NAME, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs);
+        }
     }
 
     @Override
@@ -137,12 +141,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     }
 
     private InfinispanChangelogBasedTransaction<LoginFailureKey, LoginFailureEntity> createTransaction(KeycloakSession session) {
-        var connections = session.getProvider(InfinispanConnectionProvider.class);
-        var tx = new InfinispanChangelogBasedTransaction<>(session,
-                connections.getCache(LOGIN_FAILURE_CACHE_NAME),
-                SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs,
-                serializer,
-                connections.getBlockingManager());
+        var tx = new InfinispanChangelogBasedTransaction<>(session, cacheInfo);
         session.getProvider(InfinispanTransactionProvider.class).registerTransaction(tx);
         return tx;
     }

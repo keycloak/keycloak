@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -46,73 +45,37 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
     protected final Map<K, SessionUpdatesList<V>> offlineUpdates = new HashMap<>();
     private final String cacheName;
-    private final Cache<K, SessionEntityWrapper<V>> cache;
-    private final Cache<K, SessionEntityWrapper<V>> offlineCache;
-    private final SessionFunction<V> lifespanMsLoader;
-    private final SessionFunction<V> maxIdleTimeMsLoader;
-    private final SessionFunction<V> offlineLifespanMsLoader;
-    private final SessionFunction<V> offlineMaxIdleTimeMsLoader;
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
-    private final SerializeExecutionsByKey<K> serializerOnline;
-    private final SerializeExecutionsByKey<K> serializerOffline;
-    private final BlockingManager blockingManager;
+    private final CacheInfo<K, V> cacheInfo;
+    private final CacheInfo<K, V> offlineCacheInfo;
+
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
-                                                       Cache<K, SessionEntityWrapper<V>> cache,
-                                                       Cache<K, SessionEntityWrapper<V>> offlineCache,
-                                                       SessionFunction<V> lifespanMsLoader,
-                                                       SessionFunction<V> maxIdleTimeMsLoader,
-                                                       SessionFunction<V> offlineLifespanMsLoader,
-                                                       SessionFunction<V> offlineMaxIdleTimeMsLoader,
                                                        ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                       SerializeExecutionsByKey<K> serializerOnline,
-                                                       SerializeExecutionsByKey<K> serializerOffline,
-                                                       BlockingManager blockingManager) {
+                                                       CacheInfo<K, V> cacheInfo,
+                                                       CacheInfo<K, V> offlineCacheInfo) {
         kcSession = session;
         this.cacheName = cacheName;
-        this.cache = cache;
-        this.offlineCache = offlineCache;
-        this.lifespanMsLoader = lifespanMsLoader;
-        this.maxIdleTimeMsLoader = maxIdleTimeMsLoader;
-        this.offlineLifespanMsLoader = offlineLifespanMsLoader;
-        this.offlineMaxIdleTimeMsLoader = offlineMaxIdleTimeMsLoader;
         this.batchingQueue = batchingQueue;
-        this.serializerOnline = serializerOnline;
-        this.serializerOffline = serializerOffline;
-        this.blockingManager = blockingManager;
+        this.cacheInfo = cacheInfo;
+        this.offlineCacheInfo = offlineCacheInfo;
     }
 
     public Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
-        if (offline) {
-            return offlineCache;
-        } else {
-            return cache;
-        }
+        return offline ? offlineCacheInfo.cache() : cacheInfo.cache();
     }
 
     protected SessionFunction<V> getLifespanMsLoader(boolean offline) {
-        if (offline) {
-            return offlineLifespanMsLoader;
-        } else {
-            return lifespanMsLoader;
-        }
+        return offline ? offlineCacheInfo.lifespanFunction() : cacheInfo.lifespanFunction();
     }
 
     protected SessionFunction<V> getMaxIdleMsLoader(boolean offline) {
-        if (offline) {
-            return offlineMaxIdleTimeMsLoader;
-        } else {
-            return maxIdleTimeMsLoader;
-        }
+        return offline ? offlineCacheInfo.maxIdleFunction() : cacheInfo.maxIdleFunction();
     }
 
     protected Map<K, SessionUpdatesList<V>> getUpdates(boolean offline) {
-        if (offline) {
-            return offlineUpdates;
-        } else {
-            return updates;
-        }
+        return offline ? offlineUpdates : updates;
     }
 
     public SessionEntityWrapper<V> get(K key, boolean offline) {
@@ -167,11 +130,10 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                var c = entity.isOffline() ? offlineCache : cache;
-                if (c != null) {
+                var c = entity.isOffline() ? offlineCacheInfo : cacheInfo;
+                if (c.cache() != null) {
                     // Update cache. It is non-blocking.
-                    var serializer = entity.isOffline() ? serializerOffline : serializerOnline;
-                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, serializer, blockingManager, LOG);
+                    InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG);
                 }
 
                 if (persister == null) {

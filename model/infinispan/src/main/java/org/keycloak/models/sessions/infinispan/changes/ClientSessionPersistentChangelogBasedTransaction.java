@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
 import org.infinispan.Cache;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -27,7 +26,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
-import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.UserSessionAdapter;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
@@ -46,18 +44,11 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                            Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache,
-                                                            Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineCache,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> lifespanMsLoader,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> maxIdleTimeMsLoader,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> offlineLifespanMsLoader,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> offlineMaxIdleTimeMsLoader,
-                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx,
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                            SerializeExecutionsByKey<UUID> serializerOnline,
-                                                            SerializeExecutionsByKey<UUID> serializerOffline,
-                                                            BlockingManager blockingManager) {
-        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline, blockingManager);
+                                                            CacheInfo<UUID, AuthenticatedClientSessionEntity> cacheInfo,
+                                                            CacheInfo<UUID, AuthenticatedClientSessionEntity> offlineCacheInfo,
+                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx) {
+        super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheInfo, offlineCacheInfo);
         this.userSessionTx = userSessionTx;
     }
 
