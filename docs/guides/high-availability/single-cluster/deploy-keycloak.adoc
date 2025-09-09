@@ -6,7 +6,7 @@ title="Deploying {project_name} across multiple availability-zones with the Oper
 summary="Deploy {project_name} for high availability with the {project_name} Operator as a building block."
 tileVisible="false" >
 
-This guide describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover availability-zone
+This {section} describes advanced {project_name} configurations for {kubernetes} which are load tested and will recover availability-zone
 failures.
 
 These instructions are intended for use with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.

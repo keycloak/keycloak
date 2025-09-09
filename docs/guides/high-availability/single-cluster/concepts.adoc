@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Concepts for single-cluster deployments"
@@ -12,10 +13,20 @@ It outlines the requirements of the high availability architecture and describes
 [#single-cluster-when-to-use]
 == When to use this setup
 
-Use this setup to provide {project_name} deployments that are deployed to a setup with transparent networking.
+<@profile.ifProduct>
+
+Use this setup to deploy {project_name} to an {kubernetes} cluster.
+
+</@profile.ifProduct>
+
+<@profile.ifCommunity>
+
+Use this setup to deploy {project_name} to a setup with transparent networking.
 
 To provide a more concrete example, the following chapter assumes a deployment contained within a single {kubernetes} cluster.
 The same concepts could be applied to a set of virtual or physical machines and a manual or scripted deployment.
+
+</@profile.ifCommunity>
 
 == Single or multiple availability-zones
 
