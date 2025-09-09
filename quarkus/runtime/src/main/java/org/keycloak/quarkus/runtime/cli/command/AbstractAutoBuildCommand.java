@@ -135,13 +135,6 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         }
     }
 
-    /**
-     * Controls whether the command actually starts the server
-     */
-    protected boolean shouldStart() {
-        return true;
-    }
-
     protected void doBeforeRun() {
 
     }
@@ -154,6 +147,11 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     protected EnumSet<OptionCategory> excludedCategories() {
         return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
+    }
+
+    @Override
+    public boolean shouldStart() {
+        return true;
     }
 
 }
