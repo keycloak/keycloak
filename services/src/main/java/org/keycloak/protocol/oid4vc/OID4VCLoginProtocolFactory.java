@@ -103,7 +103,6 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 			naturalPersonScope.setDescription("OIDC$VP Scope, that adds all properties required for a natural person.");
 			naturalPersonScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
 			naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
-			naturalPersonScope.addProtocolMapper(builtins.get(CLIENT_ROLES_MAPPER));
 			naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
 			naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
 			naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
