@@ -124,7 +124,7 @@ public class ResourcePolicyRepresentation {
             return this;
         }
 
-        public Builder onCoditions(ResourcePolicyConditionRepresentation... condition) {
+        public Builder onConditions(ResourcePolicyConditionRepresentation... condition) {
             if (conditions == null) {
                 conditions = new ArrayList<>();
             }

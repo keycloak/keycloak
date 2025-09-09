@@ -15,6 +15,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.policy.ResourcePolicyConditionProvider;
 import org.keycloak.models.policy.ResourcePolicyEvent;
+import org.keycloak.models.policy.ResourcePolicyInvalidStateException;
 import org.keycloak.models.policy.ResourceType;
 
 public class IdentityProviderPolicyConditionProvider implements ResourcePolicyConditionProvider {
@@ -32,6 +33,8 @@ public class IdentityProviderPolicyConditionProvider implements ResourcePolicyCo
         if (!ResourceType.USERS.equals(event.getResourceType())) {
             return false;
         }
+
+        validate();
 
         String userId = event.getResourceId();
         RealmModel realm = session.getContext().getRealm();
@@ -57,6 +60,15 @@ public class IdentityProviderPolicyConditionProvider implements ResourcePolicyCo
         );
 
         return cb.exists(subquery);
+    }
+
+    @Override
+    public void validate() {
+        expectedAliases.forEach(alias -> {
+            if (session.identityProviders().getByAlias(alias) == null) {
+                throw new ResourcePolicyInvalidStateException(String.format("Identity provider %s does not exist.", alias));
+            }
+        });
     }
 
     @Override

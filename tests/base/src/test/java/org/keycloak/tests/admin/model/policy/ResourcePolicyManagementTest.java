@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import org.hamcrest.Matchers;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -40,6 +39,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RealmResourcePolicies;
+import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -56,6 +56,7 @@ import org.keycloak.models.policy.SetUserAttributeActionProviderFactory;
 import org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory;
 import org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory;
 import org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyConditionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
@@ -202,7 +203,7 @@ public class ResourcePolicyManagementTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the policy and setup the first action
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -249,19 +250,25 @@ public class ResourcePolicyManagementTest {
     public void testAssignPolicyToExistingResources() {
         // create some realm users
         for (int i = 0; i < 10; i++) {
-            managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build());
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build()).close();
         }
 
         // create some users associated with a federated identity
         for (int i = 0; i < 10; i++) {
             managedRealm.admin().users().create(UserConfigBuilder.create().username("idp-user-" + i)
-                    .federatedLink("someidp", UUID.randomUUID().toString(), "idp-user-" + i).build());
+                    .federatedLink("someidp", UUID.randomUUID().toString(), "idp-user-" + i).build()).close();
         }
+
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias("someidp");
+        idp.setProviderId(KeycloakOIDCIdentityProviderFactory.PROVIDER_ID);
+        idp.setEnabled(true);
+        managedRealm.admin().identityProviders().create(idp).close();
 
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
                 .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.name())
-                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                .onConditions(ResourcePolicyConditionRepresentation.create()
                         .of(IdentityProviderPolicyConditionFactory.ID)
                         .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, "someidp")
                         .build())
@@ -278,12 +285,12 @@ public class ResourcePolicyManagementTest {
         // creation.
         for (int i = 0; i < 3; i++) {
             managedRealm.admin().users().create(UserConfigBuilder.create().username("new-idp-user-" + i)
-                    .federatedLink("someidp", UUID.randomUUID().toString(), "new-idp-user-" + i).build());
+                    .federatedLink("someidp", UUID.randomUUID().toString(), "new-idp-user-" + i).build()).close();
         }
 
         // new realm users created after the policy - these should not be attached to the policy because they are not idp users.
         for (int i = 0; i < 3; i++) {
-            managedRealm.admin().users().create(UserConfigBuilder.create().username("new-user-" + i).build());
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("new-user-" + i).build()).close();
         }
 
         runOnServer.run((RunOnServer) session -> {
@@ -377,7 +384,7 @@ public class ResourcePolicyManagementTest {
         assertThat(policy.getName(), is("test-policy"));
 
         // create a new user - should bind the user to the policy and setup the first action
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -406,7 +413,7 @@ public class ResourcePolicyManagementTest {
         managedRealm.admin().resources().policies().policy(policy.getId()).update(policy).close();
 
         // create another user - should NOT bind the user to the policy as it is disabled
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("anotheruser").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("anotheruser").build()).close();
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -441,7 +448,7 @@ public class ResourcePolicyManagementTest {
         managedRealm.admin().resources().policies().policy(policy.getId()).update(policy).close();
 
         // create a third user - should bind the user to the policy as it is enabled again
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("thirduser").email("thirduser@example.com").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("thirduser").email("thirduser@example.com").build()).close();
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -484,7 +491,7 @@ public class ResourcePolicyManagementTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the policy and setup the only action in the policy
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
@@ -533,7 +540,7 @@ public class ResourcePolicyManagementTest {
                 ).build()).close();
 
         // create a new user - should be bound to the new policy and all actions should run right away
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build()).close();
 
         // check the user has the attribute set and is disabled
         runOnServer.run(session -> {
@@ -559,7 +566,7 @@ public class ResourcePolicyManagementTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("test@example.com").name("John", "").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("test@example.com").name("John", "").build()).close();
 
         runOnServer.run(session -> {
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
@@ -597,7 +604,7 @@ public class ResourcePolicyManagementTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser2").email("test2@example.com").name("Jane", "").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser2").email("test2@example.com").name("Jane", "").build()).close();
 
         runOnServer.run(session -> {
 
@@ -637,7 +644,7 @@ public class ResourcePolicyManagementTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser3").email("test3@example.com").name("Bob", "").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser3").email("test3@example.com").name("Bob", "").build()).close();
 
         runOnServer.run(session -> {
             ResourcePolicyManager manager = new ResourcePolicyManager(session);
@@ -672,7 +679,7 @@ public class ResourcePolicyManagementTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser4").name("NoEmail", "").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser4").name("NoEmail", "").build()).close();
 
         runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);
@@ -712,7 +719,7 @@ public class ResourcePolicyManagementTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser5").email("testuser5@example.com").name("TestUser5", "").build());
+        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser5").email("testuser5@example.com").name("TestUser5", "").build()).close();
 
         runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);

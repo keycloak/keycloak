@@ -135,7 +135,7 @@ public class UserAttributePolicyConditionTest {
                 .of(EventBasedResourcePolicyProviderFactory.ID)
                 .onEvent(ResourceOperationType.CREATE.name())
                 .recurring()
-                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                .onConditions(ResourcePolicyConditionRepresentation.create()
                         .of(UserAttributePolicyConditionFactory.ID)
                         .withConfig(attributes)
                         .build())

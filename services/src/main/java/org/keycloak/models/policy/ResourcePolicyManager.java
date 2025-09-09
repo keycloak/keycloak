@@ -203,29 +203,36 @@ public class ResourcePolicyManager {
                 .filter(policy -> policy.isEnabled() && !getActions(policy.getId()).isEmpty())
                 .forEach(policy -> {
                     ResourcePolicyProvider provider = getPolicyProvider(policy);
-                    if (!currentlyAssignedPolicies.contains(policy.getId())) {
-                        // if policy is not active for the resource, check if the provider allows activating based on the event
-                        if (provider.activateOnEvent(event)) {
-                            if (policy.isScheduled()) {
-                                // policy is scheduled, so we schedule the first action
-                                log.debugf("Scheduling first action of policy %s for resource %s based on event %s",
-                                        policy.getId(), event.getResourceId(), event.getOperation());
+                    try {
+                        if (!currentlyAssignedPolicies.contains(policy.getId())) {
+                            // if policy is not active for the resource, check if the provider allows activating based on the event
+                            if (provider.activateOnEvent(event)) {
+                                if (policy.isScheduled()) {
+                                    // policy is scheduled, so we schedule the first action
+                                    log.debugf("Scheduling first action of policy %s for resource %s based on event %s",
+                                            policy.getId(), event.getResourceId(), event.getOperation());
+                                    policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
+                                } else {
+                                    // policy is not scheduled, so we run all actions immediately
+                                    log.debugf("Running all actions of policy %s for resource %s based on event %s",
+                                            policy.getId(), event.getResourceId(), event.getOperation());
+                                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), s -> {
+                                        getActions(policy.getId()).forEach(action -> getActionProvider(action).run(List.of(event.getResourceId())));
+                                    });
+                                }
+                            }
+                        } else {
+                            if (provider.resetOnEvent(event)) {
                                 policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
-                            } else {
-                                // policy is not scheduled, so we run all actions immediately
-                                log.debugf("Running all actions of policy %s for resource %s based on event %s",
-                                        policy.getId(), event.getResourceId(), event.getOperation());
-                                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), s -> {
-                                    getActions(policy.getId()).forEach(action -> getActionProvider(action).run(List.of(event.getResourceId())));
-                                });
+                            } else if (provider.deactivateOnEvent(event)) {
+                                policyStateProvider.remove(policy.getId(), event.getResourceId());
                             }
                         }
-                    } else {
-                        if (provider.resetOnEvent(event)) {
-                            policyStateProvider.scheduleAction(policy, getFirstAction(policy), event.getResourceId());
-                        } else if (provider.deactivateOnEvent(event)) {
-                            policyStateProvider.remove(policy.getId(), event.getResourceId());
-                        }
+                    } catch (ResourcePolicyInvalidStateException e) {
+                        policy.getConfig().putSingle("enabled", "false");
+                        policy.getConfig().putSingle("validation_error", e.getMessage());
+                        updatePolicy(policy, policy.getConfig());
+                        log.debugf("Policy %s was disabled due to: %s", policy.getId(), e.getMessage());
                     }
                 });
     }

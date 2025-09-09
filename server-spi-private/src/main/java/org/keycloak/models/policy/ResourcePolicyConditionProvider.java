@@ -13,4 +13,6 @@ public interface ResourcePolicyConditionProvider extends Provider {
     default Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> userRoot) {
         return null;
     }
+
+    void validate() throws ResourcePolicyInvalidStateException;
 }

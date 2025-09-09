@@ -50,6 +50,11 @@ public class UserAttributePolicyConditionProvider implements ResourcePolicyCondi
     }
 
     @Override
+    public void validate() {
+        // no-op
+    }
+
+    @Override
     public void close() {
 
     }
