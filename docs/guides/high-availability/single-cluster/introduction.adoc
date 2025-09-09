@@ -47,19 +47,26 @@ The following configurations are supported:
 <@profile.ifProduct>
 
 * {project_name} deployed on an OpenShift cluster version 4.17 or later
-** Pods can be scheduled across multiple availability zones within the same cloud-provider region.
+** For cloud setups, Pods can be scheduled across up to three availability zones within the same region
+if OpenShift supports spanning multiple availability zones in that environment and {project_name}'s latency requirements are met.
+** For on-premise setups, Pods can be scheduled across up to three datacenters
+if OpenShift supports spanning multiple datacenters in that environment and {project_name}'s latency requirements are met.
 
 </@profile.ifProduct>
 
 <@profile.ifCommunity>
 
 * {project_name} deployed on a {kubernetes} cluster
-** Pods can be scheduled across multiple availability zones within the same cloud-provider region.
+** For cloud setups, Pods can be scheduled across multiple availability zones within the same region
+if {project_name}'s latency requirements are met.
+** For on-premise setups, Pods can be scheduled across multiple datacenters
+if {project_name}'s latency requirements are met.
 * {project_name} deployed on a virtual machines or bare metal
+** Instances can be scheduled across multiple availability zones within the same cloud-provider region or multiple datacenters if {project_name}'s latency requirements are met.
 
 </@profile.ifCommunity>
 
-Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
+* Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
 
 * Database
 ** For a list of supported databases, see <@links.server id="db"/>.

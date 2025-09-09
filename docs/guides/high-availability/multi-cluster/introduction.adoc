@@ -7,7 +7,7 @@ title="Multi-cluster deployments"
 summary="Connect multiple {project_name} deployments in independent {kubernetes} clusters" >
 
 {project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches. Load balancers can distribute the load evenly across those instances.
-Those setups are intended for a transparent networks, see <@links.ha id="single-cluster-introduction" /> for more details.
+Those setups are intended for transparent networks, see <@links.ha id="single-cluster-introduction" /> for more details.
 
 A multi-cluster setup adds additional components, which allows non-transparent networks to be bridged,
 in order to provide additional high availability that may be needed for some environments.
@@ -54,12 +54,7 @@ The following configurations are supported:
 
 * Two {kubernetes} single-AZ clusters, in the same AWS Region
 ** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
-<@profile.ifProduct>
 either ROSA HCP or ROSA classic.
-</@profile.ifProduct>
-<@profile.ifCommunity>
-using ROSA HCP.
-</@profile.ifCommunity>
 
 ** Each {kubernetes} cluster has all its workers in a single Availability Zone.
 <@profile.ifProduct>
