@@ -65,7 +65,10 @@ public class KeycloakRecorder {
     }
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
-        Profile.init(profileName, features);
+        var profile = Profile.init(profileName, features);
+        if (!Environment.isRebuildCheck()) {
+            profile.logUnsupportedFeatures();
+        }
     }
 
     // default handler for redirecting to specific path
@@ -118,11 +121,13 @@ public class KeycloakRecorder {
         return propertyCollector -> {
             try (InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
                     AgroalDataSource.class, new DataSource() {
-                        @Override public Class<? extends Annotation> annotationType() {
+                        @Override
+                        public Class<? extends Annotation> annotationType() {
                             return DataSource.class;
                         }
 
-                        @Override public String value() {
+                        @Override
+                        public String value() {
                             return name;
                         }
                     })) {
