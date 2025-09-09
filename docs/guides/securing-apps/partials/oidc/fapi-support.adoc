@@ -7,7 +7,7 @@
 * https://openid.net/specs/openid-financial-api-part-2-1_0.html[Financial-grade API Security Profile 1.0 - Part 2: Advanced]
 * https://openid.net/specs/openid-financial-api-ciba-ID1.html[Financial-grade API: Client Initiated Backchannel Authentication Profile] (FAPI CIBA)
 * https://openid.net/specs/fapi-security-profile-2_0-final.html[FAPI 2.0 Security Profile (Final)]
-* https://openid.bitbucket.io/fapi/fapi-2_0-message-signing.html[FAPI 2.0 Message Signing (Draft)]
+* https://openid.bitbucket.io/fapi/fapi-2_0-message-signing.html[FAPI 2.0 Message Signing (Final)]
 
 This compliance means that the {project_name} server will verify the requirements
 for the authorization server, which are mentioned in the specifications. {project_name} adapters do not have any specific support for the FAPI, hence the required validations on the client (application)
