@@ -171,6 +171,11 @@ article.pf-v5-c-card.pf-m-flat.kc-email-connection
   font-weight: bold;
 }
 
+.kc-oid4vci-subtitle {
+  font-size: var(--pf-v5-global--FontSize--md);
+  font-weight: bold;
+}
+
 .kc-row-drag-button {
   padding: var(--pf-v5-global--spacer--sm);
 }

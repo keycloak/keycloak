@@ -20,7 +20,7 @@ import {
   TextInput,
   TextVariants,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../components/form/FormAccess";
@@ -56,7 +56,7 @@ export const RealmSettingsTokensTab = ({
     serverInfo.providers!["signature"].providers,
   );
 
-  const { control, register, reset, formState, handleSubmit } =
+  const { control, register, reset, formState, handleSubmit, setValue } =
     useFormContext<RealmRepresentation>();
 
   const offlineSessionMaxEnabled = useWatch({
@@ -76,6 +76,26 @@ export const RealmSettingsTokensTab = ({
     name: "revokeRefreshToken",
     defaultValue: false,
   });
+
+  // Hydrate form values from realm attributes for OID4VCI
+  useEffect(() => {
+    if (realm.attributes) {
+      // Set the nonce lifetime value if it exists in attributes
+      if (realm.attributes["vc.c-nonce-lifetime-seconds"]) {
+        setValue(
+          "attributes.vc.c-nonce-lifetime-seconds",
+          realm.attributes["vc.c-nonce-lifetime-seconds"],
+        );
+      }
+      // Set the pre-authorized code lifespan value if it exists in attributes
+      if (realm.attributes["preAuthorizedCodeLifespanS"]) {
+        setValue(
+          "attributes.preAuthorizedCodeLifespanS",
+          realm.attributes["preAuthorizedCodeLifespanS"],
+        );
+      }
+    }
+  }, [realm.attributes, setValue]);
 
   return (
     <PageSection variant="light">
@@ -618,6 +638,72 @@ export const RealmSettingsTokensTab = ({
               )}
             />
           </FormGroup>
+        </FormAccess>
+      </FormPanel>
+      {isFeatureEnabled(Feature.OpenId4VCI) && (
+        <FormAccess
+          isHorizontal
+          role="manage-realm"
+          className="pf-v5-u-mt-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <Text className="kc-oid4vci-subtitle" component={TextVariants.h1}>
+            {t("oid4vciAttributes")}
+          </Text>
+          <FormGroup
+            label={t("oid4vciNonceLifetime")}
+            fieldId="oid4vciNonceLifetime"
+            labelIcon={
+              <HelpItem
+                helpText={t("oid4vciNonceLifetimeHelp")}
+                fieldLabelId="oid4vciNonceLifetime"
+              />
+            }
+          >
+            <Controller
+              name="attributes.vc.c-nonce-lifetime-seconds"
+              control={control}
+              rules={{ required: t("required"), min: 30 }}
+              render={({ field }) => (
+                <TimeSelector
+                  {...field}
+                  id="oid4vciNonceLifetime"
+                  min={30}
+                  units={["second", "minute", "hour"]}
+                  value={field.value}
+                  onChange={field.onChange}
+                  data-testid="oid4vci-nonce-lifetime-seconds"
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("preAuthorizedCodeLifespan")}
+            fieldId="preAuthorizedCodeLifespan"
+            labelIcon={
+              <HelpItem
+                helpText={t("preAuthorizedCodeLifespanHelp")}
+                fieldLabelId="preAuthorizedCodeLifespan"
+              />
+            }
+          >
+            <Controller
+              name="attributes.preAuthorizedCodeLifespanS"
+              control={control}
+              rules={{ required: t("required"), min: 30 }}
+              render={({ field }) => (
+                <TimeSelector
+                  {...field}
+                  id="preAuthorizedCodeLifespan"
+                  min={30}
+                  units={["second", "minute", "hour"]}
+                  value={field.value}
+                  onChange={field.onChange}
+                  data-testid="pre-authorized-code-lifespan-s"
+                />
+              )}
+            />
+          </FormGroup>
           <ActionGroup>
             <Button
               variant="primary"
@@ -632,7 +718,7 @@ export const RealmSettingsTokensTab = ({
             </Button>
           </ActionGroup>
         </FormAccess>
-      </FormPanel>
+      )}
     </PageSection>
   );
 };

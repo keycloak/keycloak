@@ -16,8 +16,7 @@ export type RealmSettingsTab =
   | "tokens"
   | "client-policies"
   | "user-profile"
-  | "user-registration"
-  | "oid4vci-attributes";
+  | "user-registration";
 
 export type RealmSettingsParams = {
   realm: string;

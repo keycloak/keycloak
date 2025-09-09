@@ -27,38 +27,45 @@ const isOid4vciFeatureEnabled = async () => {
   return isEnabled;
 };
 
-// Helper function to handle feature flag logic and return tab element
-const getOid4vciTab = async (page: any) => {
+// Helper function to handle feature flag logic and return tokens tab element
+const getTokensTab = async (page: any) => {
   const isFeatureEnabled = await isOid4vciFeatureEnabled();
-  const oid4vciTab = page.getByTestId("rs-oid4vci-attributes-tab");
+  const tokensTab = page.getByTestId("rs-tokens-tab");
 
   if (!isFeatureEnabled) {
-    await expect(oid4vciTab).toBeHidden();
+    // If feature is not enabled, we still need to check if the OID4VCI section is hidden
+    await tokensTab.click();
+    const oid4vciSection = page.getByText("OID4VCI attributes");
+    await expect(oid4vciSection).toBeHidden();
     return null;
   }
-  return oid4vciTab;
+  return tokensTab;
 };
 
-test("OID4VCI tab visibility", async ({ page }) => {
+test("OID4VCI section visibility in Tokens tab", async ({ page }) => {
   const isFeatureEnabled = await isOid4vciFeatureEnabled();
-  const oid4vciTab = page.getByTestId("rs-oid4vci-attributes-tab");
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+
+  await tokensTab.click();
+
+  const oid4vciSection = page.getByText("OID4VCI attributes");
 
   // Always assert based on feature flag state
   if (isFeatureEnabled) {
-    await expect(oid4vciTab).toBeVisible();
+    await expect(oid4vciSection).toBeVisible();
   } else {
-    await expect(oid4vciTab).toBeHidden();
+    await expect(oid4vciSection).toBeHidden();
   }
 });
 
 test("should render fields and save values with correct attribute keys", async ({
   page,
 }) => {
-  const oid4vciTab = await getOid4vciTab(page);
-  if (!oid4vciTab) test.skip();
+  const tokensTab = await getTokensTab(page);
+  if (!tokensTab) test.skip();
 
   // Feature is enabled, proceed with the test
-  await oid4vciTab.click();
+  await tokensTab.click();
 
   const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
   const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
@@ -68,7 +75,7 @@ test("should render fields and save values with correct attribute keys", async (
 
   await nonceField.fill("120");
   await preAuthField.fill("300");
-  await page.getByTestId("oid4vci-tab-save").click();
+  await page.getByTestId("tokens-tab-save").click();
   await expect(page.getByText(/success/i)).toBeVisible();
 
   const realm = await adminClient.getRealm(realmName);
@@ -78,15 +85,15 @@ test("should render fields and save values with correct attribute keys", async (
 });
 
 test("should persist values after page refresh", async ({ page }) => {
-  const oid4vciTab = await getOid4vciTab(page);
-  if (!oid4vciTab) test.skip();
+  const tokensTab = await getTokensTab(page);
+  if (!tokensTab) test.skip();
 
   // Feature is enabled, proceed with the test
-  await oid4vciTab.click();
+  await tokensTab.click();
 
   await page.getByTestId("oid4vci-nonce-lifetime-seconds").fill("120");
   await page.getByTestId("pre-authorized-code-lifespan-s").fill("300");
-  await page.getByTestId("oid4vci-tab-save").click();
+  await page.getByTestId("tokens-tab-save").click();
   await expect(page.getByText(/success/i)).toBeVisible();
 
   // Refresh the page
@@ -112,15 +119,15 @@ test("should persist values after page refresh", async ({ page }) => {
 });
 
 test("should validate required fields and minimum values", async ({ page }) => {
-  const oid4vciTab = await getOid4vciTab(page);
-  if (!oid4vciTab) test.skip();
+  const tokensTab = await getTokensTab(page);
+  if (!tokensTab) test.skip();
 
   // Feature is enabled, proceed with the test
-  await oid4vciTab.click();
+  await tokensTab.click();
 
   const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
   const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
-  const saveButton = page.getByTestId("oid4vci-tab-save");
+  const saveButton = page.getByTestId("tokens-tab-save");
   const validationErrorText =
     "Please ensure all fields are filled and values are 30 seconds or greater.";
 
