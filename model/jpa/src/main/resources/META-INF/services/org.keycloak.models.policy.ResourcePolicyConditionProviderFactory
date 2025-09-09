@@ -18,3 +18,4 @@
 org.keycloak.models.policy.conditions.GroupMembershipPolicyConditionFactory
 org.keycloak.models.policy.conditions.IdentityProviderPolicyConditionFactory
 org.keycloak.models.policy.conditions.UserAttributePolicyConditionFactory
+org.keycloak.models.policy.conditions.RolePolicyConditionFactory

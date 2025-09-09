@@ -31,6 +31,8 @@ import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleModel.RoleGrantedEvent;
+import org.keycloak.models.RoleModel.RoleRevokedEvent;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
@@ -38,7 +40,6 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
-import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
@@ -507,6 +508,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public void grantRole(RoleModel role) {
         if (hasDirectRole(role)) return;
         grantRoleImpl(role);
+        RoleGrantedEvent.fire(role, this, session);
     }
 
     public void grantRoleImpl(RoleModel role) {
@@ -545,6 +547,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.remove(entity);
         }
         em.flush();
+        RoleRevokedEvent.fire(role, this, session);
     }
 
     @Override
