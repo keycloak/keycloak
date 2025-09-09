@@ -140,7 +140,7 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 		String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
 		ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
         if (clientModel == null) {
-            LOGGER.warnf("Client %s not found.", clientModel.getClientId());
+            LOGGER.warnf("Client %s not found.", client);
             return;
         }
 

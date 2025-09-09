@@ -32,7 +32,6 @@ import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.client
 
 public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 
-
 	@Test
 	public void testRoleMapping() throws Throwable {
 		String token = getBearerToken(oauth);
