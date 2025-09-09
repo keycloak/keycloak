@@ -38,8 +38,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -405,6 +403,7 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+
         // Authenticate first to fail fast on auth errors
         AuthenticationManager.AuthResult authResult = getAuthResult();
 
@@ -477,13 +476,26 @@ public class OID4VCIssuerEndpoint {
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, requestedCredential);
 
-        Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
+        // Get the list of all proofs (handles single proof, multiple proofs, or none)
+        List<String> allProofs = getAllProofs(credentialRequestVO);
 
-        // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
-        responseVO
-                .addCredential(theCredential)
-                .setNotificationId(generateNotificationId());
+        responseVO.setNotificationId(generateNotificationId());
+
+        if (allProofs.isEmpty()) {
+            // Single issuance without proof
+            Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
+            responseVO.addCredential(theCredential);
+        } else {
+            // Issue credentials for each proof (or one if no proofs)
+            Proofs originalProofs = credentialRequestVO.getProofs();
+            for (String currentProof : allProofs) {
+                credentialRequestVO.setProofs(new Proofs().setJwt(List.of(currentProof)));
+                Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
+                responseVO.addCredential(theCredential);
+            }
+            credentialRequestVO.setProofs(originalProofs);
+        }
 
         if (encryptionParams != null) {
             String jwe = encryptCredentialResponse(responseVO, encryptionParams);
@@ -494,6 +506,23 @@ public class OID4VCIssuerEndpoint {
         }
 
         return Response.ok().entity(responseVO).build();
+    }
+
+    private List<String> getAllProofs(CredentialRequest credentialRequestVO) {
+        List<String> allProofs = new ArrayList<>();
+
+        Proofs proofs = credentialRequestVO.getProofs();
+        if (proofs == null) {
+            return allProofs; // No proofs provided
+        }
+
+        if (proofs.getJwt() == null || proofs.getJwt().isEmpty()) {
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF,
+                    "The 'proofs' object must contain exactly one proof type with non-empty array."));
+        }
+
+        allProofs.addAll(proofs.getJwt());
+        return allProofs;
     }
 
     /**
@@ -688,7 +717,8 @@ public class OID4VCIssuerEndpoint {
      */
     private Object getCredential(AuthenticationManager.AuthResult authResult,
                                  SupportedCredentialConfiguration credentialConfig,
-                                 CredentialRequest credentialRequestVO) {
+                                 CredentialRequest credentialRequestVO
+    ) {
 
         // Get the client scope model from the credential configuration
         CredentialScopeModel credentialScopeModel = getClientScopeModel(credentialConfig);
