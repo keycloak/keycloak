@@ -17,7 +17,7 @@
 
 package org.keycloak.it.junit5.extension;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.ArrayList;
 import java.util.HashMap;

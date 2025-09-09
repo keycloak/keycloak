@@ -35,15 +35,13 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.mappers.HostnameV2PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 
-public abstract class AbstractStartCommand extends AbstractCommand {
+public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     public static final String OPTIMIZED_BUILD_OPTION_LONG = "--optimized";
 
@@ -146,15 +144,6 @@ public abstract class AbstractStartCommand extends AbstractCommand {
 
     protected void doBeforeRun() {
 
-    }
-
-    @Override
-    protected void validateConfig() {
-        super.validateConfig(); // we want to run the generic validation here first to check for unknown options
-        if (shouldStart()) { // if not starting, we aren't accepting http requests so no validation needed
-            HttpPropertyMappers.validateConfig();
-            HostnameV2PropertyMappers.validateConfig(picocli);
-        }
     }
 
     @Override

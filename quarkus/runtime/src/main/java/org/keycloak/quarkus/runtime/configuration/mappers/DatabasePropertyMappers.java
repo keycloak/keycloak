@@ -28,14 +28,12 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class DatabasePropertyMappers {
+final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
-    private DatabasePropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getDatabasePropertyMappers() {
-        var mappers = new PropertyMapper<?>[]{
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        List<PropertyMapper<?>> mappers = List.of(
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::transformDialect)
                         .build(),
@@ -106,7 +104,7 @@ final class DatabasePropertyMappers {
                         .build(),
                 fromOption(DB_URL_PATH)
                         .build()
-        };
+        );
 
         return appendDatasourceMappers(mappers, Map.of(
                 // Inherit options from the DB mappers
@@ -186,8 +184,8 @@ final class DatabasePropertyMappers {
         /**
          * Automatically create mappers for datasource options
          */
-        static PropertyMapper<?>[] appendDatasourceMappers(PropertyMapper<?>[] mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
-            List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.length);
+        static List<PropertyMapper<?>> appendDatasourceMappers(List<PropertyMapper<?>> mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
+            List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.size());
 
             for (var parent : mappers) {
                 var parentOption = parent.getOption();
@@ -225,9 +223,9 @@ final class DatabasePropertyMappers {
                 datasourceMappers.add(created.build());
             }
 
-            datasourceMappers.addAll(List.of(mappers));
+            datasourceMappers.addAll(mappers);
 
-            return datasourceMappers.toArray(new PropertyMapper[0]);
+            return datasourceMappers;
         }
 
         private static String transformDatasourceTo(String to) {

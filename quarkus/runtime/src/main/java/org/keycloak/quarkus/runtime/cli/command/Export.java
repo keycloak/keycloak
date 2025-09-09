@@ -21,7 +21,6 @@ import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.ExportImportConfig;
-import org.keycloak.quarkus.runtime.configuration.mappers.ExportPropertyMappers;
 import picocli.CommandLine.Command;
 
 import java.util.EnumSet;
@@ -36,12 +35,6 @@ public final class Export extends AbstractNonServerCommand {
     @Override
     protected void doBeforeRun() {
         System.setProperty(ExportImportConfig.ACTION, ACTION_EXPORT);
-    }
-
-    @Override
-    public void validateConfig() {
-        ExportPropertyMappers.validateConfig();
-        super.validateConfig();
     }
 
     @Override

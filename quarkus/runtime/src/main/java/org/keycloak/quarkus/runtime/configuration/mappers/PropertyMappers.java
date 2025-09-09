@@ -44,6 +44,21 @@ public final class PropertyMappers {
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
     private static final Logger log = Logger.getLogger(PropertyMappers.class);
+    private final static List<PropertyMapperGrouping> GROUPINGS;
+    static {
+        GROUPINGS = List.of(new CachingPropertyMappers(), new DatabasePropertyMappers(),
+                new ConfigKeystorePropertyMappers(), new EventPropertyMappers(), new ClassLoaderPropertyMappers(),
+                new ExportPropertyMappers(), new BootstrapAdminPropertyMappers(), new HostnameV2PropertyMappers(),
+                new HttpPropertyMappers(), new HttpAccessLogPropertyMappers(), new HealthPropertyMappers(),
+                new FeaturePropertyMappers(), new ImportPropertyMappers(), new ManagementPropertyMappers(),
+                new MetricsPropertyMappers(), new LoggingPropertyMappers(), new ProxyPropertyMappers(),
+                new VaultPropertyMappers(), new TracingPropertyMappers(), new TransactionPropertyMappers(),
+                new SecurityPropertyMappers(), new TruststorePropertyMappers());
+    }
+
+    public static List<PropertyMapperGrouping> getPropertyMapperGroupings() {
+        return GROUPINGS;
+    }
 
     private PropertyMappers(){}
 
@@ -53,28 +68,7 @@ public final class PropertyMappers {
 
     public static void reset() {
         MAPPERS = new MappersConfig();
-        MAPPERS.addAll(CachingPropertyMappers.getClusteringPropertyMappers());
-        MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
-        MAPPERS.addAll(HostnameV2PropertyMappers.getHostnamePropertyMappers());
-        MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
-        MAPPERS.addAll(HttpAccessLogPropertyMappers.getMappers());
-        MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
-        MAPPERS.addAll(ConfigKeystorePropertyMappers.getConfigKeystorePropertyMappers());
-        MAPPERS.addAll(ManagementPropertyMappers.getManagementPropertyMappers());
-        MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
-        MAPPERS.addAll(EventPropertyMappers.getMetricsPropertyMappers());
-        MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
-        MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
-        MAPPERS.addAll(FeaturePropertyMappers.getMappers());
-        MAPPERS.addAll(LoggingPropertyMappers.getMappers());
-        MAPPERS.addAll(TracingPropertyMappers.getMappers());
-        MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());
-        MAPPERS.addAll(ClassLoaderPropertyMappers.getMappers());
-        MAPPERS.addAll(SecurityPropertyMappers.getMappers());
-        MAPPERS.addAll(ExportPropertyMappers.getMappers());
-        MAPPERS.addAll(ImportPropertyMappers.getMappers());
-        MAPPERS.addAll(TruststorePropertyMappers.getMappers());
-        MAPPERS.addAll(BootstrapAdminPropertyMappers.getMappers());
+        GROUPINGS.forEach(g -> MAPPERS.addAll(g.getPropertyMappers()));
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
@@ -245,7 +239,7 @@ public final class PropertyMappers {
 
         private final WildcardMappersConfig wildcardConfig = new WildcardMappersConfig();
 
-        public void addAll(PropertyMapper<?>[] mappers) {
+        public void addAll(List<? extends PropertyMapper<?>> mappers) {
             for (PropertyMapper<?> mapper : mappers) {
                 addMapper(mapper);
 

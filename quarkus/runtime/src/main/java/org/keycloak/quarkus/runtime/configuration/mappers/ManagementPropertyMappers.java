@@ -27,15 +27,15 @@ import static org.keycloak.config.ManagementOptions.LEGACY_OBSERVABILITY_INTERFA
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public class ManagementPropertyMappers {
+import java.util.List;
+
+public class ManagementPropertyMappers implements PropertyMapperGrouping {
 
     private static final String HTTP_MANAGEMENT_SCHEME_IS_INHERITED = "http-management-scheme is inherited";
 
-    private ManagementPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getManagementPropertyMappers() {
-        return new PropertyMapper[]{
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(ManagementOptions.HTTP_MANAGEMENT_ENABLED)
                         .to("quarkus.management.enabled")
                         .transformer((val, ctx) -> managementEnabledTransformer())
@@ -118,8 +118,8 @@ public class ManagementPropertyMappers {
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_TYPE)
                         .to("quarkus.management.ssl.certificate.key-store-file-type")
                         .paramLabel("type")
-                        .build(),
-        };
+                        .build()
+        );
     }
 
     public static boolean isManagementEnabled() {
