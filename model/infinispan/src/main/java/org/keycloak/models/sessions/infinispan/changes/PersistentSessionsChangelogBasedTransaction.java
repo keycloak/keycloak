@@ -146,7 +146,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
     @Override
     public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
-        SessionChangesPerformer<K, V> persister = null;
+        JpaChangesPerformer<K, V> persister = null;
         for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
             if (sessionUpdates.getUpdateTasks().isEmpty()) {

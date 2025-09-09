@@ -48,18 +48,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletionStage;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
-public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionChangesPerformer<K, V> {
+public class JpaChangesPerformer<K, V extends SessionEntity> {
     private static final Logger LOG = Logger.getLogger(JpaChangesPerformer.class);
 
     private final List<PersistentUpdate> changes;
     private final TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor;
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
+    private boolean warningShown = false;
 
     public JpaChangesPerformer(String cacheName, ArrayBlockingQueue<PersistentUpdate> batchingQueue) {
         // The changes list is only used when batching is disabled.
@@ -69,26 +71,70 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     }
 
-    @Override
-    public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
-        changes.add(newUpdate(entry, merged));
-    }
-
-    @Override
-    public void write(KeycloakSession session) {
-        changes.forEach(persistentUpdate -> persistentUpdate.perform(session));
-    }
-
-    @Override
+    /**
+     * Checks if this instance support non-blocking writes.
+     * <p>
+     * If this instance is non-blocking, the invoker must use
+     * {@link #asyncWrite(AggregateCompletionStage, Map.Entry, MergedUpdate)}.
+     * <p>
+     * Otherwise, the implementation must support {@link #registerChange(Map.Entry, MergedUpdate)} and
+     * {@link #write(KeycloakSession)}. The invoker should register the change using the first method and applied them
+     * in a blocking way using the later method.
+     *
+     * @return {@code true} if this instance is non-blocking.
+     * @see #asyncWrite(AggregateCompletionStage, Map.Entry, MergedUpdate)
+     * @see #registerChange(Map.Entry, MergedUpdate)
+     * @see #write(KeycloakSession)
+     */
     public boolean isNonBlocking() {
         return batchingQueue != null;
     }
 
-    @Override
+    /**
+     * Performs a non-blocking write into the database.
+     * <p>
+     * The implementation should register the {@link CompletionStage} into the {@link AggregateCompletionStage}.
+     *
+     * @param stage  The {@link AggregateCompletionStage} to collect the {@link CompletionStage}.
+     * @param entry  The {@link Map.Entry} with the ID and the session.
+     * @param merged The {@link MergedUpdate} to be applied to the existing session.
+     * @throws NullPointerException if this instance does not support non-blocking writes.
+     * @see #isNonBlocking()
+     */
     public void asyncWrite(AggregateCompletionStage<Void> stage, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
         var update = newUpdate(entry, merged);
         offer(update);
         stage.dependsOn(update.future());
+    }
+
+    /**
+     * It queues a database write to be applied at a future invocation.
+     *
+     * @param entry  The {@link Map.Entry} with the ID and the session.
+     * @param merged The {@link MergedUpdate} to be applied to the existing session.
+     * @throws UnsupportedOperationException if this instance does not support blocking writes.
+     * @see #isNonBlocking()
+     */
+    public void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
+        changes.add(newUpdate(entry, merged));
+    }
+
+    /**
+     * Applies all the pending write operation into the database.
+     *
+     * @param session The {@link KeycloakSession} to access the database.
+     */
+    public void write(KeycloakSession session) {
+        changes.forEach(persistentUpdate -> persistentUpdate.perform(session));
+    }
+
+    /**
+     * Clears any pending blocking changes.
+     *
+     * @throws UnsupportedOperationException if this instance does not support blocking writes.
+     */
+    public void clear() {
+        changes.clear();
     }
 
     private PersistentUpdate newUpdate(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
@@ -97,13 +143,13 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     private TriConsumer<KeycloakSession, Map.Entry<K, SessionUpdatesList<V>>, MergedUpdate<V>> processor(String cacheName) {
         return switch (cacheName) {
-            case USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME -> this::processUserSessionUpdate;
-            case CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME -> this::processClientSessionUpdate;
+            case USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME ->
+                    JpaChangesPerformer::processUserSessionUpdate;
+            case CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME ->
+                    JpaChangesPerformer::processClientSessionUpdate;
             default -> throw new IllegalStateException("Unexpected value: " + cacheName);
         };
     }
-
-    private boolean warningShown = false;
 
     private void offer(PersistentUpdate update) {
         if (!batchingQueue.offer(update)) {
@@ -121,12 +167,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         }
     }
 
-
-    public void clear() {
-        changes.clear();
-    }
-
-    private void processClientSessionUpdate(KeycloakSession session, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
+    private static <K, V extends SessionEntity> void processClientSessionUpdate(KeycloakSession session, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
         SessionUpdatesList<V> sessionUpdates = entry.getValue();
         SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
         RealmModel realm = sessionUpdates.getRealm();
@@ -143,7 +184,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
     }
 
-    private void mergeClientSession(SessionEntityWrapper<V> sessionWrapper, UserSessionPersisterProvider userSessionPersister, RealmModel realm, SessionUpdatesList<V> sessionUpdates) {
+    private static <K, V extends SessionEntity> void mergeClientSession(SessionEntityWrapper<V> sessionWrapper, UserSessionPersisterProvider userSessionPersister, RealmModel realm, SessionUpdatesList<V> sessionUpdates) {
         AuthenticatedClientSessionEntity entity = (AuthenticatedClientSessionEntity) sessionWrapper.getEntity();
         ClientModel client = new ClientModelLazyDelegate(null) {
             @Override
@@ -395,7 +436,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         }, entity.isOffline());
     }
 
-    private void processUserSessionUpdate(KeycloakSession session, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
+    private static <K, V extends SessionEntity> void processUserSessionUpdate(KeycloakSession session, Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged) {
         SessionUpdatesList<V> sessionUpdates = entry.getValue();
         SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
         RealmModel realm = sessionUpdates.getRealm();
@@ -564,7 +605,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         }, entity.isOffline());
     }
 
-    private void mergeUserSession(KeycloakSession innerSession, Map.Entry<K, SessionUpdatesList<V>> entry, PersistentUserSessionAdapter userSessionModel, RealmModel realm, SessionUpdatesList<V> sessionUpdates, UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity) {
+    private static <K, V extends SessionEntity> void mergeUserSession(KeycloakSession innerSession, Map.Entry<K, SessionUpdatesList<V>> entry, PersistentUserSessionAdapter userSessionModel, RealmModel realm, SessionUpdatesList<V> sessionUpdates, UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity) {
         UserSessionEntity userSessionEntity = new UserSessionEntity(userSessionModel.getId()) {
             @Override
             public Map<String, String> getNotes() {
