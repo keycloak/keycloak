@@ -167,6 +167,11 @@ jobs:
           source: github
           opm: 1.21.0
 
+      - name: Install OC
+        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        with:
+          oc: 4
+
       - name: Install Yq
         run: sudo snap install yq
 
@@ -224,6 +229,23 @@ jobs:
         run: |
           ./deploy-examples.sh keycloak
           kubectl -n keycloak wait servicemonitor/example-kc --for=jsonpath='{.metadata.name}' --timeout=60s
+
+      - name: Debug Custom Resources
+        if: failure()
+        run: |
+          kubectl get keycloaks -A -o yaml
+          kubectl get keycloakrealmimports -A -o yaml
+
+      - name: Gather inspect report
+        if: failure()
+        run: oc adm inspect ns
+
+      - name: Upload inspect report
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: oc-inspect
+          path: inspect.*
 
   check:
     name: Status Check - Keycloak Operator CI
