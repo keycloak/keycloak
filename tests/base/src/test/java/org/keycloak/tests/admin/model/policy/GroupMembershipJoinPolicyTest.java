@@ -3,33 +3,33 @@ package org.keycloak.tests.admin.model.policy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.keycloak.tests.admin.model.policy.ResourcePolicyManagementTest.findEmailByRecipient;
 
 import java.time.Duration;
 import java.util.List;
 
-import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RealmResourcePolicies;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.EventBasedResourcePolicyProviderFactory;
+import org.keycloak.models.policy.SetUserAttributeActionProviderFactory;
 import org.keycloak.models.policy.conditions.GroupMembershipPolicyConditionFactory;
-import org.keycloak.models.policy.NotifyUserActionProviderFactory;
 import org.keycloak.models.policy.ResourceOperationType;
 import org.keycloak.models.policy.ResourcePolicyManager;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyConditionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.mail.MailServer;
-import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
@@ -48,11 +48,11 @@ public class GroupMembershipJoinPolicyTest {
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
-    @InjectMailServer
-    private MailServer mailServer;
-
     @Test
     public void testEventsOnGroupMembershipJoin() {
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        managedRealm.admin().users().userProfile().update(upConfig);
         String groupId;
 
         try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create()
@@ -69,7 +69,8 @@ public class GroupMembershipJoinPolicyTest {
                         .build())
                 .withActions(
                         ResourcePolicyActionRepresentation.create()
-                                .of(NotifyUserActionProviderFactory.ID)
+                                .of(SetUserAttributeActionProviderFactory.ID)
+                                .withConfig("attribute", "attr1")
                                 .after(Duration.ofDays(5))
                                 .build()
                 ).build();
@@ -87,7 +88,9 @@ public class GroupMembershipJoinPolicyTest {
             userId = ApiUtil.getCreatedId(response);
         }
 
-        managedRealm.admin().users().get(userId).joinGroup(groupId);
+        UserResource userResource = managedRealm.admin().users().get(userId);
+
+        userResource.joinGroup(groupId);
 
         runOnServer.run((session -> {
             RealmModel realm = configureSessionContext(session);
@@ -104,11 +107,8 @@ public class GroupMembershipJoinPolicyTest {
             }
         }));
 
-        // Verify that the notify action was executed by checking email was sent
-        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "generic-user@example.com");
-        assertNotNull(testUserMessage, "The first action (notify) should have sent an email.");
-
-        mailServer.runCleanup();
+        UserRepresentation rep = userResource.toRepresentation();
+        assertNotNull(rep.getAttributes().get("attribute"));
     }
 
     private static RealmModel configureSessionContext(KeycloakSession session) {

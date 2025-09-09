@@ -56,6 +56,13 @@ public class ResourcePolicyConditionRepresentation {
         this.config.put(key, Collections.singletonList(value));
     }
 
+    public void setConfig(String key, List<String> values) {
+        if (this.config == null) {
+            this.config = new HashMap<>();
+        }
+        this.config.put(key, values);
+    }
+
     public static class Builder {
 
         private ResourcePolicyConditionRepresentation action;
@@ -67,6 +74,16 @@ public class ResourcePolicyConditionRepresentation {
 
         public Builder withConfig(String key, String value) {
             action.setConfig(key, value);
+            return this;
+        }
+
+        public Builder withConfig(String key, List<String> value) {
+            action.setConfig(key, value);
+            return this;
+        }
+
+        public Builder withConfig(Map<String, List<String>> config) {
+            action.setConfig(config);
             return this;
         }
 

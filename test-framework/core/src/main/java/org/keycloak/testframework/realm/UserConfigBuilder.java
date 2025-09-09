@@ -8,6 +8,8 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class UserConfigBuilder {
 
@@ -85,6 +87,11 @@ public class UserConfigBuilder {
 
     public UserConfigBuilder attribute(String key, String... value) {
         rep.setAttributes(Collections.combine(rep.getAttributes(), key, value));
+        return this;
+    }
+
+    public UserConfigBuilder attributes(Map<String, List<String>> attributes) {
+        rep.setAttributes(Collections.combine(rep.getAttributes(), attributes));
         return this;
     }
 
