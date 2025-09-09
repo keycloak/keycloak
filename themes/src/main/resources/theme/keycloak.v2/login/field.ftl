@@ -88,7 +88,7 @@
   </@group>
 </#macro>
 
-<#macro clipboard name label value="" readonly=true>
+<#macro clipboard name label ariaLabel=label value="" readonly=true>
   <@group name=name label=label>
     <div class="${properties.kcCodeClipboardCopyClass}" id="kc-${name}-clipboard">
       <div class="${properties.kcCodeClipboardCopyGroupClass}">
@@ -111,12 +111,12 @@
           <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
             <span class="${properties.kcInputClass} <#if readonly>${properties.kcFormReadOnlyClass}</#if>">
               <input
-                id="kc-${name}"
+                id="${name}"
                 name="${name}"
                 value="${value}"
                 type="text"
                 <#if readonly>readonly</#if>
-                aria-label="${label}"
+                aria-label="${ariaLabel}"
               />
             </span>
           </div>
@@ -137,7 +137,7 @@
         </div>
       </div>
       <div class="${properties.kcCodeClipboardCopyContentClass}" id="kc-${name}-content" hidden>
-        <pre><code>${value}</code></pre>
+        <pre><code aria-label="${ariaLabel}">${value}</code></pre>
       </div>
     </div>
   </@group>

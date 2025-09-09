@@ -11,8 +11,7 @@
         <div id="kc-code">
             <#if code.success>
                 <p>${msg("copyCodeInstruction")}</p>
-                <@field.clipboard name="code" label="" value=code.code />
-                
+                <@field.clipboard name="code" label="" ariaLabel=msg("codeSuccess") value=code.code />
                 <script type="module">
                     (() => {
                         const copyButton = document.getElementById('kc-code-copy-button');
