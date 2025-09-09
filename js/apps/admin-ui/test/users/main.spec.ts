@@ -1,5 +1,10 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import { expect, test } from "@playwright/test";
-import { v4 as uuid } from "uuid";
+import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
+import { toAddUser } from "../../src/user/routes/AddUser.tsx";
+import { toUser } from "../../src/user/routes/User.tsx";
+import { toUsers } from "../../src/user/routes/Users.tsx";
+import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.ts";
 import {
   assertAttributeLength,
@@ -7,11 +12,12 @@ import {
   fillAttributeData,
   goToAttributesTab,
 } from "../utils/attributes.ts";
+import { DEFAULT_REALM } from "../utils/constants.ts";
 import { selectItem } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
-import { goToRealm, goToRealmSettings, goToUsers } from "../utils/sidebar.ts";
+import { goToUsers } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   assertRowExists,
@@ -23,42 +29,15 @@ import {
   clickCancelButton,
   clickSaveButton,
   fillUserForm,
-  goToGroupTab,
   joinGroup,
 } from "./main.ts";
 
-let groupName = "group";
-let groupsList: string[] = [];
+test.describe("User creation", () => {
+  test("navigates to the create user page", async ({ page }) => {
+    const realm = await createTestBed();
 
-test.describe.serial("User creation", () => {
-  const realmName = `users-${uuid()}`;
+    await login(page, { to: toUsers({ realm }) });
 
-  const userId = `user_crud-${uuid()}`;
-
-  test.beforeAll(async () => {
-    await adminClient.createRealm(realmName);
-
-    for (let i = 0; i <= 2; i++) {
-      groupName += "_" + uuid();
-      await adminClient.createGroup(groupName, realmName);
-      groupsList = [...groupsList, groupName];
-    }
-  });
-
-  test.afterAll(() => adminClient.deleteRealm(realmName));
-
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToRealm(page, realmName);
-    await goToRealmSettings(page);
-    await selectItem(page, "#unmanagedAttributePolicy", "Enabled");
-    await page.getByTestId("realmSettingsGeneralTab-save").click();
-    await goToUsers(page);
-  });
-
-  test.afterEach(() => adminClient.deleteUser(userId, realmName, true));
-
-  test("Go to create User page", async ({ page }) => {
     await clickAddUserButton(page);
     await expect(page).toHaveURL(/.*users\/add-user/);
 
@@ -66,42 +45,53 @@ test.describe.serial("User creation", () => {
     await expect(page).not.toHaveURL(/.*users\/add-user/);
   });
 
-  test("Create user test", async ({ page }) => {
-    await clickAddUserButton(page);
+  test("creates a new user", async ({ page }) => {
+    const realm = await createTestBed();
+
+    await login(page, { to: toAddUser({ realm }) });
+
     await fillUserForm(page, {
-      username: userId,
-      email: `example_${uuid()}@example.com`,
+      username: "test-user",
+      email: "test-user@example.com",
     });
     await clickSaveButton(page);
     await assertNotificationMessage(page, "The user has been created");
   });
 
-  test("Should check temporary admin user existence", async ({ page }) => {
+  test("checks temporary admin user existence", async ({ page }) => {
+    await login(page, { to: toUsers({ realm: DEFAULT_REALM }) });
+
     // check banner visibility first
     await expect(page.locator(".pf-v5-c-banner")).toContainText(
       "You are logged in as a temporary admin user.",
     );
 
-    await goToRealm(page, "master");
-    await goToUsers(page);
     await searchItem(page, "Search", "admin");
     await assertRowExists(page, "admin");
     await expect(page.locator("#temporary-admin-label")).toBeVisible();
   });
 
-  test("Create user with groups test", async ({ page }) => {
-    await clickAddUserButton(page);
-    await fillUserForm(page, { username: userId });
-    await joinGroup(page, [groupsList[0]]);
+  test("creates a user that joins a group", async ({ page }) => {
+    const realm = await createTestBed({
+      groups: [{ name: "test-group" }],
+    });
+
+    await login(page, { to: toAddUser({ realm }) });
+
+    await fillUserForm(page, { username: "test-user" });
+    await joinGroup(page, ["test-group"]);
     await clickSaveButton(page);
     await assertNotificationMessage(page, "The user has been created");
   });
 
-  test("Create user with credentials test", async ({ page }) => {
-    await clickAddUserButton(page);
+  test("creates a user with a password credential", async ({ page }) => {
+    const realm = await createTestBed();
+
+    await login(page, { to: toAddUser({ realm }) });
+
     await fillUserForm(page, {
-      username: userId,
-      email: `example_${uuid()}@example.com`,
+      username: "test-user",
+      email: "test-user@example.com",
       firstName: "firstname",
       lastName: "lastname",
     });
@@ -116,102 +106,114 @@ test.describe.serial("User creation", () => {
     await confirmModal(page);
     await confirmModal(page);
   });
+});
 
-  test.describe.serial("Existing users", () => {
-    const placeHolder = "Search user";
-    const existingUserId = `existing_user-${uuid()}`;
-    const existingUserId2 = `existing_user2-${uuid()}`;
+test.describe("Existing users", () => {
+  const placeHolder = "Search user";
+  const existingUserName = "existing-user";
+  const overrides: RealmRepresentation = {
+    users: [{ username: existingUserName }],
+  };
 
-    test.beforeAll(() =>
-      Promise.all([
-        adminClient.createUser({
-          realm: realmName,
-          username: existingUserId,
-        }),
-        adminClient.createUser({
-          realm: realmName,
-          username: existingUserId2,
-        }),
-      ]),
+  test("searches for an existing user", async ({ page }) => {
+    const realm = await createTestBed(overrides);
+
+    await login(page, { to: toUsers({ realm }) });
+
+    await searchItem(page, placeHolder, existingUserName);
+    await assertRowExists(page, existingUserName);
+  });
+
+  test("searches for a non-existing user", async ({ page }) => {
+    const realm = await createTestBed(overrides);
+
+    await login(page, { to: toUsers({ realm }) });
+
+    await searchItem(page, "Search", "non-existing-user");
+    await assertNoResults(page);
+  });
+
+  test("edits a user", async ({ page }) => {
+    const realm = await createTestBed(overrides);
+    const user = await adminClient.findUserByUsername(realm, existingUserName);
+
+    await login(page, { to: toUser({ realm, id: user.id!, tab: "settings" }) });
+
+    await fillUserForm(page, {
+      email: "test-user@example.com",
+      firstName: "first",
+      lastName: "last",
+    });
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "The user has been saved");
+  });
+
+  const attributesName = "unmanagedAttributes";
+
+  test("adds unmanaged attributes to a user", async ({ page }) => {
+    const realm = await createTestBed(overrides);
+
+    await login(page, { to: toRealmSettings({ realm }) });
+
+    await selectItem(page, "#unmanagedAttributePolicy", "Enabled");
+    await page.getByTestId("realmSettingsGeneralTab-save").click();
+
+    await goToUsers(page);
+    await clickTableRowItem(page, existingUserName);
+    await goToAttributesTab(page);
+
+    await fillAttributeData(page, "key_test", "value_test", attributesName);
+    await clickAttributeSaveButton(page);
+    await assertNotificationMessage(page, "The user has been saved");
+
+    await fillAttributeData(page, "LDAP_ID", "value_test", attributesName, 1);
+    await fillAttributeData(
+      page,
+      "LDAP_ID",
+      "another_value_test",
+      attributesName,
+      2,
     );
+    await clickAttributeSaveButton(page);
 
-    test("Search existing user test", async ({ page }) => {
-      await searchItem(page, placeHolder, existingUserId);
-      await assertRowExists(page, existingUserId);
+    await expect(page.getByText("Update of read-only attribute")).toHaveCount(
+      2,
+    );
+    await assertNotificationMessage(page, "The user has not been saved: ");
+  });
+
+  test("adds unmanaged attributes with multiple values to a user", async ({
+    page,
+  }) => {
+    const realm = await createTestBed(overrides);
+
+    await login(page, { to: toRealmSettings({ realm }) });
+
+    await selectItem(page, "#unmanagedAttributePolicy", "Enabled");
+    await page.getByTestId("realmSettingsGeneralTab-save").click();
+    await goToUsers(page);
+    await clickTableRowItem(page, existingUserName);
+    await goToAttributesTab(page);
+
+    await fillAttributeData(page, "key-multiple", "value1", attributesName);
+    await fillAttributeData(page, "key-multiple", "value2", attributesName, 1);
+    await clickAttributeSaveButton(page);
+
+    await assertNotificationMessage(page, "The user has been saved");
+    await assertAttributeLength(page, 2, attributesName);
+  });
+
+  test("adds a user to a group", async ({ page }) => {
+    const realm = await createTestBed({
+      ...overrides,
+      groups: [{ name: "test-group" }],
     });
+    const user = await adminClient.findUserByUsername(realm, existingUserName);
 
-    test("Search non-existing user test", async ({ page }) => {
-      await searchItem(page, "Search", "user_DNE");
-      await assertNoResults(page);
-    });
+    await login(page, { to: toUser({ realm, id: user.id!, tab: "groups" }) });
 
-    test("User details test", async ({ page }) => {
-      await searchItem(page, placeHolder, existingUserId);
-      await assertRowExists(page, existingUserId);
-      await clickTableRowItem(page, existingUserId);
-
-      await fillUserForm(page, {
-        email: `example_${uuid()}@example.com`,
-        firstName: "first",
-        lastName: "last",
-      });
-      await clickSaveButton(page);
-      await assertNotificationMessage(page, "The user has been saved");
-
-      await goToUsers(page);
-      await searchItem(page, placeHolder, existingUserId);
-      await assertRowExists(page, existingUserId);
-    });
-
-    const attributesName = "unmanagedAttributes";
-
-    test("Select Unmanaged attributes", async ({ page }) => {
-      await clickTableRowItem(page, existingUserId);
-
-      await goToAttributesTab(page);
-      await fillAttributeData(page, "key_test", "value_test", attributesName);
-      await clickAttributeSaveButton(page);
-      await assertNotificationMessage(page, "The user has been saved");
-
-      await fillAttributeData(page, "LDAP_ID", "value_test", attributesName, 1);
-      await fillAttributeData(
-        page,
-        "LDAP_ID",
-        "another_value_test",
-        attributesName,
-        2,
-      );
-      await clickAttributeSaveButton(page);
-      await expect(page.getByText("Update of read-only attribute")).toHaveCount(
-        2,
-      );
-      await assertNotificationMessage(page, "The user has not been saved: ");
-    });
-
-    test("User attributes with multiple values test", async ({ page }) => {
-      await clickTableRowItem(page, existingUserId2);
-
-      await goToAttributesTab(page);
-      await fillAttributeData(page, "key-multiple", "value1", attributesName);
-      await fillAttributeData(
-        page,
-        "key-multiple",
-        "value2",
-        attributesName,
-        1,
-      );
-      await clickAttributeSaveButton(page);
-      await assertNotificationMessage(page, "The user has been saved");
-      await assertAttributeLength(page, 2, attributesName);
-    });
-
-    test("Add user to groups test", async ({ page }) => {
-      await clickTableRowItem(page, existingUserId);
-
-      await goToGroupTab(page);
-      await joinGroup(page, groupsList, true);
-      await assertNotificationMessage(page, "Added group membership");
-      await assertRowExists(page, groupsList[2]);
-    });
+    await joinGroup(page, ["test-group"], true);
+    await assertNotificationMessage(page, "Added group membership");
+    await assertRowExists(page, "test-group");
   });
 });

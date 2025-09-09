@@ -43,7 +43,7 @@ class AdminClient {
 
   async createRealm(realm: string, payload?: RealmRepresentation) {
     await this.#login();
-    await this.#client.realms.create({ realm, ...payload });
+    return await this.#client.realms.create({ realm, ...payload });
   }
 
   async updateRealm(realm: string, payload: RealmRepresentation) {
@@ -666,6 +666,22 @@ class AdminClient {
         ...policy,
       },
     );
+  }
+
+  async findUserByUsername(
+    realm: string,
+    username: string,
+  ): Promise<UserRepresentation> {
+    await this.#login();
+
+    const users = await this.#client.users.find({
+      realm,
+      username,
+      exact: true,
+      max: 1,
+    });
+
+    return users[0];
   }
 }
 

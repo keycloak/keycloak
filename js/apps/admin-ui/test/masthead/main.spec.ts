@@ -87,7 +87,7 @@ test.describe.serial("Masthead tests", () => {
 
     test("Login without privileges to see admin console", async ({ page }) => {
       await logout(page);
-      await login(page, username, "test", realmName);
+      await login(page, { realm: realmName, username, password: "test" });
       await expect(
         page.getByText(
           "You do not have permission to access this resource, sign in with a user that has permission, or contact your administrator.",
