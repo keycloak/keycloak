@@ -17,6 +17,13 @@
 
 package org.keycloak.tests.admin.model.policy;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -117,11 +124,47 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
     private static final String CLIENT_SECRET = "secret";
 
     @Test
+    public void testRemoveAssociatedIdp() {
+        consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
+                .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
+                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onConditions(ResourcePolicyConditionRepresentation.create()
+                        .of(IdentityProviderPolicyConditionFactory.ID)
+                        .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
+                        .build())
+                .withActions(
+                        ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
+                                .after(Duration.ofDays(1))
+                                .build()
+                ).build()).close();
+
+        List<ResourcePolicyRepresentation> policies = consumerRealm.admin().resources().policies().list();
+        assertThat(policies, hasSize(1));
+
+        ResourcePolicyRepresentation policyRep = consumerRealm.admin().resources().policies().policy(policies.get(0).getId()).toRepresentation();
+        assertThat(policyRep.getConfig().getFirst("enabled"), nullValue());
+
+        // remove IDP
+        consumerRealm.admin().identityProviders().get(IDP_OIDC_ALIAS).remove();
+
+        // create new user - it will trigger an activation event and therefore should disable the policy
+        consumerRealm.admin().users().create(UserConfigBuilder.create().username("test").build()).close();
+
+        // check the policy is disabled
+        policyRep = consumerRealm.admin().resources().policies().policy(policies.get(0).getId()).toRepresentation();
+        assertThat(policyRep.getConfig().getFirst("enabled"), allOf(notNullValue(), is("false")));
+        List<String> validationErrors = policyRep.getConfig().get("validation_error");
+        assertThat(validationErrors, notNullValue());
+        assertThat(validationErrors, hasSize(1));
+        assertThat(validationErrors.get(0), containsString("Identity provider %s does not exist.".formatted(IDP_OIDC_ALIAS)));
+    }
+
+    @Test
     public void tesRunActionOnFederatedUser() {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
                 .onEvent(ResourceOperationType.LOGIN.toString())
-                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                .onConditions(ResourcePolicyConditionRepresentation.create()
                         .of(IdentityProviderPolicyConditionFactory.ID)
                         .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
                         .build())
@@ -192,7 +235,7 @@ public class BrokeredUserSessionRefreshTimePolicyTest {
         consumerRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserSessionRefreshTimeResourcePolicyProviderFactory.ID)
                 .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.toString())
-                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                .onConditions(ResourcePolicyConditionRepresentation.create()
                         .of(IdentityProviderPolicyConditionFactory.ID)
                         .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
                         .build())

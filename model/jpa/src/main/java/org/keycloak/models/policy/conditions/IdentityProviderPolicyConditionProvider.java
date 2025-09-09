@@ -10,6 +10,7 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
@@ -32,6 +33,8 @@ public class IdentityProviderPolicyConditionProvider implements ResourcePolicyCo
         if (!ResourceType.USERS.equals(event.getResourceType())) {
             return false;
         }
+
+        validate();
 
         String userId = event.getResourceId();
         RealmModel realm = session.getContext().getRealm();
@@ -57,6 +60,15 @@ public class IdentityProviderPolicyConditionProvider implements ResourcePolicyCo
         );
 
         return cb.exists(subquery);
+    }
+
+    @Override
+    public void validate() {
+        expectedAliases.forEach(alias -> {
+            if (session.identityProviders().getByAlias(alias) == null) {
+                throw new ModelValidationException(String.format("Identity provider %s does not exist.", alias));
+            }
+        });
     }
 
     @Override

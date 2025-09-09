@@ -261,7 +261,7 @@ public class ResourcePolicyManagementTest {
         managedRealm.admin().resources().policies().create(ResourcePolicyRepresentation.create()
                 .of(UserCreationTimeResourcePolicyProviderFactory.ID)
                 .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.name())
-                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                .onConditions(ResourcePolicyConditionRepresentation.create()
                         .of(IdentityProviderPolicyConditionFactory.ID)
                         .withConfig(IdentityProviderPolicyConditionFactory.EXPECTED_ALIASES, "someidp")
                         .build())
