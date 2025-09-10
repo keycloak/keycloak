@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -85,7 +86,7 @@ public class OrganizationsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation( summary = "Creates a new organization")
+    @Operation(summary = "Creates a new organization")
     public Response create(OrganizationRepresentation organization) {
         auth.realm().requireManageRealm();
         Organizations.checkEnabled(provider);
@@ -136,7 +137,10 @@ public class OrganizationsResource {
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "if true, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("false") boolean briefRepresentation
     ) {
-        auth.realm().requireViewRealm();
+        if (!auth.realm().canViewRealm() || !auth.realm().canManageRealm() ||
+                !auth.groups().canView() || !auth.groups().canManage())
+            throw new ForbiddenException();
+
         Organizations.checkEnabled(provider);
 
         // check if are searching orgs by attribute.
@@ -146,6 +150,7 @@ public class OrganizationsResource {
         } else {
             return provider.getAllStream(search, exact, first, max).map(model -> ModelToRepresentation.toBriefRepresentation(model, briefRepresentation));
         }
+
     }
 
     /**
@@ -153,7 +158,10 @@ public class OrganizationsResource {
      */
     @Path("{org-id}")
     public OrganizationResource get(@PathParam("org-id") String orgId) {
-        auth.realm().requireManageRealm();
+        if (!auth.realm().canViewRealm() || !auth.realm().canManageRealm() ||
+                !auth.groups().canView() || !auth.groups().canManage())
+            throw new ForbiddenException();
+
         Organizations.checkEnabled(provider);
 
         if (StringUtil.isBlank(orgId)) {
@@ -169,6 +177,7 @@ public class OrganizationsResource {
         session.getContext().setOrganization(organizationModel);
 
         return new OrganizationResource(session, organizationModel, adminEvent);
+
     }
 
     @Path("members/{member-id}/organizations")
