@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +34,9 @@ import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
+/**
+ * Utility methods for embedded and change-log based transaction
+ */
 public class InfinispanChangesUtils {
 
     private InfinispanChangesUtils() {
@@ -124,10 +126,10 @@ public class InfinispanChangesUtils {
             MergedUpdate<V> task,
             SessionEntityWrapper<V> oldVersionEntity,
             Logger logger) {
-        return cacheInfo.sequencer().orderOnKey(key, () -> replaceAsync(cacheInfo.cache(), key, task, null, oldVersionEntity, 0, logger));
+        return cacheInfo.sequencer().orderOnKey(key, () -> replaceIteration(cacheInfo.cache(), key, task, null, oldVersionEntity, 0, logger));
     }
 
-    private static <K, V extends SessionEntity> CompletionStage<Void> replaceAsync(
+    private static <K, V extends SessionEntity> CompletionStage<Void> replaceIteration(
             Cache<K, SessionEntityWrapper<V>> cache,
             K key,
             MergedUpdate<V> task,
@@ -145,27 +147,33 @@ public class InfinispanChangesUtils {
             logger.debugf("Entity %s removed after evaluation", key);
             return CacheDecorators.ignoreReturnValues(cache).removeAsync(key).thenRun(CompletionStages.NO_OP_RUNNABLE);
         }
-        SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, expectedSession.getLocalMetadata());
+        SessionEntityWrapper<V> newVersionEntity = new SessionEntityWrapper<>(expectedSession.getLocalMetadata(), session);
         CompletionStage<SessionEntityWrapper<V>> stage = cache.computeIfPresentAsync(key, new ReplaceFunction<>(expectedSession.getVersion(), newVersionEntity), task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
-        return stage.thenCompose(rv -> {
-            if (rv == null) {
-                logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
-                return CompletableFutures.completedNull();
-            }
-
-            if (rv.getVersion().equals(newVersionEntity.getVersion())) {
-                if (logger.isTraceEnabled()) {
-                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, expectedSession.getVersion(), newVersionEntity.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
-                }
-                return CompletableFutures.completedNull();
-            }
-            task.runUpdate(rv.getEntity());
-            return replaceAsync(cache, key, task, expectedSession, rv, iteration + 1, logger);
-        });
+        return stage.thenCompose(rv -> handleReplaceResponse(cache, key, task, expectedSession, newVersionEntity, rv, iteration + 1, logger));
     }
 
-    private static <V extends SessionEntity> SessionEntityWrapper<V> generateNewVersionAndWrapEntity(V entity, Map<String, String> localMetadata) {
-        return new SessionEntityWrapper<>(localMetadata, entity);
-    }
+    private static <K, V extends SessionEntity> CompletionStage<Void> handleReplaceResponse(
+            Cache<K, SessionEntityWrapper<V>> cache,
+            K key,
+            MergedUpdate<V> task,
+            SessionEntityWrapper<V> expectedSession,
+            SessionEntityWrapper<V> newSession,
+            SessionEntityWrapper<V> returnValue,
+            int iteration,
+            Logger logger
+    ) {
+        if (returnValue == null) {
+            logger.debugf("Entity %s not found. Maybe removed in the meantime. Replace task will be ignored", key);
+            return CompletableFutures.completedNull();
+        }
 
+        if (returnValue.getVersion().equals(newSession.getVersion())) {
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s, Lifespan: %d ms, MaxIdle: %d ms", key, expectedSession.getVersion(), newSession.getVersion(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+            }
+            return CompletableFutures.completedNull();
+        }
+        task.runUpdate(returnValue.getEntity());
+        return replaceIteration(cache, key, task, expectedSession, returnValue, iteration + 1, logger);
+    }
 }

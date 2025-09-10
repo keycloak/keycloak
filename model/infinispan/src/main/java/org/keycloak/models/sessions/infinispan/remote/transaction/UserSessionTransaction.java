@@ -46,10 +46,10 @@ public class UserSessionTransaction implements NonBlockingTransaction {
 
     @Override
     public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
-        userSessions.asyncCommit(stage, null);
-        clientSessions.asyncCommit(stage, null);
-        offlineUserSessions.asyncCommit(stage, null);
-        offlineClientSessions.asyncCommit(stage, null);
+        userSessions.asyncCommit(stage, databaseUpdates);
+        clientSessions.asyncCommit(stage, databaseUpdates);
+        offlineUserSessions.asyncCommit(stage, databaseUpdates);
+        offlineClientSessions.asyncCommit(stage, databaseUpdates);
     }
 
     @Override

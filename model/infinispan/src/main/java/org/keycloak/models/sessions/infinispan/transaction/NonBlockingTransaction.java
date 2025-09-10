@@ -36,9 +36,12 @@ public interface NonBlockingTransaction {
      * <p>
      * The implementation should not block the thread and add any (or none) {@link CompletionStage} into the
      * {@code stage}.
+     * <p>
+     * Any blocking operation should be consumed by the {@code databaseUpdates}. It will be executed at a later
+     * instant.
      *
      * @param stage           The {@link AggregateCompletionStage} to collect the {@link CompletionStage}.
-     * @param databaseUpdates
+     * @param databaseUpdates The {@link Consumer} to use for blocking/database updates.
      */
     void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates);
 

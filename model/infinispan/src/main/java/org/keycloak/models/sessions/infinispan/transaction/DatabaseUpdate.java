@@ -19,9 +19,17 @@ package org.keycloak.models.sessions.infinispan.transaction;
 
 import org.keycloak.models.KeycloakSession;
 
+/**
+ * A pending (blocking) database update.
+ */
 @FunctionalInterface
 public interface DatabaseUpdate {
 
+    /**
+     * Write the database changes using the {@code session} provided.
+     *
+     * @param session The {@link KeycloakSession}.
+     */
     void write(KeycloakSession session);
 
 }

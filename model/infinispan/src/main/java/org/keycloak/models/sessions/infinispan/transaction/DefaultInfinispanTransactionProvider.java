@@ -61,10 +61,15 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
     protected void commitImpl() {
         final AggregateCompletionStage<Void> stage = CompletionStages.aggregateCompletionStage();
         final DatabaseWrites databaseWrites = new DatabaseWrites();
+
+        // sends all the cache requests and queues any pending database writes.
         transactionList.forEach(transaction -> transaction.asyncCommit(stage, databaseWrites));
 
+        // all the cache requests has been sent
+        // apply the database changes in a blocking fashion, and in a single transaction.
         commitDatabaseUpdates(databaseWrites);
 
+        // finally, wait for the completion of the cache updates.
         CompletionStages.join(stage.freeze());
     }
 
@@ -108,7 +113,7 @@ public class DefaultInfinispanTransactionProvider extends AbstractKeycloakTransa
 
         @Override
         public String getTaskName() {
-            return "User/Client session database update";
+            return "Database Update";
         }
     }
 }

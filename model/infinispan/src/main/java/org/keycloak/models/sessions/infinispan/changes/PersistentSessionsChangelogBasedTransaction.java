@@ -17,14 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletionStages;
@@ -38,6 +30,14 @@ import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
 abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends SessionEntity> implements SessionsChangelogBasedTransaction<K, V>, NonBlockingTransaction {
 
     private static final Logger LOG = Logger.getLogger(PersistentSessionsChangelogBasedTransaction.class);
@@ -48,7 +48,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
     private final CacheInfo<K, V> cacheInfo;
     private final CacheInfo<K, V> offlineCacheInfo;
-
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
@@ -130,7 +129,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                var c = entity.isOffline() ? offlineCacheInfo : cacheInfo;
+                var c = isOffline ? offlineCacheInfo : cacheInfo;
                 if (c.cache() != null) {
                     // Update cache. It is non-blocking.
                     InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG);
@@ -143,8 +142,10 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                     }
                 }
                 if (persister.isNonBlocking()) {
+                    // batching enabled, another thread will commit the changes.
                     persister.asyncWrite(stage, entry, merged);
                 } else {
+                    // batching disabled, we queue, and we will execute the update later.
                     persister.registerChange(entry, merged);
                 }
             }

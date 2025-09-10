@@ -49,6 +49,8 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -56,7 +58,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<InfinispanAuthenticationSessionProvider>, EnvironmentDependentProviderFactory {
+public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<InfinispanAuthenticationSessionProvider>, EnvironmentDependentProviderFactory, ProviderEventListener {
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
 
@@ -86,11 +88,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(event -> {
-            if (event instanceof PostMigrationEvent) {
-                KeycloakModelUtils.runJobInTransaction(factory, this::registerClusterListeners);
-            }
-        });
+        factory.register(this);
         try (var session = factory.create()) {
             cacheInfo = InfinispanChangesUtils.createWithCache(session, AUTHENTICATION_SESSIONS_CACHE_NAME, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS);
         }
@@ -106,6 +104,13 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
                 .defaultValue(DEFAULT_AUTH_SESSIONS_LIMIT)
                 .add()
                 .build();
+    }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof PostMigrationEvent pme) {
+            KeycloakModelUtils.runJobInTransaction(pme.getFactory(), this::registerClusterListeners);
+        }
     }
 
     protected void registerClusterListeners(KeycloakSession session) {

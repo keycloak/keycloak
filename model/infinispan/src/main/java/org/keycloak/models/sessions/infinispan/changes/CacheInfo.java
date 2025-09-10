@@ -22,6 +22,10 @@ import org.infinispan.util.concurrent.ActionSequencer;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
+/**
+ * Groups the {@link Cache}, the {@link ActionSequencer} (used by replace method) and the {@link SessionFunction} to
+ * compute the lifespan, and the max-idle for this session entity.
+ */
 public record CacheInfo<K, V extends SessionEntity>(Cache<K, SessionEntityWrapper<V>> cache,
                                                     ActionSequencer sequencer,
                                                     SessionFunction<V> lifespanFunction,
