@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.apache.http.HttpHeaders;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -53,6 +54,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -87,12 +89,6 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static final String VC_KEY = "vc";
     public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
 
-    // Static list of supported asymmetric algorithms
-    private static final List<String> ASYMMETRIC_ALGORITHMS = Arrays.asList(
-            RS256, RS384, RS512,
-            ES256, ES384, ES512,
-            PS256, PS384, PS512
-    );
 
     protected final KeycloakSession keycloakSession;
 
@@ -132,14 +128,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         boolean signedMetadataEnabled = Boolean.parseBoolean(realm.getAttribute(SIGNED_METADATA_ENABLED_ATTR));
 
         if (preferJwt && signedMetadataEnabled) {
-            String signedJwt = null;
-            try {
-                signedJwt = generateSignedMetadata(issuer, session);
-            } catch (Exception e) {
-                LOGGER.warnf(e, "Failed to generate signed metadata for realm: %s", realm.getName());
-            }
-            if (signedJwt != null) {
-                return signedJwt;
+            Optional<String> signedJwt = generateSignedMetadata(issuer, session);
+            if (signedJwt.isPresent()) {
+                return signedJwt.get();
             } else {
                 LOGGER.debugf("Falling back to JSON response due to signed metadata failure for realm: %s", realm.getName());
             }
@@ -185,10 +176,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      *
      * @param metadata The CredentialIssuer metadata object to sign.
      * @param session  The Keycloak session.
-     * @return The compact JWS string.
-     * @throws IllegalStateException if generation fails due to configuration or signing issues.
+     * @return Optional containing the compact JWS string if successful, empty if fallback to unsigned JSON is needed.
      */
-    public String generateSignedMetadata(CredentialIssuer metadata, KeycloakSession session) {
+    public Optional<String> generateSignedMetadata(CredentialIssuer metadata, KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         KeyManager keyManager = session.keys();
 
@@ -198,14 +188,14 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
             alg = getSigningAlgorithm(realm, session);
         } catch (IllegalStateException e) {
             LOGGER.warnf("Failed to get signing algorithm: %s. Falling back to unsigned metadata.", e.getMessage());
-            return null; // Return null to indicate fallback to JSON
+            return Optional.empty(); // Return empty to indicate fallback to JSON
         }
 
         // Retrieve active key
         KeyWrapper keyWrapper = keyManager.getActiveKey(realm, KeyUse.SIG, alg);
         if (keyWrapper == null) {
-            throw new IllegalStateException(
-                    String.format("No active key found for realm '%s' with algorithm '%s'", realm.getName(), alg));
+            LOGGER.warnf("No active key found for realm '%s' with algorithm '%s'. Falling back to unsigned metadata.", realm.getName(), alg);
+            return Optional.empty();
         }
 
         // Create JsonWebToken with metadata as claims
@@ -219,7 +209,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 jwt.exp(Time.currentTime() + lifespan);
             } catch (NumberFormatException e) {
                 LOGGER.warnf("Invalid lifespan duration for signed metadata: %s. Falling back to unsigned metadata.", lifespanStr);
-                return null; // Return null to indicate fallback to JSON
+                return Optional.empty(); // Return empty to indicate fallback to JSON
             }
         }
 
@@ -234,27 +224,27 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         // Sign the JWS
         SignatureProvider signerProvider = session.getProvider(SignatureProvider.class, alg);
         if (signerProvider == null) {
-            throw new IllegalStateException("No signature provider for algorithm: " + alg);
+            LOGGER.warnf("No signature provider for algorithm: %s. Falling back to unsigned metadata.", alg);
+            return Optional.empty();
         }
 
         SignatureSignerContext signer = signerProvider.signer(keyWrapper);
         if (signer == null) {
-            throw new IllegalStateException("No signer context for algorithm: " + alg);
+            LOGGER.warnf("No signer context for algorithm: %s. Falling back to unsigned metadata.", alg);
+            return Optional.empty();
         }
 
         try {
-            return jwsBuilder.jsonContent(jwt).sign(signer);
+            return Optional.of(jwsBuilder.jsonContent(jwt).sign(signer));
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to sign metadata", e);
+            LOGGER.warnf(e, "Failed to sign metadata. Falling back to unsigned metadata.");
+            return Optional.empty();
         }
     }
 
 
     private String getSigningAlgorithm(RealmModel realm, KeycloakSession session) {
-        List<String> supportedAlgorithms = getSupportedSignatureAlgorithms(session)
-                .stream()
-                .filter(ASYMMETRIC_ALGORITHMS::contains)
-                .collect(Collectors.toList());
+        List<String> supportedAlgorithms = getSupportedAsymmetricSignatureAlgorithms(session);
 
         if (supportedAlgorithms.isEmpty()) {
             throw new IllegalStateException("No asymmetric signing algorithms available for realm: " + realm.getName());
@@ -475,6 +465,27 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
         return keyManager.getKeysStream(realm)
                 .filter(key -> KeyUse.SIG.equals(key.getUse()))
+                .map(KeyWrapper::getAlgorithm)
+                .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the supported asymmetric signature algorithms from realm keys.
+     * Filters out symmetric algorithms since only asymmetric keys can be used for signed metadata.
+     * Uses the same filtering logic as JWKSServerUtils.getRealmJwks().
+     */
+    public static List<String> getSupportedAsymmetricSignatureAlgorithms(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        KeyManager keyManager = session.keys();
+
+        return keyManager.getKeysStream(realm)
+                .filter(key -> KeyUse.SIG.equals(key.getUse()))
+                .filter(key -> key.getStatus().isEnabled() && key.getPublicKey() != null)
+                .filter(key -> KeyType.RSA.equals(key.getType()) ||
+                        KeyType.EC.equals(key.getType()) ||
+                        KeyType.OKP.equals(key.getType()))
                 .map(KeyWrapper::getAlgorithm)
                 .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
                 .distinct()
