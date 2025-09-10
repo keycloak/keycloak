@@ -81,6 +81,7 @@ public class HttpUtils {
             // add common headers that are needed by some pages
             method.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9");
             method.addHeader(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            method.addHeader(HttpHeaders.USER_AGENT, "Java/" + System.getProperty("java.version") + " (https://www.keycloak.org; keycloak-dev@googlegroups.com)");
             client.execute(method, responseHandler);
         } catch (Exception e) {
             response.setError("exception " + e.getMessage());
