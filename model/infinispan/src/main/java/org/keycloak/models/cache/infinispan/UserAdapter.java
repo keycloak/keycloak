@@ -29,7 +29,6 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
-import org.keycloak.models.policy.ResourcePolicyManager;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 

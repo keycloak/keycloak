@@ -421,6 +421,6 @@ public interface RealmResource {
     @Path("client-types")
     ClientTypesResource clientTypes();
 
-    @Path("resources")
-    RealmResourcesResource resources();
+    @Path("workflows")
+    WorkflowsResource workflows();
 }
