@@ -21,10 +21,11 @@ import {
   TextInput,
   TextVariants,
 } from "@patternfly/react-core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../components/form/FormAccess";
+import { convertAttributeNameToForm } from "../util";
 import {
   TimeSelector,
   toHumanFormat,
@@ -58,12 +59,12 @@ export const RealmSettingsTokensTab = ({
     serverInfo.providers!["signature"].providers,
   );
 
-  const { control, register, reset, formState, handleSubmit, setValue } =
+  const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
 
   // Show a global error notification if validation fails
   const onError = () => {
-    addAlert(t("formValidationError"), AlertVariant.danger);
+    addAlert(t("oid4vciFormValidationError"), AlertVariant.danger);
   };
 
   const offlineSessionMaxEnabled = useWatch({
@@ -83,26 +84,6 @@ export const RealmSettingsTokensTab = ({
     name: "revokeRefreshToken",
     defaultValue: false,
   });
-
-  // Hydrate form values from realm attributes for OID4VCI
-  useEffect(() => {
-    if (realm.attributes) {
-      // Set the nonce lifetime value if it exists in attributes
-      if (realm.attributes["vc.c-nonce-lifetime-seconds"]) {
-        setValue(
-          "attributes.vc.c-nonce-lifetime-seconds",
-          realm.attributes["vc.c-nonce-lifetime-seconds"],
-        );
-      }
-      // Set the pre-authorized code lifespan value if it exists in attributes
-      if (realm.attributes["preAuthorizedCodeLifespanS"]) {
-        setValue(
-          "attributes.preAuthorizedCodeLifespanS",
-          realm.attributes["preAuthorizedCodeLifespanS"],
-        );
-      }
-    }
-  }, [realm.attributes, setValue]);
 
   const sections = [
     {
@@ -685,7 +666,9 @@ export const RealmSettingsTokensTab = ({
             }
           >
             <Controller
-              name="attributes.vc.c-nonce-lifetime-seconds"
+              name={convertAttributeNameToForm(
+                "attributes.vc.c-nonce-lifetime-seconds",
+              )}
               control={control}
               rules={{ required: t("required"), min: 30 }}
               render={({ field }) => (
@@ -712,7 +695,9 @@ export const RealmSettingsTokensTab = ({
             }
           >
             <Controller
-              name="attributes.preAuthorizedCodeLifespanS"
+              name={convertAttributeNameToForm(
+                "attributes.preAuthorizedCodeLifespanS",
+              )}
               control={control}
               rules={{ required: t("required"), min: 30 }}
               render={({ field }) => (

@@ -29,7 +29,11 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import type { Environment } from "../environment";
 import helpUrls from "../help-urls";
-import { convertFormValuesToObject, convertToFormValues } from "../util";
+import {
+  convertAttributeNameToForm,
+  convertFormValuesToObject,
+  convertToFormValues,
+} from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -191,6 +195,28 @@ export const RealmSettingsTabs = () => {
 
   const setupForm = (r: RealmRepresentation = realm!) => {
     convertToFormValues(r, setValue);
+
+    // Handle OID4VCI attributes conversion
+    if (r.attributes) {
+      // Set the nonce lifetime value if it exists in attributes
+      if (r.attributes["vc.c-nonce-lifetime-seconds"]) {
+        setValue(
+          convertAttributeNameToForm(
+            "attributes.vc.c-nonce-lifetime-seconds",
+          ) as any,
+          r.attributes["vc.c-nonce-lifetime-seconds"],
+        );
+      }
+      // Set the pre-authorized code lifespan value if it exists in attributes
+      if (r.attributes["preAuthorizedCodeLifespanS"]) {
+        setValue(
+          convertAttributeNameToForm(
+            "attributes.preAuthorizedCodeLifespanS",
+          ) as any,
+          r.attributes["preAuthorizedCodeLifespanS"],
+        );
+      }
+    }
   };
 
   useEffect(() => {
@@ -236,31 +262,16 @@ export const RealmSettingsTabs = () => {
       );
     }
     if (r.attributes) {
-      // Handle nested vc object created by React Hook Form
-      if (r.attributes["vc"] && typeof r.attributes["vc"] === "object") {
-        const vcObj = r.attributes["vc"] as Record<string, any>;
-        Object.keys(vcObj).forEach((key) => {
-          const flatKey = `vc.${key}`;
-          r.attributes![flatKey] = vcObj[key]?.toString() || vcObj[key];
-        });
-        // Remove the nested object
-        delete r.attributes["vc"];
-      }
-
       // Convert OID4VCI attributes to strings if they're not already
-      if (
-        r.attributes["vc.c-nonce-lifetime-seconds"] !== undefined &&
-        typeof r.attributes["vc.c-nonce-lifetime-seconds"] !== "string"
-      ) {
-        r.attributes["vc.c-nonce-lifetime-seconds"] =
-          r.attributes["vc.c-nonce-lifetime-seconds"].toString();
-      }
-      if (
-        r.attributes["preAuthorizedCodeLifespanS"] !== undefined &&
-        typeof r.attributes["preAuthorizedCodeLifespanS"] !== "string"
-      ) {
-        r.attributes["preAuthorizedCodeLifespanS"] =
-          r.attributes["preAuthorizedCodeLifespanS"].toString();
+      const stringifiedAttributes = [
+        "vc.c-nonce-lifetime-seconds",
+        "preAuthorizedCodeLifespanS",
+      ];
+      for (const attr of stringifiedAttributes) {
+        const value = r.attributes[attr];
+        if (typeof value === "number") {
+          r.attributes[attr] = value.toString();
+        }
       }
     }
 
