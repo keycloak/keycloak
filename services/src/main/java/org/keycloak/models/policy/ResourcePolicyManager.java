@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -154,7 +155,14 @@ public class ResourcePolicyManager {
     }
 
     private ResourceAction getFirstAction(ResourcePolicy policy) {
-        return getActions(policy.getId()).get(0);
+        ResourceAction action = getActions(policy.getId()).get(0);
+        Long notBefore = policy.getNotBefore();
+
+        if (notBefore != null) {
+            action.setAfter(notBefore);
+        }
+
+        return action;
     }
 
     private ResourcePolicyProvider getPolicyProvider(ResourcePolicy policy) {
@@ -184,19 +192,18 @@ public class ResourcePolicyManager {
     public void scheduleAllEligibleResources(ResourcePolicy policy) {
         if (policy.isEnabled()) {
             ResourcePolicyProvider provider = getPolicyProvider(policy);
-            ResourceAction firstAction = getFirstAction(policy);
-            provider.getEligibleResourcesForInitialAction().forEach(resourceId -> {
-                // TODO run each scheduling task in a separate tx as other txs might schedule an action while this is running.
-                this.policyStateProvider.scheduleAction(policy, firstAction, resourceId);
-            });
+            provider.getEligibleResourcesForInitialAction()
+                    .forEach(resourceId -> processEvent(List.of(policy), new AdhocResourcePolicyEvent(ResourceType.USERS, resourceId)));
         }
     }
 
     public void processEvent(ResourcePolicyEvent event) {
+        processEvent(getPolicies(), event);
+    }
 
+    public void processEvent(List<ResourcePolicy> policies, ResourcePolicyEvent event) {
         List<String> currentlyAssignedPolicies = policyStateProvider.getScheduledActionsByResource(event.getResourceId())
                 .stream().map(ScheduledAction::policyId).toList();
-        List<ResourcePolicy> policies = this.getPolicies();
 
         // iterate through the policies, and for those not yet assigned to the user check if they can be assigned
         policies.stream()
@@ -277,6 +284,7 @@ public class ResourcePolicyManager {
                     realm.getComponentsStream(policy.getId(), ResourceActionProvider.class.getName()).forEach(realm::removeComponent);
                     realm.removeComponent(policy);
                 });
+        policyStateProvider.remove(id);
     }
 
     public ResourcePolicy getPolicy(String id) {
@@ -316,8 +324,9 @@ public class ResourcePolicyManager {
 
     public ResourcePolicy toModel(ResourcePolicyRepresentation rep) {
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
+        List<ResourcePolicyConditionRepresentation> conditions = ofNullable(rep.getConditions()).orElse(List.of());
 
-        for (ResourcePolicyConditionRepresentation condition : rep.getConditions()) {
+        for (ResourcePolicyConditionRepresentation condition : conditions) {
             String conditionProviderId = condition.getProviderId();
             config.computeIfAbsent("conditions", key -> new ArrayList<>()).add(conditionProviderId);
 
@@ -346,5 +355,15 @@ public class ResourcePolicyManager {
         }
 
         return new ResourceAction(rep.getProviderId(), rep.getConfig(), subActions);
+    }
+
+    public void bind(ResourcePolicy policy, ResourceType type, String resourceId) {
+        processEvent(List.of(policy), new AdhocResourcePolicyEvent(type, resourceId));
+    }
+
+    public Object resolveResource(ResourceType type, String resourceId) {
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(type, "resourceId");
+        return type.resolveResource(session, resourceId);
     }
 }
