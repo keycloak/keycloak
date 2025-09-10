@@ -81,7 +81,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
 
-    // Realm attributes for signed metadata configuratio
+    // Realm attributes for signed metadata configuration
     public static final String SIGNED_METADATA_ENABLED_ATTR = "oid4vci.signed_metadata.enabled";
     public static final String SIGNED_METADATA_LIFESPAN_ATTR = "oid4vci.signed_metadata.lifespan";
     public static final String SIGNED_METADATA_ALG_ATTR = "oid4vci.signed_metadata.alg";
