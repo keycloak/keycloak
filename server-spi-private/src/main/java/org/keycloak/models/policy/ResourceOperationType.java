@@ -1,7 +1,6 @@
 package org.keycloak.models.policy;
 
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
@@ -9,6 +8,9 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.FederatedIdentityModel.FederatedIdentityCreatedEvent;
 import org.keycloak.models.FederatedIdentityModel.FederatedIdentityRemovedEvent;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleModel.RoleGrantedEvent;
+import org.keycloak.models.RoleModel.RoleRevokedEvent;
 import org.keycloak.provider.ProviderEvent;
 
 public enum ResourceOperationType {
@@ -17,7 +19,8 @@ public enum ResourceOperationType {
     LOGIN(EventType.LOGIN),
     ADD_FEDERATED_IDENTITY(new Class[] {FederatedIdentityCreatedEvent.class}, new Class[] {FederatedIdentityRemovedEvent.class}),
     REMOVE_FEDERATED_IDENTITY(FederatedIdentityRemovedEvent.class),
-    GROUP_MEMBERSHIP_JOIN(GroupMemberJoinEvent.class);
+    GROUP_MEMBERSHIP_JOIN(GroupMemberJoinEvent.class),
+    ROLE_GRANTED(new Class[] {RoleGrantedEvent.class}, new Class[] {RoleRevokedEvent.class});
 
     private final List<Object> types;
     private final List<Object> deactivationTypes;
@@ -70,6 +73,12 @@ public enum ResourceOperationType {
         }
         if (event instanceof FederatedIdentityModel.FederatedIdentityRemovedEvent fie) {
             return fie.getUser().getId();
+        }
+        if (event instanceof RoleModel.RoleGrantedEvent rge) {
+            return rge.getUser().getId();
+        }
+        if (event instanceof RoleModel.RoleRevokedEvent rre) {
+            return rre.getUser().getId();
         }
         return null;
     }
