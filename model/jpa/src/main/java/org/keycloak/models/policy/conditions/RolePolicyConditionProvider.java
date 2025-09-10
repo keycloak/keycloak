@@ -11,6 +11,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.policy.ResourcePolicyConditionProvider;
 import org.keycloak.models.policy.ResourcePolicyEvent;
+import org.keycloak.models.policy.ResourcePolicyInvalidStateException;
 import org.keycloak.models.policy.ResourceType;
 import org.keycloak.models.utils.RoleUtils;
 
@@ -49,6 +50,15 @@ public class RolePolicyConditionProvider implements ResourcePolicyConditionProvi
         }
 
         return true;
+    }
+
+    @Override
+    public void validate() throws ResourcePolicyInvalidStateException {
+        expectedRoles.forEach(id -> {
+            if (session.roles().getRoleById(session.getContext().getRealm(), id) == null) {
+                throw new ResourcePolicyInvalidStateException(String.format("Role with id %s does not exist.", id));
+            }
+        });
     }
 
     private RoleModel getRole(String expectedRole, RealmModel realm) {

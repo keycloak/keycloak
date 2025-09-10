@@ -140,7 +140,7 @@ public class RolePolicyConditionTest {
                 .of(EventBasedResourcePolicyProviderFactory.ID)
                 .onEvent(ResourceOperationType.ROLE_GRANTED.name())
                 .recurring()
-                .onCoditions(ResourcePolicyConditionRepresentation.create()
+                .onConditions(ResourcePolicyConditionRepresentation.create()
                         .of(RolePolicyConditionFactory.ID)
                         .withConfig(attributes)
                         .build())
