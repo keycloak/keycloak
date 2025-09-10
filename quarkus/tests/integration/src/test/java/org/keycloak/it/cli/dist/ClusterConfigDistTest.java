@@ -206,6 +206,7 @@ public class ClusterConfigDistTest {
         result.assertNoMessage("JGroups JDBC_PING discovery enabled");
         result.assertNoMessage("JGroups Encryption enabled.");
         result.assertNoMessage("Starting JGroups certificate reload manager");
+        result.assertNoMessage("Modifying the default cache configuration in the config file without setting cache-config-mutate=true is deprecated.");
     }
 
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
