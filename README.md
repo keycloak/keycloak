@@ -8,6 +8,7 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/keycloak/keycloak?style=flat)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/keycloak/keycloak)
 [![Translation status](https://hosted.weblate.org/widget/keycloak/svg-badge.svg)](docs/translation.md)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/keycloak/keycloak)
 
 # Open Source Identity and Access Management
 
