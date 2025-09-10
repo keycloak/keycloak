@@ -1,21 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { login } from "../utils/login.js";
+import { generatePath } from "react-router-dom";
+import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
+import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar.js";
-
-const realmName = `oid4vci-test-${crypto.randomUUID()}`;
-
-test.beforeAll(async () => {
-  await adminClient.createRealm(realmName, {});
-});
-
-test.afterAll(() => adminClient.deleteRealm(realmName));
-
-test.beforeEach(async ({ page }) => {
-  await login(page);
-  await goToRealm(page, realmName);
-  await goToRealmSettings(page);
-});
+import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
+import { login } from "../utils/login.js";
 
 // Helper function to check if OID4VCI feature is enabled by checking server info
 const isOid4vciFeatureEnabled = async () => {
@@ -58,6 +47,9 @@ const navigateToOid4vciSection = async (page: any) => {
 test("OID4VCI section visibility and jump link in Tokens tab", async ({
   page,
 }) => {
+  const realm = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm }) });
+
   const isFeatureEnabled = await isOid4vciFeatureEnabled();
   const tokensTab = page.getByTestId("rs-tokens-tab");
 
@@ -81,6 +73,9 @@ test("OID4VCI section visibility and jump link in Tokens tab", async ({
 test("should render fields and save values with correct attribute keys", async ({
   page,
 }) => {
+  const realm = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm }) });
+
   const isFeatureEnabled = await navigateToOid4vciSection(page);
   if (!isFeatureEnabled) test.skip();
 
@@ -95,13 +90,16 @@ test("should render fields and save values with correct attribute keys", async (
   await page.getByTestId("tokens-tab-save").click();
   await expect(page.getByText(/success/i)).toBeVisible();
 
-  const realm = await adminClient.getRealm(realmName);
-  expect(realm).toBeDefined();
-  expect(realm?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("120");
-  expect(realm?.attributes?.["preAuthorizedCodeLifespanS"]).toBe("300");
+  const realmData = await adminClient.getRealm(realm);
+  expect(realmData).toBeDefined();
+  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("120");
+  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBe("300");
 });
 
 test("should persist values after page refresh", async ({ page }) => {
+  const realm = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm }) });
+
   const isFeatureEnabled = await navigateToOid4vciSection(page);
   if (!isFeatureEnabled) test.skip();
 
@@ -112,20 +110,23 @@ test("should persist values after page refresh", async ({ page }) => {
 
   // Refresh the page
   await page.reload();
-  await goToRealm(page, realmName);
-  await goToRealmSettings(page);
+
+  // Navigate back to realm settings using the same pattern as login
+  const url = new URL(generatePath(ROOT_PATH, { realm }), SERVER_URL);
+  url.hash = toRealmSettings({ realm }).pathname!;
+  await page.goto(url.toString());
 
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
-  const realm = await adminClient.getRealm(realmName);
-  expect(realm?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
-  expect(realm?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
+  const realmData = await adminClient.getRealm(realm);
+  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
+  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
 
   // The values should be numbers representing seconds
   const nonceValue = parseInt(
-    realm?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
+    realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
   const preAuthValue = parseInt(
-    realm?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
+    realmData?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
@@ -133,6 +134,9 @@ test("should persist values after page refresh", async ({ page }) => {
 });
 
 test("should validate form fields and save valid values", async ({ page }) => {
+  const realm = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm }) });
+
   const isFeatureEnabled = await navigateToOid4vciSection(page);
   if (!isFeatureEnabled) test.skip();
 
@@ -163,18 +167,43 @@ test("should validate form fields and save valid values", async ({ page }) => {
   ).toBeVisible();
 
   // Verify the values were saved correctly
-  const realm = await adminClient.getRealm(realmName);
-  expect(realm?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
-  expect(realm?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
+  const realmData = await adminClient.getRealm(realm);
+  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
+  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
 
   // The values should be numbers representing seconds
   const nonceValue = parseInt(
-    realm?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
+    realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
   const preAuthValue = parseInt(
-    realm?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
+    realmData?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
   expect(preAuthValue).toBeGreaterThan(0);
+});
+
+test("should show validation error for values below minimum threshold", async ({
+  page,
+}) => {
+  const realm = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm }) });
+
+  const isFeatureEnabled = await navigateToOid4vciSection(page);
+  if (!isFeatureEnabled) test.skip();
+
+  const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
+  const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
+  const saveButton = page.getByTestId("tokens-tab-save");
+
+  // Fill with values below the minimum threshold (29 seconds)
+  await nonceField.fill("29");
+  await preAuthField.fill("29");
+
+  await saveButton.click();
+
+  // Check for validation error message
+  const validationErrorText =
+    "Please ensure all OID4VCI attribute fields are filled and values are 30 seconds or greater.";
+  await expect(page.getByText(validationErrorText).first()).toBeVisible();
 });
