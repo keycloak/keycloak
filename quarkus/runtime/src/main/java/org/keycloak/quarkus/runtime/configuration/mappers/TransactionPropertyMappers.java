@@ -19,7 +19,8 @@ public class TransactionPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE)
                         .to("quarkus.datasource.\"<datasource>\".jdbc.transactions")
-                        .transformer(TransactionPropertyMappers::getQuarkusTransactionsValue)
+                        .transformer(TransactionPropertyMappers::getQuarkusTransactionsValueDatasource)
+                        .allowQuarkusPropertiesFallback(true) // we allow to use properties in quarkus.properties due to backwards compatibility for datasources
                         .build()
         );
     }
@@ -32,5 +33,14 @@ public class TransactionPropertyMappers implements PropertyMapperGrouping {
         }
 
         return "enabled";
+    }
+
+    // temporarily allow to get direct values from the Quarkus property for the datasource
+    private static String getQuarkusTransactionsValueDatasource(String name, String txValue, ConfigSourceInterceptorContext context) {
+        return switch (txValue) {
+            case "true", "xa" -> "xa";
+            case "disabled" -> "disabled";
+            default -> "enabled";
+        };
     }
 }
