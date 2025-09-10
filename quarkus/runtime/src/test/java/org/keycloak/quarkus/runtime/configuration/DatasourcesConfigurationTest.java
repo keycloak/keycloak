@@ -8,8 +8,6 @@ import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
@@ -385,6 +383,31 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.\"users\".jdbc.initial-size", "50",
                 "quarkus.datasource.jdbc.max-size", "115",
                 "quarkus.datasource.\"users\".jdbc.max-size", "115"
+        ));
+    }
+
+    @Test
+    public void quarkusProperties() {
+        // values obtained from the /src/test/resources/conf/quarkus.properties
+        initConfig();
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.userstore.db-kind", "mariadb",
+                "quarkus.datasource.userstore.username", "user-unquoted",
+                "quarkus.datasource.userstore.jdbc.url", "jdbc:mariadb://my-url.com:3333/userstore"
+        ));
+
+        // quoted
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"userstore\".db-kind", "postgresql",
+                "quarkus.datasource.\"userstore\".username", "user-quoted",
+                "quarkus.datasource.\"userstore\".jdbc.url", "jdbc:postgresql://localhost:5433/db"
+        ));
+
+        assertConfig(Map.of(
+                "db-kind-userstore", "postgresql",
+                "db-username-userstore","user-quoted",
+                "db-url-full-userstore","jdbc:postgresql://localhost:5433/db"
         ));
     }
 }

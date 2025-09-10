@@ -67,19 +67,19 @@ public class PropertyMapper<T> {
     private final BooleanSupplier required;
     private final String requiredWhen;
     private final String from;
+    private final boolean allowQuarkusPropertiesFallback;
 
     private final String namedProperty;
 
     PropertyMapper(PropertyMapper<T> mapper, String from, String to, String mapFrom, String namedProperty, ValueMapper parentMapper) {
         this(mapper.option, to, mapper.enabled, mapper.enabledWhen, mapper.mapper, mapFrom, parentMapper,
-                mapper.paramLabel, mapper.mask, mapper.validator, mapper.description, mapper.required,
-                mapper.requiredWhen, from, namedProperty);
+                mapper.paramLabel, mapper.mask, mapper.validator, mapper.description, mapper.required, mapper.requiredWhen, from, namedProperty, mapper.allowQuarkusPropertiesFallback);
     }
 
     PropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
                    ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
-                   String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
-                   String description, BooleanSupplier required, String requiredWhen, String from, String namedProperty) {
+                   String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator, String description,
+                   BooleanSupplier required, String requiredWhen, String from, String namedProperty, boolean allowQuarkusPropertiesFallback) {
         this.option = option;
         this.from = from == null ? NS_KEYCLOAK_PREFIX + this.option.getKey() : from;
         this.to = to == null ? getFrom() : to;
@@ -97,6 +97,7 @@ public class PropertyMapper<T> {
         this.description = description;
         this.parentMapper = parentMapper;
         this.namedProperty = namedProperty;
+        this.allowQuarkusPropertiesFallback = allowQuarkusPropertiesFallback;
     }
 
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
@@ -106,6 +107,11 @@ public class PropertyMapper<T> {
         // we don't want the NestedPropertyMappingInterceptor to restart the chain here, so we force a proceed
         // this ensures that mapFrom transformers, and regular transformers are applied exclusively - not chained
         ConfigValue config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+
+        // due to backward compatibility, we allow for some options to use Quarkus properties in the quarkus.properties file
+        if (allowQuarkusPropertiesFallback) {
+            config = getConfigValueFromQuarkus(config, context);
+        }
 
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {
@@ -131,6 +137,14 @@ public class PropertyMapper<T> {
 
         // now try any defaults from quarkus
         return context.proceed(name);
+    }
+
+    // due to backward compatibility, we allow for some options to use Quarkus properties in the quarkus.properties file
+    ConfigValue getConfigValueFromQuarkus(ConfigValue currentConfig, ConfigSourceInterceptorContext context) {
+        if ((currentConfig == null || currentConfig.getValue() == null) && !getFrom().equals(getTo())) {
+            return context.proceed(getTo());
+        }
+        return currentConfig;
     }
 
     public Option<T> getOption() {
@@ -343,6 +357,7 @@ public class PropertyMapper<T> {
         private String requiredWhen = "";
         private BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer;
         private ValueMapper wildcardMapFrom;
+        private boolean allowQuarkusPropertiesFallback;
 
         public Builder(Option<T> option) {
             this.option = option;
@@ -491,17 +506,22 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        public Builder<T> allowQuarkusPropertiesFallback(boolean allow) {
+            this.allowQuarkusPropertiesFallback = allow;
+            return this;
+        }
+
         public PropertyMapper<T> build() {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
             if (option.getKey().contains(WildcardPropertyMapper.WILDCARD_FROM_START)) {
-                return new WildcardPropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
+                return new WildcardPropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom, allowQuarkusPropertiesFallback);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
             }
-            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
+            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null, allowQuarkusPropertiesFallback);
         }
     }
 
