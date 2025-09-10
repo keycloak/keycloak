@@ -254,7 +254,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 Long exp = previousResponse.getAccessTokenExpiration();
                 if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
                     OAuthResponse newResponse = refreshToken(previousResponse, session);
-                    if (newResponse.getExpiresIn() > 0) {
+                    if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
                         long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
                         newResponse.setAccessTokenExpiration(accessTokenExpiration);
                     }
@@ -477,7 +477,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (getConfig().isStoreToken() && response.startsWith("{")) {
             try {
                 OAuthResponse tokenResponse = JsonSerialization.readValue(response, OAuthResponse.class);
-                if (tokenResponse.getExpiresIn() > 0) {
+                if (tokenResponse.getExpiresIn() != null && tokenResponse.getExpiresIn() > 0) {
                     long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
                     tokenResponse.setAccessTokenExpiration(accessTokenExpiration);
                     response = JsonSerialization.writeValueAsString(tokenResponse);
