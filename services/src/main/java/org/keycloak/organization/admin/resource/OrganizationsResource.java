@@ -115,13 +115,13 @@ public class OrganizationsResource {
     /**
      * Returns a stream of organizations, filtered according to query parameters.
      *
-     * @param search a {@code String} representing either an organization name or domain.
+     * @param search      a {@code String} representing either an organization name or domain.
      * @param searchQuery a query to search for organization attributes, in the format 'key1:value2 key2:value2'.
-     * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
-     *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
-     *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
-     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
-     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @param exact       if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
+     *                    either the organization name or one of its domains must match exactly the {@code search} param. If false,
+     *                    the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     * @param first       the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max         the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return a non-null {@code Stream} of matched organizations.
      */
     @GET
@@ -137,8 +137,7 @@ public class OrganizationsResource {
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "if true, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("false") boolean briefRepresentation
     ) {
-        if (!auth.realm().canViewRealm() || !auth.realm().canManageRealm() ||
-                !auth.groups().canView() || !auth.groups().canManage())
+        if (!auth.realm().canViewRealm() || !auth.realm().canManageRealm() || !auth.users().canView()) // TODO: Delete this comment; canView contains a check for both Manage and View
             throw new ForbiddenException();
 
         Organizations.checkEnabled(provider);
@@ -158,8 +157,7 @@ public class OrganizationsResource {
      */
     @Path("{org-id}")
     public OrganizationResource get(@PathParam("org-id") String orgId) {
-        if (!auth.realm().canViewRealm() || !auth.realm().canManageRealm() ||
-                !auth.groups().canView() || !auth.groups().canManage())
+        if (!auth.realm().canViewRealm() || !auth.realm().canManageRealm() || !auth.users().canView()) // TODO: Delete this comment; canView contains a check for both Manage and View
             throw new ForbiddenException();
 
         Organizations.checkEnabled(provider);
