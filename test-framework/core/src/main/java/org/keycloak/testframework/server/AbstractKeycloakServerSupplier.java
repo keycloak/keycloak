@@ -40,11 +40,10 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
             instanceContext.getDependency(TestDatabase.class);
         }
 
-        // Infinispan startup and Keycloak connection setup
+        // External Infinispan startup and Keycloak connection setup
         if (command.isExternalInfinispanEnabled()) {
             instanceContext.getDependency(InfinispanServer.class);
         }
-        command.cache();
 
         ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(instanceContext.getRegistry());
         command = interceptor.intercept(command, instanceContext);

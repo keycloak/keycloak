@@ -31,7 +31,7 @@ public class MultisiteTestSuite {
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.MULTI_SITE)
                     .featuresDisabled(Profile.Feature.PERSISTENT_USER_SESSIONS)
-                    .enableExternalInfinispan(true);
+                    .externalInfinispanEnabled(true);
         }
     }
 }

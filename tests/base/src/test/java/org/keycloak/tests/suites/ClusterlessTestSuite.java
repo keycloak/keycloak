@@ -31,7 +31,7 @@ public class ClusterlessTestSuite {
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.CLUSTERLESS)
                     .featuresDisabled(Profile.Feature.PERSISTENT_USER_SESSIONS)
-                    .enableExternalInfinispan(true);
+                    .externalInfinispanEnabled(true);
         }
     }
 }

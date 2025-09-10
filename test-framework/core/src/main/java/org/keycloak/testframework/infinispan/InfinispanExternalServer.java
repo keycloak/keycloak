@@ -3,7 +3,9 @@ package org.keycloak.testframework.infinispan;
 import java.util.Map;
 
 import org.infinispan.server.test.core.InfinispanContainer;
-import org.keycloak.testframework.util.JavaPropertiesUtil;
+import org.jboss.logging.Logger;
+import org.keycloak.testframework.logging.JBossLogConsumer;
+import org.keycloak.testframework.util.ContainerImages;
 
 public class InfinispanExternalServer extends InfinispanContainer implements InfinispanServer {
 
@@ -11,15 +13,16 @@ public class InfinispanExternalServer extends InfinispanContainer implements Inf
     private static final String PASSWORD = "Password1!";
     private static final String HOST = "127.0.0.1";
 
-    static InfinispanExternalServer create() {
-        String containerName = JavaPropertiesUtil.getContainerImageName("infinispan-server.properties", "infinispan");
-        return new InfinispanExternalServer(containerName);
+    public static InfinispanExternalServer create() {
+        return new InfinispanExternalServer(ContainerImages.getContainerImageName("infinispan"));
     }
 
+    @SuppressWarnings("resource")
     private InfinispanExternalServer(String dockerImageName) {
         super(dockerImageName);
         withUser(USER);
         withPassword(PASSWORD);
+        withLogConsumer(new JBossLogConsumer(Logger.getLogger("managed.infinispan")));
         addFixedExposedPort(11222, 11222);
     }
 

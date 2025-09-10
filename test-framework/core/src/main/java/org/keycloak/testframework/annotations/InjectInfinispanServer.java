@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface InjectInfinispanServer {
 
-    LifeCycle lifecycle() default LifeCycle.CLASS;
+    LifeCycle lifecycle() default LifeCycle.GLOBAL;
 }

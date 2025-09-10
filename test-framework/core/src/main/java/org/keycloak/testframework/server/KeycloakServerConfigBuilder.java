@@ -50,23 +50,18 @@ public class KeycloakServerConfigBuilder {
                 .option("bootstrap-admin-password", password);
     }
 
-    public KeycloakServerConfigBuilder setCache(CacheType cacheType) {
+    public KeycloakServerConfigBuilder cache(CacheType cacheType) {
         this.cacheType = cacheType;
         return this;
     }
 
-    public KeycloakServerConfigBuilder cache() {
-        option("cache", cacheType.name().toLowerCase());
-        return this;
-    }
-
-    public KeycloakServerConfigBuilder enableExternalInfinispan(boolean enabled) {
+    public KeycloakServerConfigBuilder externalInfinispanEnabled(boolean enabled) {
         if (enabled) {
             this.externalInfinispan = true;
-            setCache(CacheType.ISPN);
+            cache(CacheType.ISPN);
         } else {
             this.externalInfinispan = false;
-            setCache(CacheType.LOCAL);
+            cache(CacheType.LOCAL);
         }
         return this;
     }
@@ -208,6 +203,9 @@ public class KeycloakServerConfigBuilder {
     }
 
     List<String> toArgs() {
+        // Cache setup -> supported values: local or ispn
+        option("cache", cacheType.name().toLowerCase());
+
         log.build();
 
         List<String> args = new LinkedList<>();
