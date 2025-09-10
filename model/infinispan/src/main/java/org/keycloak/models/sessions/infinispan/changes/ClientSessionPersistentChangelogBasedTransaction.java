@@ -86,6 +86,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
             // Cache does not contain the offline flag value so adding it
             wrappedEntity.getEntity().setOffline(offline);
+            wrappedEntity.getEntity().setUserSessionId(userSession.getId());
 
             RealmModel realmFromSession = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
             if (!realmFromSession.getId().equals(realm.getId())) {
@@ -147,6 +148,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         entity.setRedirectUri(clientSession.getRedirectUri());
         entity.setTimestamp(clientSession.getTimestamp());
         entity.setOffline(clientSession.getUserSession().isOffline());
+        entity.setUserSessionId(userSessionId);
 
         return entity;
     }
