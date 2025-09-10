@@ -37,6 +37,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.protocol.LoginProtocol;
 
 /**
  * Provider interface for OAuth 2.0 grant types
@@ -83,6 +84,7 @@ public interface OAuth2GrantType extends Provider {
         protected Cors cors;
         protected Object tokenManager;
         protected String grantType;
+        protected LoginProtocol protocol;
 
         public Context(KeycloakSession session, Object clientConfig, Map<String, String> clientAuthAttributes,
                 MultivaluedMap<String, String> formParams, EventBuilder event, Cors cors, Object tokenManager) {
@@ -100,6 +102,9 @@ public interface OAuth2GrantType extends Provider {
             this.cors = cors;
             this.tokenManager = tokenManager;
             this.grantType = formParams.getFirst(OAuth2Constants.GRANT_TYPE);
+            if (this.client != null) {
+                this.protocol = session.getProvider(LoginProtocol.class, this.client.getProtocol());
+            }
         }
 
         public void setFormParams(MultivaluedHashMap<String, String> formParams) {
@@ -108,6 +113,9 @@ public interface OAuth2GrantType extends Provider {
 
         public void setClient(ClientModel client) {
             this.client = client;
+            if (client != null) {
+                this.protocol = session.getProvider(LoginProtocol.class, client.getProtocol());
+            }
         }
 
         public void setClientConfig(Object clientConfig) {
@@ -172,6 +180,10 @@ public interface OAuth2GrantType extends Provider {
 
         public String getGrantType() {
             return grantType;
+        }
+
+        public LoginProtocol getProtocol() {
+            return protocol;
         }
     }
 

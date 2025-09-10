@@ -160,6 +160,9 @@ public interface OAuth2Constants {
 
     String CNF = "cnf";
 
+    String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
+    String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
+
     // DPoP - https://datatracker.ietf.org/doc/html/rfc9449
     String DPOP_HTTP_HEADER = "DPoP";
     String DPOP_NONCE_HEADER = "DPoP-Nonce";
