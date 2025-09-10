@@ -28,35 +28,35 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="40343-RLM-resource-policy-state-table" author="keycloak">
-        <createTable tableName="RESOURCE_POLICY_STATE">
+    <changeSet id="40343-workflow-state-table" author="keycloak">
+        <createTable tableName="WORKFLOW_STATE">
             <column name="RESOURCE_ID" type="VARCHAR(255)">
                 <constraints nullable="false" />
             </column>
-            <column name="POLICY_ID" type="VARCHAR(255)">
+            <column name="WORKFLOW_ID" type="VARCHAR(255)">
                 <constraints nullable="false" />
             </column>
-            <column name="POLICY_PROVIDER_ID" type="VARCHAR(255)" />
+            <column name="WORKFLOW_PROVIDER_ID" type="VARCHAR(255)" />
             <column name="RESOURCE_TYPE" type="VARCHAR(255)" />
-            <column name="SCHEDULED_ACTION_ID" type="VARCHAR(255)" />
-            <column name="SCHEDULED_ACTION_TIMESTAMP" type="BIGINT" />
+            <column name="SCHEDULED_STEP_ID" type="VARCHAR(255)" />
+            <column name="SCHEDULED_STEP_TIMESTAMP" type="BIGINT" />
         </createTable>
 
         <addPrimaryKey
-                constraintName="PK_RESOURCE_POLICY_STATE"
-                tableName="RESOURCE_POLICY_STATE"
-                columnNames="RESOURCE_ID, POLICY_ID" />
+                constraintName="PK_WORKFLOW_STEP_STATE"
+                tableName="WORKFLOW_STATE"
+                columnNames="RESOURCE_ID, WORKFLOW_ID" />
 
-        <createIndex indexName="IDX_RES_POLICY_STATE_ACTION"
-                     tableName="RESOURCE_POLICY_STATE">
-            <column name="POLICY_ID" />
-            <column name="SCHEDULED_ACTION_ID" />
+        <createIndex indexName="IDX_WORKFLOW_STATE_STEP"
+                     tableName="WORKFLOW_STATE">
+            <column name="WORKFLOW_ID" />
+            <column name="SCHEDULED_STEP_ID" />
         </createIndex>
 
-        <createIndex indexName="IDX_RES_POLICY_STATE_PROVIDER"
-                     tableName="RESOURCE_POLICY_STATE">
+        <createIndex indexName="IDX_WORKFLOW_STATE_PROVIDER"
+                     tableName="WORKFLOW_STATE">
             <column name="RESOURCE_ID" />
-            <column name="POLICY_PROVIDER_ID" />
+            <column name="WORKFLOW_PROVIDER_ID" />
         </createIndex>
     </changeSet>
 

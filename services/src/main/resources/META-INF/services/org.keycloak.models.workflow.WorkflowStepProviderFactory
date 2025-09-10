@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc. and/or its affiliates
+# Copyright 2025 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 
-org.keycloak.events.email.EmailEventListenerProviderFactory
-org.keycloak.events.log.JBossLoggingEventListenerProviderFactory
-org.keycloak.models.workflow.WorkflowsEventListenerFactory
+org.keycloak.models.workflow.DisableUserStepProviderFactory
+org.keycloak.models.workflow.NotifyUserStepProviderFactory
+org.keycloak.models.workflow.DeleteUserStepProviderFactory
+org.keycloak.models.workflow.SetUserAttributeStepProviderFactory
+org.keycloak.models.workflow.AggregatedStepProviderFactory
+org.keycloak.models.workflow.AddRequiredActionStepProviderFactory
