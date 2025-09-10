@@ -166,7 +166,8 @@ final class DatabasePropertyMappers {
 
             var created = fromOption(datasourceOption.get())
                     .isMasked(parent.isMask())
-                    .transformer(parent.getMapper());
+                    .transformer(parent.getMapper())
+                    .allowQuarkusPropertiesFallback(true); // we allow to use properties in quarkus.properties due to backwards compatibility for datasources
 
             if (parent.getMapFrom() != null) {
                 var wildcardMapFromOption = getKeyForDatasource(parent.getMapFrom())
