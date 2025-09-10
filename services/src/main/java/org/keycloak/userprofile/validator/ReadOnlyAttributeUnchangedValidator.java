@@ -17,7 +17,9 @@
 package org.keycloak.userprofile.validator;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.userprofile.DeclarativeUserProfileProviderFactory.DEFAULT_ADMIN_READ_ONLY_TIMESTAMP_ATTRIBUTES;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -69,12 +71,16 @@ public class ReadOnlyAttributeUnchangedValidator implements SimpleValidator {
         @SuppressWarnings("unchecked")
         List<String> values = (List<String>) input;
 
-        if (values == null) {
-            return context;
-        }
-
         UserModel user = attributeContext.getUser();
         String existingValue = user == null ? null : user.getFirstAttribute(key);
+        
+        if (values == null || values.isEmpty()) {
+            // Allow omitting timestamp attributes as they're auto-managed by external systems
+            if (isLDAPTimestampAttribute(key)) {
+                return context;
+            }
+            // For other read-only attributes, treat empty values as explicit removal attempts
+        }
 
         String value = null;
         if (!values.isEmpty()) {
@@ -96,6 +102,12 @@ public class ReadOnlyAttributeUnchangedValidator implements SimpleValidator {
         }
 
         return ObjectUtil.isEqualOrBothNull(existingValue, value);
+    }
+
+    private boolean isLDAPTimestampAttribute(String attributeName) {
+        // Only allow omitting auto-managed timestamp attributes, not permanent identifiers
+        // LDAP timestamps are auto-updated by LDAP server, so omitting them is safe
+        return Arrays.asList(DEFAULT_ADMIN_READ_ONLY_TIMESTAMP_ATTRIBUTES).contains(attributeName);
     }
 
 }

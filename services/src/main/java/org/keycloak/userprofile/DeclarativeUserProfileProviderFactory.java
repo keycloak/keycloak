@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
@@ -92,8 +93,13 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      * There are the declarations for creating the built-in validations for read-only attributes. Regardless of the context where
      * user profiles are used. They are related to internal attributes with hard conditions on them in terms of management.
      */
+    private static final String[] ADMIN_READ_ONLY_IDENTITY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN" };
+    public static final String[] DEFAULT_ADMIN_READ_ONLY_TIMESTAMP_ATTRIBUTES = { "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
+    public static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = Stream.of(
+            List.of(ADMIN_READ_ONLY_IDENTITY_ATTRIBUTES),
+            List.of(DEFAULT_ADMIN_READ_ONLY_TIMESTAMP_ATTRIBUTES)
+    ).flatMap(List::stream).toArray(String[]::new);
     private static final String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason" };
-    private static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
 
