@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -254,13 +255,13 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
             ClientModel client = new ClientModelLazyDelegate(null) {
                 @Override
                 public String getId() {
-                    return entity.getClientId();
+                    return Objects.requireNonNull(entity.getClientId());
                 }
             };
             UserSessionModel userSession = new UserSessionModelDelegate(null) {
                 @Override
                 public String getId() {
-                    return entity.getUserSessionId();
+                    return Objects.requireNonNull(entity.getUserSessionId());
                 }
             };
             PersistentAuthenticatedClientSessionAdapter clientSessionModel = (PersistentAuthenticatedClientSessionAdapter) userSessionPersister.loadClientSession(realm, client, userSession, entity.isOffline());
