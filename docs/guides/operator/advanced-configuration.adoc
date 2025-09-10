@@ -290,7 +290,26 @@ spec:
 
 Please see https://kubernetes.io/docs/concepts/scheduling-eviction[the kubernetes docs] for more on scheduling concepts.
 
-If you do not specify a custom affinity, your Pods will have an anti-affinity for the same zone and node to improve availability.
+If you do not specify a custom topology spread constraint, your Pods will have a spread constraint across zones and nodes to improve availability. These defaults do not affect import and update Jobs, only server Pods.
+
+==== Job Scheduling
+
+Realm import and update Jobs inherit the scheduling of the server Pods if it is specified in the Keycloak CR `spec.scheduling` field. If your server Pod scheduling is highly restrictive this may result in the 
+Job Pods being unschedulable. In this situation you may override the Job scheduling using the Keycloak CR `spec.update.scheduling` and `spec.import.scheduling` fields.
+ 
+For example the following will remove the use of any server Pod scheduling for the update Job: 
+ 
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  update:
+    scheduling: {}
+  ...
+----
 
 === Management Interface
 
