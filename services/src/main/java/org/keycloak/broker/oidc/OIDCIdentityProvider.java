@@ -29,10 +29,11 @@ import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.ClientAssertionContext;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -61,7 +62,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -71,7 +71,6 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -1044,72 +1043,25 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public boolean verifyClientAssertion(ClientAssertionContext context) {
+    public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
+        OIDCIdentityProviderConfig config = getConfig();
+
+        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, v -> verify(v.getJws()),
+                config.getIssuer(), config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
+
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
             return false;
         }
 
-        if (!getConfig().isSupportsClientAssertions()) {
-            return context.failure("Issuer does not support client assertions");
+        if (!config.isSupportsClientAssertions()) {
+            throw new RuntimeException("Issuer does not support client assertions");
         }
 
-        if (!getConfig().isValidateSignature()) {
-            return context.failure("Signature validation not enabled for issuer");
+        if (!config.isValidateSignature()) {
+            throw new RuntimeException("Signature validation not enabled for issuer");
         }
 
-        if (!context.getAssertionType().equals(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)) {
-            return false;
-        }
-
-        JWSInput jws = context.getJwsInput();
-        JsonWebToken token = context.getToken();
-        ClientModel client = context.getClient();
-
-        if (!verify(jws)) {
-            return context.failure("Invalid signature");
-        }
-
-        if (token.getIssuer() == null) {
-            return context.failure("Token issuer required");
-        }
-
-        if (!token.getIssuer().equals(getConfig().getIssuer())) {
-            return context.failure("Invalid token issuer");
-        }
-
-        String expectedAudience = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName());
-        int allowedClockSkew = getConfig().getAllowedClockSkew();
-
-        if (token.getExp() == null || token.getExp() <= 0) {
-            return context.failure("Token does not contain an expiration");
-        }
-
-        if (!(token.getAudience().length == 1 && token.getAudience()[0].equals(expectedAudience))) {
-            return context.failure("Invalid audience");
-        }
-
-        if (!token.isActive(allowedClockSkew)) {
-            return context.failure("Token not active");
-        }
-        if (token.getIat() != null && token.getIat() > 0 && token.getIat() - allowedClockSkew > Time.currentTime()) {
-            return context.failure("Token was issued in the future");
-        }
-
-        if (!(getConfig().isSupportsClientAssertionReuse())) {
-            if (token.getId() == null) {
-                return context.failure("Token id required");
-            }
-            SingleUseObjectProvider singeUseCache = session.singleUseObjects();
-            long lifespanInSecs = token.getExp() + allowedClockSkew - Time.currentTime();
-            if (singeUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
-                logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, client.getClientId());
-            } else {
-                logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), client.getClientId());
-                return context.failure("Token already used");
-            }
-        }
-
-        return true;
+        return validator.validate();
     }
 
 }

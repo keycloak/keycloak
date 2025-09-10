@@ -3,13 +3,14 @@ package org.keycloak.broker.spiffe;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.client.AbstractJWTClientValidator;
+import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.ClientAssertionContext;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
-import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.events.EventBuilder;
@@ -23,7 +24,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.Urls;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.net.URI;
@@ -59,59 +59,36 @@ public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityPr
     }
 
     @Override
-    public boolean verifyClientAssertion(ClientAssertionContext context) {
-        if (!context.getAssertionType().equals(SpiffeConstants.CLIENT_ASSERTION_TYPE)) {
-            return false;
-        }
+    public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
+        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, this::verifySignature,
+                    null, config.getAllowedClockSkew(), true);
+        validator.setExpectedClientAssertionType(SpiffeConstants.CLIENT_ASSERTION_TYPE);
 
         String trustedDomain = config.getTrustDomain();
 
-        if (!verifySignature(context)) {
-            return context.failure("Invalid signature");
-        }
-
-        JsonWebToken token = context.getToken();
+        JsonWebToken token = validator.getState().getToken();
 
         URI uri = URI.create(token.getSubject());
         if (!uri.getScheme().equals("spiffe")) {
-            return context.failure("Not a SPIFFE ID");
+            throw new RuntimeException("Not a SPIFFE ID");
         }
 
         if (!uri.getRawAuthority().equals(trustedDomain)) {
-            return context.failure("Invalid trust-domain");
+            throw new RuntimeException("Invalid trust-domain");
         }
 
-        String expectedAudience = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName());
-        int allowedClockSkew = config.getAllowedClockSkew();
-
-        if (token.getExp() == null || token.getExp() <= 0) {
-            return context.failure("Token does not contain an expiration");
-        }
-
-        if (!(token.getAudience().length == 1 && token.getAudience()[0].equals(expectedAudience))) {
-            return context.failure("Invalid audience");
-        }
-
-        if (!token.isActive(allowedClockSkew)) {
-            return context.failure("Token not active");
-        }
-        if (token.getIat() != null && token.getIat() > 0 && token.getIat() - allowedClockSkew > Time.currentTime()) {
-            return context.failure("Token was issued in the future");
-        }
-
-        return true;
+        return validator.validate();
     }
 
-    private boolean verifySignature(ClientAssertionContext context) {
-
+    private boolean verifySignature(AbstractJWTClientValidator validator) {
         try {
             String bundleEndpoint = config.getBundleEndpoint();
-            JWSInput jws = context.getJwsInput();
+            JWSInput jws = validator.getState().getJws();
             JWSHeader header = jws.getHeader();
             String kid = header.getKeyId();
             String alg = header.getRawAlgorithm();
 
-            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(context.getRealm().getId(), config.getInternalId());
+            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(validator.getContext().getRealm().getId(), config.getInternalId());
 
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
             KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new SpiffeBundleEndpointLoader(session, bundleEndpoint));

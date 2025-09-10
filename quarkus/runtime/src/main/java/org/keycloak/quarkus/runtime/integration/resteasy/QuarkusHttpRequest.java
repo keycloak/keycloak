@@ -50,6 +50,8 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     private final ResteasyReactiveRequestContext context;
 
+    private MultivaluedMap<String, String> decodedFormParameters;
+
     public <R> QuarkusHttpRequest(ResteasyReactiveRequestContext context) {
         this.context = context;
     }
@@ -67,27 +69,30 @@ public final class QuarkusHttpRequest implements HttpRequest {
         if (context == null) {
             return null;
         }
-        FormData parameters = context.getFormData();
 
-        if (parameters == null || !parameters.iterator().hasNext()) {
-            return EMPTY_FORM_PARAM;
-        }
+        if (decodedFormParameters == null) {
+            FormData parameters = context.getFormData();
 
-        MultivaluedMap<String, String> params = new QuarkusMultivaluedHashMap<>();
-
-        for (String name : parameters) {
-            Deque<FormValue> values = parameters.get(name);
-
-            if (values == null || values.isEmpty()) {
-                continue;
+            if (parameters == null || !parameters.iterator().hasNext()) {
+                return EMPTY_FORM_PARAM;
             }
 
-            for (FormValue value : values) {
-                params.add(name, value.getValue());
+            decodedFormParameters = new QuarkusMultivaluedHashMap<>();
+
+            for (String name : parameters) {
+                Deque<FormValue> values = parameters.get(name);
+
+                if (values == null || values.isEmpty()) {
+                    continue;
+                }
+
+                for (FormValue value : values) {
+                    decodedFormParameters.add(name, value.getValue());
+                }
             }
         }
 
-        return params;
+        return decodedFormParameters;
     }
 
     @Override
