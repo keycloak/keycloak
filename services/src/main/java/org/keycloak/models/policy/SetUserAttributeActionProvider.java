@@ -17,7 +17,7 @@
 
 package org.keycloak.models.policy;
 
-import static org.keycloak.keys.Attributes.PRIORITY_KEY;
+import static org.keycloak.models.policy.ResourceAction.PRIORITY_KEY;
 import static org.keycloak.models.policy.ResourceAction.AFTER_KEY;
 
 import java.util.List;
