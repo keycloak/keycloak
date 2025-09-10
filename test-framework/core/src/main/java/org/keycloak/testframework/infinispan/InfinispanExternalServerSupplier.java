@@ -15,7 +15,7 @@ public class InfinispanExternalServerSupplier implements Supplier<InfinispanServ
 
     @Override
     public InfinispanServer getValue(InstanceContext<InfinispanServer, InjectInfinispanServer> instanceContext) {
-        InfinispanServer server = new InfinispanExternalServer();
+        InfinispanServer server = InfinispanExternalServer.create();
         getLogger().info("Starting Infinispan Server");
 
         long start = System.currentTimeMillis();
