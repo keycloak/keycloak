@@ -188,7 +188,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setTlsClientCertificateBoundAccessTokens(true);
 
         if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            config.setDpopSigningAlgValuesSupported(new ArrayList<>(DPoPUtil.DPOP_SUPPORTED_ALGS));
+            config.setDpopSigningAlgValuesSupported(new ArrayList<>(DPoPUtil.getDPoPSupportedAlgorithms(session)));
         }
 
         URI revocationEndpoint = frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "revoke")

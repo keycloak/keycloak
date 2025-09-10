@@ -1,6 +1,7 @@
 package org.keycloak.testframework.ui.page;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -42,5 +43,13 @@ public class LoginPage extends AbstractPage {
     @Override
     public String getExpectedPageId() {
         return "login-login";
+    }
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
+
+    public void clearUsernameInput() {
+        usernameInput.clear();
     }
 }

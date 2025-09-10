@@ -22,7 +22,7 @@ import {
 } from "../utils/table.ts";
 import { goToScopeTab } from "./scope.ts";
 
-test.describe("Scope tab test", () => {
+test.describe.serial("Scope tab test", () => {
   const scopeName = `client-scope-mapper-${uuidv4()}`;
   const tableName = "Role list";
 

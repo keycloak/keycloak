@@ -55,9 +55,6 @@ public class CredentialIssuer {
     @JsonProperty("batch_credential_issuance")
     private BatchCredentialIssuance batchCredentialIssuance;
 
-    @JsonProperty("signed_metadata")
-    private String signedMetadata;
-
     @JsonProperty("credential_configurations_supported")
     private Map<String, SupportedCredentialConfiguration> credentialsSupported;
 
@@ -66,6 +63,9 @@ public class CredentialIssuer {
 
     @JsonProperty("credential_response_encryption")
     private CredentialResponseEncryptionMetadata credentialResponseEncryption;
+
+    @JsonProperty("credential_request_encryption")
+    private CredentialRequestEncryptionMetadata credentialRequestEncryption;
 
     public String getCredentialIssuer() {
         return credentialIssuer;
@@ -130,15 +130,6 @@ public class CredentialIssuer {
         return this;
     }
 
-    public String getSignedMetadata() {
-        return signedMetadata;
-    }
-
-    public CredentialIssuer setSignedMetadata(String signedMetadata) {
-        this.signedMetadata = signedMetadata;
-        return this;
-    }
-
     public Map<String, SupportedCredentialConfiguration> getCredentialsSupported() {
         return credentialsSupported;
     }
@@ -166,6 +157,15 @@ public class CredentialIssuer {
 
     public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryptionMetadata credentialResponseEncryption) {
         this.credentialResponseEncryption = credentialResponseEncryption;
+        return this;
+    }
+
+    public CredentialRequestEncryptionMetadata getCredentialRequestEncryption() {
+        return credentialRequestEncryption;
+    }
+
+    public CredentialIssuer setCredentialRequestEncryption(CredentialRequestEncryptionMetadata credentialRequestEncryption) {
+        this.credentialRequestEncryption = credentialRequestEncryption;
         return this;
     }
 

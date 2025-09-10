@@ -13,7 +13,7 @@ import {
   populateTokensPage,
 } from "./tokens.ts";
 
-test.describe("Realm Settings - Tokens", () => {
+test.describe.serial("Realm Settings - Tokens", () => {
   const realmName = `tokens-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));

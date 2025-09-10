@@ -1,5 +1,6 @@
 package org.keycloak.tests.admin.model.policy;
 
+import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -15,6 +16,8 @@ import org.keycloak.representations.resources.policies.ResourcePolicyActionRepre
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -32,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.tests.admin.model.policy.ResourcePolicyManagementTest.findEmailByRecipient;
 
 @KeycloakIntegrationTest(config = RLMServerConfig.class)
 public class UserCreationTimePolicyTest {
@@ -52,6 +56,9 @@ public class UserCreationTimePolicyTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectMailServer
+    private MailServer mailServer;
 
     @Test
     public void testDisableUserBasedOnCreationDate() {
@@ -80,7 +87,7 @@ public class UserCreationTimePolicyTest {
             assertNull(user.getAttributes().get("message"));
 
             // running the scheduled tasks now shouldn't pick up any action as none are due to run yet
-            manager.runScheduledTasks();
+            manager.runScheduledActions();
             user = session.users().getUserByUsername(realm, "alice");
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
@@ -88,14 +95,19 @@ public class UserCreationTimePolicyTest {
             try {
                 // set offset to 7 days - notify action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 user = session.users().getUserByUsername(realm, "alice");
                 assertTrue(user.isEnabled());
-                assertNotNull(user.getAttributes().get("message"));
             } finally {
                 Time.setOffset(0);
             }
         }));
+
+        // Verify that the notify action was executed by checking email was sent
+        MimeMessage testUserMessage = findEmailByRecipient(mailServer, "alice@wornderland.org");
+        assertNotNull(testUserMessage, "The first action (notify) should have sent an email.");
+
+        mailServer.runCleanup();
 
         // logging-in with alice should not reset the policy - we should still run the disable action next
         oauth.openLoginForm();
@@ -111,10 +123,9 @@ public class UserCreationTimePolicyTest {
             try {
                 // set offset to 11 days - disable action should run now
                 Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
-                manager.runScheduledTasks();
+                manager.runScheduledActions();
                 UserModel user = session.users().getUserByUsername(realm, "alice");
                 assertFalse(user.isEnabled());
-                assertNotNull(user.getAttributes().get("message"));
             } finally {
                 Time.setOffset(0);
             }

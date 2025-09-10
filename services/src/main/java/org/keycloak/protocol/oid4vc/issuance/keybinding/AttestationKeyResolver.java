@@ -13,19 +13,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package org.keycloak.testframework.server;
+package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import org.keycloak.common.Profile;
+import org.keycloak.jose.jwk.JWK;
+
+import java.util.Map;
 
 /**
- * @author Pascal Knüppel
+ * Interface for resolving attestation public keys by kid for JWT attestation validation.
+ * Implementations may use local registries, remote JWKS, or other trusted sources.
+ *
+ * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
  */
-public class DefaultServerConfigWithOid4Vci extends DefaultKeycloakServerConfig {
-    @Override
-    public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-        return super.configure(config).features(Profile.Feature.OID4VC_VCI);
-    }
+public interface AttestationKeyResolver {
+    /**
+     * Resolves a JWK for the given kid, header, and payload context.
+     * Returns null if the key cannot be resolved or is not trusted.
+     */
+    JWK resolveKey(String kid, Map<String, Object> header, Map<String, Object> payload);
 }

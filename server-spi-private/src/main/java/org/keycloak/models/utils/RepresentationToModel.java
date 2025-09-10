@@ -882,7 +882,15 @@ public class RepresentationToModel {
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         updateOrganizationBroker(representation, session);
         identityProviderModel.setOrganizationId(representation.getOrganizationId());
-        identityProviderModel.setConfig(removeEmptyString(representation.getConfig()));
+
+        // Merge config from the identity provider model in case the provider sets some default config
+        Map<String, String> repConfig = removeEmptyString(representation.getConfig());
+        if (repConfig != null && !repConfig.isEmpty()) {
+            if (identityProviderModel.getConfig() == null) {
+                identityProviderModel.setConfig(new HashMap<>());
+            }
+            identityProviderModel.getConfig().putAll(repConfig);
+        }
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
         if (flowAlias == null || flowAlias.trim().isEmpty()) {

@@ -53,12 +53,11 @@ async function updateUserLocale(locale: string) {
 
 async function goToPage(page: Page, locale: string) {
   await updateUserLocale(locale);
-  await login(
-    page,
-    testConfig.username,
-    testConfig.password,
-    testConfig.realmName,
-  );
+  await login(page, {
+    realm: testConfig.realmName,
+    username: testConfig.username,
+    password: testConfig.password,
+  });
   await goToUserFederation(page);
 }
 
@@ -71,7 +70,7 @@ async function addLocalization(locale: string, key: string, value: string) {
   );
 }
 
-test.describe("i18n tests", () => {
+test.describe.serial("i18n tests", () => {
   // Constants for test assertions
   const texts = {
     realmLocalizationEn: "realmSettings en",

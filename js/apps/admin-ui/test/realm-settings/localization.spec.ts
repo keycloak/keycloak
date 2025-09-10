@@ -22,7 +22,7 @@ import {
   switchInternationalization,
 } from "./localization.ts";
 
-test.describe("Go to localization tab", () => {
+test.describe.serial("Go to localization tab", () => {
   const realmName = `localization-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -43,7 +43,7 @@ test.describe("Go to localization tab", () => {
     await assertNotificationMessage(page, "Realm successfully updated");
   });
 
-  test.describe("Locales tab - CRUD bundle", () => {
+  test.describe.serial("Locales tab - CRUD bundle", () => {
     test.beforeAll(() =>
       adminClient.updateRealm(realmName, { internationalizationEnabled: true }),
     );

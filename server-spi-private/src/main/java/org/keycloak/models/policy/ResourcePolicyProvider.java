@@ -38,18 +38,18 @@ public interface ResourcePolicyProvider extends Provider {
     boolean supports(ResourceType type);
 
     /**
-     * Indicates whether the policy supports being assigned to a resource based on the event or not. If {@code true}, the
-     * policy's first action will be scheduled for the resource.
+     * Indicates whether the policy supports being activated for a resource based on the event or not. If {@code true}, the
+     * policy will be activated for the resource. For scheduled policies, this means the first action will be scheduled. For
+     * immediate policies, this means all actions will be executed right away.
      *
      * At the very least, implementations should validate the event's resource type and operation to ensure the policy will
-     * only be assigned on expected operations being performed on the expected type.
+     * only be activated on expected operations being performed on the expected type.
      *
      * @param event a {@link ResourcePolicyEvent} containing details of the event that was triggered such as operation
      *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
-     * @return {@code true} if the policy allows for the setup of the first action based on the received event; {@code false}
-     *              otherwise.
+     * @return {@code true} if the policy can be activated based on the received event; {@code false} otherwise.
      */
-    boolean scheduleOnEvent(ResourcePolicyEvent event);
+    boolean activateOnEvent(ResourcePolicyEvent event);
 
     /**
      * Indicates whether the policy supports being reset (i.e. go back to the first action) based on the event received or not.
@@ -65,4 +65,18 @@ public interface ResourcePolicyProvider extends Provider {
      * @return {@code true} if the policy supports resetting the flow based on the received event; {@code false} otherwise.
      */
     boolean resetOnEvent(ResourcePolicyEvent event);
+
+    /**
+     * Indicates whether the policy supports being deactivated for a resource based on the event or not. If {@code true}, the
+     * policy will be deactivated for the resource, meaning any existing scheduled actions will be removed and no further
+     * actions will be executed.
+     *
+     * At the very least, implementations should validate the event's resource type and operation to ensure the policy will
+     * only be deactivated on expected operations being performed on the expected type.
+     *
+     * @param event a {@link ResourcePolicyEvent} containing details of the event that was triggered such as operation
+     *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
+     * @return {@code true} if the policy can be deactivated based on the received event; {@code false} otherwise.
+     */
+    boolean deactivateOnEvent(ResourcePolicyEvent event);
 }

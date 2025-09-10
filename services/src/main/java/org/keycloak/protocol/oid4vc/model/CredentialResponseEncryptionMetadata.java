@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Represents the credential_response_encryption metadata for an OID4VCI Credential Issuer.
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-credential-issuer-metadata-p}
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p}
  *
  * @author <a href="mailto:Bertrand.Ogen@adorsys.com">Bertrand Ogen</a>
  */
@@ -36,6 +36,9 @@ public class CredentialResponseEncryptionMetadata {
 
     @JsonProperty("enc_values_supported")
     private List<String> encValuesSupported;
+
+    @JsonProperty("zip_values_supported")
+    private List<String> zipValuesSupported;
 
     @JsonProperty("encryption_required")
     private Boolean encryptionRequired;
@@ -54,6 +57,14 @@ public class CredentialResponseEncryptionMetadata {
 
     public void setEncValuesSupported(List<String> encValuesSupported) {
         this.encValuesSupported = encValuesSupported;
+    }
+
+    public List<String> getZipValuesSupported() {
+        return zipValuesSupported;
+    }
+
+    public void setZipValuesSupported(List<String> zipValuesSupported) {
+        this.zipValuesSupported = zipValuesSupported;
     }
 
     public Boolean getEncryptionRequired() {

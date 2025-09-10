@@ -966,6 +966,8 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     userSessionsPerformer.applyChangesSynchronously(s);
                     clientSessionPerformer.applyChangesSynchronously(s);
                 });
+        userSessionsPerformer.clear();
+        clientSessionPerformer.clear();
     }
 
 }

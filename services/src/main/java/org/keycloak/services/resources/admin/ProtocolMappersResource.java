@@ -22,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -127,6 +128,10 @@ public class ProtocolMappersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.PROTOCOL_MAPPERS)
     @Operation(summary = "Create a mapper")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created"),
+        @APIResponse(responseCode = "409", description = "Conflict")
+    })
     public Response createMapper(ProtocolMapperRepresentation rep) {
         managePermission.require();
 

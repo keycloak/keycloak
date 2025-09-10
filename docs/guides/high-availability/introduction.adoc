@@ -12,22 +12,34 @@ for your deployments.
 
 == Architectures
 
-The following architectures are supported by {project_name}.
+This document describes two architectures to deploy {project_name}: Single-cluster deployments and multi-cluster deployments.
 
-=== Single cluster
+=== Single-cluster deployments
 
-Deploy {project_name} in a single cluster, optionally "stretched" across multiple availability-zones, using <@links.ha id="single-cluster-introduction" />.
+Deploy {project_name} in a single cluster, optionally across multiple availability-zones in the same region, using <@links.ha id="single-cluster-introduction" />.
 
 Advantages::
 * No external dependencies
+
+<@profile.ifProduct>
+
+* Deployment in a single {kubernetes} cluster
+
+</@profile.ifProduct>
+
+<@profile.ifCommunity>
+
 * Deployment in a single {kubernetes} cluster or a set of virtual machines with transparent networking
+
+</@profile.ifCommunity>
+
 * Tolerate availability-zone failures if deployed to multiple availability zones
 
 Disadvantages::
 * {kubernetes} cluster is a single point of failure:
 ** Control-plane failures could impact all {project_name} pods
 
-=== Multi cluster
+=== Multi-cluster deployments
 
 Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones to increase availability using <@links.ha id="multi-cluster-introduction" />.
 
@@ -49,7 +61,7 @@ Disadvantages::
 
 === Next Steps
 
-To learn more about the different high-availability architectures, please consult the individual guides.
+To learn more about the different high-availability architectures and their supported configurations, please consult the individual {sections}.
 
 <@profile.ifCommunity>
 * <@links.ha id="single-cluster-introduction" />

@@ -36,7 +36,7 @@ import {
   setTermsOfServiceUrl,
 } from "./saml.ts";
 
-test.describe("Fine Grain SAML Endpoint Configuration", () => {
+test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
   const clientName = `saml-advanced-tab-${uuid()}`;
 
   test.beforeAll(() =>
@@ -84,7 +84,7 @@ test.describe("Fine Grain SAML Endpoint Configuration", () => {
   });
 });
 
-test.describe("Clients SAML tests", () => {
+test.describe.serial("Clients SAML tests", () => {
   const clientId = "saml";
 
   const clientName = `saml-settings-${uuid()}`;

@@ -10,11 +10,7 @@ import {
   fillAttributeData,
   goToAttributesTab,
 } from "../utils/attributes.ts";
-import {
-  assertRequiredFieldError,
-  clickCancelButton,
-  clickSaveButton,
-} from "../utils/form.ts";
+import { assertRequiredFieldError, clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
@@ -39,7 +35,7 @@ import {
   goToAssociatedRolesTab,
 } from "./main.ts";
 
-test.describe("Realm roles test", () => {
+test.describe.serial("Realm roles test", () => {
   const realmName = `realm-roles-${uuid()}`;
   const prefix = "realm_role_crud";
   const searchPlaceHolder = "Search role by name";
@@ -60,7 +56,7 @@ test.describe("Realm roles test", () => {
 
     await fillRoleData(page, "admin");
     await clickSaveButton(page);
-    await clickCancelButton(page);
+    await goToRealmRoles(page);
 
     await clickCreateRoleButton(page);
     await fillRoleData(page, "admin");
@@ -244,7 +240,7 @@ test.describe("Realm roles test", () => {
     await assertNotificationMessage(page, "Role mapping updated");
   });
 
-  test.describe("edit role details", () => {
+  test.describe.serial("edit role details", () => {
     const editRoleName = "going to edit";
     const description = "some description";
     const updateDescription = "updated description";

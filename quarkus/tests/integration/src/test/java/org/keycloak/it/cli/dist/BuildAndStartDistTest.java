@@ -32,7 +32,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @DistributionTest

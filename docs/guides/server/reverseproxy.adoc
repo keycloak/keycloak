@@ -121,6 +121,11 @@ The following table shows the recommended paths to expose.
 |Yes
 |This path is needed to serve assets correctly. It may be served from a CDN instead of the {project_name} path.
 
+|/.well-known/
+|/.well-known/
+|Yes
+|This path is needed to resolve Authorization Server Metadata and other information via RFC8414.
+
 |/metrics
 |-
 |No
@@ -135,6 +140,8 @@ The following table shows the recommended paths to expose.
 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
+
+NOTE: If you configured a `http-relative-path` on the server, proceed as follows to use discovery wih RFC8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
 
 == Trusted Proxies
 

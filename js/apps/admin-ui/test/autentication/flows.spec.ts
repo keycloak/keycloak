@@ -39,7 +39,7 @@ import {
   goToWebAuthnTab,
 } from "./flow.ts";
 
-test.describe("Authentication test", () => {
+test.describe.serial("Authentication test", () => {
   const realmName = `authentication-flow-${uuidv4()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -84,7 +84,7 @@ test.describe("Authentication test", () => {
     );
   });
 
-  test.describe("Flow details", () => {
+  test.describe.serial("Flow details", () => {
     const flowName = "Copy of browser test";
 
     test.beforeEach(async ({ page }) => {
@@ -188,7 +188,7 @@ test.describe("Authentication test", () => {
   });
 });
 
-test.describe("Required actions", () => {
+test.describe.serial("Required actions", () => {
   const realmName = `test-${uuidv4()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -240,7 +240,7 @@ test.describe("Required actions", () => {
   });
 });
 
-test.describe("Password policies tab", () => {
+test.describe.serial("Password policies tab", () => {
   const realmName = `policies-password-${uuidv4()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -264,7 +264,7 @@ test.describe("Password policies tab", () => {
   });
 });
 
-test.describe("Accessibility tests for authentication", () => {
+test.describe.serial("Accessibility tests for authentication", () => {
   const realmName = "a11y-realm";
   const flowName = `Flow-${uuidv4()}`;
 

@@ -17,16 +17,28 @@
 package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -68,16 +80,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -90,7 +92,7 @@ import java.util.Optional;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String SCOPE_OPENID = "openid";
@@ -1039,4 +1041,27 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         return Boolean.valueOf(emailVerified.toString());
     }
+
+    @Override
+    public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
+        OIDCIdentityProviderConfig config = getConfig();
+
+        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, v -> verify(v.getJws()),
+                config.getIssuer(), config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
+            return false;
+        }
+
+        if (!config.isSupportsClientAssertions()) {
+            throw new RuntimeException("Issuer does not support client assertions");
+        }
+
+        if (!config.isValidateSignature()) {
+            throw new RuntimeException("Signature validation not enabled for issuer");
+        }
+
+        return validator.validate();
+    }
+
 }

@@ -46,7 +46,7 @@ const addProviderMenu = "Add new provider";
 const createdSuccessMessage = "User federation provider successfully created";
 const savedSuccessMessage = "User federation provider successfully saved";
 
-test.describe("User Fed Kerberos tests", () => {
+test.describe.serial("User Fed Kerberos tests", () => {
   const realmName = `user-federation-kerberos_${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -73,7 +73,7 @@ test.describe("User Fed Kerberos tests", () => {
     await assertNotificationMessage(page, createdSuccessMessage);
   });
 
-  test.describe("Edit Kerberos provider", () => {
+  test.describe.serial("Edit Kerberos provider", () => {
     test.beforeAll(() =>
       adminClient.createUserFederation(realmName, {
         providerId: provider,

@@ -36,7 +36,7 @@ const hcLdapAttMapper = "hardcoded-ldap-attribute-mapper";
 const roleLdapMapper = "role-ldap-mapper";
 const hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
-test.describe("User Fed LDAP mapper tests", () => {
+test.describe.serial("User Fed LDAP mapper tests", () => {
   const realmName = `user-federation-kerberos_${uuid()}`;
 
   test.beforeAll(async () => {
@@ -108,10 +108,9 @@ test.describe("User Fed LDAP mapper tests", () => {
 
   test("Create hardcoded attribute mapper", async ({ page }) => {
     await clickAddMapper(page);
+    await page.getByTestId("name").fill(`${hcAttMapper}-test`);
     await selectItem(page, "#kc-providerId", hcAttMapper);
-
     await fillHardwareAttributeMapper(page, {
-      name: `${hcAttMapper}-test`,
       config: {
         "user.model.attribute": ["middleName"],
         "attribute.value": ["test"],

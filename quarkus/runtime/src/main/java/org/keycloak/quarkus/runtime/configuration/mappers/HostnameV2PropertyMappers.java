@@ -13,18 +13,18 @@ import org.keycloak.common.Profile;
 import org.keycloak.config.HostnameV2Options;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.SecureContextResolver;
 
-public final class HostnameV2PropertyMappers {
+public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
 
     private static final String CONTEXT_WARNING = "the server is running in an insecure context. Secure contexts are required for full functionality, including cross-origin cookies.";
     private static final List<String> REMOVED_OPTIONS = Arrays.asList("hostname-admin-url", "hostname-path", "hostname-port", "hostname-strict-backchannel", "hostname-url", "proxy", "hostname-strict-https");
 
-    private HostnameV2PropertyMappers(){}
-
-    public static PropertyMapper<?>[] getHostnamePropertyMappers() {
+    @Override
+    public List<? extends PropertyMapper<?>> getPropertyMappers() {
         return Stream.of(
                 fromOption(HostnameV2Options.HOSTNAME)
                         .to("kc.spi-hostname--v2--hostname")
@@ -39,11 +39,14 @@ public final class HostnameV2PropertyMappers {
                 fromOption(HostnameV2Options.HOSTNAME_DEBUG)
         )
         .map(b -> b.isEnabled(() -> Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2), "hostname:v2 feature is enabled").build())
-        .toArray(s -> new PropertyMapper<?>[s]);
+        .toList();
     }
 
-    public static void validateConfig(Picocli picocli) {
-        validateConfig(picocli::warn);
+    @Override
+    public void validateConfig(Picocli picocli) {
+        if (picocli.getParsedCommand().filter(AbstractCommand::isServing).isPresent()) {
+            validateConfig(picocli::warn);
+        }
     }
 
     public static void validateConfig(Consumer<String> warn) {

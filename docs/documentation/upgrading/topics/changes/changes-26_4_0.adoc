@@ -4,7 +4,22 @@
 Breaking changes are identified as requiring changes from existing users to their configurations.
 In minor or patch releases we will only do breaking changes to fix bugs.
 
-=== <TODO>
+=== Fine-grained admin permissions: RESET_PASSWORD scope for Users
+
+A new `reset-password` scope has been added to the Users resource type in Fine-Grained Admin Permissions v2. This scope allows administrators to grant password reset permissions independently from the broader `manage` scope.
+
+By default, the behavior remains compatible with previous versions through the `fallbackToManageUsers` configuration option, which is set to `true` by default. When this fallback is enabled, password reset permissions will use the existing `manage` scope behavior.
+
+To enable the new granular password reset permissions, set the configuration option:
+
+[source]
+----
+fgap.v2.resetPassword.fallbackToManageUsers=false
+----
+
+When the fallback is disabled, only explicit `reset-password` scope permissions will allow password reset operations, providing more fine-grained control over administrative access.
+
+For more information about fine-grained admin permissions, see the link:{adminguide_finegrained_link}[{adminguide_finegrained_name}] chapter in the {adminguide_name}.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -43,6 +58,28 @@ Custom caches can still be added without setting this option.
 When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
 and use the `+--cache-...+` options to make changes for example to the cache sizes.
 
+=== RFC8414 compliant lookup of metadata
+
+{project_name} now exposes an RFC8414-compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL.
+
+As an example, OAuth 2.0 Authorization Server Metadata information was exposed via:
+
+[source]
+----
+https://keycloak.example.com/realms/{realm}/.well-known/oauth-authorization-server
+----
+
+It is now available also via:
+
+[source]
+----
+https://keycloak.example.com/.well-known/oauth-authorization-server/realms/{realm}
+----
+
+To benefit from this, expose the path `/.well-known/` in your reverse proxy configuration.
+
+NOTE: If a `http-relative-path` is configured, configure a reverse proxy to map the `/.well-known/` path to the path with the prefix on the server.
+
 === Operator default affinity configuration changed
 
 The default affinity strategy has been updated so that a `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rule
@@ -64,11 +101,16 @@ When using the `+/realms/{realm-name}/broker/{provider_alias}/token+` endpoint f
 
 When using GitHub as an IDP, you can now enable JSON responses to leverage the token refresh for this endpoint.
 
-== Required field in User Session note mapper
+=== Persistent User Session Batching Disabled
+
+The batching of persistent user session updates has been turned off by default because it negatively impacts performance with some database vendors, which offset the benefits with other database vendors.
+It can be enabled using the CLI option `--spi-user-sessions--infinispan--use-batches=true`, but users are encouraged to load test their environment to verify performance improvements.
+
+=== Required field in User Session note mapper
 
 The name of the session note is now shown as a required field in the Admin UI.
 
-== Required field in OIDC attribute mapper
+=== Required field in OIDC attribute mapper
 
 The name of the token claim is now shown as a required field in the Admin UI.
 
@@ -134,6 +176,16 @@ The input fields  in the login theme for OTP and recovery codes and have been op
 * The input mode is now `numeric`, which will ease the input on mobile devices.
 * The auto-complete is set to `one-time-code` to avoid interference with password managers.
 
+=== Maximum length of the parameters in the OIDC authentication request
+
+When the OIDC authentication request (or OAuth2 authorization request) is sent, there is now limit for the maximum length of every standard OIDC/OAuth2 parameter. The maximum length of each standard parameter is 4000 characters,
+which is very big number and can be lowered in the future releases. For now, it is kept big for the backwards compatibility. The only exception is the `login_hint` parameter, which is limited
+to the maximum length of 255 characters. This is aligned with the maximum length for the `username` and `email` attributes configured in the default user profile configuration.
+
+If you want to make those number higher or lower, you can start the server with the option `req-params-default-max-size` for the default maximum length of the standard
+OIDC/OAuth2 parameters or you can use something like `req-params-max-size` for one specific parameter. See the `login-protocol` provider configuration
+of the link:{allproviderconfigguide_link}[{allproviderconfigguide_name}] for more details.
+
 === UTF-8 management in the email sender
 
 Since this release, {project_name} adds a new option `allowutf8` for the realm SMTP configuration (*Allow UTF-8* field inside the *Email* tab in the *Realm settings* section of the Admin Console).
@@ -149,6 +201,15 @@ If you have an SMTP server configured for your realm, perform the following migr
 * If your SMTP server does not support SMTPUTF8:
 . Keep the *Allow UTF-8* option disabled.
 . Verify that no email addresses of users have non-ASCII characters in the local part of the email address. If you detect emails with non-ascii characters in the local part you can use the Verify Profile action to force the user to modify the email after the upgrade.
+
+=== Aligning the count of users with the actual number of users returned from searches
+
+When searching for users in the Admin Console or via the User API, the count of users returned from the
+`/admin/realms/{realm}/users/count` endpoint is now aligned with the actual number of users returned when executing
+searches via `/admin/realms/{realm}/users`.
+
+If you are relying on the users count endpoint, make sure to review your client(s) so that they expect the users count
+to be aligned with the actual number of users returned from searches.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

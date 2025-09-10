@@ -17,17 +17,20 @@
 
 package org.keycloak.models.policy;
 
+import java.util.List;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 
 public class ResourceAction implements Comparable<ResourceAction> {
 
-    private static final String AFTER_KEY = "after";
-    private static final String PRIORITY_KEY = "priority";
+    public static final String AFTER_KEY = "after";
+    public static final String PRIORITY_KEY = "priority";
 
     private String id;
     private String providerId;
     private MultivaluedHashMap<String, String> config;
+    private List<ResourceAction> actions = List.of();
 
     public ResourceAction() {
         // reflection
@@ -37,9 +40,10 @@ public class ResourceAction implements Comparable<ResourceAction> {
         this.providerId = providerId;
     }
 
-    public ResourceAction(String providerId, MultivaluedHashMap<String, String> config) {
+    public ResourceAction(String providerId, MultivaluedHashMap<String, String> config, List<ResourceAction> actions) {
         this.providerId = providerId;
         this.config = config;
+        this.actions = actions;
     }
 
     public ResourceAction(ComponentModel model) {
@@ -94,6 +98,17 @@ public class ResourceAction implements Comparable<ResourceAction> {
 
     public Long getAfter() {
         return Long.valueOf(getConfig().getFirstOrDefault(AFTER_KEY, "0"));
+    }
+
+    public List<ResourceAction> getActions() {
+        if (actions == null) {
+            return List.of();
+        }
+        return actions;
+    }
+
+    public void setActions(List<ResourceAction> actions) {
+        this.actions = actions;
     }
 
     @Override

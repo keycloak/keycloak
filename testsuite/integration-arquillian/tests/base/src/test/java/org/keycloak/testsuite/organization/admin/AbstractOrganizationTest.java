@@ -140,9 +140,12 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             id = ApiUtil.getCreatedId(response);
         }
-        // set the idp domain to the first domain used to create the org.
-        broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-        broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+
+        if (orgDomains != null && orgDomains.length > 0) {
+            // set the idp domain to the first domain used to create the org.
+            broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
+            broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        }
         testRealm.identityProviders().create(broker).close();
         testCleanup.addCleanup(testRealm.identityProviders().get(broker.getAlias())::remove);
         testRealm.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
@@ -158,10 +161,12 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         org.setAlias(name);
         org.setDescription(name + " is a test organization!");
 
-        for (String orgDomain : orgDomains) {
-            OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
-            domainRep.setName(orgDomain);
-            org.addDomain(domainRep);
+        if (orgDomains != null) {
+            for (String orgDomain : orgDomains) {
+                OrganizationDomainRepresentation domainRep = new OrganizationDomainRepresentation();
+                domainRep.setName(orgDomain);
+                org.addDomain(domainRep);
+            }
         }
 
         org.setAttributes(Map.of("key", List.of("value1", "value2")));

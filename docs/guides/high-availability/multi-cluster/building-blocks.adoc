@@ -34,7 +34,7 @@ Ensures that the instances are deployed and restarted as needed.
 
 *Suggested setup:* Red Hat OpenShift Service on AWS (ROSA) deployed in each availability zone.
 
-*Not considered:* A stretched ROSA cluster which spans multiple availability zones, as this could be a single point of failure if misconfigured.
+*Not considered:* A ROSA cluster which spans multiple availability zones, as this could be a single point of failure if misconfigured.
 
 == Database
 

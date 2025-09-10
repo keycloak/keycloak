@@ -19,6 +19,7 @@ package org.keycloak.jose.jwk;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.util.PemUtils;
 
@@ -45,9 +46,14 @@ public class JWK {
 
     public static final String SHA256_509_THUMBPRINT = "x5t#S256";
 
+    /**
+     * This duplicates {@link org.keycloak.crypto.KeyUse}, which should be used instead when possible
+     */
+    @Deprecated
     public enum Use {
         SIG("sig"),
-        ENCRYPTION("enc");
+        ENCRYPTION("enc"),
+        JWT_SVID("jwt-svid");
 
         private String str;
 
@@ -164,5 +170,19 @@ public class JWK {
         otherClaims.put(name, value);
     }
 
+    /**
+     * Ability to retrieve custom claims in a unified way. The subclasses (like for example OKPublicJWK) may contain the custom claims
+     * as Java properties when the "JWK" class can contain the same claims inside the "otherClaims" map. This method allows to obtain the
+     * claim in both ways regardless of if we have "JWK" class or some of it's subclass
+     *
+     * @param claimName claim name
+     * @param claimType claim type
+     * @return claim if present or null
+     */
+    @JsonIgnore
+    public <T> T getOtherClaim(String claimName, Class<T> claimType) {
+        Object o = getOtherClaims().get(claimName);
+        return o == null ? null : claimType.cast(o);
+    }
 
 }

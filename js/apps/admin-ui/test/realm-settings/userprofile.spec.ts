@@ -25,7 +25,7 @@ import {
   switchOffIfOn,
 } from "./userprofile.ts";
 
-test.describe("User profile tabs", () => {
+test.describe.serial("User profile tabs", () => {
   const name = "Test";
   const displayName = "Test display name";
   const modifyName = "ModifyTest";
@@ -65,7 +65,7 @@ test.describe("User profile tabs", () => {
     await adminClient.deleteUser("testuser11", realmName, true);
   });
 
-  test.describe("Attributes sub tab tests", () => {
+  test.describe.serial("Attributes sub tab tests", () => {
     test("Completes new attribute form and performs cancel", async ({
       page,
     }) => {

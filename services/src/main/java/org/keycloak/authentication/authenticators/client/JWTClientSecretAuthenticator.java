@@ -20,10 +20,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -55,66 +53,9 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        JWTClientValidator validator = new JWTClientValidator(context, getId());
-        if (!validator.clientAssertionParametersValidation()) return;
-
         try {
-            validator.readJws();
-            if (!validator.validateClient()) return;
-            if (!validator.validateSignatureAlgorithm()) return;
-
-            RealmModel realm = validator.getRealm();
-            ClientModel client = validator.getClient();
-            JWSInput jws = validator.getJws();
-            JsonWebToken token = validator.getToken();
-            String clientAssertion = validator.getClientAssertion();
-
-            String clientSecretString = client.getSecret();
-            if (clientSecretString == null) {
-                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
-                return;
-            }
-
-            //
-            OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
-            if (wrapper.isClientSecretExpired()) {
-                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
-                return;
-            }
-            //
-
-            boolean signatureValid;
-            try {
-                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, (jose, validatedClient) -> {
-                    DEFAULT_VALIDATOR.accept(jose, validatedClient);
-                    String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
-                    ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
-                    if (signatureProvider == null) {
-                        throw new RuntimeException("Algorithm not supported");
-                    }
-                    if (signatureProvider.isAsymmetricAlgorithm()) {
-                        throw new RuntimeException("Algorithm is not symmetric");
-                    }
-                }, JsonWebToken.class);
-                signatureValid = jwt != null;
-                //try authenticate with client rotated secret
-                if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
-                    jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, wrapper.toRotatedClientModel(), JsonWebToken.class);
-                    signatureValid = jwt != null;
-                }
-            } catch (RuntimeException e) {
-                Throwable cause = e.getCause() != null ? e.getCause() : e;
-                throw new RuntimeException("Signature on JWT token by client secret failed validation", cause);
-            }
-            if (!signatureValid) {
-                throw new RuntimeException("Signature on JWT token by client secret  failed validation");
-            }
-            // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
-            // JWT contents and verification in client_secret_jwt is the same as in private_key_jwt
-            validator.validateTokenAudience(context, realm, token);
-
-            validator.validateToken();
-            validator.validateTokenReuse();
+            JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
+            if (!validator.validate()) return;
 
             context.success();
         } catch (Exception e) {
@@ -122,6 +63,53 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with client secret signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
+    }
+
+    public boolean verifySignature(AbstractJWTClientValidator validator) {
+        ClientAuthenticationFlowContext context = validator.getContext();
+        ClientModel client = validator.getClient();
+
+        String clientSecretString = client.getSecret();
+        if (clientSecretString == null) {
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
+            return false;
+        }
+
+        //
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
+        if (wrapper.isClientSecretExpired()) {
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
+            return false;
+        }
+        //
+
+        boolean signatureValid;
+        try {
+            JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(), client, (jose, validatedClient) -> {
+                DEFAULT_VALIDATOR.accept(jose, validatedClient);
+                String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
+                ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+                if (signatureProvider == null) {
+                    throw new RuntimeException("Algorithm not supported");
+                }
+                if (signatureProvider.isAsymmetricAlgorithm()) {
+                    throw new RuntimeException("Algorithm is not symmetric");
+                }
+            }, JsonWebToken.class);
+            signatureValid = jwt != null;
+            //try authenticate with client rotated secret
+            if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
+                jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(), wrapper.toRotatedClientModel(), JsonWebToken.class);
+                signatureValid = jwt != null;
+            }
+        } catch (Exception e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new RuntimeException("Signature on JWT token by client secret failed validation", cause);
+        }
+        if (!signatureValid) {
+            throw new RuntimeException("Signature on JWT token by client secret  failed validation");
+        }
+        return true;
     }
 
     @Override

@@ -48,7 +48,14 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user, boolean ignoreAcceptLanguageHeader) {
-        HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
+        HttpHeaders requestHeaders = null;
+
+        try {
+            requestHeaders = session.getContext().getRequestHeaders();
+        } catch (Exception e) {
+            logger.debug("Could not obtain request headers from the context", e);
+        }
+
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
         if (!realm.isInternationalizationEnabled()) {

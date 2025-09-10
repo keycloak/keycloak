@@ -42,7 +42,7 @@ const FilterProtocol = {
   OpenID: "OpenID Connect",
 };
 
-test.describe("Client Scopes test", () => {
+test.describe.serial("Client Scopes test", () => {
   const clientScopeName = "client-scope-test";
   const itemId = `client-scope-test-${uuidv4()}`;
   const clientScope = {
@@ -74,7 +74,7 @@ test.describe("Client Scopes test", () => {
     }
   });
 
-  test.describe("Client Scope filter list items", () => {
+  test.describe.serial("Client Scope filter list items", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToClientScopes(page);
@@ -155,7 +155,7 @@ test.describe("Client Scopes test", () => {
     });
   });
 
-  test.describe("Client Scope modify list items", () => {
+  test.describe.serial("Client Scope modify list items", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToClientScopes(page);
@@ -173,7 +173,7 @@ test.describe("Client Scopes test", () => {
     });
   });
 
-  test.describe("Client Scope creation", () => {
+  test.describe.serial("Client Scope creation", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToClientScopes(page);

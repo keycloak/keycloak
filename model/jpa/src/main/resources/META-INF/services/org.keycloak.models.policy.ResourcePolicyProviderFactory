@@ -17,3 +17,4 @@
 
 org.keycloak.models.policy.UserCreationTimeResourcePolicyProviderFactory
 org.keycloak.models.policy.UserSessionRefreshTimeResourcePolicyProviderFactory
+org.keycloak.models.policy.EventBasedResourcePolicyProviderFactory

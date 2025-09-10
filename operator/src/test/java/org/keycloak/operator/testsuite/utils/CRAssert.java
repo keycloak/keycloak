@@ -297,7 +297,7 @@ public final class CRAssert {
     }
 
     public static CompletableFuture<Void> eventuallyRollingUpdateStatus(KubernetesClient client, Keycloak keycloak, String reason) {
-        // test the statefulset, rather that the keycloak status as the events with the local api server may happen too quickly and the keycloak status may not get upddated
+        // test the statefulset, rather that the keycloak status as the events with the local api server may happen too quickly and the keycloak status may not get updated
         var cf1 = client.apps().statefulSets().withName(keycloak.getMetadata().getName()).informOnCondition(ss -> {
             return !ss.isEmpty() && KeycloakController.isRolling(ss.get(0));
         });

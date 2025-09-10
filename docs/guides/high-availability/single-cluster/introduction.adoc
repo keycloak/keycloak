@@ -3,13 +3,15 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
-title="Single cluster deployments"
-summary="Deploy a single Keycloak cluster, optionally stretched across multiple availability-zones" >
+title="Single-cluster deployments"
+summary="Deploy a single Keycloak cluster, optionally across multiple availability-zones in the same region" >
 
-== When to use a single cluster setup
-The {project_name} single cluster architecture is targeted at use cases that:
+== When to use a single-cluster setup
+
+The {project_name} single-cluster setup is targeted at use cases that:
 
 * Deploy to an infrastructure with transparent networking, like for example a single {kubernetes} cluster.
+* Desire all healthy {project_name} instances to handle user requests.
 * Are constrained to a single
 <@profile.ifProduct>
 AWS Region.
@@ -21,38 +23,55 @@ AWS Region or an equivalent low-latency setup.
 * Fit within a defined user and request count.
 * Can accept the impact of periodic outages.
 
-<@profile.ifCommunity>
 [#single-cluster-tested-configuration]
 == Tested Configuration
 
 We regularly test {project_name} with the following configuration:
-</@profile.ifCommunity>
-<@profile.ifProduct>
-[#single-cluster-supported-configuration]
-== Supported Configuration
-</@profile.ifProduct>
 
-* An OpenShift cluster deployed across three availability-zones
+* An OpenShift cluster deployed across three availability zones
 ** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
-<@profile.ifProduct>
-either ROSA HCP or ROSA classic.
-</@profile.ifProduct>
-<@profile.ifCommunity>
 using ROSA HCP.
-</@profile.ifCommunity>
 
 ** At least one worker node for each availability-zone
-** OpenShift version
-<@profile.ifProduct>
-4.17 (or later).
-</@profile.ifProduct>
-<@profile.ifCommunity>
-4.17.
-</@profile.ifCommunity>
+** OpenShift version 4.17.
 
 * Amazon Aurora PostgreSQL database
-** High availability with a primary DB instance in one Availability Zone, and synchronously replicated readers in the other Availability Zones
+** High availability with a primary DB instance in one availability zone, and synchronously replicated readers in the other availability zones
 ** Version ${properties["aurora-postgresql.version"]}
+
+[#single-cluster-supported-configuration]
+== Supported Configurations
+
+The following configurations are supported:
+
+<@profile.ifProduct>
+
+* {project_name} deployed on an OpenShift cluster version 4.17 or later
+** For cloud setups, Pods can be scheduled across up to three availability zones within the same region
+if OpenShift supports spanning multiple availability zones in that environment and {project_name}'s latency requirements are met.
+** For on-premise setups, Pods can be scheduled across up to three datacenters
+if OpenShift supports spanning multiple datacenters in that environment and {project_name}'s latency requirements are met.
+
+</@profile.ifProduct>
+
+<@profile.ifCommunity>
+
+* {project_name} deployed on a {kubernetes} cluster
+** For cloud setups, Pods can be scheduled across multiple availability zones within the same region
+if {project_name}'s latency requirements are met.
+** For on-premise setups, Pods can be scheduled across multiple datacenters
+if {project_name}'s latency requirements are met.
+* {project_name} deployed on a virtual machines or bare metal
+** Instances can be scheduled across multiple availability zones within the same cloud-provider region or multiple datacenters if {project_name}'s latency requirements are met.
+
+</@profile.ifCommunity>
+
+* Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
+
+* Database
+** For a list of supported databases, see <@links.server id="db"/>.
+** Deployments spanning multiple availability zones must utilize a database that can tolerate zone failures
+and synchronously replicates data between replicas.
 
 <#include "/high-availability/partials/configuration-disclaimer.adoc" />
 

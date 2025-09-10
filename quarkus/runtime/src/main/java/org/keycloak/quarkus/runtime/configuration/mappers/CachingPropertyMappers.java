@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-import org.hibernate.boot.model.source.spi.Caching;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
@@ -25,7 +24,7 @@ import com.google.common.base.CaseFormat;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
-final class CachingPropertyMappers {
+final class CachingPropertyMappers implements PropertyMapperGrouping {
 
     private static final String REMOTE_HOST_SET = "remote host is set";
     private static final String MULTI_SITE_OR_EMBEDDED_REMOTE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
@@ -33,10 +32,8 @@ final class CachingPropertyMappers {
 
     private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
 
-    private CachingPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getClusteringPropertyMappers() {
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
         List<PropertyMapper<?>> staticMappers = List.of(
                 fromOption(CachingOptions.CACHE)
                         .paramLabel("type")
@@ -170,7 +167,7 @@ final class CachingPropertyMappers {
             mappers.add(maxCountOpt(cache, InfinispanUtils::isEmbeddedInfinispan, "embedded Infinispan clusters configured"));
         }
 
-        return mappers.toArray(new PropertyMapper[0]);
+        return mappers;
     }
 
     private static boolean getDefaultMtlsEnabled() {

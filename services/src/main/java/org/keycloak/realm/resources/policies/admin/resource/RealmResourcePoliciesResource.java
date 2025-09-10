@@ -1,6 +1,5 @@
 package org.keycloak.realm.resources.policies.admin.resource;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.ws.rs.Consumes;
@@ -12,12 +11,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.policy.ResourceAction;
 import org.keycloak.models.policy.ResourcePolicy;
 import org.keycloak.models.policy.ResourcePolicyManager;
-import org.keycloak.representations.resources.policies.ResourcePolicyActionRepresentation;
 import org.keycloak.representations.resources.policies.ResourcePolicyRepresentation;
 
 class RealmResourcePoliciesResource {
@@ -33,7 +29,7 @@ class RealmResourcePoliciesResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(ResourcePolicyRepresentation rep) {
-        ResourcePolicy policy = createPolicy(rep);
+        ResourcePolicy policy = manager.toModel(rep);
         return Response.created(session.getContext().getUri().getRequestUriBuilder().path(policy.getId()).build()).build();
     }
 
@@ -41,7 +37,7 @@ class RealmResourcePoliciesResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createAll(List<ResourcePolicyRepresentation> reps) {
         for (ResourcePolicyRepresentation policy : reps) {
-            createPolicy(policy);
+            manager.toModel(policy);
         }
         return Response.created(session.getContext().getUri().getRequestUri()).build();
     }
@@ -60,30 +56,6 @@ class RealmResourcePoliciesResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<ResourcePolicyRepresentation> list() {
-        return manager.getPolicies().stream().map(this::toRepresentation).toList();
-    }
-
-    private ResourcePolicy createPolicy(ResourcePolicyRepresentation rep) {
-        ResourcePolicyManager manager = new ResourcePolicyManager(session);
-        ResourcePolicy policy = manager.addPolicy(rep.getProviderId(), rep.getConfig());
-        List<ResourceAction> actions = new ArrayList<>();
-
-        for (ResourcePolicyActionRepresentation actionRep : rep.getActions()) {
-            actions.add(new ResourceAction(actionRep.getProviderId(), new MultivaluedHashMap<>(actionRep.getConfig())));
-        }
-
-        manager.updateActions(policy, actions);
-
-        return policy;
-    }
-
-    ResourcePolicyRepresentation toRepresentation(ResourcePolicy policy) {
-        ResourcePolicyRepresentation rep = new ResourcePolicyRepresentation(policy.getId(), policy.getProviderId(), policy.getConfig());
-
-        for (ResourceAction action : manager.getActions(policy)) {
-            rep.addAction(new ResourcePolicyActionRepresentation(action.getId(), action.getProviderId(), action.getConfig()));
-        }
-
-        return rep;
+        return manager.getPolicies().stream().map(manager::toRepresentation).toList();
     }
 }

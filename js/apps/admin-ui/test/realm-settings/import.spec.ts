@@ -25,7 +25,7 @@ import {
   toggleUsers,
 } from "./import.ts";
 
-test.describe("Partial import test", () => {
+test.describe.serial("Partial import test", () => {
   const testRealm = `Partial-import-${uuid()}`;
   const testRealm2 = `Partial-import-2-${uuid()}`;
 

@@ -8,12 +8,13 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ProxyPropertyMappers {
+import java.util.List;
 
-    private ProxyPropertyMappers(){}
+final class ProxyPropertyMappers implements PropertyMapperGrouping{
 
-    public static PropertyMapper<?>[] getProxyPropertyMappers() {
-        return new PropertyMapper[] {
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(ProxyOptions.PROXY_HEADERS)
                         .to("quarkus.http.proxy.proxy-address-forwarding")
                         .transformer((v, c) -> proxyEnabled(null, v, c))
@@ -49,7 +50,7 @@ final class ProxyPropertyMappers {
                         .addValidateEnabled(() -> !Configuration.isBlank(ProxyOptions.PROXY_HEADERS), "proxy-headers is set")
                         .paramLabel("trusted proxies")
                         .build()
-        };
+        );
     }
 
     private static void validateAddress(String address) {

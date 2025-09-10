@@ -1,6 +1,7 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
+import { DEFAULT_REALM } from "../utils/constants.ts";
 import { assertRequiredFieldError, switchOff } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import {
@@ -26,7 +27,7 @@ const editedRealmName = `Edited-Test-realm-${uuid()}`;
 const testDisabledName = `Test-Disabled-${uuid()}`;
 const specialCharsName = `%22-${uuid()}`;
 
-test.describe("Realm tests", () => {
+test.describe.serial("Realm tests", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await clickCreateRealm(page);
@@ -46,7 +47,7 @@ test.describe("Realm tests", () => {
     await page.getByTestId("create").click();
     await assertRequiredFieldError(page, "realm");
 
-    await fillRealmName(page, "master");
+    await fillRealmName(page, DEFAULT_REALM);
     await clickCreateRealmForm(page);
 
     await assertNotificationMessage(

@@ -80,6 +80,8 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     public static final String STACK = "stack";
     public static final String NODE_NAME = "nodeName";
     public static final String SITE_NAME = "siteName";
+    public static final String MACHINE_NAME = "machineName";
+    public static final String RACK_NAME = "rackName";
 
     private volatile ConfigurationBuilderHolder builderHolder;
     private volatile Config.Scope keycloakConfig;
@@ -257,7 +259,19 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
                 .add();
         builder.property()
                 .name(SITE_NAME)
-                .helpText("The name of the site where this node runs. Used for server hinting.")
+                .helpText("The name of the site (availability zone) where this instance runs. It can be set if running Keycloak in different availability zones. Infinispan takes into consideration this value to keep the backup data spread between different sites.")
+                .label("name")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add();
+        builder.property()
+                .name(MACHINE_NAME)
+                .helpText("The name of the physical machine where this instance runs. It can be set if multiple Keycloak instances are running in the same physical machines. Infinispan takes into consideration this value to keep the backup data spread between different machines.")
+                .label("name")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add();
+        builder.property()
+                .name(RACK_NAME)
+                .helpText("The name of the rack where this instance runs. It can be set if multiple Keycloak instances are running in the same physical rack. Infinispan takes into consideration this value to keep the backup data spread between different racks.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();

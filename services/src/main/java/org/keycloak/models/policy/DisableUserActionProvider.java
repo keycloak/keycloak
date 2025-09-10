@@ -17,6 +17,8 @@
 
 package org.keycloak.models.policy;
 
+import static org.keycloak.models.policy.ResourceAction.AFTER_KEY;
+
 import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
@@ -55,6 +57,6 @@ public class DisableUserActionProvider implements ResourceActionProvider {
 
     @Override
     public boolean isRunnable() {
-        return actionModel.get("after") != null;
+        return actionModel.get(AFTER_KEY) != null;
     }
 }

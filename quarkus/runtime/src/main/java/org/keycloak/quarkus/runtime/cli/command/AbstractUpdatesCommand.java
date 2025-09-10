@@ -30,9 +30,7 @@ import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import picocli.CommandLine;
 
-public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
-
-    private static final int FEATURE_DISABLED_EXIT_CODE = 4;
+public abstract class AbstractUpdatesCommand extends AbstractAutoBuildCommand {
 
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin = new OptimizedMixin();

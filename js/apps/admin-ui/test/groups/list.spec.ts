@@ -21,7 +21,7 @@ import {
 import { createGroup, editGroup, searchGroup } from "./list.ts";
 import { goToGroupDetails } from "./util.ts";
 
-test.describe("Group test", () => {
+test.describe.serial("Group test", () => {
   const groupName = `group-${uuid()}`;
   const users: { id: string; username: string }[] = [];
   const username = "test-user";
@@ -86,7 +86,7 @@ test.describe("Group test", () => {
   });
 });
 
-test.describe("Search group under current group", () => {
+test.describe.serial("Search group under current group", () => {
   const predefinedGroups = ["level", "level1", "level2", "level3"];
 
   const placeholder = "Filter groups";

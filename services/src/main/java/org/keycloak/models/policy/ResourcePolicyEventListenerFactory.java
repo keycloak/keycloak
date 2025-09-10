@@ -17,6 +17,8 @@
 
 package org.keycloak.models.policy;
 
+import java.time.Duration;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventListenerProvider;
@@ -24,8 +26,15 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
+import org.keycloak.timer.TimerProvider;
+import org.keycloak.provider.ProviderEvent;
 
 public class ResourcePolicyEventListenerFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
+
+    public static final String ID = "resource-policy-event-listener";
+    private static final long DEFAULT_ACTION_RUNNER_TASK_INTERVAL = Duration.ofHours(12).toMillis();
+    private long actionRunnerTaskInterval;
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
@@ -39,26 +48,44 @@ public class ResourcePolicyEventListenerFactory implements EventListenerProvider
 
     @Override
     public void init(Scope config) {
-
+        actionRunnerTaskInterval = config.getLong("actionRunnerTaskInterval", DEFAULT_ACTION_RUNNER_TASK_INTERVAL);
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        factory.register(event -> {
+            KeycloakSession session = event.getKeycloakSession();
 
+            if (session != null) {
+                onEvent(event, session);
+            }
+        });
+        scheduleActionRunnerTask(factory);
+    }
+
+    private void onEvent(ProviderEvent event, KeycloakSession session) {
+        ResourcePolicyEventListener provider = (ResourcePolicyEventListener) session.getProvider(EventListenerProvider.class, getId());
+        provider.onEvent(event);
     }
 
     @Override
     public void close() {
-
     }
 
     @Override
     public String getId() {
-        return "resource-policy-event-listener";
+        return ID;
     }
 
     @Override
     public boolean isSupported(Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RESOURCE_LIFECYCLE);
+    }
+
+    private void scheduleActionRunnerTask(KeycloakSessionFactory factory) {
+        try (KeycloakSession session = factory.create()) {
+            TimerProvider timer = session.getProvider(TimerProvider.class);
+            timer.schedule(new ClusterAwareScheduledTaskRunner(factory, new ResourceActionRunnerScheduledTask(factory), actionRunnerTaskInterval), actionRunnerTaskInterval);
+        }
     }
 }

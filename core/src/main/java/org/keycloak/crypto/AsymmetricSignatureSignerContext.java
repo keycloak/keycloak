@@ -21,7 +21,7 @@ import java.security.Signature;
 
 public class AsymmetricSignatureSignerContext implements SignatureSignerContext {
 
-    private final KeyWrapper key;
+    protected final KeyWrapper key;
 
     public AsymmetricSignatureSignerContext(KeyWrapper key) throws SignatureException {
         this.key = key;
