@@ -17,11 +17,27 @@
 
 package org.keycloak.testsuite.model.session;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.hamcrest.Matchers;
 import org.infinispan.Cache;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -47,32 +63,16 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import org.hamcrest.Matchers;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 
 /**
@@ -409,19 +409,22 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             clientSessionId.set(clientSession.getId());
         });
 
-        inComittedTransaction(session -> {
-            RealmModel realm = session.realms().getRealmByName(realmName);
-            session.getContext().setRealm(realm);
+        if (InfinispanUtils.isEmbeddedInfinispan()) {
+            // causes https://github.com/keycloak/keycloak/issues/42012
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealmByName(realmName);
+                session.getContext().setRealm(realm);
 
-            Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessoinCache = session.getProvider(InfinispanConnectionProvider.class).getCache(CLIENT_SESSION_CACHE_NAME);
-            SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessoinCache.get(UUID.fromString(clientSessionId.get()));
-            assertNotNull(clientSession);
-            assertNotNull(clientSession.getEntity());
-            // user session id is not stored in the cache
-            // when reading from a remote keycloak instance, this field is null
-            // we are simulating a “remote read” here.
-            clientSession.getEntity().setUserSessionId(null);
-        });
+                Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessoinCache = session.getProvider(InfinispanConnectionProvider.class).getCache(CLIENT_SESSION_CACHE_NAME);
+                SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessoinCache.get(UUID.fromString(clientSessionId.get()));
+                assertNotNull(clientSession);
+                assertNotNull(clientSession.getEntity());
+                // user session id is not stored in the cache
+                // when reading from a remote keycloak instance, this field is null
+                // we are simulating a “remote read” here.
+                clientSession.getEntity().setUserSessionId(null);
+            });
+        }
 
 
         Function<KeycloakSession, Integer> fetchTimestamp = session -> {
@@ -431,9 +434,14 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             ClientModel client = realm.getClientByClientId(clientId);
             UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionID.get());
             // read from database!
-            AuthenticatedClientSessionModel clientSession = session.getProvider(UserSessionPersisterProvider.class)
-                    .loadClientSession(realm, client, userSession, false);
-            return clientSession.getTimestamp();
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                return session.getProvider(UserSessionPersisterProvider.class)
+                        .loadClientSession(realm, client, userSession, false)
+                        .getTimestamp();
+            }
+            return session.sessions()
+                    .getClientSession(userSession, client, clientSessionId.get(), false)
+                    .getTimestamp();
         };
 
         // fetch the current timestamp
