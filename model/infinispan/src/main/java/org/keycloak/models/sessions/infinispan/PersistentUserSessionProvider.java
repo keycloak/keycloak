@@ -849,6 +849,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
             // Update userSession entity with the clientSession
             userSessionEntity.getClientSessions().add(key.clientId());
+            clientSessionTx.addTask(key, null, clientSession, UserSessionModel.SessionPersistenceState.PERSISTENT);
         }
 
         return sessionTx.get(userSessionEntity.getId(), offline);
