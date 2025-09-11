@@ -85,6 +85,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
+import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
@@ -206,6 +207,7 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 AuthenticatedClientSessionEntity.class,
                 AuthenticationSessionEntity.class,
                 ClientSessionKey.class,
+                EmbeddedClientSessionKey.class,
                 LoginFailureEntity.class,
                 LoginFailureKey.class,
                 RemoteAuthenticatedClientSessionEntity.class,

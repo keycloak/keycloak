@@ -33,8 +33,7 @@ import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
-
-import java.util.UUID;
+import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,15 +41,16 @@ import java.util.UUID;
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
     private final KeycloakSession kcSession;
-    private AuthenticatedClientSessionEntity entity;
+    private final AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
-    private final SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
+    private final SessionsChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
-    private boolean offline;
+    private final boolean offline;
+    private final EmbeddedClientSessionKey cacheKey;
 
     public AuthenticatedClientSessionAdapter(KeycloakSession kcSession,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
-                                             SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
+                                             SessionsChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
         if (userSession == null) {
             throw new NullPointerException("userSession must not be null");
         }
@@ -61,10 +61,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         this.client = client;
         this.clientSessionUpdateTx = clientSessionUpdateTx;
         this.offline = offline;
+        this.cacheKey = new EmbeddedClientSessionKey(userSession.getId(), client.getId());
     }
 
     private void update(ClientSessionUpdateTask task) {
-        clientSessionUpdateTx.addTask(entity.getId(), task);
+        clientSessionUpdateTx.addTask(cacheKey, task);
     }
 
     /**
@@ -84,7 +85,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
         SessionUpdateTask<AuthenticatedClientSessionEntity> removeTask = Tasks.removeSync(offline);
 
-        clientSessionUpdateTx.addTask(entity.getId(), removeTask);
+        clientSessionUpdateTx.addTask(cacheKey, removeTask);
     }
 
     @Override
@@ -117,7 +118,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public String getId() {
-        return entity.getId().toString();
+        return cacheKey.toId();
     }
 
     @Override
@@ -259,9 +260,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     @Override
     public Map<String, String> getNotes() {
         if (entity.getNotes().isEmpty()) return Collections.emptyMap();
-        Map<String, String> copy = new HashMap<>();
-        copy.putAll(entity.getNotes());
-        return copy;
+        return new HashMap<>(entity.getNotes());
     }
 
     @Override

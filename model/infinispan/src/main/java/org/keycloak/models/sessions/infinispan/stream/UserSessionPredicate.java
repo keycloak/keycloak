@@ -130,7 +130,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
         return realm.equals(entity.getRealmId()) &&
                 (user == null || entity.getUser().equals(user)) &&
-                (client == null || (entity.getAuthenticatedClientSessions() != null && entity.getAuthenticatedClientSessions().containsKey(client))) &&
+                (client == null || entity.getClientSessions().contains(client)) &&
                 (brokerSessionId == null || brokerSessionId.equals(entity.getBrokerSessionId())) &&
                 (brokerUserId == null || brokerUserId.equals(entity.getBrokerUserId()));
 

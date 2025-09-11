@@ -31,7 +31,6 @@ import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.RealmModelDelegate;
@@ -46,7 +45,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 
@@ -162,7 +160,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
         };
         PersistentAuthenticatedClientSessionAdapter clientSessionModel = (PersistentAuthenticatedClientSessionAdapter) userSessionPersister.loadClientSession(realm, client, userSession, entity.isOffline());
         if (clientSessionModel != null) {
-            AuthenticatedClientSessionEntity authenticatedClientSessionEntity = new AuthenticatedClientSessionEntity(entity.getId()) {
+            AuthenticatedClientSessionEntity authenticatedClientSessionEntity = new AuthenticatedClientSessionEntity() {
                 @Override
                 public Map<String, String> getNotes() {
                     return new HashMap<>() {
@@ -252,11 +250,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 }
 
                 @Override
-                public UUID getId() {
-                    return UUID.fromString(clientSessionModel.getId());
-                }
-
-                @Override
                 public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
                     throw new IllegalStateException("not implemented");
                 }
@@ -303,7 +296,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
 
             @Override
             public String getId() {
-                return entity.getId().toString();
+                throw new UnsupportedOperationException();
             }
 
             @Override
@@ -610,16 +603,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
             }
 
             @Override
-            public AuthenticatedClientSessionStore getAuthenticatedClientSessions() {
-                return new AuthenticatedClientSessionStore() {
-                    @Override
-                    public void clear() {
-                        userSessionModel.getAuthenticatedClientSessions().clear();
-                    }
-                };
-            }
-
-            @Override
             public String getRealmId() {
                 return userSessionModel.getRealm().getId();
             }
@@ -698,11 +681,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
             public void setNotes(Map<String, String> notes) {
                 userSessionModel.getNotes().keySet().forEach(userSessionModel::removeNote);
                 notes.forEach(userSessionModel::setNote);
-            }
-
-            @Override
-            public void setAuthenticatedClientSessions(AuthenticatedClientSessionStore authenticatedClientSessions) {
-                throw new IllegalStateException("not supported");
             }
 
             @Override

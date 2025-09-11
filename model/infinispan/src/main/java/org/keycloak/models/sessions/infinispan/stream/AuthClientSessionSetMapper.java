@@ -49,6 +49,6 @@ public class AuthClientSessionSetMapper implements Function<Map.Entry<String, Se
 
     @Override
     public Set<String> apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-        return entry.getValue().getEntity().getAuthenticatedClientSessions().keySet();
+        return entry.getValue().getEntity().getClientSessions();
     }
 }
