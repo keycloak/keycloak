@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.utils.RawDistRootPath;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,13 +44,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public abstract class BasicDatabaseTest {
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
     protected void testSuccessful(CLIResult cliResult) {
         cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
+    @Launch({ "start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
     protected void testWrongUsername(CLIResult cliResult) {
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
         assertWrongUsername(cliResult);
@@ -59,7 +59,7 @@ public abstract class BasicDatabaseTest {
     protected abstract void assertWrongUsername(CLIResult cliResult);
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
+    @Launch({ "start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
     protected void testWrongPassword(CLIResult cliResult) {
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
         assertWrongPassword(cliResult);
@@ -69,7 +69,7 @@ public abstract class BasicDatabaseTest {
 
     @Order(1)
     @Test
-    @Launch({ "export", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export"})
+    @Launch({ "export", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export"})
     public void testExportSucceeds(CLIResult cliResult) {
         cliResult.assertMessage("Full model export requested");
         cliResult.assertMessage("Export finished successfully");
@@ -77,7 +77,7 @@ public abstract class BasicDatabaseTest {
 
     @Order(2)
     @Test
-    @Launch({ "import", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export" })
+    @Launch({ "import", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--dir=./target/export" })
     void testImportSucceeds(CLIResult cliResult) {
         cliResult.assertMessage("target/export");
         cliResult.assertMessage("Realm 'master' imported");

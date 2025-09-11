@@ -75,10 +75,10 @@ public final class CRAssert {
     public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status) {
         assertKeycloakStatusCondition(kc, condition, status, null);
     }
-    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status, String containedMessage) {
+    public static ObjectAssert<KeycloakStatusCondition> assertKeycloakStatusCondition(Keycloak kc, String condition, Boolean status, String containedMessage) {
         Log.debugf("Asserting CR: %s, condition: %s, status: %s, message: %s", kc.getMetadata().getName(), condition, status, containedMessage);
         try {
-            assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
+            return assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
         } catch (Exception e) {
             Log.infof("Asserting CR: %s with status:\n%s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
             throw e;
@@ -297,7 +297,7 @@ public final class CRAssert {
     }
 
     public static CompletableFuture<Void> eventuallyRollingUpdateStatus(KubernetesClient client, Keycloak keycloak, String reason) {
-        // test the statefulset, rather that the keycloak status as the events with the local api server may happen too quickly and the keycloak status may not get upddated
+        // test the statefulset, rather that the keycloak status as the events with the local api server may happen too quickly and the keycloak status may not get updated
         var cf1 = client.apps().statefulSets().withName(keycloak.getMetadata().getName()).informOnCondition(ss -> {
             return !ss.isEmpty() && KeycloakController.isRolling(ss.get(0));
         });

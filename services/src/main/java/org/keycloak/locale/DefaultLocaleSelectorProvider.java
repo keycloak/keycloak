@@ -16,6 +16,7 @@
  */
 package org.keycloak.locale;
 
+import jakarta.enterprise.context.ContextNotActiveException;
 import org.jboss.logging.Logger;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
@@ -25,7 +26,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import jakarta.ws.rs.core.HttpHeaders;
-import org.keycloak.theme.Theme;
 
 import java.util.List;
 import java.util.Locale;
@@ -48,7 +48,14 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user, boolean ignoreAcceptLanguageHeader) {
-        HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
+        HttpHeaders requestHeaders = null;
+
+        try {
+            requestHeaders = session.getContext().getRequestHeaders();
+        } catch (ContextNotActiveException e) {
+            logger.debug("No active request, can't obtain locale from request");
+        }
+
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
         if (!realm.isInternationalizationEnabled()) {

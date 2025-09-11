@@ -76,7 +76,7 @@ public final class Build extends AbstractCommand {
             validateConfig();
             return null;
         });
-        System.setProperty("quarkus.launch.rebuild", "true");
+        Environment.setRebuild();
 
         picocli.println("Updating the configuration and installing your custom providers, if any. Please wait.");
 

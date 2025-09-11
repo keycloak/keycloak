@@ -160,6 +160,10 @@ Multivalued::
 If enabled, the attribute supports multiple values and UIs are rendered accordingly to allow setting many values. When enabling this
 setting, make sure to add a validator to set a hard limit to the number of values.
 
+Default Value::
+Defines the value that will be automatically assigned to the attribute if the user does not provide one.
+Ensure that this default value complies with all configured validators for the attribute.
+
 Attribute Group::
 The attribute group to which the attribute belongs to, if any.
 
@@ -265,7 +269,7 @@ The list below provides a list of all the built-in validators:
 *error-message*: the key of the error message in i18n bundle. If not set a generic message is used.
 
 |email
-|Check if the value has a valid e-mail format.
+|Check if the value has a valid e-mail format. If <<_email, the realm is configured to send emails>> and the option *Allow UTF-8* is not enabled to support internationalized emails, this validator also checks that the local part of the address contains only ASCII characters.
 |
 *max-local-length*: an integer to define the maximum length for the local part of the email. It defaults to 64 per specification.
 

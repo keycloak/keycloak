@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
+import org.assertj.core.api.Condition;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
@@ -46,6 +47,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
@@ -542,6 +544,25 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true,
                     String.format("Waiting for %s/%s-0 due to ErrImage", k8sclient.getNamespace(),
                             kc.getMetadata().getName()));
+        });
+    }
+
+    @Test
+    public void testConfigErrorLog() {
+        var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().addToEnabledFeatures("feature doesn't exist").build());
+
+        deployKeycloak(k8sclient, kc, false);
+
+        var crSelector = k8sclient.resource(kc);
+
+        Awaitility.await().atMost(3, MINUTES).pollDelay(1, SECONDS).ignoreExceptions().untilAsserted(() -> {
+            Keycloak current = crSelector.get();
+            CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.READY, false);
+            CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true, null).has(new Condition<>(
+                    c -> c.getMessage().contains(String.format("Waiting for %s/%s-0 due to CrashLoopBackOff", k8sclient.getNamespace(), kc.getMetadata().getName()))
+                     && c.getMessage().contains("feature doesn't exist"), "message"
+                    ));
         });
     }
 

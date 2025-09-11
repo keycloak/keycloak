@@ -142,9 +142,7 @@ public class TokenEndpoint {
          * authorization_code and refresh_token grant types and extension grants such as the JWT
          * authorization grant [RFC7523])
          */
-        DPoPUtil.retrieveDPoPHeaderIfPresent(session, clientConfig, event, cors).ifPresent(dPoP -> {
-            session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
-        });
+        DPoPUtil.handleDPoPHeader(session, event, cors, clientConfig);
 
         OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes,
                                                                       formParams, event, cors, tokenManager);
@@ -211,8 +209,8 @@ public class TokenEndpoint {
     }
 
     private void checkParameterDuplicated() {
-        for (String key : formParams.keySet()) {
-            if (formParams.get(key).size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(key)) {
+        for (var entry : formParams.entrySet()) {
+            if (entry.getValue().size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(entry.getKey())) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
                         Response.Status.BAD_REQUEST);
             }

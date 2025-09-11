@@ -9,8 +9,8 @@ metrics-for-troubleshooting-database
 metrics-for-troubleshooting-http
 metrics-for-troubleshooting-clustering-and-network
 metrics-for-troubleshooting-embedded-caches
-metrics-for-troubleshooting-embedded-caches-multi-site
-metrics-for-troubleshooting-external-infinispan-multi-site
+metrics-for-troubleshooting-embedded-caches-multi-cluster
+metrics-for-troubleshooting-external-infinispan-multi-cluster
 tracing
 grafana-dashboards
 exemplars

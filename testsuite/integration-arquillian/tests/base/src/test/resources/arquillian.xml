@@ -328,6 +328,8 @@
                 </property>
                 <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
                 <property name="outputToConsole">true</property>
+                <property name="enabledFeatures">${auth.server.feature}</property>
+                <property name="disabledFeatures">${auth.server.feature.disable}</property>
             </configuration>
         </container>
         <container qualifier="auth-server-quarkus-backend2" mode="manual" >
@@ -350,6 +352,8 @@
                 </property>
                 <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
                 <property name="outputToConsole">true</property>
+                <property name="enabledFeatures">${auth.server.feature}</property>
+                <property name="disabledFeatures">${auth.server.feature.disable}</property>
             </configuration>
         </container>
     </group>

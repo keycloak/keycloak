@@ -30,10 +30,10 @@ import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -62,9 +62,13 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class).inNamespace(realm.getMetadata().getNamespace())
                 .withName(realm.getSpec().getKeycloakCRName()).get();
 
+        Keycloak existingKeycloak = context.getClient().resources(Keycloak.class).inNamespace(realm.getMetadata().getNamespace())
+                .withName(realm.getSpec().getKeycloakCRName()).require();
+
         if (existingDeployment != null) {
             ContextUtils.storeOperatorConfig(context, config);
             ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
+            ContextUtils.storeKeycloak(context, existingKeycloak);
             if (getReadyReplicas(existingDeployment) > 0) {
                 context.managedWorkflowAndDependentResourceContext().reconcileManagedWorkflow();
             }
@@ -84,10 +88,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
             updateControl = UpdateControl.patchStatus(realm);
         }
 
-        if (status
-                .getConditions()
-                .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !Boolean.TRUE.equals(c.getStatus()))) {
+        if (!status.isDone()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
@@ -111,35 +112,34 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
             return;
         }
 
-        if (getReadyReplicas(existingDeployment) < 1) {
-            status.addErrorMessage("Deployment not yet ready, waiting for it to be ready");
-            return;
-        }
-
         if (existingJob == null) {
             Log.info("Job about to start");
             status.addStartedMessage("Import Job will start soon");
-        } else {
-            Log.info("Job already executed - not recreating");
-            var oldStatus = existingJob.getStatus();
-            var lastReportedStatus = realmCR.getStatus();
-
-            if (oldStatus == null) {
-                Log.info("Job started");
-                status.addStartedMessage("Import Job started");
-            } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
-                if (!lastReportedStatus.isDone()) {
-                    // no need to restart Keycloak as we're only importing new realms and are not overwriting existing realms
-                    Log.info("Job finished");
-                }
-                status.addDone();
-            } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {
-                Log.info("Job Failed");
-                status.addErrorMessage("Import Job failed");
-            } else {
-                Log.info("Job running");
-                status.addStartedMessage("Import Job running");
+            if (getReadyReplicas(existingDeployment) < 1) {
+                status.addErrorMessage("Deployment not yet ready");
             }
+            return;
+        }
+
+        Log.info("Job already executed - not recreating");
+        var oldStatus = existingJob.getStatus();
+        var lastReportedStatus = realmCR.getStatus();
+
+        if (oldStatus == null) {
+            Log.info("Job started");
+            status.addStartedMessage("Import Job started");
+        } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
+            if (!lastReportedStatus.isDone()) {
+                // no need to restart Keycloak as we're only importing new realms and are not overwriting existing realms
+                Log.info("Job finished");
+            }
+            status.addDone();
+        } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {
+            Log.info("Job Failed");
+            status.addErrorMessage("Import Job failed");
+        } else {
+            Log.info("Job running");
+            status.addStartedMessage("Import Job running");
         }
     }
 

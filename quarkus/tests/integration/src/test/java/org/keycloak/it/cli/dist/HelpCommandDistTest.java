@@ -17,7 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

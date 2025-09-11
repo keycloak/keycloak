@@ -105,3 +105,6 @@ org.keycloak.cookie.CookieSpi
 org.keycloak.organization.OrganizationSpi
 org.keycloak.securityprofile.SecurityProfileSpi
 org.keycloak.logging.MappedDiagnosticContextSpi
+org.keycloak.models.policy.ResourceActionSpi
+org.keycloak.models.policy.ResourcePolicySpi
+org.keycloak.models.policy.ResourcePolicyConditionSpi

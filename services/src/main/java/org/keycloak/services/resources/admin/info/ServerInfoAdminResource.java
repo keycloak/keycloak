@@ -166,34 +166,32 @@ public class ServerInfoAdminResource {
 
             Map<String, ProviderRepresentation> providers = new HashMap<>();
 
-            if (providerIds != null) {
-                for (String name : providerIds) {
-                    ProviderRepresentation provider = new ProviderRepresentation();
-                    ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
-                    provider.setOrder(pi.order());
-                    if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
-                        provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
-                    }
-                    if (pi instanceof ConfiguredProvider) {
-                        ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
-                        rep.setId(pi.getId());
-                        ConfiguredProvider configured = (ConfiguredProvider)pi;
-                        rep.setHelpText(configured.getHelpText());
-                        List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
-                        if (configProperties == null) configProperties = Collections.EMPTY_LIST;
-                        rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
-                        if (pi instanceof ComponentFactory) {
-                            rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
-                        }
-                        List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
-                        if (reps == null) {
-                            reps = new LinkedList<>();
-                            info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
-                        }
-                        reps.add(rep);
-                    }
-                    providers.put(name, provider);
+            for (String name : providerIds) {
+                ProviderRepresentation provider = new ProviderRepresentation();
+                ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
+                provider.setOrder(pi.order());
+                if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
+                    provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
                 }
+                if (pi instanceof ConfiguredProvider) {
+                    ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+                    rep.setId(pi.getId());
+                    ConfiguredProvider configured = (ConfiguredProvider)pi;
+                    rep.setHelpText(configured.getHelpText());
+                    List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
+                    if (configProperties == null) configProperties = Collections.EMPTY_LIST;
+                    rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
+                    if (pi instanceof ComponentFactory) {
+                        rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
+                    }
+                    List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
+                    if (reps == null) {
+                        reps = new LinkedList<>();
+                        info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
+                    }
+                    reps.add(rep);
+                }
+                providers.put(name, provider);
             }
             spiRep.setProviders(providers);
 

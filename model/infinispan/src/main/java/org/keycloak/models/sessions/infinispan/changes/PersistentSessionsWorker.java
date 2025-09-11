@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.tracing.TracingProvider;
 
@@ -43,6 +44,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class PersistentSessionsWorker {
     private static final Logger LOG = Logger.getLogger(PersistentSessionsWorker.class);
+    public static final Duration UPDATE_TIMEOUT = Duration.of(10, ChronoUnit.SECONDS);
+    public static final int UPDATE_BASE_INTERVAL_MILLIS = 0;
 
     private final KeycloakSessionFactory factory;
     private final ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate;
@@ -150,7 +153,7 @@ public class PersistentSessionsWorker {
                                         }
                                     }
                                 },
-                                Duration.of(10, ChronoUnit.SECONDS), 0);
+                                UPDATE_TIMEOUT, UPDATE_BASE_INTERVAL_MILLIS);
                     } catch (RuntimeException ex) {
                         tracing.error(ex);
                         batch.forEach(o -> o.fail(ex));

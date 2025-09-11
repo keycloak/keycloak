@@ -53,4 +53,15 @@ public interface ClientAuthenticationFlowContext extends AbstractAuthenticationF
      */
     Map<String, String> getClientAuthAttributes();
 
+    /**
+     * Provides a mechanism for sharing computed state across multiple authenticators. Returns state of the given type.
+     * If not already set the supplier is used to initialise the state.
+     *
+     * @param type the class type of the state
+     * @param supplier a supplier that can create the computed state if not already set
+     * @return the current state
+     * @param <T> the type of the state
+     */
+    <T> T getState(Class<T> type, ClientAuthenticationFlowContextSupplier<T> supplier) throws Exception;
+
 }

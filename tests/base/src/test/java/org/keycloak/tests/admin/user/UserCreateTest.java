@@ -41,7 +41,7 @@ import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -542,7 +542,7 @@ public class UserCreateTest extends AbstractUserTest {
 
     @Test
     public void testCreateUserDoNotGrantRole() {
-        managedRealm.admin().roles().create(RoleBuilder.create().name("realm-role").build());
+        managedRealm.admin().roles().create(RoleConfigBuilder.create().name("realm-role").build());
 
         try {
             UserRepresentation userRep = UserConfigBuilder.create().username("alice").password("password").roles("realm-role")

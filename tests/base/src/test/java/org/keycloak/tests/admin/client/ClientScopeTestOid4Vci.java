@@ -23,11 +23,13 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.server.DefaultServerConfigWithOid4Vci;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +37,7 @@ import java.util.Optional;
 /**
  * @author Pascal Knüppel
  */
-@KeycloakIntegrationTest(config = DefaultServerConfigWithOid4Vci.class)
+@KeycloakIntegrationTest(config = ClientScopeTestOid4Vci.DefaultServerConfigWithOid4Vci.class)
 public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
 
     @DisplayName("Verify default values are correctly set")
@@ -89,6 +91,14 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
             Assertions.assertNotNull(clientScopeId);
             // cleanup
             clientScopes().get(clientScopeId).remove();
+        }
+    }
+
+    public static class DefaultServerConfigWithOid4Vci implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI);
         }
     }
 }

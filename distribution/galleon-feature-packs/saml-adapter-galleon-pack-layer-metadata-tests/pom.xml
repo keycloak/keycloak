@@ -28,6 +28,7 @@
     <artifactId>keycloak-saml-adapter-galleon-pack-layers-metadata-tests</artifactId>
 
     <name>Keycloak Galleon Feature Pack: SAML Adapter Layer Metadata Tests</name>
+    <description>Keycloak Galleon Feature Pack: SAML Adapter Layer Metadata Tests</description>
     <packaging>jar</packaging>
 
     <properties>

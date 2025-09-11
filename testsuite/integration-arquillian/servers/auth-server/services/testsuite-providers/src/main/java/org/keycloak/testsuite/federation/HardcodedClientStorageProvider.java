@@ -75,6 +75,11 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     }
 
     @Override
+    public ClientModel getClientByAttribute(RealmModel realm, String name, String value) {
+        return null;
+    }
+
+    @Override
     public void close() {
 
     }

@@ -15,6 +15,7 @@
     <packaging>pom</packaging>
 
     <name>Keycloak AuthZ: Policy Provider Parent</name>
+    <description>Keycloak AuthZ: Policy Provider Parent</description>
 
     <modules>
         <module>common</module>

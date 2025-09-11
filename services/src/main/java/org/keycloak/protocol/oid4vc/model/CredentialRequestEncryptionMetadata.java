@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;

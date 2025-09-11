@@ -40,6 +40,68 @@ public interface RoleModel {
         KeycloakSession getKeycloakSession();
     }
 
+    interface RoleEvent extends ProviderEvent {
+        RealmModel getRealm();
+        RoleModel getRole();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface RoleGrantedEvent extends RoleModel.RoleEvent {
+        static void fire(RoleModel role, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new RoleModel.RoleGrantedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public RoleModel getRole() {
+                    return role;
+                }
+
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+
+        UserModel getUser();
+    }
+
+    interface RoleRevokedEvent extends RoleModel.RoleEvent {
+        static void fire(RoleModel role, UserModel user, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new RoleModel.RoleRevokedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return session.getContext().getRealm();
+                }
+
+                @Override
+                public RoleModel getRole() {
+                    return role;
+                }
+
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+
+        UserModel getUser();
+    }
+
     String getName();
 
     String getDescription();

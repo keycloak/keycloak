@@ -39,7 +39,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class WatchedResourcesTest {
 
     public static final String KEYCLOAK_WATCHING_ANNOTATION = "operator.keycloak.org/watching-secrets";
+    public static final String KEYCLOAK_WATCHING_CONFIGMAPS_ANNOTATION = "operator.keycloak.org/watching-configmaps";
     public static final String KEYCLOAK_MISSING_SECRETS_ANNOTATION = "operator.keycloak.org/missing-secrets";
+    public static final String KEYCLOAK_MISSING_CONFIGMAPS_ANNOTATION = "operator.keycloak.org/missing-configmaps";
+
 
     @Inject
     WatchedResources watchedResources;

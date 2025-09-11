@@ -61,7 +61,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -72,9 +71,7 @@ public class WelcomeResource {
 
     protected static final Logger logger = Logger.getLogger(WelcomeResource.class);
 
-    private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
-
-    private AtomicBoolean shouldBootstrap;
+    private volatile Boolean shouldBootstrap;
 
     @Context
     KeycloakSession session;
@@ -133,9 +130,10 @@ public class WelcomeResource {
                 return createWelcomePage(null, "Password and confirmation doesn't match");
             }
 
+
             try {
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                applianceBootstrap.createMasterRealmUser(username, password);
+                applianceBootstrap.createMasterRealmUser(username, password, false);
             } catch (ModelException e) {
                 session.getTransactionManager().rollback();
                 logger.error("Error creating the administrative user", e);
@@ -144,8 +142,7 @@ public class WelcomeResource {
 
             expireCsrfCookie();
 
-            shouldBootstrap.set(false);
-            ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
+            shouldBootstrap = false;
             return createWelcomePage("User created", null);
         }
     }
@@ -262,11 +259,11 @@ public class WelcomeResource {
         if (shouldBootstrap == null) {
             synchronized (this) {
                 if (shouldBootstrap == null) {
-                    shouldBootstrap = new AtomicBoolean(new ApplianceBootstrap(session).isNoMasterUser());
+                    shouldBootstrap = new ApplianceBootstrap(session).isNoMasterUser();
                 }
             }
         }
-        return shouldBootstrap.get();
+        return shouldBootstrap;
     }
 
     public static boolean isLocal(KeycloakSession session) {
@@ -301,5 +298,4 @@ public class WelcomeResource {
             throw new ForbiddenException();
         }
     }
-
 }

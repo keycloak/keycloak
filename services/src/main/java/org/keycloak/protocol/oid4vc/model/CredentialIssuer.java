@@ -55,9 +55,6 @@ public class CredentialIssuer {
     @JsonProperty("batch_credential_issuance")
     private BatchCredentialIssuance batchCredentialIssuance;
 
-    @JsonProperty("signed_metadata")
-    private String signedMetadata;
-
     @JsonProperty("credential_configurations_supported")
     private Map<String, SupportedCredentialConfiguration> credentialsSupported;
 
@@ -130,15 +127,6 @@ public class CredentialIssuer {
 
     public CredentialIssuer setBatchCredentialIssuance(BatchCredentialIssuance batchCredentialIssuance) {
         this.batchCredentialIssuance = batchCredentialIssuance;
-        return this;
-    }
-
-    public String getSignedMetadata() {
-        return signedMetadata;
-    }
-
-    public CredentialIssuer setSignedMetadata(String signedMetadata) {
-        this.signedMetadata = signedMetadata;
         return this;
     }
 

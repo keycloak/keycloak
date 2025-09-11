@@ -61,10 +61,10 @@ public class NamespaceContext implements javax.xml.namespace.NamespaceContext {
      * @see javax.xml.namespace.NamespaceContext#getPrefix(java.lang.String)
      */
     public String getPrefix(String namespaceURI) {
-        for (String key : nsMap.keySet()) {
-            String value = nsMap.get(key);
+        for (var entry : nsMap.entrySet()) {
+            String value = entry.getValue();
             if (value.equals(namespaceURI)) {
-                return key;
+                return entry.getKey();
             }
         }
         return null;

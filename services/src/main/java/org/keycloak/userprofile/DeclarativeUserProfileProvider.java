@@ -398,6 +398,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                             .addWriteCondition(writeAllowed)
                             .addValidators(validators)
                             .setRequired(required)
+                            .setDefaultValue(attrConfig.getDefaultValue())
                             .setMultivalued(attrConfig.isMultivalued());
                 }
             } else {
@@ -405,6 +406,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
                         .setAttributeGroupMetadata(groupMetadata)
+                        .setDefaultValue(attrConfig.getDefaultValue())
                         .setMultivalued(attrConfig.isMultivalued());
             }
         }

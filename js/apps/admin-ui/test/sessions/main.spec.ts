@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { goToSessions } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { goToSessions } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   assertRowExists,
@@ -15,27 +15,27 @@ import {
   clickTableRowItem,
   getTableData,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   assertNotBeforeValue,
   assertRowHasSignOutKebab,
   clickNotBefore,
   clickPush,
   clickSetToNow,
-} from "./main";
+} from "./main.ts";
 
 const admin = "admin";
 const client = "security-admin-console";
 const tableName = "Sessions";
 const placeHolder = "Search session";
 
-test.describe("Sessions test", () => {
+test.describe.serial("Sessions test", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToSessions(page);
   });
 
-  test.describe("Sessions list view", () => {
+  test.describe.serial("Sessions list view", () => {
     test("check item values", async ({ page }) => {
       await searchItem(page, placeHolder, client);
       const rows = await getTableData(page, tableName);
@@ -52,7 +52,7 @@ test.describe("Sessions test", () => {
   });
 });
 
-test.describe("Offline sessions", () => {
+test.describe.serial("Offline sessions", () => {
   const clientId = `offline-client-${uuid()}`;
   const username = `user-${uuid()}`;
 
@@ -106,7 +106,7 @@ test.describe("Offline sessions", () => {
   });
 });
 
-test.describe("Search", () => {
+test.describe.serial("Search", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToSessions(page);
@@ -118,7 +118,7 @@ test.describe("Search", () => {
   });
 });
 
-test.describe("revocation", () => {
+test.describe.serial("revocation", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToSessions(page);
@@ -157,7 +157,7 @@ test.describe("revocation", () => {
   });
 });
 
-test.describe("Accessibility tests for sessions", () => {
+test.describe.serial("Accessibility tests for sessions", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await goToSessions(page);

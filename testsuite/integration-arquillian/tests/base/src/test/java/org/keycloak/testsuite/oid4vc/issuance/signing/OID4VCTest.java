@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -43,15 +44,24 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
+import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.ISO18045ResistanceLevel;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -81,11 +91,15 @@ import java.security.cert.Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest.TIME_PROVIDER;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getJtiGeneratedIdMapper;
 
 /**
@@ -534,6 +548,108 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String generateJwtProofWithKey(String aud, String nonce, KeyWrapper keyWrapper) {
+        String originalKid = keyWrapper.getKid();
+
+        JWK jwk = JWKBuilder.create()
+                .kid(originalKid)
+                .ec(keyWrapper.getPublicKey());
+
+        keyWrapper.setKid(null);
+
+        return generateUnsignedJwtProof(jwk, aud, nonce)
+                .sign(new ECDSASignatureSignerContext(keyWrapper));
+    }
+
+    protected static String createValidAttestationJwt(KeycloakSession session,
+                                                      KeyWrapper attestationKey,
+                                                      JWK proofJwk,
+                                                      String cNonce) {
+        return createValidAttestationJwt(session, attestationKey, List.of(proofJwk), cNonce);
+    }
+    protected static String createValidAttestationJwt(KeycloakSession session,
+                                                      KeyWrapper attestationKey,
+                                                      List<JWK> proofJwks,
+                                                      String cNonce) {
+        try {
+            KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
+            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
+            payload.setNonce(cNonce);
+            payload.setAttestedKeys(proofJwks);
+            payload.setKeyStorage(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+            payload.setUserAuthentication(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+
+            return new JWSBuilder()
+                    .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
+                    .kid(attestationKey.getKid())
+                    .jsonContent(payload)
+                    .sign(new ECDSASignatureSignerContext(attestationKey));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create attestation JWT", e);
+        }
+    }
+
+    protected static VCIssuanceContext createVCIssuanceContext(KeycloakSession session) {
+        VCIssuanceContext context = new VCIssuanceContext();
+        SupportedCredentialConfiguration config = new SupportedCredentialConfiguration()
+                .setFormat(Format.SD_JWT_VC)
+                .setVct("https://credentials.example.com/test-credential")
+                .setCryptographicBindingMethodsSupported(List.of("jwk"))
+                .setProofTypesSupported(ProofTypesSupported.parse(session, List.of("ES256")));
+
+        context.setCredentialConfig(config)
+                .setCredentialRequest(new CredentialRequest());
+        return context;
+    }
+
+    protected static String generateJwtProofWithKeyAttestation(KeycloakSession session,
+                                                               KeyWrapper proofKey,
+                                                               String attestationJwt,
+                                                               String cNonce) throws IOException, JWSInputException {
+        if (proofKey.getPrivateKey() == null) {
+            throw new IllegalStateException("Proof key must have private key for signing");
+        }
+        JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
+        proofJwk.setKeyId(proofKey.getKid());
+        proofJwk.setAlgorithm(proofKey.getAlgorithm());
+
+        AccessToken token = new AccessToken();
+        token.addAudience(getCredentialIssuer(session));
+        token.setNonce(cNonce);
+        token.issuedNow();
+
+        Map<String, Object> header = new LinkedHashMap<>();
+        header.put("alg", proofKey.getAlgorithm());
+        header.put("typ", JwtProofValidator.PROOF_JWT_TYP);
+        header.put("jwk", proofJwk);
+        header.put("key_attestation", attestationJwt);
+
+        return new JWSBuilder() {
+            @Override
+            protected String encodeHeader(String sigAlgName) {
+                try {
+                    return Base64Url.encode(JsonSerialization.writeValueAsBytes(header));
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to encode header", e);
+                }
+            }
+        }.jsonContent(token).sign(new ECDSASignatureSignerContext(proofKey));
+    }
+
+
+
+    protected static Map<String, Object> createAttestationPayload(JWK proofJwk, String cNonce) {
+        Objects.requireNonNull(proofJwk, "Proof JWK cannot be null");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("iat", TIME_PROVIDER.currentTimeSeconds());
+        payload.put("attested_keys", List.of(proofJwk));
+        payload.put("key_storage", List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+        payload.put("user_authentication", List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+        payload.put("nonce", cNonce);
+
+        return payload;
     }
 
     public static <T> T fromJsonString(String representation, Class<T> clazz)

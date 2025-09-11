@@ -20,9 +20,16 @@ package org.keycloak.spi.infinispan.impl.embedded;
 import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
 import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_NODE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_SITE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.MACHINE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.NODE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.RACK_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.SITE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.TRACING;
 
 import java.lang.invoke.MethodHandles;
-import java.net.InetAddress;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -32,6 +39,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -62,7 +70,6 @@ import org.keycloak.Config;
 import org.keycloak.common.util.Retry;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -101,6 +108,26 @@ public final class JGroupsConfigurator {
     }
 
     /**
+     * Checks if Infinispan is configured with or without a clustering.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} with the Infinispan configuration.
+     * @return {@code true} if Infinispan is configured without clustering.
+     */
+    public static boolean isLocal(ConfigurationBuilderHolder holder) {
+        return transportOf(holder).getTransport() == null;
+    }
+
+    /**
+     * Checks if Infinispan is configured with or without a clustering.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} with the Infinispan configuration.
+     * @return {@code true} if Infinispan is configured with clustering enabled.
+     */
+    public static boolean isClustered(ConfigurationBuilderHolder holder) {
+        return transportOf(holder).getTransport() != null;
+    }
+
+    /**
      * Configures JGroups based on the Keycloak configuration.
      *
      * @param config  The Keycloak configuration.
@@ -108,12 +135,15 @@ public final class JGroupsConfigurator {
      * @param session The {@link KeycloakSession} sessions for Database access.
      */
     public static void configureJGroups(Config.Scope config, ConfigurationBuilderHolder holder, KeycloakSession session) {
+        if (isLocal(holder)) {
+            return;
+        }
         var stack = config.get(DefaultCacheEmbeddedConfigProviderFactory.STACK);
         if (stack != null) {
             transportOf(holder).stack(stack);
         }
         configureTransport(config);
-        boolean tracingEnabled = config.getBoolean(DefaultCacheEmbeddedConfigProviderFactory.TRACING, false);
+        boolean tracingEnabled = config.getBoolean(TRACING, false);
         configureDiscovery(holder, session, tracingEnabled);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
@@ -126,30 +156,29 @@ public final class JGroupsConfigurator {
      * @param holder The {@link ConfigurationBuilderHolder} where the transport is configured.
      */
     public static void configureTopology(Config.Scope config, ConfigurationBuilderHolder holder) {
-        if (System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME) != null) {
+        if (System.getProperty(JBOSS_SITE_NAME) != null) {
             throw new IllegalArgumentException(
                     String.format("System property %s is in use. Use --spi-cache-embedded-%s-site-name config option instead",
-                            InfinispanConnectionProvider.JBOSS_SITE_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
+                            JBOSS_SITE_NAME, PROVIDER_ID));
         }
-        if (System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME) != null) {
+        if (System.getProperty(JBOSS_NODE_NAME) != null) {
             throw new IllegalArgumentException(
                     String.format("System property %s is in use. Use --spi-cache-embedded-%s-node-name config option instead",
-                            InfinispanConnectionProvider.JBOSS_NODE_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
+                            JBOSS_NODE_NAME, PROVIDER_ID));
         }
         var transport = transportOf(holder);
-        var nodeName = config.get(DefaultCacheEmbeddedConfigProviderFactory.NODE_NAME);
-        if (nodeName != null) {
-            transport.nodeName(nodeName);
-        }
         //legacy option, for backwards compatibility --spi-connections-infinispan-quarkus-site-name
         var legacySiteName = Config.scope(InfinispanConnectionSpi.SPI_NAME, "quarkus").get("site-name");
         if (legacySiteName != null) {
-            logger.warn("--spi-connections-infinispan-quarkus-site-name is deprecated and may be removed in the future. Use --spi-cache-embedded-%s-site-name".formatted(DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
+            logger.warn("--spi-connections-infinispan-quarkus-site-name is deprecated and may be removed in the future. Use --spi-cache-embedded-%s-site-name".formatted(PROVIDER_ID));
         }
-        var siteName = config.get(DefaultCacheEmbeddedConfigProviderFactory.SITE_NAME, legacySiteName);
-        if (siteName != null) {
+        var siteName = config.get(SITE_NAME, legacySiteName);
+        if (siteName != null && !siteName.isEmpty()) {
             transport.siteId(siteName);
         }
+        readConfigAndSet(config, RACK_NAME, transport::rackId);
+        readConfigAndSet(config, MACHINE_NAME, transport::machineId);
+        readConfigAndSet(config, NODE_NAME, transport::nodeName);
     }
 
     static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
@@ -337,6 +366,13 @@ public final class JGroupsConfigurator {
 
     private static boolean isJdbcPingStack(String stackName) {
         return "jdbc-ping".equals(stackName) || "jdbc-ping-udp".equals(stackName);
+    }
+
+    private static void readConfigAndSet(Config.Scope scope, String configKey, Consumer<String> consumer) {
+        String value = scope.get(configKey);
+        if (value != null && !value.isEmpty()) {
+            consumer.accept(value);
+        }
     }
 
     private static class JpaFactoryAwareJGroupsChannelConfigurator extends EmbeddedJGroupsChannelConfigurator {

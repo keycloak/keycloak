@@ -54,6 +54,7 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
@@ -66,6 +67,9 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +88,6 @@ import static org.junit.Assert.fail;
  * Test from org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest
  */
 public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
-
     // ----- getCredentialOfferUri
 
     @Test(expected = BadRequestException.class)
@@ -574,8 +577,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 assertEquals(400, response.getStatus());
                 String errorJson = response.readEntity(String.class);
                 assertNotNull("Error response should not be null", errorJson);
-                assertTrue("Error response should mention UNSUPPORTED_CREDENTIAL_TYPE or scope",
-                        errorJson.contains("UNSUPPORTED_CREDENTIAL_TYPE") || errorJson.contains("scope"));
+                assertTrue("Error response should mention UNKNOWN_CREDENTIAL_CONFIGURATION or scope",
+                        errorJson.contains("UNKNOWN_CREDENTIAL_CONFIGURATION") || errorJson.contains("scope"));
             }
         };
 
@@ -612,6 +615,83 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     response2.getEntity(), CredentialResponse.class);
             assertNotEquals("Notification IDs should be unique",
                     credentialResponse1.getNotificationId(), credentialResponse2.getNotificationId());
+        });
+    }
+
+    /**
+     * This is testing the multiple credential issuance flow in a single call with proofs
+     */
+    @Test
+    public void testRequestMultipleCredentialsWithProofs() {
+        final String scopeName = jwtTypeCredentialClientScope.getName();
+        String token = getBearerToken(oauth, client, scopeName);
+        String cNonce = getCNonce();
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            try {
+                AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+                authenticator.setTokenString(token);
+                String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+
+                String jwtProof1 = generateJwtProof(issuer, cNonce);
+                String jwtProof2 = generateJwtProof(issuer, cNonce);
+                Proofs proofs = new Proofs().setJwt(Arrays.asList(jwtProof1, jwtProof2));
+
+
+                CredentialRequest request = new CredentialRequest()
+                        .setFormat(Format.JWT_VC)
+                        .setCredentialIdentifier(scopeName)
+                        .setProofs(proofs);
+
+                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
+
+                String requestPayload = JsonSerialization.writeValueAsString(request);
+
+                Response response = endpoint.requestCredential(requestPayload);
+                assertEquals("Response status should be OK", Response.Status.OK.getStatusCode(), response.getStatus());
+
+                CredentialResponse credentialResponse = JsonSerialization.mapper
+                        .convertValue(response.getEntity(), CredentialResponse.class);
+                assertNotNull("Credential response should not be null", credentialResponse);
+                assertNotNull("Credentials array should not be null", credentialResponse.getCredentials());
+                assertEquals("Should return 2 credentials due to two proofs", 2, credentialResponse.getCredentials().size());
+
+                // Validate each credential
+                for (CredentialResponse.Credential credential : credentialResponse.getCredentials()) {
+                    assertNotNull("Credential should not be null", credential.getCredential());
+                    JsonWebToken jsonWebToken;
+                    try {
+                        jsonWebToken = TokenVerifier.create((String) credential.getCredential(), JsonWebToken.class).getToken();
+                    } catch (VerificationException e) {
+                        Assert.fail("Failed to verify JWT: " + e.getMessage());
+                        return;
+                    }
+                    assertNotNull("A valid credential string should be returned", jsonWebToken);
+                    assertNotNull("The credentials should include the vc claim", jsonWebToken.getOtherClaims().get("vc"));
+
+                    VerifiableCredential vc = JsonSerialization.mapper.convertValue(
+                            jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
+                    assertTrue("The scope-name claim should be set",
+                            vc.getCredentialSubject().getClaims().containsKey("scope-name"));
+                    assertEquals("The scope-name claim should match the scope",
+                            scopeName, vc.getCredentialSubject().getClaims().get("scope-name"));
+                    assertTrue("The given_name claim should be set",
+                            vc.getCredentialSubject().getClaims().containsKey("given_name"));
+                    assertEquals("The given_name claim should be John",
+                            "John", vc.getCredentialSubject().getClaims().get("given_name"));
+                    assertTrue("The email claim should be set",
+                            vc.getCredentialSubject().getClaims().containsKey("email"));
+                    assertEquals("The email claim should be john@email.cz",
+                            "john@email.cz", vc.getCredentialSubject().getClaims().get("email"));
+                    assertFalse("Only supported mappers should be evaluated",
+                            vc.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
+
+                }
+
+                assertNotNull("Notification ID should be present", credentialResponse.getNotificationId());
+            } catch (Exception e) {
+                throw new RuntimeException("Test failed due to: " + e.getMessage(), e);
+            }
         });
     }
 
@@ -657,7 +737,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                             Format.JWT_VC,
                             jwtVcConfig.getFormat());
 
-                    Claims jwtVcClaims = jwtVcConfig.getClaims();
+                    Claims jwtVcClaims = jwtVcConfig.getCredentialMetadata() != null ? jwtVcConfig.getCredentialMetadata().getClaims() : null;
                     assertNotNull("The jwt_vc-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
@@ -768,7 +848,95 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                                     .contains("RS256"));
                     assertEquals("The jwt_vc-credential should display as Test Credential",
                             credentialConfigurationId,
-                            jwtVcConfig.getDisplay().get(0).getName());
+                            jwtVcConfig.getCredentialMetadata() != null && jwtVcConfig.getCredentialMetadata().getDisplay() != null ?
+                                    jwtVcConfig.getCredentialMetadata().getDisplay().get(0).getName() : null);
                 }));
+    }
+
+
+    /**
+     * Test that unknown_credential_identifier error is returned when credential_identifier is not recognized
+     */
+    @Test
+    public void testRequestCredentialWithUnknownCredentialIdentifier() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialIdentifier("unknown-credential-identifier");
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+
+            try {
+                issuerEndpoint.requestCredential(requestPayload);
+                Assert.fail("Expected BadRequestException due to unknown credential identifier");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER, error.getError());
+            }
+        });
+    }
+
+    /**
+     * Test that unknown_credential_configuration error is returned when the requested credential_configuration_id does not exist
+     */
+    @Test
+    public void testRequestCredentialWithUnknownCredentialConfigurationId() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            // Create a credential request with a non-existent configuration ID
+            // This will test the unknown_credential_configuration error
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialConfigurationId("unknown-configuration-id");
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+
+            try {
+                issuerEndpoint.requestCredential(requestPayload);
+                Assert.fail("Expected BadRequestException due to unknown credential configuration");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+            }
+        });
+    }
+
+    /**
+     * Test that unknown_credential_configuration error is returned when a credential configuration exists
+     * but there is no credential builder registered for its format.
+     */
+    @Test
+    public void testRequestCredentialWhenNoCredentialBuilderForFormat() {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            // Prepare endpoint with no credential builders to simulate missing builder for the configured format
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator, Map.of());
+
+            // Use the known configuration id for the JWT VC test scope
+            CredentialRequest credentialRequest = new CredentialRequest()
+                    .setCredentialConfigurationId(jwtTypeCredentialConfigurationIdName);
+
+            String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+
+            try {
+                issuerEndpoint.requestCredential(requestPayload);
+                Assert.fail("Expected BadRequestException due to missing credential builder for format");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+            }
+        });
     }
 }

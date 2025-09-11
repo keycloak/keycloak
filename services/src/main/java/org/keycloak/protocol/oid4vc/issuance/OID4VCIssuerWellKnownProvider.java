@@ -90,8 +90,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(getCredentialResponseEncryption(keycloakSession))
                 .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
-                .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession))
-                .setSignedMetadata(getSignedMetadata(keycloakSession));
+                .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession));
     }
 
     private static String getDeferredCredentialEndpoint(KeycloakContext context) {
@@ -99,22 +98,32 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     private CredentialIssuer.BatchCredentialIssuance getBatchCredentialIssuance(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        String batchSize = realm.getAttribute("batch_credential_issuance.batch_size");
+        return getBatchCredentialIssuance(session.getContext().getRealm());
+    }
+
+    /**
+     * Returns the batch credential issuance configuration for the given realm.
+     * This method is public and static to facilitate testing without requiring session state management.
+     *
+     * @param realm The realm model
+     * @return The batch credential issuance configuration or null if not configured or invalid
+     */
+    public static CredentialIssuer.BatchCredentialIssuance getBatchCredentialIssuance(RealmModel realm) {
+        String batchSize = realm.getAttribute(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE);
         if (batchSize != null) {
             try {
+                int parsedBatchSize = Integer.parseInt(batchSize);
+                if (parsedBatchSize < 2) {
+                    LOGGER.warnf("%s must be 2 or greater, but was %d. Skipping batch_credential_issuance.", Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, parsedBatchSize);
+                    return null;
+                }
                 return new CredentialIssuer.BatchCredentialIssuance()
-                        .setBatchSize(Integer.parseInt(batchSize));
+                        .setBatchSize(parsedBatchSize);
             } catch (Exception e) {
-                LOGGER.warnf(e, "Failed to parse batch_credential_issuance.batch_size from realm attributes.");
+                LOGGER.warnf(e, "Failed to parse %s from realm attributes.", Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE);
             }
         }
         return null;
-    }
-
-    private String getSignedMetadata(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        return realm.getAttribute("signed_metadata");
     }
 
     /**

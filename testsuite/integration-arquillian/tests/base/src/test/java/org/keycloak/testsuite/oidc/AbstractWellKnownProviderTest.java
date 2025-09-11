@@ -389,7 +389,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // DPoP
             Assert.assertNames(oidcConfig.getDpopSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
-                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
+                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.EdDSA);
         } finally {
             client.close();
         }
@@ -410,9 +410,13 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         }
     }
 
+    protected URI getOIDCDiscoveryUri(UriBuilder builder) {
+        return RealmsResource.wellKnownProviderUrl(builder).build("test", this.getWellKnownProviderId());
+    }
+
     private String getOIDCDiscoveryConfiguration(Client client, String uriTemplate) {
         UriBuilder builder = UriBuilder.fromUri(uriTemplate);
-        URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", this.getWellKnownProviderId());
+        URI oidcDiscoveryUri = getOIDCDiscoveryUri(builder);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
 
         Response response = oidcDiscoveryTarget.request().get();

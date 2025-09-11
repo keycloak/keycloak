@@ -1,59 +1,31 @@
-import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { expect, test } from "@playwright/test";
-import {
-  createRandomUserWithPassword,
-  deleteUser,
-  enableLocalization,
-  importUserProfile,
-} from "../admin-client";
-import { login } from "../login";
-import userProfileConfig from "./user-profile.json" assert { type: "json" };
+import { assertLastAlert, login } from "../support/actions.ts";
+import { createTestBed } from "../support/testbed.ts";
+import userProfile from "./user-profile.json" with { type: "json" };
+import { adminClient } from "../support/admin-client.ts";
+import userProfileRealm from "../realms/user-profile-realm.json" with { type: "json" };
 
-const realm = "user-profile";
-
-test.describe("Personal info page", () => {
-  const user = "user-" + crypto.randomUUID();
-
-  test.beforeAll(() => createRandomUserWithPassword(user, "pwd", realm));
-  test.afterAll(async () => deleteUser(user, realm));
-
+test.describe("Personal info", () => {
   test("sets basic information", async ({ page }) => {
-    await login(page, user, "pwd", realm);
+    const realm = await createTestBed();
 
-    await page.getByTestId("email").fill(`${user}@somewhere.com`);
+    await login(page, realm);
+
+    await page.getByTestId("email").fill("edewit@somewhere.com");
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
 
-    const alerts = page.getByTestId("last-alert");
-    await expect(alerts).toHaveText("Your account has been updated.");
+    await assertLastAlert(page, "Your account has been updated.");
   });
 });
 
-test.describe("Personal info with userprofile enabled", () => {
-  let user: string;
-  test.beforeAll(async () => {
-    await importUserProfile(userProfileConfig as UserProfileConfig, realm);
-    user = await createRandomUserWithPassword(
-      "user-" + crypto.randomUUID(),
-      "jdoe",
-      realm,
-      {
-        email: "jdoe@keycloak.org",
-        firstName: "John",
-        lastName: "Doe",
-        realmRoles: [],
-        clientRoles: {
-          account: ["manage-account"],
-        },
-      },
-    );
-  });
+test.describe("Personal info (user profile enabled)", () => {
+  test("renders user profile fields", async ({ page }) => {
+    const realm = await createTestBed(userProfileRealm);
 
-  test.afterAll(() => deleteUser(user, realm));
-
-  test("render user profile fields", async ({ page }) => {
-    await login(page, user, "jdoe", realm);
+    await adminClient.users.updateProfile({ ...userProfile, realm });
+    await login(page, realm);
 
     await expect(page.locator("#select")).toBeVisible();
     await expect(page.getByTestId("help-label-select")).toBeVisible();
@@ -63,8 +35,11 @@ test.describe("Personal info with userprofile enabled", () => {
     await expect(page.getByText("Español")).toHaveCount(1);
   });
 
-  test("render long select options as typeahead", async ({ page }) => {
-    await login(page, user, "jdoe", realm);
+  test("renders long select options as typeahead", async ({ page }) => {
+    const realm = await createTestBed(userProfileRealm);
+
+    await adminClient.users.updateProfile({ ...userProfile, realm });
+    await login(page, realm);
 
     await page.locator("#alternatelang").click();
     await page.waitForSelector("text=Italiano");
@@ -77,8 +52,11 @@ test.describe("Personal info with userprofile enabled", () => {
     await expect(page.getByText('Create "S"')).toBeHidden();
   });
 
-  test("render long list of locales as typeahead", async ({ page }) => {
-    await login(page, user, "jdoe", realm);
+  test("renders long list of locales as typeahead", async ({ page }) => {
+    const realm = await createTestBed(userProfileRealm);
+
+    await adminClient.users.updateProfile({ ...userProfile, realm });
+    await login(page, realm);
 
     await page.locator("#attributes\\.locale").click();
     await page.waitForSelector("text=Italiano");
@@ -91,14 +69,18 @@ test.describe("Personal info with userprofile enabled", () => {
     await expect(page.getByText('Create "S"')).toBeHidden();
   });
 
-  test("save user profile", async ({ page }) => {
-    await login(page, user, "jdoe", realm);
+  test("saves user profile", async ({ page }) => {
+    const realm = await createTestBed(userProfileRealm);
+
+    await adminClient.users.updateProfile({ ...userProfile, realm });
+    await login(page, realm);
 
     await page.locator("#select").click();
     await page.getByRole("option", { name: "two" }).click();
     await page.getByTestId("email2").fill("non-valid");
     await page.getByTestId("save").click();
-    await expect(page.getByTestId("last-alert")).toHaveText(
+    await assertLastAlert(
+      page,
       "Could not update account due to validation errors",
     );
 
@@ -109,6 +91,7 @@ test.describe("Personal info with userprofile enabled", () => {
     await page.getByTestId("email2").clear();
     await page.getByTestId("email2").fill("valid@email.com");
     await page.getByTestId("save").click();
+    await assertLastAlert(page, "Your account has been updated.");
 
     await page.reload();
     await page.locator("delete-account").isVisible();
@@ -117,19 +100,19 @@ test.describe("Personal info with userprofile enabled", () => {
 });
 
 test.describe("Realm localization", () => {
-  test.beforeAll(() => enableLocalization());
-  test("change locale", async ({ page }) => {
-    const user = await createRandomUserWithPassword(
-      "user-" + crypto.randomUUID(),
-      "pwd",
-      realm,
-    );
+  test("changes locale", async ({ page }) => {
+    const realm = await createTestBed({
+      internationalizationEnabled: true,
+      supportedLocales: ["en", "nl", "de"],
+    });
 
-    await login(page, user, "pwd", realm);
+    await login(page, realm);
     await page.locator("#attributes\\.locale").click();
     page.getByRole("option").filter({ hasText: "Deutsch" });
     await page.getByRole("option", { name: "English" }).click();
     await page.getByTestId("save").click();
+    await assertLastAlert(page, "Your account has been updated.");
+
     await page.reload();
 
     expect(

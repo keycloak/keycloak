@@ -30,9 +30,7 @@ import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import picocli.CommandLine;
 
-public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
-
-    private static final int FEATURE_DISABLED_EXIT_CODE = 4;
+public abstract class AbstractUpdatesCommand extends AbstractAutoBuildCommand {
 
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin = new OptimizedMixin();
@@ -91,7 +89,8 @@ public abstract class AbstractUpdatesCommand extends AbstractStartCommand {
     }
 
     private static void loadConfiguration() {
-        // Initialize config
+        // Initialize config without directly referencing MicroProfileConfigProvider
+        // as that currently causing classloading issue during command creation
         var configProvider = ServiceLoader.load(ConfigProviderFactory.class)
                 .stream()
                 .findFirst()

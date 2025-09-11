@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -187,6 +188,36 @@ public class PersistenceXmlDatasourcesTest {
 
             assertThat(properties.getProperty(AvailableSettings.USE_SQL_COMMENTS), is("true"));
             assertThat(properties.getProperty(AvailableSettings.LOG_SLOW_QUERY), is("7500"));
+        });
+    }
+
+    @Test
+    public void dialectAndSchema() throws IOException {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mariadb");
+        initConfig();
+
+        var content = """
+                <persistence-unit name="user-store-pu" transaction-type="JTA">
+                    <properties>
+                        <property name="jakarta.persistence.jtaDataSource" value="user-store" />
+                    </properties>
+                </persistence-unit>
+                """;
+        assertPersistenceXmlSingleDS(content, descriptor -> {
+            configurePersistenceUnitProperties("user-store", descriptor);
+            var properties = descriptor.getProperties();
+            assertThat(properties.getProperty(AvailableSettings.DIALECT), is("org.hibernate.dialect.MariaDBDialect"));
+            assertThat(properties.getProperty(AvailableSettings.DEFAULT_SCHEMA), is(nullValue()));
+        });
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mariadb", "--db-schema-user-store=someSchema");
+        initConfig();
+
+        assertPersistenceXmlSingleDS(content, descriptor -> {
+            configurePersistenceUnitProperties("user-store", descriptor);
+            var properties = descriptor.getProperties();
+            assertThat(properties.getProperty(AvailableSettings.DIALECT), is("org.hibernate.dialect.MariaDBDialect"));
+            assertThat(properties.getProperty(AvailableSettings.DEFAULT_SCHEMA), is("someSchema"));
         });
     }
 

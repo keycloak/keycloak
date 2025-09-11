@@ -1,11 +1,11 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { switchOn } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToIdentityProviders } from "../utils/sidebar";
-import { clickTableRowItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { switchOn } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToIdentityProviders } from "../utils/sidebar.ts";
+import { clickTableRowItem } from "../utils/table.ts";
 import {
   addMapper,
   assertAuthorizationUrl,
@@ -20,9 +20,9 @@ import {
   createOIDCProvider,
   goToMappersTab,
   setUrl,
-} from "./main";
+} from "./main.ts";
 
-test.describe("OIDC identity provider test", () => {
+test.describe.serial("OIDC identity provider test", () => {
   const oidcProviderName = "oidc";
   const secret = "123";
 
@@ -71,7 +71,7 @@ test.describe("OIDC identity provider test", () => {
   });
 });
 
-test.describe("Edit OIDC Provider", () => {
+test.describe.serial("Edit OIDC Provider", () => {
   const oidcProviderName = "OpenID Connect v1.0";
   const alias = `edit-oidc-${uuid()}`;
 

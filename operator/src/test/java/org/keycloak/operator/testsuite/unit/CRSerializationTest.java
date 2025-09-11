@@ -109,7 +109,9 @@ public class CRSerializationTest {
         assertEquals(1,keycloak.getSpec().getLivenessProbeSpec().getProbeFailureThreshold());
         assertEquals(40,keycloak.getSpec().getStartupProbeSpec().getProbePeriodSeconds());
         assertEquals(2,keycloak.getSpec().getStartupProbeSpec().getProbeFailureThreshold());
-
+        assertEquals("MY_ENV_VAR", keycloak.getSpec().getEnv().get(0).getName());
+        assertEquals("--- {}\n", Serialization.asYaml(keycloak.getSpec().getUpdateSpec().getSchedulingSpec()));
+        assertEquals("x", keycloak.getSpec().getSchedulingSpec().getPriorityClassName());
     }
 
     @Test

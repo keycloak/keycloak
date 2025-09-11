@@ -119,9 +119,7 @@ export const RealmOverrides = ({
           max,
           realm: realm.realm!,
           selectedLocale:
-            selectMenuLocale ||
-            getValues("defaultLocale") ||
-            whoAmI.getLocale(),
+            selectMenuLocale || getValues("defaultLocale") || whoAmI.locale,
         });
 
         setTranslations(Object.entries(result));
@@ -190,14 +188,14 @@ export const RealmOverrides = ({
   const options = [
     <SelectGroup label={t("defaultLocale")} key="group1">
       <SelectOption key={DEFAULT_LOCALE} value={DEFAULT_LOCALE}>
-        {localeToDisplayName(DEFAULT_LOCALE, whoAmI.getDisplayName())}
+        {localeToDisplayName(DEFAULT_LOCALE, whoAmI.displayName)}
       </SelectOption>
     </SelectGroup>,
     <Divider key="divider" />,
     <SelectGroup label={t("supportedLocales")} key="group2">
       {watchSupportedLocales.map((locale) => (
         <SelectOption key={locale} value={locale}>
-          {localeToDisplayName(locale, whoAmI.getLocale())}
+          {localeToDisplayName(locale, whoAmI.locale)}
         </SelectOption>
       ))}
     </SelectGroup>,
@@ -244,7 +242,7 @@ export const RealmOverrides = ({
       try {
         for (const key of selectedRowKeys) {
           delete (
-            i18n.store.data[whoAmI.getLocale()][currentRealm] as Record<
+            i18n.store.data[whoAmI.locale][currentRealm] as Record<
               string,
               string
             >
@@ -440,9 +438,9 @@ export const RealmOverrides = ({
               }}
               selections={
                 selectMenuValueSelected
-                  ? localeToDisplayName(selectMenuLocale, whoAmI.getLocale())
+                  ? localeToDisplayName(selectMenuLocale, whoAmI.locale)
                   : realm.defaultLocale !== ""
-                    ? localeToDisplayName(DEFAULT_LOCALE, whoAmI.getLocale())
+                    ? localeToDisplayName(DEFAULT_LOCALE, whoAmI.locale)
                     : t("placeholderText")
               }
             >

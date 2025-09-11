@@ -1,15 +1,16 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertRequiredFieldError, switchOff } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { DEFAULT_REALM } from "../utils/constants.ts";
+import { assertRequiredFieldError, switchOff } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToClients, goToRealmSettings } from "../utils/sidebar";
-import { assertRowExists } from "../utils/table";
+} from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToClients, goToRealmSettings } from "../utils/sidebar.ts";
+import { assertRowExists } from "../utils/table.ts";
 import {
   assertCurrentRealm,
   clickClearResourceFile,
@@ -18,7 +19,7 @@ import {
   clickCreateRealmForm,
   fillRealmName,
   goToRealmSection,
-} from "./realm";
+} from "./realm.ts";
 
 const testRealmName = `Test-realm-${uuid()}`;
 const newRealmName = `New-Test-realm-${uuid()}`;
@@ -26,7 +27,7 @@ const editedRealmName = `Edited-Test-realm-${uuid()}`;
 const testDisabledName = `Test-Disabled-${uuid()}`;
 const specialCharsName = `%22-${uuid()}`;
 
-test.describe("Realm tests", () => {
+test.describe.serial("Realm tests", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await clickCreateRealm(page);
@@ -46,7 +47,7 @@ test.describe("Realm tests", () => {
     await page.getByTestId("create").click();
     await assertRequiredFieldError(page, "realm");
 
-    await fillRealmName(page, "master");
+    await fillRealmName(page, DEFAULT_REALM);
     await clickCreateRealmForm(page);
 
     await assertNotificationMessage(

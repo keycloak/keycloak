@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Red Hat, Inc. and/or its affiliates
+# Copyright 2025 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,3 +16,4 @@
 #
 
 org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidatorFactory
+org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationProofValidatorFactory

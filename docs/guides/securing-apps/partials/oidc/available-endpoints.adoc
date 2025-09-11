@@ -16,9 +16,12 @@ The most important endpoint to understand is the `well-known` configuration endp
 /realms/{realm-name}/.well-known/openid-configuration
 ....
 
-To obtain the full URL, add the base URL for {project_name} and replace `{realm-name}` with the name of your realm. For example:
+To obtain the full URL, add the base URL for {project_name} and replace `+{realm-name}+` with the name of your realm. For example:
 
-\http://localhost:8080{kc_realms_path}/master/.well-known/openid-configuration
+[subs="attributes,quotes+"]
+....
+http://localhost:8080{kc_realms_path}/\{realm-name}/.well-known/openid-configuration
+....
 
 Some RP libraries retrieve all required endpoints from this endpoint, but for others you might need to list the endpoints individually.
 

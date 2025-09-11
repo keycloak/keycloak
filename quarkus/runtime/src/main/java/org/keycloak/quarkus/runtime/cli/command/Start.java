@@ -17,7 +17,9 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
+
+import java.util.List;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -36,7 +38,7 @@ import picocli.CommandLine.Command;
         footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
                 + "By doing that, the server should start faster based on any previous configuration you have set when manually running the '" + Build.NAME + "' command.")
-public final class Start extends AbstractStartCommand {
+public final class Start extends AbstractAutoBuildCommand {
 
     public static final String NAME = "start";
 
@@ -69,10 +71,15 @@ public final class Start extends AbstractStartCommand {
             start.optimizedMixin.optimized = true;
             start.dryRunMixin.dryRun = dryRun;
             start.setPicocli(picocli);
-            picocli.initConfig(start);
+            picocli.initConfig(List.of(OPTIMIZED_BUILD_OPTION_LONG), start);
             picocli.exit(start.call());
         } catch (PropertyException | ProfileException e) {
             picocli.usageException(e.getMessage(), e.getCause());
         }
+    }
+
+    @Override
+    public boolean isServing() {
+        return true;
     }
 }

@@ -51,14 +51,14 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
 
-    public static final String PROTOCOL_ID = Oid4VciConstants.OID4VC_PROTOCOL;
-
     private static final String CLIENT_ROLES_MAPPER = "client-roles";
     private static final String USERNAME_MAPPER = "username";
     private static final String SUBJECT_ID_MAPPER = "subject-id";
     private static final String EMAIL_MAPPER = "email";
     private static final String LAST_NAME_MAPPER = "last-name";
     private static final String FIRST_NAME_MAPPER = "first-name";
+
+    public static final String PROTOCOL_ID = Oid4VciConstants.OID4VC_PROTOCOL;
 
     private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
@@ -100,9 +100,9 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
         if (naturalPersonScope == null) {
             LOGGER.debug("Add natural person scope");
-            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", PROTOCOL_ID, "natural_person"));
+            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", Oid4VciConstants.OID4VC_PROTOCOL, "natural_person"));
             naturalPersonScope.setDescription("OIDC$VP Scope, that adds all properties required for a natural person.");
-            naturalPersonScope.setProtocol(PROTOCOL_ID);
+            naturalPersonScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
             naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
             naturalPersonScope.addProtocolMapper(builtins.get(CLIENT_ROLES_MAPPER));
             naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
@@ -149,7 +149,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
     @Override
     public String getId() {
-        return PROTOCOL_ID;
+        return Oid4VciConstants.OID4VC_PROTOCOL;
     }
 
     /**

@@ -396,8 +396,8 @@ public class InstallationTest {
         Node element = elementsByTagName.item(0);
 
         if (attrNamesAndValues != null) {
-            for (String attrName : attrNamesAndValues.keySet()) {
-                assertThat(element.getAttributes().getNamedItem(attrName).getNodeValue(), containsString(attrNamesAndValues.get(attrName)));
+            for (var entry : attrNamesAndValues.entrySet()) {
+                assertThat(element.getAttributes().getNamedItem(entry.getKey()).getNodeValue(), containsString(entry.getValue()));
             }
         }
     }
@@ -441,7 +441,7 @@ public class InstallationTest {
                     .protocol("openid-connect")
                     .bearerOnly(false)
                     .publicClient(false)
-                    .authorizationServices()
+                    .authorizationServicesEnabled(true)
                     .serviceAccountsEnabled(true);
         }
     }

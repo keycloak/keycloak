@@ -50,7 +50,7 @@ public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev", "--health-enabled=true" })
-    void testHealthEndpoint() {
+    void testHealthEndpoint(KeycloakDistribution distribution) {
         when().get("/health").then()
                 .statusCode(200);
         when().get("/health/live").then()
@@ -62,17 +62,28 @@ public class HealthDistTest {
                 .statusCode(404);
         when().get("/lb-check").then()
                 .statusCode(404);
+
+        // still nothing on main
+        distribution.setRequestPort(8080);
+        when().get("/health/ready").then()
+                .statusCode(404);
     }
 
     @Test
-    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true" })
+    @Launch({ "start-dev", "--health-enabled=true", "--http-management-health-enabled=false" })
+    void testHealthEndpointOnMain(KeycloakDistribution distribution) {
+        distribution.setRequestPort(8080);
+        when().get("/health/ready").then().statusCode(200);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--health-enabled=true", "--metrics-enabled=true", "--cache=ispn" })
     void testNonBlockingProbes() {
         when().get("/health/live").then()
                 .statusCode(200);
         when().get("/health/ready").then()
                 .statusCode(200)
-                .body("checks[0].name", equalTo("Keycloak database connections async health check"))
-                .body("checks.size()", equalTo(1));
+                .body("checks.size()", equalTo(2));
         when().get("/lb-check").then()
                 .statusCode(404);
     }
@@ -93,21 +104,18 @@ public class HealthDistTest {
     void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
         for (String relativePath : List.of("/", "/auth/", "auth")) {
             distribution.run("start-dev", "--health-enabled=true", "--http-management-relative-path=" + relativePath);
-            CompletableFuture future = CompletableFuture.completedFuture(null);
+            CompletableFuture<?> future = CompletableFuture.completedFuture(null);
 
             for (int i = 0; i < 3; i++) {
-                future = CompletableFuture.allOf(CompletableFuture.runAsync(new Runnable() {
-                    @Override
-                    public void run() {
-                        for (int i = 0; i < 200; i++) {
-                            String healthPath = "health";
+                future = CompletableFuture.allOf(CompletableFuture.runAsync(() -> {
+                    for (int i1 = 0; i1 < 200; i1++) {
+                        String healthPath = "health";
 
-                            if (!relativePath.endsWith("/")) {
-                                healthPath = "/" + healthPath;
-                            }
-
-                            when().get(relativePath + healthPath).then().statusCode(200);
+                        if (!relativePath.endsWith("/")) {
+                            healthPath = "/" + healthPath;
                         }
+
+                        when().get(relativePath + healthPath).then().statusCode(200);
                     }
                 }), future);
             }

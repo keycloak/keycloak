@@ -32,6 +32,7 @@ import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -125,7 +126,12 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     private void addPodSpecTemplate(JobSpecFluent<?> builder, Keycloak keycloak, Context<Keycloak> context) {
         var podTemplate = builder.withNewTemplate();
         podTemplate.withMetadata(createMetadata(podName(keycloak), keycloak));
-        podTemplate.withSpec(createPodSpec(context));
+        PodSpec podSpec = createPodSpec(context);
+        KeycloakRealmImportJobDependentResource.handleJobScheduling(
+                keycloak,
+                Optional.ofNullable(keycloak.getSpec().getUpdateSpec()).map(UpdateSpec::getSchedulingSpec),
+                podSpec);
+        podTemplate.withSpec(podSpec);
         podTemplate.endTemplate();
     }
 
@@ -140,8 +146,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         // remove things we don't want - the main keycloak container, and any sidecars added via the unsupported PodTemplate
         builder.withContainers();
 
-        // We'll leave the scheduling fields alone - it should be fine to run these jobs where ever the keycloak workload is restricted to,
-        // if there is some corner case we are not considering that would leave the upgrade job unscheduable, we'll address that later
+        // We'll leave the scheduling fields alone - they can be overriden if needed
 
         // mix in the existing state
         var desiredPullSecrets = Optional.ofNullable(builder.buildImagePullSecrets()).orElse(List.of());

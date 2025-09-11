@@ -1,22 +1,22 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertRequiredFieldError, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
+import adminClient from "../utils/AdminClient.ts";
+import { assertRequiredFieldError, clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
   selectActionToggleItem,
-} from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToAuthentication, goToRealm } from "../utils/sidebar";
+} from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToAuthentication, goToRealm } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   clickRowKebabItem,
   clickTableRowItem,
   getRowByCellText,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   addCondition,
   addExecution,
@@ -37,9 +37,9 @@ import {
   goToPoliciesTab,
   goToRequiredActions,
   goToWebAuthnTab,
-} from "./flow";
+} from "./flow.ts";
 
-test.describe("Authentication test", () => {
+test.describe.serial("Authentication test", () => {
   const realmName = `authentication-flow-${uuidv4()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -56,7 +56,7 @@ test.describe("Authentication test", () => {
     const itemId = "browser";
     await searchItem(page, "Search for flow", itemId);
     await expect(getRowByCellText(page, itemId)).toBeVisible();
-    await expect(getRowByCellText(page, "clients")).not.toBeVisible();
+    await expect(getRowByCellText(page, "clients")).toBeHidden();
   });
 
   test("should create duplicate of existing flow", async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe("Authentication test", () => {
     );
   });
 
-  test.describe("Flow details", () => {
+  test.describe.serial("Flow details", () => {
     const flowName = "Copy of browser test";
 
     test.beforeEach(async ({ page }) => {
@@ -188,7 +188,7 @@ test.describe("Authentication test", () => {
   });
 });
 
-test.describe("Required actions", () => {
+test.describe.serial("Required actions", () => {
   const realmName = `test-${uuidv4()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -240,7 +240,7 @@ test.describe("Required actions", () => {
   });
 });
 
-test.describe("Password policies tab", () => {
+test.describe.serial("Password policies tab", () => {
   const realmName = `policies-password-${uuidv4()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
@@ -264,7 +264,7 @@ test.describe("Password policies tab", () => {
   });
 });
 
-test.describe("Accessibility tests for authentication", () => {
+test.describe.serial("Accessibility tests for authentication", () => {
   const realmName = "a11y-realm";
   const flowName = `Flow-${uuidv4()}`;
 

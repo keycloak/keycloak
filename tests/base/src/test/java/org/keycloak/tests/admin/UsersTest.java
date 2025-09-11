@@ -90,7 +90,7 @@ public class UsersTest {
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
 
@@ -113,7 +113,7 @@ public class UsersTest {
                 .password("password")
                 .name("testuser2", "testuser2")
                 .email("testuser2@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
 
@@ -150,7 +150,7 @@ public class UsersTest {
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
 
@@ -173,7 +173,7 @@ public class UsersTest {
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
         createUser(UserConfigBuilder.create()
@@ -209,7 +209,7 @@ public class UsersTest {
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
 
@@ -226,7 +226,7 @@ public class UsersTest {
                 .password("password")
                 .name("user3FirstName", "user3LastName")
                 .email("user3@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
 
@@ -254,7 +254,7 @@ public class UsersTest {
                 .password("password")
                 .name("user1FirstName", "user1LastName")
                 .email("user1@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
 
@@ -271,7 +271,7 @@ public class UsersTest {
                 .password("password")
                 .name("user3FirstName", "user3LastName")
                 .email("user3@example.com")
-                .emailVerified()
+                .emailVerified(true)
                 .enabled(true)
                 .build());
 

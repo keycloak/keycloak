@@ -27,7 +27,6 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -63,53 +62,9 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        JWTClientValidator validator = new JWTClientValidator(context, getId());
-        if (!validator.clientAssertionParametersValidation()) return;
-
         try {
-            validator.readJws();
-            if (!validator.validateClient()) return;
-            if (!validator.validateSignatureAlgorithm()) return;
-
-            RealmModel realm = validator.getRealm();
-            ClientModel client = validator.getClient();
-            JWSInput jws = validator.getJws();
-            JsonWebToken token = validator.getToken();
-            String clientAssertion = validator.getClientAssertion();
-
-            // Get client key and validate signature
-            PublicKey clientPublicKey = getSignatureValidationKey(client, context, jws);
-            if (clientPublicKey == null) {
-                // Error response already set to context
-                return;
-            }
-
-            boolean signatureValid;
-            try {
-                JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, (jose, validatedClient) -> {
-                    DEFAULT_VALIDATOR.accept(jose, validatedClient);
-                    String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
-                    ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
-                    if (signatureProvider == null) {
-                        throw new RuntimeException("Algorithm not supported");
-                    }
-                    if (!signatureProvider.isAsymmetricAlgorithm()) {
-                        throw new RuntimeException("Algorithm is not asymmetric");
-                    }
-                }, JsonWebToken.class);
-                signatureValid = jwt != null;
-            } catch (RuntimeException e) {
-                Throwable cause = e.getCause() != null ? e.getCause() : e;
-                throw new RuntimeException("Signature on JWT token failed validation", cause);
-            }
-            if (!signatureValid) {
-                throw new RuntimeException("Signature on JWT token failed validation");
-            }
-
-            validator.validateTokenAudience(context, realm, token);
-
-            validator.validateToken();
-            validator.validateTokenReuse();
+            JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
+            if (!validator.validate()) return;
 
             context.success();
         } catch (Exception e) {
@@ -117,6 +72,41 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
+    }
+
+    public boolean verifySignature(AbstractJWTClientValidator validator) {
+        ClientAuthenticationFlowContext context = validator.getContext();
+        ClientModel client = validator.getClient();
+
+        // Get client key and validate signature
+        PublicKey clientPublicKey = getSignatureValidationKey(client, context, validator.getJws());
+        if (clientPublicKey == null) {
+            // Error response already set to context
+            return false;
+        }
+
+        boolean signatureValid;
+        try {
+            JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(), client, (jose, validatedClient) -> {
+                DEFAULT_VALIDATOR.accept(jose, validatedClient);
+                String signatureAlgorithm = jose.getHeader().getRawAlgorithm();
+                ClientSignatureVerifierProvider signatureProvider = context.getSession().getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+                if (signatureProvider == null) {
+                    throw new RuntimeException("Algorithm not supported");
+                }
+                if (!signatureProvider.isAsymmetricAlgorithm()) {
+                    throw new RuntimeException("Algorithm is not asymmetric");
+                }
+            }, JsonWebToken.class);
+            signatureValid = jwt != null;
+        } catch (RuntimeException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new RuntimeException("Signature on JWT token failed validation", cause);
+        }
+        if (!signatureValid) {
+            throw new RuntimeException("Signature on JWT token failed validation");
+        }
+        return true;
     }
 
     protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {

@@ -1,7 +1,7 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 
 export async function clickCreateRoleButton(page: Page) {
-  await page.locator("text=Create role").click();
+  await page.getByTestId("create-role").click();
 }
 
 export async function goToAssociatedRolesTab(page: Page) {

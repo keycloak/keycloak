@@ -43,6 +43,8 @@ import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionPr
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProviderFactory;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionSpi;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
@@ -80,6 +82,7 @@ public class Infinispan extends KeycloakModelParameters {
             .add(CacheEmbeddedConfigProviderSpi.class)
             .add(JGroupsCertificateProviderSpi.class)
             .add(ServerConfigurationStorageProviderSpi.class)
+            .add(InfinispanTransactionSpi.class)
             .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -100,6 +103,7 @@ public class Infinispan extends KeycloakModelParameters {
             .add(CacheEmbeddedConfigProviderFactory.class)
             .add(JGroupsCertificateProviderFactory.class)
             .add(ServerConfigStorageProviderFactory.class)
+            .add(InfinispanTransactionProviderFactory.class)
             .build();
 
     @Override

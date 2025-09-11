@@ -100,7 +100,31 @@ spec:
 ----
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
        For details on various configuration formats, see <@links.server id="configuration"/>.
+       
+==== Custom environment variables
 
+You may find a need to set custom environment variables - such as for theme properties or `kc.[sh|bat]` script variables.
+The `spec.env` field of the Keycloak CR allows you to directly set any environment variable.
+Logic in the operator based upon looking for value of a particular setting does not consult `spec.env`,
+therefore do not use `spec.env` for anything that has a first-class configuration in the CR or may be specified as an `additionalOption`.
+
+Here's an example setting JAVA_OPTS_APPEND:  
+     
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  env:
+    - name: JAVA_OPTS_APPEND
+      value: -Djava.net.preferIPv6Addresses=true
+----
+
+Similar to `additionalOptions` you may specify either a value or reference a Secret.
+       
 === Secret References
 
 Secret References are used by some dedicated options in the Keycloak CR, such as a `tlsSecret`, or as a value in `additionalOptions`.
@@ -266,7 +290,26 @@ spec:
 
 Please see https://kubernetes.io/docs/concepts/scheduling-eviction[the kubernetes docs] for more on scheduling concepts.
 
-If you do not specify a custom affinity, your Pods will have an affinity for the same zone and an anti-affinity for the same node to improve availability. Scheduling to the same zone if possible helps prevent stretch clusters where cross zone cache cluster traffic may have too high of a latency.
+If you do not specify a custom topology spread constraint, your Pods will have a spread constraint across zones and nodes to improve availability. These defaults do not affect import and update Jobs, only server Pods.
+
+==== Job Scheduling
+
+Realm import and update Jobs inherit the scheduling of the server Pods if it is specified in the Keycloak CR `spec.scheduling` field. If your server Pod scheduling is highly restrictive this may result in the 
+Job Pods being unschedulable. In this situation you may override the Job scheduling using the Keycloak CR `spec.update.scheduling` and `spec.import.scheduling` fields.
+ 
+For example the following will remove the use of any server Pod scheduling for the update Job: 
+ 
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  update:
+    scheduling: {}
+  ...
+----
 
 === Management Interface
 
@@ -299,7 +342,7 @@ For more details, see <@links.server id="management-interface" />.
 
 If you need to provide trusted certificates, the Keycloak CR provides a top level feature for configuring the server's truststore as discussed in <@links.server id="keycloak-truststore"/>.
 
-Use the truststores stanza of the Keycloak spec to specify Secrets containing PEM encoded files, or PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`, for example:
+Use the truststores stanza of the Keycloak spec to specify Secrets or ConfigMaps containing PEM encoded files, or PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`, for example:
 
 [source,yaml]
 ----

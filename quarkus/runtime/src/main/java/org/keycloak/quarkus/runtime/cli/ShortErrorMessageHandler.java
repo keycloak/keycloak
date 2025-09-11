@@ -1,7 +1,7 @@
 package org.keycloak.quarkus.runtime.cli;
 
 import static java.lang.String.format;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.io.PrintWriter;
 import java.util.Optional;

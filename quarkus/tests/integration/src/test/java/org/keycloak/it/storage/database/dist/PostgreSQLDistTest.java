@@ -29,7 +29,7 @@ import org.keycloak.it.storage.database.PostgreSQLTest;
 
 import io.quarkus.test.junit.main.Launch;
 import org.keycloak.it.utils.RawDistRootPath;
-import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 
 @DistributionTest(removeBuildOptionsAfterBuild = true)
 @WithDatabase(alias = "postgres")
@@ -44,7 +44,7 @@ public class PostgreSQLDistTest extends PostgreSQLTest {
 
     @Tag(DistributionTest.STORAGE)
     @Test
-    @Launch({"start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--spi-connections-jpa-quarkus-migration-strategy=manual", "--spi-connections-jpa-quarkus-initialize-empty=false", "--http-enabled=true", "--hostname-strict=false",})
+    @Launch({"start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--spi-connections-jpa-quarkus-migration-strategy=manual", "--spi-connections-jpa-quarkus-initialize-empty=false", "--http-enabled=true", "--hostname-strict=false",})
     public void testKeycloakDbUpdateScript(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
         assertManualDbInitialization(cliResult, rawDistRootPath);
     }

@@ -48,6 +48,7 @@ body:
         - infinispan
         - ldap
         - login/ui
+        - observability
         - oidc
         - oid4vc
         - operator
