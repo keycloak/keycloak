@@ -8,10 +8,11 @@ import org.keycloak.common.Profile;
 import org.keycloak.testframework.injection.SuiteSupport;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.tests.admin.ClientTest;
+import org.keycloak.tests.admin.client.SessionTest;
+import org.keycloak.tests.admin.concurrency.ConcurrentLoginTest;
 
 @Suite
-@SelectClasses(ClientTest.class)
+@SelectClasses({SessionTest.class, ConcurrentLoginTest.class})
 public class VolatileSessionsTestSuite {
 
     @BeforeSuite

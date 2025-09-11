@@ -54,6 +54,7 @@ public abstract class AbstractConcurrencyTest {
     private static final Logger LOGGER = Logger.getLogger(AbstractConcurrencyTest.class);
 
     private static final int DEFAULT_THREADS = 4;
+    private static final int DEFAULT_NUMBER_OF_EXECUTIONS = 20 * DEFAULT_THREADS;
 
     public static final String REALM_NAME = "default";
     public static final String MASTER_REALM_NAME = "master";
@@ -62,10 +63,10 @@ public abstract class AbstractConcurrencyTest {
     private static final boolean SYNCHRONIZED = false;
 
     protected void run(final KeycloakRunnable... runnables) {
-        run(DEFAULT_THREADS, runnables);
+        run(DEFAULT_THREADS, DEFAULT_NUMBER_OF_EXECUTIONS, runnables);
     }
 
-    public static void run(final int numThreads, final KeycloakRunnable... runnables) {
+    public static void run(final int numThreads, final int totalNumberOfExecutions, final KeycloakRunnable... runnables) {
         final ExecutorService service = SYNCHRONIZED
                 ? Executors.newSingleThreadExecutor()
                 : Executors.newFixedThreadPool(numThreads);
@@ -104,7 +105,9 @@ public abstract class AbstractConcurrencyTest {
             });
         }
 
-        tasks.addAll(runnablesToTasks);
+        for (int i = 0; i < totalNumberOfExecutions; i ++) {
+            tasks.addAll(runnablesToTasks);
+        }
 
         try {
             service.invokeAll(tasks);

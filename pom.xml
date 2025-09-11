@@ -183,6 +183,9 @@
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <assertj-core.version>3.22.0</assertj-core.version>
 
+        <!-- New Base Test and Documentation Test -->
+        <jsoup.version>1.18.3</jsoup.version>
+
         <!-- Maven Plugins -->
         <maven.plugins.version>3.13.1</maven.plugins.version>
         <replacer.plugin.version>1.4.1</replacer.plugin.version>

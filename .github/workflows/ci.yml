@@ -473,6 +473,23 @@ jobs:
           name: store-it-mvn-logs
           path: .github/scripts/ansible/files
 
+  new-volatile-sessions-tests:
+    name: Volatile Sessions IT
+    needs: [ build, conditional ]
+    if: needs.conditional.outputs.ci-store == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run base tests
+        run: |
+          ./mvnw package -f tests/pom.xml -Dtest=VolatileSessionsTestsuite
+
   external-infinispan-tests:
     name: External Infinispan IT
     needs: [ build, conditional ]
@@ -512,6 +529,27 @@ jobs:
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: remote-infinispan-integration-tests
+
+  new-external-infinispan-tests:
+    name: New External Infinispan IT
+    needs: [ build, conditional ]
+    if: needs.conditional.outputs.ci-store == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      matrix:
+        testsuite: [ "ClusterlessTestSuite,MultisiteTestSuite" ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run base tests without cache
+        run: |
+          ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.testsuite }}
 
   auroradb-integration-tests:
     name: AuroraDB IT
@@ -1170,6 +1208,7 @@ jobs:
       - jdk-integration-tests
       - store-integration-tests
       - volatile-sessions-tests
+      - new-volatile-sessions-tests
       - store-model-tests
       - clustering-integration-tests
       - fips-unit-tests
@@ -1179,6 +1218,7 @@ jobs:
       - sssd-unit-tests
       - migration-tests
       - external-infinispan-tests
+      - new-external-infinispan-tests
       - test-framework
       - base-new-integration-tests
       - mixed-cluster-compatibility-tests
