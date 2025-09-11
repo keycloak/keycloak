@@ -11,7 +11,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { useAdminClient } from "../../admin-client";
-import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
+import { FileUploadForm } from "../../components/json-file-upload/JsonFileUpload";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import type { Environment } from "../../environment";
 import { addTrailingSlash } from "../../util";
