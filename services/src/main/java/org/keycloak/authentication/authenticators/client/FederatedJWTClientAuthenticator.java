@@ -115,6 +115,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     }
 
     @Override
+    public boolean isConfigurablePerClient() {
+        return true;
+    }
+
+    @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return Collections.emptyList();
     }
