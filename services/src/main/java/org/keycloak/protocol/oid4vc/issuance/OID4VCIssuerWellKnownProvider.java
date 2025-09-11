@@ -21,7 +21,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.apache.http.HttpHeaders;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -51,7 +51,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,14 +58,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.constants.Oid4VciConstants.SIGNED_METADATA_JWT_TYPE;
-import static org.keycloak.crypto.Algorithm.ES256;
-import static org.keycloak.crypto.Algorithm.ES384;
-import static org.keycloak.crypto.Algorithm.ES512;
-import static org.keycloak.crypto.Algorithm.PS256;
-import static org.keycloak.crypto.Algorithm.PS384;
-import static org.keycloak.crypto.Algorithm.PS512;
-import static org.keycloak.crypto.Algorithm.RS384;
-import static org.keycloak.crypto.Algorithm.RS512;
 import static org.keycloak.crypto.KeyType.RSA;
 import static org.keycloak.jose.jwk.RSAPublicJWK.RS256;
 
@@ -472,24 +463,12 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     /**
-     * Returns the supported asymmetric signature algorithms from realm keys.
-     * Filters out symmetric algorithms since only asymmetric keys can be used for signed metadata.
-     * Uses the same filtering logic as JWKSServerUtils.getRealmJwks().
+     * Returns the supported asymmetric signature algorithms.
+     * Delegates to CryptoUtils for shared implementation with OIDCWellKnownProvider.
+     * This includes all asymmetric algorithms supported by Keycloak (RSA, EC, EdDSA).
      */
     public static List<String> getSupportedAsymmetricSignatureAlgorithms(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        KeyManager keyManager = session.keys();
-
-        return keyManager.getKeysStream(realm)
-                .filter(key -> KeyUse.SIG.equals(key.getUse()))
-                .filter(key -> key.getStatus().isEnabled() && key.getPublicKey() != null)
-                .filter(key -> KeyType.RSA.equals(key.getType()) ||
-                        KeyType.EC.equals(key.getType()) ||
-                        KeyType.OKP.equals(key.getType()))
-                .map(KeyWrapper::getAlgorithm)
-                .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
+        return CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
     }
 
 }
