@@ -114,4 +114,15 @@ The Operator now provisions a `ServiceMonitor` for the management endpoint if me
 `monitoring.coreos.com/v1:ServiceMonitor` Custom Resource Definition is present on the Kubernetes cluster. The
 specification of the `ServiceMonitor` takes into account the various management endpoint configurations, to ensure that
 metrics can be scraped without any additional configuration. If you do not want a `ServiceMonitor` to be created, you can disable
-this by setting `spec.serviceMonitor.enabled: false`. For more details, see the link:{operatorguide_link}[{operatorguide_name}].
+this by setting `spec.serviceMonitor.enabled: false`.
+
+For more details, see the link:{operatorguide_link}[{operatorguide_name}].
+
+= Additional datasources configuration is supported
+
+Users have the need to connect to the existing external database and be able to integrate it with {project_name}.
+The configuration of the external database connection can be specified via the additional datasource configuration that is supported now.
+
+Read more about it in the link:https://www.keycloak.org/server/db#configure-multiple-datasources[Configure multiple datasources] guide.
+
+For the information about the necessary migration from the old configuration to the new one, see the link:{upgradingguide_link}[{upgradingguide_name}].
