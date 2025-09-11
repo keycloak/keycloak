@@ -60,4 +60,8 @@ public final class StartDev extends AbstractAutoBuildCommand {
     public boolean isServing() {
         return true;
     }
+        
+    OptimizedMixin getOptimizedMixin() {
+        return null;
+    }
 }

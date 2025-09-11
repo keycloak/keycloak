@@ -151,4 +151,15 @@ public final class Build extends AbstractCommand {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isHelpAll() {
+        return helpAllMixin != null ? helpAllMixin.allOptions : false;
+    }
+
+    @Override
+    public boolean isOptimized() {
+        return false;
+    }
+
 }
