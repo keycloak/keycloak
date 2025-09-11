@@ -297,8 +297,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
                 if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
                     newResponse.setRefreshToken(previousResponse.getRefreshToken());
-                }
-                if (newResponse.getRefreshExpiresIn() == null && previousResponse.getRefreshExpiresIn() != null) {
                     newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
                 }
                 if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
