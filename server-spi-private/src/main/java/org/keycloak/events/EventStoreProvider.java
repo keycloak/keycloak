@@ -17,6 +17,7 @@
 
 package org.keycloak.events;
 
+import org.keycloak.events.admin.AdminEventCountQuery;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.models.RealmModel;
 
@@ -37,6 +38,13 @@ public interface EventStoreProvider extends EventListenerProvider {
     EventQuery createQuery();
 
     /**
+     * Returns an object representing of event count query of type {@link EventCountQuery}.
+     *
+     * @return a query object
+     */
+    EventCountQuery createCountQuery();
+
+    /**
      * Returns an object representing admin event query of type {@link AdminEventQuery}.
      *
      * The object is used for collecting requested properties of admin events (e.g. realm, operation, resourceType
@@ -46,6 +54,13 @@ public interface EventStoreProvider extends EventListenerProvider {
      * @return a query object
      */
     AdminEventQuery createAdminQuery();
+
+    /**
+     * Returns an object representing admin event count query of type {@link AdminEventCountQuery}
+     *
+     * @return a query object
+     */
+    AdminEventCountQuery createAdminCountQuery();
 
     /**
      * Removes all auth events from this store provider.
