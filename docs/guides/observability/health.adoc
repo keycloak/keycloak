@@ -63,7 +63,7 @@ By default, no check is returned from the health endpoints.
 
 == Using the health checks
 
-It is recommended that the health endpoints be monitored by external HTTP requests. Due to security measures that remove `curl` and other packages from the {project_name} container image, local command-based monitoring will not function easily.
+Due to security measures that remove `curl` and other packages from the {project_name} container image, you are not able to easily run checks against HTTPS endpoints.
 
 If you are not using {project_name} in a container, use whatever you want to access the health check endpoints.
 
@@ -71,7 +71,7 @@ If you are not using {project_name} in a container, use whatever you want to acc
 
 You may use a simple HTTP HEAD request to determine the `+live+` or `+ready+` state of {project_name}. `+curl+` is a good HTTP client for this purpose.
 
-If {project_name} is deployed in a container, you must run this command from outside it due to the previously mentioned security measures. For example:
+If {project_name} is deployed in a container, you must use a custom image or run this command from outside it due to the previously mentioned security measures. For example:
 
 [source, bash]
 ----
@@ -95,7 +95,13 @@ The Containerfile https://docs.docker.com/reference/dockerfile/#healthcheck[`+HE
 { printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000
 ----
 
-The above code depends on the values of the {project_name} options `http-relative-path` (`http-management-relative-path`) and `http-management-port`. In case those are changed the code needs to be modified accordingly.
+The above code depends on the values of the {project_name} options such as `http-relative-path` (`http-management-relative-path`) and `http-management-port`. In case those are changed the code needs to be modified accordingly.
+
+If you enable TLS, the management interface will also use TLS. Depending upon how the management interface endpoints are intended to be used you can still have plain HTTP health checks if:
+
+- the management interface uses HTTP, not HTTPS, by setting `http-management-scheme` to `http`.
+- or the health checks are enabled for the main interface by setting `http-management-health-enabled` to `false` and accessible via HTTP with setting `http-enabled` to `true`. 
+In this scenario external traffic to the HTTP port (defaults to 8080) or to the health endpoints (defaults to /health) should not be allowed by your proxy.
 
 == Available Checks
 
