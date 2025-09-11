@@ -150,7 +150,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                             iteration -> KeycloakModelUtils.runJobInTransaction(kcSession.getKeycloakSessionFactory(), super::applyChangesSynchronously),
                             (iteration, t) -> {
                                 if (iteration > 20) {
-                                    // never retry more than 20 times
+                                    // Never retry more than 20 times.
                                     throw new RuntimeException("Maximum number of retries reached", t);
                                 }
                             }, PersistentSessionsWorker.UPDATE_TIMEOUT, PersistentSessionsWorker.UPDATE_BASE_INTERVAL_MILLIS);

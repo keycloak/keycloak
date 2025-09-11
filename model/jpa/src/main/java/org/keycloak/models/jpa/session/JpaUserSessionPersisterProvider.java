@@ -311,29 +311,34 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         userSessionQuery.setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline));
         userSessionQuery.setMaxResults(1);
 
-        Stream<OfflineUserSessionModel> persistentUserSessions = closing(userSessionQuery.getResultStream().map(this::toAdapter));
+        PersistentUserSessionEntity entity = userSessionQuery.getSingleResultOrNull();
+        if (entity == null) {
+            return null;
+        }
 
-        return persistentUserSessions.findAny().map(userSession -> {
+        OfflineUserSessionModel userSession = toAdapter(entity);
+        if (userSession == null) {
+            return null;
+        }
 
-            TypedQuery<PersistentClientSessionEntity> clientSessionQuery = em.createNamedQuery("findClientSessionsByUserSession", PersistentClientSessionEntity.class);
-            clientSessionQuery.setParameter("userSessionId", userSessionId);
-            clientSessionQuery.setParameter("offline", offlineStr);
+        TypedQuery<PersistentClientSessionEntity> clientSessionQuery = em.createNamedQuery("findClientSessionsByUserSession", PersistentClientSessionEntity.class);
+        clientSessionQuery.setParameter("userSessionId", userSessionId);
+        clientSessionQuery.setParameter("offline", offlineStr);
 
-            Set<String> removedClientUUIDs = new HashSet<>();
+        Set<String> removedClientUUIDs = new HashSet<>();
 
-            closing(clientSessionQuery.getResultStream()).forEach(clientSession -> {
-                        boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
-                        if (!added) {
-                            // client was removed in the meantime
-                            removedClientUUIDs.add(clientSession.getClientId());
-                        }
+        closing(clientSessionQuery.getResultStream()).forEach(clientSession -> {
+                    boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
+                    if (!added) {
+                        // client was removed in the meantime
+                        removedClientUUIDs.add(clientSession.getClientId());
                     }
-            );
+                }
+        );
 
-            removedClientUUIDs.forEach(this::onClientRemoved);
+        removedClientUUIDs.forEach(this::onClientRemoved);
 
-            return userSession;
-        }).orElse(null);
+        return userSession;
     }
 
     @Override
