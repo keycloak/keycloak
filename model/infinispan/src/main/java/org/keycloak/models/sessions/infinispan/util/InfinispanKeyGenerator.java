@@ -27,8 +27,8 @@ import org.infinispan.affinity.KeyAffinityService;
 import org.infinispan.affinity.KeyAffinityServiceFactory;
 import org.infinispan.affinity.KeyGenerator;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 
 /**
@@ -88,7 +88,7 @@ public class InfinispanKeyGenerator {
 
         @Override
         public UUID getKey() {
-            return UUID.randomUUID();
+            return SecretGenerator.getInstance().generateSecureUUID();
         }
     }
 
@@ -97,7 +97,7 @@ public class InfinispanKeyGenerator {
 
         @Override
         public String getKey() {
-            return KeycloakModelUtils.generateId();
+            return SecretGenerator.getInstance().generateSecureID();
         }
     }
 }

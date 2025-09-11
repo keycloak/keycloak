@@ -36,7 +36,7 @@ public abstract class AbstractUpdatesCommand extends AbstractAutoBuildCommand {
     OptimizedMixin optimizedMixin = new OptimizedMixin();
 
     @Override
-    protected boolean shouldStart() {
+    public boolean shouldStart() {
         return false;
     }
 

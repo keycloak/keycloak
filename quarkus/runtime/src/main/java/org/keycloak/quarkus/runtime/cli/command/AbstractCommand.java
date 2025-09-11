@@ -144,4 +144,11 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return false;
     }
 
+    /**
+     * Controls whether the command actually starts the server
+     */
+    public boolean shouldStart() {
+        return false;
+    }
+
 }
