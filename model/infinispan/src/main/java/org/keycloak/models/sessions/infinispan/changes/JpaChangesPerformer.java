@@ -278,6 +278,8 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 }
             });
             clientSessionModel.getUpdatedModel();
+        } else {
+            LOG.debugf("No client session found for %s/%s", entity.getUserSessionId(), entity.getClientId());
         }
     }
 
@@ -433,6 +435,8 @@ public class JpaChangesPerformer<K, V extends SessionEntity> implements SessionC
                 PersistentUserSessionAdapter userSessionModel = (PersistentUserSessionAdapter) userSessionPersister.loadUserSession(realm, entry.getKey().toString(), entity.isOffline());
                 if (userSessionModel != null) {
                     mergeUserSession(session, entry, userSessionModel, realm, sessionUpdates, userSessionPersister, entity);
+                } else {
+                    LOG.debugf("No user session found for %s", entry.getKey());
                 }
             }
         }
