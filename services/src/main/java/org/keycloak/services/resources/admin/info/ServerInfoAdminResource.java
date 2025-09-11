@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -183,6 +184,10 @@ public class ServerInfoAdminResource {
                     rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
                     if (pi instanceof ComponentFactory) {
                         rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
+                    }
+                    if (pi instanceof ConfiguredPerClientProvider) {
+                        List<ProviderConfigProperty> configClientProperties = ((ConfiguredPerClientProvider) pi).getConfigPropertiesPerClient();
+                        rep.setClientProperties(ModelToRepresentation.toRepresentation(configClientProperties));
                     }
                     List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
                     if (reps == null) {
