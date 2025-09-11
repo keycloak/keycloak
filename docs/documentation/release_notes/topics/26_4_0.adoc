@@ -40,7 +40,7 @@ ifeval::[{project_community}==true]
 Thank you to https://github.com/eicki[@eicki] for contributing this.
 endif::[]
 
-For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
+For more details on this opt-in feature, see https://www.keycloak.org/server/logging[Configuring logging].
 
 = Ability to specify a `tlsSecret` on the Keycloak CR `ingress` spec
 
