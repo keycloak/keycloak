@@ -16,7 +16,20 @@ runs:
   steps:
     - id: setup-java
       name: Setup Java
+      if: inputs.java-version != '25'
       uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
       with:
         distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}
+    # Set up JDK 25 via SDKMAN for EA build
+    - id: setup-java-sdkman
+      name: Setup Java (via SDKMAN for JDK 25)
+      if: inputs.java-version == '25'
+      uses: sdkman/sdkman-action@v1
+      with:
+        candidate: java
+        version: 25.ea.36-open
+    - id: check-java
+      name: Check Java version
+      shell: bash
+      run: java --version
