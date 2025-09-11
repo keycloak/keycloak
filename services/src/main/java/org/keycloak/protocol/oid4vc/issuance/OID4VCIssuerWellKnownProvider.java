@@ -206,10 +206,13 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     private static JSONWebKeySet buildJwks(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         JSONWebKeySet jwks = JWKSServerUtils.getRealmJwks(session, realm);
-        // Filter for encryption keys only
+
+        // Filter for encryption keys only and exclude symmetric keys (oct)
         JWK[] encKeys = Arrays.stream(jwks.getKeys())
                 .filter(jwk -> JWK.Use.ENCRYPTION.asString().equals(jwk.getPublicKeyUse()))
+                .filter(jwk -> jwk.getKeyType() != null && !jwk.getKeyType().equals("oct"))
                 .toArray(JWK[]::new);
+
         jwks.setKeys(encKeys);
         return jwks;
     }
@@ -223,7 +226,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         if (zipAlgs != null && !zipAlgs.isEmpty()) {
             return Arrays.stream(zipAlgs.split(","))
                     .map(String::trim)
-                    .filter(alg -> alg.equals("DEF")) // Only support DEFLATE for now
+                    .filter(alg -> alg.equals(DEFLATE_COMPRESSION)) // Only support DEFLATE for now
                     .collect(Collectors.toList());
         }
         return null; // Omit if not configured

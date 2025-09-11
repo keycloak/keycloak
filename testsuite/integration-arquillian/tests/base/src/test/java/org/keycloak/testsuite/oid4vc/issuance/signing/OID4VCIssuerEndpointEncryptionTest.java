@@ -62,7 +62,7 @@ import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_ENCRYPTION_PA
 import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 /**
- * Test class for Credential Request and Response Encryption as per spec
+ * Test class for Credential Request and Response Encryption
  *
  * @author Bertrand Ogen
  */
@@ -157,7 +157,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 } catch (BadRequestException e) {
                     ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                     assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
-                    assertEquals("Encryption is required by the Credential Issuer, but the request is not a JWE.", error.getErrorDescription());
+                    assertEquals("Encryption is required but request is not a valid JWE: Not a JWE String", error.getErrorDescription());
                 }
             } finally {
                 realm.removeAttribute("oid4vci.encryption.required");
@@ -534,7 +534,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 } catch (BadRequestException e) {
                     ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                     assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
-                    assertEquals("Encryption is required by the Credential Issuer, but the request is not a JWE.", error.getErrorDescription());
+                    assertEquals("Encryption is required but request is not a valid JWE: Not a JWE String", error.getErrorDescription());
                 }
             } finally {
                 realm.removeAttribute("oid4vci.encryption.required");

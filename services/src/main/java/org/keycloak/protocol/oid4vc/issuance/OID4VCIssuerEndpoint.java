@@ -35,12 +35,14 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
@@ -88,6 +90,7 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
@@ -109,8 +112,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Inflater;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -128,6 +129,7 @@ public class OID4VCIssuerEndpoint {
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     private static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
+    public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
@@ -395,49 +397,9 @@ public class OID4VCIssuerEndpoint {
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
-        CredentialRequestEncryptionMetadata requestEncryptionMetadata = issuerMetadata.getCredentialRequestEncryption();
-        boolean isRequestEncryptionRequired = Optional.ofNullable(requestEncryptionMetadata)
-                .map(CredentialRequestEncryptionMetadata::isEncryptionRequired)
-                .orElse(false);
 
-        // Determine if the request is a JWE
-        String contentType = session.getContext().getHttpRequest().getHttpHeaders()
-                .getHeaderString(HttpHeaders.CONTENT_TYPE);
-        if (contentType != null) {
-            contentType = contentType.split(";")[0].trim(); // Handle parameters like charset
-        }
-        boolean isJwe = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType)
-                || looksLikeCompactJwe(requestPayload);
-
-        if (isRequestEncryptionRequired && !isJwe) {
-            String errorMessage = "Encryption is required by the Credential Issuer, but the request is not a JWE.";
-            LOGGER.debug(errorMessage);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
-        }
-
-        CredentialRequest credentialRequestVO;
-        if (isJwe) {
-            if (requestEncryptionMetadata == null) {
-                String errorMessage = "Received encrypted request, but credential_request_encryption is not supported.";
-                LOGGER.debug(errorMessage);
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
-            }
-            try {
-                credentialRequestVO = decryptCredentialRequest(requestPayload, requestEncryptionMetadata);
-            } catch (Exception e) {
-                String errorMessage = "Failed to decrypt JWE: " + e.getMessage();
-                LOGGER.debug(errorMessage);
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
-            }
-        } else {
-            try {
-                credentialRequestVO = JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
-            } catch (JsonProcessingException e) {
-                String errorMessage = "Failed to parse JSON request: " + e.getMessage();
-                LOGGER.debug(errorMessage);
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
-        }
+        // Validate request encryption
+        CredentialRequest credentialRequestVO = validateRequestEncryption(requestPayload, issuerMetadata);
 
         // Authenticate after parsing to avoid processing invalid requests
         AuthenticationManager.AuthResult authResult = getAuthResult();
@@ -445,7 +407,7 @@ public class OID4VCIssuerEndpoint {
         // Validate encryption parameters if present
         CredentialResponseEncryption encryptionParams = credentialRequestVO.getCredentialResponseEncryption();
         CredentialResponseEncryptionMetadata encryptionMetadata = OID4VCIssuerWellKnownProvider.getCredentialResponseEncryption(session);
-        boolean isEncryptionRequired = Optional.of(encryptionMetadata)
+        boolean isEncryptionRequired = Optional.ofNullable(encryptionMetadata)
                 .map(CredentialResponseEncryptionMetadata::getEncryptionRequired)
                 .orElse(false);
 
@@ -523,7 +485,7 @@ public class OID4VCIssuerEndpoint {
 
         // Encrypt all responses if encryption parameters are provided, except for error credential responses
         if (encryptionParams != null && !(theCredential instanceof ErrorResponse)) {
-            String jwe = encryptCredentialResponse(responseVO, encryptionParams);
+            String jwe = encryptCredentialResponse(responseVO, encryptionParams, encryptionMetadata);
             return Response.ok()
                     .type(MediaType.APPLICATION_JWT)
                     .entity(jwe)
@@ -531,6 +493,52 @@ public class OID4VCIssuerEndpoint {
         }
 
         return Response.ok().entity(responseVO).build();
+    }
+
+    private CredentialRequest validateRequestEncryption(String requestPayload, CredentialIssuer issuerMetadata) throws BadRequestException {
+        CredentialRequestEncryptionMetadata requestEncryptionMetadata = issuerMetadata.getCredentialRequestEncryption();
+        boolean isRequestEncryptionRequired = Optional.ofNullable(requestEncryptionMetadata)
+                .map(CredentialRequestEncryptionMetadata::isEncryptionRequired)
+                .orElse(false);
+
+        // Determine if the request is a JWE based on content-type
+        String contentType = session.getContext().getHttpRequest().getHttpHeaders()
+                .getHeaderString(HttpHeaders.CONTENT_TYPE);
+        if (contentType != null) {
+            contentType = contentType.split(";")[0].trim(); // Handle parameters like charset
+        }
+        boolean contentTypeIsJwt = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType);
+
+        if (isRequestEncryptionRequired || contentTypeIsJwt) {
+            if (requestEncryptionMetadata == null && contentTypeIsJwt) {
+                String errorMessage = "Received JWT content-type request, but credential_request_encryption is not supported.";
+                LOGGER.debug(errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            }
+
+            try {
+                return decryptCredentialRequest(requestPayload, requestEncryptionMetadata);
+            } catch (Exception e) {
+                if (isRequestEncryptionRequired) {
+                    String errorMessage = "Encryption is required but request is not a valid JWE: " + e.getMessage();
+                    LOGGER.debug(errorMessage);
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                }
+                if (contentTypeIsJwt) {
+                    String errorMessage = "Request has JWT content-type but is not a valid JWE: " + e.getMessage();
+                    LOGGER.debug(errorMessage);
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                }
+            }
+        }
+
+        try {
+            return JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+        } catch (JsonProcessingException e) {
+            String errorMessage = "Failed to parse JSON request: " + e.getMessage();
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+        }
     }
 
     /**
@@ -543,7 +551,11 @@ public class OID4VCIssuerEndpoint {
      */
     private CredentialRequest decryptCredentialRequest(String jweString, CredentialRequestEncryptionMetadata metadata) throws Exception {
         JWE jwe = new JWE(jweString);
-        JWEHeader header = (JWEHeader) jwe.getHeader();
+        JOSEHeader rawHeader = jwe.getHeader();
+        if (!(rawHeader instanceof JWEHeader)) {
+            throw new JWEException("Invalid header type: expected JWEHeader but got " + rawHeader.getClass().getName());
+        }
+        JWEHeader header = (JWEHeader) rawHeader;
 
         // Validate alg and enc against supported values
         String enc = header.getEncryptionAlgorithm();
@@ -555,10 +567,12 @@ public class OID4VCIssuerEndpoint {
 
         // Handle compression if present
         String zip = header.getCompressionAlgorithm();
-        if (zip != null && (metadata.getZipValuesSupported() == null || !metadata.getZipValuesSupported().contains(zip))) {
-            String errorMessage = String.format("Unsupported compression algorithm: zip=%s", zip);
-            LOGGER.debugf(errorMessage);
-            throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
+        if (zip != null) {
+            if (!DEFLATE_COMPRESSION.equals(zip) || metadata.getZipValuesSupported() == null || !metadata.getZipValuesSupported().contains(zip)) {
+                String errorMessage = String.format("Unsupported compression algorithm: zip=%s", zip);
+                LOGGER.debugf(errorMessage);
+                throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
+            }
         }
 
         // Get a private key from KeyManager based on kid
@@ -591,9 +605,9 @@ public class OID4VCIssuerEndpoint {
             throw new JWEException("Failed to decrypt JWE: " + e.getMessage());
         }
 
-        // Handle decompression if zip=DEF
+        // Handle decompression if needed
         byte[] content = jwe.getContent();
-        if (zip != null && "DEF".equals(zip)) {
+        if (zip != null) {
             content = decompress(content, zip);
         }
 
@@ -616,22 +630,10 @@ public class OID4VCIssuerEndpoint {
      */
     // TODO handle compression/decompression transparently at the JWE software layer.
     private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
-        if ("DEF".equals(zipAlgorithm)) {
+        if (DEFLATE_COMPRESSION.equals(zipAlgorithm)) {
             try {
-                // Tests compress with raw DEFLATE (nowrap=true).
-                Inflater inflater = new Inflater(true);
-                inflater.setInput(content);
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                while (!inflater.finished()) {
-                    int count = inflater.inflate(buffer);
-                    if (count == 0 && inflater.needsInput()) {
-                        break;
-                    }
-                    out.write(buffer, 0, count);
-                }
-                return out.toByteArray();
-            } catch (Exception e) {
+                return IOUtils.toByteArray(DeflateUtil.decode(content));
+            } catch (IOException e) {
                 throw new JWEException("Failed to decompress: " + e.getMessage());
             }
         }
@@ -667,7 +669,7 @@ public class OID4VCIssuerEndpoint {
         // If the JWK's alg is not supported, we cannot proceed
         LOGGER.debugf("JWK algorithm '%s' is not supported by the server. Supported algorithms: %s",
                 jwkAlg, supportedAlgs);
-        return null;
+        throw new IllegalArgumentException(String.format("JWK algorithm '%s' is not supported. Supported algorithms: %s", jwkAlg, supportedAlgs));
     }
 
     /**
@@ -679,7 +681,9 @@ public class OID4VCIssuerEndpoint {
      * @throws BadRequestException If encryption parameters are invalid
      * @throws WebApplicationException If encryption fails due to server issues
      */
-    private String encryptCredentialResponse(CredentialResponse response, CredentialResponseEncryption encryptionParams) {
+    private String encryptCredentialResponse(CredentialResponse response,
+                                             CredentialResponseEncryption encryptionParams,
+                                             CredentialResponseEncryptionMetadata metadata) {
         validateEncryptionParameters(encryptionParams);
 
         String enc = encryptionParams.getEnc();
@@ -701,15 +705,8 @@ public class OID4VCIssuerEndpoint {
                     "Invalid JWK: Failed to parse public key."));
         }
 
-        // Retrieve metadata
-        CredentialResponseEncryptionMetadata metadata = OID4VCIssuerWellKnownProvider.getCredentialResponseEncryption(session);
-
         // Select alg
         String selectedAlg = selectKeyManagementAlg(metadata, jwk);
-        if (selectedAlg == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
-                    "No supported key management algorithm for provided JWK."));
-        }
 
         // Perform encryption
         try {
@@ -756,12 +753,8 @@ public class OID4VCIssuerEndpoint {
      */
     // TODO handle compression/decompression transparently at the JWE software layer.
     private byte[] compressContent(byte[] content, String zipAlgorithm) throws IOException {
-        if ("DEF".equals(zipAlgorithm)) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (DeflaterOutputStream deflate = new DeflaterOutputStream(out)) {
-                deflate.write(content);
-            }
-            return out.toByteArray();
+        if (DEFLATE_COMPRESSION.equals(zipAlgorithm)) {
+            return DeflateUtil.encode(content);
         }
         throw new IllegalArgumentException("Unsupported compression algorithm: " + zipAlgorithm);
     }
