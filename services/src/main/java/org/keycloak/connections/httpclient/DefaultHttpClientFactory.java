@@ -68,6 +68,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
 
     private volatile CloseableHttpClient httpClient;
+    private volatile CloseableHttpClient retriableHttpClient;
     private Config.Scope config;
 
     private BasicResponseHandler stringResponseHandler;
@@ -101,112 +102,20 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
             @Override
             public CloseableHttpClient getRetriableHttpClient() {
-                return getRetriableHttpClient(defaultRetryConfig);
+                return retriableHttpClient;
             }
 
             @Override
             public CloseableHttpClient getRetriableHttpClient(RetryConfig retryConfig) {
-                // If retries are disabled, just return the default client
-                if (retryConfig == null || retryConfig.getMaxRetries() <= 0) {
-                    return getHttpClient();
+                // If using default config, return the cached client
+                if (retryConfig == null ||
+                    (defaultRetryConfig.getMaxRetries() == retryConfig.getMaxRetries() &&
+                     defaultRetryConfig.isRetryOnIOException() == retryConfig.isRetryOnIOException())) {
+                    return retriableHttpClient;
                 }
 
-                // Create HTTP client builder
-                HttpClientBuilder builder = newHttpClientBuilder();
-
-                // Configure basic settings
-                long socketTimeout = retryConfig.getSocketTimeoutMillis();
-                long establishConnectionTimeout = retryConfig.getConnectionTimeoutMillis();
-                int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
-                int connectionPoolSize = config.getInt("connection-pool-size", 128);
-                long connectionTTL = config.getLong("connection-ttl-millis", -1L);
-                long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
-                boolean disableCookies = config.getBoolean("disable-cookies", true);
-                boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
-                boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
-
-                // Configure builder
-                builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
-                        .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
-                        .maxPooledPerRoute(maxPooledPerRoute)
-                        .connectionPoolSize(connectionPoolSize)
-                        .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
-                        .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
-                        .disableCookies(disableCookies)
-                        .proxyMappings(DefaultHttpClientFactory.this.configureProxySettings())
-                        .expectContinueEnabled(expectContinueEnabled)
-                        .reuseConnections(reuseConnections);
-
-                // Configure security settings
-                DefaultHttpClientFactory.this.configureSecuritySettings(session, builder);
-
-                // Configure retry handler
-                if (retryConfig.getMaxRetries() > 0) {
-                    builder.getApacheHttpClientBuilder().setRetryHandler(
-                            new org.apache.http.impl.client.DefaultHttpRequestRetryHandler(
-                                    retryConfig.getMaxRetries(), retryConfig.isRetryOnIOException()) {
-                                @Override
-                                public boolean retryRequest(IOException exception, int executionCount,
-                                        org.apache.http.protocol.HttpContext context) {
-                                    boolean shouldRetry = super.retryRequest(exception, executionCount, context);
-
-                                    if (shouldRetry) {
-                                        // Calculate exponential backoff delay with jitter if enabled
-                                        long baseDelay = (long) (retryConfig.getInitialBackoffMillis() *
-                                                Math.pow(retryConfig.getBackoffMultiplier(), executionCount - 1));
-                                        long delayMillis = calculateBackoffDelay(executionCount, retryConfig);
-
-                                        // Log retry attempt
-                                        if (retryConfig.isUseJitter()) {
-                                            logger.debugf(
-                                                    "Retrying HTTP request (attempt %d) with backoff delay %d ms (base: %d ms, jitter factor: %.2f): %s",
-                                                    executionCount, delayMillis, baseDelay,
-                                                    retryConfig.getJitterFactor(), exception.getMessage());
-                                        } else {
-                                            logger.debugf(
-                                                    "Retrying HTTP request (attempt %d) with backoff delay %d ms: %s",
-                                                    executionCount, delayMillis, exception.getMessage());
-                                        }
-
-                                        try {
-                                            // Sleep for the calculated delay
-                                            Thread.sleep(delayMillis);
-                                        } catch (InterruptedException e) {
-                                            Thread.currentThread().interrupt();
-                                            return false; // Don't retry if interrupted
-                                        }
-                                    } else if (executionCount > retryConfig.getMaxRetries()) {
-                                        logger.debugf("Not retrying HTTP request after %d attempts: %s",
-                                                executionCount - 1, exception.getMessage());
-                                    }
-                                    return shouldRetry;
-                                }
-                            });
-                }
-
-                return builder.build();
-            }
-
-            /**
-             * Calculates the backoff delay with optional jitter
-             */
-            private long calculateBackoffDelay(int executionCount, RetryConfig config) {
-                // executionCount starts at 1, so we need to subtract 1 to get the retry number
-                int retryNumber = executionCount - 1;
-
-                // Calculate base exponential backoff: initialBackoff * (multiplier ^
-                // retryNumber)
-                long baseDelay = (long) (config.getInitialBackoffMillis()
-                        * Math.pow(config.getBackoffMultiplier(), retryNumber));
-
-                // Apply jitter if enabled
-                if (config.isUseJitter()) {
-                    double jitterFactor = config.getJitterFactor();
-                    double randomFactor = 1.0 - jitterFactor + (Math.random() * jitterFactor * 2.0);
-                    return (long) (baseDelay * randomFactor);
-                } else {
-                    return baseDelay;
-                }
+                // Otherwise create a new client with the custom config
+                return DefaultHttpClientFactory.this.createRetriableHttpClient(session, retryConfig);
             }
 
             @Override
@@ -265,6 +174,9 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             if (httpClient != null) {
                 httpClient.close();
             }
+            if (retriableHttpClient != null && retriableHttpClient != httpClient) {
+                retriableHttpClient.close();
+            }
         } catch (IOException ignored) {
 
         }
@@ -315,9 +227,88 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 if (httpClient == null) {
                     // Create the default HTTP client with no retries
                     httpClient = createHttpClientWithoutRetries(session);
+
+                    // Initialize the default retriable client
+                    if (defaultRetryConfig.getMaxRetries() > 0) {
+                        // Create a retriable client with the default configuration
+                        retriableHttpClient = createRetriableHttpClient(session, defaultRetryConfig);
+                    } else {
+                        // If retries are disabled by default, use the regular client
+                        retriableHttpClient = httpClient;
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Creates a retriable HTTP client with the specified retry configuration
+     */
+    private CloseableHttpClient createRetriableHttpClient(KeycloakSession session, RetryConfig retryConfig) {
+        // If retries are disabled, just return the default client
+        if (retryConfig == null || retryConfig.getMaxRetries() <= 0) {
+            return httpClient;
+        }
+
+        // Create HTTP client builder
+        HttpClientBuilder builder = newHttpClientBuilder();
+
+        // Configure basic settings
+        long socketTimeout = retryConfig.getSocketTimeoutMillis();
+        long establishConnectionTimeout = retryConfig.getConnectionTimeoutMillis();
+        int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
+        int connectionPoolSize = config.getInt("connection-pool-size", 128);
+        long connectionTTL = config.getLong("connection-ttl-millis", -1L);
+        long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
+        boolean disableCookies = config.getBoolean("disable-cookies", true);
+        boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
+        boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+
+        // Configure builder
+        builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
+                .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
+                .maxPooledPerRoute(maxPooledPerRoute)
+                .connectionPoolSize(connectionPoolSize)
+                .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
+                .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
+                .disableCookies(disableCookies)
+                .proxyMappings(configureProxySettings())
+                .expectContinueEnabled(expectContinueEnabled)
+                .reuseConnections(reuseConnections);
+
+        // Configure security settings
+        configureSecuritySettings(session, builder);
+
+        // Configure retry handler
+        builder.getApacheHttpClientBuilder().setRetryHandler(
+                new org.apache.http.impl.client.DefaultHttpRequestRetryHandler(
+                        retryConfig.getMaxRetries(), retryConfig.isRetryOnIOException()) {
+                    @Override
+                    public boolean retryRequest(IOException exception, int executionCount,
+                            org.apache.http.protocol.HttpContext context) {
+                        boolean shouldRetry = super.retryRequest(exception, executionCount, context);
+                        if (shouldRetry) {
+                            try {
+                                // Calculate backoff with jitter
+                                long baseDelay = retryConfig.getInitialBackoffMillis() *
+                                        (long)Math.pow(retryConfig.getBackoffMultiplier(), executionCount - 1);
+                                long delay = baseDelay;
+                                if (retryConfig.isUseJitter()) {
+                                    // Add +/- 50% jitter
+                                    double jitter = 1.0 - retryConfig.getJitterFactor() +
+                                            (Math.random() * retryConfig.getJitterFactor() * 2.0);
+                                    delay = (long)(baseDelay * jitter);
+                                }
+                                Thread.sleep(delay);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                        return shouldRetry;
+                    }
+                });
+
+        return builder.build();
     }
 
     /**
