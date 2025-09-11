@@ -29,11 +29,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import type { Environment } from "../environment";
 import helpUrls from "../help-urls";
-import {
-  convertAttributeNameToForm,
-  convertFormValuesToObject,
-  convertToFormValues,
-} from "../util";
+import { convertFormValuesToObject, convertToFormValues } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -195,28 +191,6 @@ export const RealmSettingsTabs = () => {
 
   const setupForm = (r: RealmRepresentation = realm!) => {
     convertToFormValues(r, setValue);
-
-    // Handle OID4VCI attributes conversion
-    if (r.attributes) {
-      // Set the nonce lifetime value if it exists in attributes
-      if (r.attributes["vc.c-nonce-lifetime-seconds"]) {
-        setValue(
-          convertAttributeNameToForm(
-            "attributes.vc.c-nonce-lifetime-seconds",
-          ) as any,
-          r.attributes["vc.c-nonce-lifetime-seconds"],
-        );
-      }
-      // Set the pre-authorized code lifespan value if it exists in attributes
-      if (r.attributes["preAuthorizedCodeLifespanS"]) {
-        setValue(
-          convertAttributeNameToForm(
-            "attributes.preAuthorizedCodeLifespanS",
-          ) as any,
-          r.attributes["preAuthorizedCodeLifespanS"],
-        );
-      }
-    }
   };
 
   useEffect(() => {
@@ -260,19 +234,6 @@ export const RealmSettingsTabs = () => {
             .map(({ key, value }) => [key, value]),
         ),
       );
-    }
-    if (r.attributes) {
-      // Convert OID4VCI attributes to strings if they're not already
-      const stringifiedAttributes = [
-        "vc.c-nonce-lifetime-seconds",
-        "preAuthorizedCodeLifespanS",
-      ];
-      for (const attr of stringifiedAttributes) {
-        const value = r.attributes[attr];
-        if (typeof value === "number") {
-          r.attributes[attr] = value.toString();
-        }
-      }
     }
 
     try {
