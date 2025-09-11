@@ -117,6 +117,8 @@ export default interface RealmRepresentation {
   ssoSessionMaxLifespanRememberMe?: number;
   clientSessionIdleTimeout?: number;
   clientSessionMaxLifespan?: number;
+  clientOfflineSessionIdleTimeout?: number;
+  clientOfflineSessionMaxLifespan?: number;
   supportedLocales?: string[];
   // UserFederationMapperRepresentation
   userFederationMappers?: any[];
