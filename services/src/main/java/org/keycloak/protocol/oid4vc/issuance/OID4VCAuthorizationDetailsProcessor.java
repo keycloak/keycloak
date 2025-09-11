@@ -29,7 +29,7 @@ import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.protocol.oid4vc.model.Format;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_RESPONSE;
+import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 import static org.keycloak.protocol.oid4vc.model.Format.SUPPORTED_FORMATS;
 
 import java.util.ArrayList;

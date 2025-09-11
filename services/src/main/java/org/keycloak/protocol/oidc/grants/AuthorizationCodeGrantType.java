@@ -52,7 +52,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_RESPONSE;
+import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 
 /**
  * OAuth 2.0 Authorization Code Grant
