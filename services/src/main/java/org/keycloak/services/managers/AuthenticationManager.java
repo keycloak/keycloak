@@ -25,7 +25,6 @@ import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
-import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.TokenVerifier.TokenTypeCheck;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -109,7 +108,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -644,6 +642,29 @@ public class AuthenticationManager {
     }
 
     /**
+     * Logout all clientSessions belonging to the the given user session
+     * @param session
+     * @param realm
+     * @param userSession
+     * @param client
+     * @param uriInfo
+     * @param headers
+     */
+    public static void backchannelLogoutUserSessionFromClient(KeycloakSession session, RealmModel realm, UserSessionModel userSession, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if(clientSession!=null) {
+            backchannelLogoutClientSession(session,
+                    realm,
+                    clientSession,
+                    null,
+                    uriInfo,
+                    headers);
+            clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+            TokenManager.dettachClientSession(clientSession);
+        }
+    }
+
+    /**
      * Logout all clientSessions of this user and client
      * @param session
      * @param realm
@@ -654,14 +675,10 @@ public class AuthenticationManager {
      */
     public static void backchannelLogoutUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
         session.sessions().getUserSessionsStream(realm, user)
-                .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()) // collect to avoid concurrent modification.
-                .forEach(clientSession -> {
-                    backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
-                    clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-                    TokenManager.dettachClientSession(clientSession);
-                });
+                .toList() // collect to avoid concurrent modification.
+                .forEach(userSession ->
+                                backchannelLogoutUserSessionFromClient(session, realm, userSession, client, uriInfo, headers)
+                        );
     }
 
     public static Response browserLogout(KeycloakSession session,
