@@ -43,6 +43,18 @@ export async function createSAMLProvider(
   await clickAddButton(page);
 }
 
+export async function createSPIFFEProvider(
+  page: Page,
+  providerName: string,
+  trustDomain: string,
+  bundleEndpoint: string,
+) {
+  await clickProviderCard(page, providerName);
+  await page.getByTestId("config.trustDomain").fill(trustDomain);
+  await page.getByTestId("config.bundleEndpoint").fill(bundleEndpoint);
+  await clickAddButton(page);
+}
+
 export async function assertAuthorizationUrl(page: Page) {
   await expect(page.getByTestId("config.authorizationUrl")).toHaveValue(
     authorizationUrl,

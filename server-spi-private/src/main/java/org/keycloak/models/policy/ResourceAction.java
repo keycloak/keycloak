@@ -25,7 +25,7 @@ import org.keycloak.component.ComponentModel;
 public class ResourceAction implements Comparable<ResourceAction> {
 
     public static final String AFTER_KEY = "after";
-    private static final String PRIORITY_KEY = "priority";
+    public static final String PRIORITY_KEY = "priority";
 
     private String id;
     private String providerId;

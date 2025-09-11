@@ -28,6 +28,7 @@ public class ResourcePolicy {
     private MultivaluedHashMap<String, String> config;
     private String providerId;
     private String id;
+    private Long notBefore;
 
     public ResourcePolicy() {
         // reflection
@@ -74,5 +75,13 @@ public class ResourcePolicy {
 
     public boolean isScheduled() {
         return config != null && Boolean.parseBoolean(config.getFirstOrDefault("scheduled", "true"));
+    }
+
+    public Long getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(Long milliseconds) {
+        this.notBefore = milliseconds;
     }
 }

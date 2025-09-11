@@ -43,14 +43,15 @@ public class EventBasedResourcePolicyProvider implements ResourcePolicyProvider 
     }
 
     protected boolean isActivationEvent(ResourcePolicyEvent event) {
-        List<String> events = model.getConfig().getOrDefault("events", List.of());
         ResourceOperationType operation = event.getOperation();
 
-        if (events.contains(operation.name())) {
+        if (ResourceOperationType.AD_HOC.equals(operation)) {
             return true;
         }
 
-        return false;
+        List<String> events = model.getConfig().getOrDefault("events", List.of());
+
+        return events.contains(operation.name());
     }
 
     @Override
