@@ -37,7 +37,7 @@ import org.keycloak.federation.kerberos.KerberosFederationProvider;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -50,11 +50,13 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.setUserProfileConfiguration;
 import static org.keycloak.util.JsonSerialization.writeValueAsString;
@@ -250,13 +252,19 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
         testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
 
+        List<UserRepresentation> search = testRealm().users().search("*", -1, -1, true);
+        assertThat(search.isEmpty(), is(false));
+        user1 = search.stream().filter(u -> u.getUsername().equals("admintestuser1")).findFirst().orElseThrow();
+        assertThat(user1.getAttributes().containsKey(LDAPConstants.LDAP_ID), is(true));
+        assertThat(user1.isEnabled(), is(false));
+
         try {
-            List<UserRepresentation> search = testRealm().users().search("*", -1, -1, true);
-            Assert.fail("Should fail because LDAP is in failing state");
+            testRealm().users().get(newUserId1).update(user1);
+            Assert.fail("Not expected to successfully update user");
         } catch (WebApplicationException expected) {
             Response response = expected.getResponse();
-            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
-            assertEquals("unknown_error", error.getError());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertTrue(error.getErrorMessage().contains("The user is read-only. The user storage provider 'test-ldap' is currently unavailable. Check the server logs for more details."));
         }
     }
 
