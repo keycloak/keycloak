@@ -389,8 +389,10 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     CredentialResponse credentialResponseVO = JsonSerialization.mapper
                             .convertValue(credentialResponse.getEntity(),
                                     CredentialResponse.class);
-                    String credentialString = (String)credentialResponseVO.getCredentials().get(0).getCredential();
+
+                    String credentialString = (String) credentialResponseVO.getCredentials().get(0).getCredential();
                     SdJwtVP sdJwtVP = SdJwtVP.of(credentialString);
+
                     assertNotNull("A valid credential string should have been responded", sdJwtVP);
                 }));
     }
