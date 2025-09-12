@@ -17,15 +17,34 @@
 
 package org.keycloak.testsuite.model.session;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.hamcrest.Matchers;
+import org.infinispan.Cache;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -37,35 +56,24 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import org.keycloak.models.Constants;
-import org.hamcrest.Matchers;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
-import java.util.LinkedList;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -378,6 +386,85 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     }
 
     @Test
+    public void testClientTimestampUpdate() {
+        final String realmName = "client-test";
+        final String username = "my-user";
+        final String clientId = "my-app";
+        final AtomicReference<String> userSessionID = new AtomicReference<>();
+        final AtomicReference<String> clientSessionId = new AtomicReference<>();
+
+        // create user and client
+        inComittedTransaction(session -> {
+            RealmModel realm = session.realms().createRealm(realmName);
+            session.getContext().setRealm(realm);
+            realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX));
+
+            realm.addClient(clientId);
+            session.users().addUser(realm, username);
+
+            UserSessionModel userSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, username), username, "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+            userSessionID.set(userSession.getId());
+
+            AuthenticatedClientSessionModel clientSession = createClientSession(session, realm.getId(), realm.getClientByClientId(clientId), userSession, "http://redirect", "state");
+            clientSessionId.set(clientSession.getId());
+        });
+
+        if (InfinispanUtils.isEmbeddedInfinispan()) {
+            // causes https://github.com/keycloak/keycloak/issues/42012
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealmByName(realmName);
+                session.getContext().setRealm(realm);
+
+                Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessoinCache = session.getProvider(InfinispanConnectionProvider.class).getCache(CLIENT_SESSION_CACHE_NAME);
+                SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessoinCache.get(UUID.fromString(clientSessionId.get()));
+                assertNotNull(clientSession);
+                assertNotNull(clientSession.getEntity());
+                // user session id is not stored in the cache
+                // when reading from a remote keycloak instance, this field is null
+                // we are simulating a “remote read” here.
+                clientSession.getEntity().setUserSessionId(null);
+            });
+        }
+
+
+        Function<KeycloakSession, Integer> fetchTimestamp = session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            ClientModel client = realm.getClientByClientId(clientId);
+            UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionID.get());
+            // read from database!
+            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+                return session.getProvider(UserSessionPersisterProvider.class)
+                        .loadClientSession(realm, client, userSession, false)
+                        .getTimestamp();
+            }
+            return session.sessions()
+                    .getClientSession(userSession, client, clientSessionId.get(), false)
+                    .getTimestamp();
+        };
+
+        // fetch the current timestamp
+        int currentTimestamp = inComittedTransaction(fetchTimestamp);
+
+        // update timestamp
+        inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            ClientModel client = realm.getClientByClientId(clientId);
+            UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionID.get());
+            session.sessions()
+                    .getClientSession(userSession, client, clientSessionId.get(), false)
+                    .setTimestamp(currentTimestamp + 10);
+        });
+
+        // check if it is updated
+        int timestamp = inComittedTransaction(fetchTimestamp);
+        assertEquals(currentTimestamp + 10, timestamp);
+    }
+
+    @Test
     public void testOnUserRemoved() {
         int started = Time.currentTime();
         AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
@@ -466,6 +553,10 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 setTimeOffset(i);
 
                 UserSessionModel userSession = session.sessions().createUserSession(null, realm, user, "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                if (userSessionsInner.contains(userSession.getId())) {
+                    Assert.fail("Duplicate session id generated: " + userSession.getId());
+                }
+
                 createClientSession(session, realmId, realm.getClientByClientId("test-app"), userSession, "http://redirect", "state");
                 userSessionsInner.add(userSession.getId());
             }
@@ -495,6 +586,48 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             }
             return null;
         });
+
+    }
+
+    @Test
+    public void testConcurrentSessionCreation() {
+        String userSessionId = withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            UserSessionModel userSession = session.sessions().createUserSession(null, realm, user, "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+            userSession.setNote("ITERATION1", "true");
+            return userSession.getId();
+        });
+
+        // Simulate a concurrently created session
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            UserSessionModel userSession = session.sessions().createUserSession(userSessionId, realm, user, "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+            userSession.setNote("ITERATION2", "true");
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+            assertThat(userSession.getNote("ITERATION1"), Matchers.equalTo("true"));
+            assertThat(userSession.getNote("ITERATION2"), Matchers.equalTo("true"));
+            return null;
+        });
+
+        if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+            try {
+                // Simulate a concurrently created session with a different user
+                withRealm(realmId, (session, realm) -> {
+                    UserModel user = session.users().getUserByUsername(realm, "user2");
+                    UserSessionModel userSession = session.sessions().createUserSession(userSessionId, realm, user, "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                    userSession.setNote("ITERATION2", "true");
+                    return null;
+                });
+                Assert.fail("Exception expected");
+            } catch (RuntimeException e) {
+                assertThat(e.getMessage(), Matchers.containsString("Maximum number of retries reached"));
+                assertThat(e.getCause().getMessage(), Matchers.containsString("User ID of the session does not match"));
+            }
+        }
 
     }
 

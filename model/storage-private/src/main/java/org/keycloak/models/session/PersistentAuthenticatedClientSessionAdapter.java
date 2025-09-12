@@ -258,7 +258,10 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public String toString() {
-        return getId();
+        return "PersistentAuthenticatedClientSessionAdapter{" +
+                "userSessionId=" + model.getUserSessionId() +
+                "clientId=" + model.getClientId() +
+                "}";
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

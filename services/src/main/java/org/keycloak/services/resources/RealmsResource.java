@@ -50,13 +50,14 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 
 import java.net.URI;
 import java.util.Comparator;
+
+import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -226,7 +227,7 @@ public class RealmsResource {
 
     @GET
     @Path("{realm}/.well-known/{alias}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, APPLICATION_JWT})
     public Response getWellKnown(final @PathParam("realm") String name,
                                  final @PathParam("alias") String alias) {
         return getWellKnownResponse(session, name, alias, logger);
@@ -247,8 +248,13 @@ public class RealmsResource {
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, wellKnownProviderFactoryFound.getId());
 
         if (wellKnown != null) {
-            ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());
-            return Cors.builder().allowAllOrigins().auth().add(responseBuilder);
+            Object config = wellKnown.getConfig();
+            Response.ResponseBuilder responseBuilder;
+
+            // Check if the provider returned a JWT string or JSON object
+            responseBuilder = Response.ok(config).type(config instanceof String ? APPLICATION_JWT : MediaType.APPLICATION_JSON);
+
+            return Cors.builder().allowAllOrigins().auth().add(responseBuilder.cacheControl(CacheControlUtil.noCache()));
         }
 
         throw new NotFoundException();
