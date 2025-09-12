@@ -17,7 +17,6 @@
 
 package org.keycloak.organization.admin.resource;
 
-
 import java.util.Map;
 import java.util.stream.Stream;
 
