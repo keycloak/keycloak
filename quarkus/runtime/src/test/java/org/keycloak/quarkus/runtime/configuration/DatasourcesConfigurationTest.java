@@ -387,4 +387,32 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.\"users\".jdbc.max-size", "115"
         ));
     }
+
+    @Test
+    public void quarkusProperties() {
+        // values obtained from the /src/test/resources/conf/quarkus.properties
+        initConfig();
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.userstore.db-kind", "mariadb",
+                "quarkus.datasource.userstore.username", "user-unquoted",
+                "quarkus.datasource.userstore.jdbc.url", "jdbc:mariadb://my-url.com:3333/userstore",
+                "quarkus.datasource.userstore.jdbc.transaction", "disabled"
+        ));
+
+        // quoted
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"userstore\".db-kind", "postgresql",
+                "quarkus.datasource.\"userstore\".username", "user-quoted",
+                "quarkus.datasource.\"userstore\".jdbc.url", "jdbc:postgresql://localhost:5433/db",
+                "quarkus.datasource.\"userstore\".jdbc.transaction", "xa"
+        ));
+
+        assertConfig(Map.of(
+                "db-kind-userstore", "postgresql",
+                "db-username-userstore","user-quoted",
+                "db-url-full-userstore","jdbc:postgresql://localhost:5433/db",
+                "transaction-xa-enabled-userstore","true"
+        ));
+    }
 }

@@ -19,6 +19,7 @@ public class TransactionPropertyMappers {
                 fromOption(TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE)
                         .to("quarkus.datasource.\"<datasource>\".jdbc.transactions")
                         .transformer(TransactionPropertyMappers::getQuarkusTransactionsValue)
+                        .allowQuarkusPropertiesFallback(true) // we allow to use properties in quarkus.properties due to backwards compatibility for datasources
                         .build()
         };
     }

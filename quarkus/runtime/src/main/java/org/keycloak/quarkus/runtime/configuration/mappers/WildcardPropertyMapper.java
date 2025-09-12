@@ -33,8 +33,8 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen, ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
-            String description, BooleanSupplier required, String requiredWhen, BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
-        super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null, null);
+            String description, BooleanSupplier required, String requiredWhen, BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom, boolean allowQuarkusPropertiesFallback) {
+        super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null, null, allowQuarkusPropertiesFallback);
         this.wildcardMapFrom = wildcardMapFrom;
 
         this.fromPrefix = getFrom().substring(0, getFrom().indexOf(WILDCARD_FROM_START));
