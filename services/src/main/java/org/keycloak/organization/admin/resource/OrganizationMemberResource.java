@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -57,6 +58,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
@@ -67,13 +69,15 @@ public class OrganizationMemberResource {
     private final OrganizationProvider provider;
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationMemberResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationMemberResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.provider = session.getProvider(OrganizationProvider.class);
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
+        this.auth = auth;
     }
 
     @POST
@@ -83,6 +87,9 @@ public class OrganizationMemberResource {
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
             "an error response is returned")
     public Response addMember(String id) {
+        if (!auth.realm().canManageRealm() && !auth.users().canManage())
+            throw new ForbiddenException();
+
         id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
         
         UserModel user = session.users().getUserById(realm, id);
@@ -177,6 +184,9 @@ public class OrganizationMemberResource {
             "between the user and organization. The user itself is deleted in case the membership is managed, otherwise the user is not deleted. " +
             "If no user is found, or if they are not a member of the organization, an error response is returned")
     public Response delete(@PathParam("member-id") String memberId) {
+        if (!auth.realm().canManageRealm() && !auth.users().canManage())
+            throw new ForbiddenException();
+
         if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }

@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationResource {
@@ -52,12 +53,14 @@ public class OrganizationResource {
     private final OrganizationProvider provider;
     private final AdminEventBuilder adminEvent;
     private final OrganizationModel organization;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.session = session;
         this.provider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION);
+        this.auth = auth;
     }
 
     @GET
@@ -99,7 +102,7 @@ public class OrganizationResource {
 
     @Path("members")
     public OrganizationMemberResource members() {
-        return new OrganizationMemberResource(session, organization, adminEvent);
+        return new OrganizationMemberResource(session, organization, adminEvent, auth);
     }
 
     @Path("identity-providers")

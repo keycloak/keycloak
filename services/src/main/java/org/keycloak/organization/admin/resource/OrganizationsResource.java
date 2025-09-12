@@ -173,7 +173,7 @@ public class OrganizationsResource {
 
         session.getContext().setOrganization(organizationModel);
 
-        return new OrganizationResource(session, organizationModel, adminEvent);
+        return new OrganizationResource(session, organizationModel, adminEvent, auth);
     }
 
     @Path("members/{member-id}/organizations")
@@ -183,6 +183,6 @@ public class OrganizationsResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations associated with the user that has the specified id")
     public Stream<OrganizationRepresentation> getOrganizations(@PathParam("member-id") String memberId) {
-        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId);
+        return new OrganizationMemberResource(session, null, adminEvent, auth).getOrganizations(memberId);
     }
 }
