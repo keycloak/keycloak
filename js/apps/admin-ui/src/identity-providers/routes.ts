@@ -1,6 +1,7 @@
 import type { AppRouteObject } from "../routes";
 import { IdentityProviderRoute } from "./routes/IdentityProvider";
 import { IdentityProviderKeycloakOidcRoute } from "./routes/IdentityProviderKeycloakOidc";
+import { IdentityProviderEntraIdOidcRoute } from "./routes/IdentityProviderEntraIdOidc";
 import { IdentityProviderOidcRoute } from "./routes/IdentityProviderOidc";
 import { IdentityProviderSamlRoute } from "./routes/IdentityProviderSaml";
 import { IdentityProviderSpiffeRoute } from "./routes/IdentityProviderSpiffe";
@@ -18,6 +19,7 @@ const routes: AppRouteObject[] = [
   IdentityProviderSamlRoute,
   IdentityProviderSpiffeRoute,
   IdentityProviderKeycloakOidcRoute,
+  IdentityProviderEntraIdOidcRoute,
   IdentityProviderCreateRoute,
   IdentityProviderRoute,
   IdentityProviderOAuth2Route,

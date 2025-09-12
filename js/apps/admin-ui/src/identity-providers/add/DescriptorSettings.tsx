@@ -3,6 +3,7 @@ import { ExpandableSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import {
   NumberControl,
   SelectControl,
@@ -19,6 +20,8 @@ type DescriptorSettingsProps = {
 
 const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
+  const isEntraId = pathname.includes("entraid-oidc");
 
   const form = useFormContext<IdentityProviderRepresentation>();
   const { control } = form;
@@ -98,6 +101,13 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           isDisabled={readOnly}
           stringify
         />
+        {isEntraId && (
+          <DefaultSwitchControl
+            name="config.sendLogoutHintOnLogout"
+            label={t("sendLogoutHintOnLogout")}
+            stringify
+          />
+        )}
         <DefaultSwitchControl
           name="config.sendClientIdOnLogout"
           label={t("sendClientIdOnLogout")}

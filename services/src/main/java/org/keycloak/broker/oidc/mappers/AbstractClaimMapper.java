@@ -17,10 +17,7 @@
 
 package org.keycloak.broker.oidc.mappers;
 
-import static org.keycloak.utils.JsonUtils.splitClaimPath;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -32,6 +29,8 @@ import org.keycloak.util.JsonSerialization;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -74,7 +73,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
 
     public static Object getClaimValue(BrokeredIdentityContext context, String claim) {
         {  // search access token
-            JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
+            JsonWebToken token = (JsonWebToken)context.getContextData().get(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
             if (token != null) {
                 Object value = getClaimValue(token, claim);
                 if (value != null) return value;
