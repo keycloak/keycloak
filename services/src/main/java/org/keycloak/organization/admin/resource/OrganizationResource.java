@@ -76,6 +76,8 @@ public class OrganizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Deletes the organization")
     public Response delete() {
+        auth.realm().requireManageRealm();
+
         boolean removed = provider.remove(organization);
         if (removed) {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
@@ -90,6 +92,8 @@ public class OrganizationResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Updates the organization")
     public Response update(OrganizationRepresentation organizationRep) {
+        auth.realm().requireManageRealm();
+
         try {
             OrganizationsValidation.validateUrl(organizationRep.getRedirectUrl());
             RepresentationToModel.toModel(organizationRep, organization);

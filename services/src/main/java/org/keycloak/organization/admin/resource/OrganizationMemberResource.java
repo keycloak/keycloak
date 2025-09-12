@@ -87,7 +87,7 @@ public class OrganizationMemberResource {
             "an existing user with the organization. If no user is found, or if it is already associated with the organization, " +
             "an error response is returned")
     public Response addMember(String id) {
-        if (!auth.realm().canManageRealm() && !auth.users().canManage())
+        if (!auth.users().canManage())
             throw new ForbiddenException();
 
         id = id.replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
@@ -184,7 +184,7 @@ public class OrganizationMemberResource {
             "between the user and organization. The user itself is deleted in case the membership is managed, otherwise the user is not deleted. " +
             "If no user is found, or if they are not a member of the organization, an error response is returned")
     public Response delete(@PathParam("member-id") String memberId) {
-        if (!auth.realm().canManageRealm() && !auth.users().canManage())
+        if (!auth.users().canManage())
             throw new ForbiddenException();
 
         if (StringUtil.isBlank(memberId)) {
