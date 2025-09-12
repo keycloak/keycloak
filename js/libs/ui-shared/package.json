@@ -67,5 +67,16 @@
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-lib-inject-css": "^2.2.2",
     "vitest": "^3.2.4"
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/libs/ui-shared"
+  },
+  "homepage": "https://www.keycloak.org/"
 }
