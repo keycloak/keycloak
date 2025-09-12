@@ -768,7 +768,7 @@ getReferenceCategory() is just a category the Authenticator belongs to.
 
 ==== Adding an authenticator form
 
-{project_name} comes with a Freemarker <<_themes,theme and template engine>>.
+{project_name} comes with a Freemarker https://www.keycloak.org/ui-customization/themes[theme and template engine].
 The createForm() method you called within authenticate() of your Authenticator class, builds an HTML page from a file within your login theme: `secret-question.ftl`.
 This file should be added to the `theme-resources/templates` in your JAR, see <<_theme_resource,Theme Resource Provider>> for more details.
 
