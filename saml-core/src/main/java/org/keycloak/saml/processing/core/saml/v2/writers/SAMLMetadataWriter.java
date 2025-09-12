@@ -77,6 +77,9 @@ public class SAMLMetadataWriter extends BaseWriter {
         if (entities.getValidUntil() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.VALID_UNTIL.get(), entities.getValidUntil().toString());
         }
+        if (entities.getCacheDuration() != null) {
+            StaxUtil.writeAttribute(writer, JBossSAMLConstants.CACHE_DURATION.get(), entities.getCacheDuration().toString());
+        }
         if (entities.getID() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), entities.getID());
         }
@@ -116,6 +119,9 @@ public class SAMLMetadataWriter extends BaseWriter {
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ENTITY_ID.get(), entityDescriptor.getEntityID());
         if (entityDescriptor.getValidUntil() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.VALID_UNTIL.get(), entityDescriptor.getValidUntil().toString());
+        }
+        if (entityDescriptor.getCacheDuration() != null) {
+            StaxUtil.writeAttribute(writer, JBossSAMLConstants.CACHE_DURATION.get(), entityDescriptor.getCacheDuration().toString());
         }
         if (entityDescriptor.getID() != null) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), entityDescriptor.getID());

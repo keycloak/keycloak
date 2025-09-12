@@ -22,6 +22,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.TimeUnit;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,15 +55,31 @@ public class SPMetadataDescriptor {
             String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts, List<KeyDescriptorType> encryptionCerts) {
         return buildSPDescriptor(Collections.singletonList(new EndpointType(loginBinding, assertionEndpoint)),
                 Collections.singletonList(new EndpointType(logoutBinding, logoutEndpoint)),
-                wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted, entityId, nameIDPolicyFormat, signingCerts, encryptionCerts);
+                wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted, entityId, nameIDPolicyFormat, signingCerts, encryptionCerts, null);
     }
 
     public static EntityDescriptorType buildSPDescriptor(List<EndpointType> assertionConsumerServices, List<EndpointType> singleLogoutServices,
             boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
             String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts,
             List<KeyDescriptorType> encryptionCerts) {
+        return buildSPDescriptor(assertionConsumerServices, singleLogoutServices, wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
+                entityId, nameIDPolicyFormat, signingCerts, encryptionCerts, null);
+    }
+
+    public static EntityDescriptorType buildSPDescriptor(List<EndpointType> assertionConsumerServices, List<EndpointType> singleLogoutServices,
+            boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
+            String entityId, String nameIDPolicyFormat, List<KeyDescriptorType> signingCerts,
+            List<KeyDescriptorType> encryptionCerts, Long expiration) {
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
         entityDescriptor.setID(IDGenerator.create("ID_"));
+        if (expiration != null && expiration > 0) {
+            try {
+                Duration cacheDuration = DatatypeFactory.newInstance().newDuration(TimeUnit.SECONDS.toMillis(expiration));
+                entityDescriptor.setCacheDuration(cacheDuration);
+            } catch (DatatypeConfigurationException e) {
+                throw new RuntimeException("Cannot create datatype factory to create duration", e);
+            }
+        }
 
         SPSSODescriptorType spSSODescriptor = new SPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
         spSSODescriptor.setAuthnRequestsSigned(wantAuthnRequestsSigned);

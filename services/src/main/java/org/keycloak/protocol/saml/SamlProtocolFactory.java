@@ -180,7 +180,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
             client.setRequiresClientSignature(true);
         }
 
-        if (client.requiresClientSignature() && client.getClientSigningCertificate() == null) {
+        if (client.requiresClientSignature() && client.getClientSigningCertificate() == null
+                && (!client.isUseMetadataDescriptorUrl() || client.getMetadataDescriptorUrl() != null)) {
             CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(newClient.getClientId());
             client.setClientSigningCertificate(info.getCertificate());
             client.setClientSigningPrivateKey(info.getPrivateKey());

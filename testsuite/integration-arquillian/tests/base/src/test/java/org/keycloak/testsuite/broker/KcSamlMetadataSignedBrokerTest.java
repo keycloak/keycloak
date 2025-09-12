@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.Closeable;
 import java.util.HashMap;
@@ -26,43 +25,23 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.SamlClient;
-import org.keycloak.testsuite.util.SamlClientBuilder;
-import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import static org.keycloak.testsuite.util.Matchers.bodyHC;
 
 /**
  *
  * @author rmartinc
  */
-public class KcSamlMetadataSignedBrokerTest extends AbstractBrokerTest {
+public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBrokerTest {
 
     public class KcSamlMetadataSignedBrokerConfiguration extends KcSamlBrokerConfiguration {
 
@@ -119,7 +98,7 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractBrokerTest {
         doSamlPostLogin(Status.OK.getStatusCode(), "Update Account Information", this::identityDocument);
 
         // rotate the key and do not allow refresh <30 it should fail
-        rotateKeys(Algorithm.RS256, "rsa-generated");
+        rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
         doSamlPostLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider", this::identityDocument);
 
         // ofsset to allow the refresh of the key
@@ -133,7 +112,7 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractBrokerTest {
         doSamlPostLogin(Status.OK.getStatusCode(), "Update Account Information", this::removeKeyNameFromSignature);
 
         // rotate the key and do not allow refresh <30 it should fail
-        rotateKeys(Algorithm.RS256, "rsa-generated");
+        rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
         doSamlPostLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider", this::removeKeyNameFromSignature);
 
         // ofsset to allow the refresh of the key
@@ -154,10 +133,10 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractBrokerTest {
             doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
 
             // rotate keys it should fail
-            rotateKeys(Algorithm.RS256, "rsa-generated");
+            rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
             doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider");
 
-            // offset of 35 is not enough (POST require iteration of keys)
+            // offset of 35 is not enough (REDIRECT require iteration of keys)
             setTimeOffset(35);
             doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider.");
 
@@ -166,7 +145,7 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractBrokerTest {
             doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
 
             // rotate keys it should fail again
-            rotateKeys(Algorithm.RS256, "rsa-generated");
+            rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
             doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider");
 
             // manually refresh after 1d plus 20s (15s more min refresh is 10s)
@@ -176,91 +155,41 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractBrokerTest {
         }
     }
 
-    private Document identityDocument(Document doc) {
-        return doc;
-    }
+    @Test
+    public void testRedirectLoginCacheDuration() throws Exception {
+        try (Closeable realmUpdater = new RealmAttributeUpdater(adminClient.realm(bc.providerRealmName()))
+                .setAttribute(SamlConfigAttributes.SAML_DESCRIPTOR_CACHE_SECONDS, "3600") // set cache in the descriptor to 1h
+                .update();
+             Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false")
+                .update();
+             Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+                .update()) {
+            // do initial login with the current key
+            doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
 
-    private Document removeKeyNameFromSignature(Document doc) {
-        NodeList nodes = doc.getElementsByTagNameNS(JBossSAMLURIConstants.XMLDSIG_NSURI.get(), JBossSAMLConstants.KEY_INFO.get());
-        if (nodes != null && nodes.getLength() > 0) {
-            Element keyInfo = (Element) nodes.item(0);
-            nodes = keyInfo.getChildNodes();
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Node node = nodes.item(i);
-                if (JBossSAMLURIConstants.XMLDSIG_NSURI.get().equals(node.getNamespaceURI())
-                        && "KeyName".equals(node.getLocalName())) {
-                    keyInfo.removeChild(node);
-                    break;
-                }
-            }
+            // rotate keys it should fail
+            rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
+            doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider");
+
+            // offset of 35 is not enough (REDIRECT require iteration of keys)
+            setTimeOffset(35);
+            doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider.");
+
+            // offset more than one hour set as cache duration in the realm
+            setTimeOffset(3600 + 5);
+            doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
+
+            // rotate keys it should fail again
+            rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
+            doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider");
+
+            // manually refresh after 1d plus 20s (15s more min refresh is 10s)
+            setTimeOffset(3600 + 20);
+            Assert.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
+            doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
         }
-        return doc;
-    }
-
-    private void doSamlPostLogin(int statusCode, String expectedString, SamlDocumentStepBuilder.Saml2DocumentTransformer transformer)
-            throws ProcessingException, ConfigurationException, ParsingException {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST,
-                BrokerTestTools.getConsumerRoot() + "/sales-post/saml", null);
-        Document doc = SAML2Request.convert(loginRep);
-        new SamlClientBuilder()
-                .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, SamlClient.Binding.POST)
-                .build() // Request to consumer IdP
-                .login().idp(bc.getIDPAlias()).build()
-                .processSamlResponse(SamlClient.Binding.POST).build() // AuthnRequest to producer IdP
-                .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
-                .processSamlResponse(SamlClient.Binding.POST) // Response from producer IdP
-                .transformDocument(transformer)
-                .build()
-                // first-broker flow: if valid request, it displays an update profile page on consumer realm
-                .execute(currentResponse -> {
-                    Assert.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
-                    MatcherAssert.assertThat(currentResponse, bodyHC(Matchers.containsString(expectedString)));
-                });
-    }
-
-    private void doSamlRedirectLogin(int statusCode, String expectedString) throws ProcessingException, ConfigurationException, ParsingException {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST,
-                BrokerTestTools.getConsumerRoot() + "/sales-post/saml", null);
-        Document doc = SAML2Request.convert(loginRep);
-        new SamlClientBuilder()
-                .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, SamlClient.Binding.REDIRECT)
-                .build() // Request to consumer IdP
-                .login().idp(bc.getIDPAlias()).build()
-                .processSamlResponse(SamlClient.Binding.REDIRECT).build() // AuthnRequest to producer IdP
-                .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
-                .processSamlResponse(SamlClient.Binding.REDIRECT) // Response from producer IdP
-                .build()
-                // first-broker flow: if valid request, it displays an update profile page on consumer realm
-                .execute(currentResponse -> {
-                    Assert.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
-                    MatcherAssert.assertThat(currentResponse, bodyHC(Matchers.containsString(expectedString)));
-                });
-    }
-
-    private ComponentRepresentation createComponentRep(String algorithm, String providerId, String realmId) {
-        ComponentRepresentation keys = new ComponentRepresentation();
-        keys.setName("generated");
-        keys.setProviderType(KeyProvider.class.getName());
-        keys.setProviderId(providerId);
-        keys.setParentId(realmId);
-        keys.setConfig(new MultivaluedHashMap<>());
-        keys.getConfig().putSingle("priority", Long.toString(System.currentTimeMillis()));
-        keys.getConfig().putSingle("algorithm", algorithm);
-        return keys;
-    }
-
-    private void rotateKeys(String algorithm, String providerId) {
-        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-        String activeKid = providerRealm.keys().getKeyMetadata().getActive().get(algorithm);
-
-        // Rotate public keys on the parent broker
-        String realmId = providerRealm.toRepresentation().getId();
-        ComponentRepresentation keys = createComponentRep(algorithm, providerId, realmId);
-        try (Response response = providerRealm.components().add(keys)) {
-            Assert.assertEquals(201, response.getStatus());
-        }
-
-        String updatedActiveKid = providerRealm.keys().getKeyMetadata().getActive().get(algorithm);
-        Assert.assertNotEquals(activeKid, updatedActiveKid);
     }
 }

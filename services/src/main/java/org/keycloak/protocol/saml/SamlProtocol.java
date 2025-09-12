@@ -598,7 +598,7 @@ public class SamlProtocol implements LoginProtocol {
 
         if (samlClient.requiresEncryption()) {
             try {
-                SamlProtocolUtils.setupEncryption(samlClient, bindingBuilder);
+                SamlProtocolUtils.setupEncryption(session, samlClient, bindingBuilder);
             } catch (Exception e) {
                 logger.error("failed", e);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.FAILED_TO_PROCESS_RESPONSE);
@@ -912,7 +912,7 @@ public class SamlProtocol implements LoginProtocol {
         }
         if (new SamlClient(client).requiresClientSignature()) {
             try {
-                SamlProtocolUtils.verifyDocumentSignature(client, holder.getSamlDocument());
+                SamlProtocolUtils.verifyDocumentSignature(session, client, holder.getSamlDocument());
             } catch (VerificationException ex) {
                 logger.warnf("Logout response from client %s contains invalid signature", client.getClientId());
                 return false;

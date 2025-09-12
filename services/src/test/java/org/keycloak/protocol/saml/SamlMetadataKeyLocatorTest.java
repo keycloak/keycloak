@@ -19,14 +19,18 @@ package org.keycloak.protocol.saml;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.cert.X509Certificate;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
@@ -45,7 +49,7 @@ public class SamlMetadataKeyLocatorTest {
     private static final String EXPIRED_CERT = "MIIDQTCCAimgAwIBAgIUT8qwq3DECizGLB2tQAaaNSGAVLgwDQYJKoZIhvcNAQELBQAwMDEuMCwGA1UEAwwlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qtc2lnLzAeFw0yMzAxMjcxNjAwMDBaFw0yMzAxMjgxNjAwMDBaMDAxLjAsBgNVBAMMJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LXNpZy8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdIwQZjDffQJL75c/QqqgXPZR7NTFkCGQu/kL3eF/kU8bD1Ck+aKakZyw3xELLgMNg4atu4kt3waSgEKSanvFOpAzH+etS/MMIBYBRKfGcFWAKyr0pukjmx1pw4d3SgQj2lB1FDvVGP62Kl4i34XLxLXtuSkYFiNCTfF26wxfwT0tHTiSynQL2jaa9f5TRAKsXwepUII72Awkk04Zqi3trf5BpNac2s+C6Ey4eAnouWzI5Rg0VDDmt3GzxXPaY6wga9afUSb9z4oJwyW1MiE6ENjfNbdmsUvdXCriRNDviO71CnWrLJA44maKDosubfUtC9Ac9BaRjutFyn1UExE9xAgMBAAGjUzBRMB0GA1UdDgQWBBR4R5i1kWMxzzdQ3TdgI/MuNLChSDAfBgNVHSMEGDAWgBR4R5i1kWMxzzdQ3TdgI/MuNLChSDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAacI/f9YFVTUCGXfh/FCVBQI20bgOs9D6IpIhN8L5kEnY6Ox5t00b9G5Bz64alK3WMR3DdhTEpufX8IMFpMlme/JnnOQXkfmIvzbev4iIKxcKFvS8qNXav8PVxwDApuzgxEq/XZCtFXhDS3q1jGRmlOr+MtQdCNQuJmxy7kOoFPY+UYjhSXTZVrCyFI0LYJQfcZ69bYXd+5h1U3UsN4ZvsBgnrz/IhhadaCtTZVtvyr/uzHiJpqT99VO9/7lwh2zL8ihPyOUVDjdYxYyCi+BHLRB+udnVAfo7t3fbxMi1gV9xVcYaqTJgSArsYM8mxv8p5mhTa8TJknzs4V3Dm+PHs";
 
     private static final String DESCRIPTOR
-            = "<md:EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" entityID=\"http://localhost:8080/realms/keycloak\">"
+            = "<md:EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" entityID=\"http://localhost:8080/realms/keycloak\" cacheDuration=\"P1D\">"
             + "<md:IDPSSODescriptor WantAuthnRequestsSigned=\"true\" protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">"
             + "<md:KeyDescriptor use=\"signing\">"
             + "<ds:KeyInfo>"
@@ -219,5 +223,22 @@ public class SamlMetadataKeyLocatorTest {
 
         MatcherAssert.assertThat(StreamSupport.stream(keyLocator.spliterator(), false).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder(keycloak2));
+    }
+
+    @Test
+    public void testLoaderWithExpiration() throws Exception {
+        Long expiration = Time.currentTimeMillis() + (24 * 60 * 60 * 1000);
+        GregorianCalendar cal = new GregorianCalendar();
+        cal.setTimeInMillis(expiration);
+        XMLGregorianCalendar calendar = DatatypeFactory.newInstance().newXMLGregorianCalendar(cal);
+
+        // check expiration is read OK using cacheDuration which is in the default descriptor, 5s window
+        PublicKeyLoader loader = new TestSamlMetadataPublicKeyLoader(DESCRIPTOR, true);
+        MatcherAssert.assertThat(loader.loadKeys().getExpirationTime(), Matchers.allOf(Matchers.greaterThanOrEqualTo(expiration), Matchers.lessThan(expiration + 5000)));
+
+        // check expiration is read OK using validUntil instead cacheDuration, 5s window
+        String desc = DESCRIPTOR.replaceFirst("cacheDuration=\"P1D\"", "validUntil=\"" + calendar.toXMLFormat() + "\"");
+        loader = new TestSamlMetadataPublicKeyLoader(desc, true);
+        MatcherAssert.assertThat(loader.loadKeys().getExpirationTime(), Matchers.allOf(Matchers.greaterThan(expiration - 5000), Matchers.lessThanOrEqualTo(expiration)));
     }
 }

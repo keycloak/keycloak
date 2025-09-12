@@ -49,4 +49,7 @@ public interface SamlConfigAttributes {
     String SAML_ASSERTION_LIFESPAN = "saml.assertion.lifespan";
     String SAML_ARTIFACT_BINDING_IDENTIFIER = "saml.artifact.binding.identifier";
     String SAML_ALLOW_ECP_FLOW = "saml.allow.ecp.flow";
+    String SAML_USE_METADATA_DESCRIPTOR_URL = "saml.useMetadataDescriptorUrl";
+    String SAML_METADATA_DESCRIPTOR_URL = "saml.metadataDescriptorUrl";
+    String SAML_DESCRIPTOR_CACHE_SECONDS = "saml.descriptor.cache.seconds";
 }

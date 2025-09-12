@@ -80,7 +80,9 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
                     .helpText("Maximum interval in seconds that keys are cached when they are retrieved via all keys methods. "
                             + "When all keys for the entry are retrieved there is no way to detect if a key is missing "
                             + "(different to the case when the key is retrieved via ID for example). "
-                            + "In that situation this option forces a refresh from time to time. Default 24 hours.")
+                            + "In that situation this option forces a refresh from time to time. "
+                            + "This time can be overriden by the protocol (for example using cacheDuration or validUntil in the SAML descriptor). "
+                            + "Default 24 hours.")
                     .defaultValue(24*60*60)
                     .add()
                 .build();
