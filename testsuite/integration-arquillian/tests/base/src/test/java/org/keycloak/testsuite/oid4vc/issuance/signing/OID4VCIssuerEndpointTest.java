@@ -220,26 +220,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
     }
 
-    protected String getBearerToken(OAuthClient oAuthClient) {
-        return getBearerToken(oAuthClient, null);
-    }
-
-    protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client) {
-        return getBearerToken(oAuthClient, client, null);
-    }
-
-    protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client, String credentialScopeName) {
-        if (client != null) {
-            oAuthClient.client(client.getClientId(), client.getSecret());
-        }
-        if (credentialScopeName != null) {
-            oAuthClient.scope(credentialScopeName);
-        }
-        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john",
-                "password");
-        return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode()).getAccessToken();
-    }
-
     private ClientResource findClientByClientId(RealmResource realm, String clientId) {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (clientId.equals(c.getClientId())) {
