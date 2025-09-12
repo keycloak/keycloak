@@ -76,7 +76,7 @@ import static org.keycloak.services.clientpolicy.executor.FapiConstant.ALLOWED_A
  */
 public class AttestationValidatorUtil {
 
-    public static final String ATTESTATION_JWT_TYP = "keyattestation+jwt";
+    public static final String ATTESTATION_JWT_TYP = "key-attestation+jwt ";
     private static final String CACERTS_PATH = System.getProperty("javax.net.ssl.trustStore",
             System.getProperty("java.home") + "/lib/security/cacerts");
     private static final char[] DEFAULT_TRUSTSTORE_PASSWORD = System.getProperty(
