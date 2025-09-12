@@ -39,7 +39,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
 
     @Override
     protected ServiceMonitor desired(Keycloak primary, Context<Keycloak> context) {
-        var endpoint = managementEndpoint(primary, context);
+        var endpoint = managementEndpoint(primary, context, true);
         var meta = primary.getMetadata();
         var spec = ServiceMonitorSpec.get(primary);
         return new ServiceMonitorBuilder()

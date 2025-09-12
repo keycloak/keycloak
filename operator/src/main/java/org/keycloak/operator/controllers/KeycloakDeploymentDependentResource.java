@@ -356,7 +356,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // Set bind address as this is required for JGroups to form a cluster in IPv6 environments
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
-        ManagementEndpoint endpoint = managementEndpoint(keycloakCR, context);
+        var healthEnabled = readConfigurationValue(HTTP_MANAGEMENT_HEALTH_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(true);
+        ManagementEndpoint endpoint = managementEndpoint(keycloakCR, context, healthEnabled);
 
         // probes
         var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
@@ -645,12 +646,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     record ManagementEndpoint(String relativePath, String protocol, int port) {}
 
-    static ManagementEndpoint managementEndpoint(Keycloak keycloakCR, Context<Keycloak> context) {
+    static ManagementEndpoint managementEndpoint(Keycloak keycloakCR, Context<Keycloak> context, boolean useMgmtProtocolPort) {
         boolean tls = isTlsConfigured(keycloakCR);
         String protocol = tls ? "HTTPS" : "HTTP";
         int port;
 
-        if (readConfigurationValue(HTTP_MANAGEMENT_HEALTH_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(true)) {
+        if (useMgmtProtocolPort) {
             port = HttpManagementSpec.managementPort(keycloakCR);
             if (readConfigurationValue(HTTP_MANAGEMENT_SCHEME, keycloakCR, context).filter("http"::equals).isPresent()) {
                 protocol = "HTTP";
