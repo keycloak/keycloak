@@ -384,9 +384,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 .server(TEST_REALM_NAME)
                 .run((session -> {
                     OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
-                    Object issuerConfig = oid4VCIssuerWellKnownProvider.getConfig();
-                    assertTrue("Valid credential-issuer metadata should be returned.", issuerConfig instanceof CredentialIssuer);
-                    CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
+                    CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
                     assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
                     assertEquals("The correct nonce endpoint should be included.",
