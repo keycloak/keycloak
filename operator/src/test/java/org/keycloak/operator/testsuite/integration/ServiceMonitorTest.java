@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -51,9 +52,11 @@ public class ServiceMonitorTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(true, false);;
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
-        var sm = getServiceMonitor(kc);
-        assertThat(sm).isNotNull();
-        assertThat(sm.getSpec().getEndpoints()).hasSize(1);
+        Awaitility.await().untilAsserted(() -> {
+            var sm = getServiceMonitor(kc);
+            assertThat(sm).isNotNull();
+            assertThat(sm.getSpec().getEndpoints()).hasSize(1);
+        });
     }
 
     @Test
@@ -94,11 +97,13 @@ public class ServiceMonitorTest extends BaseOperatorTest {
         );
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
-        var sm = getServiceMonitor(kc);
-        assertThat(sm).isNotNull();
-        assertThat(sm.getSpec().getEndpoints()).hasSize(1);
-        assertThat(sm.getSpec().getEndpoints().get(0).getInterval()).isEqualTo("1s");
-        assertThat(sm.getSpec().getEndpoints().get(0).getScrapeTimeout()).isEqualTo("2s");
+        Awaitility.await().untilAsserted(() -> {
+            var sm = getServiceMonitor(kc);
+            assertThat(sm).isNotNull();
+            assertThat(sm.getSpec().getEndpoints()).hasSize(1);
+            assertThat(sm.getSpec().getEndpoints().get(0).getInterval()).isEqualTo("1s");
+            assertThat(sm.getSpec().getEndpoints().get(0).getScrapeTimeout()).isEqualTo("2s");
+        });
     }
 
     private ServiceMonitor getServiceMonitor(Keycloak kc) {
