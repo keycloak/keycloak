@@ -170,4 +170,45 @@ public class RetryConfigTest {
         assertFalse(config.isUseJitter());
         assertEquals(0.5, config.getJitterFactor(), 0.001); // Default value should still be set
     }
+
+    @Test
+    public void testEqualsWithSameValues() {
+        RetryConfig config1 = new RetryConfig.Builder()
+                .maxRetries(5)
+                .retryOnIOException(false)
+                .initialBackoffMillis(2000)
+                .backoffMultiplier(3.0)
+                .useJitter(true)
+                .jitterFactor(0.5)
+                .connectionTimeoutMillis(15000)
+                .socketTimeoutMillis(20000)
+                .build();
+
+        RetryConfig config2 = new RetryConfig.Builder()
+                .maxRetries(5)
+                .retryOnIOException(false)
+                .initialBackoffMillis(2000)
+                .backoffMultiplier(3.0)
+                .useJitter(true)
+                .jitterFactor(0.5)
+                .connectionTimeoutMillis(15000)
+                .socketTimeoutMillis(20000)
+                .build();
+
+        assertEquals(config1, config2);
+        assertEquals(config2, config1);
+        assertEquals(config1.hashCode(), config2.hashCode());
+    }
+
+    @Test
+    public void testEqualsWithNull() {
+        RetryConfig config = new RetryConfig.Builder().build();
+        assertNotEquals(config, null);
+    }
+
+    @Test
+    public void testEqualsSameInstance() {
+        RetryConfig config = new RetryConfig.Builder().build();
+        assertEquals(config, config);
+    }
 }

@@ -108,9 +108,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             @Override
             public CloseableHttpClient getRetriableHttpClient(RetryConfig retryConfig) {
                 // If using default config, return the cached client
-                if (retryConfig == null ||
-                    (defaultRetryConfig.getMaxRetries() == retryConfig.getMaxRetries() &&
-                     defaultRetryConfig.isRetryOnIOException() == retryConfig.isRetryOnIOException())) {
+                if (retryConfig == null || defaultRetryConfig.equals(retryConfig)) {
                     return retriableHttpClient;
                 }
 

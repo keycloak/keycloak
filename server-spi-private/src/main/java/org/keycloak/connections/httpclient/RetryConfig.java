@@ -179,6 +179,57 @@ public class RetryConfig {
     }
 
     /**
+     * Compares this RetryConfig with another object for equality.
+     * <p>
+     * Two RetryConfig objects are considered equal if all their configuration
+     * parameters match exactly.
+     *
+     * @param obj The object to compare with
+     * @return {@code true} if the objects are equal, {@code false} otherwise
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        RetryConfig that = (RetryConfig) obj;
+
+        if (maxRetries != that.maxRetries) return false;
+        if (retryOnIOException != that.retryOnIOException) return false;
+        if (initialBackoffMillis != that.initialBackoffMillis) return false;
+        if (Double.compare(backoffMultiplier, that.backoffMultiplier) != 0) return false;
+        if (useJitter != that.useJitter) return false;
+        if (Double.compare(jitterFactor, that.jitterFactor) != 0) return false;
+        if (connectionTimeoutMillis != that.connectionTimeoutMillis) return false;
+        return socketTimeoutMillis == that.socketTimeoutMillis;
+    }
+
+    /**
+     * Returns a hash code value for this RetryConfig.
+     * <p>
+     * This method is implemented to be consistent with {@link #equals(Object)},
+     * ensuring that equal RetryConfig objects have the same hash code.
+     *
+     * @return A hash code value for this object
+     */
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = maxRetries;
+        result = 31 * result + (retryOnIOException ? 1 : 0);
+        result = 31 * result + (int) (initialBackoffMillis ^ (initialBackoffMillis >>> 32));
+        temp = Double.doubleToLongBits(backoffMultiplier);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + (useJitter ? 1 : 0);
+        temp = Double.doubleToLongBits(jitterFactor);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        result = 31 * result + connectionTimeoutMillis;
+        result = 31 * result + socketTimeoutMillis;
+        return result;
+    }
+
+    /**
      * Builder for creating {@link RetryConfig} instances.
      * <p>
      * This builder uses the following defaults:
