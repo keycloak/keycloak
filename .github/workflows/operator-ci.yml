@@ -151,6 +151,11 @@ jobs:
           source: github
           opm: 1.21.0
 
+      - name: Install OC
+        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        with:
+          oc: 4
+
       - name: Install Yq
         run: sudo snap install yq
 
@@ -173,25 +178,15 @@ jobs:
           REGISTRY=$(minikube ip):5000 ./scripts/olm-testing.sh ${GITHUB_SHA::6}
 
       - name: Deploy an example Keycloak and wait for it to be ready
-        working-directory: operator
+        working-directory: operator/scripts
         run: |
-          kubectl apply -f src/test/resources/example-postgres.yaml
-          ./scripts/check-crds-installed.sh
-          kubectl apply -f src/test/resources/example-db-secret.yaml
-          kubectl apply -f src/test/resources/example-tls-secret.yaml
-          kubectl apply -f src/test/resources/example-keycloak.yaml
-          kubectl apply -f src/test/resources/example-realm.yaml
-          # Wait for the CRs to be ready
-          ./scripts/check-examples-installed.sh
+          ./check-crd-installed.sh keycloaks
+          ./check-crd-installed.sh keycloakrealmimports
+          ./deploy-examples.sh
           
       - name: Single namespace cleanup
-        working-directory: operator
-        run: |
-          kubectl delete -f src/test/resources/example-postgres.yaml
-          kubectl delete -f src/test/resources/example-db-secret.yaml
-          kubectl delete -f src/test/resources/example-tls-secret.yaml
-          kubectl delete -f src/test/resources/example-keycloak.yaml
-          kubectl delete -f src/test/resources/example-realm.yaml
+        working-directory: operator/scripts
+        run: ./undeploy-examples.sh
       
       - name: Arrange OLM test installation for all namespaces
         working-directory: operator
@@ -200,16 +195,40 @@ jobs:
           kubectl patch operatorgroup og --type json --patch '[{"op":"remove","path":"/spec/targetNamespaces"}]'
        
       - name: Deploy an example Keycloak in a different namespace and wait for it to be ready
-        working-directory: operator
+        working-directory: operator/scripts
         run: |
           kubectl create ns keycloak
-          kubectl apply -f src/test/resources/example-postgres.yaml -n keycloak
-          kubectl apply -f src/test/resources/example-db-secret.yaml -n keycloak
-          kubectl apply -f src/test/resources/example-tls-secret.yaml -n keycloak
-          kubectl apply -f src/test/resources/example-keycloak.yaml -n keycloak
-          kubectl apply -f src/test/resources/example-realm.yaml -n keycloak
-          # Wait for the CRs to be ready
-          ./scripts/check-examples-installed.sh keycloak
+          ./deploy-examples.sh keycloak
+          ./undeploy-examples.sh keycloak
+
+      - name: Install ServiceMonitor CRD
+        working-directory: operator
+        run: |
+          kubectl apply -f src/test/resources/service-monitor-crds.yml
+          ./scripts/check-crd-installed.sh servicemonitors
+
+      - name: Deploy an example Keycloak with ServiceMonitor
+        working-directory: operator/scripts
+        run: |
+          ./deploy-examples.sh keycloak
+          kubectl -n keycloak wait servicemonitor/example-kc --for=jsonpath='{.metadata.name}' --timeout=60s
+
+      - name: Debug Custom Resources
+        if: failure()
+        run: |
+          kubectl get keycloaks -A -o yaml
+          kubectl get keycloakrealmimports -A -o yaml
+
+      - name: Gather inspect report
+        if: failure()
+        run: oc adm inspect ns
+
+      - name: Upload inspect report
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: oc-inspect
+          path: inspect.*
 
   check:
     name: Status Check - Keycloak Operator CI
