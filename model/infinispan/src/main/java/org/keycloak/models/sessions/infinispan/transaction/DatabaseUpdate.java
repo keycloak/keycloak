@@ -17,38 +17,19 @@
 
 package org.keycloak.models.sessions.infinispan.transaction;
 
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 
-public class DefaultInfinispanTransactionProviderFactory implements InfinispanTransactionProviderFactory{
+/**
+ * A pending (blocking) database update.
+ */
+@FunctionalInterface
+public interface DatabaseUpdate {
 
-    public static final String ID = "default";
+    /**
+     * Write the database changes using the {@code session} provided.
+     *
+     * @param session The {@link KeycloakSession}.
+     */
+    void write(KeycloakSession session);
 
-    @Override
-    public InfinispanTransactionProvider create(KeycloakSession session) {
-        var provider = new DefaultInfinispanTransactionProvider(session);
-        session.getTransactionManager().enlistAfterCompletion(provider);
-        return provider;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public void close() {
-
-    }
-
-    @Override
-    public String getId() {
-        return ID;
-    }
 }

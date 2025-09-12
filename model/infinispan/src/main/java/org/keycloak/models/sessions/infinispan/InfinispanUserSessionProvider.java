@@ -56,7 +56,6 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
@@ -108,22 +107,18 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
                                          InfinispanKeyGenerator keyGenerator,
-                                         Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
-                                         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
-                                         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache,
-                                         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache,
+                                         InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
+                                         InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
+                                         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionTx,
+                                         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> offlineClientSessionTx,
                                          SessionFunction<UserSessionEntity> offlineSessionCacheEntryLifespanAdjuster,
-                                         SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster,
-                                         SerializeExecutionsByKey<String> serializerSession,
-                                         SerializeExecutionsByKey<String> serializerOfflineSession,
-                                         SerializeExecutionsByKey<UUID> serializerClientSession,
-                                         SerializeExecutionsByKey<UUID> serializerOfflineClientSession) {
+                                         SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster) {
         this.session = session;
 
-        this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCache, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, serializerSession);
-        this.offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCache, offlineSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineSessionMaxIdleMs, serializerOfflineSession);
-        this.clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCache, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs, serializerClientSession);
-        this.offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCache, offlineClientSessionCacheEntryLifespanAdjuster, SessionTimeouts::getOfflineClientSessionMaxIdleMs, serializerOfflineClientSession);
+        this.sessionTx = sessionTx;
+        this.offlineSessionTx = offlineSessionTx;
+        this.clientSessionTx = clientSessionTx;
+        this.offlineClientSessionTx = offlineClientSessionTx;
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
@@ -133,10 +128,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         this.offlineClientSessionCacheEntryLifespanAdjuster = offlineClientSessionCacheEntryLifespanAdjuster;
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
-        session.getTransactionManager().enlistAfterCompletion(sessionTx);
-        session.getTransactionManager().enlistAfterCompletion(offlineSessionTx);
-        session.getTransactionManager().enlistAfterCompletion(clientSessionTx);
-        session.getTransactionManager().enlistAfterCompletion(offlineClientSessionTx);
     }
 
     protected Cache<String, SessionEntityWrapper<UserSessionEntity>> getCache(boolean offline) {

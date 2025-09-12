@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,17 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import org.infinispan.Cache;
+import org.infinispan.util.concurrent.ActionSequencer;
+import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
-import java.util.Map;
-
-public interface SessionChangesPerformer<K, V extends SessionEntity> {
-    default boolean shouldConsumeChange(V entity) {
-        return true;
-    }
-
-    void registerChange(Map.Entry<K, SessionUpdatesList<V>> entry, MergedUpdate<V> merged);
-
-    void applyChanges();
+/**
+ * Groups the {@link Cache}, the {@link ActionSequencer} (used by replace method) and the {@link SessionFunction} to
+ * compute the lifespan, and the max-idle for this session entity.
+ */
+public record CacheInfo<K, V extends SessionEntity>(Cache<K, SessionEntityWrapper<V>> cache,
+                                                    ActionSequencer sequencer,
+                                                    SessionFunction<V> lifespanFunction,
+                                                    SessionFunction<V> maxIdleFunction) {
 }

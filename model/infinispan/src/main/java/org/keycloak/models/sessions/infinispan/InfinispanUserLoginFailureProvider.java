@@ -24,7 +24,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.SerializeExecutionsByKey;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
@@ -35,7 +34,6 @@ import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransac
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
-import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import java.util.concurrent.Future;
 
@@ -52,20 +50,15 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
     protected final KeycloakSession session;
 
 
-    protected final Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache;
     protected final InfinispanChangelogBasedTransaction<LoginFailureKey, LoginFailureEntity> loginFailuresTx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
     public InfinispanUserLoginFailureProvider(KeycloakSession session,
-                                              Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache,
-                                              SerializeExecutionsByKey<LoginFailureKey> serializer) {
+                                              InfinispanChangelogBasedTransaction<LoginFailureKey, LoginFailureEntity> loginFailuresTx) {
         this.session = session;
-        this.loginFailureCache = loginFailureCache;
-        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, loginFailureCache, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs, serializer);
+        this.loginFailuresTx = loginFailuresTx;
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
-
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
-        session.getTransactionManager().enlistAfterCompletion(loginFailuresTx);
     }
 
 
@@ -113,7 +106,7 @@ public class InfinispanUserLoginFailureProvider implements UserLoginFailureProvi
 
         FuturesHelper futures = new FuturesHelper();
 
-        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCache = CacheDecorators.localCache(loginFailureCache);
+        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCache = CacheDecorators.localCache(loginFailuresTx.getCache());
 
         // Go through local cache data only
         // entries from other nodes will be removed by each instance receiving the event

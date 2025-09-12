@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.MetadataValue;
@@ -35,6 +36,7 @@ import org.keycloak.models.sessions.infinispan.changes.remote.remover.Conditiona
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Expiration;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
+import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 
 /**
@@ -62,7 +64,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
     }
 
     @Override
-    public void asyncCommit(AggregateCompletionStage<Void> stage) {
+    public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
         conditionalRemover.executeRemovals(getCache(), stage);
 
         for (var updater : entityChanges.values()) {

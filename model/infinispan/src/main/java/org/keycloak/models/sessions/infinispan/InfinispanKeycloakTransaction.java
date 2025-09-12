@@ -16,21 +16,24 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.BasicCache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.context.Flag;
-import org.keycloak.models.KeycloakTransaction;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
+import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class InfinispanKeycloakTransaction implements KeycloakTransaction {
+public class InfinispanKeycloakTransaction implements NonBlockingTransaction {
 
     private final static Logger log = Logger.getLogger(InfinispanKeycloakTransaction.class);
 
@@ -39,7 +42,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
      */
     private static final CacheTask TOMBSTONE = new CacheTask() {
         @Override
-        public void execute() {
+        public void execute(AggregateCompletionStage<Void> stage) {
             // noop
         }
 
@@ -49,46 +52,22 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         }
     };
 
-    public enum CacheOperation {
+    private final Map<Object, CacheTask> tasks = new HashMap<>();
+
+    private enum CacheOperation {
         ADD_WITH_LIFESPAN, REMOVE, REPLACE
     }
 
-    private boolean active;
-    private boolean rollback;
-    private final Map<Object, CacheTask> tasks = new LinkedHashMap<>();
-
     @Override
-    public void begin() {
-        active = true;
-    }
-
-    @Override
-    public void commit() {
-        if (rollback) {
-            throw new RuntimeException("Rollback only!");
+    public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
+        for (var task : tasks.values()) {
+            task.execute(stage);
         }
-
-        tasks.values().forEach(CacheTask::execute);
     }
 
     @Override
-    public void rollback() {
+    public void asyncRollback(AggregateCompletionStage<Void> stage) {
         tasks.clear();
-    }
-
-    @Override
-    public void setRollbackOnly() {
-        rollback = true;
-    }
-
-    @Override
-    public boolean getRollbackOnly() {
-        return rollback;
-    }
-
-    @Override
-    public boolean isActive() {
-        return active;
     }
 
     public <K, V> void put(BasicCache<K, V> cache, K key, V value, long lifespan, TimeUnit lifespanUnit) {
@@ -100,8 +79,8 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         } else {
             tasks.put(taskKey, new CacheTaskWithValue<V>(value, lifespan, lifespanUnit) {
                 @Override
-                public void execute() {
-                    decorateCache(cache).put(key, value, lifespan, lifespanUnit);
+                public void execute(AggregateCompletionStage<Void> stage) {
+                    stage.dependsOn(decorateCache(cache).putAsync(key, value, lifespan, lifespanUnit));
                 }
 
                 @Override
@@ -133,8 +112,8 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         } else {
             tasks.put(taskKey, new CacheTaskWithValue<V>(value, lifespan, lifespanUnit) {
                 @Override
-                public void execute() {
-                    decorateCache(cache).replace(key, value, lifespan, lifespanUnit);
+                public void execute(AggregateCompletionStage<Void> stage) {
+                    stage.dependsOn(decorateCache(cache).replaceAsync(key, value, lifespan, lifespanUnit));
                 }
 
                 @Override
@@ -165,8 +144,8 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         tasks.put(taskKey, new CacheTask() {
 
             @Override
-            public void execute() {
-                decorateCache(cache).remove(key);
+            public void execute(AggregateCompletionStage<Void> stage) {
+                stage.dependsOn(decorateCache(cache).removeAsync(key));
             }
 
             @Override
@@ -196,26 +175,20 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
     }
 
     private static <K, V> Object getTaskKey(BasicCache<K, V> cache, K key) {
-        if (key instanceof String) {
-            return new StringBuilder(cache.getName())
-                    .append("::")
-                    .append(key).toString();
-        } else {
-            return key;
-        }
+        return key instanceof String ? cache.getName() + "::" + key : key;
     }
 
-    public interface CacheTask {
-        void execute();
+    private interface CacheTask {
+        void execute(AggregateCompletionStage<Void> stage);
 
         default Operation getOperation() {
             return Operation.OTHER;
         }
     }
 
-    public enum Operation { PUT, REMOVE, OTHER }
+    private enum Operation { PUT, REMOVE, OTHER }
 
-    public static abstract class CacheTaskWithValue<V> implements CacheTask {
+    private static abstract class CacheTaskWithValue<V> implements CacheTask {
         protected V value;
         protected long lifespan;
         protected TimeUnit lifespanUnit;
@@ -242,9 +215,8 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
     // Ignore return values. Should have better performance within cluster
     private static <K, V> BasicCache<K, V> decorateCache(BasicCache<K, V> cache) {
-        if (cache instanceof RemoteCache)
-            return cache;
-        return ((Cache) cache).getAdvancedCache()
-                .withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP);
+        return cache instanceof Cache<K, V> c ?
+                c.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP) :
+                cache;
     }
 }

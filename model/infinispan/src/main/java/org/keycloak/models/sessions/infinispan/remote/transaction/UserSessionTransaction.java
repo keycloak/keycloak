@@ -17,8 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
+import java.util.function.Consumer;
+
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 
 /**
@@ -42,11 +45,11 @@ public class UserSessionTransaction implements NonBlockingTransaction {
     }
 
     @Override
-    public void asyncCommit(AggregateCompletionStage<Void> stage) {
-        userSessions.asyncCommit(stage);
-        clientSessions.asyncCommit(stage);
-        offlineUserSessions.asyncCommit(stage);
-        offlineClientSessions.asyncCommit(stage);
+    public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
+        userSessions.asyncCommit(stage, databaseUpdates);
+        clientSessions.asyncCommit(stage, databaseUpdates);
+        offlineUserSessions.asyncCommit(stage, databaseUpdates);
+        offlineClientSessions.asyncCommit(stage, databaseUpdates);
     }
 
     @Override
