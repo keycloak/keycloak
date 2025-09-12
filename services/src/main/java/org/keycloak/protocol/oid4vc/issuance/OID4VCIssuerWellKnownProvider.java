@@ -108,11 +108,25 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         CredentialResponseEncryptionMetadata responseEnc = getCredentialResponseEncryption(keycloakSession);
         CredentialRequestEncryptionMetadata requestEnc = getCredentialRequestEncryption(keycloakSession);
 
-        // Enforce: do not advertise response encryption if request encryption cannot be advertised.
+        // Keep response encryption metadata even if request encryption metadata is missing
         if (responseEnc != null && requestEnc == null) {
-            LOGGER.debug("Omitting credential_response_encryption from metadata because credential_request_encryption is not available."
-                    + " This enforces the requirement that request encryption MUST be used if response encryption is advertised.");
-            responseEnc = null;
+            LOGGER.warn("credential_response_encryption is advertised but credential_request_encryption metadata is not available. " +
+                    "If response encryption is included, request encryption should also be included. " +
+                    "keep response metadata and setting encryption_required=false.");
+            if (Boolean.TRUE.equals(responseEnc.getEncryptionRequired())) {
+                responseEnc.setEncryptionRequired(false);
+            }
+        }
+
+        // Consistency rule: if both are present and response encryption is required, mark request encryption as required too
+        if (responseEnc != null && requestEnc != null) {
+            boolean responseRequired = Boolean.TRUE.equals(responseEnc.getEncryptionRequired());
+            boolean requestRequired = Boolean.TRUE.equals(requestEnc.isEncryptionRequired());
+            if (responseRequired && !requestRequired) {
+                LOGGER.warn("credential_response_encryption.encryption_required=true while credential_request_encryption.encryption_required is false. " +
+                        "Marking request encryption as required to maintain consistency.");
+                requestEnc.setEncryptionRequired(true);
+            }
         }
 
         return new CredentialIssuer()
