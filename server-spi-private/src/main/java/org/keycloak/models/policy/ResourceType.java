@@ -23,25 +23,35 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderEvent;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 public enum ResourceType {
 
-    USERS(org.keycloak.events.admin.ResourceType.USER, List.of(OperationType.CREATE), List.of(EventType.LOGIN, EventType.REGISTER));
+    USERS(
+            org.keycloak.events.admin.ResourceType.USER,
+            List.of(OperationType.CREATE),
+            List.of(EventType.LOGIN, EventType.REGISTER),
+            (session, id) -> session.users().getUserById(session.getContext().getRealm(), id)
+    );
 
     private final org.keycloak.events.admin.ResourceType supportedAdminResourceType;
     private final List<OperationType> supportedAdminOperationTypes;
     private final List<EventType> supportedEventTypes;
+    private final BiFunction<KeycloakSession, String, ?> resourceResolver;
 
     ResourceType(org.keycloak.events.admin.ResourceType supportedAdminResourceType,
                  List<OperationType> supportedAdminOperationTypes,
-                 List<EventType> supportedEventTypes) {
+                 List<EventType> supportedEventTypes,
+                 BiFunction<KeycloakSession, String, ?> resourceResolver) {
         this.supportedAdminResourceType = supportedAdminResourceType;
         this.supportedAdminOperationTypes = supportedAdminOperationTypes;
         this.supportedEventTypes = supportedEventTypes;
+        this.resourceResolver = resourceResolver;
     }
 
     public ResourcePolicyEvent toEvent(AdminEvent event) {
@@ -83,5 +93,9 @@ public enum ResourceType {
         }
 
         return new ResourcePolicyEvent(this, resourceOperationType, resourceId, event);
+    }
+
+    public Object resolveResource(KeycloakSession session, String id) {
+        return resourceResolver.apply(session, id);
     }
 }

@@ -113,10 +113,11 @@ public final class CacheConfigurator {
     public static void applyDefaultConfiguration(ConfigurationBuilderHolder holder, boolean warnMutate) {
         var configs = holder.getNamedConfigurationBuilders();
         boolean userProvidedConfig = false;
+        boolean clustered = holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
         for (var name : ALL_CACHES_NAME) {
             var config = configs.get(name);
             if (config == null) {
-                configs.put(name, getCacheConfiguration(name));
+                configs.put(name, getCacheConfiguration(name, clustered));
             } else if (!userProvidedConfig) {
                 userProvidedConfig = true;
             }
@@ -354,7 +355,7 @@ public final class CacheConfigurator {
     // cache configuration below
 
     public static ConfigurationBuilder getCrlCacheConfig() {
-        return getCacheConfiguration(CRL_CACHE_NAME);
+        return getCacheConfiguration(CRL_CACHE_NAME, true);
     }
 
     public static ConfigurationBuilder getRevisionCacheConfig(long maxEntries) {
@@ -391,7 +392,7 @@ public final class CacheConfigurator {
      * Returns a cache's default configuration.
      * Revision caches are not returned as their configuration depends on their associated cache's configuration.
      */
-    public static ConfigurationBuilder getCacheConfiguration(String cacheName) {
+    public static ConfigurationBuilder getCacheConfiguration(String cacheName, boolean clustered) {
         var builder = new ConfigurationBuilder();
         switch (cacheName) {
             // Distributed Caches
@@ -399,13 +400,17 @@ public final class CacheConfigurator {
             case USER_SESSION_CACHE_NAME:
             case OFFLINE_CLIENT_SESSION_CACHE_NAME:
             case OFFLINE_USER_SESSION_CACHE_NAME:
-                builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);
+                if (clustered) {
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);
+                }
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
                 return builder;
             case ACTION_TOKEN_CACHE:
             case AUTHENTICATION_SESSIONS_CACHE_NAME:
             case LOGIN_FAILURE_CACHE_NAME:
-                builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+                if (clustered) {
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+                }
                 builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
                 return builder;
             // Local Caches
@@ -426,7 +431,9 @@ public final class CacheConfigurator {
                 return builder;
             // Replicated caches
             case WORK_CACHE_NAME:
-                builder.clustering().cacheMode(CacheMode.REPL_SYNC);
+                if (clustered) {
+                    builder.clustering().cacheMode(CacheMode.REPL_SYNC);
+                }
                 return builder;
             default:
                 return null;

@@ -21,6 +21,8 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.WatchedResources;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.update.UpdateType;
 
 import java.util.Optional;
@@ -28,6 +30,7 @@ import java.util.Optional;
 public final class ContextUtils {
 
     // context keys
+    public static final String KEYCLOAK = "keycloak";
     public static final String OLD_DEPLOYMENT_KEY = "current_stateful_set";
     public static final String NEW_DEPLOYMENT_KEY = "desired_new_stateful_set";
     public static final String UPDATE_TYPE_KEY = "update_type";
@@ -90,5 +93,13 @@ public final class ContextUtils {
 
     public static KeycloakDistConfigurator getDistConfigurator(Context<?> context) {
         return context.managedWorkflowAndDependentResourceContext().getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class);
+    }
+
+    public static void storeKeycloak(Context<KeycloakRealmImport> context, Keycloak existingKeycloak) {
+        context.managedWorkflowAndDependentResourceContext().put(KEYCLOAK, existingKeycloak);
+    }
+
+    public static Keycloak getKeycloak(Context<?> context) {
+        return context.managedWorkflowAndDependentResourceContext().getMandatory(KEYCLOAK, Keycloak.class);
     }
 }

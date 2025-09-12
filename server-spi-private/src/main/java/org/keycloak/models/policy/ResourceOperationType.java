@@ -20,7 +20,8 @@ public enum ResourceOperationType {
     ADD_FEDERATED_IDENTITY(new Class[] {FederatedIdentityCreatedEvent.class}, new Class[] {FederatedIdentityRemovedEvent.class}),
     REMOVE_FEDERATED_IDENTITY(FederatedIdentityRemovedEvent.class),
     GROUP_MEMBERSHIP_JOIN(GroupMemberJoinEvent.class),
-    ROLE_GRANTED(new Class[] {RoleGrantedEvent.class}, new Class[] {RoleRevokedEvent.class});
+    ROLE_GRANTED(new Class[] {RoleGrantedEvent.class}, new Class[] {RoleRevokedEvent.class}),
+    AD_HOC(new Class[] {});
 
     private final List<Object> types;
     private final List<Object> deactivationTypes;

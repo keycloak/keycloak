@@ -135,6 +135,9 @@ spec:
   update:
     strategy: Auto
     revision: 1
+    scheduling: {}
+  scheduling:
+    priorityClassName: x
   env:
     - name : MY_ENV_VAR
       value: my-value

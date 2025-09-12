@@ -82,7 +82,7 @@ NOTE: If a `http-relative-path` is configured, configure a reverse proxy to map 
 
 === Operator default affinity configuration changed
 
-The default affinity strategy has been updated so that a `preferredDuringSchedulingIgnoredDuringExecution` anti-affinity rule
+The default scheduling strategy has been updated so that a topology spread constraint
 is created for both zones and nodes in order to increase availability in the presence of failures. Previously the default
 preferred that all nodes were deployed to the same availability zone. See the link:{highavailabilityguide_link}[{highavailabilityguide_name}]
 for more details.

@@ -18,10 +18,16 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import jakarta.ws.rs.core.UriInfo;
+import org.apache.http.HttpHeaders;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -34,9 +40,12 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.jboss.logging.Logger;
 import org.keycloak.jose.jwk.JWK;
@@ -44,10 +53,13 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.constants.Oid4VciConstants.SIGNED_METADATA_JWT_TYPE;
 import static org.keycloak.crypto.KeyType.RSA;
+import static org.keycloak.jose.jwk.RSAPublicJWK.RS256;
 
 /**
  * {@link WellKnownProvider} implementation to provide the .well-known/openid-credential-issuer endpoint, offering
@@ -58,13 +70,18 @@ import static org.keycloak.crypto.KeyType.RSA;
  */
 public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
-    public static final String VC_KEY = "vc";
-
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
 
-    protected final KeycloakSession keycloakSession;
+    // Realm attributes for signed metadata configuration
+    public static final String SIGNED_METADATA_ENABLED_ATTR = "oid4vci.signed_metadata.enabled";
+    public static final String SIGNED_METADATA_LIFESPAN_ATTR = "oid4vci.signed_metadata.lifespan";
+    public static final String SIGNED_METADATA_ALG_ATTR = "oid4vci.signed_metadata.alg";
 
+    public static final String VC_KEY = "vc";
     public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
+
+
+    protected final KeycloakSession keycloakSession;
 
     public OID4VCIssuerWellKnownProvider(KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
@@ -77,8 +94,13 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     @Override
     public Object getConfig() {
+        CredentialIssuer issuer = getIssuerMetadata();
+        return getMetadataResponse(issuer, keycloakSession);
+    }
+
+    public CredentialIssuer getIssuerMetadata() {
         KeycloakContext context = keycloakSession.getContext();
-        CredentialIssuer issuer = new CredentialIssuer()
+        return new CredentialIssuer()
                 .setCredentialIssuer(getIssuer(context))
                 .setCredentialEndpoint(getCredentialsEndpoint(context))
                 .setNonceEndpoint(getNonceEndpoint(context))
@@ -86,8 +108,24 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(getCredentialResponseEncryption(keycloakSession))
-                .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
-                .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession));
+                .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession))
+                .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession));
+    }
+
+    public Object getMetadataResponse(CredentialIssuer issuer, KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        String acceptHeader = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT);
+        boolean preferJwt = acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JWT);
+        boolean signedMetadataEnabled = Boolean.parseBoolean(realm.getAttribute(SIGNED_METADATA_ENABLED_ATTR));
+
+        if (preferJwt && signedMetadataEnabled) {
+            Optional<String> signedJwt = generateSignedMetadata(issuer, session);
+            if (signedJwt.isPresent()) {
+                return signedJwt.get();
+            } else {
+                LOGGER.debugf("Falling back to JSON response due to signed metadata failure for realm: %s", realm.getName());
+            }
+        }
         return issuer;
     }
 
@@ -125,7 +163,125 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     /**
-     * Returns the credential response encryption высоко for the issuer.
+     * Generates signed metadata as a JWS using JsonWebToken infrastructure.
+     *
+     * @param metadata The CredentialIssuer metadata object to sign.
+     * @param session  The Keycloak session.
+     * @return Optional containing the compact JWS string if successful, empty if fallback to unsigned JSON is needed.
+     */
+    public Optional<String> generateSignedMetadata(CredentialIssuer metadata, KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        KeyManager keyManager = session.keys();
+
+        // Select asymmetric signing algorithm
+        String alg;
+        try {
+            alg = getSigningAlgorithm(realm, session);
+        } catch (IllegalStateException e) {
+            LOGGER.warnf("Failed to get signing algorithm: %s. Falling back to unsigned metadata.", e.getMessage());
+            return Optional.empty(); // Return empty to indicate fallback to JSON
+        }
+
+        // Retrieve active key
+        KeyWrapper keyWrapper = keyManager.getActiveKey(realm, KeyUse.SIG, alg);
+        if (keyWrapper == null) {
+            LOGGER.warnf("No active key found for realm '%s' with algorithm '%s'. Falling back to unsigned metadata.", realm.getName(), alg);
+            return Optional.empty();
+        }
+
+        // Create JsonWebToken with metadata as claims
+        JsonWebToken jwt = createMetadataJwt(metadata, realm);
+
+        // Validate lifespan configuration
+        String lifespanStr = realm.getAttribute(SIGNED_METADATA_LIFESPAN_ATTR);
+        if (lifespanStr != null) {
+            try {
+                long lifespan = Long.parseLong(lifespanStr);
+                jwt.exp(Time.currentTime() + lifespan);
+            } catch (NumberFormatException e) {
+                LOGGER.warnf("Invalid lifespan duration for signed metadata: %s. Falling back to unsigned metadata.", lifespanStr);
+                return Optional.empty(); // Return empty to indicate fallback to JSON
+            }
+        }
+
+        // Build JWS with proper headers
+        JWSBuilder jwsBuilder = new JWSBuilder()
+                .type(SIGNED_METADATA_JWT_TYPE)
+                .kid(keyWrapper.getKid());
+
+        // Add x5c certificate chain if available
+        addCertificateHeaders(jwsBuilder, keyWrapper, realm);
+
+        // Sign the JWS
+        SignatureProvider signerProvider = session.getProvider(SignatureProvider.class, alg);
+        if (signerProvider == null) {
+            LOGGER.warnf("No signature provider for algorithm: %s. Falling back to unsigned metadata.", alg);
+            return Optional.empty();
+        }
+
+        SignatureSignerContext signer = signerProvider.signer(keyWrapper);
+        if (signer == null) {
+            LOGGER.warnf("No signer context for algorithm: %s. Falling back to unsigned metadata.", alg);
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(jwsBuilder.jsonContent(jwt).sign(signer));
+        } catch (Exception e) {
+            LOGGER.warnf(e, "Failed to sign metadata. Falling back to unsigned metadata.");
+            return Optional.empty();
+        }
+    }
+
+
+    private String getSigningAlgorithm(RealmModel realm, KeycloakSession session) {
+        List<String> supportedAlgorithms = getSupportedAsymmetricSignatureAlgorithms(session);
+
+        if (supportedAlgorithms.isEmpty()) {
+            throw new IllegalStateException("No asymmetric signing algorithms available for realm: " + realm.getName());
+        }
+
+        String configuredAlg = realm.getAttribute(SIGNED_METADATA_ALG_ATTR);
+        if (configuredAlg != null) {
+            if (!supportedAlgorithms.contains(configuredAlg)) {
+                throw new IllegalStateException("Configured signing algorithm '" + configuredAlg + "' is not supported for realm: " + realm.getName());
+            }
+            // Use the configured algorithm if present and supported
+            return configuredAlg;
+        }
+
+        // Prefer RS256 if available, otherwise use the first supported asymmetric algorithm
+        return supportedAlgorithms.contains(RS256) ? RS256 : supportedAlgorithms.get(0);
+    }
+
+    private JsonWebToken createMetadataJwt(CredentialIssuer metadata, RealmModel realm) {
+        JsonWebToken jwt = new JsonWebToken();
+
+        // Set standard JWT claims
+        jwt.subject(metadata.getCredentialIssuer());
+        jwt.issuer(metadata.getCredentialIssuer());
+        jwt.issuedNow();
+
+        // Convert metadata to map and add as other claims
+        Map<String, Object> metadataClaims = JsonSerialization.mapper.convertValue(metadata, Map.class);
+        metadataClaims.forEach(jwt::setOtherClaims);
+
+        return jwt;
+    }
+
+    private void addCertificateHeaders(JWSBuilder jwsBuilder, KeyWrapper keyWrapper, RealmModel realm) {
+        if (keyWrapper.getCertificateChain() != null && !keyWrapper.getCertificateChain().isEmpty()) {
+            jwsBuilder.x5c(keyWrapper.getCertificateChain());
+        } else if (keyWrapper.getCertificate() != null) {
+            jwsBuilder.x5c(List.of(keyWrapper.getCertificate()));
+        } else {
+            LOGGER.debugf("No certificate or certificate chain available for x5c header in realm: %s", realm.getName());
+        }
+    }
+
+
+    /**
+     * Returns the credential response encryption for the issuer.
      * Now determines supported algorithms from available realm keys.
      *
      * @param session The Keycloak session
@@ -304,6 +460,15 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the supported asymmetric signature algorithms.
+     * Delegates to CryptoUtils for shared implementation with OIDCWellKnownProvider.
+     * This includes all asymmetric algorithms supported by Keycloak (RSA, EC, EdDSA).
+     */
+    public static List<String> getSupportedAsymmetricSignatureAlgorithms(KeycloakSession session) {
+        return CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
     }
 
 }
