@@ -244,6 +244,32 @@ export const RealmSettingsSessionsTab = ({
           </FormGroup>
 
           <FormGroup
+            label={t("clientOfflineSessionIdle")}
+            fieldId="clientOfflineSessionIdle"
+            labelIcon={
+              <HelpItem
+                helpText={t("clientOfflineSessionIdleHelp")}
+                fieldLabelId="clientOfflineSessionIdle"
+              />
+            }
+          >
+            <Controller
+              name="clientOfflineSessionIdleTimeout"
+              control={control}
+              render={({ field }) => (
+                <TimeSelector
+                  className="kc-client-offline-session-idle"
+                  data-testid="client-offline-session-idle-input"
+                  aria-label="client-offline-session-idle-input"
+                  value={field.value!}
+                  onChange={field.onChange}
+                  units={["minute", "hour", "day"]}
+                />
+              )}
+            />
+          </FormGroup>
+
+          <FormGroup
             hasNoPaddingTop
             label={t("offlineSessionMaxLimited")}
             fieldId="kc-offlineSessionMaxLimited"
@@ -290,6 +316,33 @@ export const RealmSettingsSessionsTab = ({
                   <TimeSelector
                     className="kc-offline-session-max"
                     data-testid="offline-session-max-input"
+                    value={field.value!}
+                    onChange={field.onChange}
+                    units={["minute", "hour", "day"]}
+                  />
+                )}
+              />
+            </FormGroup>
+          )}
+          {offlineSessionMaxEnabled && (
+            <FormGroup
+              label={t("clientOfflineSessionMax")}
+              fieldId="clientOfflineSessionMax"
+              id="client-offline-session-max-label"
+              labelIcon={
+                <HelpItem
+                  helpText={t("clientOfflineSessionMaxHelp")}
+                  fieldLabelId="clientOfflineSessionMax"
+                />
+              }
+            >
+              <Controller
+                name="clientOfflineSessionMaxLifespan"
+                control={control}
+                render={({ field }) => (
+                  <TimeSelector
+                    className="kc-client-offline-session-max"
+                    data-testid="client-offline-session-max-input"
                     value={field.value!}
                     onChange={field.onChange}
                     units={["minute", "hour", "day"]}
