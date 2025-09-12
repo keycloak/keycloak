@@ -41,8 +41,6 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.OAuth2Constants;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -685,13 +683,6 @@ public class OID4VCIssuerEndpoint {
             }
         }
         throw new JWEException("Unsupported compression algorithm");
-    }
-
-    private boolean looksLikeCompactJwe(String payload) {
-        if (payload == null) return false;
-        // Compact JWE serialization consists of 5 dot-separated base64url parts
-        int parts = payload.split("\\.").length;
-        return parts == 5;
     }
 
     private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {

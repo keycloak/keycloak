@@ -42,6 +42,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.config.CachingOptions;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
 import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -245,7 +246,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
      */
     @Deprecated(since = "26.3", forRemoval = true)
     protected Configuration getKeysCacheConfig() {
-        return CacheConfigurator.getCacheConfiguration(KEYS_CACHE_NAME).build();
+        return CacheConfigurator.getCacheConfiguration(KEYS_CACHE_NAME, true).build();
     }
 
     /**

@@ -388,9 +388,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 .server(TEST_REALM_NAME)
                 .run((session -> {
                     OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
-                    Object issuerConfig = oid4VCIssuerWellKnownProvider.getConfig();
-                    assertTrue("Valid credential-issuer metadata should be returned.", issuerConfig instanceof CredentialIssuer);
-                    CredentialIssuer credentialIssuer = (CredentialIssuer) issuerConfig;
+                    CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
                     assertEquals("The correct issuer should be included.", expectedIssuer, credentialIssuer.getCredentialIssuer());
                     assertEquals("The correct credentials endpoint should be included.", expectedCredentialsEndpoint, credentialIssuer.getCredentialEndpoint());
                     assertEquals("The correct nonce endpoint should be included.",
@@ -421,19 +419,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     assertNotNull("The sd-jwt-credential can optionally provide a claims claim.",
                             jwtVcClaims);
 
-                    assertEquals(5,  jwtVcClaims.size());
+                    assertEquals(4,  jwtVcClaims.size());
                     {
                         Claim claim = jwtVcClaims.get(0);
-                        assertEquals("The sd-jwt-credential claim roles is present.",
-                                "roles",
-                                claim.getPath().get(0));
-                        assertFalse("The sd-jwt-credential claim roles is not mandatory.",
-                                claim.isMandatory());
-                        assertNull("The sd-jwt-credential claim roles has no display configured",
-                                claim.getDisplay());
-                    }
-                    {
-                        Claim claim = jwtVcClaims.get(1);
                         assertEquals("The sd-jwt-credential claim email is present.",
                                 "email",
                                 claim.getPath().get(0));
@@ -443,7 +431,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 claim.getDisplay());
                     }
                     {
-                        Claim claim = jwtVcClaims.get(2);
+                        Claim claim = jwtVcClaims.get(1);
                         assertEquals("The sd-jwt-credential claim firstName is present.",
                                 "firstName",
                                 claim.getPath().get(0));
@@ -453,7 +441,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 claim.getDisplay());
                     }
                     {
-                        Claim claim = jwtVcClaims.get(3);
+                        Claim claim = jwtVcClaims.get(2);
                         assertEquals("The sd-jwt-credential claim lastName is present.",
                                 "lastName",
                                 claim.getPath().get(0));
@@ -463,7 +451,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                 claim.getDisplay());
                     }
                     {
-                        Claim claim = jwtVcClaims.get(4);
+                        Claim claim = jwtVcClaims.get(3);
                         assertEquals("The sd-jwt-credential claim scope-name is present.",
                                 "scope-name",
                                 claim.getPath().get(0));
@@ -582,7 +570,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             assertEquals("firstName claim incorrectly mapped.", "John", disclosureMap.get("firstName").get(2).asText());
             assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));
             assertEquals("lastName claim incorrectly mapped.", "Doe", disclosureMap.get("lastName").get(2).asText());
-            assertTrue("The credentials should include the roles claim.", disclosureMap.containsKey("roles"));
             assertTrue("The credentials should include the scope-name claim.",
                     disclosureMap.containsKey("scope-name"));
             assertEquals("The credentials should include the scope-name claims correct value.",
