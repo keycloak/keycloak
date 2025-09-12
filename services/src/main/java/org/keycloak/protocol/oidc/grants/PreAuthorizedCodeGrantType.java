@@ -29,7 +29,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -103,55 +102,27 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 sessionContext).accessToken(accessToken);
 
         // Process authorization_details using provider discovery
-        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS_PARAM);
-        if (authorizationDetailsParam != null) {
-            List<AuthorizationDetailsResponse> authorizationDetailsResponse;
-            try {
-                authorizationDetailsResponse = session.getKeycloakSessionFactory()
-                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                        .sorted((f1, f2) -> f2.order() - f1.order())
-                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                        .map(authzDetailsProcessor -> authzDetailsProcessor.process(clientSession.getUserSession(), sessionContext, authorizationDetailsParam))
-                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                        .findFirst()
-                        .orElse(null);
-            } catch (RuntimeException e) {
-                if (e.getMessage() != null && e.getMessage().contains("Invalid authorization_details")) {
-                    LOGGER.warnf(e, "Error when processing authorization_details");
-                    event.error(Errors.INVALID_REQUEST);
-                    throw new CorsErrorResponseException(cors, "invalid_request", "Error when processing authorization_details", Response.Status.BAD_REQUEST);
-                } else {
-                    throw e;
-                }
-            }
+        List<AuthorizationDetailsResponse> authorizationDetailsResponse = processAuthorizationDetails(clientSession.getUserSession(), sessionContext);
 
-            AccessTokenResponse tokenResponse;
-            try {
-                tokenResponse = responseBuilder.build();
-            } catch (RuntimeException re) {
-                if ("cannot get encryption KEK".equals(re.getMessage())) {
-                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                            "cannot get encryption KEK", Response.Status.BAD_REQUEST);
-                } else {
-                    throw re;
-                }
+        AccessTokenResponse tokenResponse;
+        try {
+            tokenResponse = responseBuilder.build();
+        } catch (RuntimeException re) {
+            if ("cannot get encryption KEK".equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "cannot get encryption KEK", Response.Status.BAD_REQUEST);
+            } else {
+                throw re;
             }
-
-            // If authorization_details is present, add it to otherClaims
-            if (authorizationDetailsResponse != null) {
-                tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authorizationDetailsResponse);
-                event.success();
-                return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
-            }
-
-            // Return the token response without serialization
-            event.success();
-            return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
-        } else {
-            AccessTokenResponse tokenResponse = responseBuilder.build();
-            event.success();
-            return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
         }
+
+        // If authorization_details is present, add it to otherClaims
+        if (authorizationDetailsResponse != null) {
+            tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authorizationDetailsResponse);
+        }
+
+        event.success();
+        return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Override

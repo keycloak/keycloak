@@ -55,10 +55,15 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 
 /**
  * Base class for OAuth 2.0 grant types
@@ -251,6 +256,39 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
         // Default: do nothing
+    }
+
+    /**
+     * Processes the authorization_details parameter using provider discovery.
+     * This method can be overridden by subclasses to customize the behavior.
+     *
+     * @param userSession      the user session
+     * @param clientSessionCtx the client session context
+     * @return the authorization details response if processing was successful, null otherwise
+     */
+    protected List<AuthorizationDetailsResponse> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS_PARAM);
+        if (authorizationDetailsParam != null) {
+            try {
+                return session.getKeycloakSessionFactory()
+                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
+                        .sorted((f1, f2) -> f2.order() - f1.order())
+                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
+                        .map(authzDetailsProcessor -> authzDetailsProcessor.process(userSession, clientSessionCtx, authorizationDetailsParam))
+                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
+                        .findFirst()
+                        .orElse(null);
+            } catch (RuntimeException e) {
+                if (e.getMessage() != null && e.getMessage().contains("Invalid authorization_details")) {
+                    logger.warnf(e, "Error when processing authorization_details");
+                    event.error(Errors.INVALID_REQUEST);
+                    throw new CorsErrorResponseException(cors, "invalid_request", "Error when processing authorization_details", Response.Status.BAD_REQUEST);
+                } else {
+                    throw e;
+                }
+            }
+        }
+        return null;
     }
 
     @Override

@@ -23,9 +23,11 @@ import org.keycloak.provider.Provider;
 import java.util.List;
 
 /**
- * Provider interface for processing authorization_details parameter in OAuth2/OIDC token requests.
+ * Provider interface for processing authorization_details parameter in OAuth2/OIDC authorization and token requests.
  * This follows the RAR (Rich Authorization Requests) specification and allows different
  * implementations to handle various types of authorization details.
+ * The authorization_details parameter can be used in both authorization requests and token requests
+ * as specified in the OpenID for Verifiable Credential Issuance specification.
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */

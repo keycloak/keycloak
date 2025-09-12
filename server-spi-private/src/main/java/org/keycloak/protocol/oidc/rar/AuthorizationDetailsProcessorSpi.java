@@ -22,7 +22,9 @@ import org.keycloak.provider.Spi;
 
 /**
  * SPI for authorization details processors that handle the authorization_details parameter
- * in OAuth2/OIDC token requests as per RAR (Rich Authorization Requests) specification.
+ * in OAuth2/OIDC authorization and token requests as per RAR (Rich Authorization Requests) specification.
+ * The authorization_details parameter can be used in both authorization requests and token requests
+ * as specified in the OpenID for Verifiable Credential Issuance specification.
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */

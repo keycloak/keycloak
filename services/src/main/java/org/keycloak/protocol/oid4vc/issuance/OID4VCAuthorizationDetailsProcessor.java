@@ -53,11 +53,6 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             return null; // authorization_details is optional
         }
 
-        // Check if this processor can handle the authorization details parameter
-        if (!canProcess(authorizationDetailsParameter)) {
-            return null;
-        }
-
         List<AuthorizationDetail> authDetails = parseAuthorizationDetails(authorizationDetailsParameter);
         List<String> supportedFormats = new ArrayList<>(SUPPORTED_FORMATS);
         Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
@@ -74,20 +69,6 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         return authDetailsResponse;
-    }
-
-    private boolean canProcess(String authorizationDetailsParameter) {
-        try {
-            List<AuthorizationDetail> authDetails = parseAuthorizationDetails(authorizationDetailsParameter);
-            for (AuthorizationDetail detail : authDetails) {
-                if (OPENID_CREDENTIAL_TYPE.equals(detail.getType())) {
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            logger.debugf(e, "Failed to parse authorization_details for OID4VCI: %s", authorizationDetailsParameter);
-        }
-        return false;
     }
 
     private List<AuthorizationDetail> parseAuthorizationDetails(String authorizationDetailsParam) {

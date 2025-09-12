@@ -181,10 +181,6 @@ public interface OAuth2GrantType extends Provider {
         public String getGrantType() {
             return grantType;
         }
-
-        public LoginProtocol getProtocol() {
-            return protocol;
-        }
     }
 
 }

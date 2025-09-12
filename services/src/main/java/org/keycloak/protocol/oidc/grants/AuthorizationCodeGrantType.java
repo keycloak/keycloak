@@ -36,7 +36,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -199,30 +198,6 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         String scopeParam = codeData.getScope();
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
 
-        // Process authorization_details using provider discovery
-        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS_PARAM);
-        if (authorizationDetailsParam != null) {
-            try {
-                session.getKeycloakSessionFactory()
-                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                        .sorted((f1, f2) -> f2.order() - f1.order())
-                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                        .map(authzDetailsProcessor -> authzDetailsProcessor.process(userSession, clientSessionCtx, authorizationDetailsParam))
-                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                        .findFirst()
-                        .ifPresentOrElse(authzDetailsResponse -> clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authzDetailsResponse),
-                                () -> logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", authorizationDetailsParam));
-            } catch (RuntimeException e) {
-                if (e.getMessage() != null && e.getMessage().contains("Invalid authorization_details")) {
-                    logger.warnf(e, "Error when processing authorization_details");
-                    event.error(Errors.INVALID_REQUEST);
-                    throw new CorsErrorResponseException(cors, "invalid_request", "Error when processing authorization_details", Response.Status.BAD_REQUEST);
-                } else {
-                    throw e;
-                }
-            }
-        }
-
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
@@ -238,6 +213,16 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
+
+        // Process authorization_details using provider discovery (only if present)
+        if (formParams.getFirst(AUTHORIZATION_DETAILS_PARAM) != null) {
+            List<AuthorizationDetailsResponse> authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
+            if (authorizationDetailsResponse != null) {
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            } else {
+                logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", formParams.getFirst(AUTHORIZATION_DETAILS_PARAM));
+            }
+        }
 
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
     }
