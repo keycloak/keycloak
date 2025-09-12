@@ -108,7 +108,7 @@ public class UserSessionRefreshTimePolicyTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build()).close();
 
