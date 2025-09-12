@@ -163,13 +163,19 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return user;
         }
 
-        UserModel validated = validator.validate(realm, user);
+        try {
+            UserModel validated = validator.validate(realm, user);
 
-        if (validated == null) {
-            return deleteFederatedUser(realm, user);
+            if (validated == null) {
+                return deleteFederatedUser(realm, user);
+            }
+
+            return validated;
+        } catch (Exception e) {
+            logger.warnf(e, "User storage provider %s failed during federated user validation", model.getName());
         }
 
-        return validated;
+        return null;
     }
 
     private ReadOnlyUserModelDelegate deleteFederatedUser(RealmModel realm, UserModel user) {
