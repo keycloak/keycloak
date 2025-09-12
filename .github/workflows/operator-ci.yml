@@ -126,22 +126,6 @@ jobs:
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
               --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]}
 
-      - name: Install ServiceMonitor CRD
-        run: |
-          LATEST=$(curl -s https://api.github.com/repos/prometheus-operator/prometheus-operator/releases/latest | jq -cr .tag_name)
-          curl -sL https://github.com/prometheus-operator/prometheus-operator/releases/download/${LATEST}/stripped-down-crds.yaml | kubectl create -f -
-
-      - name: Test ServiceMonitor
-        run: |
-          ./mvnw clean install -Poperator -pl :keycloak-operator -am \
-          -Dquarkus.container-image.build=true \
-          -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
-          -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
-          -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
-          -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
-          --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]} \
-          -Dtest=ServiceMonitorTest
-
   test-olm:
     name: Test OLM installation
     runs-on: ubuntu-latest
@@ -218,11 +202,10 @@ jobs:
           ./undeploy-examples.sh keycloak
 
       - name: Install ServiceMonitor CRD
-        working-directory: operator/scripts
+        working-directory: operator
         run: |
-          LATEST=$(curl -s https://api.github.com/repos/prometheus-operator/prometheus-operator/releases/latest | jq -cr .tag_name)
-          curl -sL https://github.com/prometheus-operator/prometheus-operator/releases/download/${LATEST}/stripped-down-crds.yaml | kubectl create -f -
-          ./check-crd-installed.sh servicemonitors
+          kubectl apply -f src/test/resources/service-monitor-crds.yml
+          ./scripts/check-crd-installed.sh servicemonitors
 
       - name: Deploy an example Keycloak with ServiceMonitor
         working-directory: operator/scripts

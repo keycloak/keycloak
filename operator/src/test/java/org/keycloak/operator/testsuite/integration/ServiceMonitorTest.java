@@ -4,13 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpecBuilder;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -21,14 +22,19 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 public class ServiceMonitorTest extends BaseOperatorTest {
 
-    @Test
-    public void testServiceMonitorDisabledIfCRDNotAvailable() {
-        Assumptions.assumeFalse(isServiceMonitorAvailable(k8sclient));
-        // Test fails if the CRD is not available and the Operator is unable to handle missing CRD
+    private static final String SERVICE_MONITOR_CRD = new ServiceMonitor().getFullResourceName();
+
+    @BeforeAll
+    public static void beforeAll() {
+        K8sUtils.installCRD(k8sclient, "service-monitor-crds.yml");
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        K8sUtils.removeCRD(k8sclient, SERVICE_MONITOR_CRD);
     }
 
     @Test
-    @DisabledIfApiServerTest
     public void testServiceMonitorDisabledNoMetrics() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
         var kc = getTestKeycloakDeployment(true, false);;
@@ -40,7 +46,6 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     }
 
     @Test
-    @DisabledIfApiServerTest
     public void testServiceMonitorCreatedWithMetricsEnabled() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
         var kc = getTestKeycloakDeployment(true, false);;
@@ -52,7 +57,6 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     }
 
     @Test
-    @DisabledIfApiServerTest
     public void testServiceMonitorDisabledExplicitly() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
         var kc = getTestKeycloakDeployment(true, false);;
@@ -68,7 +72,6 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     }
 
     @Test
-    @DisabledIfApiServerTest
     public void testServiceMonitorDisabledLegacyManagement() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
         var kc = getTestKeycloakDeployment(true, false);;
@@ -80,7 +83,6 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     }
 
     @Test
-    @DisabledIfApiServerTest
     public void testServiceMonitorConfigProperties() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
         var kc = getTestKeycloakDeployment(true, false);;
@@ -111,7 +113,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
               .apiextensions()
               .v1()
               .customResourceDefinitions()
-              .withName(new ServiceMonitor().getFullResourceName())
+              .withName(SERVICE_MONITOR_CRD)
               .get() != null;
     }
 }
