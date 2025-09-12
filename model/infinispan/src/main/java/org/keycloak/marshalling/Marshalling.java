@@ -182,6 +182,8 @@ public final class Marshalling {
 
     public static final int RELOAD_CERTIFICATE_FUNCTION = 65615;
 
+    public static final int EMBEDDED_CLIENT_SESSION_KEY = 65616;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);
     }

@@ -55,6 +55,8 @@ public abstract class SessionEntity {
         this.realmId = realmId;
     }
 
+    @Deprecated(since = "26.4", forRemoval = true)
+    //no longer used
     public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
         if (localEntityWrapper == null) {
             return new SessionEntityWrapper<>(this);

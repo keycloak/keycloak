@@ -34,8 +34,11 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.UserSessionManager;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -83,7 +86,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
     }
 
     protected String toString(UserSessionEntity userSession) {
-        int clientSessionsSize = userSession.getAuthenticatedClientSessions()==null ? 0 : userSession.getAuthenticatedClientSessions().size();
+        int clientSessionsSize = userSession.getClientSessions().size();
         return "ID: " + userSession.getId() + ", realm: " + userSession.getRealmId()+ ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
                 ", authenticatedClientSessions: " + clientSessionsSize;
     }

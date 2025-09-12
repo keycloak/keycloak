@@ -20,7 +20,6 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -46,6 +45,7 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
@@ -89,8 +89,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private InfinispanKeyGenerator keyGenerator;
     final SerializeExecutionsByKey<String> serializerSession = new SerializeExecutionsByKey<>();
     final SerializeExecutionsByKey<String> serializerOfflineSession = new SerializeExecutionsByKey<>();
-    final SerializeExecutionsByKey<UUID> serializerClientSession = new SerializeExecutionsByKey<>();
-    final SerializeExecutionsByKey<UUID> serializerOfflineClientSession = new SerializeExecutionsByKey<>();
+    final SerializeExecutionsByKey<EmbeddedClientSessionKey> serializerClientSession = new SerializeExecutionsByKey<>();
+    final SerializeExecutionsByKey<EmbeddedClientSessionKey> serializerOfflineClientSession = new SerializeExecutionsByKey<>();
     ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate;
     private PersistentSessionsWorker persistentSessionsWorker;
     private int maxBatchSize;
@@ -101,8 +101,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public UserSessionProvider create(KeycloakSession session) {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = null;
         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = null;
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = null;
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = null;
+        Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = null;
+        Cache<EmbeddedClientSessionKey, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = null;
 
         if (useCaches) {
             InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
