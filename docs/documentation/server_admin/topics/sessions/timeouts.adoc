@@ -35,11 +35,16 @@ image:images/sessions-tab.png[Sessions Tab]
 
 [[_offline-session-max-limited]]
 |Offline Session Max Limited
-|This setting is for <<_offline-access, offline access>>. If this flag is *Enabled*, Offline Session Max can control the maximum time the offline token remains active, regardless of user activity. If the flag is *Disabled*, offline sessions never expire by lifespan, only by idle. Once this option is activated, the <<_offline-session-max, Offline Session Max>> (global option at realm level) and *Client Offline Session Max* (specific client level option in the *Advanced Settings* tab) can be configured.
+|This setting is for <<_offline-access, offline access>>. If this flag is *Enabled*, Offline Session Max can control the maximum time the offline token remains active, regardless of user activity. If the flag is *Disabled*, offline sessions never expire by lifespan, only by idle. Once this option is activated, the <<_offline-session-max, Offline Session Max>> and <<_client_offline-session-max, Client Offline Session Max>> (global option at realm level) can be configured.
 
 [[_offline-session-max]]
 |Offline Session Max
 |This setting is for <<_offline-access, offline access>>, and it is the maximum time before {project_name} revokes the corresponding offline token. This option controls the maximum amount of time the offline token remains active, regardless of user activity.
+
+[[_client_offline-session-max]]
+|Client Offline Session Max
+|This setting is for <<_offline-access, offline access>>, and it is the maximum time before {project_name} revokes the corresponding offline token for the client. This option controls the maximum amount of time the offline token remains active, regardless of user activity.
+Users can override it for individual clients in the *Advanced Settings* client tab.
 
 |Login timeout
 |The total time a logging in must take. If authentication takes longer than this time, the user must start the authentication process again.
