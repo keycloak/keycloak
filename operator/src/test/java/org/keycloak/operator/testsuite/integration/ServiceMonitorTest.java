@@ -5,9 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -22,18 +20,6 @@ import io.quarkus.test.junit.QuarkusTest;
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class ServiceMonitorTest extends BaseOperatorTest {
-
-    private static final String SERVICE_MONITOR_CRD = new ServiceMonitor().getFullResourceName();
-
-    @BeforeAll
-    public static void beforeAll() {
-        K8sUtils.installCRD(k8sclient, "service-monitor-crds.yml");
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        K8sUtils.removeCRD(k8sclient, SERVICE_MONITOR_CRD);
-    }
 
     @Test
     public void testServiceMonitorDisabledNoMetrics() {
@@ -118,7 +104,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
               .apiextensions()
               .v1()
               .customResourceDefinitions()
-              .withName(SERVICE_MONITOR_CRD)
+              .withName(new ServiceMonitor().getFullResourceName())
               .get() != null;
     }
 }

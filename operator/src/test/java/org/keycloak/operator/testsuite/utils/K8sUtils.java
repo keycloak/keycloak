@@ -56,17 +56,6 @@ public final class K8sUtils {
         return Serialization.unmarshal(Objects.requireNonNull(K8sUtils.class.getResourceAsStream("/" + fileName)), type);
     }
 
-    public static void installCRD(KubernetesClient client, String fileName) {
-        InputStream is = Objects.requireNonNull(K8sUtils.class.getResourceAsStream("/" + fileName));
-        client.apiextensions().v1().customResourceDefinitions().load(is).serverSideApply();
-    }
-
-    public static void removeCRD(KubernetesClient client, String crdName) {
-        client.apiextensions().v1().customResourceDefinitions()
-              .withName(crdName)
-              .delete();
-    }
-
     public static Keycloak getDefaultKeycloakDeployment() {
         return getResourceFromFile("example-keycloak.yaml", Keycloak.class);
     }
