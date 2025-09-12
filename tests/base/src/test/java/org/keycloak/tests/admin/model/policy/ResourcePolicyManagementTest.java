@@ -102,7 +102,7 @@ public class ResourcePolicyManagementTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build();
 
@@ -130,7 +130,7 @@ public class ResourcePolicyManagementTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build();
 
@@ -198,7 +198,7 @@ public class ResourcePolicyManagementTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build();
 
@@ -230,7 +230,7 @@ public class ResourcePolicyManagementTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build()).close();
 
@@ -309,7 +309,7 @@ public class ResourcePolicyManagementTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build()).close();
 
@@ -405,7 +405,7 @@ public class ResourcePolicyManagementTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build()).close();
 
@@ -567,7 +567,7 @@ public class ResourcePolicyManagementTest {
                                 .withConfig("message", "message")
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(2))
+                                .after(Duration.ofDays(1))
                                 .build()
                 ).build()).close();
 
@@ -594,7 +594,7 @@ public class ResourcePolicyManagementTest {
                                 .withConfig("reason", "inactivity")
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(3))
                                 .build()
                 ).build()).close();
 
@@ -632,7 +632,7 @@ public class ResourcePolicyManagementTest {
                                 .withConfig("reason", "inactivity")
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DeleteUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(30))
+                                .after(Duration.ofDays(15))
                                 .build()
                 ).build()).close();
 
@@ -672,7 +672,7 @@ public class ResourcePolicyManagementTest {
                                 .withConfig("custom_subject_key", "customComplianceSubject")
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(7))
+                                .after(Duration.ofDays(2))
                                 .build()
                 ).build()).close();
 
@@ -707,7 +707,7 @@ public class ResourcePolicyManagementTest {
                                 .after(Duration.ofDays(5))
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build()).close();
 
@@ -747,7 +747,7 @@ public class ResourcePolicyManagementTest {
                                 .withConfig("reason", "inactivity")
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(30))
+                                .after(Duration.ofDays(15))
                                 .build()
                 ).build()).close();
 

@@ -259,7 +259,7 @@ public class ResourcePolicyManager {
                         if (actions.size() > i + 1) {
                             // schedule the next action using the time offset difference between the actions.
                             ResourceAction nextAction = actions.get(i + 1);
-                            policyStateProvider.scheduleAction(policy, nextAction, nextAction.getAfter() - currentAction.getAfter(), scheduled.resourceId());
+                            policyStateProvider.scheduleAction(policy, nextAction, scheduled.resourceId());
                         } else {
                             // this was the last action, check if the policy is recurring - i.e. if we need to schedule the first action again
                             if (policy.isRecurring()) {
