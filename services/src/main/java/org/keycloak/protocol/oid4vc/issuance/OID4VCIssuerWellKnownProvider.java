@@ -102,6 +102,19 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     public CredentialIssuer getIssuerMetadata() {
         KeycloakContext context = keycloakSession.getContext();
+
+        // Build encryption metadata first to enforce coupling rule from spec:
+        // If credential_response_encryption is included, credential_request_encryption MUST also be included.
+        CredentialResponseEncryptionMetadata responseEnc = getCredentialResponseEncryption(keycloakSession);
+        CredentialRequestEncryptionMetadata requestEnc = getCredentialRequestEncryption(keycloakSession);
+
+        // Enforce: do not advertise response encryption if request encryption cannot be advertised.
+        if (responseEnc != null && requestEnc == null) {
+            LOGGER.debug("Omitting credential_response_encryption from metadata because credential_request_encryption is not available."
+                    + " This enforces the requirement that request encryption MUST be used if response encryption is advertised.");
+            responseEnc = null;
+        }
+
         return new CredentialIssuer()
                 .setCredentialIssuer(getIssuer(context))
                 .setCredentialEndpoint(getCredentialsEndpoint(context))
@@ -109,8 +122,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setDeferredCredentialEndpoint(getDeferredCredentialEndpoint(context))
                 .setCredentialsSupported(getSupportedCredentials(keycloakSession))
                 .setAuthorizationServers(List.of(getIssuer(context)))
-                .setCredentialResponseEncryption(getCredentialResponseEncryption(keycloakSession))
-                .setCredentialRequestEncryption(getCredentialRequestEncryption(keycloakSession))
+                .setCredentialResponseEncryption(responseEnc)
+                .setCredentialRequestEncryption(requestEnc)
                 .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession));
     }
 
