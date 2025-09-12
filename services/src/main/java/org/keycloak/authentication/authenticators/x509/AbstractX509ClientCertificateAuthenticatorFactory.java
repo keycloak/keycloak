@@ -115,7 +115,6 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         serialnumberHex.setDefaultValue(Boolean.toString(false));
         serialnumberHex.setHelpText("Use the hex representation of the serial number. This option is relevant for authenticators using serial number.");
 
-
         ProviderConfigProperty regExp = new ProviderConfigProperty();
         regExp.setType(STRING_TYPE);
         regExp.setName(REGULAR_EXPRESSION);
@@ -196,6 +195,20 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         ocspFailOpen.setHelpText("Whether to allow or deny authentication for client certificates that have missing/invalid/inconclusive OCSP endpoints. By default a successful OCSP response is required.");
         ocspFailOpen.setLabel("OCSP Fail-Open Behavior");
 
+        ProviderConfigProperty ocspMaxRetries = new ProviderConfigProperty();
+        ocspMaxRetries.setType(ProviderConfigProperty.STRING_TYPE);
+        ocspMaxRetries.setName(OCSP_MAX_RETRIES);
+        ocspMaxRetries.setDefaultValue("0");
+        ocspMaxRetries.setHelpText("Maximum number of retry attempts for OCSP requests that fail due to network issues.");
+        ocspMaxRetries.setLabel("OCSP Max Retries");
+
+        ProviderConfigProperty ocspTimeoutMillis = new ProviderConfigProperty();
+        ocspTimeoutMillis.setType(ProviderConfigProperty.STRING_TYPE);
+        ocspTimeoutMillis.setName(OCSP_TIMEOUT_MILLIS);
+        ocspTimeoutMillis.setDefaultValue("10000");
+        ocspTimeoutMillis.setHelpText("Timeout in milliseconds for OCSP requests. This applies to both connection and socket timeouts.");
+        ocspTimeoutMillis.setLabel("OCSP Timeout (ms)");
+
         ProviderConfigProperty ocspResponderUri = new ProviderConfigProperty();
         ocspResponderUri.setType(STRING_TYPE);
         ocspResponderUri.setName(OCSPRESPONDER_URI);
@@ -261,6 +274,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 cRLAbortIfNonUpdated,
                 oCspCheckingEnabled,
                 ocspFailOpen,
+                ocspMaxRetries,
+                ocspTimeoutMillis,
                 ocspResponderUri,
                 ocspResponderCert,
                 keyUsage,
