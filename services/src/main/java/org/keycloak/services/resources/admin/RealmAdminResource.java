@@ -86,7 +86,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.admin.resource.OrganizationsResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
-import org.keycloak.realm.resources.policies.admin.resource.RealmResourcesResource;
+import org.keycloak.workflow.admin.resource.WorkflowsResource;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -637,9 +637,9 @@ public class RealmAdminResource {
         return new OrganizationsResource(session, auth, adminEvent);
     }
 
-    @Path("resources")
-    public RealmResourcesResource resources() {
-        return new RealmResourcesResource(session);
+    @Path("workflows")
+    public WorkflowsResource workflows() {
+        return new WorkflowsResource(session);
     }
 
     @Path("{extension}")
