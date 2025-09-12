@@ -27,7 +27,10 @@ import java.util.Map;
 public class ComponentTypeRepresentation {
     protected String id;
     protected String helpText;
+    protected Boolean configurable;
+    protected Boolean configurablePerClient;
     protected List<ConfigPropertyRepresentation> properties;
+    protected List<ConfigPropertyRepresentation> clientProperties;
 
     protected Map<String, Object> metadata = new HashMap<>();
 
@@ -48,12 +51,36 @@ public class ComponentTypeRepresentation {
         this.helpText = helpText;
     }
 
+    public Boolean getConfigurable() {
+        return configurable;
+    }
+
+    public void setConfigurable(Boolean configurable) {
+        this.configurable = configurable;
+    }
+
+    public Boolean getConfigurablePerClient() {
+        return configurablePerClient;
+    }
+
+    public void setConfigurablePerClient(Boolean configurablePerClient) {
+        this.configurablePerClient = configurablePerClient;
+    }
+
     public List<ConfigPropertyRepresentation> getProperties() {
         return properties;
     }
 
     public void setProperties(List<ConfigPropertyRepresentation> properties) {
         this.properties = properties;
+    }
+
+    public List<ConfigPropertyRepresentation> getClientProperties() {
+        return clientProperties;
+    }
+
+    public void setClientProperties(List<ConfigPropertyRepresentation> clientProperties) {
+        this.clientProperties = clientProperties;
     }
 
     /**
