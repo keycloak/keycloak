@@ -17,14 +17,14 @@ The server has built-in support for different databases. You can query the avail
 
 [%autowidth]
 |===
-|Database | Option value | Tested Version
+|Database | Option value | Tested Version | Supported Versions
 
-|MariaDB Server | `mariadb` | ${properties["mariadb.version"]}
-|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]}
-|MySQL | `mysql` | ${properties["mysql.version"]}
-|Oracle Database | `oracle` | ${properties["oracledb.version"]}
-|PostgreSQL | `postgres` | ${properties["postgresql.version"]}
-|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]}
+|MariaDB Server | `mariadb` | ${properties["mariadb.version"]} | 11.8 (LTS), 11.4 (LTS), 10.11 (LTS), 10.6 (LTS)
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
+|MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS) 
+|Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note: Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 17.x, 16.x, 15.x, 14.x, 13.x
+|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
