@@ -87,6 +87,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final String MANAGE_MEMBERS = "manage-members";
     public static final String VIEW_MEMBERS = "view-members";
     public static final String IMPERSONATE_MEMBERS = "impersonate-members";
+    public static final String RESET_PASSWORD_MEMBERS = "reset-password-members";
 
     // role specific scopes
     public static final String MAP_ROLE = "map-role";
@@ -100,7 +101,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
 
     public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
-    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS));
+    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS, RESET_PASSWORD_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
     public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP, RESET_PASSWORD), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS), IMPERSONATE, Set.of(IMPERSONATE_MEMBERS)), GROUPS.getType());
     private static final String SKIP_EVALUATION = "kc.authz.fgap.skip";

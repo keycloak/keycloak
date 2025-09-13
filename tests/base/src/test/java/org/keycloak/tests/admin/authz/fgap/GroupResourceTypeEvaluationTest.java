@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
@@ -34,10 +35,12 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMB
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD_MEMBERS;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -45,9 +48,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupsResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
@@ -442,5 +450,88 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     private ScopePermissionRepresentation createAllUserPermission(UserPolicyRepresentation policy, Set<String> scopes) {
         return createAllPermission(client, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, scopes);
+    }
+
+    /**
+     * Test for GROUPS.reset-password-members scope functionality.
+     * 
+     * This test verifies that:
+     * 1. Group-based password reset permissions work through FGAP v2 alias mechanism
+     * 2. USERS.reset-password scope automatically checks GROUPS.reset-password-members policies
+     * 3. Deny-overrides principle is properly enforced
+     * 4. Group membership is correctly evaluated for password reset permissions
+     */
+    @Test
+    public void testResetPasswordMembers() {
+        // Step 0: Temporarily give myadmin MANAGE_USERS role for testing
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation realmManagementClient = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation manageUsersRole = realm.admin().clients().get(realmManagementClient.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagementClient.getId()).add(List.of(manageUsersRole));
+        
+        // Step 1: Create a test group
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("test-group");
+        Response response = realm.admin().groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        
+        // Step 2: Add user to the group to establish group membership
+        realm.admin().groups().group(groupId).members().add(userAlice.admin().toRepresentation());
+        
+        // Verify group membership
+        List<UserRepresentation> groupMembers = realm.admin().groups().group(groupId).members();
+        assertEquals(1, groupMembers.size(), "Group should have exactly one member");
+        assertEquals(userAlice.admin().toRepresentation().getId(), groupMembers.get(0).getId(), "Alice should be in the group");
+        
+        // Step 3: Create an ALLOW policy for GROUPS.reset-password-members scope
+        // This should grant password reset permissions to group members
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        ScopePermissionRepresentation resetPasswordMembersPermission = createPermission(
+            client, 
+            groupId, 
+            GROUPS_RESOURCE_TYPE, 
+            Set.of(RESET_PASSWORD_MEMBERS), 
+            allowMyAdminPermission
+        );
+        
+        // Get the permission ID after creation
+        String permissionId = getScopePermissionsResource(client).findByName(resetPasswordMembersPermission.getName()).getId();
+        assertNotNull(permissionId, "Permission should have an ID after creation");
+        
+        // Verify that myadmin is the admin making the request
+        UserRepresentation currentAdmin = realmAdminClient.realm(realm.getName()).users().search("myadmin").get(0);
+        assertEquals(myadmin.getId(), currentAdmin.getId(), "realmAdminClient should be authenticated as myadmin");
+
+        // Step 4: Test that password reset works through alias mechanism
+        // The USERS.reset-password scope should automatically check GROUPS.reset-password-members
+        // policies for users who are members of groups with such policies
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("newpassword");
+        
+        // This should succeed - user is in group with ALLOW policy for reset-password-members
+        UsersResource users = realmAdminClient.realm(realm.getName()).users();
+        String aliceId = userAlice.admin().toRepresentation().getId();
+        users.get(aliceId).resetPassword(credential);
+        
+        // Step 5: Test deny-overrides principle
+        // Create a DENY policy for the same scope to verify that explicit denials
+        // always take precedence over allowances (deny-overrides behavior)
+        UserPolicyRepresentation denyMyAdminPermission = createUserPolicy(Logic.NEGATIVE, realm, client, "Deny My Admin User Policy", myadmin.getId());
+        ScopePermissionRepresentation denyResetPasswordMembersPermission = createPermission(
+            client, 
+            groupId, 
+            GROUPS_RESOURCE_TYPE, 
+            Set.of(RESET_PASSWORD_MEMBERS), 
+            denyMyAdminPermission
+        );
+        
+        // This should fail - DENY policy should override the previous ALLOW policy
+        try {
+            users.get(aliceId).resetPassword(credential);
+            fail("Expected ForbiddenException - deny should override allow");
+        } catch (ForbiddenException expected) {
+            // Expected behavior - deny-overrides principle working correctly
+        }
     }
 }

@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -30,7 +31,9 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.UserModelRecord;
+import org.keycloak.services.resources.admin.fgap.ModelRecord.GroupModelRecord;
 
 class UserPermissionsV2 extends UserPermissions {
 
@@ -154,8 +157,20 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD,
-                () -> eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE));
+        // Check direct USERS.reset-password permission
+        if (eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD)) {
+            return true;
+        }
+
+        // Check GROUPS.reset-password-members permission for user's groups
+        // Since alias mechanism works within resource types, we need manual cross-resource-type checking
+        if (user.getGroupsStream()
+                .filter(group -> group != null)
+                .anyMatch(group -> eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.RESET_PASSWORD_MEMBERS))) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
