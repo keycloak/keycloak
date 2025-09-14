@@ -42,23 +42,23 @@ public class InfinispanChangesUtils {
     private InfinispanChangesUtils() {
     }
 
-    public static <K, V extends SessionEntity> CacheInfo<K, V> createWithCache(KeycloakSession session,
-                                                                               String cacheName,
-                                                                               SessionFunction<V> lifespanFunction,
-                                                                               SessionFunction<V> maxIdleFunction) {
+    public static <K, V extends SessionEntity> CacheHolder<K, V> createWithCache(KeycloakSession session,
+                                                                                 String cacheName,
+                                                                                 SessionFunction<V> lifespanFunction,
+                                                                                 SessionFunction<V> maxIdleFunction) {
         var connections = session.getProvider(InfinispanConnectionProvider.class);
         var cache = connections.<K, SessionEntityWrapper<V>>getCache(cacheName);
         var sequencer = new ActionSequencer(connections.getExecutor(cacheName + "Replace"), false, null);
-        return new CacheInfo<>(cache, sequencer, lifespanFunction, maxIdleFunction);
+        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction);
     }
 
-    public static <K, V extends SessionEntity> CacheInfo<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
-                                                                                  SessionFunction<V> maxIdleFunction) {
-        return new CacheInfo<>(null, null, lifespanFunction, maxIdleFunction);
+    public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
+                                                                                    SessionFunction<V> maxIdleFunction) {
+        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction);
     }
 
     public static <K, V extends SessionEntity> void runOperationInCluster(
-            CacheInfo<K, V> cacheInfo,
+            CacheHolder<K, V> cacheHolder,
             K key,
             MergedUpdate<V> task,
             SessionEntityWrapper<V> sessionWrapper,
@@ -73,23 +73,23 @@ public class InfinispanChangesUtils {
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheInfo.cache()).removeAsync(key));
+                stage.dependsOn(CacheDecorators.ignoreReturnValues(cacheHolder.cache()).removeAsync(key));
                 break;
             case ADD:
-                CompletableFuture<?> future = CacheDecorators.ignoreReturnValues(cacheInfo.cache())
+                CompletableFuture<?> future = CacheDecorators.ignoreReturnValues(cacheHolder.cache())
                         .putAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS);
                 if (logger.isTraceEnabled()) {
-                    future = future.thenRun(() -> logger.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheInfo.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs()));
+                    future = future.thenRun(() -> logger.tracef("Added entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheHolder.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs()));
                 }
                 stage.dependsOn(future);
                 break;
             case ADD_IF_ABSENT:
-                CompletableFuture<Void> putIfAbsentFuture = cacheInfo.cache().putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
-                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheInfo, existing, key, task, logger));
+                CompletableFuture<Void> putIfAbsentFuture = cacheHolder.cache().putIfAbsentAsync(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS, task.getMaxIdleTimeMs(), TimeUnit.MILLISECONDS)
+                        .thenCompose(existing -> handlePutIfAbsentResponse(cacheHolder, existing, key, task, logger));
                 stage.dependsOn(putIfAbsentFuture);
                 break;
             case REPLACE:
-                stage.dependsOn(replace(cacheInfo, key, task, sessionWrapper, logger));
+                stage.dependsOn(replace(cacheHolder, key, task, sessionWrapper, logger));
                 break;
             default:
                 throw new IllegalStateException("Unsupported state " + operation);
@@ -98,7 +98,7 @@ public class InfinispanChangesUtils {
     }
 
     private static <K, V extends SessionEntity> CompletionStage<Void> handlePutIfAbsentResponse(
-            CacheInfo<K, V> cacheInfo,
+            CacheHolder<K, V> cacheHolder,
             SessionEntityWrapper<V> existing,
             K key,
             MergedUpdate<V> task,
@@ -106,7 +106,7 @@ public class InfinispanChangesUtils {
     ) {
         if (existing == null) {
             if (logger.isTraceEnabled()) {
-                logger.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheInfo.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
+                logger.tracef("Add_if_absent successfully called for entity '%s' to the cache '%s' . Lifespan: %d ms, MaxIdle: %d ms", key, cacheHolder.cache().getName(), task.getLifespanMs(), task.getMaxIdleTimeMs());
             }
             return CompletableFutures.completedNull();
         }
@@ -117,16 +117,16 @@ public class InfinispanChangesUtils {
         // Apply updates on the existing entity and replace it
         task.runUpdate(existing.getEntity());
 
-        return replace(cacheInfo, key, task, existing, logger);
+        return replace(cacheHolder, key, task, existing, logger);
     }
 
     private static <K, V extends SessionEntity> CompletionStage<Void> replace(
-            CacheInfo<K, V> cacheInfo,
+            CacheHolder<K, V> cacheHolder,
             K key,
             MergedUpdate<V> task,
             SessionEntityWrapper<V> oldVersionEntity,
             Logger logger) {
-        return cacheInfo.sequencer().orderOnKey(key, () -> replaceIteration(cacheInfo.cache(), key, task, null, oldVersionEntity, 0, logger));
+        return cacheHolder.sequencer().orderOnKey(key, () -> replaceIteration(cacheHolder.cache(), key, task, null, oldVersionEntity, 0, logger));
     }
 
     private static <K, V extends SessionEntity> CompletionStage<Void> replaceIteration(

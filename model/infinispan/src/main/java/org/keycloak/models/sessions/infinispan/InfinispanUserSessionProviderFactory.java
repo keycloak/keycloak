@@ -40,7 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
-import org.keycloak.models.sessions.infinispan.changes.CacheInfo;
+import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangesUtils;
@@ -87,10 +87,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String CONFIG_USE_BATCHES = "useBatches";
     private static final boolean DEFAULT_USE_BATCHES = false;
 
-    private CacheInfo<String, UserSessionEntity> sessionCacheInfo;
-    private CacheInfo<String, UserSessionEntity> offlineSessionCacheInfo;
-    private CacheInfo<UUID, AuthenticatedClientSessionEntity> clientSessionCacheInfo;
-    private CacheInfo<UUID, AuthenticatedClientSessionEntity> offlineClientSessionCacheInfo;
+    private CacheHolder<String, UserSessionEntity> sessionCacheHolder;
+    private CacheHolder<String, UserSessionEntity> offlineSessionCacheHolder;
+    private CacheHolder<UUID, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
+    private CacheHolder<UUID, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
@@ -199,23 +199,23 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
             if (useCaches) {
                 try (var session = factory.create()) {
-                    sessionCacheInfo = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
-                    offlineSessionCacheInfo = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
-                    clientSessionCacheInfo = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
-                    offlineClientSessionCacheInfo = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+                    sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                    offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
+                    clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
+                    offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
                 }
             } else {
-                sessionCacheInfo = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
-                offlineSessionCacheInfo = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
-                clientSessionCacheInfo = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
-                offlineClientSessionCacheInfo = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+                sessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                offlineSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
+                clientSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
+                offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
             }
         } else {
             try (var session = factory.create()) {
-                sessionCacheInfo = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
-                offlineSessionCacheInfo = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
-                clientSessionCacheInfo = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
-                offlineClientSessionCacheInfo = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+                sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
+                clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
+                offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
             }
         }
     }
@@ -377,10 +377,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     }
 
     private VolatileTransactions createVolatileTransaction(KeycloakSession session) {
-        var sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCacheInfo);
-        var offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCacheInfo);
-        var clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCacheInfo);
-        var offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCacheInfo);
+        var sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCacheHolder);
+        var offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCacheHolder);
+        var clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCacheHolder);
+        var offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCacheHolder);
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);
@@ -393,13 +393,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private PersistentTransaction createPersistentTransaction(KeycloakSession session) {
         var sessionTx = new UserSessionPersistentChangelogBasedTransaction(session,
                 asyncQueuePersistentUpdate,
-                sessionCacheInfo,
-                offlineSessionCacheInfo);
+                sessionCacheHolder,
+                offlineSessionCacheHolder);
 
         var clientSessionTx = new ClientSessionPersistentChangelogBasedTransaction(session,
                 asyncQueuePersistentUpdate,
-                clientSessionCacheInfo,
-                offlineClientSessionCacheInfo,
+                clientSessionCacheHolder,
+                offlineClientSessionCacheHolder,
                 sessionTx);
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);

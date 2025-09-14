@@ -32,7 +32,7 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
-import org.keycloak.models.sessions.infinispan.changes.CacheInfo;
+import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangesUtils;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -63,7 +63,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
 
     private final InfinispanKeyGenerator keyGenerator = new InfinispanKeyGenerator();
-    private CacheInfo<String, RootAuthenticationSessionEntity> cacheInfo;
+    private CacheHolder<String, RootAuthenticationSessionEntity> cacheHolder;
 
     private int authSessionsLimit;
 
@@ -90,7 +90,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     public void postInit(KeycloakSessionFactory factory) {
         factory.register(this);
         try (var session = factory.create()) {
-            cacheInfo = InfinispanChangesUtils.createWithCache(session, AUTHENTICATION_SESSIONS_CACHE_NAME, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS);
+            cacheHolder = InfinispanChangesUtils.createWithCache(session, AUTHENTICATION_SESSIONS_CACHE_NAME, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS);
         }
     }
 
@@ -145,14 +145,14 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
             return;
         }
 
-        var distribution = cacheInfo.cache().getAdvancedCache().getDistributionManager();
+        var distribution = cacheHolder.cache().getAdvancedCache().getDistributionManager();
         if (distribution != null && !distribution.getCacheTopology().getDistribution(event.getAuthSessionId()).isPrimary()) {
             // Distribution is null for non-clustered caches (local-cache, used by start-dev mode).
             // If not the primary owner of the key, skip event handling.
             return;
         }
 
-        SessionEntityWrapper<RootAuthenticationSessionEntity> authSession = cacheInfo.cache().get(event.getAuthSessionId());
+        SessionEntityWrapper<RootAuthenticationSessionEntity> authSession = cacheHolder.cache().get(event.getAuthSessionId());
         updateAuthSession(authSession, event.getTabId(), event.getAuthNotesFragment());
     }
 
@@ -179,7 +179,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
             }
         }
 
-        cacheInfo.cache().replace(rootAuthSession.getId(), new SessionEntityWrapper<>(rootAuthSessionWrapper.getLocalMetadata(), rootAuthSession));
+        cacheHolder.cache().replace(rootAuthSession.getId(), new SessionEntityWrapper<>(rootAuthSessionWrapper.getLocalMetadata(), rootAuthSession));
     }
 
     @Override
@@ -202,7 +202,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     }
 
     private InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> createTransaction(KeycloakSession session) {
-        var tx = new InfinispanChangelogBasedTransaction<>(session, cacheInfo);
+        var tx = new InfinispanChangelogBasedTransaction<>(session, cacheHolder);
         session.getProvider(InfinispanTransactionProvider.class).registerTransaction(tx);
         return tx;
     }

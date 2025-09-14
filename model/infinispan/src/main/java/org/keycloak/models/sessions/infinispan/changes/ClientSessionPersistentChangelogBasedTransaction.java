@@ -45,10 +45,10 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                            CacheInfo<UUID, AuthenticatedClientSessionEntity> cacheInfo,
-                                                            CacheInfo<UUID, AuthenticatedClientSessionEntity> offlineCacheInfo,
+                                                            CacheHolder<UUID, AuthenticatedClientSessionEntity> cacheHolder,
+                                                            CacheHolder<UUID, AuthenticatedClientSessionEntity> offlineCacheHolder,
                                                             UserSessionPersistentChangelogBasedTransaction userSessionTx) {
-        super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheInfo, offlineCacheInfo);
+        super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
         this.userSessionTx = userSessionTx;
     }
 

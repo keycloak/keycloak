@@ -28,7 +28,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.sessions.infinispan.changes.CacheInfo;
+import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangesUtils;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
@@ -56,7 +56,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
     public static final String REMOVE_ALL_LOGIN_FAILURES_EVENT = "REMOVE_ALL_LOGIN_FAILURES_EVENT";
 
-    private CacheInfo<LoginFailureKey, LoginFailureEntity> cacheInfo;
+    private CacheHolder<LoginFailureKey, LoginFailureEntity> cacheHolder;
 
     @Override
     public InfinispanUserLoginFailureProvider create(KeycloakSession session) {
@@ -71,7 +71,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     public void postInit(final KeycloakSessionFactory factory) {
         factory.register(this);
         try (var session = factory.create()) {
-            cacheInfo = InfinispanChangesUtils.createWithCache(session, LOGIN_FAILURE_CACHE_NAME, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs);
+            cacheHolder = InfinispanChangesUtils.createWithCache(session, LOGIN_FAILURE_CACHE_NAME, SessionTimeouts::getLoginFailuresLifespanMs, SessionTimeouts::getLoginFailuresMaxIdleMs);
         }
     }
 
@@ -141,7 +141,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
     }
 
     private InfinispanChangelogBasedTransaction<LoginFailureKey, LoginFailureEntity> createTransaction(KeycloakSession session) {
-        var tx = new InfinispanChangelogBasedTransaction<>(session, cacheInfo);
+        var tx = new InfinispanChangelogBasedTransaction<>(session, cacheHolder);
         session.getProvider(InfinispanTransactionProvider.class).registerTransaction(tx);
         return tx;
     }

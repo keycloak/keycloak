@@ -39,9 +39,9 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                           ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                          CacheInfo<String, UserSessionEntity> cacheInfo,
-                                                          CacheInfo<String, UserSessionEntity> offlineCacheInfo) {
-        super(session, USER_SESSION_CACHE_NAME, batchingQueue, cacheInfo, offlineCacheInfo);
+                                                          CacheHolder<String, UserSessionEntity> cacheHolder,
+                                                          CacheHolder<String, UserSessionEntity> offlineCacheHolder) {
+        super(session, USER_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {

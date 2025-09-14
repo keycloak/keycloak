@@ -46,11 +46,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
     protected final KeycloakSession kcSession;
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
-    protected final CacheInfo<K, V> cacheInfo;
+    protected final CacheHolder<K, V> cacheHolder;
 
-    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, CacheInfo<K, V> cacheInfo) {
+    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, CacheHolder<K, V> cacheHolder) {
         this.kcSession = kcSession;
-        this.cacheInfo = cacheInfo;
+        this.cacheHolder = cacheHolder;
     }
 
 
@@ -59,7 +59,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
             // Lookup entity from cache
-            SessionEntityWrapper<V> wrappedEntity = cacheInfo.cache().get(key);
+            SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
             if (wrappedEntity == null) {
                 logger.tracef("Not present cache item for key %s", key);
                 return;
@@ -102,7 +102,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             throw new IllegalArgumentException("Null entity not allowed");
         }
 
-        SessionEntityWrapper<V> latestEntity = cacheInfo.cache().get(key);
+        SessionEntityWrapper<V> latestEntity = cacheHolder.cache().get(key);
         if (latestEntity == null) {
             return;
         }
@@ -121,7 +121,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     public SessionEntityWrapper<V> get(K key) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
-            SessionEntityWrapper<V> wrappedEntity = cacheInfo.cache().get(key);
+            SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
             if (wrappedEntity == null) {
                 return null;
             }
@@ -165,14 +165,14 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
             RealmModel realm = sessionUpdates.getRealm();
 
-            long lifespanMs = cacheInfo.lifespanFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
-            long maxIdleTimeMs = cacheInfo.maxIdleFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
+            long lifespanMs = cacheHolder.lifespanFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
+            long maxIdleTimeMs = cacheHolder.maxIdleFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
 
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
                 // Now run the operation in our cluster
-                InfinispanChangesUtils.runOperationInCluster(cacheInfo, entry.getKey(), merged, sessionWrapper, stage, logger);
+                InfinispanChangesUtils.runOperationInCluster(cacheHolder, entry.getKey(), merged, sessionWrapper, stage, logger);
             }
         }
     }
@@ -186,7 +186,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
      * @return The {@link Cache} backing up this transaction.
      */
     public Cache<K, SessionEntityWrapper<V>> getCache() {
-        return cacheInfo.cache();
+        return cacheHolder.cache();
     }
 
     /**
@@ -212,7 +212,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             // exists in transaction, avoid cache operation
             return updatesList.getEntityWrapper().getEntity();
         }
-        SessionEntityWrapper<V> existing = cacheInfo.cache().putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
         if (existing == null) {
             // keep track of the imported session for updates
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
@@ -259,7 +259,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
                 //nothing to import, already expired
                 return;
             }
-            var future = cacheInfo.cache().putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+            var future = cacheHolder.cache().putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
             stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
         });

@@ -46,31 +46,31 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     protected final Map<K, SessionUpdatesList<V>> offlineUpdates = new HashMap<>();
     private final String cacheName;
     private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
-    private final CacheInfo<K, V> cacheInfo;
-    private final CacheInfo<K, V> offlineCacheInfo;
+    private final CacheHolder<K, V> cacheHolder;
+    private final CacheHolder<K, V> offlineCacheHolder;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
                                                        ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                       CacheInfo<K, V> cacheInfo,
-                                                       CacheInfo<K, V> offlineCacheInfo) {
+                                                       CacheHolder<K, V> cacheHolder,
+                                                       CacheHolder<K, V> offlineCacheHolder) {
         kcSession = session;
         this.cacheName = cacheName;
         this.batchingQueue = batchingQueue;
-        this.cacheInfo = cacheInfo;
-        this.offlineCacheInfo = offlineCacheInfo;
+        this.cacheHolder = cacheHolder;
+        this.offlineCacheHolder = offlineCacheHolder;
     }
 
     public Cache<K, SessionEntityWrapper<V>> getCache(boolean offline) {
-        return offline ? offlineCacheInfo.cache() : cacheInfo.cache();
+        return offline ? offlineCacheHolder.cache() : cacheHolder.cache();
     }
 
     protected SessionFunction<V> getLifespanMsLoader(boolean offline) {
-        return offline ? offlineCacheInfo.lifespanFunction() : cacheInfo.lifespanFunction();
+        return offline ? offlineCacheHolder.lifespanFunction() : cacheHolder.lifespanFunction();
     }
 
     protected SessionFunction<V> getMaxIdleMsLoader(boolean offline) {
-        return offline ? offlineCacheInfo.maxIdleFunction() : cacheInfo.maxIdleFunction();
+        return offline ? offlineCacheHolder.maxIdleFunction() : cacheHolder.maxIdleFunction();
     }
 
     protected Map<K, SessionUpdatesList<V>> getUpdates(boolean offline) {
@@ -129,7 +129,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 
             if (merged != null) {
-                var c = isOffline ? offlineCacheInfo : cacheInfo;
+                var c = isOffline ? offlineCacheHolder : cacheHolder;
                 if (c.cache() != null) {
                     // Update cache. It is non-blocking.
                     InfinispanChangesUtils.runOperationInCluster(c, entry.getKey(), merged, entry.getValue().getEntityWrapper(), stage, LOG);
