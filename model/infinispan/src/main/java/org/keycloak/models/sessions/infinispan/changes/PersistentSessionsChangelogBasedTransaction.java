@@ -102,10 +102,6 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
     }
 
-    private JpaChangesPerformer<K, V> prepareChangesPerformers() {
-        return new JpaChangesPerformer<>(cacheName, batchingQueue);
-    }
-
     @Override
     public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
         JpaChangesPerformer<K, V> persister = null;
@@ -136,7 +132,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 }
 
                 if (persister == null) {
-                    persister = prepareChangesPerformers();
+                    persister =new JpaChangesPerformer<>(cacheName, batchingQueue);
                     if (!persister.isNonBlocking()) {
                         databaseUpdates.accept(persister::write);
                     }
