@@ -403,11 +403,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 sessionTx);
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
-        // Order matters!
-        // We have to update the client sessions before the user sessions.
-        // The user session update may modify the client session table and, when the client session updates is executed, it will throw a StaleObjectStateException.
-        transactionProvider.registerTransaction(clientSessionTx);
         transactionProvider.registerTransaction(sessionTx);
+        transactionProvider.registerTransaction(clientSessionTx);
         return new PersistentTransaction(sessionTx, clientSessionTx);
     }
 
