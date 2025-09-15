@@ -219,4 +219,10 @@ public final class Constants {
     public static final String CREATED_FROM_PERSISTENT = "created_from_persistent";
     public static final String CREATED_FROM_PERSISTENT_ONLINE = "online";
     public static final String CREATED_FROM_PERSISTENT_OFFLINE = "offline";
+
+    // Provider ID of the openid-connect protocol
+    public static final String OIDC_PROTOCOL = "openid-connect";
+
+    // Internal note for storing authorization details response in client session context
+    public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
 }

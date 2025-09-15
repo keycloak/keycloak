@@ -19,10 +19,8 @@ package org.keycloak.protocol.oidc.grants;
 
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -31,16 +29,20 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
+import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.utils.MediaType;
 
+import java.util.List;
 import java.util.UUID;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 
 public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
@@ -91,17 +93,35 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 clientSession.getUserSession(),
                 sessionContext);
 
-        AccessTokenResponse tokenResponse = tokenManager.responseBuilder(
-                        clientSession.getRealm(),
-                        clientSession.getClient(),
-                        event,
-                        session,
-                        clientSession.getUserSession(),
-                        sessionContext)
-                .accessToken(accessToken).build();
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(
+                clientSession.getRealm(),
+                clientSession.getClient(),
+                event,
+                session,
+                clientSession.getUserSession(),
+                sessionContext).accessToken(accessToken);
+
+        // Process authorization_details using provider discovery
+        List<AuthorizationDetailsResponse> authorizationDetailsResponse = processAuthorizationDetails(clientSession.getUserSession(), sessionContext);
+
+        AccessTokenResponse tokenResponse;
+        try {
+            tokenResponse = responseBuilder.build();
+        } catch (RuntimeException re) {
+            if ("cannot get encryption KEK".equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "cannot get encryption KEK", Response.Status.BAD_REQUEST);
+            } else {
+                throw re;
+            }
+        }
+
+        // If authorization_details is present, add it to otherClaims
+        if (authorizationDetailsResponse != null) {
+            tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authorizationDetailsResponse);
+        }
 
         event.success();
-
         return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
     }
 

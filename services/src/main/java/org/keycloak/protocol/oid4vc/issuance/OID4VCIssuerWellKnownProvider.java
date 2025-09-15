@@ -508,6 +508,13 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     /**
+     * Return the authorization servers from the issuer configuration.
+     */
+    public static List<String> getAuthorizationServers(KeycloakSession session) {
+        return List.of(getIssuer(session.getContext()));
+    }
+    
+    /** 
      * Returns the supported asymmetric signature algorithms.
      * Delegates to CryptoUtils for shared implementation with OIDCWellKnownProvider.
      * This includes all asymmetric algorithms supported by Keycloak (RSA, EC, EdDSA).
