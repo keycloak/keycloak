@@ -40,10 +40,11 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -57,8 +58,8 @@ import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
 import org.keycloak.protocol.oid4vc.model.Claims;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
@@ -75,6 +76,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.StringUtil;
+import org.keycloak.constants.Oid4VciConstants;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -97,8 +99,8 @@ import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED;
-import org.keycloak.constants.Oid4VciConstants;
-
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
 
 public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest {
 
@@ -106,10 +108,9 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
     public void configureTestRealm(RealmRepresentation testRealm) {
         Map<String, String> attributes = Optional.ofNullable(testRealm.getAttributes()).orElseGet(HashMap::new);
         attributes.put("credential_response_encryption.encryption_required", "true");
-        attributes.put(OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED, "true");
-        attributes.put(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
         attributes.put(ATTR_ENCRYPTION_REQUIRED, "true");
-
+        attributes.put(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
+        attributes.put(ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION);
         testRealm.setAttributes(attributes);
 
         if (testRealm.getComponents() == null) {
@@ -134,9 +135,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             // Configure realm for unsigned metadata
             testingClient.server(TEST_REALM_NAME).run(session -> {
                 RealmModel realm = session.getContext().getRealm();
-                realm.setAttribute(OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ENABLED_ATTR, "true");
-                realm.setAttribute(OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ALG_ATTR, "RS256");
-                realm.setAttribute(OID4VCIssuerWellKnownProvider.SIGNED_METADATA_LIFESPAN_ATTR, "3600");
+                realm.setAttribute(OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ENABLED_ATTR, "false");
             });
 
             HttpGet getJsonMetadata = new HttpGet(wellKnownUri);
@@ -333,7 +332,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         }
     }
 
-
     /**
      * This test uses the configured scopes {@link #jwtTypeCredentialClientScope} and
      * {@link #sdJwtTypeCredentialClientScope} to verify that the metadata endpoint is presenting the expected data
@@ -366,9 +364,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         assertNotNull("credential_request_encryption should be present", requestEncryption);
         assertEquals(List.of(A256GCM), requestEncryption.getEncValuesSupported());
         assertNotNull("zip_values_supported should be present", requestEncryption.getZipValuesSupported());
-        assertTrue("encryption_required should be true", requestEncryption.getEncryptionRequired());
+        assertTrue("encryption_required should be true", requestEncryption.isEncryptionRequired());
         assertNotNull("JWKS should be present", requestEncryption.getJwks());
-        assertFalse("JWKS should not be empty when encryption keys are available", requestEncryption.getJwks().isEmpty());
 
         CredentialIssuer.BatchCredentialIssuance batch = credentialIssuer.getBatchCredentialIssuance();
         assertNotNull("batch_credential_issuance should be present", batch);
@@ -390,6 +387,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         SupportedCredentialConfiguration supportedConfig = credentialIssuer.getCredentialsSupported()
                 .get(clientScope.getName());
+
         assertNotNull(supportedConfig);
         assertEquals(Format.SD_JWT_VC, supportedConfig.getFormat());
         assertEquals(clientScope.getName(), supportedConfig.getScope());
@@ -402,7 +400,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         compareClaims(supportedConfig.getFormat(), supportedConfig.getCredentialMetadata().getClaims(), clientScope.getProtocolMappers());
     }
-
 
     @Test
     public void testCredentialIssuerMetadataFields() {
@@ -426,8 +423,18 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     assertNotNull("credential_request_encryption should be present", requestEncryption);
                     assertTrue("Supported encryption methods should include A256GCM", requestEncryption.getEncValuesSupported().contains(A256GCM));
                     assertNotNull("zip_values_supported should be present", requestEncryption.getZipValuesSupported());
-                    assertTrue("encryption_required should be true", requestEncryption.getEncryptionRequired());
+                    assertTrue("encryption_required should be true", requestEncryption.isEncryptionRequired());
                     assertEquals(Integer.valueOf(10), issuer.getBatchCredentialIssuance().getBatchSize());
+
+                    // Additional JWK checks from HEAD's testCredentialRequestEncryptionMetadataFields
+                    assertNotNull(requestEncryption.getJwks());
+                    JWK[] keys = requestEncryption.getJwks().getKeys();
+                    assertEquals(4, keys.length); // Adjust based on actual key configuration
+                    for (JWK jwk : keys) {
+                        assertNotNull("JWK must have kid", jwk.getKeyId());
+                        assertNotNull("JWK must have alg", jwk.getAlgorithm());
+                        assertEquals("JWK must have use=enc", "enc", jwk.getPublicKeyUse());
+                    }
                 });
     }
 
@@ -435,6 +442,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         RealmModel realm = session.getContext().getRealm();
 
         realm.setAttribute(ATTR_ENCRYPTION_REQUIRED, "true");
+        realm.setAttribute(ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION);
         realm.setAttribute(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
 
         OID4VCIssuerWellKnownProvider provider = new OID4VCIssuerWellKnownProvider(session);
@@ -475,8 +483,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                         oid4vciIssuerConfig.getCredentialRequestEncryption().getEncValuesSupported().contains("A256GCM"));
                 assertNotNull("JWKS should be present in credential request encryption",
                         oid4vciIssuerConfig.getCredentialRequestEncryption().getJwks());
-                assertFalse("JWKS should not be empty when encryption keys are available",
-                        oid4vciIssuerConfig.getCredentialRequestEncryption().getJwks().isEmpty());
             }
         }
     }
@@ -550,7 +556,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         }
 
         compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), clientScope.getProtocolMappers());
-
     }
 
     private void compareDisplay(SupportedCredentialConfiguration supportedConfig, ClientScopeRepresentation clientScope) {
@@ -605,8 +610,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                             .findFirst().orElse(null);
                     if (mapper.includeInMetadata()) {
                         assertNotNull("There should be a claim matching the protocol-mappers config!", claim);
-                    }
-                    else {
+                    } else {
                         assertNull("This claim should not be included in the metadata-config!", claim);
                         // no other checks to do for this claim
                         continue;
@@ -622,8 +626,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     List<ClaimDisplay> actualDisplayList = claim.getDisplay();
                     if (expectedDisplayList == null) {
                         assertNull(actualDisplayList);
-                    }
-                    else {
+                    } else {
                         assertEquals(expectedDisplayList.size(), actualDisplayList.size());
                         MatcherAssert.assertThat(actualDisplayList,
                                 Matchers.containsInAnyOrder(expectedDisplayList.toArray()));

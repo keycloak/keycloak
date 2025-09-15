@@ -30,16 +30,16 @@ import org.keycloak.jose.jwk.JWK;
 public class CredentialResponseEncryption {
 
     /**
-     * REQUIRED. A string specifying the algorithm to be used for encrypting the Credential Response,
-     * as per the supported key management algorithms in the Credential Issuer Metadata.
-     */
-    private String alg;
-
-    /**
      * REQUIRED. A string specifying the content encryption algorithm to be used for encrypting the
      * Credential Response, as per the supported content encryption algorithms in the Credential Issuer Metadata.
      */
     private String enc;
+
+    /**
+     * OPTIONAL. A string specifying the compression algorithm to be used for compressing the
+     * Credential Response prior to encryption.
+     */
+    private String zip;
 
     /**
      * REQUIRED if credential_response_encryption is included in the Credential Request.
@@ -47,21 +47,21 @@ public class CredentialResponseEncryption {
      */
     private JWK jwk;
 
-    public String getAlg() {
-        return alg;
-    }
-
-    public CredentialResponseEncryption setAlg(String alg) {
-        this.alg = alg;
-        return this;
-    }
-
     public String getEnc() {
         return enc;
     }
 
     public CredentialResponseEncryption setEnc(String enc) {
         this.enc = enc;
+        return this;
+    }
+
+    public String getZip() {
+        return zip;
+    }
+
+    public CredentialResponseEncryption setZip(String zip) {
+        this.zip = zip;
         return this;
     }
 
