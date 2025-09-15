@@ -275,6 +275,15 @@ kubectl wait --for condition=WellFormed --timeout=300s infinispans.infinispan.or
 kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infinispan.org -n {ns} {cluster-name}
 ----
 
+.Wait until the {jdgserver_name} caches are ready
+[source,bash,subs="+attributes"]
+----
+kubectl wait --for condition=Ready --timeout=300s cache.infinispan.org -n {ns} actionTokens
+kubectl wait --for condition=Ready --timeout=300s cache.infinispan.org -n {ns} authenticationSessions
+kubectl wait --for condition=Ready --timeout=300s cache.infinispan.org -n {ns} loginFailures
+kubectl wait --for condition=Ready --timeout=300s cache.infinispan.org -n {ns} work
+----
+
 [#connecting-infinispan-to-keycloak]
 == Connecting {jdgserver_name} with {project_name}
 

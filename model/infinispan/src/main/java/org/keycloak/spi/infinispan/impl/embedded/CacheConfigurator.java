@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.AbstractStoreConfiguration;
+import org.infinispan.configuration.cache.BackupConfiguration;
+import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
@@ -36,6 +38,11 @@ import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
@@ -78,6 +85,8 @@ public final class CacheConfigurator {
 
     private static final String MAX_COUNT_SUFFIX = "MaxCount";
     private static final String OWNER_SUFFIX = "Owners";
+    private static final int STATE_TRANSFER_CHUNK_SIZE = 16;
+    private static final int MIN_NUM_OWNERS_REMOTE_CACHE = 2;
 
     private CacheConfigurator() {
     }
@@ -319,7 +328,66 @@ public final class CacheConfigurator {
         }
     }
 
+    /**
+     * Creates a {@link ConfigurationBuilder} for a cache in a remote Infinispan cluster.
+     * <p>
+     * The returned builder is a template based on the provider's default configuration, which can be freely modified by
+     * the caller before use.
+     *
+     * @param cacheName The name of the cache for which to create the configuration.
+     * @param config    The provider's base configuration scope, which may contain cache-specific customizations.
+     * @param sites     An array of remote site names for cross-site replication backups. If null or empty, cross-site
+     *                  replication will be disabled.
+     * @return A {@link ConfigurationBuilder} for the specified cache, or {@code null} if no configuration exists for
+     * the given {@code cacheName}.
+     */
+    public static ConfigurationBuilder getRemoteCacheConfiguration(String cacheName, Config.Scope config, String[] sites) {
+        return switch (cacheName) {
+            case CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteAuthenticatedClientSessionEntity.class);
+            case USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteUserSessionEntity.class);
+            case AUTHENTICATION_SESSIONS_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RootAuthenticationSessionEntity.class);
+            case LOGIN_FAILURE_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, LoginFailureEntity.class);
+            case ACTION_TOKEN_CACHE, WORK_CACHE_NAME -> remoteCacheConfigurationBuilder(cacheName, config, sites, null);
+            default -> null;
+        };
+    }
+
     // private methods below
+
+    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity) {
+        var builder = new ConfigurationBuilder();
+        builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+        builder.clustering().hash().numOwners(Math.max(MIN_NUM_OWNERS_REMOTE_CACHE, config.getInt(numOwnerConfigKey(name), MIN_NUM_OWNERS_REMOTE_CACHE)));
+        builder.clustering().stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
+        builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
+        builder.statistics().enable();
+
+        if (indexedEntity != null) {
+            builder.indexing().enable().addIndexedEntities(Marshalling.protoEntity(indexedEntity));
+        }
+
+        if (sites == null || sites.length == 0) {
+            return builder;
+        }
+
+        // we need transactions for cross-site to detect deadlock and rollback any changes.
+        builder.transaction()
+                .transactionMode(TransactionMode.TRANSACTIONAL)
+                .useSynchronization(false)
+                .lockingMode(LockingMode.PESSIMISTIC);
+        for (var site : sites) {
+            builder.sites().addBackup()
+                    .site(site)
+                    .strategy(BackupConfiguration.BackupStrategy.SYNC)
+                    .backupFailurePolicy(BackupFailurePolicy.FAIL)
+                    .stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
+        }
+        return builder;
+    }
 
     private static void configureRevisionCache(ConfigurationBuilderHolder holder, String baseCache, String revisionCache, long defaultMaxEntries) {
         var baseBuilder = holder.getNamedConfigurationBuilders().get(baseCache);

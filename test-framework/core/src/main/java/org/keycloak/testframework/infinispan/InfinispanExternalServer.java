@@ -35,8 +35,7 @@ public class InfinispanExternalServer extends InfinispanContainer implements Inf
                 "cache-remote-tls-enabled", "false",
                 "spi-cache-embedded-default-site-name", "ispn",
                 "spi-load-balancer-check-remote-poll-interval", "500",
-                "spi-cache-remote-default-client-intelligence", "BASIC",
-                "-Dkc.cache-remote-create-caches", "true"
+                "spi-cache-remote-default-client-intelligence", "BASIC"
         );
     }
 }
