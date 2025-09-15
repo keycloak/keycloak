@@ -67,13 +67,7 @@ public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityPr
         String trustedDomain = config.getTrustDomain();
 
         JsonWebToken token = validator.getState().getToken();
-
-        URI uri = URI.create(token.getSubject());
-        if (!uri.getScheme().equals("spiffe")) {
-            throw new RuntimeException("Not a SPIFFE ID");
-        }
-
-        if (!uri.getRawAuthority().equals(trustedDomain)) {
+        if (!token.getSubject().startsWith(trustedDomain + "/")) {
             throw new RuntimeException("Invalid trust-domain");
         }
 

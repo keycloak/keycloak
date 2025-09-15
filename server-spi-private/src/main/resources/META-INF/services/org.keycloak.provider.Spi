@@ -109,3 +109,4 @@ org.keycloak.models.policy.ResourceActionSpi
 org.keycloak.models.policy.ResourcePolicySpi
 org.keycloak.models.policy.ResourcePolicyConditionSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
+org.keycloak.cache.AlternativeLookupSPI

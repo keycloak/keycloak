@@ -12,6 +12,7 @@ import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -70,14 +71,14 @@ public class SpiffeClientAuthTest {
     @Test
     public void testInvalidConfig() {
         testInvalidConfig("with-port:8080", "https://localhost");
-        testInvalidConfig("spiffe://with-spiffe-scheme", "https://localhost");
+        testInvalidConfig("with-spiffe-scheme", "https://localhost");
         testInvalidConfig("valid", "invalid-url");
     }
 
     @Test
     public void testInvalidTrustDomain() {
         IdentityProviderUpdater.updateWithRollback(realm, IDP_ALIAS, rep -> {
-            rep.getConfig().put(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "different-domain");
+            rep.getConfig().put(IdentityProviderModel.ISSUER, "spiffe://different-domain");
         });
 
         Assertions.assertFalse(doClientGrant(createDefaultToken()));
@@ -155,7 +156,7 @@ public class SpiffeClientAuthTest {
     private void testInvalidConfig(String trustDomain, String bundleEndpoint) {
         IdentityProviderRepresentation idp = IdentityProviderBuilder.create().providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                 .alias("another")
-                .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, trustDomain)
+                .setAttribute(IdentityProviderModel.ISSUER, trustDomain)
                 .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, bundleEndpoint).build();
 
         try (Response r = realm.admin().identityProviders().create(idp)) {
@@ -187,7 +188,7 @@ public class SpiffeClientAuthTest {
                     IdentityProviderBuilder.create()
                             .providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "mytrust-domain")
+                            .setAttribute(IdentityProviderModel.ISSUER, "spiffe://mytrust-domain")
                             .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, "http://127.0.0.1:8500/idp/jwks")
                             .build());
         }
@@ -197,10 +198,11 @@ public class SpiffeClientAuthTest {
 
         @Override
         public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            return client.clientId(CLIENT_ID)
+            return client.clientId("myclient")
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, CLIENT_ID);
         }
     }
 

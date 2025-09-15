@@ -49,17 +49,6 @@ public interface ClientLookupProvider {
     ClientModel getClientByClientId(RealmModel realm, String clientId);
 
     /**
-     * Exact search for a client by an attribute. Throws an exception if
-     * multi clients are found.
-     *
-     * @param realm Realm to limit the search for clients.
-     * @param name The name of the client attribute
-     * @param value The value of the client attribute
-     * @return
-     */
-    ClientModel getClientByAttribute(RealmModel realm, String name, String value);
-
-    /**
      * Case-insensitive search for clients that contain the given string in their public client identifier.
      * @param realm Realm to limit the search for clients.
      * @param clientId Searched substring of the public client

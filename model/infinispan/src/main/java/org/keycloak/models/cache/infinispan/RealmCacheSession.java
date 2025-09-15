@@ -41,7 +41,6 @@ import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
@@ -61,7 +60,6 @@ import org.keycloak.models.cache.infinispan.entities.ClientScopeListQuery;
 import org.keycloak.models.cache.infinispan.entities.GroupListQuery;
 import org.keycloak.models.cache.infinispan.entities.GroupNameQuery;
 import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
-import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
 import org.keycloak.models.cache.infinispan.entities.RoleByNameQuery;
 import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
@@ -1310,16 +1308,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         } else {
             return cache.computeSerialized(session, cacheKey, (key, keycloakSession) -> prepareCachedClientByClientId(realm, clientId, key));
         }
-    }
-
-    @Override
-    public ClientModel getClientByAttribute(RealmModel realm, String name, String value) {
-        List<CachedClient> clients = cache.searchWithPredicate(c -> value.equals(c.getAttributes().get(name)), CachedClient.class).limit(2).toList();
-        return switch (clients.size()) {
-            case 0 -> getClientDelegate().getClientByAttribute(realm, name, value);
-            case 1 -> getClientById(realm, clients.get(0).getId());
-            default -> throw new ModelException("Multiple clients found with the same attribute name and value");
-        };
     }
 
     private ClientModel prepareCachedClientByClientId(RealmModel realm, String clientId, String cacheKey) {

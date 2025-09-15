@@ -34,6 +34,7 @@ public class IdentityProviderModel implements Serializable {
 
     public static final String ALIAS = "alias";
     public static final String ALIAS_NOT_IN = "aliasNotIn";
+    public static final String ISSUER = "issuer";
     public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
     public static final String AUTHENTICATE_BY_DEFAULT = "authenticateByDefault";
     public static final String CASE_SENSITIVE_ORIGINAL_USERNAME = "caseSensitiveOriginalUsername";

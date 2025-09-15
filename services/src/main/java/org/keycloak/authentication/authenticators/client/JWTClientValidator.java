@@ -22,7 +22,7 @@ public class JWTClientValidator extends AbstractJWTClientValidator {
 
     @Override
     protected String getExpectedTokenIssuer() {
-        return client.getClientId();
+        return clientAssertionState.getToken().getSubject();
     }
 
     @Override

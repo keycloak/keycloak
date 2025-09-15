@@ -980,16 +980,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public ClientModel getClientByAttribute(RealmModel realm, String name, String value) {
-        List<ClientModel> clients = searchClientsByAttributes(realm, Map.of(name, value), 0, 2).toList();
-        return switch (clients.size()) {
-            case 0 -> null;
-            case 1 -> clients.get(0);
-            default -> throw new ModelException("Multiple clients found with the same attribute name and value");
-        };
-    }
-
-    @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
