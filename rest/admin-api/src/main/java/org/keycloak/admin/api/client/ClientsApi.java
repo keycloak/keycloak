@@ -36,7 +36,7 @@ public interface ClientsApi extends Provider {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
-    ClientRepresentation createClient(@Valid @ConvertGroup(to = CreateClient.class) ClientRepresentation client,
+    ClientRepresentation createClient(@Valid ClientRepresentation client,
                                       @QueryParam("fieldValidation") FieldValidation fieldValidation);
 
     @Path("{id}")
