@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.theme;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,6 +10,10 @@ import org.keycloak.theme.Theme;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:vincent.letarouilly@gmail.com">Vincent Letarouilly</a>
@@ -39,6 +44,21 @@ public class DefaultThemeManagerTest extends AbstractKeycloakTest {
                 Assert.assertEquals("Keycloak is awesome", theme.getProperties().getProperty("system.property.found"));
                 Assert.assertEquals("${missing_system_property}", theme.getProperties().getProperty("system.property.missing"));
                 Assert.assertEquals("defaultValue", theme.getProperties().getProperty("system.property.missing.with.default"));
+            } catch (IOException e) {
+                Assert.fail(e.getMessage());
+            }
+        });
+    }
+
+    @Test
+    public void verifyLocaleNames() {
+        testingClient.server().run(session -> {
+            try {
+                Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
+                Properties messages = theme.getMessages(Locale.ENGLISH);
+                assertThat(messages.getProperty("locale_de"), Matchers.containsString("German"));
+                assertThat(messages.getProperty("locale_zh-TW"), Matchers.containsString("Chinese (Traditional)"));
+                assertThat(messages.getProperty("locale_zh-CN"), Matchers.containsString("Chinese (Simplified)"));
             } catch (IOException e) {
                 Assert.fail(e.getMessage());
             }
