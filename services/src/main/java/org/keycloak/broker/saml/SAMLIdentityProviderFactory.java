@@ -136,6 +136,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
                         if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
                             samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
+                            samlIdentityProviderConfig.setValidateSignature(true);
                         } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
                             samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                         } else if (keyDescriptorType.getUse() == null) {
