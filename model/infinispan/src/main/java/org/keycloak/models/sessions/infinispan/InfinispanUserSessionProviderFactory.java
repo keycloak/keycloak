@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -50,6 +49,7 @@ import org.keycloak.models.sessions.infinispan.changes.UserSessionPersistentChan
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
@@ -89,8 +89,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     private CacheHolder<String, UserSessionEntity> sessionCacheHolder;
     private CacheHolder<String, UserSessionEntity> offlineSessionCacheHolder;
-    private CacheHolder<UUID, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
-    private CacheHolder<UUID, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
+    private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
+    private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
@@ -410,8 +410,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     private record VolatileTransactions(InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
                                         InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
-                                        InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionTx,
-                                        InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> offlineClientSessionTx) {}
+                                        InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx,
+                                        InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionTx) {}
 
     private record PersistentTransaction(UserSessionPersistentChangelogBasedTransaction userTx, ClientSessionPersistentChangelogBasedTransaction clientTx) {}
 

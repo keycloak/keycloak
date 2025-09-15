@@ -83,7 +83,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
     }
 
     protected String toString(UserSessionEntity userSession) {
-        int clientSessionsSize = userSession.getAuthenticatedClientSessions()==null ? 0 : userSession.getAuthenticatedClientSessions().size();
+        int clientSessionsSize = userSession.getClientSessions().size();
         return "ID: " + userSession.getId() + ", realm: " + userSession.getRealmId()+ ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
                 ", authenticatedClientSessions: " + clientSessionsSize;
     }
