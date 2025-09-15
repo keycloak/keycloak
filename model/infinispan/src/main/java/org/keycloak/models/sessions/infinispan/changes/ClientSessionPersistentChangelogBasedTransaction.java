@@ -26,7 +26,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
-import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.UserSessionAdapter;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
@@ -45,17 +44,11 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                            Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> cache,
-                                                            Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineCache,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> lifespanMsLoader,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> maxIdleTimeMsLoader,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> offlineLifespanMsLoader,
-                                                            SessionFunction<AuthenticatedClientSessionEntity> offlineMaxIdleTimeMsLoader,
-                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx,
                                                             ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                            SerializeExecutionsByKey<UUID> serializerOnline,
-                                                            SerializeExecutionsByKey<UUID> serializerOffline) {
-        super(session, CLIENT_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+                                                            CacheHolder<UUID, AuthenticatedClientSessionEntity> cacheHolder,
+                                                            CacheHolder<UUID, AuthenticatedClientSessionEntity> offlineCacheHolder,
+                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx) {
+        super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
         this.userSessionTx = userSessionTx;
     }
 

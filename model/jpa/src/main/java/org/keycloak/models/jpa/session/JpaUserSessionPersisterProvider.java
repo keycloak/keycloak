@@ -325,18 +325,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         clientSessionQuery.setParameter("userSessionId", userSessionId);
         clientSessionQuery.setParameter("offline", offlineStr);
 
-        Set<String> removedClientUUIDs = new HashSet<>();
-
-        closing(clientSessionQuery.getResultStream()).forEach(clientSession -> {
-                    boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
-                    if (!added) {
-                        // client was removed in the meantime
-                        removedClientUUIDs.add(clientSession.getClientId());
-                    }
-                }
+        closing(clientSessionQuery.getResultStream()).forEach(clientSession ->
+                addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession)
         );
-
-        removedClientUUIDs.forEach(this::onClientRemoved);
 
         return userSession;
     }
