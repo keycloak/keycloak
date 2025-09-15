@@ -20,6 +20,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
+import org.keycloak.services.util.Projections;
 
 public class DefaultClientsApi implements ClientsApi {
     private final KeycloakSession session;
@@ -53,7 +54,7 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     @Override
-    public ClientApi client(@PathParam("id") String clientId) {
+    public ClientApi client(@PathParam("id") String clientId, @QueryParam("fields") Projections projections) {
         var client = Optional.ofNullable(session.clients().getClientByClientId(realm, clientId)).orElseThrow(() -> new NotFoundException("Client cannot be found"));
         session.getContext().setClient(client);
         return session.getProvider(ClientApi.class);
