@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static org.keycloak.config.OptionsUtil.DURATION_DESCRIPTION;
+
 public class DatabaseOptions {
 
     public static final Option<String> DB_DIALECT = new OptionBuilder<>("db-dialect", String.class)
@@ -91,7 +93,7 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_POOL_MAX_LIFETIME = new OptionBuilder<>("db-pool-max-lifetime", String.class)
             .category(OptionCategory.DATABASE)
-            .description("The maximum time a connection remains in the pool, after which it will be closed upon return and replaced as necessary. Requires a ISO 8601 Duration string.")
+            .description("The maximum time a connection remains in the pool, after which it will be closed upon return and replaced as necessary. " + DURATION_DESCRIPTION)
             .build();
 
     public static final Option<Boolean> DB_SQL_JPA_DEBUG = new OptionBuilder<>("db-debug-jpql", Boolean.class)
