@@ -111,7 +111,7 @@ There are also some container based tests to check if Keycloak starts using one 
 
 These tests are disabled by default. They using Quarkus development mode predefined database containers by default and can be run in the `tests` subdirectory by using e.g. 
 
-    ../mvnw clean install -Dkc.test.storage.database=true -Dtest=MariaDBStartDatabaseTest
+    ../../mvnw clean install -Ptest-database -Dtest=MariaDBDistTest
 
 to spin up a MariaDB container and start Keycloak with it.
 
