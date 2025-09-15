@@ -77,7 +77,7 @@ import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2D
  */
 public class OIDCLoginProtocol implements LoginProtocol {
 
-    public static final String LOGIN_PROTOCOL = "openid-connect";
+    public static final String LOGIN_PROTOCOL = Constants.OIDC_PROTOCOL;
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
     public static final String CODE_PARAM = "code";
