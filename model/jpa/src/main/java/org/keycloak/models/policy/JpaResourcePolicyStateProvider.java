@@ -54,7 +54,7 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
     }
 
     @Override
-    public void scheduleAction(ResourcePolicy policy, ResourceAction action, long scheduledTimeOffset, String resourceId) {
+    public void scheduleAction(ResourcePolicy policy, ResourceAction action, String resourceId) {
         ResourcePolicyStateEntity.PrimaryKey pk = new ResourcePolicyStateEntity.PrimaryKey(resourceId, policy.getId());
         ResourcePolicyStateEntity entity = em.find(ResourcePolicyStateEntity.class, pk);
         if (entity == null) {
@@ -63,12 +63,12 @@ public class JpaResourcePolicyStateProvider implements ResourcePolicyStateProvid
             entity.setPolicyId(policy.getId());
             entity.setPolicyProviderId(policy.getProviderId());
             entity.setScheduledActionId(action.getId());
-            entity.setScheduledActionTimestamp(Time.currentTimeMillis() + scheduledTimeOffset);
+            entity.setScheduledActionTimestamp(Time.currentTimeMillis() + action.getAfter());
             em.persist(entity);
         }
         else {
             entity.setScheduledActionId(action.getId());
-            entity.setScheduledActionTimestamp(Time.currentTimeMillis() + scheduledTimeOffset);
+            entity.setScheduledActionTimestamp(Time.currentTimeMillis() + action.getAfter());
         }
     }
 

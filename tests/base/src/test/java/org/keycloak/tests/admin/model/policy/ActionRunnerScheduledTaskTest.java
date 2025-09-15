@@ -83,7 +83,7 @@ public class ActionRunnerScheduledTaskTest {
                                 .withConfig("message", "message")
                                 .build(),
                         ResourcePolicyActionRepresentation.create().of(DisableUserActionProviderFactory.ID)
-                                .after(Duration.ofDays(10))
+                                .after(Duration.ofDays(5))
                                 .build()
                 ).build()).close();
 

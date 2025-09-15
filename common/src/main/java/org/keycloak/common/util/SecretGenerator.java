@@ -1,7 +1,6 @@
 package org.keycloak.common.util;
 
 import java.security.SecureRandom;
-import java.util.Random;
 import java.util.UUID;
 
 public class SecretGenerator {
@@ -18,12 +17,7 @@ public class SecretGenerator {
 
     private static final SecretGenerator instance = new SecretGenerator();
 
-    private ThreadLocal<Random> random = new ThreadLocal<Random>() {
-        @Override
-        protected Random initialValue() {
-            return new SecureRandom();
-        }
-    };
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private SecretGenerator() {
     }
@@ -33,12 +27,7 @@ public class SecretGenerator {
     }
     
     public String generateSecureID() {
-        StringBuilder builder = new StringBuilder(instance.randomBytesHex(16));
-        builder.insert(8, '-');
-        builder.insert(13, '-');
-        builder.insert(18, '-');
-        builder.insert(23, '-');
-        return builder.toString();
+        return generateSecureUUID().toString();
     }
 
     public String randomString() {
@@ -57,11 +46,10 @@ public class SecretGenerator {
             throw new IllegalArgumentException();
         }
 
-        Random r = random.get();
         char[] buf = new char[length];
 
         for (int idx = 0; idx < buf.length; ++idx) {
-            buf[idx] = symbols[r.nextInt(symbols.length)];
+            buf[idx] = symbols[SECURE_RANDOM.nextInt(symbols.length)];
         }
 
         return new String(buf);
@@ -77,7 +65,7 @@ public class SecretGenerator {
         }
 
         byte[] buf = new byte[length];
-        random.get().nextBytes(buf);
+        SECURE_RANDOM.nextBytes(buf);
         return buf;
     }
 
@@ -121,6 +109,18 @@ public class SecretGenerator {
      * @return UUID with all bits random
      */
     public UUID generateSecureUUID() {
-        return new UUID(random.get().nextLong(), random.get().nextLong());
+        byte[] data = randomBytes(16);
+        return new UUID(toLong(data, 0), toLong(data, 8));
+    }
+
+    private static long toLong(byte[] data, int offset) {
+        return  ((data[offset] & 0xFFL) << 56) |
+                ((data[offset + 1] & 0xFFL) << 48) |
+                ((data[offset + 2] & 0xFFL) << 40) |
+                ((data[offset + 3] & 0xFFL) << 32) |
+                ((data[offset + 4] & 0xFFL) << 24) |
+                ((data[offset + 5] & 0xFFL) << 16) |
+                ((data[offset + 6] & 0xFFL) <<  8) |
+                ((data[offset + 7] & 0xFFL)) ;
     }
 }

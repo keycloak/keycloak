@@ -38,6 +38,7 @@ export type FileUploadFormProps = Omit<FileUploadProps, "onChange"> & {
   helpText?: string;
   unWrap?: boolean;
   language?: string;
+  previewMaxLength?: number;
 };
 
 export const FileUploadForm = ({
@@ -45,6 +46,7 @@ export const FileUploadForm = ({
   onChange,
   helpText = "helpFileUpload",
   unWrap = false,
+  previewMaxLength = 102400, // 100KB
   language,
   extension,
   ...rest
@@ -150,15 +152,23 @@ export const FileUploadForm = ({
             isLoading={fileUpload.isLoading}
             hideDefaultPreview
           >
-            {!rest.hideDefaultPreview && (
-              <CodeEditor
-                aria-label="File content"
-                value={fileUpload.value}
-                language={language}
-                onChange={(value) => handleTextOrDataChange(value)}
-                readOnly={!rest.allowEditingUploadedText}
-              />
-            )}
+            {!rest.hideDefaultPreview &&
+              (!fileUpload.value ||
+              fileUpload.value.length < previewMaxLength ? (
+                <CodeEditor
+                  aria-label="File content"
+                  value={fileUpload.value}
+                  language={language}
+                  onChange={(value) => handleTextOrDataChange(value)}
+                  readOnly={!rest.allowEditingUploadedText}
+                />
+              ) : (
+                <CodeEditor
+                  aria-label="File content"
+                  value={t("fileUploadPreviewDisabled")}
+                  readOnly
+                />
+              ))}
           </FileUpload>
           <FormHelperText>
             <HelperText>

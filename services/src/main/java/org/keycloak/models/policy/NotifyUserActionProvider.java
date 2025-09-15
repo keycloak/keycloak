@@ -87,8 +87,7 @@ public class NotifyUserActionProvider implements ResourceActionProvider {
         }
         
         // Return default subject key based on next action type
-        String defaultSubjectKey = getDefaultSubjectKey(nextActionType);
-        return defaultSubjectKey;
+        return getDefaultSubjectKey(nextActionType);
     }
 
     private String getBodyTemplate() {
@@ -124,35 +123,22 @@ public class NotifyUserActionProvider implements ResourceActionProvider {
     }
 
     private String getNextActionType() {
-        ComponentModel nextAction = getNextNonNotificationAction();
-        return nextAction != null ? nextAction.getProviderId() : "unknown-action";
+        Map<ComponentModel, Long> nextActionMap = getNextNonNotificationAction();
+        return nextActionMap.isEmpty() ? "unknown-action" : nextActionMap.keySet().iterator().next().getProviderId();
     }
 
     private int calculateDaysUntilNextAction() {
-        ComponentModel nextAction = getNextNonNotificationAction();
-        if (nextAction == null) {
+        Map<ComponentModel, Long> nextActionMap = getNextNonNotificationAction();
+        if (nextActionMap.isEmpty()) {
             return 0;
         }
-        
-        String currentAfter = actionModel.get(AFTER_KEY);
-        String nextAfter = nextAction.get(AFTER_KEY);
-        
-        if (currentAfter == null || nextAfter == null) {
-            return 0;
-        }
-        
-        try {
-            long currentMillis = Long.parseLong(currentAfter);
-            long nextMillis = Long.parseLong(nextAfter);
-            Duration difference = Duration.ofMillis(nextMillis - currentMillis);
-            return Math.toIntExact(difference.toDays());
-        } catch (NumberFormatException e) {
-            log.warnv("Invalid days format: current={0}, next={1}", currentAfter, nextAfter);
-            return 0;
-        }
+        Long timeToNextAction = nextActionMap.values().iterator().next();
+        return Math.toIntExact(Duration.ofMillis(timeToNextAction).toDays());
     }
 
-    private ComponentModel getNextNonNotificationAction() {
+    private Map<ComponentModel, Long> getNextNonNotificationAction() {
+        long timeToNextNonNotificationAction = 0L;
+
         RealmModel realm = session.getContext().getRealm();
         ComponentModel policyModel = realm.getComponent(actionModel.getParentId());
         
@@ -167,15 +153,19 @@ public class NotifyUserActionProvider implements ResourceActionProvider {
         // Find current action and return next non-notification action
         boolean foundCurrent = false;
         for (ComponentModel action : actions) {
-            if (foundCurrent && !action.getProviderId().equals("notify-user-action-provider")) {
-                return action;
+            if (foundCurrent) {
+                timeToNextNonNotificationAction += action.get(AFTER_KEY, 0L);
+                if (!action.getProviderId().equals("notify-user-action-provider")) {
+                    // we found the next non-notification action, accumulate its time and break
+                    return Map.of(action, timeToNextNonNotificationAction);
+                }
             }
             if (action.getId().equals(actionModel.getId())) {
                 foundCurrent = true;
             }
         }
         
-        return null;
+        return Map.of();
     }
     
     private String getDefaultSubjectKey(String actionType) {

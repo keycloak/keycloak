@@ -51,11 +51,7 @@ public interface ResourcePolicyStateProvider extends Provider {
      */
     void removeAll();
 
-    default void scheduleAction(ResourcePolicy policy, ResourceAction action, String resourceId) {
-        this.scheduleAction(policy, action, action.getAfter(), resourceId);
-    }
-
-    void scheduleAction(ResourcePolicy policy, ResourceAction action, long scheduledTimeOffset, String resourceId);
+    void scheduleAction(ResourcePolicy policy, ResourceAction action, String resourceId);
 
     ScheduledAction getScheduledAction(String policyId, String resourceId);
 
