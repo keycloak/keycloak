@@ -7,9 +7,7 @@ import {
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
-  ActionGroup,
   AlertVariant,
-  Button,
   FormGroup,
   FormHelperText,
   HelperText,
@@ -25,11 +23,13 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../components/form/FormAccess";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { convertAttributeNameToForm } from "../util";
 import {
   TimeSelector,
   toHumanFormat,
 } from "../components/time-selector/TimeSelector";
+import { TimeSelectorControl } from "../components/time-selector/TimeSelectorControl";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { beerify, sortProviders } from "../util";
@@ -628,19 +628,12 @@ export const RealmSettingsTokensTab = ({
             />
           </FormGroup>
           {!isFeatureEnabled(Feature.OpenId4VCI) && (
-            <ActionGroup>
-              <Button
-                variant="primary"
-                type="submit"
-                data-testid="tokens-tab-save"
-                isDisabled={!formState.isDirty}
-              >
-                {t("save")}
-              </Button>
-              <Button variant="link" onClick={() => reset(realm)}>
-                {t("revert")}
-              </Button>
-            </ActionGroup>
+            <FixedButtonsGroup
+              name="tokens-tab"
+              isSubmit
+              isDisabled={!formState.isDirty}
+              reset={() => reset(realm)}
+            />
           )}
         </FormAccess>
       ),
@@ -655,77 +648,36 @@ export const RealmSettingsTokensTab = ({
           className="pf-v5-u-mt-lg"
           onSubmit={handleSubmit(save, onError)}
         >
-          <FormGroup
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.vc.c-nonce-lifetime-seconds",
+            )}
             label={t("oid4vciNonceLifetime")}
-            fieldId="oid4vciNonceLifetime"
-            labelIcon={
-              <HelpItem
-                helpText={t("oid4vciNonceLifetimeHelp")}
-                fieldLabelId="oid4vciNonceLifetime"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm(
-                "attributes.vc.c-nonce-lifetime-seconds",
-              )}
-              control={control}
-              rules={{ required: t("required"), min: 30 }}
-              render={({ field }) => (
-                <TimeSelector
-                  {...field}
-                  id="oid4vciNonceLifetime"
-                  min={30}
-                  units={["second", "minute", "hour"]}
-                  value={field.value}
-                  onChange={field.onChange}
-                  data-testid="oid4vci-nonce-lifetime-seconds"
-                />
-              )}
-            />
-          </FormGroup>
-          <FormGroup
+            labelIcon={t("oid4vciNonceLifetimeHelp")}
+            controller={{
+              rules: { required: t("required"), min: 30 },
+            }}
+            min={30}
+            units={["second", "minute", "hour"]}
+          />
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.preAuthorizedCodeLifespanS",
+            )}
             label={t("preAuthorizedCodeLifespan")}
-            fieldId="preAuthorizedCodeLifespan"
-            labelIcon={
-              <HelpItem
-                helpText={t("preAuthorizedCodeLifespanHelp")}
-                fieldLabelId="preAuthorizedCodeLifespan"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm(
-                "attributes.preAuthorizedCodeLifespanS",
-              )}
-              control={control}
-              rules={{ required: t("required"), min: 30 }}
-              render={({ field }) => (
-                <TimeSelector
-                  {...field}
-                  id="preAuthorizedCodeLifespan"
-                  min={30}
-                  units={["second", "minute", "hour"]}
-                  value={field.value}
-                  onChange={field.onChange}
-                  data-testid="pre-authorized-code-lifespan-s"
-                />
-              )}
-            />
-          </FormGroup>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              data-testid="tokens-tab-save"
-              isDisabled={!formState.isDirty}
-            >
-              {t("save")}
-            </Button>
-            <Button variant="link" onClick={() => reset(realm)}>
-              {t("revert")}
-            </Button>
-          </ActionGroup>
+            labelIcon={t("preAuthorizedCodeLifespanHelp")}
+            controller={{
+              rules: { required: t("required"), min: 30 },
+            }}
+            min={30}
+            units={["second", "minute", "hour"]}
+          />
+          <FixedButtonsGroup
+            name="tokens-tab"
+            isSubmit
+            isDisabled={!formState.isDirty}
+            reset={() => reset(realm)}
+          />
         </FormAccess>
       ),
     },

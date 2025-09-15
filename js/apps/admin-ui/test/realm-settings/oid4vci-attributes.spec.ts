@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { generatePath } from "react-router-dom";
 import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
 import { createTestBed } from "../support/testbed.ts";
@@ -7,17 +7,17 @@ import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
 import { login } from "../utils/login.js";
 
 // Helper function to check if OID4VCI feature is enabled by checking server info
-const isOid4vciFeatureEnabled = async () => {
+async function isOid4vciFeatureEnabled() {
   const serverInfo = await adminClient.getServerInfo();
-  const oid4vciFeature = serverInfo.features?.find(
-    (feature: any) => feature.name === "OID4VC_VCI",
+  const features = serverInfo.features ?? [];
+
+  return features.some(
+    (feature) => feature.name === "OID4VC_VCI" && feature.enabled,
   );
-  const isEnabled = oid4vciFeature?.enabled || false;
-  return isEnabled;
-};
+}
 
 // Helper function to handle feature flag logic and navigate to OID4VCI section
-const navigateToOid4vciSection = async (page: any) => {
+const navigateToOid4vciSection = async (page: Page) => {
   const isFeatureEnabled = await isOid4vciFeatureEnabled();
   const tokensTab = page.getByTestId("rs-tokens-tab");
 
@@ -79,8 +79,12 @@ test("should render fields and save values with correct attribute keys", async (
   const isFeatureEnabled = await navigateToOid4vciSection(page);
   if (!isFeatureEnabled) test.skip();
 
-  const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
-  const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
+  const nonceField = page.getByTestId(
+    "attributes.vc🍺c-nonce-lifetime-seconds",
+  );
+  const preAuthField = page.getByTestId(
+    "attributes.preAuthorizedCodeLifespanS",
+  );
 
   await expect(nonceField).toBeVisible();
   await expect(preAuthField).toBeVisible();
@@ -103,8 +107,8 @@ test("should persist values after page refresh", async ({ page }) => {
   const isFeatureEnabled = await navigateToOid4vciSection(page);
   if (!isFeatureEnabled) test.skip();
 
-  await page.getByTestId("oid4vci-nonce-lifetime-seconds").fill("120");
-  await page.getByTestId("pre-authorized-code-lifespan-s").fill("300");
+  await page.getByTestId("attributes.vc🍺c-nonce-lifetime-seconds").fill("120");
+  await page.getByTestId("attributes.preAuthorizedCodeLifespanS").fill("300");
   await page.getByTestId("tokens-tab-save").click();
   await expect(page.getByText(/success/i)).toBeVisible();
 
@@ -140,8 +144,12 @@ test("should validate form fields and save valid values", async ({ page }) => {
   const isFeatureEnabled = await navigateToOid4vciSection(page);
   if (!isFeatureEnabled) test.skip();
 
-  const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
-  const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
+  const nonceField = page.getByTestId(
+    "attributes.vc🍺c-nonce-lifetime-seconds",
+  );
+  const preAuthField = page.getByTestId(
+    "attributes.preAuthorizedCodeLifespanS",
+  );
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Test that fields are visible and can be filled
@@ -192,8 +200,12 @@ test("should show validation error for values below minimum threshold", async ({
   const isFeatureEnabled = await navigateToOid4vciSection(page);
   if (!isFeatureEnabled) test.skip();
 
-  const nonceField = page.getByTestId("oid4vci-nonce-lifetime-seconds");
-  const preAuthField = page.getByTestId("pre-authorized-code-lifespan-s");
+  const nonceField = page.getByTestId(
+    "attributes.vc🍺c-nonce-lifetime-seconds",
+  );
+  const preAuthField = page.getByTestId(
+    "attributes.preAuthorizedCodeLifespanS",
+  );
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Fill with values below the minimum threshold (29 seconds)
