@@ -22,6 +22,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -29,9 +30,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.services.error.ValidationExceptionHandler;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest()
@@ -96,6 +101,51 @@ public class AdminV2Test {
 
             ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
             assertEquals("I'm also a description", client.getDescription());
+        }
+    }
+
+    @Test
+    public void clientRepresentationValidation() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "displayName": "something",
+                    "appUrl": "notUrl"
+                }
+                """));
+
+        try (var response = client.execute(request)) {
+            assertThat(response, notNullValue());
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ValidationExceptionHandler.ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            var violations = body.violations();
+            assertThat(violations.size(), is(1));
+            assertThat(violations.iterator().next(), is("clientId: must not be blank"));
+        }
+
+        request.setEntity(new StringEntity("""
+                {
+                    "clientId": "some-client",
+                    "displayName": "something",
+                    "appUrl": "notUrl",
+                    "auth": {
+                        "method":"missing-enabled"
+                    }
+                }
+                """));
+
+        try (var response = client.execute(request)) {
+            assertThat(response, notNullValue());
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ValidationExceptionHandler.ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            var violations = body.violations();
+            assertThat(violations.size(), is(1));
+            assertThat(violations.iterator().next(), is("appUrl: must be a valid URL"));
         }
     }
 }
