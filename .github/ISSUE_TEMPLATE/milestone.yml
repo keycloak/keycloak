@@ -27,6 +27,6 @@ body:
     id: notes
     attributes:
       label: Notes
-      description: Design ideas? Implementation ideas? Anything that will give us more context about the feature you are proposing!
+      description: Design ideas? Implementation ideas? Anything that will give us more about the milestone
     validations:
       required: false
