@@ -33,6 +33,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
@@ -103,7 +104,8 @@ public interface OAuth2GrantType extends Provider {
             this.tokenManager = tokenManager;
             this.grantType = formParams.getFirst(OAuth2Constants.GRANT_TYPE);
             if (this.client != null) {
-                this.protocol = session.getProvider(LoginProtocol.class, this.client.getProtocol());
+                String protocolName = this.client.getProtocol() != null ? this.client.getProtocol() : Constants.OIDC_PROTOCOL;
+                this.protocol = session.getProvider(LoginProtocol.class, protocolName);
             }
         }
 
@@ -114,7 +116,8 @@ public interface OAuth2GrantType extends Provider {
         public void setClient(ClientModel client) {
             this.client = client;
             if (client != null) {
-                this.protocol = session.getProvider(LoginProtocol.class, client.getProtocol());
+                String protocolName = this.client.getProtocol() != null ? this.client.getProtocol() : Constants.OIDC_PROTOCOL;
+                this.protocol = session.getProvider(LoginProtocol.class, protocolName);
             }
         }
 
