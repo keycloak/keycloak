@@ -30,8 +30,9 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
         public boolean isMet(DependentResource<Ingress, Keycloak> dependentResource, Keycloak primary,
                              Context<Keycloak> context) {
             var opts = configuredOptions(primary);
-            if (Boolean.parseBoolean(opts.get(LEGACY_MANAGEMENT_ENABLED)) || !Boolean.parseBoolean(opts.getOrDefault(METRICS_ENABLED, "false")))
+            if (Boolean.parseBoolean(opts.get(LEGACY_MANAGEMENT_ENABLED)) || !Boolean.parseBoolean(opts.getOrDefault(METRICS_ENABLED, "false"))) {
                 return false;
+            }
 
             return ServiceMonitorSpec.get(primary).isEnabled();
         }
@@ -46,6 +47,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
               .withNewMetadata()
                 .withName(meta.getName())
                 .withNamespace(meta.getNamespace())
+                .withLabels(Utils.allInstanceLabels(primary))
               .endMetadata()
               .withNewSpec()
                 .withNewNamespaceSelector()
