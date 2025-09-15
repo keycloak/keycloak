@@ -89,6 +89,11 @@ public class DatabaseOptions {
             .description("The maximum size of the connection pool.")
             .build();
 
+    public static final Option<String> DB_POOL_MAX_LIFETIME = new OptionBuilder<>("db-pool-max-lifetime", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The maximum time a connection remains in the pool, after which it will be closed upon return and replaced as necessary. Requires a ISO 8601 Duration string.")
+            .build();
+
     public static final Option<Boolean> DB_SQL_JPA_DEBUG = new OptionBuilder<>("db-debug-jpql", Boolean.class)
             .category(OptionCategory.DATABASE)
             .defaultValue(false)

@@ -131,6 +131,10 @@ Database:
                      The password of the database user.
 --db-pool-initial-size <size>
                      The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. Requires a ISO 8601 Duration
+                       string.
 --db-pool-max-size <size>
                      The maximum size of the connection pool. Default: 100.
 --db-pool-min-size <size>

@@ -27,6 +27,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,8 @@ import io.quarkus.arc.Arc;
 import org.jboss.logging.Logger;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.database.Database;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
@@ -52,6 +55,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -124,6 +128,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         } else {
             Version.RESOURCES_VERSION = id;
         }
+        checkMySQLWaitTimeout();
     }
 
     @Override
@@ -290,6 +295,30 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             updater.export(connection, schema, databaseUpdateFile);
         } finally {
             dbLock2.releaseLock();
+        }
+    }
+
+    private void checkMySQLWaitTimeout() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor))
+            return;
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'wait_timeout'")) {
+            if (rs.next()) {
+                var waitTimeout = rs.getInt(2);
+                var poolMaxLifetime = Duration.parse(Configuration.getConfigValue(DatabaseOptions.DB_POOL_MAX_LIFETIME).getValue());
+                if (poolMaxLifetime.getSeconds() > waitTimeout) {
+                    logger.warnf("%1$s 'wait_timeout=%2$d' is less than the configured '%3$s' duration. " +
+                                "This can cause 'No operations allowed after connection closed' exceptions, which can impact Keycloak operations. " +
+                                "To avoid such issue, it is highly recommended to set '%3$s' to a duration greater than '%2$d' seconds.",
+                          vendor, waitTimeout, DatabaseOptions.DB_POOL_MAX_LIFETIME.getKey(), poolMaxLifetime);
+                }
+            }
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate %s 'wait_timeout' due to database exception", vendor);
         }
     }
 }
