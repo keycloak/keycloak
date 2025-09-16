@@ -172,7 +172,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         SessionUpdateTask<AuthenticatedClientSessionEntity> createClientSessionTask = Tasks.addIfAbsentSync();
         clientSessionUpdateTx.addTask(key, createClientSessionTask, entity, persistenceState);
 
-        sessionTx.addTask(userSession.getId(), new RegisterClientSessionTask(client.getId()));
+        sessionTx.addTask(userSession.getId(), new RegisterClientSessionTask(key.clientId()));
 
         return adapter;
     }
@@ -652,11 +652,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     protected void removeUserSession(UserSessionEntity sessionEntity, boolean offline) {
-        InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
         var clientSessionUpdateTx = getClientSessionTransaction(offline);
-        sessionEntity.getClientSessions().forEach(clientUUID -> clientSessionUpdateTx.addTask(new EmbeddedClientSessionKey(clientUUID, sessionEntity.getId()), Tasks.removeSync()));
-        SessionUpdateTask<UserSessionEntity> removeTask = Tasks.removeSync();
-        userSessionUpdateTx.addTask(sessionEntity.getId(), removeTask);
+        sessionEntity.getClientSessions().forEach(clientUUID -> clientSessionUpdateTx.addTask(new EmbeddedClientSessionKey(sessionEntity.getId(), clientUUID), Tasks.removeSync()));
+        getTransaction(offline).addTask(sessionEntity.getId(), Tasks.removeSync());
     }
 
     UserSessionAdapter<InfinispanUserSessionProvider> wrap(RealmModel realm, UserSessionEntity entity, boolean offline, UserModel user) {
