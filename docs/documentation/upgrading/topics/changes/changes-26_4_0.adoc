@@ -1,8 +1,8 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
-Breaking changes are the configuration changes that are required for {project_name} to continue to operate normally.
-In minor or patch releases, breaking changes are only bug fixes.
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
 === Fine-grained admin permissions: RESET_PASSWORD scope for Users
 
@@ -28,7 +28,7 @@ Notable changes may include internal behavior changes that prevent common miscon
 
 === Usage of the `exact` request parameter when searching users by attributes
 
-If you are querying users by attributes through the User API where you want to fetch users that match a specific attribute key (regardless the value), 
+If you are querying users by attributes through the User API where you want to fetch users that match a specific attribute key (regardless the value),
 consider setting the `exact` request parameter to `false` when invoking the `+/admin/realms/{realm}/users+` using
 the `GET` method.
 
@@ -147,7 +147,7 @@ If a user has an email set when updating the profile during the authentication f
 The `EVENT_ENTITY` table now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID` and `TYPE`, which allows a faster search in the Admin Console for events of a specific user and event type.
 
 If the table contains more than 300,000 entries, {project_name} skips the index creation during the automatic schema migration. However, the SQL statement appears on the console during migration so you can apply it manually after {project_name} startup.
-For details on configuring a different limit, see link:{upgradingguide_link}#_migrate_db[Migrating the database]. 
+For details on configuring a different limit, see link:{upgradingguide_link}#_migrate_db[Migrating the database].
 
 === Encryption algorithms for SAML updated
 
@@ -235,7 +235,7 @@ As an alternative, use the `cache-embedded-offline-sessions-max-count` and `cach
 
 === Passkeys Conditional UI Authenticator requires a feature
 
-The *Passkeys Conditional UI Authenticator* authenticator was deprecated in the version 26.3.0, but you can still use it if you enable 
+The *Passkeys Conditional UI Authenticator* authenticator was deprecated in the version 26.3.0, but you can still use it if you enable
 `passkeys_conditional_ui_authenticator` during server startup. As a result, you can re-configure authentication flows for passkeys authentication as described in link:{adminguide_link}#passkeys_server_administration_guide[Passkeys]. Nonetheless, both this startup option and the *Passkeys Conditional UI Authenticator* are deprecated.
 
 === Modifying default cache configurations in the cache config file
