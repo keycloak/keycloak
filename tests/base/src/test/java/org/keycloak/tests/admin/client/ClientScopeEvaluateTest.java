@@ -15,53 +15,60 @@
  * the License.
  */
 
-package org.keycloak.testsuite.admin.client;
+package org.keycloak.tests.admin.client;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientResource;
+import org.junit.jupiter.api.Test;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.AbstractClientTest;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.utils.admin.ApiUtil;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
  */
-public class ClientScopeEvaluateTest extends AbstractClientTest {
+@KeycloakIntegrationTest
+public class ClientScopeEvaluateTest {
 
-    private ClientResource accountClient;
+    @InjectRealm
+    ManagedRealm managedRealm;
 
-    @Before
-    public void init() {
-        accountClient = findClientResourceById("account");
-        createTestUserWithAdminClient();
-        getCleanup().addUserId(testUser.getId());
-    }
+    @InjectUser(config = ClientScopeUserConfig.class)
+    ManagedUser managedUser;
+
+    @InjectClient
+    ManagedClient managedClient;
 
     @Test
     public void testGenerateAccessToken() {
-        AccessToken accessToken = accountClient.clientScopesEvaluate().generateAccessToken("openid", testUser.getId(), null);
+        AccessToken accessToken = managedClient.admin().clientScopesEvaluate().generateAccessToken("openid", managedUser.getId(), null);
         assertNotNull(accessToken);
         assertNotNull(accessToken.getSubject());
         assertNotNull(accessToken.getPreferredUsername());
 
-        List<UserSessionRepresentation> sessions = accountClient.getUserSessions(0, 5);
+        List<UserSessionRepresentation> sessions = managedClient.admin().getUserSessions(0, 5);
         assertEquals(0, sessions.size());
     }
 
     @Test
     public void testGenerateIdToken() {
-        IDToken idToken = accountClient.clientScopesEvaluate().generateExampleIdToken("openid", testUser.getId(), null);
+        IDToken idToken = managedClient.admin().clientScopesEvaluate().generateExampleIdToken("openid", managedUser.getId(), null);
         assertNotNull(idToken);
         assertNotNull(idToken.getSubject());
         assertNotNull(idToken.getPreferredUsername());
@@ -69,7 +76,7 @@ public class ClientScopeEvaluateTest extends AbstractClientTest {
 
     @Test
     public void testGenerateUserInfo() {
-        Map<String, Object> userinfo = accountClient.clientScopesEvaluate().generateExampleUserinfo("openid", testUser.getId());
+        Map<String, Object> userinfo = managedClient.admin().clientScopesEvaluate().generateExampleUserinfo("openid", managedUser.getId());
         assertFalse(userinfo.isEmpty());
         assertNotNull(userinfo.get(IDToken.SUBJECT));
         assertNotNull(userinfo.get(IDToken.PREFERRED_USERNAME));
@@ -77,32 +84,42 @@ public class ClientScopeEvaluateTest extends AbstractClientTest {
 
     @Test
     public void testGenerateAccessTokenWithoutBasicScope() {
-        String basicScopeId = ApiUtil.findClientScopeByName(testRealmResource(),"basic").toRepresentation().getId();
-        accountClient.removeDefaultClientScope(basicScopeId);
+        String basicScopeId = ApiUtil.findClientScopeByName(managedRealm.admin(),"basic").toRepresentation().getId();
+        managedClient.admin().removeDefaultClientScope(basicScopeId);
 
-        AccessToken accessToken = accountClient.clientScopesEvaluate().generateAccessToken("openid", testUser.getId(), null);
+        AccessToken accessToken = managedClient.admin().clientScopesEvaluate().generateAccessToken("openid", managedUser.getId(), null);
         assertNotNull(accessToken);
         assertNull(accessToken.getSubject());
 
-        accountClient.addDefaultClientScope(basicScopeId);
+        managedClient.admin().addDefaultClientScope(basicScopeId);
     }
 
     @Test
     public void testGenerateAccessTokenWithOptionalScope() {
-        String emailScopeId = ApiUtil.findClientScopeByName(testRealmResource(),"email").toRepresentation().getId();
-        accountClient.removeDefaultClientScope(emailScopeId);
-        accountClient.addOptionalClientScope(emailScopeId);
+        String emailScopeId = ApiUtil.findClientScopeByName(managedRealm.admin(),"email").toRepresentation().getId();
+        managedClient.admin().removeDefaultClientScope(emailScopeId);
+        managedClient.admin().addOptionalClientScope(emailScopeId);
 
-        AccessToken accessToken = accountClient.clientScopesEvaluate().generateAccessToken("openid", testUser.getId(), null);
+        AccessToken accessToken = managedClient.admin().clientScopesEvaluate().generateAccessToken("openid", managedUser.getId(), null);
         assertNotNull(accessToken);
         assertNull(accessToken.getEmail());
 
-        accessToken = accountClient.clientScopesEvaluate().generateAccessToken("openid email", testUser.getId(), null);
+        accessToken = managedClient.admin().clientScopesEvaluate().generateAccessToken("openid email", managedUser.getId(), null);
         assertNotNull(accessToken);
         assertNotNull(accessToken.getEmail());
 
-        accountClient.removeOptionalClientScope(emailScopeId);
-        accountClient.addDefaultClientScope(emailScopeId);
+        managedClient.admin().removeOptionalClientScope(emailScopeId);
+        managedClient.admin().addDefaultClientScope(emailScopeId);
     }
 
+    private static class ClientScopeUserConfig implements UserConfig {
+
+        @Override
+        public UserConfigBuilder configure(UserConfigBuilder config) {
+            return config.username("test-user")
+                    .name("Test", "User")
+                    .email("test@user.com")
+                    .emailVerified(true);
+        }
+    }
 }
