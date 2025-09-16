@@ -48,7 +48,7 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * Test for the CRUD scenarios when the operation is called on the object, which is owned by different realm

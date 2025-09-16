@@ -36,7 +36,7 @@ import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChann
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.SUCCEED;
 import static org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status.UNAUTHORIZED;
 import static org.keycloak.testsuite.Assert.assertExpiration;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;

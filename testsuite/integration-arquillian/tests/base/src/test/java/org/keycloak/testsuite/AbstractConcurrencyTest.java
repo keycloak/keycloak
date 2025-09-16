@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.concurrency;
+package org.keycloak.testsuite;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.Collections;

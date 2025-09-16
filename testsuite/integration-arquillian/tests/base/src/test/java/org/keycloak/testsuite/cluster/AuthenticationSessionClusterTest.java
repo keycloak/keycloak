@@ -41,7 +41,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

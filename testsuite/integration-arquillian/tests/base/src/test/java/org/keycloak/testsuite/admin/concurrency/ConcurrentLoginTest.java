@@ -59,6 +59,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.AbstractConcurrencyTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
