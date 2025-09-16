@@ -136,5 +136,7 @@
 :securing_apps_base_link: https://www.keycloak.org/securing-apps
 :securing_apps_java_policy_enforcer_link: {securing_apps_base_link}/policy-enforcer
 :securing_apps_java_policy_enforcer_name: Java Policy enforcer
+:securing_apps_javascript_adapter_link: {securing_apps_base_link}/javascript-adapter
+:securing_apps_javascript_adapter_name: {project_name} Javascript adapter
 :securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
 :securing_apps_token_exchange_name: Token exchange Documentation
