@@ -175,6 +175,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         if (imported != null) {
             LOG.debugf("Client-session already imported by another transaction. userSessionId=%s, clientSessionId=%s, clientId=%s, offline=%s",
                     userSession.getId(), clientSessionId, client.getId(), offline);
+            imported.getEntity().setUserSessionId(userSession.getId());
             return imported;
         }
 

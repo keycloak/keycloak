@@ -697,6 +697,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         // Import client sessions
         clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
+        clientSessionsById.keySet().stream().map(key -> clientSessionTx.get(key, offline))
+                .map(SessionEntityWrapper::getEntity)
+                .forEach(authenticatedClientSessionEntity -> authenticatedClientSessionEntity.setUserSessionId(sessionId));
         return wrappedUserSessionEntity;
     }
 
