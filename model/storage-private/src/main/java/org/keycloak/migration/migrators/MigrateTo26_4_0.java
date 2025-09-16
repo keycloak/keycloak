@@ -36,7 +36,10 @@ public class MigrateTo26_4_0 extends RealmMigration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.getProvider(UserSessionProvider.class).migrate(VERSION.toString());
+        UserSessionProvider provider = session.getProvider(UserSessionProvider.class);
+        if (provider != null) {
+            provider.migrate(VERSION.toString());
+        }
         super.migrate(session);
     }
 
