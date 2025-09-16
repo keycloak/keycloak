@@ -312,9 +312,9 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 var waitTimeout = rs.getInt(2);
                 var poolMaxLifetime = DurationConverter.parseDuration(Configuration.getConfigValue(DatabaseOptions.DB_POOL_MAX_LIFETIME).getValue());
                 if (poolMaxLifetime.getSeconds() >= waitTimeout) {
-                    logger.warnf("%1$s 'wait_timeout=%2$d' is less or equal than the configured '%3$s' duration. " +
+                    logger.warnf("%1$s 'wait_timeout=%2$d' is less than or equal to the configured '%3$s' duration. " +
                                 "This can cause 'No operations allowed after connection closed' exceptions, which can impact Keycloak operations. " +
-                                "To avoid such issue, set '%3$s' to a duration smaller than '%2$d' seconds.",
+                                "To avoid such issues, set '%3$s' to a duration smaller than '%2$d' seconds.",
                           vendor, waitTimeout, DatabaseOptions.DB_POOL_MAX_LIFETIME.getKey(), poolMaxLifetime);
                 }
             }
