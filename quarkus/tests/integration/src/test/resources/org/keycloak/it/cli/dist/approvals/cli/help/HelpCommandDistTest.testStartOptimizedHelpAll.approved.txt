@@ -414,7 +414,8 @@ Logging:
                        Default: 512. Available only when Console log handler is activated and
                        asynchronous logging is enabled.
 --log-console-color <true|false>
-                     Enable or disable colors when logging to console. Default: false. Available
+                     Enable or disable colors when logging to console. If this is not present then
+                       an attempt will be made to guess if the terminal supports color. Available
                        only when Console log handler is activated.
 --log-console-format <format>
                      The format of unstructured console log entries. If the format has spaces in

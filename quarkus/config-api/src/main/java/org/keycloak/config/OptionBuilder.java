@@ -54,7 +54,6 @@ public class OptionBuilder<T> {
         hidden = false;
         build = false;
         description = null;
-        defaultValue = Optional.empty();
         strictExpectedValues = true;
     }
 
@@ -178,8 +177,12 @@ public class OptionBuilder<T> {
             }
         }
 
-        if (defaultValue.isEmpty() && Boolean.class.equals(expected)) {
-            defaultValue = Optional.of((T) Boolean.FALSE);
+        if (defaultValue == null) {
+            if (Boolean.class.equals(expected)) {
+                defaultValue = Optional.of((T) Boolean.FALSE);
+            } else {
+                defaultValue = Optional.empty();
+            }
         }
 
         if (transformEnumValues) {
