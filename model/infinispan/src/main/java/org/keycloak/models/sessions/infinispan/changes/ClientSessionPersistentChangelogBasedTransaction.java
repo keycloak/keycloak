@@ -52,7 +52,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         this.userSessionTx = userSessionTx;
     }
 
-    public void setUserSessionId(Collection<UUID> keys, String userSessionId, boolean offline) {
+    public void setUserSessionId(Collection<EmbeddedClientSessionKey> keys, String userSessionId, boolean offline) {
         keys.stream().map(getUpdates(offline)::get)
                 .filter(Objects::nonNull)
                 .map(SessionUpdatesList::getEntityWrapper)
