@@ -216,7 +216,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             // This still keeps the user session cache to keep users logged in on a best effort basis. Only the offline user sessions cache is cleared.
             var stage = CompletionStages.aggregateCompletionStage();
             Stream.of(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME)
-                    .map(s -> session.getProvider(InfinispanConnectionProvider.class).getCache(s))
+                    .map(s -> {
+                        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                        if (provider != null) {
+                            return provider.getCache(s, false);
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
                     .map(AsyncCache::clearAsync)
                     .forEach(stage::dependsOn);
             CompletionStages.join(stage.freeze());

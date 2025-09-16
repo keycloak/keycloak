@@ -845,7 +845,15 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             // Refreshing of tokens will still work even if the user session does not contain the list of client sessions.
             var stage = CompletionStages.aggregateCompletionStage();
             Stream.of(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME)
-                    .map(s -> session.getProvider(InfinispanConnectionProvider.class).getCache(s))
+                    .map(s -> {
+                        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                        if (provider != null) {
+                            return provider.getCache(s, false);
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
                     .map(AsyncCache::clearAsync)
                     .forEach(stage::dependsOn);
             CompletionStages.join(stage.freeze());
