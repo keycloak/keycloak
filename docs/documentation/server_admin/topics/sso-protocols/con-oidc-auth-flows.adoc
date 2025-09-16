@@ -329,7 +329,7 @@ This is a browser-based logout. The application obtains session status informati
 When the session is terminated at {project_name} the application will notice and trigger its own logout.
 
 This is useful especially for the browser-based applications, such as when the application is secured by the link:{securing_apps_javascript_adapter_link}[{securing_apps_javascript_adapter_name}]
-then logout from one browser tab can trigger automatic logout from all other browser tabs with applications secured by the javascript adapter.
+As a result, logout from one browser tab can trigger automatic logout from all other browser tabs with applications secured by the javascript adapter.
 
 [[]]
 ===== RP-Initiated Logout
@@ -366,11 +366,11 @@ on the clients.
 If the client is not enabled with front-channel logout, then {project_name} is going to try first to send logout requests through the back-channel
 using the <<_back-channel-logout-url, Back-Channel Logout URL>>. If not defined, the server is going to fall back to using the <<_admin-url, Admin URL>>.
 
-If even the Admin URL is not specified, {project_name} will not propagate logout to the client. This can be still sufficient for many client application deployments. For
-instance when the client application is frontend javascript application, it may rely on the <<_oidc-logout-session-management, Session Management>> and hence there is no need to send
-dedicated logout request to the client application. Other client applications may just rely on the short <<_timeouts,Access token lifespan timeout>>. This means that the session on the application
-side will be still valid for the short time after {project_name} SSO session logout, however when the client application will try to refresh the access token, the token refresh request to {project_name}
-will fail due the fact that {project_name} SSO session was already logged out.
+If even the Admin URL is not specified, {project_name} will not propagate logout to the client. This action can be still sufficient for many client application deployments. For
+instance, when the client application is a frontend javascript application, it may rely on the <<_oidc-logout-session-management, Session Management>> and hence no need exists to send
+a dedicated logout request to the client application. Other client applications may just rely on the short <<_timeouts,Access token lifespan timeout>>. This situation means that the session on the application
+side remains valid for the short time after {project_name} SSO session logout. However, when the client application tries to refresh the access token, the token refresh request to {project_name}
+will fail because the {project_name} SSO session is already logged out.
 
 ===== Backchannel Logout
 
@@ -378,8 +378,8 @@ This is a non-browser-based logout that uses direct backchannel communication be
 {project_name} sends a HTTP POST request containing a logout token to all clients logged into {project_name}. These
 requests are sent to a registered backchannel logout URLs at {project_name} and are supposed to trigger a logout at client side.
 
-When the client application supports backchannel logout, it is usually better alternative than the front-channel logout as communication happens directly between client and {project_name} without web browser
-involved, which is usually more reliable. Also for example when the {project_name} logout of specified user is triggered by the administrator from the <<viewing-user-sessions,Admin console>> (or other use of admin REST API)
-or by the user himself from <<_account-service,the Account console>>, then {project_name} is able to propagate backchannel logout request to the client applications attached to the session being
-logged out. This is not supported in case of Front-Channel logout as {project_name} can propagate logout to the client via front-channel just when logout is triggered in the same browser
-session, which is being logged-out (that is not the case for example when session of the specific user is logged-out by the administrator from the admin console).
+When the client application supports backchannel logout, that logout is usually a better alternative than the front-channel logout as communication happens directly between the client and {project_name} without a web browser
+involved, which is usually more reliable. Also, when the {project_name} logout of specified user is triggered by the administrator from the <<viewing-user-sessions,Admin console>> (or other use of admin REST API)
+or by the actual user from <<_account-service,the Account console>>, then {project_name} can propagate a backchannel logout request to the client applications attached to the session being
+logged out. This scenario is not supported in case of Front-Channel logout because {project_name} can propagate logout to the client by front-channel just when the logout is triggered in the same browser
+session, which is being logged out. That is not the case for example when session of the specific user is logged-out by the administrator from the admin console.
