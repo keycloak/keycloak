@@ -56,7 +56,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private final UUID id;
 
-    private transient String userSessionId;
+    private volatile String userSessionId;
 
     public AuthenticatedClientSessionEntity(UUID id) {
         this.id = id;
