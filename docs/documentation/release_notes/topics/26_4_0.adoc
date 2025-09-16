@@ -107,3 +107,11 @@ endif::[]
 The SAML clients can now be configured to automatically download the signing and encrypting certificates from the SP entity metadata descriptor endpoint. In order to use this new feature, in the client *Settings* tab, section *Signature and Encryption*, configure the *Metadata descriptor URL* option (the URL where the SP metadata information with the certificates is published) and activate *Use metadata descriptor URL*. The certificates will be automatically downloaded and cached in the `public-key-storage` SPI from that URL.
 
 For more information, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] in the {adminguide_name}.
+
+= Operator creates a ServiceMonitor automatically
+
+The Operator now provisions a `ServiceMonitor` for the management endpoint if metrics are enabled and the
+`monitoring.coreos.com/v1:ServiceMonitor` Custom Resource Definition is present on the Kubernetes cluster. The
+specification of the `ServiceMonitor` takes into account the various management endpoint configurations, to ensure that
+metrics can be scraped without any additional configuration. If you do not want a `ServiceMonitor` to be created, you can disable
+this by setting `spec.serviceMonitor.enabled: false`. For more details, see the link:{operatorguide_link}[{operatorguide_name}].
