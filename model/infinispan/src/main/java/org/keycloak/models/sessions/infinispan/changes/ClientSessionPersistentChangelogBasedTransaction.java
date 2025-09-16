@@ -31,6 +31,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionStore;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -50,6 +51,15 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
                                                             UserSessionPersistentChangelogBasedTransaction userSessionTx) {
         super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
         this.userSessionTx = userSessionTx;
+    }
+
+    public void setUserSessionId(Collection<UUID> keys, String userSessionId, boolean offline) {
+        keys.stream().map(getUpdates(offline)::get)
+                .filter(Objects::nonNull)
+                .map(SessionUpdatesList::getEntityWrapper)
+                .map(SessionEntityWrapper::getEntity)
+                .filter(Objects::nonNull)
+                .forEach(authenticatedClientSessionEntity -> authenticatedClientSessionEntity.setUserSessionId(userSessionId));
     }
 
     public SessionEntityWrapper<AuthenticatedClientSessionEntity> get(RealmModel realm, ClientModel client, UserSessionModel userSession, UUID key, boolean offline) {

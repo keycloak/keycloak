@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -697,9 +696,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         // Import client sessions
         clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
-        clientSessionsById.keySet().stream().map(key -> clientSessionTx.get(key, offline))
-                .map(SessionEntityWrapper::getEntity)
-                .forEach(authenticatedClientSessionEntity -> authenticatedClientSessionEntity.setUserSessionId(sessionId));
+        clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
         return wrappedUserSessionEntity;
     }
 
