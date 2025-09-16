@@ -328,7 +328,7 @@ Again since all of this is described in the OIDC specification we will only give
 This is a browser-based logout. The application obtains session status information from {project_name} at a regular basis.
 When the session is terminated at {project_name} the application will notice and trigger its own logout.
 
-This is useful especially for the browser based applications. For example when the application is secured by the link:{securing_apps_javascript_adapter_link}[{securing_apps_javascript_adapter_name}]
+This is useful especially for the browser-based applications, such as when the application is secured by the link:{securing_apps_javascript_adapter_link}[{securing_apps_javascript_adapter_name}]
 then logout from one browser tab can trigger automatic logout from all other browser tabs with applications secured by the javascript adapter.
 
 [[]]
