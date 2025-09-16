@@ -138,7 +138,7 @@ public class RoleWorkflowConditionTest {
 
         List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.ROLE_GRANTED.name())
+                .onEvent(ResourceOperationType.USER_ROLE_ADD.name())
                 .recurring()
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(RoleWorkflowConditionFactory.ID)

@@ -102,7 +102,7 @@ public class UserSessionRefreshTimeWorkflowTest {
     public void testDisabledUserAfterInactivityPeriod() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -184,7 +184,7 @@ public class UserSessionRefreshTimeWorkflowTest {
     public void testMultipleWorkflows() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -192,7 +192,7 @@ public class UserSessionRefreshTimeWorkflowTest {
                                 .withConfig("custom_message", "notifier1_message")
                                 .build()
                 ).of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(10))

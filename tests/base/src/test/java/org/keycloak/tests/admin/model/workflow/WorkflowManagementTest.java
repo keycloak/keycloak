@@ -142,14 +142,14 @@ public class WorkflowManagementTest {
 
         workflows.create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.CREATE.toString())
+                .onEvent(ResourceOperationType.USER_ADD.toString())
                 .recurring()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
                                 .build()
                 ).of(EventBasedWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .recurring()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -218,7 +218,7 @@ public class WorkflowManagementTest {
     public void testWorkflowDoesNotFallThroughStepsInSingleRun() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.CREATE.toString())
+                .onEvent(ResourceOperationType.USER_ADD.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -293,7 +293,7 @@ public class WorkflowManagementTest {
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.name())
+                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADD.name())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(IdentityProviderWorkflowConditionFactory.ID)
                         .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, "someidp")
@@ -392,7 +392,7 @@ public class WorkflowManagementTest {
         // create a test workflow
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.CREATE.toString())
+                .onEvent(ResourceOperationType.USER_ADD.toString())
                 .name("test-workflow")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -508,7 +508,7 @@ public class WorkflowManagementTest {
     public void testRecurringWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.CREATE.toString())
+                .onEvent(ResourceOperationType.USER_ADD.toString())
                 .recurring()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)

@@ -127,7 +127,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void testInvalidateWorkflowOnIdentityProviderRemoval() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(IdentityProviderWorkflowConditionFactory.ID)
                         .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
@@ -163,7 +163,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void tesRunStepOnFederatedUser() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(IdentityProviderWorkflowConditionFactory.ID)
                         .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
@@ -234,7 +234,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void testAddRemoveFedIdentityAffectsWorkflowAssociation() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.ADD_FEDERATED_IDENTITY.toString())
+                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADD.toString())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(IdentityProviderWorkflowConditionFactory.ID)
                         .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
