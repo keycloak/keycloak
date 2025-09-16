@@ -716,6 +716,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     }
 
     @Test
+    @Deprecated(since = "26.4", forRemoval = true)
     public void testMigrateSession() {
         Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
         Assume.assumeTrue(InfinispanUtils.isEmbeddedInfinispan());

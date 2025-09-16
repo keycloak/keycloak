@@ -111,6 +111,11 @@ configured directly by {project_name}:
 Configuring ports using the old
 properties has not changed, but using the CLI options is recommended because the previous method could be deprecated.
 
+=== Internal representation of client sessions changed
+
+The cache key of the authenticated client sessions has changed for embedded Infinispan, while the public APIs have not changed.
+Due to this, you should not run 26.4.x concurrently in a cluster with previous versions.
+
 === External IDP tokens automatically refreshed
 
 When using the `+/realms/{realm-name}/broker/{provider_alias}/token+` endpoint for an OAuth 2.0 IDP that provides refresh tokens and JSON responses or for OIDC IDPs, the tokens will be automatically refreshed each time they are retrieved via the endpoint if the access token has expired and the IDP provided a refresh token.
@@ -255,6 +260,11 @@ All {project_name} default cache configurations have been removed from `conf/cac
 Configuration of the default cache configurations in `conf/cache-ispn.xml`, or in a custom file by `--cache-config-file`, without specifying `--cache-config-mutate=true` is now deprecated and will log a warning.
 
 In a future major release, the start-up will fail if default cache configurations are stated in those files and the option is not specified.
+
+=== Simplified API for UserSessionProvider
+
+In order to retrieve a client session via `UserSessionProvider#getClientSession`, you no longer need to pass in the client session ID. The old methods have been deprecated and will be removed in a future release.
+Review also the other methods that are deprecated for removal in this class.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

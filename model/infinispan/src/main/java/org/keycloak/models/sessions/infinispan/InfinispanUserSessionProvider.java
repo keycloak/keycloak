@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.api.AsyncCache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.stream.CacheCollectors;
 import org.jboss.logging.Logger;
@@ -208,6 +209,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         if ("26.0.0".equals(modelVersion)) {
             log.debug("Clear caches to migrate to Infinispan Protostream");
             CompletionStages.join(session.getProvider(InfinispanConnectionProvider.class).migrateToProtoStream());
+        } else if ("26.4.0".equals(modelVersion)) {
+            log.debug("Clear caches as client session entries are now outdated and are not migrated");
+            // This is a best-effort approach: Even if due to a rolling update some entries are left there, the checking of sessions and tokens does not depend on them.
+            // Refreshing of tokens will still work even if the user session does not contain the list of client sessions.
+            // This still keeps the user session cache to keep users logged in on a best effort basis. Only the offline user sessions cache is cleared.
+            var stage = CompletionStages.aggregateCompletionStage();
+            Stream.of(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME)
+                    .map(s -> session.getProvider(InfinispanConnectionProvider.class).getCache(s))
+                    .map(AsyncCache::clearAsync)
+                    .forEach(stage::dependsOn);
+            CompletionStages.join(stage.freeze());
         }
     }
 

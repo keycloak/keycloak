@@ -71,6 +71,7 @@ public interface UserSessionProvider extends Provider {
     /**
      * @deprecated Use {@link #createUserSession(String, RealmModel, UserModel, String, String, String, boolean, String, String, UserSessionModel.SessionPersistenceState)} instead.
      */
+    @Deprecated(forRemoval = true)
     default UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId,
                 brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
