@@ -104,5 +104,16 @@
         "../../libs/keycloak-admin-client:build"
       ]
     }
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/apps/account-ui"
+  },
+  "homepage": "https://www.keycloak.org/"
 }
