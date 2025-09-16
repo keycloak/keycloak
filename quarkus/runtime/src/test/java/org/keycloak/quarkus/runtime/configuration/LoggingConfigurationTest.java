@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.configuration;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
@@ -39,6 +40,13 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import io.smallrye.config.SmallRyeConfig;
 
 public class LoggingConfigurationTest extends AbstractConfigurationTest {
+
+    @Test
+    public void testDefaultLogColor() {
+        SmallRyeConfig config = createConfig();
+        assertNull(config.getConfigValue("kc.log-console-color").getValue());
+        assertNotNull(config.getConfigValue("quarkus.console.color").getValue());
+    }
 
     @Test
     public void logHandlerConfig() {
