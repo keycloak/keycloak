@@ -34,6 +34,9 @@ outputs:
   codeql-javascript:
     description: Should "codeql-analysis.yml / javascript" execute
     value: ${{ steps.changes.outputs.codeql-javascript }}
+  codeql-actions:
+    description: Should "codeql-analysis.yml / GitHub Actions" execute
+    value: ${{ steps.changes.outputs.codeql-actions }}
   codeql-typescript:
     description: Should "codeql-analysis.yml / typescript" execute
     value: ${{ steps.changes.outputs.codeql-typescript }}

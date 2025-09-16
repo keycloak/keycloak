@@ -33,6 +33,7 @@ jobs:
       java: ${{ steps.conditional.outputs.codeql-java }}
       javascript: ${{ steps.conditional.outputs.codeql-javascript }}
       typescript: ${{ steps.conditional.outputs.codeql-typescript }}
+      actions: ${{ steps.conditional.outputs.codeql-actions }}
     permissions:
       contents: read
       pull-requests: read
@@ -126,6 +127,33 @@ jobs:
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
 
+  actions:
+    name: CodeQL GitHub Actions
+    needs: conditional
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # Required for SARIF upload
+    if: needs.conditional.outputs.actions == 'true'
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@2d92b76c45b91eb80fc44c74ce3fce0ee94e8f9d # v3.30.0
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
+        with:
+          languages: actions
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@2d92b76c45b91eb80fc44c74ce3fce0ee94e8f9d # v3.30.0
+        with:
+          wait-for-processing: true
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+
   check:
     name: Status Check - CodeQL
     if: always()
@@ -134,6 +162,7 @@ jobs:
       - java
       - javascript
       - typescript
+      - actions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
