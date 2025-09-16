@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.keycloak.common.crypto.FipsMode;
 
+import static org.keycloak.config.OptionsUtil.DURATION_DESCRIPTION;
+
 public class HttpOptions {
 
     public static final Option<Boolean> HTTP_ENABLED = new OptionBuilder<>("http-enabled", Boolean.class)
@@ -65,7 +67,7 @@ public class HttpOptions {
 
     public static final Option<String> HTTPS_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-certificates-reload-period", String.class)
             .category(OptionCategory.HTTP)
-            .description("Interval on which to reload key store, trust store, and certificate files referenced by https-* options. May be a java.time.Duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1 to disable.")
+            .description("Interval on which to reload key store, trust store, and certificate files referenced by https-* options. " + DURATION_DESCRIPTION + " Must be greater than 30 seconds. Use -1 to disable.")
             .defaultValue("1h")
             .build();
 

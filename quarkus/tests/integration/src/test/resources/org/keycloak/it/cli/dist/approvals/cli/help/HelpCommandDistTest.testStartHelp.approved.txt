@@ -137,6 +137,11 @@ Database:
                      The password of the database user.
 --db-pool-initial-size <size>
                      The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. May be an ISO 8601 duration
+                       value, an integer number of seconds, or an integer followed by one of [ms,
+                       h, m, s, d].
 --db-pool-max-size <size>
                      The maximum size of the connection pool. Default: 100.
 --db-pool-min-size <size>
@@ -283,7 +288,7 @@ HTTP(S):
                      The file path to a private key in PEM format.
 --https-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-* options. May be a java.time.Duration value, an integer
+                       referenced by https-* options. May be an ISO 8601 duration value, an integer
                        number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must
                        be greater than 30 seconds. Use -1 to disable. Default: 1h.
 --https-cipher-suites <ciphers>
@@ -355,8 +360,8 @@ Management:
                        details. Available only when http-management-scheme is inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-management-* options for the management server. May be a
-                       java.time.Duration value, an integer number of seconds, or an integer
+                       referenced by https-management-* options for the management server. May be
+                       an ISO 8601 duration value, an integer number of seconds, or an integer
                        followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
                        to disable. If not given, the value is inherited from HTTP options. Relevant
                        only when something is exposed on the management interface - see the guide

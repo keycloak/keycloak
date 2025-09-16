@@ -49,6 +49,17 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== MySQL and MariaDB wait_timeout validation
+
+In order to prevent connections being closed unexpectedly by the database server, it is necessary to ensure that the {project_name}
+connection pool is correctly configured with respect to the server's `wait_timeout` setting.
+
+Starting with this release, {project_name} defines a default `db-pool-max-lifetime` of 7 hours and 50 minutes for MySQL
+and MariaDB databases as the default `wait_timeout` is 8 hours.
+
+If the server defines a `wait_timeout` which is greater than the default, or provided, `db-pool-max-lifetime` value, then
+a warning will be logged on {project_name} startup.
+
 === Cache configuration removed from cache-ispn.xml
 
 The `conf/cache-ispn.xml` file no longer contains the default cache configurations.
