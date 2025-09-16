@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;

@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.cli.KcRegExec.WORK_DIR;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 

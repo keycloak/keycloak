@@ -51,7 +51,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.BrowserFlowTest;

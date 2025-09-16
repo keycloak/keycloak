@@ -41,7 +41,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;

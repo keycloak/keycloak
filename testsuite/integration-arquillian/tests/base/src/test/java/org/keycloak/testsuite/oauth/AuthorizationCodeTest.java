@@ -31,7 +31,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.AuthorizationResponseToken;
@@ -50,9 +49,7 @@ import org.openqa.selenium.By;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -60,7 +57,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -62,7 +62,7 @@ import org.keycloak.util.JsonSerialization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createEcJwk;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRsaJwk;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateEcdsaKey;

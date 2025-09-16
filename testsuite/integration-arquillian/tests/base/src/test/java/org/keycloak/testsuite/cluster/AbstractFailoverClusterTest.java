@@ -42,7 +42,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 

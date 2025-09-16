@@ -33,6 +33,7 @@ import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.testsuite.AbstractClientTest;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.KeystoreUtils;
 

@@ -106,7 +106,7 @@ import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLU
 import static org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper.PAIRWISE_SUB_ALGORITHM_SALT;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.NEW_ROLE_NAME;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 

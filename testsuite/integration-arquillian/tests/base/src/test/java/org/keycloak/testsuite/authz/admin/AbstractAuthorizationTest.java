@@ -28,7 +28,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.admin.client.AbstractClientTest;
+import org.keycloak.testsuite.AbstractClientTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;

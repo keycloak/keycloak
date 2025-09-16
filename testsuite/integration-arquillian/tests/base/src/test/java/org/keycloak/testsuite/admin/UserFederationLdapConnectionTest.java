@@ -31,6 +31,7 @@ import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.util.LDAPRule;
 
 import jakarta.ws.rs.BadRequestException;

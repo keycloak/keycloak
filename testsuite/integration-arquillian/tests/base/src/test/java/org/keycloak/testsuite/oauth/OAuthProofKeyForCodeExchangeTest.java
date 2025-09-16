@@ -29,7 +29,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.UserBuilder;
-import jakarta.ws.rs.core.UriBuilder;
+
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.stream.Stream;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 
 //https://tools.ietf.org/html/rfc7636

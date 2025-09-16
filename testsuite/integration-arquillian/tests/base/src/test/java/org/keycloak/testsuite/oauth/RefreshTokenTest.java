@@ -116,7 +116,7 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN;
 import static org.keycloak.testsuite.Assert.assertExpiration;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;

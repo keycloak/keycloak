@@ -44,7 +44,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * Tests setting up alternative reset credentials sub flow to prevent signing in after clicking "forgot password"

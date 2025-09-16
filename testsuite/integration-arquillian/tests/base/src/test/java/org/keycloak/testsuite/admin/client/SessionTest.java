@@ -25,6 +25,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testsuite.AbstractClientTest;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
