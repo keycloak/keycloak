@@ -11,14 +11,6 @@ emails before any account updates.
 
 For more information, see link:{adminguide_link}#_update-email-workflow[Update Email Workflow].
 
-== OAuth 2.0 Demonstrating Proof-of-Possession (DPoP) is now supported
-
-DPoP binds an access token and a refresh token together with the public part of a client’s key pair. This binding prevents an attacker from using stolen tokens. This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
-
-To enable this feature, start the server with `--features=preview` or `--features=dpop`.
-
-For more information, see link:{adminguide_link}#con-advanced-settings_server_administration_guide[Advanced configuration].
-
 = Passkeys integration is now supported
 
 This feature integrates passkeys seamlessly in the {project_name} forms using both conditional and modal UIs. To activate the integration in the realm, go to *Authentication*, *Policies*, *Webauthn Passwordless Policy* and switch *Enable Passkeys* to enabled.
@@ -31,21 +23,24 @@ The *Conditional - credential* is a new authenticator that checks if a specific 
 
 For more information about conditional flows, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
 
-= Option to force management interface to use HTTP.
+= Option to force management interface to use HTTP
 
 A new option, `http-management-scheme`, may be set to `http` to force the management interface to use HTTP rather than inheriting the HTTPS settings of the main interface.
 
-= Option to expose health endpoints on the main HTTP(S) ports
+= Option to expose health endpoints on the main HTTP(S) port
 
-With `health-enabled` set to true, you may set the `http-management-health-enabled` to `false` to indicate that health endpoints should be exposed on the main HTTP(s) ports instead of the
+With `health-enabled` set to true, you may set the `http-management-health-enabled` to `false` to indicate that health endpoints should be exposed on the main HTTP(s) port instead of the
 management port. When this option is `false` you should block unwanted external traffic to `/health` at your proxy.
 
 = Additional context information for log messages (preview)
 
-You can now add context information to each log message like the realm or the client that initiated the request.
+You can now add context information via the mapped diagnostic context (MDC) to each log message like the realm or the client that initiated the request.
 This helps you to track down a warning or error message in the log to a specific caller or environment
+ifeval::[{project_community}==true]
+Thank you to https://github.com/eicki[@eicki] for contributing this.
+endif::[]
 
-For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
+For more details on this opt-in feature, see https://www.keycloak.org/server/logging[Configuring logging].
 
 = Ability to specify a `tlsSecret` on the Keycloak CR `ingress` spec
 
@@ -78,13 +73,8 @@ When no domain is specified, organization members will not be validated against 
 = Enhancements for single-cluster and multi-cluster setups
 
 This release renamed multi-az to multi-cluster.
-ifeval::[{project_community}==true]
-The updated documentation includes a separate guide for single-cluster setups, which describes 
-endif::[]
-ifeval::[{project_product}==true]
-The updated documentation describes 
-endif::[]
-how {project_name} clusters can be optionally "stretched" across multiple availability-zones for increased availability.
+The updated documentation describes
+how {project_name} clusters can be optionally distributed across multiple availability-zones within a region for increased availability.
 The {project_name} Operator now deploys {project_name} across multiple availability zones within a Kubernetes cluster by default. {project_name} also detects split-brains within a cluster.
 
 This change should provide better availability for users who are running {project_name} in Kubernetes clusters that span multiple availability zones.
@@ -98,27 +88,22 @@ Community volunteers now maintain some of the translations in https://hosted.web
 If you want to volunteer to maintain an existing or a new translation via Weblate, you can find the necessary steps in the https://github.com/keycloak/keycloak/blob/main/docs/translation.md[translation guidelines].
 endif::[]
 
-= Setting up OTP can enfore set up of recovery codes
+= Enforce set up of recovery codes after setting up OTP
 
 If you have enabled OTPs and recovery codes as a second factor for authentication, you can configure the OTP required action to ask users to set up recovery codes once they set up an OTP.
 ifeval::[{project_community}==true]
 Thank you to https://github.com/dasniko[@dasniko] for contributing this.
 endif::[]
 
-= MDC logging to correlate messages with realms and clients
-
-As a new preview feature, you can include in all log messages in the mapped diagnostic context (MDC) of each message realm name, client ID and other information.
-This helps you to correlate error messages to a specific realm or client.
-ifeval::[{project_community}==true]
-Thank you to https://github.com/eicki[@eicki] for contributing this.
-endif::[]
-
-For more information, see https://www.keycloak.org/server/logging[Configuring logging].
-
-ifeval::[{project_community}==true]
 = Supported OAuth standards listed on one page
 
-A new guide exist with a list of https://www.keycloak.org/securing-apps/specifications[all implemented OpenID Connect related specifications].
+A new guide exists with a list of https://www.keycloak.org/securing-apps/specifications[all implemented OpenID Connect related specifications].
+ifeval::[{project_community}==true]
 Thank you to https://github.com/tnorimat[@tnorimat] for contributing this.
-
 endif::[]
+
+= Automatic certificate management for SAML clients
+
+The SAML clients can now be configured to automatically download the signing and encrypting certificates from the SP entity metadata descriptor endpoint. In order to use this new feature, in the client *Settings* tab, section *Signature and Encryption*, configure the *Metadata descriptor URL* option (the URL where the SP metadata information with the certificates is published) and activate *Use metadata descriptor URL*. The certificates will be automatically downloaded and cached in the `public-key-storage` SPI from that URL.
+
+For more information, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] in the {adminguide_name}.

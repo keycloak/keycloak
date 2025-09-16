@@ -26,6 +26,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
@@ -65,7 +66,6 @@ import org.keycloak.util.TokenUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.approveOAuth2DeviceAuthorization;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.denyOAuth2DeviceAuthorization;
@@ -77,10 +77,9 @@ import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2D
  */
 public class OIDCLoginProtocol implements LoginProtocol {
 
-    public static final String LOGIN_PROTOCOL = "openid-connect";
+    public static final String LOGIN_PROTOCOL = Constants.OIDC_PROTOCOL;
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
-    public static final String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
@@ -251,7 +250,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Standard or hybrid flow
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
-            OAuth2Code codeData = new OAuth2Code(UUID.randomUUID().toString(),
+            OAuth2Code codeData = new OAuth2Code(SecretGenerator.getInstance().generateSecureID(),
                 Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                 nonce,
                 authSession.getClientNote(OAuth2Constants.SCOPE),

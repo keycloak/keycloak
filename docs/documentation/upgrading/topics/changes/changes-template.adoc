@@ -1,15 +1,15 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
-Breaking changes are identified as requiring changes from existing users to their configurations.
-In minor or patch releases we will only do breaking changes to fix bugs.
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
 === <TODO>
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
-Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 
 === <TODO>
 

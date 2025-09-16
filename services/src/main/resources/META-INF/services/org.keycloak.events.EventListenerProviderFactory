@@ -17,4 +17,4 @@
 
 org.keycloak.events.email.EmailEventListenerProviderFactory
 org.keycloak.events.log.JBossLoggingEventListenerProviderFactory
-org.keycloak.models.policy.ResourcePolicyEventListenerFactory
+org.keycloak.models.workflow.WorkflowsEventListenerFactory

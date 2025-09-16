@@ -29,8 +29,10 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.ext.Provider;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory;
 import org.keycloak.services.cors.Cors;
+import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 import java.util.List;
 
@@ -54,7 +56,7 @@ public class ServerMetadataResource {
 
     @GET
     @Path("{provider}/realms/{realm}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, APPLICATION_JWT})
     public Response getOAuth2AuthorizationServerWellKnown(final @PathParam("provider") String providerName,
                                                           final @PathParam("realm") String name) {
         if (!isValidProvider(providerName)) throw new NotFoundException();
@@ -68,6 +70,7 @@ public class ServerMetadataResource {
     private boolean isValidProvider(String providerName) {
         // you can add codes here considering the current status of the implementation (preview, experimental).
         if (OAuth2WellKnownProviderFactory.PROVIDER_ID.equals(providerName)) return true;
+        if (OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID.equals(providerName)) return true;
         return false;
     }
 }

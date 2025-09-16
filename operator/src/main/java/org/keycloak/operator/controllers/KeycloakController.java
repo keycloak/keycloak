@@ -34,6 +34,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.CRDPresentActivationCondition;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
@@ -63,7 +64,12 @@ import java.util.concurrent.TimeUnit;
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class),
-        @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class)
+        @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class),
+        @Dependent(
+              type = KeycloakServiceMonitorDependentResource.class,
+              activationCondition = CRDPresentActivationCondition.class,
+              reconcilePrecondition = KeycloakServiceMonitorDependentResource.ReconcilePrecondition.class
+        ),
     })
 public class KeycloakController implements Reconciler<Keycloak> {
 

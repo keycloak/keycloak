@@ -110,16 +110,6 @@ jobs:
 
           ./mvnw test -pl "$PROJECTS" -am
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: unit-tests
-
   base-integration-tests:
     name: Base IT
     needs: build
@@ -142,22 +132,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Base IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: base-integration-tests-${{ matrix.group }}
 
   adapter-integration-tests:
     name: Adapter IT
@@ -183,22 +163,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Base IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: adapter-integration-tests
+          job-name: Adapter IT
 
   adapter-integration-tests-strict-cookies:
     name: Adapter IT Strict Cookies
@@ -224,22 +194,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pfirefox-strict-cookies -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Base IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: adapter-integration-tests-strict-cookies
+          job-name: Adapter IT Strict Cookies
 
   quarkus-unit-tests:
     name: Quarkus UT
@@ -261,16 +221,6 @@ jobs:
       - name: Run unit tests
         run: |
           ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: quarkus-unit-tests-${{ matrix.os }}
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -327,16 +277,6 @@ jobs:
           fi
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.suite }}
-
   jdk-integration-tests:
     name: Java Distribution IT
     needs: build
@@ -378,22 +318,12 @@ jobs:
         run:
           ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Java Distribution IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
 
   login-v1-tests:
     name: Login Theme v1 tests
@@ -413,22 +343,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Java Distribution IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
+          job-name: Login Theme v1 tests
 
   volatile-sessions-tests:
     name: Volatile Sessions IT
@@ -449,29 +369,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Store IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: store-integration-tests-${{ matrix.variant }}
-
-      - name: EC2 Maven Logs
-        if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: store-it-mvn-logs
-          path: .github/scripts/ansible/files
+          job-name: Volatile Sessions IT
 
   external-infinispan-tests:
     name: External Infinispan IT
@@ -496,22 +399,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
-          job-name: Remote Infinispan IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: remote-infinispan-integration-tests
+          job-name: External Infinispan IT
 
   auroradb-integration-tests:
     name: AuroraDB IT
@@ -601,22 +494,12 @@ jobs:
 
           rm -rf $results
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: AuroraDB IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: migration-tests-${{ env.old-version }}-aurora-postgres
 
       - name: EC2 Maven Logs
         if: failure()
@@ -644,22 +527,12 @@ jobs:
           rsync -a $results/* ../../../
           rm -rf $results
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: AuroraDB IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: aurora-integration-tests
 
       - name: EC2 Maven Logs
         if: failure()
@@ -758,22 +631,12 @@ jobs:
             -pl testsuite/integration-arquillian/tests/base \
             2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Store IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: store-integration-tests-${{ matrix.db }}
 
   store-model-tests:
     name: Store Model Tests
@@ -791,22 +654,12 @@ jobs:
       - name: Run model tests
         run: testsuite/model/test-all-profiles.sh ${{ env.SUREFIRE_RETRY }}
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Store Model Tests
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: store-model-tests
 
   clustering-integration-tests:
     name: Clustering IT
@@ -826,22 +679,12 @@ jobs:
         run: |
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Clustering IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: clustering-integration-tests
 
   fips-unit-tests:
     name: FIPS UT
@@ -863,16 +706,6 @@ jobs:
 
       - name: Run crypto tests
         run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
-
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: fips-unit-tests
 
   fips-integration-tests:
     name: FIPS IT
@@ -901,22 +734,12 @@ jobs:
       - name: Run base tests
         run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: FIPS IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: fips-integration-tests-${{ matrix.mode }}
 
   forms-integration-tests:
     name: Forms IT
@@ -943,22 +766,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} -f testsuite/integration-arquillian/tests/base/pom.xml 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Forms IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: forms-integration-tests-${{ matrix.browser }}
 
   webauthn-integration-tests:
     name: WebAuthn IT
@@ -988,22 +801,12 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: WebAuthn IT
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: webauthn-integration-tests-${{ matrix.browser }}
 
   sssd-unit-tests:
     name: SSSD
@@ -1036,12 +839,6 @@ jobs:
       - name: Run tests
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: sssd-unit-tests
-
   migration-tests:
     name: Migration Tests
     runs-on: ubuntu-latest
@@ -1072,22 +869,12 @@ jobs:
           "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
           -f testsuite/integration-arquillian/pom.xml 2>&1 | misc/log/trimmer.sh
 
-      - name: Upload JVM Heapdumps
-        if: always()
-        uses: ./.github/actions/upload-heapdumps
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Migration Tests
-
-      - name: Surefire reports
-        if: always()
-        uses: ./.github/actions/archive-surefire-reports
-        with:
-          job-id: migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
 
   test-framework:
     name: Test Framework

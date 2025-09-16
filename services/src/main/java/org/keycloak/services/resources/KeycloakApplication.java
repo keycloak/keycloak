@@ -59,7 +59,6 @@ public abstract class KeycloakApplication extends Application {
         try {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
-            Profile.getInstance().logUnsupportedFeatures();
             loadConfig();
 
             platform.onStartup(this::startup);
@@ -71,6 +70,7 @@ public abstract class KeycloakApplication extends Application {
     }
 
     protected void startup() {
+        Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();
 
