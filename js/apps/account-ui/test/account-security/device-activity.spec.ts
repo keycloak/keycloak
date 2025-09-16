@@ -29,6 +29,7 @@ test.describe("Device activity", () => {
         .getByRole("button", { name: "Sign out", exact: true })
         .click();
       await page2.getByRole("button", { name: "Confirm", exact: true }).click();
+      await expect(page2.getByTestId("last-alert")).toContainText("Signed out");
 
       // Reload pages and verify the first session is logged out, while the second session remains active.
       await page1.reload();
@@ -64,17 +65,17 @@ test.describe("Device activity", () => {
         .getByRole("button", { name: "Sign out all devices", exact: true })
         .click();
       await page2.getByRole("button", { name: "Confirm", exact: true }).click();
+      await expect(
+        page2.getByRole("heading", {
+          name: "Sign in to your account",
+          exact: true,
+        }),
+      ).toBeVisible();
 
       // Reload only the first page (second page is already logged out), and verify both sessions are logged out.
       await page1.reload();
       await expect(
         page1.getByRole("heading", {
-          name: "Sign in to your account",
-          exact: true,
-        }),
-      ).toBeVisible();
-      await expect(
-        page2.getByRole("heading", {
           name: "Sign in to your account",
           exact: true,
         }),
