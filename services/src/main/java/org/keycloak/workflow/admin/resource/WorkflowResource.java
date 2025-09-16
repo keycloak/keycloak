@@ -70,4 +70,9 @@ public class WorkflowResource {
 
         manager.bind(workflow, type, resourceId);
     }
+
+    @Path("steps")
+    public WorkflowStepsResource steps() {
+        return new WorkflowStepsResource(manager, workflow);
+    }
 }
