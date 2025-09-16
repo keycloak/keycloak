@@ -41,6 +41,10 @@ public class SamlClient extends ClientConfigResolver {
         super(client);
     }
 
+    public ClientModel getClient() {
+        return client;
+    }
+
     public String getCanonicalizationMethod() {
         return resolveAttribute(SamlConfigAttributes.SAML_CANONICALIZATION_METHOD_ATTRIBUTE);
     }
@@ -304,5 +308,25 @@ public class SamlClient extends ClientConfigResolver {
 
     public String getArtifactBindingIdentifier() {
         return client.getAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER);
+    }
+
+    public void setUseMetadataDescriptorUrl(Boolean useDescriptorUrl) {
+        if (useDescriptorUrl == null || !useDescriptorUrl) {
+            client.removeAttribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL);
+        } else {
+            client.setAttribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL, Boolean.toString(useDescriptorUrl));
+        }
+    }
+
+    public boolean isUseMetadataDescriptorUrl() {
+        return Boolean.parseBoolean(resolveAttribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL));
+    }
+
+    public String getMetadataDescriptorUrl() {
+        return client.getAttribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL);
+    }
+
+    public void setMetadataDescriptorUrl(String metadataUrl) {
+        client.setAttribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, metadataUrl);
     }
 }

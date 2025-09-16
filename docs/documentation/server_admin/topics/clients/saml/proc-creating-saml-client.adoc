@@ -100,6 +100,12 @@ do not work if the SAML client runs on Java 17 or higher.
 +
 *Canonicalization Method*:: The canonicalization method for XML signatures.
 
+*Metadata descriptor URL*:: External URL where the client publishes the `SPSSODescriptor` metadata. This URL is used to download the client certificates when the *Use metadata descriptor URL* is enabled.
+
+*Use metadata descriptor URL*:: When *ON*, the certificates to validate signatures (*Client signature required* option is enabled in the *Keys* tab) and encrypt assertions (*Encrypt assertions* in the same tab) are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. If a specific certificate is requested to validate a signature (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) or any key is requested to encrypt, the refresh is only done after a max cache time. This maximum time can be specified in the descriptor itself, `cacheDuration` or `validUntil` attributes, or the cache provider defines one. See https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works.
++
+When the option is *OFF*, the key should be generated or imported when activating the respective switch in the *Keys* tab.
+
 *Encryption algorithm*:: Encryption algorithm used for the client. Default value is `AES_256_GCM` when not defined.
 
 *Key transport algorithm*:: Key transport algorithm used for the client to encrypt the secret key used for encryption. Default value is `RSA-OAEP-11` when not defined.
@@ -135,9 +141,13 @@ There will be also one item on the consent screen about this client itself.
 
 == Keys tab
 
-*Client Signature Required*:: If *Client Signature Required* is enabled, documents coming from a client are expected to be signed. {project_name} will validate this signature using the client public key or cert set up in the `Keys` tab.
+*Client Signature Required*:: If *Client Signature Required* is enabled, documents coming from a client are expected to be signed. {project_name} will validate this signature.
++
+If the option *Use metadata descriptor URL* is enabled in the *Signature and Encryption* section of the *Settings* tab, the public keys used to validate signature are automatically downloaded and cached by {project_name}. If that option is disabled, you need to import or generate the key when *Client Signature Required* is activated.
 
 *Encrypt Assertions*:: Encrypts the assertions in SAML documents with the specified client public key. Default algorithms used for encryption are configured with security in mind. If you need a different configuration, the encryption details can be modified in the *Settings* tab, section *Signature and Encryption*. The encryption options are only visible when this *Encrypt Assertions* option is enabled.
++
+The key used to encrypt the assertions is controlled in the same way as in the case of *Client Signature Required*. If *Use metadata descriptor URL* is enabled, the key is doenloaded and cached by {project_name}. If that option is disabled, you need to import or generate the key when activating the *Encrypt Assertions* option.
 
 == Advanced tab
 
