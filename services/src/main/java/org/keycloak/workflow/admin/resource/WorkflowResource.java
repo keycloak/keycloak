@@ -12,10 +12,13 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.services.ErrorResponse;
 
 public class WorkflowResource {
 
@@ -29,12 +32,20 @@ public class WorkflowResource {
 
     @DELETE
     public void delete() {
-        manager.removeWorkflow(workflow.getId());
+        try {
+            manager.removeWorkflow(workflow.getId());
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     @PUT
     public void update(WorkflowRepresentation rep) {
-        manager.updateWorkflow(workflow, rep.getConfig());
+        try {
+            manager.updateWorkflow(workflow, rep.getConfig());
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     @GET

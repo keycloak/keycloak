@@ -1,6 +1,7 @@
 package org.keycloak.tests.admin.model.workflow;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -12,6 +13,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -23,6 +26,7 @@ import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.UserCreationTimeWorkflowProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -80,6 +84,28 @@ public class AggregatedStepTest {
             assertThat(a.getConfig().isEmpty(), is(false));
             assertThat(a.getConfig(), hasEntry("priority", List.of("2")));
         });
+    }
+
+    @Test
+    public void testFailCreateIfSettingActionsToRegularActions() {
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .withConfig("key", "value")
+                                .withSteps(WorkflowStepRepresentation.create()
+                                                .of(SetUserAttributeStepProviderFactory.ID)
+                                                .withConfig("message", "message")
+                                                .build(),
+                                        WorkflowStepRepresentation.create()
+                                                .of(DisableUserStepProviderFactory.ID)
+                                                .build()
+                                ).build())
+                .build())) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Action provider " + SetUserAttributeStepProviderFactory.ID + " does not support aggregated actions"));
+        }
     }
 
     @Test
