@@ -100,6 +100,9 @@ spec:
 ----
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
        For details on various configuration formats, see <@links.server id="configuration"/>.
+       
+NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface. 
+If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to also set the additionalOption `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests. 
 
 ==== Custom environment variables
 

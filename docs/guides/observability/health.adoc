@@ -84,6 +84,8 @@ If the command returns with status 0, then {project_name} is `+live+` or `+ready
 
 Define a https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#http-probes[HTTP Probe] so that Kubernetes may externally monitor the health endpoints. Do not use a liveness command.
 
+NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface. If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to set `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests.
+
 === HEALTHCHECK
 
 The Containerfile `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. The {project_name} container does not have any CLI HTTP clients installed. Consider installing `+curl+` as an additional RPM, as detailed by the <@links.server id="containers" /> {section}. Note that your container may be less secure because of this.
