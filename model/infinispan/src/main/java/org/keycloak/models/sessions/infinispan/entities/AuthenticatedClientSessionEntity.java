@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.infinispan.protostream.annotations.ProtoFactory;
@@ -46,7 +47,9 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
     public static final Logger logger = Logger.getLogger(AuthenticatedClientSessionEntity.class);
 
     // Metadata attribute, which contains the last timestamp available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
+    @Deprecated(since = "26.4", forRemoval = true)
     public static final String LAST_TIMESTAMP_REMOTE = "lstr";
+    @Deprecated(since = "26.4", forRemoval = true)
     public static final String CLIENT_ID_NOTE = "clientId";
 
     private String authMethod;
@@ -56,7 +59,9 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
+    // TODO [pruivo] [KC27] make these fields final. They are the client session identity.
     private volatile String userSessionId;
+    private volatile String clientId;
 
     public AuthenticatedClientSessionEntity() {
     }
@@ -102,12 +107,13 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         return Boolean.parseBoolean(getNotes().get(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE));
     }
 
+    @ProtoField(7)
     public String getClientId() {
-        return getNotes().get(CLIENT_ID_NOTE);
+        return clientId;
     }
 
     public void setClientId(String clientId) {
-        getNotes().put(CLIENT_ID_NOTE, clientId);
+        this.clientId = clientId;
     }
 
     @ProtoField(value = 5)
@@ -130,25 +136,33 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     @Override
     public boolean equals(Object o) {
-        return this == o;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AuthenticatedClientSessionEntity that = (AuthenticatedClientSessionEntity) o;
+        return Objects.equals(userSessionId, that.userSessionId) && Objects.equals(clientId, that.clientId);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(userSessionId);
+        result = 31 * result + Objects.hashCode(clientId);
+        return result;
     }
 
     // factory method required because of final fields
     @ProtoFactory
-    AuthenticatedClientSessionEntity(String realmId, String authMethod, String redirectUri, int timestamp, String action, Map<String, String> notes) {
+    AuthenticatedClientSessionEntity(String realmId, String authMethod, String redirectUri, int timestamp, String action, Map<String, String> notes, String userSessionId, String clientId) {
         super(realmId);
         this.authMethod = authMethod;
         this.redirectUri = redirectUri;
         this.timestamp = timestamp;
         this.action = action;
         this.notes = notes;
+        this.userSessionId = userSessionId;
+        this.clientId = clientId;
     }
 
-    @Override
-    public int hashCode() {
-        return System.identityHashCode(this);
-    }
-
+    @ProtoField(7)
     public String getUserSessionId() {
         return userSessionId;
     }

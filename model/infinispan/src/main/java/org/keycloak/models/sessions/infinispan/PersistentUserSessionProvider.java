@@ -910,6 +910,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             var key = new EmbeddedClientSessionKey(sessionEntityWrapper.getEntity().getId(), clientId);
             SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessionCache.get(key);
             if (clientSession != null) {
+                // TODO [pruivo] [KC27] Remove!
                 // This is necessary because client sessions created by a KC version < 22 do not have clientId set within the entity.
                 if (clientSession.getEntity().getClientId() == null) {
                     clientSession.getEntity().setClientId(clientId);
