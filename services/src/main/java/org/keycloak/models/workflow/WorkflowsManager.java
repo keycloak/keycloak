@@ -433,4 +433,111 @@ public class WorkflowsManager {
             }
         }
     }
+
+    public WorkflowStep addStepToWorkflow(String workflowId, WorkflowStep step, Integer position) {
+        Objects.requireNonNull(workflowId, "workflowId cannot be null");
+        Objects.requireNonNull(step, "step cannot be null");
+
+        List<WorkflowStep> existingSteps = getSteps(workflowId);
+
+        int targetPosition = position != null ? position : existingSteps.size();
+        if (targetPosition < 0 || targetPosition > existingSteps.size()) {
+            throw new BadRequestException("Invalid position: " + targetPosition + ". Must be between 0 and " + existingSteps.size());
+        }
+
+        // First, shift existing steps at and after the target position to make room
+        shiftStepsForInsertion(targetPosition, existingSteps);
+
+        step.setPriority(targetPosition + 1);
+        WorkflowStep addedStep = addStep(workflowId, step);
+
+        updateScheduledStepsAfterStepChange(workflowId);
+
+        log.debugf("Added step %s to workflow %s at position %d", addedStep.getId(), workflowId, targetPosition);
+        return addedStep;
+    }
+
+    public void removeStepFromWorkflow(String workflowId, String stepId) {
+        Objects.requireNonNull(workflowId, "workflowId cannot be null");
+        Objects.requireNonNull(stepId, "stepId cannot be null");
+
+        RealmModel realm = getRealm();
+        ComponentModel stepComponent = realm.getComponent(stepId);
+
+        if (stepComponent == null || !stepComponent.getParentId().equals(workflowId)) {
+            throw new BadRequestException("Step not found or not part of workflow: " + stepId);
+        }
+
+        realm.removeComponent(stepComponent);
+
+        // Reorder remaining steps and update state
+        reorderAllSteps(workflowId);
+        updateScheduledStepsAfterStepChange(workflowId);
+
+        log.debugf("Removed step %s from workflow %s", stepId, workflowId);
+    }
+
+    private void shiftStepsForInsertion(int insertPosition, List<WorkflowStep> existingSteps) {
+        RealmModel realm = getRealm();
+
+        // Shift all steps at and after the insertion position by +1 priority
+        for (int i = insertPosition; i < existingSteps.size(); i++) {
+            WorkflowStep step = existingSteps.get(i);
+            step.setPriority(step.getPriority() + 1);
+            updateStepComponent(realm, step);
+        }
+    }
+
+    private void reorderAllSteps(String workflowId) {
+        List<WorkflowStep> steps = getSteps(workflowId);
+        RealmModel realm = getRealm();
+
+        for (int i = 0; i < steps.size(); i++) {
+            WorkflowStep step = steps.get(i);
+            step.setPriority(i + 1);
+            updateStepComponent(realm, step);
+        }
+    }
+
+    private void updateStepComponent(RealmModel realm, WorkflowStep step) {
+        ComponentModel component = realm.getComponent(step.getId());
+        component.setConfig(step.getConfig());
+        realm.updateComponent(component);
+    }
+
+    private void updateScheduledStepsAfterStepChange(String workflowId) {
+        List<WorkflowStep> steps = getSteps(workflowId);
+
+        if (steps.isEmpty()) {
+            workflowStateProvider.remove(workflowId);
+            return;
+        }
+
+        for (ScheduledStep scheduled : workflowStateProvider.getScheduledStepsByWorkflow(workflowId)) {
+            boolean stepStillExists = steps.stream()
+                    .anyMatch(step -> step.getId().equals(scheduled.stepId()));
+
+            if (!stepStillExists) {
+                Workflow workflow = getWorkflow(workflowId);
+                workflowStateProvider.scheduleStep(workflow, steps.get(0), scheduled.resourceId());
+            }
+        }
+    }
+
+    public WorkflowStepRepresentation toStepRepresentation(WorkflowStep step) {
+        List<WorkflowStepRepresentation> steps = step.getSteps().stream()
+                .map(this::toStepRepresentation)
+                .toList();
+        return new WorkflowStepRepresentation(step.getId(), step.getProviderId(), step.getConfig(), steps);
+    }
+
+    public WorkflowStep toStepModel(WorkflowStepRepresentation rep) {
+        List<WorkflowStep> subSteps = new ArrayList<>();
+
+        for (WorkflowStepRepresentation subStep : ofNullable(rep.getSteps()).orElse(List.of())) {
+            subSteps.add(toStepModel(subStep));
+        }
+
+        return new WorkflowStep(rep.getProviderId(), rep.getConfig(), subSteps);
+    }
 }
