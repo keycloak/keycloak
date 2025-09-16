@@ -107,7 +107,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         return Boolean.parseBoolean(getNotes().get(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE));
     }
 
-    @ProtoField(7)
+    @ProtoField(9)
     public String getClientId() {
         return clientId;
     }
@@ -162,7 +162,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.clientId = clientId;
     }
 
-    @ProtoField(7)
+    @ProtoField(8)
     public String getUserSessionId() {
         return userSessionId;
     }
