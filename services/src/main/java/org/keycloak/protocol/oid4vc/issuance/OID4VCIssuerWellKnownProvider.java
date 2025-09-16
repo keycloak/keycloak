@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
+import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import org.apache.http.HttpHeaders;
 import org.keycloak.common.util.Time;
@@ -26,6 +27,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -38,13 +40,15 @@ import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import java.net.URI;
 
-import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.services.Urls;
+import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -129,6 +133,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
             }
         }
 
+        // Add deprecation headers/logs if the old realm-scoped route was used
+        addDeprecationHeadersIfOldRoute(keycloakSession);
+
         return new CredentialIssuer()
                 .setCredentialIssuer(getIssuer(context))
                 .setCredentialEndpoint(getCredentialsEndpoint(context))
@@ -155,6 +162,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 LOGGER.debugf("Falling back to JSON response due to signed metadata failure for realm: %s", realm.getName());
             }
         }
+
         return issuer;
     }
 
@@ -521,6 +529,38 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      */
     public static List<String> getSupportedAsymmetricSignatureAlgorithms(KeycloakSession session) {
         return CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
+    }
+
+    /**
+     * Attach OID4VCI-specific deprecation headers (and a server WARN) when the old
+     * realm-scoped route is used.
+     * old: /realms/{realm}/.well-known/openid-credential-issuer
+     * new: /.well-known/openid-credential-issuer/realms/{realm}
+     */
+    private void addDeprecationHeadersIfOldRoute(KeycloakSession session) {
+        String requestPath = session.getContext().getUri().getRequestUri().getPath();
+        if (requestPath == null) {
+            return;
+        }
+
+        int idxRealms = requestPath.indexOf("/realms/");
+        int idxWellKnown = requestPath.indexOf("/.well-known/");
+        boolean isOldRoute = idxRealms >= 0 && idxWellKnown > idxRealms;
+        if (!isOldRoute) {
+            return;
+        }
+
+        UriBuilder base = session.getContext().getUri().getBaseUriBuilder();
+        String logKey = session.getContext().getRealm().getName();
+        URI successor = ServerMetadataResource.wellKnownOAuthProviderUrl(base)
+                .build(Oid4VciConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER, logKey);
+
+        HttpResponse httpResponse = session.getContext().getHttpResponse();
+        httpResponse.setHeader("Warning", "299 - \"Deprecated endpoint; use " + successor + "\"");
+        httpResponse.setHeader("Deprecation", "true");
+        httpResponse.setHeader("Link", "<" + successor + ">; rel=\"successor-version\"");
+
+        LOGGER.warnf("Deprecated realm-scoped well-known endpoint accessed for OID4VCI in realm '%s'. Use %s instead.", logKey, successor);
     }
 
 }

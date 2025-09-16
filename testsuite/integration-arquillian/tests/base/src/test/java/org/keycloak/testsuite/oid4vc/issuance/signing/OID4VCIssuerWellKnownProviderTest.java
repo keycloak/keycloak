@@ -23,6 +23,7 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -700,6 +701,65 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         // Non-numeric value should be rejected (parsing exception)
         testBatchSizeValidation(testingClient, "invalid", false, null);
+    }
+
+    @Test
+    public void testOldOidcDiscoveryCompliantWellKnownUrlWithDeprecationHeaders() {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            // Old OIDC Discovery compliant URL
+            String oldWellKnownUri = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/.well-known/openid-credential-issuer";
+            String expectedIssuer = getRealmPath(TEST_REALM_NAME);
+
+            HttpGet getMetadata = new HttpGet(oldWellKnownUri);
+            getMetadata.addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+
+            try (CloseableHttpResponse response = httpClient.execute(getMetadata)) {
+                // Status & Content-Type
+                assertEquals("Old well-known URL should return 200 OK",
+                        HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+
+                String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue();
+                assertTrue("Content-Type should be application/json",
+                        contentType.startsWith(MediaType.APPLICATION_JSON));
+
+                // Headers
+                Header warning = response.getFirstHeader("Warning");
+                Header deprecation = response.getFirstHeader("Deprecation");
+                Header link = response.getFirstHeader("Link");
+
+                assertNotNull("Should have deprecation warning header", warning);
+                assertTrue("Warning header should contain deprecation message",
+                        warning.getValue().contains("Deprecated endpoint"));
+
+                assertNotNull("Should have deprecation header", deprecation);
+                assertEquals("Deprecation header should be 'true'", "true", deprecation.getValue());
+
+                assertNotNull("Should have successor link header", link);
+                assertTrue("Link header should contain successor-version",
+                        link.getValue().contains("successor-version"));
+
+                // Response body
+                String json = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                CredentialIssuer issuer = JsonSerialization.readValue(json, CredentialIssuer.class);
+
+                assertNotNull("Response should be a CredentialIssuer object", issuer);
+
+                assertEquals("credential_issuer should be set",
+                        expectedIssuer, issuer.getCredentialIssuer());
+                assertEquals("credential_endpoint should be correct",
+                        expectedIssuer + "/protocol/oid4vc/credential", issuer.getCredentialEndpoint());
+                assertEquals("nonce_endpoint should be correct",
+                        expectedIssuer + "/protocol/oid4vc/nonce", issuer.getNonceEndpoint());
+                assertEquals("deferred_credential_endpoint should be correct",
+                        expectedIssuer + "/protocol/oid4vc/deferred_credential", issuer.getDeferredCredentialEndpoint());
+
+                assertNotNull("authorization_servers should be present", issuer.getAuthorizationServers());
+                assertNotNull("credential_response_encryption should be present", issuer.getCredentialResponseEncryption());
+                assertNotNull("batch_credential_issuance should be present", issuer.getBatchCredentialIssuance());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process old well-known URL response: " + e.getMessage(), e);
+        }
     }
 
     private void testBatchSizeValidation(KeycloakTestingClient testingClient, String batchSize, boolean shouldBePresent, Integer expectedValue) {
