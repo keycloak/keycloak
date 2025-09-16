@@ -89,19 +89,19 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
         clientSessionEntities.forEach(clientUUID -> {
             // Check if client still exists
             ClientModel client = realm.getClientById(clientUUID);
-            if (client != null) {
-                final AuthenticatedClientSessionModel clientSession = provider.getClientSession(this, client, offline);
-                if (clientSession != null) {
-                    result.put(clientUUID, clientSession);
-                } else {
-                    // Either the client session has expired, or it hasn't been added by a concurrently running login yet.
-                    // So it is unsafe to clear it, so we need to keep it for now. Otherwise, the test ConcurrentLoginTest.concurrentLoginSingleUser will fail.
-                    // removedClientUUIDS.add(key);
-                }
-            } else {
+            if (client == null) {
                 // client does no longer exist
                 removedClientUUIDS.add(clientUUID);
+                return;
             }
+            var clientSession = provider.getClientSession(this, client, offline);
+            if (clientSession == null) {
+                // Either the client session has expired, or it hasn't been added by a concurrently running login yet.
+                // So it is unsafe to remove it, so we need to keep it for now.
+                // Otherwise, the test ConcurrentLoginTest.concurrentLoginSingleUser will fail.
+                return;
+            }
+            result.put(clientUUID, clientSession);
         });
 
         removeAuthenticatedClientSessions(removedClientUUIDS);

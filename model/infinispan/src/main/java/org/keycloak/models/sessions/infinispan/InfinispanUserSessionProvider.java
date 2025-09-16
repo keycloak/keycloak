@@ -78,6 +78,9 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.utils.StreamsUtil;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -213,17 +216,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
             log.debug("Clear caches as client session entries are now outdated and are not migrated");
             // This is a best-effort approach: Even if due to a rolling update some entries are left there, the checking of sessions and tokens does not depend on them.
             // Refreshing of tokens will still work even if the user session does not contain the list of client sessions.
-            // This still keeps the user session cache to keep users logged in on a best effort basis. Only the offline user sessions cache is cleared.
+            // This still keeps the user session cache to keep users logged in on a best effort basis.
+            // Only the offline user sessions cache is cleared, but not the regular user sessions cache is cleared.
+            // All client session caches regular and offline client sessions are cleared as usual.
             var stage = CompletionStages.aggregateCompletionStage();
-            Stream.of(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME)
-                    .map(s -> {
-                        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-                        if (provider != null) {
-                            return provider.getCache(s, false);
-                        } else {
-                            return null;
-                        }
-                    })
+            var provider = session.getProvider(InfinispanConnectionProvider.class);
+            Stream.of(OFFLINE_USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)
+                    .map(s -> provider.getCache(s, false))
                     .filter(Objects::nonNull)
                     .map(AsyncCache::clearAsync)
                     .forEach(stage::dependsOn);

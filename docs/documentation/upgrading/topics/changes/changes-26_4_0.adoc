@@ -263,8 +263,9 @@ In a future major release, the start-up will fail if default cache configuration
 
 === Simplified API for UserSessionProvider
 
-In order to retrieve a client session via `UserSessionProvider#getClientSession`, you no longer need to pass in the client session ID. The old methods have been deprecated and will be removed in a future release.
-Review also the other methods that are deprecated for removal in this class.
+In order to retrieve a client session via `UserSessionProvider#getClientSession`, you no longer need to pass in the client session ID.
+The old methods have been deprecated and will be removed in a future release.
+You should also review the other methods that are deprecated for removal in this class.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
