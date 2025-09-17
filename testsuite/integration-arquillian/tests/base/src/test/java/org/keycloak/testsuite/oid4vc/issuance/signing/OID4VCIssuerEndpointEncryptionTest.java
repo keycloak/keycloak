@@ -91,7 +91,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     PrivateKey privateKey = (PrivateKey) jwkPair.get("privateKey");
 
                     CredentialRequest credentialRequest = new CredentialRequest()
-                            .setFormat(Format.JWT_VC)
                             .setCredentialIdentifier(scopeName)
                             .setCredentialResponseEncryption(
                                     new CredentialResponseEncryption()
@@ -146,7 +145,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setFormat(Format.JWT_VC)
                         .setCredentialIdentifier("test-credential");
 
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
@@ -194,7 +192,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 PrivateKey responsePrivateKey = (PrivateKey) jwkPair.get("privateKey");
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setFormat(Format.JWT_VC)
                         .setCredentialIdentifier(scopeName)
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
@@ -263,7 +260,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 // Create credential request with response encryption parameters
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setFormat(Format.JWT_VC)
                         .setCredentialIdentifier(scopeName)
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
@@ -317,7 +313,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             // Missing enc parameter
             JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"n\":\"test-n\",\"e\":\"AQAB\"}").getJwk();
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
                     .setCredentialIdentifier("test-credential")
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
@@ -420,7 +415,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             }
 
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
                     .setCredentialIdentifier("test-credential")
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
@@ -456,7 +450,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             }
 
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
                     .setCredentialIdentifier("test-credential")
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
@@ -488,7 +481,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             // Invalid JWK (missing modulus but WITH alg parameter)
             JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"alg\":\"RSA-OAEP-256\",\"e\":\"AQAB\"}").getJwk();
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setFormat(Format.JWT_VC)
                     .setCredentialIdentifier(scopeName)
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
@@ -523,7 +515,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setFormat(Format.JWT_VC)
                         .setCredentialIdentifier(scopeName);
 
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
