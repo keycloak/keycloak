@@ -23,7 +23,6 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.quarkus.runtime.configuration.MemorySizeConverter;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.common.Profile;
 import org.keycloak.config.LoggingOptions;
@@ -32,8 +31,9 @@ import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
+import io.quarkus.dev.console.QuarkusConsole;
+import io.quarkus.runtime.configuration.MemorySizeConverter;
 import io.smallrye.config.ConfigSourceInterceptorContext;
-import picocli.CommandLine.Help.Ansi;
 
 public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
@@ -267,7 +267,7 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private String transformConsoleColor(String value, ConfigSourceInterceptorContext context) {
-        return Optional.ofNullable(value).orElse(Boolean.toString(Ansi.AUTO.enabled()));
+        return Optional.ofNullable(value).orElse(Boolean.toString(QuarkusConsole.hasColorSupport()));
     }
 
     public static boolean isConsoleEnabled() {
