@@ -24,11 +24,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * Utility class for handling claims path pointers.
  * A claims path pointer is a pointer into the Verifiable Credential, identifying one or more claims.
- * 
+ *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
 public class ClaimsPathPointer {
@@ -158,9 +159,9 @@ public class ClaimsPathPointer {
                 return true;
             }
 
-            // If components are different, no conflict at this level
-            if (!comp1.equals(comp2)) {
-                return false;
+            // If components are equal, return true (as suggested by reviewer)
+            if (Objects.equals(comp1, comp2)) {
+                return true;
             }
         }
 
@@ -192,6 +193,12 @@ public class ClaimsPathPointer {
                 continue; // Skip invalid paths
             }
 
+            // Validate the claims path pointer format according to OID4VCI specification
+            if (!isValidPath(path)) {
+                logger.warnf("Invalid claims path pointer: %s. Path must contain only strings, non-negative integers, and null values.", path);
+                continue; // Skip invalid paths
+            }
+
             try {
                 // Get claim values
                 List<Object> claimValues = processClaimsPathPointer(allClaims, path);
@@ -212,6 +219,8 @@ public class ClaimsPathPointer {
                 // Optional claims that don't exist are simply not included
             } catch (IllegalArgumentException e) {
                 if (Boolean.TRUE.equals(claim.getMandatory())) {
+                    // Log error for mandatory claims before re-throwing
+                    logger.errorf("Failed to process mandatory claim path %s: %s", path, e.getMessage());
                     // Re-throw for mandatory claims
                     throw e;
                 }
@@ -261,10 +270,6 @@ public class ClaimsPathPointer {
                         if (value != null) {
                             nextSelection.add(value);
                         }
-                        // If key doesn't exist, element is removed from selection (not added to nextSelection)
-                    } else {
-                        // Not an object, abort processing for this element
-                        // Element is removed from selection
                     }
                 } else if (component instanceof Integer) {
                     // Integer component: select element by index
@@ -277,19 +282,12 @@ public class ClaimsPathPointer {
                         if (index < list.size()) {
                             nextSelection.add(list.get(index));
                         }
-                        // If index out of bounds, element is removed from selection
-                    } else {
-                        // Not a list, abort processing for this element
-                        // Element is removed from selection
                     }
                 } else if (component == null) {
                     // Null component: select all elements of currently selected array(s)
                     if (current instanceof List) {
                         List<?> list = (List<?>) current;
                         nextSelection.addAll(list);
-                    } else {
-                        // Not an array, abort processing for this element
-                        // Element is removed from selection
                     }
                 } else {
                     throw new IllegalArgumentException("Invalid path component type: " + component.getClass().getSimpleName() +
@@ -347,70 +345,7 @@ public class ClaimsPathPointer {
      * @param values the list of values to add
      */
     private static void createArrayStructureForMultipleValues(Map<String, Object> claims, List<Object> path, List<Object> values) {
-        if (path.size() < 2) {
-            return;
-        }
-
-        Object current = claims;
-        String rootKey = (String) path.get(0);
-
-        // Ensure root key exists
-        if (!(current instanceof Map)) {
-            return;
-        }
-
-        Map<String, Object> rootMap = (Map<String, Object>) current;
-        if (!rootMap.containsKey(rootKey)) {
-            rootMap.put(rootKey, new ArrayList<Object>());
-        }
-
-        current = rootMap.get(rootKey);
-
-        // Navigate through the path, building structure as needed
-        for (int i = 1; i < path.size() - 1; i++) {
-            Object component = path.get(i);
-
-            if (component instanceof String) {
-                if (!(current instanceof Map)) {
-                    return; // Can't navigate further
-                }
-                Map<String, Object> map = (Map<String, Object>) current;
-                if (!map.containsKey(component)) {
-                    map.put((String) component, new HashMap<String, Object>());
-                }
-                current = map.get(component);
-            } else if (component instanceof Integer) {
-                if (!(current instanceof List)) {
-                    return; // Can't navigate further
-                }
-                List<Object> list = (List<Object>) current;
-                int index = (Integer) component;
-                while (list.size() <= index) {
-                    list.add(new HashMap<String, Object>());
-                }
-                current = list.get(index);
-            }
-        }
-
-        // Set the final value - for array selection, we want to add all values
-        Object finalComponent = path.get(path.size() - 1);
-        if (finalComponent instanceof String) {
-            if (current instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) current;
-                // For array selection, store all values
-                map.put((String) finalComponent, new ArrayList<Object>(values));
-            }
-        } else if (finalComponent instanceof Integer) {
-            if (current instanceof List) {
-                List<Object> list = (List<Object>) current;
-                int index = (Integer) finalComponent;
-                while (list.size() <= index) {
-                    list.add(null);
-                }
-                // For array selection, store all values
-                list.set(index, new ArrayList<Object>(values));
-            }
-        }
+        buildNestedStructure(claims, path, new ArrayList<Object>(values), true);
     }
 
     /**
@@ -443,6 +378,18 @@ public class ClaimsPathPointer {
      * @param value  the value to add
      */
     private static void buildNestedClaimStructure(Map<String, Object> claims, List<Object> path, Object value) {
+        buildNestedStructure(claims, path, value, false);
+    }
+
+    /**
+     * Generic method to build nested structure for both single values and multiple values.
+     *
+     * @param claims           the claims map to build in
+     * @param path             the claims path pointer
+     * @param value            the value to add (single value or list of values)
+     * @param isArraySelection true if this is for array selection (multiple values), false for single value
+     */
+    private static void buildNestedStructure(Map<String, Object> claims, List<Object> path, Object value, boolean isArraySelection) {
         if (path.size() < 2) {
             return;
         }
@@ -457,7 +404,8 @@ public class ClaimsPathPointer {
 
         Map<String, Object> rootMap = (Map<String, Object>) current;
         if (!rootMap.containsKey(rootKey)) {
-            rootMap.put(rootKey, new HashMap<String, Object>());
+            // Use ArrayList for array selection, HashMap for single values
+            rootMap.put(rootKey, isArraySelection ? new ArrayList<Object>() : new HashMap<String, Object>());
         }
 
         current = rootMap.get(rootKey);
@@ -482,7 +430,8 @@ public class ClaimsPathPointer {
                 List<Object> list = (List<Object>) current;
                 int index = (Integer) component;
                 while (list.size() <= index) {
-                    list.add(new HashMap<String, Object>());
+                    // Use HashMap for single values, null for array selection
+                    list.add(isArraySelection ? null : new HashMap<String, Object>());
                 }
                 current = list.get(index);
             }

@@ -174,6 +174,12 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
                 throw getInvalidRequestException("Invalid claims description: path is required");
             }
 
+            // Validate the claims path pointer format according to OID4VCI specification
+            if (!ClaimsPathPointer.isValidPath(requestedClaim.getPath())) {
+                throw getInvalidRequestException("Invalid claims path pointer: " + requestedClaim.getPath() +
+                        ". Path must contain only strings, non-negative integers, and null values.");
+            }
+
             String requestedPath = requestedClaim.getPath().toString();
 
             // Check if the requested claim path exists in the exposed metadata
@@ -209,7 +215,6 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             credentialIdentifiers = new ArrayList<>();
             credentialIdentifiers.add(UUID.randomUUID().toString());
         }
-
 
         OID4VCAuthorizationDetailsResponse responseDetail = new OID4VCAuthorizationDetailsResponse();
         responseDetail.setType(OPENID_CREDENTIAL_TYPE);
