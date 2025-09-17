@@ -37,16 +37,18 @@ public abstract class AbstractGeneratedSecretKeyProviderFactory<T extends KeyPro
         ConfigurationValidationHelper validation = SecretKeyProviderUtils.validateConfiguration(model);
         validation.checkList(Attributes.SECRET_SIZE_PROPERTY, false);
 
-        int size = model.get(Attributes.SECRET_SIZE_KEY, getDefaultKeySize());
-
         if (!(model.contains(Attributes.SECRET_KEY))) {
+            int size = model.get(Attributes.SECRET_SIZE_KEY, getDefaultKeySize());
             generateSecret(model, size);
             logger().debugv("Generated secret for {0}", realm.getName());
         } else {
             int currentSize = Base64Url.decode(model.get(Attributes.SECRET_KEY)).length;
+            int size = model.get(Attributes.SECRET_SIZE_KEY, currentSize);
             if (currentSize != size) {
                 generateSecret(model, size);
                 logger().debugv("Secret size changed, generating new secret for {0}", realm.getName());
+            } else if (model.get(Attributes.SECRET_SIZE_KEY) == null && currentSize != getDefaultKeySize()) {
+                model.put(Attributes.SECRET_SIZE_KEY, currentSize);
             }
         }
     }

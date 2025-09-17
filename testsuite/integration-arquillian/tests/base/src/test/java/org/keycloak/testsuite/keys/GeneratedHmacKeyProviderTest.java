@@ -141,19 +141,31 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
-        Response response = adminClient.realm("test").components().add(rep);
-        String id = ApiUtil.getCreatedId(response);
-        response.close();
+        try (Response response = adminClient.realm("test").components().add(rep)) {
+            rep.setId(ApiUtil.getCreatedId(response));
+        }
 
-        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
         assertEquals(GeneratedHmacKeyProviderFactory.DEFAULT_HMAC_KEY_SIZE, Base64Url.decode(component.getConfig().getFirst("secret")).length);
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = adminClient.realm("test").components().component(rep.getId()).toRepresentation();
         createdRep.getConfig().putSingle("secretSize", "512");
-        adminClient.realm("test").components().component(id).update(createdRep);
+        adminClient.realm("test").components().component(rep.getId()).update(createdRep);
 
-        component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
         assertEquals(512, Base64Url.decode(component.getConfig().getFirst("secret")).length);
+        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        String secret = component.getConfig().getFirst("secret");
+
+        createdRep = adminClient.realm("test").components().component(rep.getId()).toRepresentation();
+        createdRep.getConfig().putSingle("secretSize", "");
+        adminClient.realm("test").components().component(rep.getId()).update(createdRep);
+
+        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        assertEquals("512", component.getConfig().getFirst("secretSize"));
+        assertEquals(512, Base64Url.decode(component.getConfig().getFirst("secret")).length);
+        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        assertEquals(secret, component.getConfig().getFirst("secret"));
     }
 
     @Test
