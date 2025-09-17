@@ -2,6 +2,8 @@ package org.keycloak.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -27,7 +29,15 @@ public class DefaultAlternativeLookupProviderFactory implements AlternativeLooku
         Integer maximumSize = config.getInt("maximumSize", 1000);
         Integer expireAfter = config.getInt("expireAfter", 60);
 
-        this.lookupCache = Caffeine.newBuilder().maximumSize(maximumSize).expireAfterAccess(expireAfter, TimeUnit.MINUTES).build();
+        CaffeineStatsCounter metrics = new CaffeineStatsCounter(Metrics.globalRegistry, "lookup");
+
+        this.lookupCache = Caffeine.newBuilder()
+                .maximumSize(maximumSize)
+                .expireAfterAccess(expireAfter, TimeUnit.MINUTES)
+                .recordStats(() -> metrics)
+                .build();
+
+        metrics.registerSizeMetric(lookupCache);
     }
 
     @Override
