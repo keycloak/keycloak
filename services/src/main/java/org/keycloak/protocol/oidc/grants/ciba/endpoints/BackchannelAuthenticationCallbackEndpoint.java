@@ -204,7 +204,8 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
      * @return The raw bearer token.
      */
     protected String getRawBearerToken(HttpHeaders httpHeaders, AuthenticationChannelResponse response) {
-        return AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(httpHeaders);
+        AppAuthManager.AuthHeader authHeader = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(httpHeaders);
+        return authHeader == null ? null : authHeader.getToken();
     }
 
     protected void sendClientNotificationRequest(ClientModel client, CibaConfig cibaConfig, OAuth2DeviceCodeModel deviceModel) {

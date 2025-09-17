@@ -168,6 +168,7 @@ public interface OAuth2Constants {
     String DPOP_NONCE_HEADER = "DPoP-Nonce";
     Algorithm DPOP_DEFAULT_ALGORITHM = PS256;
     String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
+    String ALGS_ATTRIBUTE = "algs";
 
 }
 
