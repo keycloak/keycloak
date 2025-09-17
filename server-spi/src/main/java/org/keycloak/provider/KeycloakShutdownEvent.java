@@ -3,7 +3,7 @@ package org.keycloak.provider;
 import org.keycloak.models.KeycloakSessionFactory;
 
 /**
- * Signals that Keycloak is about to be shutdown.
+ * Signals that Keycloak is about to shutdown.
  */
 public class KeycloakShutdownEvent extends AbstractLifecycleEvent {
 
