@@ -267,6 +267,10 @@ In order to retrieve a client session via `UserSessionProvider#getClientSession`
 The old methods have been deprecated and will be removed in a future release.
 You should also review the other methods that are deprecated for removal in this class.
 
+=== Simplified API for AuthenticatedClientSessionModel
+
+The `clientId` note in the authenticated client session is an internal note present only when using the embedded caches, and is now deprecated for removal. Instead, use the `getClient()` method.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
