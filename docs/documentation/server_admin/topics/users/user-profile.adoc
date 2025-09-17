@@ -906,4 +906,4 @@ If you want to use internationalized messages when configuring attributes, attri
 set their display name, description, and values, using a placeholder that will translate to a message from a message bundle.
 
 For that, you can use a placeholder to resolve messages keys such as `${myAttributeName}`, where `myAttributeName` is the key for a message in a message bundle. For more details,
-look at link:{developerguide_link}#messages[{developerguide_name}] about how to add message bundles to custom themes.
+look at link:https://www.keycloak.org/ui-customization/localization#_localizing_messages_in_a_theme[Localizing messages in a theme] about how to add message bundles to custom themes.
