@@ -24,6 +24,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
@@ -34,6 +35,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
+import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.util.DPoPUtil;
 
@@ -69,6 +72,9 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
         @JsonProperty("enforce-authorization-code-binding-to-dpop")
         protected Boolean enforceAuthorizationCodeBindingToDpop;
 
+        @JsonProperty("allow-only-refresh-token-binding")
+        protected Boolean allowOnlyRefreshTokenBinding;
+
         public Boolean isAutoConfigure() {
             return autoConfigure;
         }
@@ -83,6 +89,14 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
 
         public void setEnforceAuthorizationCodeBindingToDpop(Boolean enforceAuthorizationCodeBindingToDpop) {
             this.enforceAuthorizationCodeBindingToDpop = enforceAuthorizationCodeBindingToDpop;
+        }
+
+        public Boolean getAllowOnlyRefreshTokenBinding() {
+            return allowOnlyRefreshTokenBinding;
+        }
+
+        public void setAllowOnlyRefreshTokenBinding(Boolean allowOnlyRefreshTokenBinding) {
+            this.allowOnlyRefreshTokenBinding = allowOnlyRefreshTokenBinding;
         }
     }
 
@@ -112,7 +126,13 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
                 checkOnAuthorizationRequest(authzRequestContext);
                 break;
             case TOKEN_REQUEST:
+                TokenRequestContext authorizationRequestContext = (TokenRequestContext) context;
+                validateAndBindOnlyRefreshToken(authorizationRequestContext.getClient());
+                break;
             case TOKEN_REFRESH:
+                TokenRefreshContext tokenRefreshContext = (TokenRefreshContext) context;
+                validateAndBindOnlyRefreshToken(tokenRefreshContext.getClient());
+                break;
             case USERINFO_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
                 // Codes for processing these requests verifies DPoP.
@@ -154,6 +174,19 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
         }
 
         validateBinding(token, dPoP);
+    }
+
+    private void validateAndBindOnlyRefreshToken(ClientModel client) throws ClientPolicyException {
+        boolean useDPoPToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP();
+        if (useDPoPToken || configuration.getAllowOnlyRefreshTokenBinding() == null || !configuration.getAllowOnlyRefreshTokenBinding() || !client.isPublicClient()) {
+            return;
+        }
+
+        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+        if (dPoP == null) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_DPOP_PROOF, "DPoP proof is missing");
+        }
+        session.setAttribute(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, true);
     }
 
     private void checkOnAuthorizationRequest(AuthorizationRequestContext authzRequestContext) throws ClientPolicyException {
