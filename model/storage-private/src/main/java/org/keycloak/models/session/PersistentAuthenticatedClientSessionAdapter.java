@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -245,15 +246,14 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof AuthenticatedClientSessionModel)) return false;
+        if (!(o instanceof AuthenticatedClientSessionModel that)) return false;
 
-        AuthenticatedClientSessionModel that = (AuthenticatedClientSessionModel) o;
-        return that.getId().equals(getId());
+        return Objects.equals(getId(), that.getId());
     }
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return Objects.hashCode(getId());
     }
 
     @Override

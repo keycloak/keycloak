@@ -28,7 +28,6 @@ import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
@@ -129,7 +128,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         return isScheduledForRemove(getUpdates(offline).get(key));
     }
 
-    public void registerClientSession(String userSessionId, String clientId, UUID clientSessionId, boolean offline) {
+    public void registerClientSession(String userSessionId, String clientId, boolean offline) {
         addTask(userSessionId, new PersistentSessionUpdateTask<>() {
             @Override
             public boolean isOffline() {
@@ -138,7 +137,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
             @Override
             public void runUpdate(UserSessionEntity entity) {
-                entity.getAuthenticatedClientSessions().put(clientId, clientSessionId);
+                entity.getClientSessions().add(clientId);
             }
 
             @Override

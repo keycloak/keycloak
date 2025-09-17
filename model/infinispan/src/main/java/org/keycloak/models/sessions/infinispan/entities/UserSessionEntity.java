@@ -17,13 +17,15 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoReserved;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
@@ -38,6 +40,10 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @ProtoTypeId(Marshalling.USER_SESSION_ENTITY)
+@ProtoReserved(
+        value = {11},
+        names = {"authenticatedClientSessions"}
+)
 public class UserSessionEntity extends SessionEntity {
 
     public static final Logger logger = Logger.getLogger(UserSessionEntity.class);
@@ -66,12 +72,16 @@ public class UserSessionEntity extends SessionEntity {
 
     private UserSessionModel.State state;
 
+    private final Set<String> clientSessions = ConcurrentHashMap.newKeySet();
+
+    private Map<String, String> notes = new ConcurrentHashMap<>();
+
     public UserSessionEntity(String id) {
         this.id = id;
     }
 
     @ProtoFactory
-    static UserSessionEntity protoFactory(String realmId, String id, String user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, int started, int lastSessionRefresh, Map<String, String> notes, AuthenticatedClientSessionStore authenticatedClientSessions, UserSessionModel.State state, String brokerSessionId, String brokerUserId) {
+    static UserSessionEntity protoFactory(String realmId, String id, String user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, int started, int lastSessionRefresh, Map<String, String> notes, UserSessionModel.State state, String brokerSessionId, String brokerUserId, Set<String> clientSessions) {
         var entity = new UserSessionEntity(id);
         entity.setRealmId(realmId);
         entity.setUser(user);
@@ -85,7 +95,7 @@ public class UserSessionEntity extends SessionEntity {
         entity.setBrokerUserId(brokerUserId);
         entity.setState(state);
         entity.setNotes(notes);
-        entity.setAuthenticatedClientSessions(authenticatedClientSessions);
+        entity.getClientSessions().addAll(clientSessions);
         return entity;
     }
 
@@ -93,10 +103,6 @@ public class UserSessionEntity extends SessionEntity {
     public String getId() {
         return id;
     }
-
-    private Map<String, String> notes = new ConcurrentHashMap<>();
-
-    private AuthenticatedClientSessionStore authenticatedClientSessions = new AuthenticatedClientSessionStore();
 
     @ProtoField(3)
     public String getUser() {
@@ -170,15 +176,6 @@ public class UserSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
-    @ProtoField(11)
-    public AuthenticatedClientSessionStore getAuthenticatedClientSessions() {
-        return authenticatedClientSessions;
-    }
-
-    public void setAuthenticatedClientSessions(AuthenticatedClientSessionStore authenticatedClientSessions) {
-        this.authenticatedClientSessions = authenticatedClientSessions;
-    }
-
     @ProtoField(value = 12)
     public UserSessionModel.State getState() {
         return state;
@@ -206,6 +203,11 @@ public class UserSessionEntity extends SessionEntity {
         this.brokerUserId = brokerUserId;
     }
 
+    @ProtoField(value = 15, collectionImplementation = HashSet.class)
+    public Set<String> getClientSessions() {
+        return clientSessions;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -224,7 +226,7 @@ public class UserSessionEntity extends SessionEntity {
     @Override
     public String toString() {
         return String.format("UserSessionEntity [id=%s, realm=%s, lastSessionRefresh=%d, clients=%s]", getId(), getRealmId(), getLastSessionRefresh(),
-          new TreeSet(this.authenticatedClientSessions.keySet()));
+          clientSessions);
     }
 
     @Override
@@ -283,7 +285,6 @@ public class UserSessionEntity extends SessionEntity {
         entity.setBrokerUserId(userSession.getBrokerUserId());
         entity.setIpAddress(userSession.getIpAddress());
         entity.setNotes(userSession.getNotes() == null ? new ConcurrentHashMap<>() : userSession.getNotes());
-        entity.setAuthenticatedClientSessions(new AuthenticatedClientSessionStore());
         entity.setRememberMe(userSession.isRememberMe());
         entity.setState(userSession.getState());
         if (userSession instanceof OfflineUserSessionModel offline) {
