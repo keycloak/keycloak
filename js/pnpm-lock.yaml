@@ -199,8 +199,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       p-debounce:
-        specifier: ^4.0.0
-        version: 4.0.0
+        specifier: ^5.0.0
+        version: 5.0.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -3257,9 +3257,9 @@ packages:
     resolution: {integrity: sha512-qFOyK5PjiWZd+QQIh+1jhdb9LpxTF0qs7Pm8o5QHYZ0M3vKqSqzsZaEB6oWlxZ+q2sJBMI/Ktgd2N5ZwQoRHfg==}
     engines: {node: '>= 0.4'}
 
-  p-debounce@4.0.0:
-    resolution: {integrity: sha512-4Ispi9I9qYGO4lueiLDhe4q4iK5ERK8reLsuzH6BPaXn53EGaua8H66PXIFGrW897hwjXp+pVLrm/DLxN0RF0A==}
-    engines: {node: '>=12'}
+  p-debounce@5.0.0:
+    resolution: {integrity: sha512-rnaPSZtETbl75h6lcVFQxJ9LXJhkYhtVNie4Kj/nECazixDxrPYWl8I+DfY69C299HI4Of8NJDfR0ekrlcwAkA==}
+    engines: {node: '>=20'}
 
   p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
@@ -4787,7 +4787,7 @@ snapshots:
       jszip: 3.10.1
       keycloak-js: 26.2.0
       lodash-es: 4.17.21
-      p-debounce: 4.0.0
+      p-debounce: 5.0.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-hook-form: 7.62.0(react@18.3.1)
@@ -7340,7 +7340,7 @@ snapshots:
       object-keys: 1.1.1
       safe-push-apply: 1.0.0
 
-  p-debounce@4.0.0: {}
+  p-debounce@5.0.0: {}
 
   p-limit@3.1.0:
     dependencies:
