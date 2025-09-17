@@ -35,6 +35,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -103,16 +104,27 @@ public class WorkflowsManager {
 
     private WorkflowStep addStep(String parentId, WorkflowStep step) {
         RealmModel realm = getRealm();
-        ComponentModel workflowModel = realm.getComponent(parentId);
+        ComponentModel parentModel = realm.getComponent(parentId);
+
+        if (parentModel == null) {
+            throw new ModelValidationException("Parent component not found: " + parentId);
+        }
+
         ComponentModel stepModel = new ComponentModel();
 
         stepModel.setId(step.getId());//need to keep stable UUIDs not to break a link in state table
-        stepModel.setParentId(workflowModel.getId());
+        stepModel.setParentId(parentModel.getId());
         stepModel.setProviderId(step.getProviderId());
         stepModel.setProviderType(WorkflowStepProvider.class.getName());
         stepModel.setConfig(step.getConfig());
 
-        return new WorkflowStep(realm.addComponentModel(stepModel));
+        WorkflowStep persisted = new WorkflowStep(realm.addComponentModel(stepModel));
+
+        persisted.setSteps(step.getSteps());
+
+        validateStep(persisted);
+
+        return persisted;
     }
 
     public List<Workflow> getWorkflows() {
@@ -139,7 +151,7 @@ public class WorkflowsManager {
         return step;
     }
 
-    public WorkflowStep getStepById(KeycloakSession session, String id) {
+    public WorkflowStep getStepById(String id) {
         RealmModel realm = session.getContext().getRealm();
         ComponentModel component = realm.getComponent(id);
 
@@ -361,5 +373,20 @@ public class WorkflowsManager {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(type, "resourceId");
         return type.resolveResource(session, resourceId);
+    }
+
+    private void validateStep(WorkflowStep persisted) throws ModelValidationException {
+        List<WorkflowStep> aggregated = persisted.getSteps();
+
+        if (!aggregated.isEmpty()) {
+            WorkflowStepProvider provider = getStepProvider(persisted);
+
+            if (!(provider instanceof AggregatedStepProvider)) {
+                // for now, only AggregatedActionProvider supports having sub-actions but we might want to support
+                // in the future more actions from having sub-actions by querying the capability from the provider or via
+                // a marker interface
+                throw new ModelValidationException("Action provider " + persisted.getProviderId() + " does not support aggregated actions");
+            }
+        }
     }
 }

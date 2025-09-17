@@ -12,9 +12,11 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.services.ErrorResponse;
 
 import java.util.List;
 
@@ -34,15 +36,19 @@ public class WorkflowsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(WorkflowRepresentation rep) {
-        Workflow workflow = manager.toModel(rep);
-        return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
+        try {
+            Workflow workflow = manager.toModel(rep);
+            return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
+        } catch (ModelException me) {
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createAll(List<WorkflowRepresentation> reps) {
         for (WorkflowRepresentation workflow : reps) {
-            manager.toModel(workflow);
+            create(workflow).close();
         }
         return Response.created(session.getContext().getUri().getRequestUri()).build();
     }

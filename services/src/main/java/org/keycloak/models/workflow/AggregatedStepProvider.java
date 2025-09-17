@@ -23,11 +23,7 @@ public class AggregatedStepProvider implements WorkflowStepProvider {
 
     @Override
     public void run(List<String> userIds) {
-        WorkflowsManager manager = new WorkflowsManager(session);
-        List<WorkflowStepProvider> steps = manager.getStepById(session, model.getId())
-                .getSteps().stream()
-                .map(manager::getStepProvider)
-                .toList();
+        List<WorkflowStepProvider> steps = getSteps();
 
         for (String userId : userIds) {
             for (WorkflowStepProvider step : steps) {
@@ -38,5 +34,14 @@ public class AggregatedStepProvider implements WorkflowStepProvider {
                 }
             }
         }
+    }
+
+    private List<WorkflowStepProvider> getSteps() {
+        WorkflowsManager manager = new WorkflowsManager(session);
+
+        return manager.getStepById(model.getId())
+                .getSteps().stream()
+                .map(manager::getStepProvider)
+                .toList();
     }
 }
