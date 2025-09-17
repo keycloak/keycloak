@@ -72,7 +72,7 @@ When no domain is specified, organization members will not be validated against 
 
 = Enhancements for single-cluster and multi-cluster setups
 
-This release renamed multi-az to multi-cluster.
+This release renamed multi-site to multi-cluster.
 The updated documentation describes
 how {project_name} clusters can be optionally distributed across multiple availability-zones within a region for increased availability.
 The {project_name} Operator now deploys {project_name} across multiple availability zones within a Kubernetes cluster by default. {project_name} also detects split-brains within a cluster.
