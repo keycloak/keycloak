@@ -113,6 +113,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
     }
 
     public void setClientId(String clientId) {
+        getNotes().put(CLIENT_ID_NOTE, clientId);
         this.clientId = clientId;
     }
 

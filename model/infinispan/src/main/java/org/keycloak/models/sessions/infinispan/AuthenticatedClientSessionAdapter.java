@@ -276,6 +276,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
                 entity.getNotes().clear();
                 entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));
                 entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
+                entity.getNotes().put(AuthenticatedClientSessionEntity.CLIENT_ID_NOTE, getClient().getId());
                 if (userSession.isRememberMe()) {
                     entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
                 }
