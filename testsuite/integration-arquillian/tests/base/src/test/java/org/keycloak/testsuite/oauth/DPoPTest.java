@@ -106,6 +106,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -113,6 +114,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.OAuth2Constants.DPOP_HTTP_HEADER;
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
+import static org.keycloak.OAuthErrorException.INVALID_TOKEN;
+import static org.keycloak.services.util.DPoPUtil.DPOP_SCHEME;
 import static org.keycloak.services.util.DPoPUtil.DPOP_TOKEN_TYPE;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createDPoPBindEnforcerExecutorConfig;
@@ -546,7 +549,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
             UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(null).send();
             assertEquals(401, userInfoResponse.getStatusCode());
-            assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"Token verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
+            testWWWAuthenticateHeaderError(userInfoResponse);
 
             oauth.doLogout(response.getRefreshToken());
         } finally {
@@ -561,7 +564,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(null).send();
         assertEquals(401, userInfoResponse.getStatusCode());
-        assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"Token verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
+        testWWWAuthenticateHeaderError(userInfoResponse);
 
         oauth.doLogout(response.getRefreshToken());
     }
@@ -577,7 +580,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate(), response.getAccessToken());
         UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofRsaEncoded).send();
         assertEquals(401, userInfoResponse.getStatusCode());
-        assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"Token verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
+        testWWWAuthenticateHeaderError(userInfoResponse);
 
         oauth.doLogout(response.getRefreshToken());
     }
@@ -591,7 +594,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         // use the same DPoP proof
         UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProof).send();
         assertEquals(401, userInfoResponse.getStatusCode());
-        assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"Token verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
+        testWWWAuthenticateHeaderError(userInfoResponse);
 
         oauth.doLogout(response.getRefreshToken());
     }
@@ -608,9 +611,25 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.GET, oauth.getEndpoints().getUserInfo(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate(), response.getAccessToken());
         UserInfoResponse userInfoResponse = oauth.userInfoRequest(response.getAccessToken()).dpop(dpopProofRsaEncoded).send();
         assertEquals(401, userInfoResponse.getStatusCode());
-        assertEquals("Bearer realm=\"test\", error=\"invalid_token\", error_description=\"Token verification failed\"", userInfoResponse.getHeaders().get("WWW-Authenticate"));
+        testWWWAuthenticateHeaderError(userInfoResponse);
 
         oauth.doLogout(response.getRefreshToken());
+    }
+
+    private void testWWWAuthenticateHeaderError(UserInfoResponse userInfoResponse) {
+        String wwwAuthenticate = userInfoResponse.getHeaders().get("WWW-Authenticate");
+        Assert.assertThat(wwwAuthenticate, startsWith(DPOP_SCHEME));
+        String chunks1 = wwwAuthenticate.substring(DPOP_SCHEME.length() + 1);
+        Map<String, String> map = new HashMap<>();
+        for (String p : chunks1.split(", ")) {
+            String[] chunks2 = p.split("=");
+            map.put(chunks2[0], chunks2[1]);
+        }
+
+        Assert.assertEquals(map.get(OAuth2Constants.ERROR), "\"" + INVALID_TOKEN + "\"");
+        String algs = map.get(OAuth2Constants.ALGS_ATTRIBUTE);
+        Assert.assertTrue(algs.contains(Algorithm.EdDSA));
+        Assert.assertTrue(algs.contains(Algorithm.RS256));
     }
 
     @Test

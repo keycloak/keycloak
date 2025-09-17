@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
  */
 public class AppAuthManager extends AuthenticationManager {
 
-    private static final String BEARER = "Bearer";
+    public static final String BEARER = "Bearer";
 
     private static final Pattern WHITESPACES = Pattern.compile("\\s+");
 
@@ -57,9 +57,9 @@ public class AppAuthManager extends AuthenticationManager {
     /**
      * Extracts the token string from the given Authorization Bearer header.
      *
-     * @return the token string or {@literal null}
+     * @return authHeader with the token and scheme or {@literal null}
      */
-    private static String extractTokenStringFromAuthHeader(String authHeader) {
+    private static AuthHeader extractTokenStringFromAuthHeader(String authHeader) {
 
         if (authHeader == null) {
             return null;
@@ -88,16 +88,16 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
 
-        return tokenString;
+        return new AuthHeader(typeString, tokenString);
     }
 
     /**
      * Extracts the token string from the Authorization Bearer Header.
      *
      * @param headers
-     * @return the token string or {@literal null} if the Authorization header is not of type Bearer, or the token string is missing.
+     * @return the authHeader with the token and scheme or {@literal null} if the Authorization header is not of supported type (EG. Bearer or DPoP), or the token string is missing.
      */
-    public static String extractAuthorizationHeaderTokenOrReturnNull(HttpHeaders headers) {
+    public static AuthHeader extractAuthorizationHeaderTokenOrReturnNull(HttpHeaders headers) {
         // error if including more than one Authorization header
         List<String> authHeaders = headers.getRequestHeaders().get(HttpHeaders.AUTHORIZATION);
         if (authHeaders == null || authHeaders.isEmpty()) {
@@ -122,11 +122,11 @@ public class AppAuthManager extends AuthenticationManager {
         if (authHeader == null) {
             return null;
         }
-        String tokenString = extractTokenStringFromAuthHeader(authHeader);
-        if (tokenString == null ){
+        AuthHeader parsedHeader = extractTokenStringFromAuthHeader(authHeader);
+        if (parsedHeader == null ){
             throw new NotAuthorizedException(BEARER);
         }
-        return tokenString;
+        return parsedHeader.getToken();
     }
 
     public static class BearerTokenAuthenticator {
@@ -195,6 +195,25 @@ public class AppAuthManager extends AuthenticationManager {
 
             return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
                     verifier -> DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString)));
+        }
+    }
+
+    public static class AuthHeader {
+
+        private final String scheme;
+        private final String token;
+
+        public AuthHeader(String scheme, String token) {
+            this.scheme = scheme;
+            this.token = token;
+        }
+
+        public String getScheme() {
+            return scheme;
+        }
+
+        public String getToken() {
+            return token;
         }
     }
 
