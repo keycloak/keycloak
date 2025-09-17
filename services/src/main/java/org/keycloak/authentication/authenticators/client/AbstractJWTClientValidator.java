@@ -112,8 +112,15 @@ public abstract class AbstractJWTClientValidator {
             return failure("client_id parameter does not match sub claim");
         }
 
+        String expectedTokenIssuer = getExpectedTokenIssuer();
+        if (expectedTokenIssuer != null && !expectedTokenIssuer.equals(token.getIssuer())) {
+            return false;
+        }
+
         context.getEvent().client(clientId);
-        client = realm.getClientByClientId(clientId);
+
+        client = clientAssertionState.getClient();
+
         if (client == null) {
             return failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
         } else {
@@ -127,11 +134,6 @@ public abstract class AbstractJWTClientValidator {
         if (clientAuthenticatorProviderId != null && !clientAuthenticatorProviderId.equals(client.getClientAuthenticatorType())) {
             logger.debug("Not configured authenticator for client, ignoring");
             return false;
-        }
-
-        String expectedTokenIssuer = getExpectedTokenIssuer();
-        if (expectedTokenIssuer != null && !expectedTokenIssuer.equals(token.getIssuer())) {
-            return failure("Invalid token issuer", Response.Status.UNAUTHORIZED.getStatusCode());
         }
 
         return true;

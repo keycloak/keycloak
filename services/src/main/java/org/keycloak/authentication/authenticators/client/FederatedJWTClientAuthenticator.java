@@ -9,14 +9,18 @@ import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.spiffe.SpiffeConstants;
+import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resources.IdentityBrokerService;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +33,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     public static final String PROVIDER_ID = "federated-jwt";
 
     public static final String JWT_CREDENTIAL_ISSUER_KEY = "jwt.credential.issuer";
+    public static final String JWT_CREDENTIAL_SUBJECT_KEY = "jwt.credential.sub";
 
-    private static final List<ProviderConfigProperty> CONFIG = List.of(
-            new ProviderConfigProperty(JWT_CREDENTIAL_ISSUER_KEY, "Identity provider", "Issuer of the client assertion", ProviderConfigProperty.STRING_TYPE, null)
+    private static final List<ProviderConfigProperty> CLIENT_CONFIG = List.of(
+            new ProviderConfigProperty(JWT_CREDENTIAL_ISSUER_KEY, "Identity provider", "Issuer of the client assertion", ProviderConfigProperty.STRING_TYPE, null),
+            new ProviderConfigProperty(JWT_CREDENTIAL_SUBJECT_KEY, "Federated subject", "External clientId (subject)", ProviderConfigProperty.STRING_TYPE, null)
     );
 
     private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT, SpiffeConstants.CLIENT_ASSERTION_TYPE);
@@ -42,24 +48,36 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     }
 
     @Override
-    // TODO Should share code with JWTClientAuthenticator/JWTClientValidator rather than duplicating, but that requires quite a bit of refactoring
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
-            JsonWebToken token = clientAssertionState.getToken();
 
             if (!SUPPORTED_ASSERTION_TYPES.contains(clientAssertionState.getClientAssertionType())) {
                 return;
             }
 
-            ClientModel client = lookupClient(context, token.getSubject());
+            final String issuer = clientAssertionState.getToken().getIssuer() != null ?
+                    clientAssertionState.getToken().getIssuer() :
+                    toIssuer(clientAssertionState.getToken().getSubject());
+            if (issuer == null) return;
+
+            AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
+
+            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(context.getSession(), issuer);
+            ClientAssertionIdentityProvider identityProvider = getClientAssertionIdentityProvider(context.getSession(), identityProviderModel);
+            if (identityProvider == null) return;
+
+            String federatedClientId = clientAssertionState.getToken().getSubject();
+
+            ClientModel client = lookupProvider.lookupClientFromClientAttributes(
+                    context.getSession(),
+                    Map.of(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, identityProviderModel.getAlias(), FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, federatedClientId));
             if (client == null) return;
 
-            if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) {
-                return;
-            }
+            clientAssertionState.setClient(client);
 
-            ClientAssertionIdentityProvider identityProvider = lookupIdentityProvider(context, client);
+            if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) return;
+
             if (identityProvider.verifyClientAssertion(context)) {
                 context.success();
             } else {
@@ -71,22 +89,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         }
     }
 
-    private ClientModel lookupClient(ClientAuthenticationFlowContext context, String subject) {
-        ClientModel client = context.getRealm().getClientByClientId(subject);
-        if (client == null) {
-            context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
+    private ClientAssertionIdentityProvider getClientAssertionIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel) {
+        if (identityProviderModel == null) {
             return null;
         }
-        if (!client.isEnabled()) {
-            context.failure(AuthenticationFlowError.CLIENT_DISABLED);
-            return null;
-        }
-        return client;
-    }
-
-    private ClientAssertionIdentityProvider lookupIdentityProvider(ClientAuthenticationFlowContext context, ClientModel client) {
-        String idpAlias = client.getAttribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY);
-        IdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(context.getSession(), idpAlias);
+        IdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel);
         if (identityProvider instanceof ClientAssertionIdentityProvider clientAssertionProvider) {
             return clientAssertionProvider;
         } else {
@@ -121,7 +128,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
-        return CONFIG;
+        return CLIENT_CONFIG;
     }
 
     @Override
@@ -137,6 +144,17 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED);
+    }
+
+    protected static String toIssuer(String subject) {
+        try {
+            URI uri = new URI(subject);
+            String scheme = uri.getScheme();
+            String authority = uri.getRawAuthority();
+            return scheme != null && authority != null ? scheme + "://" + authority : null;
+        } catch (URISyntaxException e) {
+            return null;
+        }
     }
 
 }

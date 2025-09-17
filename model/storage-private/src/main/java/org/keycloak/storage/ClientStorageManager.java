@@ -158,19 +158,6 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
-    public ClientModel getClientByAttribute(RealmModel realm, String name, String value) {
-        ClientModel client = localStorage().getClientByAttribute(realm, name, value);
-        if (client != null) {
-            return client;
-        }
-        return getEnabledStorageProviders(session, realm, ClientLookupProvider.class)
-                .map(provider -> provider.getClientByAttribute(realm, name, value))
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-    }
-
-    @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         return query((p, f, m) -> p.searchClientsByClientIdStream(realm, clientId, f, m), realm, firstResult, maxResults);
     }

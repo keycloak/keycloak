@@ -69,7 +69,8 @@ public class FederatedClientAuthFromKeycloakTest {
             return client.clientId("myclient")
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, "myclient");
         }
     }
 

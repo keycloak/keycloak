@@ -50,7 +50,7 @@ export async function createSPIFFEProvider(
   bundleEndpoint: string,
 ) {
   await clickProviderCard(page, providerName);
-  await page.getByTestId("config.trustDomain").fill(trustDomain);
+  await page.getByTestId("config.issuer").fill(trustDomain);
   await page.getByTestId("config.bundleEndpoint").fill(bundleEndpoint);
   await clickAddButton(page);
 }

@@ -7,6 +7,7 @@ import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthe
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -32,7 +33,8 @@ public class FederatedClientAuthTest {
 
     private static final String IDP_ALIAS = "external-idp";
 
-    private static final String CLIENT_ID = "myclient";
+    private static final String INTERNAL_CLIENT_ID = "internal-myclient";
+    private static final String EXTERNAL_CLIENT_ID = "external-myclient";
 
     @InjectRealm(config = ExernalClientAuthRealmConfig.class)
     protected ManagedRealm realm;
@@ -142,12 +144,13 @@ public class FederatedClientAuthTest {
         rep.getConfig().put(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTION_REUSE, "true");
         idp.update(rep);
 
-        JsonWebToken token = createDefaultToken();
-        Assertions.assertTrue(doClientGrant(token));
-        Assertions.assertTrue(doClientGrant(token));
-
-        rep.getConfig().remove(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTION_REUSE);
-        idp.update(rep);
+        try {
+            JsonWebToken token = createDefaultToken();
+            Assertions.assertTrue(doClientGrant(token));
+        } finally {
+            rep.getConfig().remove(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTION_REUSE);
+            idp.update(rep);
+        }
     }
 
     @Test
@@ -170,6 +173,10 @@ public class FederatedClientAuthTest {
 
     private boolean doClientGrant(String jws) {
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(jws).send();
+        if (response.isSuccess()) {
+            AccessToken accessToken = oAuthClient.parseToken(response.getAccessToken(), AccessToken.class);
+            Assertions.assertEquals(INTERNAL_CLIENT_ID, accessToken.getIssuedFor());
+        }
         return response.isSuccess();
     }
 
@@ -180,7 +187,7 @@ public class FederatedClientAuthTest {
         token.audience(oAuthClient.getEndpoints().getIssuer());
         token.iat((long) Time.currentTime());
         token.exp((long) (Time.currentTime() + 300));
-        token.subject(CLIENT_ID);
+        token.subject(EXTERNAL_CLIENT_ID);
         return token;
     }
 
@@ -205,10 +212,11 @@ public class FederatedClientAuthTest {
 
         @Override
         public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            return client.clientId(CLIENT_ID)
+            return client.clientId(INTERNAL_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID);
         }
     }
 

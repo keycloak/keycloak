@@ -7,22 +7,29 @@ import org.keycloak.authentication.ClientAuthenticationFlowContextSupplier;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.JsonWebToken;
 
 public class ClientAssertionState {
 
     private static final Supplier SUPPLIER = new Supplier();
 
+    private ClientModel client;
     private final String clientAssertionType;
     private final String clientAssertion;
     private final JWSInput jws;
     private final JsonWebToken token;
 
-    public ClientAssertionState(String clientAssertionType, String clientAssertion, JWSInput jws, JsonWebToken token) {
+    public ClientAssertionState(ClientModel client, String clientAssertionType, String clientAssertion, JWSInput jws, JsonWebToken token) {
+        this.client = client;
         this.clientAssertionType = clientAssertionType;
         this.clientAssertion = clientAssertion;
         this.jws = jws;
         this.token = token;
+    }
+
+    public void setClient(ClientModel client) {
+        this.client = client;
     }
 
     public String getClientAssertionType() {
@@ -41,6 +48,10 @@ public class ClientAssertionState {
         return token;
     }
 
+    public ClientModel getClient() {
+        return client;
+    }
+
     public static ClientAuthenticationFlowContextSupplier<ClientAssertionState> supplier() {
         return SUPPLIER;
     }
@@ -56,6 +67,9 @@ public class ClientAssertionState {
 
             JWSInput jws = null;
             JsonWebToken token = null;
+
+            ClientModel client = null;
+
             if (clientAssertion != null) {
                 jws = new JWSInput(clientAssertion);
                 token = jws.readJsonContent(JsonWebToken.class);
@@ -64,9 +78,13 @@ public class ClientAssertionState {
                 event.detail(Details.CLIENT_ASSERTION_ID, token.getId());
                 event.detail(Details.CLIENT_ASSERTION_ISSUER, token.getIssuer());
                 event.detail(Details.CLIENT_ASSERTION_SUB, token.getSubject());
+
+                if (token.getSubject() != null) {
+                    client = context.getRealm().getClientByClientId(token.getSubject());
+                }
             }
 
-            return new ClientAssertionState(clientAssertionType, clientAssertion, jws, token);
+            return new ClientAssertionState(client, clientAssertionType, clientAssertion, jws, token);
         }
 
     }
