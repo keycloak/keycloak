@@ -93,6 +93,7 @@ public class DPoPUtil {
     public static final String DPOP_TOKEN_TYPE = "DPoP";
     public static final String DPOP_SCHEME = "DPoP";
     public final static String DPOP_SESSION_ATTRIBUTE = "dpop";
+    public final static String DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE = "dpop-binding-only-refresh-token";
 
     public enum Mode {
         ENABLED,
@@ -593,6 +594,11 @@ public class DPoPUtil {
 
             DPoP dPoP = session.getAttribute(DPOP_SESSION_ATTRIBUTE, DPoP.class);
             if (dPoP == null) {
+                return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
+            }
+
+            Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
+            if (bindOnlyRefreshToken) {
                 return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
             }
             AccessToken.Confirmation confirmation = (AccessToken.Confirmation) token.getOtherClaims()

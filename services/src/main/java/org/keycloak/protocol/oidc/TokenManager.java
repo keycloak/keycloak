@@ -1167,7 +1167,7 @@ public class TokenManager {
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            final AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
+            AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
             refreshToken = new RefreshToken(accessToken, confirmation);
             refreshToken.id(SecretGenerator.getInstance().generateSecureID());
             refreshToken.issuedNow();
@@ -1188,6 +1188,15 @@ public class TokenManager {
                 refreshToken.getOtherClaims().put(Constants.REQUESTED_AUDIENCE, Arrays.stream(resquestedAudienceClients)
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toSet()));
+            }
+            Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
+            if (bindOnlyRefreshToken) {
+                DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+                if (dPoP != null) {
+                    confirmation = new AccessToken.Confirmation();
+                    confirmation.setKeyThumbprint(dPoP.getThumbprint());
+                    refreshToken.setConfirmation(confirmation);
+                }
             }
         }
 

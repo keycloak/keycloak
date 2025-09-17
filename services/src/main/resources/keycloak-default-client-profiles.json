@@ -369,7 +369,8 @@
           "executor": "dpop-bind-enforcer",
           "configuration": {
             "auto-configure": "true",
-            "enforce-authorization-code-binding-to-dpop": "false"
+            "enforce-authorization-code-binding-to-dpop": "false",
+            "allow-only-refresh-token-binding": "false"
           }
         },
         {
@@ -456,7 +457,8 @@
           "executor": "dpop-bind-enforcer",
           "configuration": {
             "auto-configure": "true",
-            "enforce-authorization-code-binding-to-dpop": "false"
+            "enforce-authorization-code-binding-to-dpop": "false",
+            "allow-only-refresh-token-binding": "false"
           }
         }
       ]
@@ -535,7 +537,8 @@
           "executor": "dpop-bind-enforcer",
           "configuration": {
             "auto-configure": "true",
-            "enforce-authorization-code-binding-to-dpop": "false"
+            "enforce-authorization-code-binding-to-dpop": "false",
+            "allow-only-refresh-token-binding": "false"
           }
         },
         {
