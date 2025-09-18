@@ -21,6 +21,7 @@ import liquibase.Scope;
 import liquibase.ThreadLocalScopeManager;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
+import liquibase.database.DatabaseConnection;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
@@ -169,7 +170,13 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         } catch (Exception e) {
             throw new RuntimeException("Failed to create instance of " + liquibaseDatabaseClazz.getName());
         }
-        liquibaseDatabase.setConnection(new JdbcConnection(connection));
+        DatabaseConnection liquibaseConnection = new JdbcConnection(connection);
+        try {
+            logger.debugf("DB Product Name: %s", liquibaseConnection.getDatabaseProductName());
+        } catch (LiquibaseException e) {
+            logger.debug("Failed to detect DB Product Name", e);
+        }
+        liquibaseDatabase.setConnection(liquibaseConnection);
 
         return liquibaseDatabase;
     }
