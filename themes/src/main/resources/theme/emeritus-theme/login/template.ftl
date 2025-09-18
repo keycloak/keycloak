@@ -82,7 +82,7 @@
     <div id="kc-header" class="${properties.kcHeaderClass!}">
           <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}">
           <a id="logo" target="_blank">
-            <img id="kc-header-logo" src="https://s40424.pcdn.co/in/wp-content/uploads/2022/02/emeritus-logo.png" alt="company"/>
+            <img id="kc-header-logo" src="https://s44783.pcdn.co/wp-content/uploads/2020/12/emeritus-logo.webp" alt="company"/>
            </a>
         </div>
     </div>
