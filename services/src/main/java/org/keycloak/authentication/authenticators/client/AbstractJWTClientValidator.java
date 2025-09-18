@@ -117,13 +117,12 @@ public abstract class AbstractJWTClientValidator {
             return false;
         }
 
-        context.getEvent().client(clientId);
-
         client = clientAssertionState.getClient();
 
         if (client == null) {
             return failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
         } else {
+            context.getEvent().client(client.getClientId());
             context.setClient(client);
         }
 

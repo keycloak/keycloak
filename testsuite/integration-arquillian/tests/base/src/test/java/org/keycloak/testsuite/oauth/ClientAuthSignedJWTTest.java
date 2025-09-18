@@ -457,7 +457,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
-        assertError(response,401, "unknown-client", "invalid_client", Errors.CLIENT_NOT_FOUND);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
