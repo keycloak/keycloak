@@ -25,6 +25,9 @@ import org.keycloak.component.ComponentModel;
 
 public class Workflow {
 
+    public static final String SCHEDULED_KEY = "scheduled";
+    public static final String RECURRING_KEY = "recurring";
+
     private MultivaluedHashMap<String, String> config;
     private String providerId;
     private String id;
@@ -70,18 +73,18 @@ public class Workflow {
     }
 
     public boolean isRecurring() {
-        return config != null && Boolean.parseBoolean(config.getFirst("recurring"));
+        return config != null && Boolean.parseBoolean(config.getFirst(RECURRING_KEY));
     }
 
     public boolean isScheduled() {
-        return config != null && Boolean.parseBoolean(config.getFirstOrDefault("scheduled", "true"));
+        return config != null && Boolean.parseBoolean(config.getFirstOrDefault(SCHEDULED_KEY, "true"));
     }
 
     public Long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(Long milliseconds) {
-        this.notBefore = milliseconds;
+    public void setNotBefore(Long notBefore) {
+        this.notBefore = notBefore;
     }
 }

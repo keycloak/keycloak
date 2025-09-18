@@ -87,7 +87,37 @@ public class AggregatedStepTest {
     }
 
     @Test
-    public void testFailCreateIfSettingActionsToRegularActions() {
+    public void testCreateAggregatedStepAsSubStep() {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(AggregatedStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .withSteps(WorkflowStepRepresentation.create()
+                                                .of(AggregatedStepProviderFactory.ID)
+                                                .withConfig("message", "message")
+                                                .after(Duration.ofDays(5))
+                                                .withSteps(WorkflowStepRepresentation.create()
+                                                                .of(SetUserAttributeStepProviderFactory.ID)
+                                                                .withConfig("message", "message")
+                                                                .build(),
+                                                        WorkflowStepRepresentation.create()
+                                                                .of(DisableUserStepProviderFactory.ID)
+                                                                .build()
+                                                )
+                                                .build(),
+                                        WorkflowStepRepresentation.create()
+                                                .of(DisableUserStepProviderFactory.ID)
+                                                .build()
+                                ).build())
+                .build()).close();
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+    }
+
+    @Test
+    public void testFailCreateIfSettingStepsToRegularSteps() {
         try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
@@ -104,7 +134,30 @@ public class AggregatedStepTest {
                                 ).build())
                 .build())) {
             assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Action provider " + SetUserAttributeStepProviderFactory.ID + " does not support aggregated actions"));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step provider " + SetUserAttributeStepProviderFactory.ID + " does not support aggregated steps"));
+        }
+    }
+
+    @Test
+    public void testFailCreateIfSubStepHasTimeCondition() {
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .withConfig("key", "value")
+                                .withSteps(WorkflowStepRepresentation.create()
+                                                .of(SetUserAttributeStepProviderFactory.ID)
+                                                .withConfig("message", "message")
+                                                .after(Duration.ofDays(1))
+                                                .build(),
+                                        WorkflowStepRepresentation.create()
+                                                .of(DisableUserStepProviderFactory.ID)
+                                                .build()
+                                ).build())
+                .build())) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step provider " + SetUserAttributeStepProviderFactory.ID + " does not support aggregated steps"));
         }
     }
 

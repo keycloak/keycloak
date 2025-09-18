@@ -17,16 +17,6 @@
 
 package org.keycloak.models.workflow;
 
-import static java.util.Optional.ofNullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import jakarta.ws.rs.BadRequestException;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
@@ -37,11 +27,24 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static java.util.Optional.ofNullable;
+import static org.keycloak.models.workflow.Workflow.RECURRING_KEY;
+import static org.keycloak.models.workflow.Workflow.SCHEDULED_KEY;
+import static org.keycloak.models.workflow.WorkflowStep.AFTER_KEY;
 
 public class WorkflowsManager {
 
@@ -85,6 +88,8 @@ public class WorkflowsManager {
         for (int i = 0; i < steps.size(); i++) {
             WorkflowStep step = steps.get(i);
 
+            validateStep(workflow, step);
+
             // assign priority based on index.
             step.setPriority(i + 1);
 
@@ -121,8 +126,6 @@ public class WorkflowsManager {
         WorkflowStep persisted = new WorkflowStep(realm.addComponentModel(stepModel));
 
         persisted.setSteps(step.getSteps());
-
-        validateStep(persisted);
 
         return persisted;
     }
@@ -334,6 +337,8 @@ public class WorkflowsManager {
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
         List<WorkflowConditionRepresentation> conditions = ofNullable(rep.getConditions()).orElse(List.of());
 
+        validateWorkflow(rep, config);
+
         for (WorkflowConditionRepresentation condition : conditions) {
             String conditionProviderId = condition.getProviderId();
             config.computeIfAbsent("conditions", key -> new ArrayList<>()).add(conditionProviderId);
@@ -353,6 +358,27 @@ public class WorkflowsManager {
         createSteps(workflow, steps);
 
         return workflow;
+    }
+
+    private void validateWorkflow(WorkflowRepresentation rep, MultivaluedHashMap<String, String> config) {
+        // Validations:
+        //  workflow cannot be both immediate and recurring
+        //  immediate workflow cannot have time conditions
+        //  all steps of scheduled workflow must have time condition
+
+        boolean isImmediate = config.containsKey(SCHEDULED_KEY) && !Boolean.parseBoolean(config.getFirst(SCHEDULED_KEY));
+        boolean isRecurring = config.containsKey(RECURRING_KEY) && Boolean.parseBoolean(config.getFirst(RECURRING_KEY));
+        boolean hasTimeCondition = rep.getSteps().stream().allMatch(step -> step.getConfig() != null
+                && step.getConfig().containsKey(AFTER_KEY));
+        if (isImmediate && isRecurring) {
+            throw new WorkflowInvalidStateException("Workflow cannot be both immediate and recurring.");
+        }
+        if (isImmediate && hasTimeCondition) {
+            throw new WorkflowInvalidStateException("Immediate workflow cannot have steps with time conditions.");
+        }
+        if (!isImmediate && !hasTimeCondition) {
+            throw new WorkflowInvalidStateException("Scheduled workflow cannot have steps without time conditions.");
+        }
     }
 
     private WorkflowStep toModel(WorkflowStepRepresentation rep) {
@@ -375,17 +401,35 @@ public class WorkflowsManager {
         return type.resolveResource(session, resourceId);
     }
 
-    private void validateStep(WorkflowStep persisted) throws ModelValidationException {
-        List<WorkflowStep> aggregated = persisted.getSteps();
+    private void validateStep(Workflow workflow, WorkflowStep step) throws ModelValidationException {
+        boolean isAggregatedStep = !step.getSteps().isEmpty();
+        boolean isScheduledWorkflow = workflow.isScheduled();
 
-        if (!aggregated.isEmpty()) {
-            WorkflowStepProvider provider = getStepProvider(persisted);
-
-            if (!(provider instanceof AggregatedStepProvider)) {
-                // for now, only AggregatedActionProvider supports having sub-actions but we might want to support
-                // in the future more actions from having sub-actions by querying the capability from the provider or via
+        if (isAggregatedStep) {
+            if (!step.getProviderId().equals(AggregatedStepProviderFactory.ID)) {
+                // for now, only AggregatedStepProvider supports having sub-steps, but we might want to support
+                // in the future more steps from having sub-steps by querying the capability from the provider or via
                 // a marker interface
-                throw new ModelValidationException("Action provider " + persisted.getProviderId() + " does not support aggregated actions");
+                throw new ModelValidationException("Step provider " + step.getProviderId() + " does not support aggregated steps");
+            }
+
+            List<WorkflowStep> subSteps = step.getSteps();
+            // for each sub-step (in case it's not aggregated step on its own) check all it's sub-steps do not have
+            // time conditions, all its sub-steps are meant to be run at once
+            if (subSteps.stream().anyMatch(subStep ->
+                    subStep.getConfig().getFirst(AFTER_KEY) != null &&
+                            !subStep.getProviderId().equals(AggregatedStepProviderFactory.ID))) {
+                throw new ModelValidationException("Sub-steps of aggregated step cannot have time conditions.");
+            }
+        } else {
+            if (isScheduledWorkflow) {
+                if (step.getConfig().getFirst(AFTER_KEY) == null || step.getAfter() < 0) {
+                    throw new ModelValidationException("All steps of scheduled workflow must have a valid 'after' time condition.");
+                }
+            } else { // immediate workflow
+                if (step.getConfig().getFirst(AFTER_KEY) != null) {
+                    throw new ModelValidationException("Immediate workflow step cannot have a time condition.");
+                }
             }
         }
     }

@@ -1,7 +1,9 @@
 package org.keycloak.tests.admin.model.workflow;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.time.Duration;
 import java.util.List;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
@@ -49,6 +52,7 @@ public class AdhocWorkflowTest {
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
+                        .after(Duration.ofDays(1))
                         .build())
                 .build()).close();
 
@@ -58,6 +62,31 @@ public class AdhocWorkflowTest {
         assertThat(workflow.getSteps(), hasSize(1));
         WorkflowStepRepresentation aggregatedStep = workflow.getSteps().get(0);
         assertThat(aggregatedStep.getProviderId(), is(SetUserAttributeStepProviderFactory.ID));
+    }
+
+    @Test
+    public void testBindAdHocScheduledWithImmediateWorkflow() {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
+                .of(EventBasedWorkflowProviderFactory.ID)
+                .immediate()
+                .withSteps(WorkflowStepRepresentation.create()
+                        .of(SetUserAttributeStepProviderFactory.ID)
+                        .withConfig("message", "message")
+                        .build())
+                .build()).close();
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+        WorkflowRepresentation workflow = workflows.get(0);
+
+        try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
+            String id = ApiUtil.getCreatedId(response);
+            try {
+                managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, Duration.ofDays(5).toMillis());
+            } catch (Exception e) {
+                assertThat(e, instanceOf(BadRequestException.class));
+            }
+        }
     }
 
     @Test
@@ -79,30 +108,13 @@ public class AdhocWorkflowTest {
             String id = ApiUtil.getCreatedId(response);
             managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id);
         }
-
-        runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-            UserModel user = session.users().getUserByUsername(realm, "alice");
-
-            manager.runScheduledSteps();
-            assertNull(user.getAttributes().get("message"));
-
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, "alice");
-                assertNotNull(user.getAttributes().get("message"));
-            } finally {
-                Time.setOffset(0);
-            }
-        }));
     }
 
     @Test
-    public void testRunAdHocNonScheduledWorkflow() {
+    public void testRunAdHocImmediateWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .immediate()
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -134,6 +146,7 @@ public class AdhocWorkflowTest {
                 .of(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
+                        .after(Duration.ofDays(5))
                         .withConfig("message", "message")
                         .build())
                 .build()).close();
