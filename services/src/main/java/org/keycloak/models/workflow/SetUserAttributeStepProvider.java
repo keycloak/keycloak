@@ -17,6 +17,9 @@
 
 package org.keycloak.models.workflow;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
+
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -25,9 +28,6 @@ import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map.Entry;
-
-import static org.keycloak.models.workflow.WorkflowStep.AFTER_KEY;
-import static org.keycloak.models.workflow.WorkflowStep.PRIORITY_KEY;
 
 public class SetUserAttributeStepProvider implements WorkflowStepProvider {
 
@@ -55,7 +55,7 @@ public class SetUserAttributeStepProvider implements WorkflowStepProvider {
                 for (Entry<String, List<String>> entry : stepModel.getConfig().entrySet()) {
                     String key = entry.getKey();
 
-                    if (!key.startsWith(AFTER_KEY) && !key.startsWith(PRIORITY_KEY)) {
+                    if (!key.startsWith(CONFIG_AFTER) && !key.startsWith(CONFIG_PRIORITY)) {
                         log.debugv("Setting attribute {0} to user {1})", key, user.getId());
                         user.setAttribute(key, entry.getValue());
                     }

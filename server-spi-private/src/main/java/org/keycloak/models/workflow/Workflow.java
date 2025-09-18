@@ -17,6 +17,11 @@
 
 package org.keycloak.models.workflow;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
+
 import java.util.List;
 import java.util.Map;
 
@@ -24,9 +29,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 
 public class Workflow {
-
-    public static final String SCHEDULED_KEY = "scheduled";
-    public static final String RECURRING_KEY = "recurring";
 
     private MultivaluedHashMap<String, String> config;
     private String providerId;
@@ -69,15 +71,15 @@ public class Workflow {
     }
 
     public boolean isEnabled() {
-        return config != null && Boolean.parseBoolean(config.getFirstOrDefault("enabled", "true"));
+        return config != null && Boolean.parseBoolean(config.getFirstOrDefault(CONFIG_ENABLED, "true"));
     }
 
     public boolean isRecurring() {
-        return config != null && Boolean.parseBoolean(config.getFirst(RECURRING_KEY));
+        return config != null && Boolean.parseBoolean(config.getFirst(CONFIG_RECURRING));
     }
 
     public boolean isScheduled() {
-        return config != null && Boolean.parseBoolean(config.getFirstOrDefault(SCHEDULED_KEY, "true"));
+        return config != null && Boolean.parseBoolean(config.getFirstOrDefault(CONFIG_SCHEDULED, "true"));
     }
 
     public Long getNotBefore() {
@@ -86,5 +88,19 @@ public class Workflow {
 
     public void setNotBefore(Long notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public void setEnabled(boolean enabled) {
+        if (config == null) {
+            config = new MultivaluedHashMap<>();
+        }
+        config.putSingle(CONFIG_ENABLED, String.valueOf(enabled));
+    }
+
+    public void setError(String message) {
+        if (config == null) {
+            config = new MultivaluedHashMap<>();
+        }
+        config.putSingle(CONFIG_ERROR, message);
     }
 }

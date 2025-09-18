@@ -28,6 +28,7 @@ import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -136,7 +137,7 @@ public class RoleWorkflowConditionTest {
             createRoleIfNotExists(roleName);
         }
 
-        List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ROLE_ADD.name())
                 .recurring()
