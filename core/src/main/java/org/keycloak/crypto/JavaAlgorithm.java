@@ -130,6 +130,21 @@ public class JavaAlgorithm {
         }
     }
 
+    public static String getKeyType(String keyAlgorithm) {
+        switch (keyAlgorithm) {
+            case KeyType.RSA:
+                return KeyType.RSA;
+            case KeyType.EC:
+                return KeyType.EC;
+            case Algorithm.EdDSA:
+            case Algorithm.Ed448:
+            case Algorithm.Ed25519:
+                return KeyType.OKP;
+            default:
+                return KeyType.OCT;
+        }
+    }
+
     public static boolean isRSAJavaAlgorithm(String algorithm) {
         return getJavaAlgorithm(algorithm).contains("RSA");
     }
