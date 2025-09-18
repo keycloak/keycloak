@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationReprese
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.util.DPoPUtil;
@@ -65,12 +66,23 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
         @JsonProperty("auto-configure")
         protected Boolean autoConfigure;
 
+        @JsonProperty("enforce-authorization-code-binding-to-dpop")
+        protected Boolean enforceAuthorizationCodeBindingToDpop;
+
         public Boolean isAutoConfigure() {
             return autoConfigure;
         }
 
         public void setAutoConfigure(Boolean autoConfigure) {
             this.autoConfigure = autoConfigure;
+        }
+
+        public Boolean getEnforceAuthorizationCodeBindingToDpop() {
+            return enforceAuthorizationCodeBindingToDpop;
+        }
+
+        public void setEnforceAuthorizationCodeBindingToDpop(Boolean enforceAuthorizationCodeBindingToDpop) {
+            this.enforceAuthorizationCodeBindingToDpop = enforceAuthorizationCodeBindingToDpop;
         }
     }
 
@@ -94,6 +106,10 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
                 ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
                 autoConfigure(clientUpdateContext.getProposedClientRepresentation());
                 validate(clientUpdateContext.getProposedClientRepresentation());
+                break;
+            case AUTHORIZATION_REQUEST:
+                AuthorizationRequestContext authzRequestContext = (AuthorizationRequestContext) context;
+                checkOnAuthorizationRequest(authzRequestContext);
                 break;
             case TOKEN_REQUEST:
             case TOKEN_REFRESH:
@@ -138,6 +154,13 @@ public class DPoPBindEnforcerExecutor implements ClientPolicyExecutorProvider<DP
         }
 
         validateBinding(token, dPoP);
+    }
+
+    private void checkOnAuthorizationRequest(AuthorizationRequestContext authzRequestContext) throws ClientPolicyException {
+        if (configuration.getEnforceAuthorizationCodeBindingToDpop() != null && configuration.getEnforceAuthorizationCodeBindingToDpop() && (authzRequestContext.getAuthorizationEndpointRequest().getDpopJkt() == null)) {
+            // Checking only the presence of the parameter here. As long as parameter is present, it is automatically saved to authenticationSession and checked later in token request
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: dpop_jkt");
+        }
     }
 
     private DPoP retrieveAndVerifyDPoP(HttpRequest request) throws ClientPolicyException {

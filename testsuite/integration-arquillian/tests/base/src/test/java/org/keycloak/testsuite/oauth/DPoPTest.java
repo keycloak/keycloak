@@ -42,6 +42,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
@@ -81,6 +82,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.ServerURLs;
@@ -644,7 +646,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile("MyProfile", "Le Premier Profil")
-                        .addExecutor(DPoPBindEnforcerExecutorFactory.PROVIDER_ID, createDPoPBindEnforcerExecutorConfig(Boolean.FALSE))
+                        .addExecutor(DPoPBindEnforcerExecutorFactory.PROVIDER_ID, createDPoPBindEnforcerExecutorConfig(Boolean.FALSE, Boolean.FALSE))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -686,7 +688,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile("MyProfile", "Le Premier Profil")
-                        .addExecutor(DPoPBindEnforcerExecutorFactory.PROVIDER_ID, createDPoPBindEnforcerExecutorConfig(Boolean.TRUE))
+                        .addExecutor(DPoPBindEnforcerExecutorFactory.PROVIDER_ID, createDPoPBindEnforcerExecutorConfig(Boolean.TRUE, Boolean.FALSE))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -781,6 +783,47 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         updateProfiles("{}");
 
         oauth.logoutForm().idTokenHint(encodedIdToken).open();
+    }
+
+    @Test
+    public void testDPoPBindEnforcerExecutorWithEnforcedAuthzCodeBinding() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile("MyProfile", "Le Premier Profil")
+                        .addExecutor(DPoPBindEnforcerExecutorFactory.PROVIDER_ID, createDPoPBindEnforcerExecutorConfig(Boolean.FALSE, Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy("MyPolicy", "La Primera Plitica", Boolean.TRUE)
+                        .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
+                                createClientAccessTypeConditionConfig(List.of(ClientAccessTypeConditionFactory.TYPE_PUBLIC)))
+                        .addProfile("MyProfile")
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Login without dpop_jkt - failure
+        oauth.client(TEST_PUBLIC_CLIENT_ID);
+        oauth.openLoginForm();
+        AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("Missing parameter: dpop_jkt", response.getErrorDescription());
+        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
+                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
+                        "Missing parameter: dpop_jkt").client(oauth.getClientId()).user((String) null)
+                .assertEvent();
+
+        // Login with dpop_jkt -- should be OK
+        long clockSkew = 10;
+        sendAuthorizationRequestWithDPoPJkt(jktEc);
+        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) (Time.currentTime() + clockSkew), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null);
+        successTokenProceduresWithDPoP(dpopProofEcEncoded, jktEc);
+
+        updatePolicies("{}");
+        updateProfiles("{}");
     }
 
     @Test

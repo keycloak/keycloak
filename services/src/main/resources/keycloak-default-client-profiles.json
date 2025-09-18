@@ -368,7 +368,8 @@
         {
           "executor": "dpop-bind-enforcer",
           "configuration": {
-            "auto-configure": "true"
+            "auto-configure": "true",
+            "enforce-authorization-code-binding-to-dpop": "false"
           }
         },
         {
@@ -454,7 +455,8 @@
         {
           "executor": "dpop-bind-enforcer",
           "configuration": {
-            "auto-configure": "true"
+            "auto-configure": "true",
+            "enforce-authorization-code-binding-to-dpop": "false"
           }
         }
       ]
@@ -532,7 +534,8 @@
         {
           "executor": "dpop-bind-enforcer",
           "configuration": {
-            "auto-configure": "true"
+            "auto-configure": "true",
+            "enforce-authorization-code-binding-to-dpop": "false"
           }
         },
         {
