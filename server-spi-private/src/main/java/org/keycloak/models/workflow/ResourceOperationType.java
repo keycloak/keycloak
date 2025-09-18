@@ -15,12 +15,12 @@ import org.keycloak.provider.ProviderEvent;
 
 public enum ResourceOperationType {
 
-    CREATE(OperationType.CREATE, EventType.REGISTER),
-    LOGIN(EventType.LOGIN),
-    ADD_FEDERATED_IDENTITY(new Class[] {FederatedIdentityCreatedEvent.class}, new Class[] {FederatedIdentityRemovedEvent.class}),
-    REMOVE_FEDERATED_IDENTITY(FederatedIdentityRemovedEvent.class),
-    GROUP_MEMBERSHIP_JOIN(GroupMemberJoinEvent.class),
-    ROLE_GRANTED(new Class[] {RoleGrantedEvent.class}, new Class[] {RoleRevokedEvent.class}),
+    USER_ADD(OperationType.CREATE, EventType.REGISTER),
+    USER_LOGIN(EventType.LOGIN),
+    USER_FEDERATED_IDENTITY_ADD(new Class[] {FederatedIdentityCreatedEvent.class}, new Class[] {FederatedIdentityRemovedEvent.class}),
+    USER_FEDERATED_IDENTITY_REMOVE(FederatedIdentityRemovedEvent.class),
+    USER_GROUP_MEMBERSHIP_ADD(GroupMemberJoinEvent.class),
+    USER_ROLE_ADD(new Class[] {RoleGrantedEvent.class}, new Class[] {RoleRevokedEvent.class}),
     AD_HOC(new Class[] {});
 
     private final List<Object> types;

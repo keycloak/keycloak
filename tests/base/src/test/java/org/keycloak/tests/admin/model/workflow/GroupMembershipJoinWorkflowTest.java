@@ -68,7 +68,7 @@ public class GroupMembershipJoinWorkflowTest {
 
         List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.GROUP_MEMBERSHIP_JOIN.name())
+                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADD.name())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(GroupMembershipWorkflowConditionFactory.ID)
                         .withConfig(GroupMembershipWorkflowConditionFactory.EXPECTED_GROUPS, groupId)
@@ -126,7 +126,7 @@ public class GroupMembershipJoinWorkflowTest {
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(GroupMembershipWorkflowConditionFactory.ID)
                         .withConfig(GroupMembershipWorkflowConditionFactory.EXPECTED_GROUPS, groupId)
