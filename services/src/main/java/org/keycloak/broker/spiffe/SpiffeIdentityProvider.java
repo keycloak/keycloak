@@ -26,7 +26,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 /**
