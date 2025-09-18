@@ -191,6 +191,7 @@ include::../examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 +
 {project_name} automatic creates the caches.
 To customize any default configuration, use the {infinispan-operator-docs}#creating-caches_creating-caches[`Cache` CR] to declare the full cache configuration.
+To take effect, the `Cache` CR must be deployed before any {project_name} Pod starts.
 
 == Verifying the deployment
 
@@ -237,7 +238,7 @@ include::../examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
 This is optional, and it defaults to `11222`.
 <3> The Secret `name` and `key` with the {jdgserver_name} username credential.
 <4> The Secret `name` and `key` with the {jdgserver_name} password credential.
-<5> The mame of the remote site. 
+<5> The mame of the remote site.
 
 === Architecture
 
