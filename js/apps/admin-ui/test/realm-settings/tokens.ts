@@ -57,10 +57,6 @@ export async function populateTokensPage(page: Page) {
 
   await page.getByTestId("execute-actions-input").fill("9");
   await changeTimeUnit(page, "Days", "#kc-execute-actions-select-menu");
-
-  // Fill OID4VCI fields (required when feature is enabled)
-  await page.getByTestId("attributes.vc🍺c-nonce-lifetime-seconds").fill("30");
-  await page.getByTestId("attributes.preAuthorizedCodeLifespanS").fill("30");
 }
 
 export async function clickSaveSessionsButton(page: Page) {

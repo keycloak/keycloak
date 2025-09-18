@@ -655,7 +655,8 @@ export const RealmSettingsTokensTab = ({
             label={t("oid4vciNonceLifetime")}
             labelIcon={t("oid4vciNonceLifetimeHelp")}
             controller={{
-              rules: { required: t("required"), min: 30 },
+              defaultValue: 60,
+              rules: { min: 30 },
             }}
             min={30}
             units={["second", "minute", "hour"]}
@@ -667,7 +668,8 @@ export const RealmSettingsTokensTab = ({
             label={t("preAuthorizedCodeLifespan")}
             labelIcon={t("preAuthorizedCodeLifespanHelp")}
             controller={{
-              rules: { required: t("required"), min: 30 },
+              defaultValue: 30,
+              rules: { min: 30 },
             }}
             min={30}
             units={["second", "minute", "hour"]}

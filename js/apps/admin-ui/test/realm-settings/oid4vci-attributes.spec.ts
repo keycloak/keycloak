@@ -47,15 +47,18 @@ test("should render fields and save values with correct attribute keys", async (
   await expect(nonceField).toBeVisible();
   await expect(preAuthField).toBeVisible();
 
-  await nonceField.fill("120");
-  await preAuthField.fill("300");
+  await nonceField.fill("60");
+  await preAuthField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(page.getByText(/success/i)).toBeVisible();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
 
   const realmData = await adminClient.getRealm(realm);
   expect(realmData).toBeDefined();
-  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("120");
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBe("300");
+  // TimeSelector converts values based on selected unit (60 minutes = 3600 seconds, 120 seconds = 120 seconds)
+  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
+  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBe("120");
 });
 
 test("should persist values after page refresh", async ({ page }) => {
@@ -75,10 +78,12 @@ test("should persist values after page refresh", async ({ page }) => {
     "attributes.preAuthorizedCodeLifespanS",
   );
 
-  await nonceField.fill("120");
-  await preAuthField.fill("300");
+  await nonceField.fill("60");
+  await preAuthField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(page.getByText(/success/i)).toBeVisible();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
 
   // Refresh the page
   await page.reload();
@@ -129,7 +134,6 @@ test("should validate form fields and save valid values", async ({ page }) => {
   await expect(saveButton).toBeVisible();
 
   // Test with valid values - this should work
-  // Clear fields first to ensure clean state
   await nonceField.clear();
   await preAuthField.clear();
 
@@ -190,6 +194,6 @@ test("should show validation error for values below minimum threshold", async ({
 
   // Check for validation error message
   const validationErrorText =
-    "Please ensure all OID4VCI attribute fields are filled and values are 30 seconds or greater.";
+    "Please ensure the OID4VCI attribute fields are filled with values 30 seconds or greater.";
   await expect(page.getByText(validationErrorText).first()).toBeVisible();
 });
