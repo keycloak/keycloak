@@ -267,9 +267,10 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
-    public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure) {
+    public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure, Boolean enforceAuthorizationCodeBindingToDpop) {
         DPoPBindEnforcerExecutor.Configuration config = new DPoPBindEnforcerExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
+        config.setEnforceAuthorizationCodeBindingToDpop(enforceAuthorizationCodeBindingToDpop);
         return config;
     }
 

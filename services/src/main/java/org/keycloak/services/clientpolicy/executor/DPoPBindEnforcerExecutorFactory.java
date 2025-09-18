@@ -17,15 +17,11 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 public class DPoPBindEnforcerExecutorFactory  implements ClientPolicyExecutorProviderFactory {
@@ -34,8 +30,13 @@ public class DPoPBindEnforcerExecutorFactory  implements ClientPolicyExecutorPro
 
     public static final String AUTO_CONFIGURE = "auto-configure";
 
+    public static final String ENFORCE_AUTHORIZATION_CODE_BINDING_TO_DPOP = "enforce-authorization-code-binding-to-dpop";
+
     private static final ProviderConfigProperty AUTO_CONFIGURE_PROPERTY = new ProviderConfigProperty(
             AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to use DPoP bind token", ProviderConfigProperty.BOOLEAN_TYPE, false);
+
+    private static final ProviderConfigProperty ENFORCE_AUTHORIZATION_CODE_BINDING_TO_DPOP_KEY = new ProviderConfigProperty(
+            ENFORCE_AUTHORIZATION_CODE_BINDING_TO_DPOP, "Enforce Authorization Code binding to DPoP key", "If On, then there is enforced authorization code binding to DPoP key. This means that parameter 'dpop_jkt' will be required in the OIDC/OAuth2 authentication requests and will be verified during token request if it matches DPoP proof. When this is false, it is still possible to use 'dpop_jkt' parameter, but it will not be required", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
@@ -66,6 +67,6 @@ public class DPoPBindEnforcerExecutorFactory  implements ClientPolicyExecutorPro
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.singletonList(AUTO_CONFIGURE_PROPERTY);
+        return List.of(AUTO_CONFIGURE_PROPERTY, ENFORCE_AUTHORIZATION_CODE_BINDING_TO_DPOP_KEY);
     }
 }
