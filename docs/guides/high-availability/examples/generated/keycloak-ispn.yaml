@@ -486,8 +486,10 @@ spec:
       secret:
         name: remote-store-secret
         key: password
+    - name: spi-cache-remote--default--remote-sites
+      value: "site-2" # <5>
+    # end::keycloak-ispn[]
     - name: db-driver
-      # end::keycloak-ispn[]
 
       value: software.amazon.jdbc.Driver
   http:
