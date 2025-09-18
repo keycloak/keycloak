@@ -517,4 +517,60 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.http.access-log.exclude-pattern", "/realms/test/*"
         ));
     }
+
+    @Test
+    public void logsExportDefault() {
+        initConfig();
+
+        assertConfig(Map.of(
+                "log-export-enabled", "false",
+                "log-export-endpoint", "http://localhost:4317",
+                "log-export-protocol", "grpc",
+                "log-export-level", "all"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "false",
+                "quarkus.otel.enabled", "false",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "http://localhost:4317",
+                "quarkus.otel.exporter.otlp.logs.protocol", "grpc",
+                "quarkus.otel.logs.level","ALL"
+        ));
+    }
+
+    @Test
+    public void logsExportPriority() {
+        ConfigArgsConfigSource.setCliArgs("--log-export-enabled=true", "--log-export-endpoint=localhost:2000", "--log-export-protocol=http/protobuf","--log-export-level=warn");
+        initConfig();
+        assertConfig(Map.of(
+                "log-export-enabled", "true",
+                "log-export-endpoint", "localhost:2000",
+                "log-export-protocol", "http/protobuf",
+                "log-export-level", "warn"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "localhost:2000",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf",
+                "quarkus.otel.logs.level","WARN"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--telemetry-endpoint=http://keycloak.org:1234", "--telemetry-protocol=grpc", "--log-export-enabled=true", "--log-export-endpoint=my-domain:2001", "--log-export-protocol=http/protobuf");
+        initConfig();
+        assertConfig(Map.of(
+                "log-export-enabled", "true",
+                "log-export-endpoint", "my-domain:2001",
+                "log-export-protocol", "http/protobuf",
+                "telemetry-endpoint", "http://keycloak.org:1234",
+                "telemetry-protocol", "grpc"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.otel.logs.enabled", "true",
+                "quarkus.otel.enabled", "true",
+                "quarkus.otel.exporter.otlp.logs.endpoint", "my-domain:2001",
+                "quarkus.otel.exporter.otlp.logs.protocol", "http/protobuf"
+        ));
+    }
 }
