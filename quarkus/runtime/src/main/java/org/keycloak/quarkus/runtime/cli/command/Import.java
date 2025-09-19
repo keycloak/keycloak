@@ -23,8 +23,6 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.ExportImportConfig;
 import picocli.CommandLine.Command;
 
-import java.util.EnumSet;
-
 @Command(name = Import.NAME,
         header = "Import data from a directory or a file.",
         description = "%nImport data from a directory or a file.")
@@ -46,8 +44,11 @@ public final class Import extends AbstractNonServerCommand {
     }
 
     @Override
-    protected EnumSet<OptionCategory> excludedCategories() {
-        return EnumSet.of(OptionCategory.EXPORT);
+    public boolean isHiddenCategory(OptionCategory category) {
+        if (category == OptionCategory.IMPORT) {
+            return false;
+        }
+        return super.isHiddenCategory(category);
     }
 
 }
