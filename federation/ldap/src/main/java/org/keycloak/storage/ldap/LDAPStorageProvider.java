@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 
@@ -1123,19 +1125,36 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return Stream.iterate(ldapQuery,
                     query -> {
                         //the very 1st page - Pagination context might not yet be present
-                        if (query.getPaginationContext() == null) try {
-                            query.initPagination();
-                            //returning true for first iteration as the LDAP was not queried yet
-                            return true;
-                        } catch (NamingException e) {
-                            throw new ModelException("Querying of LDAP failed " + query, e);
+                        if (query.getPaginationContext() == null) {
+                            try {
+                                query.initPagination();
+                                //returning true for first iteration as the LDAP was not queried yet
+                                return true;
+                            } catch (NameNotFoundException | CommunicationException e) {
+                                logger.errorf(e, "Failed to init LDAP query pagination %s", query);
+                                return false;
+                            } catch (NamingException e) {
+                                throw new ModelException("Querying of LDAP failed " + query, e);
+                            }
                         }
                         return query.getPaginationContext().hasNextPage();
                     },
                     query -> query
             ).flatMap(query -> {
                         query.setLimit(limit);
-                        List<LDAPObject> ldapObjects = query.getResultList();
+                        List<LDAPObject> ldapObjects;
+
+                        try {
+                            ldapObjects = query.getResultList();
+                        } catch (ModelException mde) {
+                            if (mde.isCausedBy(NameNotFoundException.class, CommunicationException.class)) {
+                                logger.errorf(mde, "Failed to query LDAP %s", query);
+                                return Stream.empty();
+                            } else {
+                                throw mde;
+                            }
+                        }
+
                         if (ldapObjects.isEmpty()) {
                             return Stream.empty();
                         }
