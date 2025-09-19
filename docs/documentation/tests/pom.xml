@@ -8,7 +8,6 @@
             --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
             --add-opens java.base/java.io=ALL-UNNAMED
         </surefire.system.args>
-        <version.jsoup>1.18.3</version.jsoup>
     </properties>
 
     <build>
@@ -135,7 +134,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>${version.jsoup}</version>
+            <version>${jsoup.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
