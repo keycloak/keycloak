@@ -375,12 +375,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = session.getContext().getRealm();
         KeyManager keyManager = session.keys();
 
-        List<String> supportedEncryptionAlgorithms = keyManager.getKeysStream(realm)
-                .filter(key -> KeyUse.ENC.equals(key.getUse()))
-                .map(KeyWrapper::getAlgorithm)
-                .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
+        List<String> supportedEncryptionAlgorithms = CryptoUtils.getSupportedAsymmetricEncryptionAlgorithms(session);
 
         // Default algorithms if none configured
         if (supportedEncryptionAlgorithms.isEmpty()) {
