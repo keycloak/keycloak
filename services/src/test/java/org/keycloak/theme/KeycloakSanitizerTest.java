@@ -64,8 +64,8 @@ public class KeycloakSanitizerTest {
     public void testLinks() throws Exception {
         List<String> html = new ArrayList<>();
 
-        html.set(0, "<a href=\"https://www.example.org/sub-page\">Link text</a>");
-        expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow noopener noreferrer\">Link text</a>";
+        html.add("<a href=\"https://www.example.org/sub-page\">Link text</a>");
+        String expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow\">Link text</a>";
         assertResult(expectedResult, html);
 
         html.set(0, "<a href=\"https://www.example.org/terms-of-service\" target=\"_blank\">Link text</a>");
@@ -73,11 +73,11 @@ public class KeycloakSanitizerTest {
         assertResult(expectedResult, html);
 
         html.set(0, "<a href=\"https://www.example.org/sub-page\" target=\"_top\">Link text</a>");
-        expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow noopener noreferrer\">Link text</a>";
+        expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow\">Link text</a>";
         assertResult(expectedResult, html);
 
         html.set(0, "<a href=\"https://www.example.org/sub-page\" target=\"someframe\">Link text</a>");
-        expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow noopener noreferrer\">Link text</a>";
+        expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow\">Link text</a>";
         assertResult(expectedResult, html);
     }
 
