@@ -10,6 +10,9 @@ import java.util.Properties;
 
 import org.junit.Test;
 
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.RealmModelDelegate;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,23 +27,41 @@ public class LocaleUtilTest {
 
     @Test
     public void getParentLocale() {
-        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH_1996), equalTo(LOCALE_DE_CH));
-        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH), equalTo(Locale.GERMAN));
-        assertThat(LocaleUtil.getParentLocale(Locale.GERMAN), equalTo(Locale.ENGLISH));
+        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH_1996, null), equalTo(LOCALE_DE_CH));
+        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH, null), equalTo(Locale.GERMAN));
+        assertThat(LocaleUtil.getParentLocale(Locale.GERMAN, null), equalTo(Locale.ENGLISH));
 
-        assertThat(LocaleUtil.getParentLocale(Locale.ENGLISH), nullValue());
+        assertThat(LocaleUtil.getParentLocale(Locale.ENGLISH, null), nullValue());
+    }
+
+    @Test
+    public void getParentLocaleWithRealmDefaultLocaleFallback() {
+        RealmModel realm = new RealmModelDelegate(null) {
+            @Override
+            public boolean isInternationalizationEnabled() {
+                return true;
+            }
+            @Override
+            public String getDefaultLocale() {return "it";}
+
+        };
+
+        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH_1996, realm), equalTo(LOCALE_DE_CH));
+        assertThat(LocaleUtil.getParentLocale(LOCALE_DE_CH, realm), equalTo(Locale.GERMAN));
+        assertThat(LocaleUtil.getParentLocale(Locale.GERMAN, realm), equalTo(Locale.ITALIAN));
+        assertThat(LocaleUtil.getParentLocale(Locale.ITALIAN, realm), nullValue());
     }
 
     @Test
     public void getApplicableLocales() {
-        assertThat(LocaleUtil.getApplicableLocales(LOCALE_DE_CH_1996),
+        assertThat(LocaleUtil.getApplicableLocales(LOCALE_DE_CH_1996, null),
                 equalTo(Arrays.asList(LOCALE_DE_CH_1996, LOCALE_DE_CH, Locale.GERMAN, Locale.ENGLISH)));
-        assertThat(LocaleUtil.getApplicableLocales(LOCALE_DE_CH),
+        assertThat(LocaleUtil.getApplicableLocales(LOCALE_DE_CH, null),
                 equalTo(Arrays.asList(LOCALE_DE_CH, Locale.GERMAN, Locale.ENGLISH)));
-        assertThat(LocaleUtil.getApplicableLocales(Locale.GERMAN),
+        assertThat(LocaleUtil.getApplicableLocales(Locale.GERMAN, null),
                 equalTo(Arrays.asList(Locale.GERMAN, Locale.ENGLISH)));
 
-        assertThat(LocaleUtil.getApplicableLocales(Locale.ENGLISH), equalTo(Collections.singletonList(Locale.ENGLISH)));
+        assertThat(LocaleUtil.getApplicableLocales(Locale.ENGLISH, null), equalTo(Collections.singletonList(Locale.ENGLISH)));
     }
 
     @Test
@@ -75,7 +96,7 @@ public class LocaleUtilTest {
                 keyDefinedForLanguageAndParents, keyDefinedForEnglishOnly), Locale.ENGLISH);
         groupedMessages.put(Locale.ENGLISH, englishMessages);
 
-        Properties mergedMessages = LocaleUtil.mergeGroupedMessages(LOCALE_DE_CH_1996, groupedMessages);
+        Properties mergedMessages = LocaleUtil.mergeGroupedMessages(null, LOCALE_DE_CH_1996, groupedMessages);
 
         Properties expectedMergedMessages = new Properties();
         addTestValue(expectedMergedMessages, keyDefinedEverywhere, LOCALE_DE_CH_1996);
@@ -164,7 +185,7 @@ public class LocaleUtilTest {
         groupedMessages2.put(Locale.ENGLISH, english2Messages);
 
         Properties mergedMessages =
-                LocaleUtil.mergeGroupedMessages(LOCALE_DE_CH_1996, groupedMessages1, groupedMessages2);
+                LocaleUtil.mergeGroupedMessages(null, LOCALE_DE_CH_1996, groupedMessages1, groupedMessages2);
 
         Properties expectedMergedMessages = new Properties();
         addTestValue(expectedMergedMessages, keyDefinedForVariantFromMessages1AndFallbacks, LOCALE_DE_CH_1996,
