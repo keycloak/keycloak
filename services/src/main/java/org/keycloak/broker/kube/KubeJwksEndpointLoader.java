@@ -29,18 +29,17 @@ public class KubeJwksEndpointLoader implements PublicKeyLoader {
 
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
-        try (CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient()) {
-            HttpGet httpGet = new HttpGet(endpoint);
+        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        HttpGet httpGet = new HttpGet(endpoint);
 
-            String token = FileUtils.readFileToString(new File("/var/run/secrets/kubernetes.io/serviceaccount/token"), StandardCharsets.UTF_8);
+        String token = FileUtils.readFileToString(new File("/var/run/secrets/kubernetes.io/serviceaccount/token"), StandardCharsets.UTF_8);
 
-            httpGet.setHeader(HttpHeaders.ACCEPT, "application/json");
-            httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        httpGet.setHeader(HttpHeaders.ACCEPT, "application/jwk-set+json");
+        httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 
-            CloseableHttpResponse response = httpClient.execute(httpGet);
+        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
             JSONWebKeySet jwks = JsonSerialization.readValue(response.getEntity().getContent(), JSONWebKeySet.class);
-            return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.JWT_SVID);
+            return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG);
         }
     }
-
 }

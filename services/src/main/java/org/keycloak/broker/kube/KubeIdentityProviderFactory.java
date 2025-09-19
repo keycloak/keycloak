@@ -32,7 +32,7 @@ public class KubeIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public IdentityProviderModel createConfig() {
-        return new SpiffeIdentityProviderConfig();
+        return new OIDCIdentityProviderConfig();
     }
 
     @Override
@@ -42,7 +42,7 @@ public class KubeIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.SPIFFE);
+        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED);
     }
 
 }
