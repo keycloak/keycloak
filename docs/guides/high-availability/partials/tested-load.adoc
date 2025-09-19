@@ -8,7 +8,16 @@ We regularly test {project_name} with the following load:
 </@profile.ifCommunity>
 
 * 100,000 users
+<@profile.ifProduct>
 * 300 requests per second
+</@profile.ifProduct>
+<@profile.ifCommunity>
+* 1000 logins per second with 20000 refreshes per second.
+* 6 Pods
+** Each Pod with limits: 40vCPU and 8GB Memory
+* Amazon Aurora PostgreSQL database
+** Instance type: `db.r8g.16xlarge`
+</@profile.ifCommunity>
 
 <@profile.ifCommunity>
 While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} name instances and databases.
