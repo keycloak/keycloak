@@ -104,6 +104,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "id.token.signed.response.alg",
                       "id.token.encrypted.response.alg",
                       "id.token.encrypted.response.enc",
+                      "id.token.as.detached.signature",
                       "user.info.response.signature.alg",
                       "user.info.encrypted.response.alg",
                       "user.info.encrypted.response.enc",
