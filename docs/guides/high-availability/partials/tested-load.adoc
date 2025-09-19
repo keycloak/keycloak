@@ -12,11 +12,11 @@ We regularly test {project_name} with the following load:
 * 300 requests per second
 </@profile.ifProduct>
 <@profile.ifCommunity>
-* 1000 logins per second with 20000 refreshes per second.
-* 6 Pods
-** Each Pod with limits: 40vCPU and 8GB Memory
-* Amazon Aurora PostgreSQL database
-** Instance type: `db.r8g.16xlarge`
+* 1000 logins per second with 20000 token refreshes per second.
+* 6 Pods single-cluster setup across 3 availability zones in one region
+** Each Pod with limits of 40 vCPU and 8 GB memory
+* Amazon Aurora PostgreSQL multi-az database deployed in two availability zones
+** Instance type: `db.r8g.16xlarge` for both reader and writer instance
 </@profile.ifCommunity>
 
 <@profile.ifCommunity>
