@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 
@@ -43,12 +45,13 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     private final PersistentUserSessionModel model;
     private UserModel user;
-    private String userId;
+    private final String userId;
     private RealmModel realm;
     private KeycloakSession session;
     private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;
 
     private PersistentUserSessionData data;
+    private Consumer<Map<String, AuthenticatedClientSessionModel>> clientSessionsLoader = ignored -> {};
 
     public PersistentUserSessionAdapter(UserSessionModel other) {
         this.data = new PersistentUserSessionData();
@@ -266,6 +269,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     @Override
     public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+        clientSessionsLoader.accept(authenticatedClientSessions);
         return authenticatedClientSessions;
     }
 
@@ -275,7 +279,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             return;
         }
 
-        removedClientUUIDS.forEach(authenticatedClientSessions::remove);
+        removedClientUUIDS.forEach(getAuthenticatedClientSessions()::remove);
     }
 
     @Override
@@ -340,10 +344,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof UserSessionModel)) return false;
-
-        UserSessionModel that = (UserSessionModel) o;
-        return that.getId().equals(getId());
+        return o instanceof UserSessionModel that && that.getId().equals(getId());
     }
 
     @Override
@@ -389,6 +390,10 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     public void setBrokerUserId(String brokerUserId) {
         getData().setBrokerUserId(brokerUserId);
+    }
+
+    public void setClientSessionsLoader(Consumer<Map<String, AuthenticatedClientSessionModel>> clientSessionsLoader) {
+        this.clientSessionsLoader = Objects.requireNonNullElse(clientSessionsLoader, this.clientSessionsLoader);
     }
 
     protected static class PersistentUserSessionData {
