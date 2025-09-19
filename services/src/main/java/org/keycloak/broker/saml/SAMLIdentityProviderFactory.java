@@ -114,7 +114,6 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                 samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
-                samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
                 samlIdentityProviderConfig.setArtifactBindingResponse(artifactBindingResponse);
                 samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
@@ -136,6 +135,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
                         if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
                             samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
+                            samlIdentityProviderConfig.setValidateSignature(true);
                         } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
                             samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                         } else if (keyDescriptorType.getUse() == null) {
