@@ -550,6 +550,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testConfigErrorLog() {
         var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setStartOptimized(false);
         kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().addToEnabledFeatures("feature doesn't exist").build());
 
         deployKeycloak(k8sclient, kc, false);
