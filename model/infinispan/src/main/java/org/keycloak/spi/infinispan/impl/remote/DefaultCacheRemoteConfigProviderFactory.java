@@ -34,8 +34,6 @@ import org.infinispan.client.hotrod.configuration.Configuration;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.ExhaustedAction;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
-import org.infinispan.commons.dataconversion.MediaType;
-import org.infinispan.configuration.cache.CacheMode;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
@@ -46,8 +44,10 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderFactory;
+import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
 import javax.net.ssl.SSLContext;
 
@@ -79,6 +79,7 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     private static final String CONNECTION_POOL_EXHAUSTED_ACTION = "connectionPoolExhaustedAction";
     private static final String AUTH_REALM = "authRealm";
     private static final String SASL_MECHANISM = "saslMechanism";
+    private static final String BACKUP_SITES = "backupSites";
 
     // configuration defaults
     private static final String CLIENT_INTELLIGENCE_DEFAULT = ClientIntelligence.getDefault().name();
@@ -135,6 +136,7 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
         addConnectionPoolConfig(builder);
         addTlsConfig(builder);
         addAuthenticationConfig(builder);
+        addCreateRemoteCachesConfig(builder);
         return builder.build();
     }
 
@@ -259,29 +261,19 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
         }
     }
 
-    private static boolean shouldCreateRemoteCaches() {
-        // TODO convert to SPI option when we want to support this feature
-        // http://github.com/keycloak/keycloak/issues/32129
-        return Boolean.getBoolean("kc.cache-remote-create-caches");
-    }
+    private void configureRemoteCaches(ConfigurationBuilder builder) {
+        var sites = keycloakConfiguration.getArray(BACKUP_SITES);
 
-    private static void configureRemoteCaches(ConfigurationBuilder builder) {
-        if (!shouldCreateRemoteCaches()) {
-            return;
-        }
-        // fall back for distributed caches if not defined
-        logger.warn("Creating remote cache in external Infinispan server. It should not be used in production!");
-        var baseConfig = defaultRemoteCacheBuilder();
-
+        // hijack the embedded cache configuration :)
+        var embeddedKeycloakConfig = Config.scope(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheRemoteConfigProviderFactory.PROVIDER_ID);
         skipSessionsCacheIfRequired(Arrays.stream(CLUSTERED_CACHE_NAMES))
-                .forEach(name -> builder.remoteCache(name).configuration(baseConfig.toStringConfiguration(name)));
-    }
-
-    private static org.infinispan.configuration.cache.Configuration defaultRemoteCacheBuilder() {
-        var builder = new org.infinispan.configuration.cache.ConfigurationBuilder();
-        builder.clustering().cacheMode(CacheMode.DIST_SYNC);
-        builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
-        return builder.build();
+                .forEach(name -> {
+                    var cacheConfig = CacheConfigurator.getRemoteCacheConfiguration(name, embeddedKeycloakConfig, sites);
+                    if (cacheConfig == null) {
+                        return;
+                    }
+                    builder.remoteCache(name).configuration(cacheConfig.build().toStringConfiguration(name));
+                });
     }
 
     // configuration option below
@@ -356,5 +348,9 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
                 .label("hostname")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
+    }
+
+    private static void addCreateRemoteCachesConfig(ProviderConfigurationBuilder builder) {
+        copyFromOption(builder, BACKUP_SITES, "sites", ProviderConfigProperty.LIST_TYPE, CachingOptions.CACHE_REMOTE_BACKUP_SITES, false);
     }
 }

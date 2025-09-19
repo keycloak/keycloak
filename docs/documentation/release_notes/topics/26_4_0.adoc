@@ -122,3 +122,21 @@ The Operator now provisions a `ServiceMonitor` for the management endpoint if me
 specification of the `ServiceMonitor` takes into account the various management endpoint configurations, to ensure that
 metrics can be scraped without any additional configuration. If you do not want a `ServiceMonitor` to be created, you can disable
 this by setting `spec.serviceMonitor.enabled: false`. For more details, see the link:{operatorguide_link}[{operatorguide_name}].
+
+== {project_name} automatically creates the necessary caches on the first startup if they do not exist
+
+You no longer need to manually create caches in your external Infinispan cluster.
+
+When using the `multi-site` or `clusterless` features, {project_name} now automatically creates the necessary caches during startup if they do not already exist on the Infinispan server.
+
+Any existing caches, manually created before {project_name} startup, will be preserved, and their configuration will not be modified.
+
+For high availability, you can now easily configure cross-site replication.
+Simply set the backup site name (e.g., availability zone) using the following option:
+
+[source,bash]
+----
+--cache-remote-backup-sites=<name>
+----
+
+When this option is set, Infinispan will automatically replicate the cache data to the specified location.

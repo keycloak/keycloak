@@ -1,6 +1,7 @@
 package org.keycloak.config;
 
 import java.io.File;
+import java.util.List;
 
 import com.google.common.base.CaseFormat;
 
@@ -28,6 +29,7 @@ public class CachingOptions {
     public static final String CACHE_REMOTE_USERNAME_PROPERTY = CACHE_REMOTE_PREFIX + "-username";
     public static final String CACHE_REMOTE_PASSWORD_PROPERTY = CACHE_REMOTE_PREFIX + "-password";
     public static final String CACHE_REMOTE_TLS_ENABLED_PROPERTY = CACHE_REMOTE_PREFIX + "-tls-enabled";
+    public static final String CACHE_REMOTE_BACKUP_SITES_PROPERTY = CACHE_REMOTE_PREFIX + "-backup-sites";
 
     private static final String CACHE_METRICS_PREFIX = "cache-metrics";
     public static final String CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY = CACHE_METRICS_PREFIX + "-histograms-enabled";
@@ -178,6 +180,11 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description("Enable TLS support to communicate with a secured remote Infinispan server. Recommended to be enabled in production.")
             .defaultValue(Boolean.TRUE)
+            .build();
+
+    public static final Option<List<String>> CACHE_REMOTE_BACKUP_SITES = OptionBuilder.listOptionBuilder(CACHE_REMOTE_BACKUP_SITES_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("Configures a list of backup sites names to where the external Infinispan cluster backups the Keycloak data.")
             .build();
 
     public static Option<Integer> maxCountOption(String cache) {

@@ -172,7 +172,7 @@ include::../examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <8> The secret key (filename) of the Keystore as defined in the previous step.
 <9> The secret name where the Truststore exists as defined in the previous step.
 <10> The Truststore key (filename) of the Keystore as defined in the previous step.
-<11> The remote site's name, in this case  `{site-b}`.
+<11> The remote site's name, in this case  `{site-b}`. Use this value in {project_name} option `cache-remote-backup-sites`.
 <12> The namespace of the {jdgserver_name} cluster from the remote site.
 <13> The {ocp} API URL for the remote site.
 <14> The secret with the access token to authenticate into the remote site.
@@ -189,75 +189,9 @@ include::../examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 
 . Creating the caches for {project_name}.
 +
-{project_name} requires the following caches to be present: `actionTokens`, `authenticationSessions`, `loginFailures`, and `work`.
-+
-The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
-Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
-The documentation contains more details about the options used by this {section}.
-The following example shows the `Cache` CR for `{site-a}`.
-+
---
-. In `{site-a}` create a `Cache` CR for each of the caches mentioned above with the following content.
-+
-.Cache `actionTokens`
-[source,yaml]
-----
-include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-actionTokens]
-----
-+
-.Cache `authenticationSessions`
-[source,yaml]
-----
-include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-authenticationSessions]
-----
-+
-.Cache `loginFailures`
-[source,yaml]
-----
-include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-loginFailures]
-----
-+
-.Cache `work`
-[source,yaml]
-----
-include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-work]
-----
-<1> The transaction mode.
-<2> The locking mode used by the transaction.
-<3> The remote site name.
-<4> The cross-site communication strategy, in this case, `SYNC`.
-<5> The cross-site replication timeout.
-<6> The cross-site replication failure policy.
---
-+
-The example above is the recommended configuration to achieve the best data consistency.
-+
-====
-*Background information*
-
-Deadlocks may occur in an active-active setup as entries are modified concurrently in both sites.
-
-The `transaction.mode: NON_DURABLE_XA` ensures that the transaction is rolled back keeping the data consistent if this occurs.
-The setting `backup.failurePolicy: FAIL` is required in this case.
-It will throw an error that allows the transaction to be safely rolled back.
-When this occurs, {project_name} will attempt a retry.
-
-The `transaction.locking: PESSIMISTIC` is the only supported locking mode; `OPTIMISTIC` is not recommended due to its network costs.
-The same settings also prevent that one site is updated while the other site is unreachable.
-
-The `backup.strategy: SYNC` ensures the data is visible and stored in the other site when the {project_name} request is completed.
-
-NOTE: The `locking.acquireTimeout` can be reduced to fail fast in a deadlock scenario.
-The `backup.timeout` must always be higher than the `locking.acquireTimeout`.
-====
-+
-For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 3 of the above diagram.
-+
-.Example for `actionTokens` cache in `{site-b}`
-[source,yaml]
-----
-include::../examples/generated/ispn-site-b.yaml[tag=infinispan-cache-actionTokens]
-----
+{project_name} automatically creates the necessary caches on the first startup if they do not exist.
+To customize any default configuration, use the {infinispan-operator-docs}#creating-caches_creating-caches[`Cache` CR] to declare the full cache configuration.
+To take effect, the `Cache` CR must be deployed before any {project_name} Pod starts.
 
 == Verifying the deployment
 
@@ -301,9 +235,10 @@ include::../examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
 ----
 <1> The hostname of the remote {jdgserver_name} cluster.
 <2> The port of the remote {jdgserver_name} cluster.
-This is optional and it defaults to `11222`.
+This is optional, and it defaults to `11222`.
 <3> The Secret `name` and `key` with the {jdgserver_name} username credential.
 <4> The Secret `name` and `key` with the {jdgserver_name} password credential.
+<5> The name of the remote site.
 
 === Architecture
 
