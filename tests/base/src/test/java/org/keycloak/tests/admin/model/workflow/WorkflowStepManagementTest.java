@@ -70,7 +70,7 @@ public class WorkflowStepManagementTest {
         // Create a workflow for testing (need at least one step for persistence)
         List<WorkflowRepresentation> workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.CREATE.toString())
+                .onEvent(ResourceOperationType.USER_ADD.toString())
                 .name("Test Workflow")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
