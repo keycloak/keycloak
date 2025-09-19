@@ -102,6 +102,9 @@ Cache:
 --cache-metrics-histograms-enabled <true|false>
                      Enable histograms for metrics for the embedded caches. Default: false.
                        Available only when metrics are enabled.
+--cache-remote-backup-sites <sites>
+                     Configures a list of backup sites names to where the external Infinispan
+                       cluster backups the Keycloak data. Available only when remote host is set.
 --cache-remote-host <hostname>
                      The hostname of the external Infinispan cluster. Available only when feature
                        'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or

@@ -486,7 +486,7 @@ spec:
       secret:
         name: remote-store-secret
         key: password
-    - name: spi-cache-remote--default--remote-sites
+    - name: cache-remote-backup-sites
       value: "site-2" # <5>
     # end::keycloak-ispn[]
     - name: db-driver

@@ -79,7 +79,7 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     private static final String CONNECTION_POOL_EXHAUSTED_ACTION = "connectionPoolExhaustedAction";
     private static final String AUTH_REALM = "authRealm";
     private static final String SASL_MECHANISM = "saslMechanism";
-    private static final String REMOTE_SITES = "remoteSites";
+    private static final String BACKUP_SITES = "backupSites";
 
     // configuration defaults
     private static final String CLIENT_INTELLIGENCE_DEFAULT = ClientIntelligence.getDefault().name();
@@ -262,7 +262,7 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     }
 
     private void configureRemoteCaches(ConfigurationBuilder builder) {
-        var sites = keycloakConfiguration.getArray(REMOTE_SITES);
+        var sites = keycloakConfiguration.getArray(BACKUP_SITES);
 
         // hijack the embedded cache configuration :)
         var embeddedKeycloakConfig = Config.scope(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheRemoteConfigProviderFactory.PROVIDER_ID);
@@ -351,10 +351,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     }
 
     private static void addCreateRemoteCachesConfig(ProviderConfigurationBuilder builder) {
-        builder.property()
-                .name(REMOTE_SITES)
-                .helpText("A comma-separated list of remote sites names. If set, the external Infinispan cluster expects these sites to backup the Keycloak data.")
-                .type(ProviderConfigProperty.LIST_TYPE)
-                .add();
+        copyFromOption(builder, BACKUP_SITES, "sites", ProviderConfigProperty.LIST_TYPE, CachingOptions.CACHE_REMOTE_BACKUP_SITES, false);
     }
 }

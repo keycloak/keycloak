@@ -123,22 +123,20 @@ specification of the `ServiceMonitor` takes into account the various management 
 metrics can be scraped without any additional configuration. If you do not want a `ServiceMonitor` to be created, you can disable
 this by setting `spec.serviceMonitor.enabled: false`. For more details, see the link:{operatorguide_link}[{operatorguide_name}].
 
-== Automatic cache creation in external Infinispan
+== {project_name} automatically creates the necessary caches on the first startup if they do not exist
 
 You no longer need to manually create caches in your external Infinispan cluster.
-When using the `multi-site` or `clusterless` features, {project_name} now automatically creates the necessary caches during startup if they don't already exist.
 
-This new feature solves a common pain point, removing the extra step of configuring the external cluster manually.
+When using the `multi-site` or `clusterless` features, {project_name} now automatically creates the necessary caches during startup if they do not already exist on the Infinispan server.
 
-Don't worry — any existing, manually configured caches are safe.
-Their settings will be preserved and will not be changed.
+Any existing caches, manually created before {project_name} startup, will be preserved, and their configuration will not be modified.
 
 For high availability, you can now easily configure cross-site replication.
 Simply set the backup site name (e.g., availability zone) using the following option:
 
 [source,bash]
 ----
---spi-cache-remote--default--remote-sites=<name>
+--cache-remote-backup-sites=<name>
 ----
 
 When this option is set, Infinispan will automatically replicate the cache data to the specified location.
