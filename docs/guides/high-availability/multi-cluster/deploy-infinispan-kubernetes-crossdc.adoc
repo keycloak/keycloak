@@ -172,7 +172,7 @@ include::../examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <8> The secret key (filename) of the Keystore as defined in the previous step.
 <9> The secret name where the Truststore exists as defined in the previous step.
 <10> The Truststore key (filename) of the Keystore as defined in the previous step.
-<11> The remote site's name, in this case  `{site-b}`.
+<11> The remote site's name, in this case  `{site-b}`. Use this value in {project_name} option `cache-remote-backup-sites`.
 <12> The namespace of the {jdgserver_name} cluster from the remote site.
 <13> The {ocp} API URL for the remote site.
 <14> The secret with the access token to authenticate into the remote site.
