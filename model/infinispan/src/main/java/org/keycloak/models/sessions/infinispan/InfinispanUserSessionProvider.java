@@ -74,7 +74,6 @@ import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
-import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.utils.StreamsUtil;
 
@@ -102,15 +101,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
 
-    protected final InfinispanKeyGenerator keyGenerator;
-
     protected final SessionFunction<UserSessionEntity> offlineSessionCacheEntryLifespanAdjuster;
 
     protected final SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster;
 
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
-                                         InfinispanKeyGenerator keyGenerator,
                                          InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
                                          InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
                                          InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx,
@@ -127,7 +123,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         this.persisterLastSessionRefreshStore = persisterLastSessionRefreshStore;
-        this.keyGenerator = keyGenerator;
         this.offlineSessionCacheEntryLifespanAdjuster = offlineSessionCacheEntryLifespanAdjuster;
         this.offlineClientSessionCacheEntryLifespanAdjuster = offlineClientSessionCacheEntryLifespanAdjuster;
 
@@ -184,7 +179,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
                                               String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
         if (id == null) {
-            id = keyGenerator.generateKeyString(session, sessionTx.getCache());
+            id = sessionTx.generateKey();
         }
 
         UserSessionEntity entity = UserSessionEntity.create(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
