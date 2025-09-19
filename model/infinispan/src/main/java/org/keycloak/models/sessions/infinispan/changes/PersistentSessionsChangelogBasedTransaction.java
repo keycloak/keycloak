@@ -77,6 +77,11 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         return offline ? offlineUpdates : updates;
     }
 
+    public K generateKey() {
+        assert cacheHolder.keyGenerator() != null;
+        return cacheHolder.keyGenerator().get();
+    }
+
     public SessionEntityWrapper<V> get(K key, boolean offline) {
         SessionUpdatesList<V> myUpdates = getUpdates(offline).get(key);
         if (myUpdates == null) {
