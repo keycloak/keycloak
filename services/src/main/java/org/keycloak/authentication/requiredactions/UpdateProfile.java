@@ -43,10 +43,8 @@ import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.utils.StringUtil;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -74,7 +72,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>(context.getHttpRequest().getDecodedFormParameters());
         UserModel user = context.getUser();
         String newEmail = formData.getFirst(UserModel.EMAIL);
-        boolean isEmailUpdated = !ofNullable(user.getEmail()).orElse("").equals(newEmail);
+        boolean isEmailUpdated = newEmail != null && !ofNullable(user.getEmail()).orElse("").equals(newEmail);
         RealmModel realm = context.getRealm();
         boolean isForceEmailVerification = isEmailUpdated && UpdateEmail.isVerifyEmailEnabled(realm);
 
