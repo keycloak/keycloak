@@ -3,6 +3,13 @@
 
 Read on to learn more about each new feature, and https://www.keycloak.org/docs/latest/upgrading/index.html[find additional details in the upgrading guide] if you are upgrading from a previous release of {project_name}.
 
+= Federated client authentication preview
+
+Identity providers are now able to federate client authentication. This allows clients to authenticate with SPIFFE JWT SVIDs,
+Kubernetes service accounts, or tokens issued by a OpenID Connect identity provider.
+
+This feature is currently preview, and expected to become supported in 26.5.
+
 = Update Email Workflow is now supported
 
 This feature provides a more secure and consistent flow to update user

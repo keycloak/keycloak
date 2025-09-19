@@ -91,9 +91,9 @@ public class Profile {
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
 
-        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.EXPERIMENTAL),
+        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.PREVIEW),
 
-        SPIFFE("SPIFFE trust relationship provider", Type.EXPERIMENTAL),
+        SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
 
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
