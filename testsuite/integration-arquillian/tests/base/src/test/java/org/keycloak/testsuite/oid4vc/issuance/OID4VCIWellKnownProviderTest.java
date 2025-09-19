@@ -64,7 +64,6 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
 		// Generate a random AES key (default length: 256 bits)
 		byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
 
-		// Encode as JWK (or Base64 if you prefer)
 		String secretBase64 = org.keycloak.common.util.Base64.encodeBytes(secret);
 
 		ComponentExportRepresentation component = new ComponentExportRepresentation();
