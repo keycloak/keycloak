@@ -1,10 +1,13 @@
 <@profile.ifProduct>
+
 == Maximum load
 
 * 100,000 users
 * 300 requests per second
+
 </@profile.ifProduct>
 <@profile.ifCommunity>
+
 == Tested load
 
 We regularly test {project_name} with the following load:
@@ -12,12 +15,16 @@ We regularly test {project_name} with the following load:
 * 100,000 users
 * 300 requests per second
 
-And we tested a load up to the following values:
+And we have tested the following load:
 
 * 100,000 users
 * 1000 logins, with 20000 token refreshes per second.
+
+Using:
+
 * A single-cluster setup consisting of 6 pods, spread across 3 availability zones in a single region.
 ** Each Pod has limits of  40 vCPU and 8 GB memory
 * Amazon Aurora PostgreSQL multi-az database deployed in two availability zones
 ** Instance type: `db.r8g.16xlarge` for both reader and writer instance
+
 </@profile.ifCommunity>
