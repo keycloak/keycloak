@@ -80,6 +80,26 @@ Read more on each item in the <@links.ha id="single-cluster-building-blocks" /> 
 [#single-cluster-load]
 <#include "/high-availability/partials/tested-load.adoc" />
 
+<@profile.ifCommunity>
+
+We have successfully scaled to the following load:
+
+* 100,000 users
+* 1,000 logins, with 20,000 token refreshes per second.
+
+We used the following setup for this:
+
+* Single-cluster setup consisting of 6 Pods, spread across 3 availability zones in a single AWS region.
+** Each Pod with limits of 40 vCPU and 8 GB memory
+* Amazon Aurora PostgreSQL multi-az database deployed in two availability zones
+** Instance type: `db.r8g.16xlarge` for both reader and writer instance
+
+As the load increased, the CPU usage increased linearly.
+
+</@profile.ifCommunity>
+
+See the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section} for more information.
+
 [#single-cluster-limitations]
 == Limitations
 
