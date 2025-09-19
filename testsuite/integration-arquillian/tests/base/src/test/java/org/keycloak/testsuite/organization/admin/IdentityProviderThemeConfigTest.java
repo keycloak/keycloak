@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
