@@ -68,10 +68,13 @@ public class HotRodServerRule extends ExternalResource {
         HotRodServerConfiguration build = new HotRodServerConfigurationBuilder().build();
         hotRodServer = new HotRodServer();
         hotRodServer.start(build, hotRodCacheManager);
+        hotRodServer.postStart();
 
         HotRodServerConfiguration build2 = new HotRodServerConfigurationBuilder().port(11333).build();
         hotRodServer2 = new HotRodServer();
         hotRodServer2.start(build2, hotRodCacheManager2);
+        hotRodServer2.postStart();
+
 
         // Create a Hot Rod client
         org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteBuilder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();

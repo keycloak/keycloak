@@ -113,6 +113,7 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
         schemaPackageName = Marshalling.PROTO_SCHEMA_PACKAGE,
         schemaFilePath = "proto/generated",
         allowNullFields = true,
+        orderedMarshallers = true,
 
         // common-types for UUID
         dependsOn = CommonTypes.class,

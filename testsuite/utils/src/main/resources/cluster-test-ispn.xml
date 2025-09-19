@@ -18,10 +18,10 @@
 
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:15.0 http://www.infinispan.org/schemas/infinispan-config-15.0.xsd
-            urn:org:jgroups http://www.jgroups.org/schema/jgroups-5.3.xsd"
-        xmlns="urn:infinispan:config:15.0"
-        xmlns:ispn="urn:infinispan:config:15.0">
+        xsi:schemaLocation="urn:infinispan:config:16.0 https://infinispan.org/schemas/infinispan-config-16.0.xsd
+            urn:org:jgroups http://www.jgroups.org/schema/jgroups-5.4.xsd"
+        xmlns="urn:infinispan:config:16.0"
+        xmlns:ispn="urn:infinispan:config:16.0">
 
     <!-- used by auth-server-cluster-undertow profile -->
     <!-- all containers run in the same JVM, we can use the shared loopback and ping.-->
@@ -30,12 +30,11 @@
         <stack name="test" extends="tcp">
             <!-- no network traffic as all messages are handled inside the JVM -->
             <SHARED_LOOPBACK xmlns="urn:org:jgroups" ispn:stack.combine="REPLACE" ispn:stack.position="TCP"
-                             thread_pool.use_virtual_threads="true"
+                             use_vthreads="true"
                              bundler_type="no-bundler"/>
             <SHARED_LOOPBACK_PING xmlns="urn:org:jgroups" ispn:stack.combine="REPLACE" ispn:stack.position="MPING"/>
             <!-- in JVM cluster, no failure detection, no flow control, no fragmentation. -->
             <RED xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
-            <FD_SOCK2 xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
             <UFC xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
             <MFC xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>
             <FRAG4 xmlns="urn:org:jgroups" ispn:stack.combine="REMOVE"/>

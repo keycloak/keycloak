@@ -124,10 +124,6 @@
             <artifactId>infinispan-component-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-remote-query-server</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

@@ -17,6 +17,14 @@
 
 package org.keycloak.it.cli.dist;
 
+import static io.restassured.RestAssured.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +33,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.base.CaseFormat;
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -38,13 +45,7 @@ import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import static io.restassured.RestAssured.when;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import com.google.common.base.CaseFormat;
 
 /**
  * @author Ryan Emerson <remerson@redhat.com>
@@ -146,9 +147,7 @@ public class ClusterConfigKeepAliveDistTest {
                 .prettyPrint();
 
         ConfigurationBuilderHolder configHolder = new ParserRegistry().parse(configJson, MediaType.APPLICATION_JSON);
-        // Workaround for ISPN-16595
-        String cacheName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache);
-        return configHolder.getNamedConfigurationBuilders().get(cacheName).build();
+        return configHolder.getNamedConfigurationBuilders().get(cache).build();
     }
 
     private record CacheOwners(String name, int owners) {
