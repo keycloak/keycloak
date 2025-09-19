@@ -189,7 +189,7 @@ include::../examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 
 . Creating the caches for {project_name}.
 +
-{project_name} automatic creates the caches.
+{project_name} automatically creates the necessary caches on the first startup if they do not exist.
 To customize any default configuration, use the {infinispan-operator-docs}#creating-caches_creating-caches[`Cache` CR] to declare the full cache configuration.
 To take effect, the `Cache` CR must be deployed before any {project_name} Pod starts.
 
