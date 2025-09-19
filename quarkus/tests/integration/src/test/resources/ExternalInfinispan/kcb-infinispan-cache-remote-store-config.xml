@@ -21,9 +21,9 @@
 <!--tag::keycloak-ispn-configmap[] -->
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:15.0 https://www.infinispan.org/schemas/infinispan-config-15.0.xsd
+        xsi:schemaLocation="urn:infinispan:config:16.0 https://www.infinispan.org/schemas/infinispan-config-15.0.xsd
             urn:infinispan:config:store:remote:15.0 https://www.infinispan.org/schemas/infinispan-cachestore-remote-config-15.0.xsd"
-        xmlns="urn:infinispan:config:15.0">
+        xmlns="urn:infinispan:config:16.0">
     <!--end::keycloak-ispn-configmap[] -->
 
     <!-- the statistics="true" attribute is not part of the original KC config and was added by Keycloak Benchmark -->
