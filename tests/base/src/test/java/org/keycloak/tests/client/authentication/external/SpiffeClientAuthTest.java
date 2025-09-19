@@ -5,162 +5,103 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.spiffe.SpiffeConstants;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfig;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfigBuilder;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
-import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-
-import java.util.UUID;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class SpiffeClientAuthTest {
+public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
 
+    private static final String INTERNAL_CLIENT_ID = "myclient";
+    private static final String EXTERNAL_CLIENT_ID = "spiffe://mytrust-domain/myclient";
     private static final String IDP_ALIAS = "spiffe-idp";
-
-    private static final String CLIENT_ID = "spiffe://mytrust-domain/myclient";
+    private static final String TRUST_DOMAIN = "spiffe://mytrust-domain";
+    private static final String BUNDLE_ENDPOINT = "http://127.0.0.1:8500/idp/jwks";
 
     @InjectRealm(config = ExernalClientAuthRealmConfig.class)
     protected ManagedRealm realm;
 
-    @InjectClient(config = ExernalClientAuthClientConfig.class)
-    protected ManagedClient client;
-
-    @InjectOAuthClient
-    OAuthClient oAuthClient;
-
     @InjectOAuthIdentityProvider(config = SpiffeIdpConfig.class)
     OAuthIdentityProvider identityProvider;
 
-    @Test
-    public void testInvalidSignature() {
-        OAuthIdentityProvider.OAuthIdentityProviderKeys keys = identityProvider.createKeys();
-        String jws = identityProvider.encodeToken(createDefaultToken(), keys);
-        Assertions.assertFalse(doClientGrant(jws));
-    }
-
-    @Test
-    public void testValidToken() {
-        Assertions.assertTrue(doClientGrant(createDefaultToken()));
+    public SpiffeClientAuthTest() {
+        super(null, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
     }
 
     @Test
     public void testInvalidConfig() {
         testInvalidConfig("with-port:8080", "https://localhost");
-        testInvalidConfig("spiffe://with-spiffe-scheme", "https://localhost");
+        testInvalidConfig("with-spiffe-scheme", "https://localhost");
         testInvalidConfig("valid", "invalid-url");
     }
 
     @Test
     public void testInvalidTrustDomain() {
-        IdentityProviderUpdater.updateWithRollback(realm, IDP_ALIAS, rep -> {
-            rep.getConfig().put(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "different-domain");
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(IdentityProviderModel.ISSUER, "spiffe://different-domain");
         });
 
-        Assertions.assertFalse(doClientGrant(createDefaultToken()));
-    }
-
-    @Test
-    public void testValidInvalidAssertionType() {
-        String jws = identityProvider.encodeToken(createDefaultToken());
-        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(jws, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT).send();
-        Assertions.assertFalse(response.isSuccess());
-    }
-
-    @Test
-    public void testInvalidAud() {
-        JsonWebToken token = createDefaultToken();
-        token.audience("invalid");
-        Assertions.assertFalse(doClientGrant(token));
-    }
-
-    @Test
-    public void testMultipleAud() {
-        JsonWebToken token = createDefaultToken();
-        token.audience(token.getAudience()[0], "invalid");
-        Assertions.assertFalse(doClientGrant(token));
-    }
-
-    @Test
-    public void testInvalidNbf() {
-        JsonWebToken token = createDefaultToken();
-        token.nbf((long) (Time.currentTime() + 60));
-        Assertions.assertFalse(doClientGrant(token));
-    }
-
-    @Test
-    public void testExpired() {
-        JsonWebToken token = createDefaultToken();
-        token.exp((long) (Time.currentTime() - 30));
-        Assertions.assertFalse(doClientGrant(token));
-    }
-
-    @Test
-    public void testMissingExp() {
-        JsonWebToken token = createDefaultToken();
-        token.exp(null);
-        Assertions.assertFalse(doClientGrant(token));
+        JsonWebToken jwt = createDefaultToken();
+        assertFailure(doClientGrant(jwt));
+        assertFailure(null, null, jwt.getSubject(), jwt.getId(), "client_not_found", events.poll());
     }
 
     @Test
     public void testReuse() {
-        JsonWebToken token = createDefaultToken();
-        token.id(UUID.randomUUID().toString());
-        Assertions.assertTrue(doClientGrant(token));
-        Assertions.assertTrue(doClientGrant(token));
+        JsonWebToken jwt = createDefaultToken();
+        assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
+        assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), null, EXTERNAL_CLIENT_ID, events.poll());
+        assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
+        assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), null, EXTERNAL_CLIENT_ID, events.poll());
     }
 
-    private boolean doClientGrant(JsonWebToken token) {
-        String jws = identityProvider.encodeToken(token);
-        return doClientGrant(jws);
+    @Override
+    protected OAuthIdentityProvider getIdentityProvider() {
+        return identityProvider;
     }
 
-    private boolean doClientGrant(String jws) {
-        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(jws, SpiffeConstants.CLIENT_ASSERTION_TYPE).send();
-        return response.isSuccess();
-    }
-
-    private JsonWebToken createDefaultToken() {
+    @Override
+    protected JsonWebToken createDefaultToken() {
         JsonWebToken token = new JsonWebToken();
         token.id(null);
         token.audience(oAuthClient.getEndpoints().getIssuer());
         token.exp((long) (Time.currentTime() + 300));
-        token.subject(CLIENT_ID);
+        token.subject(EXTERNAL_CLIENT_ID);
         return token;
     }
 
     private void testInvalidConfig(String trustDomain, String bundleEndpoint) {
         IdentityProviderRepresentation idp = IdentityProviderBuilder.create().providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                 .alias("another")
-                .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, trustDomain)
+                .setAttribute(IdentityProviderModel.ISSUER, trustDomain)
                 .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, bundleEndpoint).build();
 
         try (Response r = realm.admin().identityProviders().create(idp)) {
             Assertions.assertEquals(400, r.getStatus());
         }
+    }
+
+    @Override
+    protected String getClientAssertionType() {
+        return SpiffeConstants.CLIENT_ASSERTION_TYPE;
     }
 
     public static class SpiffeServerConfig extends ClientAuthIdpServerConfig {
@@ -183,24 +124,21 @@ public class SpiffeClientAuthTest {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            return realm.identityProvider(
+            realm.identityProvider(
                     IdentityProviderBuilder.create()
                             .providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "mytrust-domain")
-                            .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, "http://127.0.0.1:8500/idp/jwks")
+                            .setAttribute(IdentityProviderModel.ISSUER, TRUST_DOMAIN)
+                            .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, BUNDLE_ENDPOINT)
                             .build());
-        }
-    }
 
-    public static class ExernalClientAuthClientConfig implements ClientConfig {
-
-        @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            return client.clientId(CLIENT_ID)
+            realm.addClient(INTERNAL_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID);
+
+            return realm;
         }
     }
 

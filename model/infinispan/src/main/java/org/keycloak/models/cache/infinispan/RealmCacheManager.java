@@ -18,7 +18,6 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.CacheStream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
@@ -34,7 +33,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -127,13 +125,6 @@ public class RealmCacheManager extends CacheManager {
         invalidations.add(event.getId());
 
         ((RealmCacheInvalidationEvent) event).addInvalidations(this, invalidations);
-    }
-
-    public <T> CacheStream<T> searchWithPredicate(Predicate<T> predicate, Class<T> tClass) {
-        return cache.values().stream()
-                .filter(tClass::isInstance)
-                .map(tClass::cast)
-                .filter(predicate);
     }
 
     /**

@@ -25,7 +25,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.tracing.TracingProvider;
 

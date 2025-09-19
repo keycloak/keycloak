@@ -146,3 +146,7 @@ spec:
       metadata:
         labels:
           my-label: "foo"
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s

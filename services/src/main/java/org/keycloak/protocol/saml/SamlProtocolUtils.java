@@ -17,19 +17,22 @@
 
 package org.keycloak.protocol.saml;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.UriInfo;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
@@ -38,7 +41,11 @@ import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -59,6 +66,7 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.processing.core.util.RedirectBindingSignatureUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.utils.StringUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -75,13 +83,13 @@ public class SamlProtocolUtils {
      * Throws an exception if the client signature is expected to be present as per the client
      * settings and it is invalid, otherwise returns back to the caller.
      *
+     * @param session
      * @param client
      * @param document
      * @throws VerificationException
      */
-    public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
-        PublicKey publicKey = getSignatureValidationKey(client);
-        verifyDocumentSignature(document, new HardcodedKeyLocator(publicKey));
+    public static void verifyDocumentSignature(KeycloakSession session, ClientModel client, Document document) throws VerificationException {
+        verifyDocumentSignature(document, createKeyLocatorForClient(session, new SamlClient(client), KeyUse.SIG));
     }
 
     /**
@@ -104,27 +112,36 @@ public class SamlProtocolUtils {
     }
 
     /**
-     * Returns public part of SAML signing key from the client settings.
-     * @param client
-     * @return Public key for signature validation.
-     * @throws VerificationException
-     */
-    public static PublicKey getSignatureValidationKey(ClientModel client) throws VerificationException {
-        return getPublicKey(new SamlClient(client).getClientSigningCertificate());
-    }
-
-    /**
      * Returns public part of SAML encryption key from the client settings.
+     * @param session
      * @param client
      * @return Public key for encryption.
      * @throws VerificationException
      */
-    public static PublicKey getEncryptionKey(ClientModel client) throws VerificationException {
-        return getPublicKey(client, SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
+    public static PublicKey getEncryptionKey(KeycloakSession session, ClientModel client) throws VerificationException {
+        return getEncryptionKey(session, new SamlClient(client));
     }
 
-    public static void setupEncryption(SamlClient samlClient, BaseSAML2BindingBuilder<?> bindingBuilder) throws VerificationException {
-        PublicKey publicKey = getPublicKey(samlClient.getClientEncryptingCertificate());
+    /**
+     * Returns public part of SAML encryption key from the client settings.
+     * @param session
+     * @param samlClient
+     * @return Public key for encryption.
+     * @throws VerificationException
+     */
+    public static PublicKey getEncryptionKey(KeycloakSession session, SamlClient samlClient) throws VerificationException {
+        KeyLocator locator = createKeyLocatorForClient(session, samlClient, KeyUse.ENC);
+        // get the first one that is RSA
+        for (Key key : locator) {
+            if (KeyType.RSA.equals(key.getAlgorithm())) {
+                return (PublicKey) key;
+            }
+        }
+        throw new VerificationException("Client does not have a public key for encryption");
+    }
+
+    public static void setupEncryption(KeycloakSession session, SamlClient samlClient, BaseSAML2BindingBuilder<?> bindingBuilder) throws VerificationException {
+        PublicKey publicKey = getEncryptionKey(session, samlClient);
         bindingBuilder.encrypt(publicKey);
         if (samlClient.getClientEncryptingAlgorithm() != null) {
             bindingBuilder.encryptionAlgorithm(samlClient.getClientEncryptingAlgorithm());
@@ -148,6 +165,26 @@ public class SamlProtocolUtils {
     public static PublicKey getPublicKey(ClientModel client, String attribute) throws VerificationException {
         String certPem = client.getAttribute(attribute);
         return getPublicKey(certPem);
+    }
+
+    public static KeyLocator createKeyLocatorForClient(KeycloakSession session, ClientModel client, KeyUse use) throws VerificationException {
+        return createKeyLocatorForClient(session, new SamlClient(client), use);
+    }
+
+    public static KeyLocator createKeyLocatorForClient(KeycloakSession session, SamlClient samlClient, KeyUse use) throws VerificationException {
+        if (StringUtil.isNotBlank(samlClient.getMetadataDescriptorUrl()) && samlClient.isUseMetadataDescriptorUrl()) {
+            // configured to use the metadata
+            String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(samlClient.getClient().getRealm().getId(), samlClient.getClient().getClientId());
+            PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+            PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, samlClient.getMetadataDescriptorUrl(), false);
+            return new SamlMetadataKeyLocator(modelKey, keyLoader, use, keyStorage);
+        } else if (KeyUse.SIG.equals(use)) {
+            // return the certificate in the client
+            return new HardcodedKeyLocator(getPublicKey(samlClient.getClientSigningCertificate()));
+        } else if (KeyUse.ENC.equals(use)) {
+            return new HardcodedKeyLocator(getPublicKey(samlClient.getClientEncryptingCertificate()));
+        }
+        throw new VerificationException("Client does not have a public key for use " + use);
     }
 
     private static PublicKey getPublicKey(String certPem) throws VerificationException {

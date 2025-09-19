@@ -4,7 +4,6 @@ import io.quarkus.maven.dependency.Dependency;
 import org.jboss.logging.Logger;
 import org.keycloak.it.utils.OutputConsumer;
 import org.keycloak.it.utils.RawKeycloakDistribution;
-import org.keycloak.testframework.config.Config;
 
 import java.nio.file.Path;
 import java.util.Collections;

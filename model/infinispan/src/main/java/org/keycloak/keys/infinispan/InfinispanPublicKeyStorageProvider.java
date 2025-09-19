@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -137,7 +138,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
         // Check if key is in cache, but only if KID is provided or if the key cache has been loaded recently,
         // in order to get a key based on partial match with alg param.
-        if (entry != null && (kid != null || !isSendingRequestAllowed)) {
+        if (!isExpired(entry, currentTime) && (kid != null || !isSendingRequestAllowed)) {
             KeyWrapper publicKey = entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
             if (publicKey != null) {
                 // return a copy of the key to not modify the cached one
@@ -172,7 +173,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
     @Override
     public KeyWrapper getFirstPublicKey(String modelKey, Predicate<KeyWrapper> predicate, PublicKeyLoader loader) {
         PublicKeysEntry entry = keys.get(modelKey);
-        if (entry != null) {
+        int currentTime = Time.currentTime();
+        if (!isExpired(entry, currentTime)) {
             // if in cache just try to return if found
             KeyWrapper key = entry.getCurrentKeys().getKeyByPredicate(predicate);
             if (key != null) {
@@ -180,7 +182,6 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             }
         }
         // if not found try a second time if reload allowed by minTimeBetweenRequests
-        int currentTime = Time.currentTime();
         entry = reloadKeys(modelKey, entry, currentTime, loader);
         if (entry != null) {
             KeyWrapper key = entry.getCurrentKeys().getKeyByPredicate(predicate);
@@ -203,7 +204,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         PublicKeysEntry entry = keys.get(modelKey);
         int currentTime = Time.currentTime();
 
-        if (entry == null || currentTime > entry.getLastRequestTime() + maxCacheTime) {
+        if (isExpired(entry, currentTime) || (hasNoExpiration(entry) && currentTime > entry.getLastRequestTime() + maxCacheTime)) {
             // reload preemptively
             PublicKeysEntry updatedEntry = reloadKeys(modelKey, entry, currentTime, loader);
             if (updatedEntry != null) {
@@ -221,6 +222,22 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         PublicKeysEntry entry = keys.get(modelKey);
         int currentTime = Time.currentTime();
         return reloadKeys(modelKey, entry, currentTime, loader) != null;
+    }
+
+    private boolean hasNoExpiration(PublicKeysEntry entry) {
+        return entry == null || entry.getCurrentKeys().getExpirationTime() == null;
+    }
+
+    private boolean isExpired(PublicKeysEntry entry, int currentTime) {
+        if (entry == null) {
+            return true;
+        }
+
+        if (entry.getCurrentKeys().getExpirationTime() != null) {
+            return currentTime > TimeUnit.MILLISECONDS.toSeconds(entry.getCurrentKeys().getExpirationTime());
+        }
+
+        return false;
     }
 
     private PublicKeysEntry reloadKeys(String modelKey, PublicKeysEntry entry, int currentTime, PublicKeyLoader loader) {
@@ -288,7 +305,11 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
                 entry = new PublicKeysEntry(currentTime, publicKeys);
 
-                keys.put(modelKey, entry);
+                if (publicKeys.getExpirationTime() != null) {
+                    keys.put(modelKey, entry, publicKeys.getExpirationTime(), TimeUnit.MILLISECONDS);
+                } else {
+                    keys.put(modelKey, entry);
+                }
             }
             return entry;
         }

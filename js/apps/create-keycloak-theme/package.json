@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "chalk": "^5.6.2",
-    "commander": "^14.0.0",
-    "fs-extra": "^11.3.1",
+    "commander": "^14.0.1",
+    "fs-extra": "^11.3.2",
     "mustache": "^4.2.0",
     "simple-git": "^3.28.0"
   }

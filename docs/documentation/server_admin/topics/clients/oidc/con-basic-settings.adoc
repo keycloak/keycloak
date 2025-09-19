@@ -42,7 +42,8 @@ Domain URLs listed here are embedded within the access token sent to the client 
 
 [[_admin-url]]
 Admin URL:: Callback endpoint for a client. The server uses this URL to make callbacks like pushing revocation policies, performing backchannel logout, and other administrative operations. For {project_name} servlet adapters, this URL can be the root URL of the servlet application.
-For more information, see link:{securing_apps_link}[{securing_apps_name}].
+The callback messages sent to this URL are sent in the {project_name} specific format, which is not OIDC standard. This format is supported only for clients secured by
+the legacy {project_name} Java OIDC adapters or by the link:https://docs.wildfly.org/37/WildFly_Elytron_Security.html#Keycloak_Integration[Elytron Wildfly OIDC adapter].
 
 == Capability Config
 [[_access-type]]

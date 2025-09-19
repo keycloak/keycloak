@@ -94,7 +94,7 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     }
 
     /**
-     * deprecated use {@link #setRefreshTokenUseCount(String, int)}
+     * @deprecated  use {@link #setRefreshTokenUseCount(String, int)}
      */
     @Deprecated
     default void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
@@ -137,6 +137,6 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
                 removeNote(note);
             }
         }
-        getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(getTimestamp()));
+        setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(getTimestamp()));
     }
 }

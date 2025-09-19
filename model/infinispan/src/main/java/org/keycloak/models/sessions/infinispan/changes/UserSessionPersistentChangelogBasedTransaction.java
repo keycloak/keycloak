@@ -25,11 +25,9 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
-import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
@@ -39,16 +37,10 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
 
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> cache,
-                                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineCache,
-                                                          SessionFunction<UserSessionEntity> lifespanMsLoader,
-                                                          SessionFunction<UserSessionEntity> maxIdleTimeMsLoader,
-                                                          SessionFunction<UserSessionEntity> offlineLifespanMsLoader,
-                                                          SessionFunction<UserSessionEntity> offlineMaxIdleTimeMsLoader,
                                                           ArrayBlockingQueue<PersistentUpdate> batchingQueue,
-                                                          SerializeExecutionsByKey<String> serializerOnline,
-                                                          SerializeExecutionsByKey<String> serializerOffline) {
-        super(session, USER_SESSION_CACHE_NAME, cache, offlineCache, lifespanMsLoader, maxIdleTimeMsLoader, offlineLifespanMsLoader, offlineMaxIdleTimeMsLoader, batchingQueue, serializerOnline, serializerOffline);
+                                                          CacheHolder<String, UserSessionEntity> cacheHolder,
+                                                          CacheHolder<String, UserSessionEntity> offlineCacheHolder) {
+        super(session, USER_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
@@ -136,7 +128,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         return isScheduledForRemove(getUpdates(offline).get(key));
     }
 
-    public void registerClientSession(String userSessionId, String clientId, UUID clientSessionId, boolean offline) {
+    public void registerClientSession(String userSessionId, String clientId, boolean offline) {
         addTask(userSessionId, new PersistentSessionUpdateTask<>() {
             @Override
             public boolean isOffline() {
@@ -145,7 +137,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
             @Override
             public void runUpdate(UserSessionEntity entity) {
-                entity.getAuthenticatedClientSessions().put(clientId, clientSessionId);
+                entity.getClientSessions().add(clientId);
             }
 
             @Override

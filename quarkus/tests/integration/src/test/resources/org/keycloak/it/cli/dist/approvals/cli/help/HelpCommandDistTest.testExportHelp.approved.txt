@@ -41,6 +41,11 @@ Database:
                      The password of the database user.
 --db-pool-initial-size <size>
                      The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. May be an ISO 8601 duration
+                       value, an integer number of seconds, or an integer followed by one of [ms,
+                       h, m, s, d].
 --db-pool-max-size <size>
                      The maximum size of the connection pool. Default: 100.
 --db-pool-min-size <size>
@@ -170,8 +175,8 @@ Management:
                        details. Available only when http-management-scheme is inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-management-* options for the management server. May be a
-                       java.time.Duration value, an integer number of seconds, or an integer
+                       referenced by https-management-* options for the management server. May be
+                       an ISO 8601 duration value, an integer number of seconds, or an integer
                        followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
                        to disable. If not given, the value is inherited from HTTP options. Relevant
                        only when something is exposed on the management interface - see the guide
@@ -264,15 +269,14 @@ Export:
 
 --dir <dir>          Set the path to a directory where files will be created with the exported data.
 --file <file>        Set the path to a file that will be created with the exported data. To export
-                       more than 500 users, export to a directory with different files instead.
+                       more than 50000 users, export to a directory with different files instead.
 --realm <realm>      Set the name of the realm to export. If not set, all realms are going to be
                        exported.
 --users <strategy>   Set how users should be exported. Possible values are: skip, realm_file,
                        same_file, different_files. Default: different_files.
 --users-per-file <number>
                      Set the number of users per file. It is used only if 'users' is set to
-                       'different_files'. Increasing this number leads to exponentially increasing
-                       export times. Default: 50.
+                       'different_files'. Default: 50.
 
 Bootstrap Admin:
 

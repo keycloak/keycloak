@@ -32,7 +32,6 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
     public static final String USE_JWKS_URL = "useJwksUrl";
     public static final String VALIDATE_SIGNATURE = "validateSignature";
     public static final String IS_ACCESS_TOKEN_JWT = "isAccessTokenJWT";
-    public static final String ISSUER = "issuer";
     public static final String SUPPORTS_CLIENT_ASSERTIONS = "supportsClientAssertions";
     public static final String SUPPORTS_CLIENT_ASSERTION_REUSE = "supportsClientAssertionReuse";
 

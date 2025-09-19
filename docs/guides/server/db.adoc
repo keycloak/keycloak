@@ -17,14 +17,14 @@ The server has built-in support for different databases. You can query the avail
 
 [%autowidth]
 |===
-|Database | Option value | Tested Version
+|Database | Option value | Tested Version | Supported Versions
 
-|MariaDB Server | `mariadb` | ${properties["mariadb.version"]}
-|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]}
-|MySQL | `mysql` | ${properties["mysql.version"]}
-|Oracle Database | `oracle` | ${properties["oracledb.version"]}
-|PostgreSQL | `postgres` | ${properties["postgresql.version"]}
-|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]}
+|MariaDB Server | `mariadb` | ${properties["mariadb.version"]} | 11.8 (LTS), 11.4 (LTS), 10.11 (LTS), 10.6 (LTS)
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
+|MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS) 
+|Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note: Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 17.x, 16.x, 15.x, 14.x, 13.x
+|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
@@ -359,3 +359,17 @@ In the same way the migrationExport to point to a specific file and location:
 For more information, check the link:{upgrading_guide_link}#_migrate_db[Migrating the database] documentation.
 
 </@tmpl.guide>
+
+== Configuring the connection pool
+
+=== MySQL and MariaDB
+
+In order to prevent 'No operations allowed after connection closed' exceptions from being thrown, it is necessary to ensure
+that {project_name}'s connection pool has a connection maximum lifetime that is less than the server's configured `wait_timeout`.
+When using the MySQL and MariaDB database, {project_name} configures a default max lifetime of 7 hours and 50 minutes, as
+this is less than the default server value of 8 hours.
+
+If you are explicitly configuring the `wait_timeout` in your database, it is necessary to ensure that you configure a
+`db-pool-max-lifetime` value that is less than the `wait_timeout`. The recommended best practice, is to define this value
+to be your `wait_timeout` minus a few minutes. Failure to correctly configure the `db-pool-max-lifetime` will result in
+{project_name} logging a warning on startup.

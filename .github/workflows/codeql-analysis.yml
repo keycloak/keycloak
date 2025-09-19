@@ -33,6 +33,7 @@ jobs:
       java: ${{ steps.conditional.outputs.codeql-java }}
       javascript: ${{ steps.conditional.outputs.codeql-javascript }}
       typescript: ${{ steps.conditional.outputs.codeql-typescript }}
+      actions: ${{ steps.conditional.outputs.codeql-actions }}
     permissions:
       contents: read
       pull-requests: read
@@ -91,6 +92,7 @@ jobs:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
         with:
           languages: javascript
+          config-file: ./.github/codeql/codeql-config-javascript.yml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3 # v3.30.3
@@ -118,6 +120,34 @@ jobs:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
         with:
           languages: typescript
+          config-file: ./.github/codeql/codeql-config-typescript.yml
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3 # v3.30.3
+        with:
+          wait-for-processing: true
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
+
+  actions:
+    name: CodeQL GitHub Actions
+    needs: conditional
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # Required for SARIF upload
+    if: needs.conditional.outputs.actions == 'true'
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@192325c86100d080feab897ff886c34abd4c83a3 # v3.30.3
+        env:
+          CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
+        with:
+          languages: actions
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3 # v3.30.3
@@ -134,6 +164,7 @@ jobs:
       - java
       - javascript
       - typescript
+      - actions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

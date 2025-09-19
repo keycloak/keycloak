@@ -1,0 +1,32 @@
+name: Milestone
+description: Milestones are used to break up larger features
+labels: ["kind/milestone", "status/triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the milestone at a high-level
+    validations:
+      required: true
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals
+      description: Describe what capabilities the milestone should provide
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-Goals
+      description: Describe capabilities the milestone should not provide, or is out of scope
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Design ideas? Implementation ideas? Anything that will give us more about the milestone
+    validations:
+      required: false

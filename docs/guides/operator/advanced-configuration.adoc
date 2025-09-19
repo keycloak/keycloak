@@ -101,6 +101,9 @@ spec:
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
        For details on various configuration formats, see <@links.server id="configuration"/>.
        
+NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface. 
+If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to also set the additionalOption `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests. 
+
 ==== Custom environment variables
 
 You may find a need to set custom environment variables - such as for theme properties or `kc.[sh|bat]` script variables.
@@ -108,8 +111,8 @@ The `spec.env` field of the Keycloak CR allows you to directly set any environme
 Logic in the operator based upon looking for value of a particular setting does not consult `spec.env`,
 therefore do not use `spec.env` for anything that has a first-class configuration in the CR or may be specified as an `additionalOption`.
 
-Here's an example setting JAVA_OPTS_APPEND:  
-     
+Here's an example setting JAVA_OPTS_APPEND:
+
 [source,yaml]
 ----
 apiVersion: k8s.keycloak.org/v2alpha1
@@ -124,7 +127,7 @@ spec:
 ----
 
 Similar to `additionalOptions` you may specify either a value or reference a Secret.
-       
+
 === Secret References
 
 Secret References are used by some dedicated options in the Keycloak CR, such as a `tlsSecret`, or as a value in `additionalOptions`.
@@ -524,6 +527,80 @@ spec:
     annotations:
       annotation1: annotation-value1
       annotation2: annotation-value2
+----
+
+=== ServiceMonitor
+A `ServiceMonitor` resource is used to define how a service's metrics are discovered and scraped by Prometheus.
+The {project_name} Operator automatically generates a `ServiceMonitor` resource for your deployment. In order for the
+`ServiceMonitor` resource to be created, the `monitoring.coreos.com/v1:ServiceMonitor` Custom Resource Definition (CRD)
+must be installed on your {kubernetes} cluster.
+
+The Operator generates a `ServiceMonitor` with the following spec:
+
+.Default ServiceMonitor
+[source,yaml]
+----
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: example-kc # <1>
+  namespace: example-namespace # <2>
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics # <3>
+    port: management
+    scheme: https # <4>
+    scrapeTimeout: 10s
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - example-namespace # <2>
+  selector:
+    matchLabels:
+      app: keycloak
+      app.kubernetes.io/instance: example-kc # <2>
+      app.kubernetes.io/managed-by: keycloak-operator
+  scrapeProtocols:
+    - OpenMetricsText1.0.0
+----
+<1> The `ServiceMonitor` is created with the same name as the Keycloak CR.
+<2> The `ServiceMonitor` is always deployed to the same namespace as the Keycloak CR and will only match a Service
+in that namespace.
+<3> The configured path defaults to `/metrics`, but respects the `http-management-relative-path` value if configured.
+<4> The configured scheme is changed automatically depending on whether TLS is enabled or not.
+
+
+==== Modify ServiceMonitor configuration
+You can configure the `interval` and `scrapeTimeout` fields of the generated `ServiceMonitor` by modifying the Keycloak CR spec.
+
+.Modified ServiceMonitor
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  serviceMonitor:
+    interval: 10s
+    scrapeTimeout: 5s
+----
+
+==== Disable ServiceMonitor creation
+You can prevent the Operator from creating a ServiceMonitor by configuring the Keycloak CR as follows:
+
+.Disabled ServiceMonitor
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  serviceMonitor:
+    enabled: false
 ----
 
 </@tmpl.guide>

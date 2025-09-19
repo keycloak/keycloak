@@ -48,7 +48,7 @@
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
 :adminguide_eventlistener_name: Event listener
 :adminguide_eventlistener_link: {adminguide_link}#event-listener
-:adminguide_finegrained_name: fine-grained admin permissions
+:adminguide_finegrained_name: Delegating realm administration using permissions
 :adminguide_finegrained_link: {adminguide_link}#_fine_grained_permissions
 :adminguide_timeouts_name: Timeouts
 :adminguide_timeouts_link: {adminguide_link}#_timeouts
@@ -67,7 +67,7 @@
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
 :developerguide_link_latest: {project_doc_base_url_latest}/server_development/
-:developerguide_deploying_themes: {developerguide_link}#deploying-themes
+:developerguide_deploying_themes: https://www.keycloak.org/ui-customization/themes#_deploying_themes
 :developerguide_actiontoken_name: Action Token Handler SPI
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_handler_spi
 :developerguide_jsproviders_name: JavaScript Providers
@@ -80,6 +80,8 @@
 :highavailabilityguide_name: High Availability Guide
 :highavailabilityguide_link: https://www.keycloak.org/guides#high-availability
 :observablitycategory_link: https://www.keycloak.org/guides#observability
+:operatorguide_name: Operator  Guide
+:operatorguide_link: https://www.keycloak.org/guides#operator
 :tracingguide_name: Enabling Tracing
 :tracingguide_link: https://www.keycloak.org/observability/tracing
 :upgradingguide_name: Upgrading Guide
@@ -136,5 +138,7 @@
 :securing_apps_base_link: https://www.keycloak.org/securing-apps
 :securing_apps_java_policy_enforcer_link: {securing_apps_base_link}/policy-enforcer
 :securing_apps_java_policy_enforcer_name: Java Policy enforcer
+:securing_apps_javascript_adapter_link: {securing_apps_base_link}/javascript-adapter
+:securing_apps_javascript_adapter_name: {project_name} Javascript adapter
 :securing_apps_token_exchange_link: {securing_apps_base_link}/token-exchange
 :securing_apps_token_exchange_name: Token exchange Documentation

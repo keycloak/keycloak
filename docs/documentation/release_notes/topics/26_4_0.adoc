@@ -3,6 +3,13 @@
 
 Read on to learn more about each new feature, and https://www.keycloak.org/docs/latest/upgrading/index.html[find additional details in the upgrading guide] if you are upgrading from a previous release of {project_name}.
 
+= Federated client authentication preview
+
+Identity providers are now able to federate client authentication. This allows clients to authenticate with SPIFFE JWT SVIDs,
+Kubernetes service accounts, or tokens issued by a OpenID Connect identity provider.
+
+This feature is currently preview, and expected to become supported in 26.5.
+
 = Update Email Workflow is now supported
 
 This feature provides a more secure and consistent flow to update user
@@ -72,7 +79,7 @@ When no domain is specified, organization members will not be validated against 
 
 = Enhancements for single-cluster and multi-cluster setups
 
-This release renamed multi-az to multi-cluster.
+This release renamed multi-site to multi-cluster.
 The updated documentation describes
 how {project_name} clusters can be optionally distributed across multiple availability-zones within a region for increased availability.
 The {project_name} Operator now deploys {project_name} across multiple availability zones within a Kubernetes cluster by default. {project_name} also detects split-brains within a cluster.
@@ -102,3 +109,16 @@ ifeval::[{project_community}==true]
 Thank you to https://github.com/tnorimat[@tnorimat] for contributing this.
 endif::[]
 
+= Automatic certificate management for SAML clients
+
+The SAML clients can now be configured to automatically download the signing and encrypting certificates from the SP entity metadata descriptor endpoint. In order to use this new feature, in the client *Settings* tab, section *Signature and Encryption*, configure the *Metadata descriptor URL* option (the URL where the SP metadata information with the certificates is published) and activate *Use metadata descriptor URL*. The certificates will be automatically downloaded and cached in the `public-key-storage` SPI from that URL.
+
+For more information, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] in the {adminguide_name}.
+
+= Operator creates a ServiceMonitor automatically
+
+The Operator now provisions a `ServiceMonitor` for the management endpoint if metrics are enabled and the
+`monitoring.coreos.com/v1:ServiceMonitor` Custom Resource Definition is present on the Kubernetes cluster. The
+specification of the `ServiceMonitor` takes into account the various management endpoint configurations, to ensure that
+metrics can be scraped without any additional configuration. If you do not want a `ServiceMonitor` to be created, you can disable
+this by setting `spec.serviceMonitor.enabled: false`. For more details, see the link:{operatorguide_link}[{operatorguide_name}].

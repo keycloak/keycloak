@@ -33,6 +33,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
@@ -157,6 +158,9 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration for startup probe, by default it is 1 for periodSeconds and 600 for failureThreshold")
     private ProbeSpec startupProbeSpec;
 
+    @JsonProperty("serviceMonitor")
+    @JsonPropertyDescription("Configuration related to the generated ServiceMonitor")
+    private ServiceMonitorSpec serviceMonitorSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -374,4 +378,12 @@ public class KeycloakSpec {
         this.importSpec = importSpec;
     }
 
+
+    public ServiceMonitorSpec getServiceMonitorSpec() {
+        return serviceMonitorSpec;
+    }
+
+    public void setServiceMonitorSpec(ServiceMonitorSpec serviceMonitorSpec) {
+        this.serviceMonitorSpec = serviceMonitorSpec;
+    }
 }
