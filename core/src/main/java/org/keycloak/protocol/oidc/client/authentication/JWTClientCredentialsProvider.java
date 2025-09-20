@@ -73,7 +73,7 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         keyWrapper.setUse(KeyUse.SIG);
 
         // check the algorithm is valid
-        switch (keyPair.getPublic().getAlgorithm()) {
+        switch (JavaAlgorithm.getKeyType(keyPair.getPublic().getAlgorithm())) {
             case KeyType.RSA:
                 if (!JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
                     throw new RuntimeException("Invalid algorithm for a RSA KeyPair: " + algorithm);
@@ -85,6 +85,12 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
                     throw new RuntimeException("Invalid algorithm for a EC KeyPair: " + algorithm);
                 }
                 this.sigCtx = new ECDSASignatureSignerContext(keyWrapper);
+                break;
+            case KeyType.OKP:
+                if (!JavaAlgorithm.isEddsaJavaAlgorithm(algorithm)) {
+                    throw new RuntimeException("Invalid algorithm for a EdDSA KeyPair: " + algorithm);
+                }
+                this.sigCtx = new AsymmetricSignatureSignerContext(keyWrapper);
                 break;
             default:
                 throw new RuntimeException("Invalid KeyPair algorithm: " + keyPair.getPublic().getAlgorithm());

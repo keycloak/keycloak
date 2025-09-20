@@ -1,0 +1,16 @@
+{
+    "realm": "authz-client-jwt-test-Ed25519",
+    "auth-server-url" : "http://localhost:8180/auth",
+    "resource" : "resource-server-test",
+    "credentials": {
+        "jwt": {
+            "client-keystore-file": "classpath:client-auth-test/keystore-client4.jks",
+            "client-keystore-type": "JKS",
+            "client-keystore-password": "storepass",
+            "client-key-alias": "clientkey",
+            "client-key-password": "keypass",
+            "algorithm": "EdDSA",
+            "token-expiration": 10
+        }
+    }
+}
