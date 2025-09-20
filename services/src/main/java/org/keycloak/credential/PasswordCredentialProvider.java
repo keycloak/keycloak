@@ -127,6 +127,8 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             if (expiredPasswordsPolicyValue > 1 || passwordAgeInDaysPolicy > 0) {
                 oldPassword.setId(null);
                 oldPassword.setType(PasswordCredentialModel.PASSWORD_HISTORY);
+                // Setting the label to "nulL" avoids duplicate label errors
+                oldPassword.setUserLabel(null);
                 oldPassword = user.credentialManager().createStoredCredential(oldPassword);
             }
         }
