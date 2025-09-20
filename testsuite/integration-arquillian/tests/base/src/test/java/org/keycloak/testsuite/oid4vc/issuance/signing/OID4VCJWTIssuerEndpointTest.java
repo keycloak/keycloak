@@ -639,7 +639,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
 
                 CredentialRequest request = new CredentialRequest()
-                        .setFormat(Format.JWT_VC)
                         .setCredentialIdentifier(scopeName)
                         .setProofs(proofs);
 
