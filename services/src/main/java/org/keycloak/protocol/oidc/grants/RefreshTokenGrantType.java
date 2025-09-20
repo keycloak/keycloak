@@ -59,7 +59,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         String scopeParameter = getRequestedScopes();
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams, client));
             refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
