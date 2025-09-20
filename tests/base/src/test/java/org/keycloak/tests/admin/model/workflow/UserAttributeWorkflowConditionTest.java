@@ -25,6 +25,7 @@ import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFactory;
+import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -131,7 +132,7 @@ public class UserAttributeWorkflowConditionTest {
     }
 
     private void createWorkflow(Map<String, List<String>> attributes) {
-        List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.name())
                 .recurring()

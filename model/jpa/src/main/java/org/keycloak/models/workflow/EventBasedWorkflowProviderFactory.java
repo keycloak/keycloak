@@ -8,12 +8,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class EventBasedWorkflowProviderFactory implements WorkflowProviderFactory {
+public class EventBasedWorkflowProviderFactory implements WorkflowProviderFactory<EventBasedWorkflowProvider> {
 
     public static final String ID = "event-based-workflow";
 
     @Override
-    public WorkflowProvider create(KeycloakSession session, ComponentModel model) {
+    public EventBasedWorkflowProvider create(KeycloakSession session, ComponentModel model) {
         return new EventBasedWorkflowProvider(session, model);
     }
 

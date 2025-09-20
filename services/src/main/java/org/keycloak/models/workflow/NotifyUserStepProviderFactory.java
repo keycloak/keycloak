@@ -28,7 +28,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class NotifyUserStepProviderFactory implements WorkflowStepProviderFactory<NotifyUserStepProvider> {
 
-    public static final String ID = "notify-user-step-provider";
+    public static final String ID = "notify-user";
 
     @Override
     public NotifyUserStepProvider create(KeycloakSession session, ComponentModel model) {

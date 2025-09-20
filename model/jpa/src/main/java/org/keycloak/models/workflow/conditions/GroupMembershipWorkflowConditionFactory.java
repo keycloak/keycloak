@@ -9,7 +9,7 @@ import org.keycloak.models.workflow.WorkflowConditionProviderFactory;
 
 public class GroupMembershipWorkflowConditionFactory implements WorkflowConditionProviderFactory<GroupMembershipWorkflowConditionProvider> {
 
-    public static final String ID = "group-membership-condition";
+    public static final String ID = "is-member-of";
     public static final String EXPECTED_GROUPS = "groups";
 
     @Override

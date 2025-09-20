@@ -34,6 +34,7 @@ import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -68,7 +69,7 @@ public class WorkflowStepManagementTest {
         workflowsResource = managedRealm.admin().workflows();
         
         // Create a workflow for testing (need at least one step for persistence)
-        List<WorkflowRepresentation> workflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.toString())
                 .name("Test Workflow")
@@ -101,7 +102,7 @@ public class WorkflowStepManagementTest {
         WorkflowStepsResource steps = workflow.steps();
 
         WorkflowStepRepresentation stepRep = new WorkflowStepRepresentation();
-        stepRep.setProviderId(DisableUserStepProviderFactory.ID);
+        stepRep.setUses(DisableUserStepProviderFactory.ID);
         stepRep.setConfig("name", "Test Step");
         stepRep.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
 
@@ -111,7 +112,7 @@ public class WorkflowStepManagementTest {
             
             assertNotNull(addedStep);
             assertNotNull(addedStep.getId());
-            assertEquals(DisableUserStepProviderFactory.ID, addedStep.getProviderId());
+            assertEquals(DisableUserStepProviderFactory.ID, addedStep.getUses());
         }
 
         // Verify step is in workflow (should be 2 total: setup step + our added step)
@@ -120,7 +121,7 @@ public class WorkflowStepManagementTest {
         
         // Verify our added step is present
         boolean foundOurStep = allSteps.stream()
-                .anyMatch(step -> DisableUserStepProviderFactory.ID.equals(step.getProviderId()) && 
+                .anyMatch(step -> DisableUserStepProviderFactory.ID.equals(step.getUses()) &&
                                  "Test Step".equals(step.getConfig().getFirst("name")));
         assertTrue(foundOurStep, "Our added step should be present in the workflow");
     }
@@ -132,7 +133,7 @@ public class WorkflowStepManagementTest {
 
         // Add one more step
         WorkflowStepRepresentation step1 = new WorkflowStepRepresentation();
-        step1.setProviderId(DisableUserStepProviderFactory.ID);
+        step1.setUses(DisableUserStepProviderFactory.ID);
         step1.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
 
         String step1Id;
@@ -162,7 +163,7 @@ public class WorkflowStepManagementTest {
 
         // Add first step at position 0
         WorkflowStepRepresentation step1 = new WorkflowStepRepresentation();
-        step1.setProviderId(NotifyUserStepProviderFactory.ID);
+        step1.setUses(NotifyUserStepProviderFactory.ID);
         step1.setConfig("name", "Step 1");
         step1.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
 
@@ -178,7 +179,7 @@ public class WorkflowStepManagementTest {
 
         // Add second step at position 1
         WorkflowStepRepresentation step2 = new WorkflowStepRepresentation();
-        step2.setProviderId(DisableUserStepProviderFactory.ID);
+        step2.setUses(DisableUserStepProviderFactory.ID);
         step2.setConfig("name", "Step 2");
         step2.setConfig("after", String.valueOf(Duration.ofDays(60).toMillis()));
 
@@ -194,7 +195,7 @@ public class WorkflowStepManagementTest {
 
         // Add third step at position 1 (middle)
         WorkflowStepRepresentation step3 = new WorkflowStepRepresentation();
-        step3.setProviderId(NotifyUserStepProviderFactory.ID);
+        step3.setUses(NotifyUserStepProviderFactory.ID);
         step3.setConfig("name", "Step 3");
         step3.setConfig("after", String.valueOf(Duration.ofDays(45).toMillis())); // Between 30 and 60 days
 
@@ -217,7 +218,7 @@ public class WorkflowStepManagementTest {
         WorkflowStepsResource steps = workflow.steps();
 
         WorkflowStepRepresentation stepRep = new WorkflowStepRepresentation();
-        stepRep.setProviderId(NotifyUserStepProviderFactory.ID);
+        stepRep.setUses(NotifyUserStepProviderFactory.ID);
         stepRep.setConfig("name", "Test Step");
         stepRep.setConfig("after", String.valueOf(Duration.ofDays(15).toMillis()));
 
@@ -231,7 +232,7 @@ public class WorkflowStepManagementTest {
         WorkflowStepRepresentation retrievedStep = steps.get(stepId);
         assertNotNull(retrievedStep);
         assertEquals(stepId, retrievedStep.getId());
-        assertEquals(NotifyUserStepProviderFactory.ID, retrievedStep.getProviderId());
+        assertEquals(NotifyUserStepProviderFactory.ID, retrievedStep.getUses());
         assertEquals("Test Step", retrievedStep.getConfig().getFirst("name"));
     }
 
