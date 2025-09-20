@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.27.0.CR1</quarkus.version>
-        <quarkus.build.version>3.27.0.CR1</quarkus.build.version>
+        <quarkus.version>999-SNAPSHOT</quarkus.version>
+        <quarkus.build.version>999-SNAPSHOT</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -159,10 +159,10 @@
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.7</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.8</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.5.5</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.6</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
@@ -181,7 +181,7 @@
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <!-- Needs to be aligned with Quarkus, handled in quarkus/set-quarkus-version.sh script -->
-        <version.surefire.plugin>3.5.3</version.surefire.plugin>
+        <version.surefire.plugin>3.5.4</version.surefire.plugin>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <assertj-core.version>3.22.0</assertj-core.version>
@@ -1721,4 +1721,5 @@
             </properties>
         </profile>
     </profiles>
+<repositories>             <repository>             <id>sonatype-snapshots</id>             <name>Sonatype Snapshots</name>             <url>https://central.sonatype.com/repository/maven-snapshots/</url>             <snapshots>                 <enabled>true</enabled>                 <updatePolicy>daily</updatePolicy>             </snapshots>             <releases>                 <enabled>false</enabled>             </releases>             </repository>             </repositories>
 </project>
