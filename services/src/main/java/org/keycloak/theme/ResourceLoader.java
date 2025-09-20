@@ -12,19 +12,40 @@ public class ResourceLoader {
         if (root == null || resource == null) {
             return null;
         }
-        Path rootPath = Path.of("/", root).normalize().toAbsolutePath();
-        Path resourcePath = rootPath.resolve(resource).normalize().toAbsolutePath();
-        if (resourcePath.startsWith(rootPath)) {
-            if (File.separatorChar == '/') {
-                resource = resourcePath.toString().substring(1);
-            } else {
-                resource = resourcePath.toString().substring(2).replace('\\', '/');
-            }
-            URL url = classLoader().getResource(resource);
-            return url != null ? url.openStream() : null;
-        } else {
+        
+        // Check for encoded traversal patterns in the original resource
+        if (containsEncodedTraversal(resource)) {
             return null;
         }
+
+        // Decode resource repeatedly to catch double/triple encoded traversal attempts
+        String previousResource;
+        do {
+            previousResource = resource;
+            resource = java.net.URLDecoder.decode(resource, java.nio.charset.StandardCharsets.UTF_8);
+        } while (!resource.equals(previousResource)); // Keep decoding until no change
+
+        // Use relative paths for proper normalization without absolute paths
+        Path rootPath = Path.of(root).normalize();
+        Path resourcePath = rootPath.resolve(resource).normalize();
+
+        // Check for directory traversal by ensuring the normalized path is still within root
+        if (!resourcePath.startsWith(rootPath)) {
+            return null;
+        }
+
+        // For classloader, use the normalized resource path
+        String resourceString = resourcePath.toString().replace('\\', '/');
+        URL url = classLoader().getResource(resourceString);
+        return url != null ? url.openStream() : null;
+    }
+    
+    private static boolean containsEncodedTraversal(String resource) {
+        // Check for various encoded forms of "../"
+        return resource.contains("%2E%2E%2F") ||  // ../
+               resource.contains("%2e%2e%2f") ||  // ../ (lowercase)
+               resource.contains("%252E%252E%252F") || // double-encoded ../
+               resource.contains("%252e%252e%252f");   // double-encoded ../ (lowercase)
     }
 
     public static InputStream getFileAsStream(File root, String resource) throws IOException {
