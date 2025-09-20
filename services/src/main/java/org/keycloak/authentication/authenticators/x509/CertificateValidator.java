@@ -179,11 +179,26 @@ public class CertificateValidator {
         private final KeycloakSession session;
         private final String responderUri;
         private final X509Certificate responderCert;
+        private final int maxRetries;
+        private final int timeoutMillis;
 
         BouncyCastleOCSPChecker(KeycloakSession session, String responderUri, X509Certificate responderCert) {
             this.session = session;
             this.responderUri = responderUri;
             this.responderCert = responderCert;
+
+            // Default values
+            this.maxRetries = 0; // No retries by default
+            this.timeoutMillis = 10000;
+        }
+
+        BouncyCastleOCSPChecker(KeycloakSession session, String responderUri, X509Certificate responderCert,
+                int maxRetries, int timeoutMillis) {
+            this.session = session;
+            this.responderUri = responderUri;
+            this.responderCert = responderCert;
+            this.maxRetries = maxRetries;
+            this.timeoutMillis = timeoutMillis;
         }
 
         @Override
@@ -201,6 +216,22 @@ public class CertificateValidator {
                 // 2) Includes the value of OCSPsigning in ExtendedKeyUsage v3 extension
                 // 3) Certificate is valid at the time
                 OCSPProvider ocspProvider = CryptoIntegration.getProvider().getOCSPProver(OCSPProvider.class);
+
+                // Configure retry behavior
+                HttpClientProvider httpProvider = session.getProvider(HttpClientProvider.class);
+                if (httpProvider != null && maxRetries > 0) {
+                    // Use the retriable HTTP client with configured max retries
+                    org.keycloak.connections.httpclient.RetryConfig retryConfig = new org.keycloak.connections.httpclient.RetryConfig.Builder()
+                            .maxRetries(maxRetries)
+                            .connectionTimeoutMillis(timeoutMillis)
+                            .socketTimeoutMillis(timeoutMillis)
+                            .build();
+
+                    httpProvider.setRetryConfig(retryConfig);
+                    logger.debugf("OCSP check configured with maxRetries=%d, timeoutMillis=%d", maxRetries,
+                            timeoutMillis);
+                }
+
                 ocspRevocationStatus = ocspProvider.check(session, cert, issuerCertificate);
             }
             else {
@@ -213,6 +244,22 @@ public class CertificateValidator {
                 }
                 logger.tracef("Responder URI \"%s\" will be used to verify revocation status of the certificate using OCSP with responderCert=%s",
                         uri.toString(), responderCert);
+
+                // Configure retry behavior
+                HttpClientProvider httpProvider = session.getProvider(HttpClientProvider.class);
+                if (httpProvider != null && maxRetries > 0) {
+                    // Use the retriable HTTP client with configured max retries
+                    org.keycloak.connections.httpclient.RetryConfig retryConfig = new org.keycloak.connections.httpclient.RetryConfig.Builder()
+                            .maxRetries(maxRetries)
+                            .connectionTimeoutMillis(timeoutMillis)
+                            .socketTimeoutMillis(timeoutMillis)
+                            .build();
+
+                    httpProvider.setRetryConfig(retryConfig);
+                    logger.debugf("OCSP check configured with maxRetries=%d, timeoutMillis=%d", maxRetries,
+                            timeoutMillis);
+                }
+
                 // Obtains the revocation status of a certificate using OCSP.
                 // OCSP responder's certificate is assumed to be the issuer's certificate
                 // certificate.
@@ -1095,12 +1142,25 @@ public class CertificateValidator {
             if (_crlLoader == null) {
                  _crlLoader = new CRLFileLoader(session, "", _crlAbortIfNonUpdated);
             }
+
+            // Get OCSP retry settings from X509AuthenticatorConfigModel if available
+            int ocspMaxRetries = 0; // Default value (no retries)
+            int ocspTimeoutMillis = 10000; // Default value
+
+            if (session != null) {
+                X509AuthenticatorConfigModel config = (X509AuthenticatorConfigModel) session
+                        .getAttribute("x509-auth-config");
+                if (config != null) {
+                    ocspMaxRetries = config.getOCSPMaxRetries();
+                    ocspTimeoutMillis = config.getOCSPTimeoutMillis();
+                }
+            }
+
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
                     _certificatePolicy, _certificatePolicyMode,
                     _crlCheckingEnabled, _crlAbortIfNonUpdated, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
-                    new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
+                    new BouncyCastleOCSPChecker(session, _responderUri, _responderCert, ocspMaxRetries, ocspTimeoutMillis), session, _timestampValidationEnabled, _trustValidationEnabled);
         }
     }
-
 
 }
