@@ -117,7 +117,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // If authorization_details is present, add it to otherClaims
-        if (authorizationDetailsResponse != null) {
+        if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
             tokenResponse.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authorizationDetailsResponse);
         }
 

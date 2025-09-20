@@ -22,38 +22,39 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import static org.junit.Assert.*;
 
 /**
- * JWT-specific authorization details flow tests.
- * Extends the base class to inherit common test logic while providing JWT-specific implementations.
+ * SD-JWT-specific authorization code flow tests with authorization details and claims validation.
+ * Extends the base class to inherit common test logic while providing SD-JWT-specific implementations.
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public class OID4VCJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
+public class OID4VCSdJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCodeFlowTestBase {
 
     @Override
     protected String getCredentialFormat() {
-        return "jwt_vc";
+        return "sd_jwt_vc";
     }
 
     @Override
     protected ClientScopeRepresentation getCredentialClientScope() {
-        return jwtTypeCredentialClientScope;
+        return sdJwtTypeCredentialClientScope;
     }
 
     @Override
     protected String getExpectedClaimPath() {
-        return "given_name";
+        return "lastName";
     }
 
     @Override
     protected void verifyCredentialStructure(Object credentialObj) {
         assertNotNull("Credential object should not be null", credentialObj);
 
-        // For JWT VC, the credential should be a string
-        assertTrue("JWT credential should be a string", credentialObj instanceof String);
-        String jwtString = (String) credentialObj;
-        assertFalse("JWT credential should not be empty", jwtString.isEmpty());
+        // For SD-JWT VC, the credential should be a string
+        assertTrue("SD-JWT credential should be a string", credentialObj instanceof String);
+        String sdJwtString = (String) credentialObj;
+        assertFalse("SD-JWT credential should not be empty", sdJwtString.isEmpty());
 
-        // Verify it looks like a JWT (contains dots)
-        assertTrue("JWT should contain dots", jwtString.contains("."));
+        // Verify it looks like an SD-JWT (contains dots and ~)
+        assertTrue("SD-JWT should contain dots", sdJwtString.contains("."));
+        assertTrue("SD-JWT should contain tilde", sdJwtString.contains("~"));
     }
 }

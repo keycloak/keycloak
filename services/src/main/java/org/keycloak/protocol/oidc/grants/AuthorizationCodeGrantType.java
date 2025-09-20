@@ -217,7 +217,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         // Process authorization_details using provider discovery (only if present)
         if (formParams.getFirst(AUTHORIZATION_DETAILS_PARAM) != null) {
             List<AuthorizationDetailsResponse> authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
-            if (authorizationDetailsResponse != null) {
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
             } else {
                 logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", formParams.getFirst(AUTHORIZATION_DETAILS_PARAM));
@@ -230,7 +230,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
         List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
-        if (authDetailsResponse != null) {
+        if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
             res.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authDetailsResponse);
         }
     }

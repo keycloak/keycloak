@@ -22,12 +22,12 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import static org.junit.Assert.*;
 
 /**
- * JWT-specific authorization details flow tests.
+ * JWT-specific authorization code flow tests with authorization details and claims validation.
  * Extends the base class to inherit common test logic while providing JWT-specific implementations.
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public class OID4VCJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
+public class OID4VCJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCodeFlowTestBase {
 
     @Override
     protected String getCredentialFormat() {
