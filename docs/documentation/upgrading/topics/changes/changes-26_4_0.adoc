@@ -4,7 +4,12 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Fine-grained admin permissions: RESET_PASSWORD scope for Users
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== Fine-grained admin permissions: reset-password scope for Users
 
 A new `reset-password` scope has been added to the Users resource type in Fine-Grained Admin Permissions v2. This scope allows administrators to grant password reset permissions independently from the broader `manage` scope.
 
@@ -20,11 +25,6 @@ fgap.v2.resetPassword.fallbackToManageUsers=false
 When the fallback is disabled, only the explicit `reset-password` scope permissions allows password reset operations, providing more fine-grained control over administrative access.
 
 For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
-
-// ------------------------ Notable changes ------------------------ //
-== Notable changes
-
-Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 
 === Usage of the `exact` request parameter when searching users by attributes
 

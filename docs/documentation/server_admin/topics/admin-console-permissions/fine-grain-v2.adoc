@@ -68,7 +68,7 @@ set of scopes:
 | *manage-group-membership* | Defines if a realm administrator can assign or unassign users to/from groups.                | None
 | *map-roles*               | Defines if a realm administrator can assign or unassign roles to/from users.                 | None
 | *impersonate*             | Defines if a realm administrator can impersonate other users.                                | `impersonate-members`
-| *reset-password*          | Defines if a realm administrator can reset user passwords. By default, this scope falls      | None
+| *reset-password*          | Defines if a realm administrator can reset user passwords. By default, this scope falls      | `reset-password-members`
                               back to `manage` scope behavior (configurable via `fgap.v2.resetPassword.fallbackToManageUsers`).
 |===
 
@@ -101,6 +101,9 @@ set of management operations:
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
 | *impersonate-members*     | Defines if a realm administrator can impersonate group members.
+                              This operation applies to any child group in the group hierarchy.
+                              This can be prevented by explicitly denying permission for specific subgroups.
+| *reset-password-members*  | Defines if a realm administrator can reset passwords of group members.
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
 | *manage-membership*       | Defines if a realm administrator can add or remove members from groups.
