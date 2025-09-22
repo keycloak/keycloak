@@ -60,6 +60,17 @@ import liquibase.servicelocator.ServiceLocator;
 @Recorder
 public class KeycloakRecorder {
 
+    /**
+     * Kubernetes CA location
+     */
+//    public static final String KUBERNETES_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    public static final String KUBERNETES_CA_PATH = "/tmp/keycloak/ca.crt";
+
+    /**
+     * An environment variable used to detect container mode.
+     */
+    public static final String CONTAINER_ENVIRONMENT_VARIABLE = "KC_RUN_IN_CONTAINER";
+
     public void initConfig() {
         Config.init(new MicroProfileConfigProvider());
     }
@@ -88,11 +99,26 @@ public class KeycloakRecorder {
 
         if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
             truststores = Stream.concat(Stream.of(truststoresDir.getAbsolutePath()), Stream.of(truststores)).toArray(String[]::new);
-        } else if (truststores.length == 0) {
-            return; // nothing to configure, we'll just use the system default
         }
 
+        truststores = includeDefaultKubernetesTruststore(truststores);
+
         TruststoreBuilder.setSystemTruststore(truststores, true, dataDir);
+    }
+
+    static String[] includeDefaultKubernetesTruststore(String[] truststores) {
+        // If running in a container, append the default Kubernetes CA if present
+        if (Boolean.valueOf(System.getenv(CONTAINER_ENVIRONMENT_VARIABLE))) {
+            File kubernetesCA = new File(KUBERNETES_CA_PATH);
+            if (kubernetesCA.exists() && kubernetesCA.isFile()) {
+                // Avoid duplicates
+                boolean alreadyPresent = Stream.of(truststores).anyMatch(p -> p.equals(kubernetesCA.getAbsolutePath()));
+                if (!alreadyPresent) {
+                    truststores = Stream.concat(Stream.of(truststores), Stream.of(kubernetesCA.getAbsolutePath())).toArray(String[]::new);
+                }
+            }
+        }
+        return truststores;
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {

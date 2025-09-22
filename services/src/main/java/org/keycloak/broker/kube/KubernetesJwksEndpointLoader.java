@@ -17,12 +17,12 @@ import org.keycloak.util.JsonSerialization;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
-public class KubeJwksEndpointLoader implements PublicKeyLoader {
+public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
     private final KeycloakSession session;
     private final String endpoint;
 
-    public KubeJwksEndpointLoader(KeycloakSession session, String endpoint) {
+    public KubernetesJwksEndpointLoader(KeycloakSession session, String endpoint) {
         this.session = session;
         this.endpoint = endpoint;
     }
@@ -32,7 +32,8 @@ public class KubeJwksEndpointLoader implements PublicKeyLoader {
         CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         HttpGet httpGet = new HttpGet(endpoint);
 
-        String token = FileUtils.readFileToString(new File("/var/run/secrets/kubernetes.io/serviceaccount/token"), StandardCharsets.UTF_8);
+//        String token = FileUtils.readFileToString(new File("/var/run/secrets/kubernetes.io/serviceaccount/token"), StandardCharsets.UTF_8);
+        String token = FileUtils.readFileToString(new File("/tmp/keycloak/token"), StandardCharsets.UTF_8);
 
         httpGet.setHeader(HttpHeaders.ACCEPT, "application/jwk-set+json");
         httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);

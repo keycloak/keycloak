@@ -69,6 +69,7 @@ import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { SpiffeSettings } from "./SpiffeSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
+import {KubernetesSettings} from "./KubernetesSettings";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -414,6 +415,7 @@ export default function DetailSettings() {
   const isSAML = provider.providerId!.includes("saml");
   const isOAuth2 = provider.providerId!.includes("oauth2");
   const isSPIFFE = provider.providerId!.includes("spiffe");
+  const isKubernetes = provider.providerId!.includes("kubernetes");
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
 
   const loader = async () => {
@@ -444,7 +446,7 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
-      isHidden: isSPIFFE,
+      isHidden: isSPIFFE || isKubernetes,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -504,6 +506,20 @@ export default function DetailSettings() {
       ),
     },
     {
+      title: t("generalSettings"),
+      isHidden: !isKubernetes,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <KubernetesSettings />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+        </Form>
+      ),
+    },
+    {
       title: t("samlSettings"),
       isHidden: !isSAML,
       panel: <DescriptorSettings readOnly={false} />,
@@ -523,7 +539,7 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
-      isHidden: isSPIFFE,
+      isHidden: isSPIFFE || isKubernetes,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -575,7 +591,7 @@ export default function DetailSettings() {
           </Tab>
           <Tab
             id="mappers"
-            isHidden={isSPIFFE}
+            isHidden={isSPIFFE || isKubernetes}
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}

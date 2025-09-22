@@ -20,9 +20,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-public class KubeIdentityProvider extends OIDCIdentityProvider {
+public class KubernetesIdentityProvider extends OIDCIdentityProvider {
 
-    public KubeIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
+    public KubernetesIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
     }
 
@@ -34,7 +34,7 @@ public class KubeIdentityProvider extends OIDCIdentityProvider {
         String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), getConfig().getInternalId());
 
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-        return keyStorage.getPublicKey(modelKey, kid, alg, new KubeJwksEndpointLoader(session, getConfig().getJwksUrl()));
+        return keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, getConfig().getJwksUrl()));
     }
 
     @Override

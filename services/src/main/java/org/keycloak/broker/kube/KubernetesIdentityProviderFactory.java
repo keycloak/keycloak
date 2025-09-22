@@ -3,7 +3,6 @@ package org.keycloak.broker.kube;
 import org.keycloak.Config;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -11,9 +10,9 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.util.Map;
 
-public class KubeIdentityProviderFactory extends AbstractIdentityProviderFactory<KubeIdentityProvider> implements EnvironmentDependentProviderFactory {
+public class KubernetesIdentityProviderFactory extends AbstractIdentityProviderFactory<KubernetesIdentityProvider> implements EnvironmentDependentProviderFactory {
 
-    public static final String PROVIDER_ID = "kube";
+    public static final String PROVIDER_ID = "kubernetes";
 
     @Override
     public String getName() {
@@ -21,8 +20,8 @@ public class KubeIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public KubeIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new KubeIdentityProvider(session, new OIDCIdentityProviderConfig(model));
+    public KubernetesIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new KubernetesIdentityProvider(session, new OIDCIdentityProviderConfig(model));
     }
 
     @Override
