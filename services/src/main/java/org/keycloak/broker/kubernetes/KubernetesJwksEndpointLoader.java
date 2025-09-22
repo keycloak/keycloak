@@ -17,6 +17,8 @@ import org.keycloak.util.JsonSerialization;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
+import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH;
+
 public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
     private final KeycloakSession session;
@@ -26,6 +28,10 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
     public KubernetesJwksEndpointLoader(KeycloakSession session, String globalEndpoint, String providerEndpoint) {
         this.session = session;
+
+        if (globalEndpoint == null && providerEndpoint == null) {
+            throw new RuntimeException("Not running on Kubernetes and Kubernetes JWKS endpoint not set");
+        }
 
         if (providerEndpoint == null || providerEndpoint.isEmpty() || globalEndpoint.equals(providerEndpoint)) {
             this.endpoint = globalEndpoint;
@@ -44,7 +50,7 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
         httpGet.setHeader(HttpHeaders.ACCEPT, "application/jwk-set+json");
 
         if (authenticate) {
-            String token = FileUtils.readFileToString(new File("/var/run/secrets/kubernetes.io/serviceaccount/token"), StandardCharsets.UTF_8);
+            String token = FileUtils.readFileToString(new File(SERVICE_ACCOUNT_TOKEN_PATH), StandardCharsets.UTF_8);
             httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         }
 

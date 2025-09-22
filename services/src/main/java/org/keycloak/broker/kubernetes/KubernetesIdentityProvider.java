@@ -41,10 +41,6 @@ public class KubernetesIdentityProvider extends OIDCIdentityProvider {
     }
 
     @Override
-    public void close() {
-    }
-
-    @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context) {
         throw new UnsupportedOperationException();
     }
