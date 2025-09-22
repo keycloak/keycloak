@@ -1261,7 +1261,7 @@ public class AuthenticationManager {
         final String kcAction = authSession.getClientNote(Constants.KC_ACTION);
         final RequiredActionProviderModel firstApplicableRequiredAction =
                 getFirstApplicableRequiredAction(realm, authSession, user, kcAction, ignoredActions);
-        boolean kcActionExecution = kcAction != null && kcAction.equals(firstApplicableRequiredAction.getProviderId());
+        boolean kcActionExecution = kcAction != null && kcAction.equals((firstApplicableRequiredAction ==null ) ? null : firstApplicableRequiredAction.getProviderId());
 
         if (firstApplicableRequiredAction != null) {
             return executeAction(session, authSession, firstApplicableRequiredAction, request, event, realm, user,
