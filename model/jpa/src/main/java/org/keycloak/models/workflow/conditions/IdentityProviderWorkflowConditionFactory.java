@@ -9,7 +9,7 @@ import org.keycloak.models.workflow.WorkflowConditionProviderFactory;
 
 public class IdentityProviderWorkflowConditionFactory implements WorkflowConditionProviderFactory<IdentityProviderWorkflowConditionProvider> {
 
-    public static final String ID = "identity-provider-condition";
+    public static final String ID = "has-identity-provider-link";
     public static final String EXPECTED_ALIASES = "alias";
 
     @Override

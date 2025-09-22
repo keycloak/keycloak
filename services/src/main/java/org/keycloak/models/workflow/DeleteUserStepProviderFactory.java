@@ -27,7 +27,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class DeleteUserStepProviderFactory implements WorkflowStepProviderFactory<DeleteUserStepProvider> {
 
-    public static final String ID = "delete-user-step-provider";
+    public static final String ID = "delete-user";
 
     @Override
     public DeleteUserStepProvider create(KeycloakSession session, ComponentModel model) {
