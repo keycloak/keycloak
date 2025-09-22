@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class KubernetesIdentityProviderFactory extends AbstractIdentityProviderFactory<KubernetesIdentityProvider> implements EnvironmentDependentProviderFactory {
 
-    public static final String PROVIDER_ID = "kube";
+    public static final String PROVIDER_ID = "kubernetes";
 
     private String globalJwksUrl;
 
