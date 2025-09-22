@@ -1,7 +1,6 @@
 package org.keycloak.tests.admin.model.workflow;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -61,7 +60,7 @@ public class AdhocWorkflowTest {
         WorkflowRepresentation workflow = workflows.get(0);
         assertThat(workflow.getSteps(), hasSize(1));
         WorkflowStepRepresentation aggregatedStep = workflow.getSteps().get(0);
-        assertThat(aggregatedStep.getProviderId(), is(SetUserAttributeStepProviderFactory.ID));
+        assertThat(aggregatedStep.getUses(), is(SetUserAttributeStepProviderFactory.ID));
     }
 
     @Test

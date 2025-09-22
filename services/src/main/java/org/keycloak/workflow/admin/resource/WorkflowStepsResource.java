@@ -77,7 +77,7 @@ public class WorkflowStepsResource {
     })
     public List<WorkflowStepRepresentation> getSteps() {
         return workflowsManager.getSteps(workflow.getId()).stream()
-                .map(workflowsManager::toStepRepresentation)
+                .map(workflowsManager::toRepresentation)
                 .toList();
     }
 
@@ -111,8 +111,7 @@ public class WorkflowStepsResource {
         WorkflowStep step = workflowsManager.toStepModel(stepRep);
         WorkflowStep addedStep = workflowsManager.addStepToWorkflow(workflow.getId(), step, position);
         
-        WorkflowStepRepresentation result = workflowsManager.toStepRepresentation(addedStep);
-        return Response.ok(result).build();
+        return Response.ok(workflowsManager.toRepresentation(addedStep)).build();
     }
 
     /**
@@ -165,10 +164,11 @@ public class WorkflowStepsResource {
         }
 
         WorkflowStep step = workflowsManager.getStepById(stepId);
+
         if (step == null) {
             throw new BadRequestException("Step not found: " + stepId);
         }
 
-        return workflowsManager.toStepRepresentation(step);
+        return workflowsManager.toRepresentation(step);
     }
 }

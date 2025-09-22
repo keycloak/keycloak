@@ -10,17 +10,16 @@ import org.keycloak.models.FederatedIdentityModel.FederatedIdentityRemovedEvent;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.RoleGrantedEvent;
-import org.keycloak.models.RoleModel.RoleRevokedEvent;
 import org.keycloak.provider.ProviderEvent;
 
 public enum ResourceOperationType {
 
     USER_ADD(OperationType.CREATE, EventType.REGISTER),
     USER_LOGIN(EventType.LOGIN),
-    USER_FEDERATED_IDENTITY_ADD(new Class[] {FederatedIdentityCreatedEvent.class}, new Class[] {FederatedIdentityRemovedEvent.class}),
+    USER_FEDERATED_IDENTITY_ADD(FederatedIdentityCreatedEvent.class),
     USER_FEDERATED_IDENTITY_REMOVE(FederatedIdentityRemovedEvent.class),
     USER_GROUP_MEMBERSHIP_ADD(GroupMemberJoinEvent.class),
-    USER_ROLE_ADD(new Class[] {RoleGrantedEvent.class}, new Class[] {RoleRevokedEvent.class}),
+    USER_ROLE_ADD(RoleGrantedEvent.class),
     AD_HOC(new Class[] {});
 
     private final List<Object> types;

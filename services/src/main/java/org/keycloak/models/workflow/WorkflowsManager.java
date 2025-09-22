@@ -25,26 +25,29 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
+import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
-import static org.keycloak.models.workflow.Workflow.RECURRING_KEY;
-import static org.keycloak.models.workflow.Workflow.SCHEDULED_KEY;
-import static org.keycloak.models.workflow.WorkflowStep.AFTER_KEY;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 
 public class WorkflowsManager {
 
@@ -66,12 +69,12 @@ public class WorkflowsManager {
         return addWorkflow(new Workflow(providerId, config));
     }
 
-    public Workflow addWorkflow(Workflow workflow) {
+    private Workflow addWorkflow(Workflow workflow) {
         RealmModel realm = getRealm();
         ComponentModel model = new ComponentModel();
 
         model.setParentId(realm.getId());
-        model.setProviderId(workflow.getProviderId());
+        model.setProviderId(ofNullable(workflow.getProviderId()).orElse(WorkflowConstants.DEFAULT_WORKFLOW));
         model.setProviderType(WorkflowProvider.class.getName());
 
         MultivaluedHashMap<String, String> config = workflow.getConfig();
@@ -84,26 +87,22 @@ public class WorkflowsManager {
     }
 
     // This method takes an ordered list of steps. First step in the list has the highest priority, last step has the lowest priority
-    public void createSteps(Workflow workflow, List<WorkflowStep> steps) {
+    private void addSteps(Workflow workflow, String parentId, List<WorkflowStep> steps) {
         for (int i = 0; i < steps.size(); i++) {
             WorkflowStep step = steps.get(i);
 
-            validateStep(workflow, step);
+            if (workflow.getId().equals(parentId)) {
+                // only validate top-level steps, sub-steps are validated as part of the parent step validation
+                validateStep(workflow, step);
+            }
 
             // assign priority based on index.
             step.setPriority(i + 1);
 
-            List<WorkflowStep> subSteps = Optional.ofNullable(step.getSteps()).orElse(List.of());
-
             // persist the new step component.
-            step = addStep(workflow.getId(), step);
+            step = addStep(parentId, step);
 
-            for (int j = 0; j < subSteps.size(); j++) {
-                WorkflowStep subStep = subSteps.get(j);
-                // assign priority based on index.
-                subStep.setPriority(j + 1);
-                addStep(step.getId(), subStep);
-            }
+            addSteps(workflow, step.getId(), step.getSteps());
         }
     }
 
@@ -183,9 +182,18 @@ public class WorkflowsManager {
     }
 
     public WorkflowStepProvider getStepProvider(WorkflowStep step) {
+        return (WorkflowStepProvider) getStepProviderFactory(step).create(session, getRealm().getComponent(step.getId()));
+    }
+
+    private ComponentFactory<?, ?> getStepProviderFactory(WorkflowStep step) {
         ComponentFactory<?, ?> stepFactory = (ComponentFactory<?, ?>) session.getKeycloakSessionFactory()
                 .getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
-        return (WorkflowStepProvider) stepFactory.create(session, getRealm().getComponent(step.getId()));
+
+        if (stepFactory == null) {
+            throw new WorkflowInvalidStateException("Step not found: " + step.getProviderId());
+        }
+
+        return stepFactory;
     }
 
     private RealmModel getRealm() {
@@ -247,8 +255,8 @@ public class WorkflowsManager {
                             }
                         }
                     } catch (WorkflowInvalidStateException e) {
-                        workflow.getConfig().putSingle("enabled", "false");
-                        workflow.getConfig().putSingle("validation_error", e.getMessage());
+                        workflow.setEnabled(false);
+                        workflow.setError(e.getMessage());
                         updateWorkflow(workflow, workflow.getConfig());
                         log.debugf("Workflow %s was disabled due to: %s", workflow.getId(), e.getMessage());
                     }
@@ -319,16 +327,53 @@ public class WorkflowsManager {
     }
 
     public WorkflowRepresentation toRepresentation(Workflow workflow) {
-        WorkflowRepresentation rep = new WorkflowRepresentation(workflow.getId(), workflow.getProviderId(), workflow.getConfig());
+        List<WorkflowConditionRepresentation> conditions = toConditionRepresentation(workflow);
+        List<WorkflowStepRepresentation> steps = toRepresentation(getSteps(workflow.getId()));
 
-        for (WorkflowStep step : getSteps(workflow.getId())) {
-            rep.addStep(toRepresentation(step));
-        }
-
-        return rep;
+        return new WorkflowRepresentation(workflow.getId(), workflow.getProviderId(), workflow.getConfig(), conditions, steps);
     }
 
-    private WorkflowStepRepresentation toRepresentation(WorkflowStep step) {
+    private List<WorkflowConditionRepresentation> toConditionRepresentation(Workflow workflow) {
+        MultivaluedHashMap<String, String> workflowConfig = ofNullable(workflow.getConfig()).orElse(new MultivaluedHashMap<>());
+        List<String> ids = workflowConfig.getOrDefault(CONFIG_CONDITIONS, List.of());
+
+        if (ids.isEmpty()) {
+            return null;
+        }
+
+        List<WorkflowConditionRepresentation> conditions = new ArrayList<>();
+
+        for (String id : ids) {
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+
+            for (Entry<String, List<String>> configEntry : workflowConfig.entrySet()) {
+                String key = configEntry.getKey();
+                if (key.startsWith(id + ".")) {
+                    config.put(key.substring(id.length() + 1), configEntry.getValue());
+                }
+            }
+
+            conditions.add(new WorkflowConditionRepresentation(id, config));
+        }
+
+        return conditions;
+    }
+
+    private List<WorkflowStepRepresentation> toRepresentation(List<WorkflowStep> existingSteps) {
+        if (existingSteps == null || existingSteps.isEmpty()) {
+            return null;
+        }
+
+        List<WorkflowStepRepresentation> steps = new ArrayList<>();
+
+        for (WorkflowStep step : existingSteps) {
+            steps.add(toRepresentation(step));
+        }
+
+        return steps;
+    }
+
+    public WorkflowStepRepresentation toRepresentation(WorkflowStep step) {
         List<WorkflowStepRepresentation> steps = step.getSteps().stream().map(this::toRepresentation).toList();
         return new WorkflowStepRepresentation(step.getId(), step.getProviderId(), step.getConfig(), steps);
     }
@@ -340,22 +385,23 @@ public class WorkflowsManager {
         validateWorkflow(rep, config);
 
         for (WorkflowConditionRepresentation condition : conditions) {
-            String conditionProviderId = condition.getProviderId();
-            config.computeIfAbsent("conditions", key -> new ArrayList<>()).add(conditionProviderId);
+            String conditionProviderId = condition.getUses();
+            getConditionProviderFactory(conditionProviderId);
+            config.computeIfAbsent(CONFIG_CONDITIONS, key -> new ArrayList<>()).add(conditionProviderId);
 
             for (Entry<String, List<String>> configEntry : condition.getConfig().entrySet()) {
                 config.put(conditionProviderId + "." + configEntry.getKey(), configEntry.getValue());
             }
         }
 
-        Workflow workflow = addWorkflow(rep.getProviderId(), config);
+        Workflow workflow = addWorkflow(rep.getUses(), config);
         List<WorkflowStep> steps = new ArrayList<>();
 
         for (WorkflowStepRepresentation stepRep : rep.getSteps()) {
             steps.add(toModel(stepRep));
         }
 
-        createSteps(workflow, steps);
+        addSteps(workflow, workflow.getId(), steps);
 
         return workflow;
     }
@@ -366,10 +412,10 @@ public class WorkflowsManager {
         //  immediate workflow cannot have time conditions
         //  all steps of scheduled workflow must have time condition
 
-        boolean isImmediate = config.containsKey(SCHEDULED_KEY) && !Boolean.parseBoolean(config.getFirst(SCHEDULED_KEY));
-        boolean isRecurring = config.containsKey(RECURRING_KEY) && Boolean.parseBoolean(config.getFirst(RECURRING_KEY));
+        boolean isImmediate = config.containsKey(CONFIG_SCHEDULED) && !Boolean.parseBoolean(config.getFirst(CONFIG_SCHEDULED));
+        boolean isRecurring = config.containsKey(CONFIG_RECURRING) && Boolean.parseBoolean(config.getFirst(CONFIG_RECURRING));
         boolean hasTimeCondition = rep.getSteps().stream().allMatch(step -> step.getConfig() != null
-                && step.getConfig().containsKey(AFTER_KEY));
+                && step.getConfig().containsKey(CONFIG_AFTER));
         if (isImmediate && isRecurring) {
             throw new WorkflowInvalidStateException("Workflow cannot be both immediate and recurring.");
         }
@@ -378,6 +424,20 @@ public class WorkflowsManager {
         }
         if (!isImmediate && !hasTimeCondition) {
             throw new WorkflowInvalidStateException("Scheduled workflow cannot have steps without time conditions.");
+        }
+
+        validateEvents(rep.getOnValues());
+        validateEvents(rep.getOnEventsReset());
+    }
+
+
+    private static void validateEvents(List<String> events) {
+        for (String event : ofNullable(events).orElse(List.of())) {
+            try {
+                ResourceOperationType.valueOf(event.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new WorkflowInvalidStateException("Invalid event type: " + event);
+            }
         }
     }
 
@@ -388,7 +448,7 @@ public class WorkflowsManager {
             subSteps.add(toModel(subStep));
         }
 
-        return new WorkflowStep(rep.getProviderId(), rep.getConfig(), subSteps);
+        return new WorkflowStep(rep.getUses(), rep.getConfig(), subSteps);
     }
 
     public void bind(Workflow workflow, ResourceType type, String resourceId) {
@@ -405,6 +465,8 @@ public class WorkflowsManager {
         boolean isAggregatedStep = !step.getSteps().isEmpty();
         boolean isScheduledWorkflow = workflow.isScheduled();
 
+        getStepProviderFactory(step);
+
         if (isAggregatedStep) {
             if (!step.getProviderId().equals(AggregatedStepProviderFactory.ID)) {
                 // for now, only AggregatedStepProvider supports having sub-steps, but we might want to support
@@ -417,17 +479,17 @@ public class WorkflowsManager {
             // for each sub-step (in case it's not aggregated step on its own) check all it's sub-steps do not have
             // time conditions, all its sub-steps are meant to be run at once
             if (subSteps.stream().anyMatch(subStep ->
-                    subStep.getConfig().getFirst(AFTER_KEY) != null &&
+                    subStep.getConfig().getFirst(CONFIG_AFTER) != null &&
                             !subStep.getProviderId().equals(AggregatedStepProviderFactory.ID))) {
                 throw new ModelValidationException("Sub-steps of aggregated step cannot have time conditions.");
             }
         } else {
             if (isScheduledWorkflow) {
-                if (step.getConfig().getFirst(AFTER_KEY) == null || step.getAfter() < 0) {
+                if (step.getConfig().getFirst(CONFIG_AFTER) == null || step.getAfter() < 0) {
                     throw new ModelValidationException("All steps of scheduled workflow must have a valid 'after' time condition.");
                 }
             } else { // immediate workflow
-                if (step.getConfig().getFirst(AFTER_KEY) != null) {
+                if (step.getConfig().getFirst(CONFIG_AFTER) != null) {
                     throw new ModelValidationException("Immediate workflow step cannot have a time condition.");
                 }
             }
@@ -524,13 +586,6 @@ public class WorkflowsManager {
         }
     }
 
-    public WorkflowStepRepresentation toStepRepresentation(WorkflowStep step) {
-        List<WorkflowStepRepresentation> steps = step.getSteps().stream()
-                .map(this::toStepRepresentation)
-                .toList();
-        return new WorkflowStepRepresentation(step.getId(), step.getProviderId(), step.getConfig(), steps);
-    }
-
     public WorkflowStep toStepModel(WorkflowStepRepresentation rep) {
         List<WorkflowStep> subSteps = new ArrayList<>();
 
@@ -538,6 +593,36 @@ public class WorkflowsManager {
             subSteps.add(toStepModel(subStep));
         }
 
-        return new WorkflowStep(rep.getProviderId(), rep.getConfig(), subSteps);
+        return new WorkflowStep(rep.getUses(), rep.getConfig(), subSteps);
+    }
+
+    public WorkflowConditionProvider getConditionProvider(String providerId, MultivaluedHashMap<String, String> modelConfig) {
+        WorkflowConditionProviderFactory<WorkflowConditionProvider> providerFactory = getConditionProviderFactory(providerId);
+        Map<String, List<String>> config = new HashMap<>();
+
+        for (Entry<String, List<String>> configEntry : modelConfig.entrySet()) {
+            if (configEntry.getKey().startsWith(providerId)) {
+                config.put(configEntry.getKey().substring(providerId.length() + 1), configEntry.getValue());
+            }
+        }
+
+        WorkflowConditionProvider condition = providerFactory.create(session, config);
+
+        if (condition == null) {
+            throw new IllegalStateException("Factory " + providerFactory.getClass() + " returned a null provider");
+        }
+
+        return condition;
+    }
+
+    private WorkflowConditionProviderFactory<WorkflowConditionProvider> getConditionProviderFactory(String providerId) {
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        WorkflowConditionProviderFactory<WorkflowConditionProvider> providerFactory = (WorkflowConditionProviderFactory<WorkflowConditionProvider>) sessionFactory.getProviderFactory(WorkflowConditionProvider.class, providerId);
+
+        if (providerFactory == null) {
+            throw new WorkflowInvalidStateException("Could not find condition provider: " + providerId);
+        }
+
+        return providerFactory;
     }
 }

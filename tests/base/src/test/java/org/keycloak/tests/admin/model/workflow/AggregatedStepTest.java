@@ -70,7 +70,7 @@ public class AggregatedStepTest {
         WorkflowRepresentation workflow = workflows.get(0);
         assertThat(workflow.getSteps(), hasSize(1));
         WorkflowStepRepresentation aggregatedStep = workflow.getSteps().get(0);
-        assertThat(aggregatedStep.getProviderId(), is(AggregatedStepProviderFactory.ID));
+        assertThat(aggregatedStep.getUses(), is(AggregatedStepProviderFactory.ID));
         List<WorkflowStepRepresentation> steps = aggregatedStep.getSteps();
         assertThat(steps, hasSize(2));
         assertStep(steps, SetUserAttributeStepProviderFactory.ID, a -> {
@@ -219,7 +219,7 @@ public class AggregatedStepTest {
     private void assertStep(List<WorkflowStepRepresentation> steps, String expectedProviderId, Consumer<WorkflowStepRepresentation> assertions) {
         assertTrue(steps.stream()
                 .anyMatch(a -> {
-                    if (a.getProviderId().equals(expectedProviderId)) {
+                    if (a.getUses().equals(expectedProviderId)) {
                         assertions.accept(a);
                         return true;
                     }

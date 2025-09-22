@@ -16,9 +16,11 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 import java.util.List;
+import java.util.Optional;
 
 public class WorkflowsResource {
 
@@ -44,10 +46,11 @@ public class WorkflowsResource {
         }
     }
 
+    @Path("set")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createAll(List<WorkflowRepresentation> reps) {
-        for (WorkflowRepresentation workflow : reps) {
+    public Response createAll(WorkflowSetRepresentation workflows) {
+        for (WorkflowRepresentation workflow : Optional.ofNullable(workflows.getWorkflows()).orElse(List.of())) {
             create(workflow).close();
         }
         return Response.created(session.getContext().getUri().getRequestUri()).build();

@@ -17,15 +17,15 @@
 
 package org.keycloak.models.workflow;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
+
 import java.util.List;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 
 public class WorkflowStep implements Comparable<WorkflowStep> {
-
-    public static final String AFTER_KEY = "after";
-    public static final String PRIORITY_KEY = "priority";
 
     private String id;
     private String providerId;
@@ -72,11 +72,11 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
     }
 
     public void setPriority(int priority) {
-        setConfig(PRIORITY_KEY, String.valueOf(priority));
+        setConfig(CONFIG_PRIORITY, String.valueOf(priority));
     }
 
     public int getPriority() {
-        String value = getConfig().getFirst(PRIORITY_KEY);
+        String value = getConfig().getFirst(CONFIG_PRIORITY);
         if (value == null) {
             return Integer.MAX_VALUE;
         }
@@ -88,11 +88,11 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
     }
 
     public void setAfter(Long ms) {
-        setConfig(AFTER_KEY, String.valueOf(ms));
+        setConfig(CONFIG_AFTER, String.valueOf(ms));
     }
 
     public Long getAfter() {
-        return Long.valueOf(getConfig().getFirstOrDefault(AFTER_KEY, "0"));
+        return Long.valueOf(getConfig().getFirstOrDefault(CONFIG_AFTER, "0"));
     }
 
     public List<WorkflowStep> getSteps() {
