@@ -176,8 +176,18 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     protected void updateEmail(UserModel user, BrokeredIdentityContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
         // Could be the case during external-internal token exchange
-        if (authSession == null) return;
+        if (authSession == null) {
+            return;
+        }
+
+        String email = context.getEmail();
+
+        if (email == null) {
+            // do not set email if not provided by the IdP
+            return;
+        }
 
         boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
 
@@ -189,7 +199,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
             }
 
             setEmailVerified(user, context);
-            user.setEmail(context.getEmail());
+            user.setEmail(email);
         }
     }
 
