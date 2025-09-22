@@ -6,17 +6,31 @@
 title="High availability overview"
 summary="Explore the different {project_name} high-availability architectures" >
 
-{project_name} supports different high-availability architectures, allowing system administrators to pick the deployment type most suitable
+{project_name} can be deployed in a number of high-availability architectures, allowing system administrators to pick the deployment type most suitable
 for their needs. Ease of deployment, cost and fault-tolerance guarantees are important considerations when determining the correct architecture
 for your deployments.
 
+<@profile.ifProduct>
+
+Any {project_name} deployment must be installed on a properly configured OpenShift cluster that has been configured per
+the https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html/installation_overview/index[OpenShift installation instructions].
+For any {project_name} installations on OpenShift clusters that span multiple sites (i.e. single cluster or multi-clusters across multiple availability zones)
+the OpenShift cluster must adhere to the guidance for Red Hat OpenShift Container Platform Clusters.
+
+Ultimately high availability architectures involve many components in addition to the software running and the responsibility
+for availability of the service is with the customer. This guide has recommended practices for using the {project_name}
+in such high availability architectures.
+
+</@profile.ifProduct>
+
 == Architectures
 
-This document describes two architectures to deploy {project_name}: Single-cluster deployments and multi-cluster deployments.
+This document describes two high availability architectures in which to deploy {project_name}: Single-cluster deployments and multi-cluster deployments.
 
 === Single-cluster deployments
 
-Deploy {project_name} in a single cluster, optionally across multiple availability-zones in the same region, using <@links.ha id="single-cluster-introduction" />.
+Deploy {project_name} in a single cluster, optionally across multiple availability-zones or data centers with the required
+network latency and database configuration, using <@links.ha id="single-cluster-introduction" />.
 
 Advantages::
 * No external dependencies
@@ -33,7 +47,7 @@ Advantages::
 
 </@profile.ifCommunity>
 
-* Tolerate availability-zone failures if deployed to multiple availability zones
+* Tolerate availability-zone failure or data center failure, if deployed to multiple availability zones or data centers
 
 Disadvantages::
 * {kubernetes} cluster is a single point of failure:
@@ -41,7 +55,8 @@ Disadvantages::
 
 === Multi-cluster deployments
 
-Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones to increase availability using <@links.ha id="multi-cluster-introduction" />.
+Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones
+or data centers with the required network latency and database configuration using <@links.ha id="multi-cluster-introduction" />.
 
 Advantages::
 * Tolerate availability-zone failure
