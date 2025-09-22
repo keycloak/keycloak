@@ -70,7 +70,7 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        setAttribute(name, List.of(value));
+        setAttribute(name, value != null ? List.of(value) : null);
     }
 
     @Override
