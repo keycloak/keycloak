@@ -36,6 +36,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -504,7 +505,11 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
         CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setFormat(getCredentialFormat());
+        credentialRequest.setCredentialDefinition(
+                new SupportedCredentialConfiguration()
+                        .setFormat(getCredentialFormat())
+                        .getCredentialDefinition()
+        );
         credentialRequest.setCredentialIdentifier(credentialIdentifier);
 
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
