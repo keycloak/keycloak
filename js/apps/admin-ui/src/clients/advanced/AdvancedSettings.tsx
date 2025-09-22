@@ -9,7 +9,6 @@ import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
-import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
 
@@ -29,9 +28,6 @@ export const AdvancedSettings = ({
   const { t } = useTranslation();
 
   const { realmRepresentation: realm } = useRealm();
-
-  const isFeatureEnabled = useIsFeatureEnabled();
-  const isDPoPEnabled = isFeatureEnabled(Feature.DPoP);
 
   const { control } = useFormContext();
   return (
@@ -124,16 +120,6 @@ export const AdvancedSettings = ({
             labelIcon={t("oAuthMutualHelp")}
             stringify
           />
-          {isDPoPEnabled && (
-            <DefaultSwitchControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.dpop.bound.access.tokens",
-              )}
-              label={t("oAuthDPoP")}
-              labelIcon={t("oAuthDPoPHelp")}
-              stringify
-            />
-          )}
           <DefaultSwitchControl
             name={convertAttributeNameToForm<FormFields>(
               "attributes.require.pushed.authorization.requests",
