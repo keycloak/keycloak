@@ -17,6 +17,8 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 
 import java.util.List;
@@ -35,14 +37,15 @@ public class OID4VCAuthorizationDetailsResponse extends AuthorizationDetailsResp
     @JsonProperty("credential_configuration_id")
     private String credentialConfigurationId;
 
-    @JsonProperty("format")
-    private String format;
-
     @JsonProperty("locations")
     private List<String> locations;
 
     @JsonProperty("credential_identifiers")
     private List<String> credentialIdentifiers;
+
+    @JsonProperty("claims")
+    private List<ClaimsDescription> claims;
+
 
     public String getType() {
         return type;
@@ -60,14 +63,6 @@ public class OID4VCAuthorizationDetailsResponse extends AuthorizationDetailsResp
         this.credentialConfigurationId = credentialConfigurationId;
     }
 
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
     public List<String> getLocations() {
         return locations;
     }
@@ -82,5 +77,13 @@ public class OID4VCAuthorizationDetailsResponse extends AuthorizationDetailsResp
 
     public void setCredentialIdentifiers(List<String> credentialIdentifiers) {
         this.credentialIdentifiers = credentialIdentifiers;
+    }
+
+    public List<ClaimsDescription> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(List<ClaimsDescription> claims) {
+        this.claims = claims;
     }
 }

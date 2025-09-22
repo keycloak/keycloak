@@ -27,6 +27,8 @@ import java.util.HashMap;
 
 /**
  * Represents an authorization_details object in the Token Request as per OID4VCI.
+ * 
+ * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
 public class AuthorizationDetail {
 
@@ -36,11 +38,11 @@ public class AuthorizationDetail {
     @JsonProperty("credential_configuration_id")
     private String credentialConfigurationId;
 
-    @JsonProperty("format")
-    private String format;
-
     @JsonProperty("locations")
     private List<String> locations;
+
+    @JsonProperty("claims")
+    private List<ClaimsDescription> claims;
 
     @JsonIgnore
     private Map<String, Object> additionalFields = new HashMap<>();
@@ -71,19 +73,19 @@ public class AuthorizationDetail {
         this.credentialConfigurationId = credentialConfigurationId;
     }
 
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
     public List<String> getLocations() {
         return locations;
     }
 
     public void setLocations(List<String> locations) {
         this.locations = locations;
+    }
+
+    public List<ClaimsDescription> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(List<ClaimsDescription> claims) {
+        this.claims = claims;
     }
 }
