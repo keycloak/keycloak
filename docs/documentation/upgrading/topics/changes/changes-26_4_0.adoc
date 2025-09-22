@@ -4,6 +4,14 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== `acr_values` request parameter is not forwarded automatically to identity providers
+
+The `acr_values` request parameter is no longer automatically forwarded to OpenID Connect identity providers during authentication.
+This change enhances security by preventing unintended disclosure of authentication context information to external IDPs.
+
+If you are relying on the `acr_values` parameter to be propagated to an identity provider, you must now explicitly set `acr_values` request parameter
+to the `Forwarded query parameters` setting in the identity provider configuration.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
