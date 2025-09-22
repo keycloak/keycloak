@@ -90,7 +90,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private int httpsPort;
     private final boolean debug;
     private final boolean enableTls;
-    private final Path serverKeyStorePath;
     private final boolean reCreate;
     private final boolean removeBuildOptionsAfterBuild;
     private final int requestPort;
@@ -100,14 +99,13 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private final OutputConsumer outputConsumer;
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
-        this(debug, manualStop, enableTls, null, reCreate, removeBuildOptionsAfterBuild, requestPort, new DefaultOutputConsumer());
+        this(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort, new DefaultOutputConsumer());
     }
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, Path serverKeyStorePath, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort, OutputConsumer outputConsumer) {
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort, OutputConsumer outputConsumer) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.enableTls = enableTls;
-        this.serverKeyStorePath = serverKeyStorePath;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
         this.requestPort = requestPort;
@@ -201,12 +199,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private void configureServer() {
         if (enableTls) {
-            Path targetKeystorePath = Path.of("conf", "server.keystore");
-            if (serverKeyStorePath == null) {
-                copyOrReplaceFileFromClasspath("/server.keystore", targetKeystorePath);
-            } else {
-                copyOrReplaceFile(serverKeyStorePath, targetKeystorePath);
-            }
+            copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
         }
     }
 

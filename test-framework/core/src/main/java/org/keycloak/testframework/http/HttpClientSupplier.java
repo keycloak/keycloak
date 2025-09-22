@@ -1,15 +1,13 @@
 package org.keycloak.testframework.http;
 
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.keycloak.testframework.annotations.InjectHttpClient;
-import org.keycloak.testframework.https.ManagedCertificate;
-import org.keycloak.testframework.https.ManagedCertificateException;
+import org.keycloak.testframework.https.ManagedCertificatesException;
+import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -31,20 +29,21 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
 
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         if (server.isTlsEnabled()) {
-            ManagedCertificate managedCert = instanceContext.getDependency(ManagedCertificate.class);
+            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
             try {
                 KeyStore serverKeyStore = managedCert.getKeyStore();
                 SSLContext sslContext = SSLContextBuilder.create()
-                        .loadTrustMaterial(serverKeyStore, new TrustSelfSignedStrategy())
+                        .loadTrustMaterial(serverKeyStore, null)
                         .build();
 
                 SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
                         sslContext,
-                        NoopHostnameVerifier.INSTANCE);
+                        SSLConnectionSocketFactory.getDefaultHostnameVerifier()
+                );
 
                 builder.setSSLSocketFactory(sslSocketFactory);
             } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
-                throw new ManagedCertificateException(e);
+                throw new ManagedCertificatesException(e);
             }
         }
 

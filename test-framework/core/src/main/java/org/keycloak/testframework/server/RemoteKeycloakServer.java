@@ -3,7 +3,6 @@ package org.keycloak.testframework.server;
 import io.quarkus.maven.dependency.Dependency;
 
 import java.net.ConnectException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Set;
@@ -12,11 +11,6 @@ import java.util.concurrent.TimeUnit;
 public class RemoteKeycloakServer implements KeycloakServer {
 
     private boolean enableTls = false;
-    private final String serverKeyStorePath;
-
-    public RemoteKeycloakServer(Path serverKeyStorePath) {
-        this.serverKeyStorePath = serverKeyStorePath == null ? null : serverKeyStorePath.toString();
-    }
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
@@ -62,9 +56,6 @@ public class RemoteKeycloakServer implements KeycloakServer {
                 .append(", please start Keycloak with:\n\n");
 
         sb.append(String.join(" \\\n", keycloakServerConfigBuilder.toArgs()));
-        if (isTlsEnabled()) {
-            sb.append(" \\\n--https-key-store-file=").append(serverKeyStorePath);
-        }
         sb.append("\n\n");
 
         Set<Dependency> dependencies = keycloakServerConfigBuilder.toDependencies();

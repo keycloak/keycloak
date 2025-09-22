@@ -1,7 +1,7 @@
 package org.keycloak.testframework.admin;
 
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
-import org.keycloak.testframework.https.ManagedCertificate;
+import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -19,7 +19,7 @@ public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, 
             return new AdminClientFactory(server.getBaseUrl());
         }
 
-        ManagedCertificate managedCert = instanceContext.getDependency(ManagedCertificate.class);
+        ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
         KeyStore serverKeyStore = managedCert.getKeyStore();
         return new AdminClientFactory(server.getBaseUrl(), serverKeyStore);
     }
