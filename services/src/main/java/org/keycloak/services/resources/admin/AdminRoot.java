@@ -291,7 +291,7 @@ public class AdminRoot {
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
-        return new ServerInfoAdminResource(session);
+        return new ServerInfoAdminResource(session, auth);
     }
 
     private HttpRequest getHttpRequest() {
