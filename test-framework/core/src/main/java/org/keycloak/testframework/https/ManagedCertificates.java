@@ -1,8 +1,10 @@
 package org.keycloak.testframework.https;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.crypto.def.DefaultCryptoProvider;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -21,9 +23,9 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-public class ManagedCertificate {
+public class ManagedCertificates {
 
-    private static final Logger LOGGER = Logger.getLogger(ManagedCertificate.class);
+    private static final Logger LOGGER = Logger.getLogger(ManagedCertificates.class);
 
     private final CryptoProvider cryptoProvider;
 
@@ -32,14 +34,18 @@ public class ManagedCertificate {
     private KeyPair keyPair;
 
     private final static Path KEYSTORE_FILE_PATH = Paths.get(System.getProperty("java.io.tmpdir"), "kc-server-testing.keystore");
-    private final static char[] PASSWORD = "password".toCharArray();
+    public final static char[] KEYSTORE_PASSWORD = "password".toCharArray();
+    public final static char[] PRVKEY_PASSWORD = "password".toCharArray();
 
-    private final static String CERT_ENTRY = "cert";
-    private final static String PRV_KEY_ENTRY = "prvKey";
+    public final static String CERT_ENTRY = "cert";
+    public final static String PRV_KEY_ENTRY = "prvKey";
 
 
-    public ManagedCertificate(CryptoProvider cryptoProvider) throws ManagedCertificateException {
-        this.cryptoProvider = cryptoProvider;
+    public ManagedCertificates() throws ManagedCertificatesException {
+        cryptoProvider = new DefaultCryptoProvider();
+        if (!CryptoIntegration.isInitialised()) {
+            CryptoIntegration.setProvider(cryptoProvider);
+        }
         initKeyStore();
     }
 
@@ -55,7 +61,7 @@ public class ManagedCertificate {
         return certificate;
     }
 
-    private void initKeyStore() throws ManagedCertificateException {
+    private void initKeyStore() throws ManagedCertificatesException {
         try {
             keyStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
 
@@ -65,19 +71,20 @@ public class ManagedCertificate {
                 generateKeyStoreContents();
             }
         } catch (Exception e) {
-            throw new ManagedCertificateException(e);
+            throw new ManagedCertificatesException(e);
         }
     }
 
     private void loadKeyStoreContents() throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException, IOException, CertificateException {
         LOGGER.debugv("Existing KeyStore file found in {0}", KEYSTORE_FILE_PATH);
         try (FileInputStream fis = new FileInputStream(KEYSTORE_FILE_PATH.toFile())) {
-            keyStore.load(fis, PASSWORD);
+            keyStore.load(fis, KEYSTORE_PASSWORD);
+            // if this is failing delete the existing keystore, or implement a fallback mechanism to generate a new one instead
         }
 
         certificate = (X509Certificate) keyStore.getCertificate(CERT_ENTRY);
         PublicKey pubKey = certificate.getPublicKey();
-        PrivateKey prvKey = (PrivateKey) keyStore.getKey(PRV_KEY_ENTRY, PASSWORD);
+        PrivateKey prvKey = (PrivateKey) keyStore.getKey(PRV_KEY_ENTRY, PRVKEY_PASSWORD);
         keyPair = new KeyPair(pubKey, prvKey);
     }
 
@@ -88,11 +95,11 @@ public class ManagedCertificate {
         createKeycloakServerCertificate();
 
         keyStore.setCertificateEntry(CERT_ENTRY, certificate);
-        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), PASSWORD, new X509Certificate[]{certificate});
+        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), PRVKEY_PASSWORD, new X509Certificate[]{certificate});
 
         // store the generated keystore in a temp folder
         try (FileOutputStream fos = new FileOutputStream(KEYSTORE_FILE_PATH.toFile())) {
-            keyStore.store(fos, PASSWORD);
+            keyStore.store(fos, KEYSTORE_PASSWORD);
         }
     }
 

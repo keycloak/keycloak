@@ -5,7 +5,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.infinispan.InfinispanServer;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
-import org.keycloak.testframework.https.ManagedCertificate;
+import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -58,15 +58,14 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
             getLogger().debugv("Startup command and options: \n\t{0}", String.join("\n\t", command.toArgs()));
         }
 
-        Path serverKeyStore = null;
         if (command.tlsEnabled()) {
-            ManagedCertificate managedCert = instanceContext.getDependency(ManagedCertificate.class);
-            serverKeyStore = managedCert.getKeycloakServerKeyStorePath();
+            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath().toString());
         }
 
         long start = System.currentTimeMillis();
 
-        KeycloakServer server = getServer(serverKeyStore);
+        KeycloakServer server = getServer();
         server.start(command);
 
         getLogger().infov("Keycloak test server started in {0} ms", System.currentTimeMillis() - start);
@@ -89,7 +88,7 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         instanceContext.getValue().stop();
     }
 
-    public abstract KeycloakServer getServer(Path serverKeyStorePath);
+    public abstract KeycloakServer getServer();
 
     public abstract boolean requiresDatabase();
 

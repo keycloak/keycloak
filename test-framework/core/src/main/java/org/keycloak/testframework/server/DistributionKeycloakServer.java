@@ -22,17 +22,15 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
     private final boolean debug;
     private boolean enableTls = false;
-    private final Path serverKeyStore;
 
-    public DistributionKeycloakServer(boolean debug, Path serverKeyStore) {
+    public DistributionKeycloakServer(boolean debug) {
         this.debug = debug;
-        this.serverKeyStore = serverKeyStore;
     }
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         enableTls = keycloakServerConfigBuilder.tlsEnabled();
-        keycloak = new RawKeycloakDistribution(false, MANUAL_STOP, enableTls, serverKeyStore, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
+        keycloak = new RawKeycloakDistribution(false, MANUAL_STOP, false, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
 
         // RawKeycloakDistribution sets "DEBUG_SUSPEND", not "DEBUG" when debug is passed to constructor
         if (debug) {

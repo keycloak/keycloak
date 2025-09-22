@@ -8,7 +8,6 @@ import org.keycloak.platform.Platform;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
@@ -17,11 +16,6 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
     private Keycloak keycloak;
     private Path homeDir;
     private boolean enableTls = false;
-    private final String serverKeyStorePath;
-
-    public EmbeddedKeycloakServer(Path serverKeyStorePath) {
-        this.serverKeyStorePath = serverKeyStorePath == null ? null : serverKeyStorePath.toString();
-    }
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
@@ -55,11 +49,7 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         }
 
         builder.setHomeDir(homeDir);
-        List<String> args = keycloakServerConfigBuilder.toArgs();
-        if (enableTls) {
-            args.add("--https-key-store-file=" + serverKeyStorePath);
-        }
-        keycloak = builder.start(args);
+        keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
     }
 
     @Override

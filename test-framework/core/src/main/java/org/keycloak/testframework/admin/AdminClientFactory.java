@@ -1,11 +1,9 @@
 package org.keycloak.testframework.admin;
 
-import jakarta.ws.rs.client.Client;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.testframework.https.ManagedCertificateException;
+import org.keycloak.testframework.https.ManagedCertificatesException;
 
 import javax.net.ssl.SSLContext;
 import java.security.KeyManagementException;
@@ -26,16 +24,18 @@ public class AdminClientFactory {
         delegateSupplier = () -> KeycloakBuilder.builder().serverUrl(serverUrl);
     }
 
-    AdminClientFactory(String serverUrl, KeyStore serverTrustStore) {
+    AdminClientFactory(String serverUrl, KeyStore serverKeyStore) {
         try {
-        SSLContext sslContext = SSLContextBuilder.create()
-                .loadTrustMaterial(serverTrustStore, new TrustSelfSignedStrategy())
-                .build();
+            SSLContext sslContext = SSLContextBuilder.create()
+                    .loadTrustMaterial(serverKeyStore, null)
+                    .build();
 
-            Client restEasyClient = Keycloak.getClientProvider().newRestEasyClient(null, sslContext, false);
-            delegateSupplier = () -> KeycloakBuilder.builder().serverUrl(serverUrl).resteasyClient(restEasyClient);
+            delegateSupplier = () ->
+                    KeycloakBuilder.builder()
+                            .serverUrl(serverUrl)
+                            .resteasyClient(Keycloak.getClientProvider().newRestEasyClient(null, sslContext, false));
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
-            throw new ManagedCertificateException(e);
+            throw new ManagedCertificatesException(e);
         }
     }
 
