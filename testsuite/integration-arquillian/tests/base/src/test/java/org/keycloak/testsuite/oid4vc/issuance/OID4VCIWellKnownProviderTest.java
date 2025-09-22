@@ -38,65 +38,65 @@ import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 
 public class OID4VCIWellKnownProviderTest extends OID4VCTest {
 
-	@Test
-	public void assertOnlyAsymmetricIncluded() throws IOException {
+    @Test
+    public void assertOnlyAsymmetricIncluded() throws IOException {
 
-		getTestingClient()
-				.server(TEST_REALM_NAME)
-				.run(session -> {
-					OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
-					CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
-					assertEquals("Only one asymmetric encryption key is present in the realm.",
-							1,
-							credentialIssuer.getCredentialResponseEncryption()
-									.getAlgValuesSupported()
-									.size());
-					assertTrue("The algorithm of the configured asymmetric encryption key should be provided.",
-							credentialIssuer.getCredentialResponseEncryption().getAlgValuesSupported().contains(RSA_OAEP_256));
-				});
-	}
+        getTestingClient()
+                .server(TEST_REALM_NAME)
+                .run(session -> {
+                    OID4VCIssuerWellKnownProvider oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
+                    CredentialIssuer credentialIssuer = oid4VCIssuerWellKnownProvider.getIssuerMetadata();
+                    assertEquals("Only one asymmetric encryption key is present in the realm.",
+                            1,
+                            credentialIssuer.getCredentialResponseEncryption()
+                                    .getAlgValuesSupported()
+                                    .size());
+                    assertTrue("The algorithm of the configured asymmetric encryption key should be provided.",
+                            credentialIssuer.getCredentialResponseEncryption().getAlgValuesSupported().contains(RSA_OAEP_256));
+                });
+    }
 
-	@Override
-	public void configureTestRealm(RealmRepresentation testRealm) {
-		if (testRealm.getComponents() != null) {
-			testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
-					getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
-			testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
-			testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated"));
-			testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated"));
-		} else {
-			testRealm.setComponents(new MultivaluedHashMap<>(
-					Map.of("org.keycloak.keys.KeyProvider",
-							List.of(
-									getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100),
-									getRsaKeyProvider(RSA_KEY),
-									getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated"),
-									getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated"))
-					)));
-		}
-	}
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        if (testRealm.getComponents() != null) {
+            testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                    getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
+            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(RSA_KEY));
+            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated"));
+            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated"));
+        } else {
+            testRealm.setComponents(new MultivaluedHashMap<>(
+                    Map.of("org.keycloak.keys.KeyProvider",
+                            List.of(
+                                    getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100),
+                                    getRsaKeyProvider(RSA_KEY),
+                                    getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated"),
+                                    getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated"))
+                    )));
+        }
+    }
 
-	public static ComponentExportRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
-		// Generate a random AES key (default length: 256 bits)
-		byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
+    public static ComponentExportRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
+        // Generate a random AES key (default length: 256 bits)
+        byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
 
-		String secretBase64 = org.keycloak.common.util.Base64.encodeBytes(secret);
+        String secretBase64 = org.keycloak.common.util.Base64.encodeBytes(secret);
 
-		ComponentExportRepresentation component = new ComponentExportRepresentation();
-		component.setName(keyName);
-		component.setId(UUID.randomUUID().toString());
-		component.setProviderId(providerId);
+        ComponentExportRepresentation component = new ComponentExportRepresentation();
+        component.setName(keyName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId(providerId);
 
-		component.setConfig(new MultivaluedHashMap<>(
-				Map.of(
-						"secret", List.of(secretBase64),
-						"active", List.of("true"),
-						"priority", List.of(String.valueOf(100)),
-						"enabled", List.of("true"),
-						"algorithm", List.of(algorithm),
-						"keyUse", List.of(keyUse) // encryption usage
-				)
-		));
-		return component;
-	}
+        component.setConfig(new MultivaluedHashMap<>(
+                Map.of(
+                        "secret", List.of(secretBase64),
+                        "active", List.of("true"),
+                        "priority", List.of(String.valueOf(100)),
+                        "enabled", List.of("true"),
+                        "algorithm", List.of(algorithm),
+                        "keyUse", List.of(keyUse) // encryption usage
+                )
+        ));
+        return component;
+    }
 }
