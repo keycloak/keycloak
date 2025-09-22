@@ -504,7 +504,6 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
         CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setFormat(getCredentialFormat());
         credentialRequest.setCredentialIdentifier(credentialIdentifier);
 
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
