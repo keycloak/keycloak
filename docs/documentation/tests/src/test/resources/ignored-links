@@ -40,5 +40,7 @@ https://www.npmjs.com/package/*
 # Failing because of broken certificate, can likely be restored later.
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
-# To be removed once KC 26.4 has been released
+# BEGIN - To be removed once KC 26.4 has been released
 https://www.keycloak.org/securing-apps/specifications
+https://www.keycloak.org/server/db#configure-multiple-datasources
+# END
