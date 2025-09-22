@@ -71,7 +71,7 @@ public class OpenIdFederationClientRegistrationService extends AbstractClientReg
                 throw new ErrorResponseException(Errors.INVALID_TRUST_ANCHOR, "No trusted trust anchor could be found", Response.Status.NOT_FOUND);
             }
             //TODO EntityFromTA will contains always actual RPMetadata after enforicng policies
-            RPMetadata rPMetadata = validTrustChain.getEntityFromTA() != null ?  validTrustChain.getEntityFromTA().getMetadata().getRelyingPartyMetadata() : statement.getMetadata().getRelyingPartyMetadata();
+            RPMetadata rPMetadata = statement.getMetadata().getRelyingPartyMetadata();
             if (rPMetadata.getJwks() == null && rPMetadata.getJwksUri() == null) {
                 rPMetadata.setJwks(statement.getJwks());
             }
@@ -131,7 +131,7 @@ public class OpenIdFederationClientRegistrationService extends AbstractClientReg
         if (!statement.getIssuer().trim().equals(statement.getSubject().trim())) {
             throw new ErrorResponseException(Errors.INVALID_ISSUER, "The registration request issuer differs from the subject.", Response.Status.NOT_FOUND);
         }
-        if (statement.getAudience() == null || !statement.getAudience()[0].equals(Urls.realmIssuer(session.getContext().getUri(UrlType.FRONTEND).getBaseUri(), session.getContext().getRealm().getName()))) {
+        if (statement.getAudience() == null || !statement.hasAudience(Urls.realmIssuer(session.getContext().getUri(UrlType.FRONTEND).getBaseUri(), session.getContext().getRealm().getName()))) {
             throw new ErrorResponseException(Errors.INVALID_REQUEST, "Aud must contain OP entity Identifier", Response.Status.BAD_REQUEST);
         }
     }

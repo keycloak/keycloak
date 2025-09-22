@@ -1,6 +1,5 @@
 package org.keycloak.services.trustchain;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -98,17 +97,16 @@ public class OpenIdFederationTrustChainProcessor implements TrustChainProcessor 
                     if (!validateEntityStatementFields(subNodeSubordinateES, authHint, leafEs.getSubject())) {
                         throw new ErrorResponseException(Errors.INVALID_TRUST_CHAIN, "Trust chain is not valid", Response.Status.BAD_REQUEST);
                     }
+                    if (leafEs.getSubject().equals(initialEntity) && (subNodeSubordinateES.getMetadata() == null || subNodeSubordinateES.getMetadata().getRelyingPartyMetadata() == null)
+                            && !OpenIdFederationUtils.containedInListEndpoint(subNodeSelfES.getMetadata().getFederationEntity().getFederationListEndpoint(), "openid_relying_party", initialEntity, session)) {
+                        //check that RP is registered as RP in immediate superior
+                        throw new ErrorResponseException(Errors.INVALID_TRUST_CHAIN, "Trust chain is not valid", Response.Status.BAD_REQUEST);
+                    }
                     logger.debug(String.format("EntityStatement of %s about %s. AuthHints: %s", subNodeSubordinateES.getIssuer(), subNodeSubordinateES.getSubject(), subNodeSubordinateES.getAuthorityHints()));
                     visitedNodes.add(subNodeSelfES.getSubject());
+
                     if (trustAnchorIds.contains(authHint)) {
                         TrustChainResolution trustAnchor = new TrustChainResolution();
-                        //fetch statement may include RPMetadata when trust anchor == Authority hint
-                        //otherwise check that RP is registered as RP in trust anchor
-                        if (subNodeSubordinateES.getSubject().equals(initialEntity) && subNodeSubordinateES.getMetadata() != null && subNodeSubordinateES.getMetadata().getRelyingPartyMetadata() != null) {
-                            trustAnchor.setEntityFromTA(subNodeSubordinateES);
-                        } else if (!OpenIdFederationUtils.containedInListEndpoint(subNodeSelfES.getMetadata().getFederationEntity().getFederationListEndpoint(), OpenIdFederationUtils.OPENID_RELAYING_PARTY, initialEntity, session)) {
-                            throw new ErrorResponseException(Errors.INVALID_TRUST_CHAIN, "Trust chain is not valid", Response.Status.BAD_REQUEST);
-                        }
                         trustAnchor.getParsedChain().add(0, subNodeSelfES);
                         trustAnchor.setTrustAnchorId(authHint);
                         chainsList.add(trustAnchor);
