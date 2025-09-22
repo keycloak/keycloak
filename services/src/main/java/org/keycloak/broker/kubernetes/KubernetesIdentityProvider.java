@@ -1,4 +1,4 @@
-package org.keycloak.broker.kube;
+package org.keycloak.broker.kubernetes;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -20,11 +20,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-public class KubeIdentityProvider extends OIDCIdentityProvider {
+public class KubernetesIdentityProvider extends OIDCIdentityProvider {
 
     private final String globalJwksUrl;
 
-    public KubeIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config, String globalJwksUrl) {
+    public KubernetesIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config, String globalJwksUrl) {
         super(session, config);
         this.globalJwksUrl = globalJwksUrl;
     }
@@ -37,7 +37,7 @@ public class KubeIdentityProvider extends OIDCIdentityProvider {
         String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), getConfig().getInternalId());
 
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-        return keyStorage.getPublicKey(modelKey, kid, alg, new KubeJwksEndpointLoader(session, globalJwksUrl, getConfig().getJwksUrl()));
+        return keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, globalJwksUrl, getConfig().getJwksUrl()));
     }
 
     @Override

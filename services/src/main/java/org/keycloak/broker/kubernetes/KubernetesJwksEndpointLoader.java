@@ -1,4 +1,4 @@
-package org.keycloak.broker.kube;
+package org.keycloak.broker.kubernetes;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
@@ -17,14 +17,14 @@ import org.keycloak.util.JsonSerialization;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
-public class KubeJwksEndpointLoader implements PublicKeyLoader {
+public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
     private final KeycloakSession session;
 
     private final boolean authenticate;
     private final String endpoint;
 
-    public KubeJwksEndpointLoader(KeycloakSession session, String globalEndpoint, String providerEndpoint) {
+    public KubernetesJwksEndpointLoader(KeycloakSession session, String globalEndpoint, String providerEndpoint) {
         this.session = session;
 
         if (providerEndpoint == null || providerEndpoint.isEmpty() || globalEndpoint.equals(providerEndpoint)) {
