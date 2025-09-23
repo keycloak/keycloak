@@ -267,7 +267,7 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private String transformConsoleColor(String value, ConfigSourceInterceptorContext context) {
-        return Optional.ofNullable(value).orElse(Boolean.toString(QuarkusConsole.hasColorSupport()));
+        return Optional.ofNullable(value).orElseGet(() -> Boolean.toString(QuarkusConsole.hasColorSupport()));
     }
 
     public static boolean isConsoleEnabled() {
