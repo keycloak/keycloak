@@ -50,8 +50,8 @@ this database
 </@profile.ifCommunity>
 or skip this section if you want to connect to a different database for which the database driver is already included.
 
-NOTE: Using custom drivers is generally considered unsupported, with the specific  exceptions mentioned in this guide
-which are fully supported.
+NOTE: Overriding the built-in database drivers or supplying your own drivers is considered unsupported.
+The only supported exceptions are explicitly documented in this guide, such as the Oracle Database driver.
 
 === Installing the Oracle Database driver
 
@@ -187,19 +187,6 @@ The following is a sample command for a PostgreSQL database.
 <@kc.start parameters="--db postgres --db-url jdbc:postgresql://mypostgres/mydatabase"/>
 
 Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
-
-== Overriding the default JDBC driver
-
-The server uses a default JDBC driver accordingly to the database you chose.
-
-To set a different driver you can set the `db-driver` with the fully qualified class name of the JDBC driver:
-
-<@kc.start parameters="--db postgres --db-driver=my.Driver"/>
-
-Regardless of the driver you set, the default driver is always available at runtime.
-
-Only set this property if you really need to. For instance, when leveraging the capabilities from a JDBC Driver Wrapper for
-a specific cloud database service.
 
 == Configuring Unicode support for the database
 
