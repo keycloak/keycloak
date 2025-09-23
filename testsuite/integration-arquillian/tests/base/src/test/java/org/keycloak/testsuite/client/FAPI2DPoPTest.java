@@ -26,7 +26,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -41,7 +40,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
@@ -65,7 +63,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRsaJwk;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateEcdsaKey;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPProof;
 
-@EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
 public class FAPI2DPoPTest extends AbstractFAPI2Test {
 
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
