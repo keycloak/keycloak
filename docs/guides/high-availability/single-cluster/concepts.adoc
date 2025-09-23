@@ -30,7 +30,7 @@ The same concepts could be applied to a set of virtual or physical machines and 
 
 == Single or multiple availability-zones
 
-The behaviour and high-availability guarantees of the {project_name} deployment are ultimately determined by the configuration of
+The behaviour and high-availability performance of the {project_name} deployment are ultimately determined by the configuration of
 the {kubernetes} cluster. Typically, {kubernetes} clusters are deployed on a single availability-zone, however in order to
 increase fault-tolerance, it is possible to https://kubernetes.io/docs/setup/best-practices/multiple-zones/[deploy the cluster across multiple availability-zones].
 
@@ -62,19 +62,23 @@ deployed on distinct nodes and distinct availability-zones when possible:
 
 [IMPORTANT]
 ====
-In order to ensure high-availability with multiple availability-zones, it is crucial that the Database is also able to
+In order to configure high-availability with multiple availability-zones, it is crucial that the Database is also able to
 withstand zone failures as {project_name} depends on the underlying database to remain available.
 ====
 
 == Failures which this setup can survive
-Deploying {project_name} on a single or across multiple availability-zones changes the high-availability characteristics
-significantly, therefore we consider these architectures independently.
+Deploying {project_name} on a single cluster in a single zone, or across multiple availability-zones, or data centers with
+the required network latency and database configuration, changes the high-availability characteristics significantly,
+therefore we consider these architectures independently.
 
 === Single Zone
 
+During testing of the high availability <@links.ha id="single-cluster-introduction" anchor="single-cluster-configuration" />, we observed the following
+restore times for the events described:
+
 [%autowidth]
 |===
-| Failure | Recovery | RPO^1^ | RTO^2^
+| Failure | Recovery | RPO^1^ | RT^2^
 
 | {project_name} Pod
 | Multiple {project_name} Pods run in a cluster. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
@@ -96,14 +100,17 @@ The {project_name} will eventually remove the unreachable pods from its local vi
 |===
 
 .Table footnotes:
-^1^ Recovery point objective, assuming all parts of the setup were healthy at the time this occurred. +
-^2^ Recovery time objective. +
+^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
+^2^ Maximum Recovery Time observed. +
 
 === Multiple Zones
 
+During testing of the high availability <@links.ha id="multi-cluster-introduction" anchor="multi-cluster-supported-configuration" />, we observed the following
+restore times for the events described:
+
 [%autowidth]
 |===
-| Failure | Recovery | RPO^1^ | RTO^2^
+| Failure | Recovery | RPO^1^ | RT^2^
 
 | Database node^3^
 | If the writer instance fails, the database can promote a reader instance in the same or other zone to be the new writer.
@@ -144,8 +151,8 @@ The {project_name} will eventually remove the unreachable pods from its local vi
 |===
 
 .Table footnotes:
-^1^ Recovery point objective, assuming all parts of the setup were healthy at the time this occurred. +
-^2^ Recovery time objective. +
+^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
+^2^ Maximum Recovery Time observed. +
 ^3^ Assumes that the database is also replicated across multiple availability-zones
 
 == Known limitations

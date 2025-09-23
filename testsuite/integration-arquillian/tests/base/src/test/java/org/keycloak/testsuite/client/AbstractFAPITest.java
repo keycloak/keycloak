@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.client;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;

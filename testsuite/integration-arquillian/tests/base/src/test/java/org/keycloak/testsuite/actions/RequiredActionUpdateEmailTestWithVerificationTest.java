@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import jakarta.mail.Address;
@@ -48,14 +49,17 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -367,6 +371,45 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("Email already exists.", errorPage.getError());
 		assertTrue(ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 	}
+
+    @Test
+    public void testForceEmailVerificationWithUpdateProfileAndExistingEmail() {
+        // Save original configuration to restore later
+        RequiredActionConfigRepresentation originalConfig = testRealm().flows().getRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name());
+
+        try {
+            // Configure UPDATE_EMAIL to force email verification
+            RequiredActionConfigRepresentation config = new RequiredActionConfigRepresentation();
+            config.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.TRUE.toString());
+            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), config);
+
+            // Create user with UPDATE_PROFILE required action
+            UserRepresentation user = UserBuilder.create()
+                    .enabled(true)
+                    .username("profile-test-user@localhost")
+                    .email("profile-test-user@localhost")
+                    .firstName("Tom")
+                    .lastName("Brady")
+                    .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                    .build();
+            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+
+            // Login and update profile (first and last name only, no email)
+            loginPage.open();
+            loginPage.login("profile-test-user@localhost", "password");
+
+            updateProfilePage.update("Updated", "Name");
+
+            if (errorPage.isCurrent()) {
+                fail("There should not be an exception thrown. Error: " + errorPage.getError());
+            }
+        } finally {
+            // Always restore original configuration
+            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
+            events.clear();
+            ApiUtil.removeUserByUsername(testRealm(), "profile-test-user@localhost");
+        }
+    }
 
 	private String fetchEmailConfirmationLink(String emailRecipient) throws MessagingException, IOException {
 		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();

@@ -53,7 +53,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 import static org.junit.Assert.*;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

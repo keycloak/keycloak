@@ -10,7 +10,8 @@
     "build": {
       "command": "rollup --config && pnpm build:rewrite-import",
       "files": [
-        "rollup.config.js"
+        "rollup.config.js",
+        "src"
       ],
       "output": [
         "target/classes/theme/keycloak/common/resources/vendor/react",

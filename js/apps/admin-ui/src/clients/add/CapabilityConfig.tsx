@@ -352,6 +352,16 @@ export const CapabilityConfig = ({
               { key: "plain", value: "plain" },
             ]}
           />
+          {isFeatureEnabled(Feature.DPoP) && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.dpop.bound.access.tokens",
+              )}
+              label={t("oAuthDPoP")}
+              labelIcon={t("oAuthDPoPHelp")}
+              stringify
+            />
+          )}
         </>
       )}
       {protocol === "saml" && (

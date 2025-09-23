@@ -32,6 +32,7 @@ import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UpdateSpec;
 
 import io.fabric8.kubernetes.api.model.ContainerFluent;
@@ -218,8 +219,12 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         return Stream.concat(updateArgs.stream(), currentArgs.stream().filter(arg -> !arg.equals("start"))).toList();
     }
 
-    private static String keycloakHash(Keycloak keycloak) {
-        return Utils.hash(List.of(keycloak.getSpec()));
+    static String keycloakHash(Keycloak keycloak) {
+        return Utils.hash(
+                List.of(new KeycloakSpecBuilder(keycloak.getSpec()).withInstances(null).withLivenessProbeSpec(null)
+                        .withStartupProbeSpec(null).withReadinessProbeSpec(null).withResourceRequirements(null)
+                        .withSchedulingSpec(null).withNetworkPolicySpec(null).withIngressSpec(null)
+                        .withImagePullSecrets().withImportSpec(null).withServiceMonitorSpec(null).build()));
     }
 
     private static Map<String, String> getLabels(HasMetadata keycloak) {

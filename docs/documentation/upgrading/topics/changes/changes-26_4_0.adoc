@@ -4,23 +4,6 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Fine-grained admin permissions: RESET_PASSWORD scope for Users
-
-A new `reset-password` scope has been added to the Users resource type in Fine-Grained Admin Permissions v2. This scope allows administrators to grant password reset permissions independently from the broader `manage` scope.
-
-By default, the behavior remains compatible with previous versions through the `fallbackToManageUsers` configuration option, which is set to `true` by default. When this fallback is enabled, password reset permissions use the existing `manage` scope behavior.
-
-To enable the new granular password reset permissions, set the configuration option:
-
-[source]
-----
-fgap.v2.resetPassword.fallbackToManageUsers=false
-----
-
-When the fallback is disabled, only the explicit `reset-password` scope permissions allows password reset operations, providing more fine-grained control over administrative access.
-
-For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
-
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -160,7 +143,7 @@ If a user has an email set when updating the profile during the authentication f
 
 === New database index on the `EVENT_ENTITY` table
 
-The `EVENT_ENTITY` table now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID` and `TYPE`, which allows a faster search in the Admin Console for events of a specific user and event type.
+The `EVENT_ENTITY` table now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID`, `TYPE` and `EVENT_TIME`, which allows a faster search in the Admin Console for events of a specific user and event type.
 
 If the table contains more than 300,000 entries, {project_name} skips the index creation during the automatic schema migration. However, the SQL statement appears on the console during migration so you can apply it manually after {project_name} startup.
 For details on configuring a different limit, see link:{upgradingguide_link}#_migrate_db[Migrating the database].
@@ -231,6 +214,16 @@ to be aligned with the actual number of users returned from searches.
 === Welcome Page changes
 
 The Welcome Page creates regular Admin users instead of temporary ones.
+
+=== Fine-grained admin permissions: new `reset-password` scope for Users
+
+The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader`manage` scope.
+
+By default, a user with the existing, broader `manage` scope for the `USERS` resource type will implicitly have permission to reset a user's password. The system checks for the explicit `reset-password` scope first. If that permission is not found, it falls back to checking if the administrator has the `manage` scope. This ensures that existing administrators with the `manage` scope continue to have the ability to reset passwords without any changes to their permissions.
+
+This implicit fallback mechanism ensures a smooth upgrade process for deployments already using fine-grained permissions. The fallback will be deprecated and removed in a future releases, so it is recommended to review and update administrator permissions to use the new `reset-password` scope where appropriate.
+
+For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

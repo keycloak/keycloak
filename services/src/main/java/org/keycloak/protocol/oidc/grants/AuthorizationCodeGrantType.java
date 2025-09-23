@@ -186,7 +186,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         DPoPUtil.validateDPoPJkt(codeData.getDpopJkt(), session, event, cors);
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult));
+            session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult, client));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());

@@ -26,6 +26,7 @@ AWS Region or an equivalent low-latency setup.
 * Permit planned outages for maintenance.
 * Fit within a defined user and request count.
 * Can accept the impact of periodic outages.
+* Deployed in data centers with the required network latency and database configuration
 
 [#multi-cluster-tested-configuration]
 == Tested Configuration
