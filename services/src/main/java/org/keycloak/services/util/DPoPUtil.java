@@ -78,6 +78,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
 import static org.keycloak.OAuth2Constants.DPOP_HTTP_HEADER;
@@ -233,22 +234,26 @@ public class DPoPUtil {
         if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
             verifier = verifier.tokenType(List.of(TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_DPOP))
                     .withChecks(token -> {
-                        String[] split = WHITESPACES.split(validator.authHeader);
-                        String typeString = split[0];
-                        if (!typeString.equals(TokenUtil.TOKEN_TYPE_DPOP) && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        boolean isSchemeDPoP = false;
+                        if (StringUtil.isNotBlank(validator.authHeader)) {
+                            String[] split = WHITESPACES.split(validator.authHeader);
+                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equals(split[0]);
+                        }
+
+                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
                             throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
                         }
-                        if (typeString.equals(TokenUtil.TOKEN_TYPE_DPOP) && !DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
                             throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
                         }
                         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
                         if (clientModel == null) {
                             throw new VerificationException("Client not found");
                         }
-                        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
+                        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !isSchemeDPoP) {
                             throw new VerificationException("This client requires DPoP, but no DPoP Authorization header is present");
                         }
-                        if (typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
+                        if (isSchemeDPoP) {
                             if (validator.accessToken == null) {
                                 throw new VerificationException("Access Token not set for validator");
                             }
@@ -591,7 +596,6 @@ public class DPoPUtil {
             if (!isDPoPSupported) {
                 return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
             }
-
             DPoP dPoP = session.getAttribute(DPOP_SESSION_ATTRIBUTE, DPoP.class);
             if (dPoP == null) {
                 return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
