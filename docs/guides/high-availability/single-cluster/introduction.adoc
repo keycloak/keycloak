@@ -4,7 +4,7 @@
 
 <@tmpl.guide
 title="Single-cluster deployments"
-summary="Deploy a single Keycloak cluster, optionally across multiple availability-zones in the same region" >
+summary="Deploy a single Keycloak cluster, optionally across multiple availability-zones" >
 
 == When to use a single-cluster setup
 
@@ -14,7 +14,7 @@ The {project_name} single-cluster setup is targeted at use cases that:
 * Desire all healthy {project_name} instances to handle user requests.
 * Are constrained to a single
 <@profile.ifProduct>
-AWS Region.
+region (e.g. a single AWS region)
 </@profile.ifProduct>
 <@profile.ifCommunity>
 AWS Region or an equivalent low-latency setup.
@@ -22,6 +22,7 @@ AWS Region or an equivalent low-latency setup.
 * Permit planned outages for maintenance.
 * Fit within a defined user and request count.
 * Can accept the impact of periodic outages.
+* Deployed in data centers with the required network latency and database configuration
 
 [#single-cluster-tested-configuration]
 == Tested Configuration
@@ -39,10 +40,12 @@ using ROSA HCP.
 ** High availability with a primary DB instance in one availability zone, and synchronously replicated readers in the other availability zones
 ** Version ${properties["aurora-postgresql.version"]}
 
-[#single-cluster-supported-configuration]
-== Supported Configurations
+<@profile.ifProduct>
+* Support for {project_name} in these configurations may require replicating issues in this tested set up.
+</@profile.ifProduct>
 
-The following configurations are supported:
+[#single-cluster-configuration]
+== Configuration
 
 <@profile.ifProduct>
 
@@ -61,12 +64,12 @@ if OpenShift supports spanning multiple datacenters in that environment and {pro
 if {project_name}'s latency requirements are met.
 ** For on-premise setups, Pods can be scheduled across multiple datacenters
 if {project_name}'s latency requirements are met.
-* {project_name} deployed on a virtual machines or bare metal
+* {project_name} deployed on virtual machines or bare metal
 ** Instances can be scheduled across multiple availability zones within the same cloud-provider region or multiple datacenters if {project_name}'s latency requirements are met.
 
 </@profile.ifCommunity>
 
-* Deployments require a P50 round-trip latency of less than 10 ms between {project_name} instances.
+* Deployments require a round-trip latency of less than 10 ms between {project_name} instances.
 
 * Database
 ** For a list of supported databases, see <@links.server id="db"/>.

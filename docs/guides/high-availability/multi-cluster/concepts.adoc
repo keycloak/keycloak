@@ -39,7 +39,7 @@ Monitoring is necessary to detect degraded setups.
 
 [%autowidth]
 |===
-| Failure | Recovery | RPO^1^ | RTO^2^
+| Failure | Recovery | RPO^1^ | RT^2^
 
 | Database node
 | If the writer instance fails, the database can promote a reader instance in the same or other site to be the new writer.
@@ -89,8 +89,8 @@ Some requests might receive an error message until the loadbalancer detects the 
 |===
 
 .Table footnotes:
-^1^ Recovery point objective, assuming all parts of the setup were healthy at the time this occurred. +
-^2^ Recovery time objective. +
+^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
+^2^ Maximum Recovery Time observed. +
 ^3^ Manual operations needed to restore the degraded setup.
 
 The statement "`No data loss`" depends on the setup not being degraded from previous failures, which includes completing any pending manual operations to resynchronize the state between the sites.
