@@ -143,7 +143,7 @@ If a user has an email set when updating the profile during the authentication f
 
 === New database index on the `EVENT_ENTITY` table
 
-The `EVENT_ENTITY` table now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID` and `TYPE`, which allows a faster search in the Admin Console for events of a specific user and event type.
+The `EVENT_ENTITY` table now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID`, `TYPE` and `EVENT_TIME`, which allows a faster search in the Admin Console for events of a specific user and event type.
 
 If the table contains more than 300,000 entries, {project_name} skips the index creation during the automatic schema migration. However, the SQL statement appears on the console during migration so you can apply it manually after {project_name} startup.
 For details on configuring a different limit, see link:{upgradingguide_link}#_migrate_db[Migrating the database].
