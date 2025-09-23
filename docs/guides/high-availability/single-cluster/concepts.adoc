@@ -73,7 +73,7 @@ therefore we consider these architectures independently.
 
 === Single Zone
 
-During testing of the link:#single-cluster-configuration[high availability configuration], we observed the following
+During testing of the high availability <@links.ha id="single-cluster-introduction" anchor="single-cluster-configuration" />, we observed the following
 restore times for the events described:
 
 [%autowidth]
@@ -104,6 +104,9 @@ The {project_name} will eventually remove the unreachable pods from its local vi
 ^2^ Maximum Recovery Time observed. +
 
 === Multiple Zones
+
+During testing of the high availability <@links.ha id="multi-cluster-introduction" anchor="multi-cluster-supported-configuration" />, we observed the following
+restore times for the events described:
 
 [%autowidth]
 |===

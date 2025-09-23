@@ -15,7 +15,7 @@ for your deployments.
 Any {project_name} deployment must be installed on a properly configured OpenShift cluster that has been configured per
 the https://docs.redhat.com/en/documentation/openshift_container_platform/4.19/html/installation_overview/index[OpenShift installation instructions].
 For any {project_name} installations on OpenShift clusters that span multiple sites (i.e. single cluster or multi-clusters across multiple availability zones)
-the OpenShift cluster must adhere to the guidance for Red Hat OpenShift Container Platform Clusters.
+the OpenShift cluster must adhere to the https://access.redhat.com/articles/3220991[Guidance for Red Hat OpenShift Container Platform Clusters].
 
 Ultimately high availability architectures involve many components in addition to the software running and the responsibility
 for availability of the service is with the customer. This guide has recommended practices for using the {project_name}

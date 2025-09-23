@@ -45,7 +45,7 @@ using ROSA HCP.
 </@profile.ifProduct>
 
 [#single-cluster-configuration]
-== Configurations
+== Configuration
 
 <@profile.ifProduct>
 
@@ -64,7 +64,7 @@ if OpenShift supports spanning multiple datacenters in that environment and {pro
 if {project_name}'s latency requirements are met.
 ** For on-premise setups, Pods can be scheduled across multiple datacenters
 if {project_name}'s latency requirements are met.
-* {project_name} deployed on a virtual machines or bare metal
+* {project_name} deployed on virtual machines or bare metal
 ** Instances can be scheduled across multiple availability zones within the same cloud-provider region or multiple datacenters if {project_name}'s latency requirements are met.
 
 </@profile.ifCommunity>
