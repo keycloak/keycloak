@@ -134,6 +134,25 @@ public class OID4VCIssuerEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
 
+    /**
+     * Session note key for storing credential configuration IDs from credential offer.
+     * This allows the authorization details processor to easily retrieve the configuration IDs
+     * without having to search through all session notes or parse the full credential offer.
+     */
+    public static final String CREDENTIAL_CONFIGURATION_IDS_NOTE = "CREDENTIAL_CONFIGURATION_IDS";
+
+    /**
+     * Prefix for session note keys that store the mapping between credential identifiers and configuration IDs.
+     * This is used to store mappings generated during authorization details processing.
+     */
+    public static final String CREDENTIAL_IDENTIFIER_PREFIX = "credential_identifier_";
+
+    /**
+     * Prefix for session note keys that store authorization details claims.
+     * This is used to store claims from authorization details for later use during credential issuance.
+     */
+    public static final String AUTHORIZATION_DETAILS_CLAIMS_PREFIX = "AUTHORIZATION_DETAILS_CLAIMS_";
+
     private Cors cors;
 
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
@@ -327,7 +346,7 @@ public class OID4VCIssuerEndpoint {
             // This allows the authorization details processor to easily retrieve the configuration IDs
             // without having to search through all session notes or parse the full credential offer
             String credentialConfigIdsJson = JsonSerialization.mapper.writeValueAsString(theOffer.getCredentialConfigurationIds());
-            clientSession.setNote("CREDENTIAL_CONFIGURATION_IDS", credentialConfigIdsJson);
+            clientSession.setNote(CREDENTIAL_CONFIGURATION_IDS_NOTE, credentialConfigIdsJson);
             LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert the offer POJO to JSON: %s", e.getMessage());
@@ -501,7 +520,7 @@ public class OID4VCIssuerEndpoint {
 
         // If credential_identifier is provided, retrieve the mapping from client session
         if (credentialRequestVO.getCredentialIdentifier() != null) {
-            String mappingKey = "credential_identifier_" + credentialRequestVO.getCredentialIdentifier();
+            String mappingKey = CREDENTIAL_IDENTIFIER_PREFIX + credentialRequestVO.getCredentialIdentifier();
 
             // First try to get the client session and look for the mapping there
             UserSessionModel userSession = authResult.getSession();
@@ -517,9 +536,6 @@ public class OID4VCIssuerEndpoint {
             }
 
             if (mappedCredentialConfigurationId != null) {
-                LOGGER.debugf("Found credential configuration ID mapping for identifier %s: %s",
-                        credentialRequestVO.getCredentialIdentifier(), mappedCredentialConfigurationId);
-
                 // Use the mapped credential configuration ID to find the credential scope
                 Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
                 if (supportedCredentials.containsKey(mappedCredentialConfigurationId)) {
@@ -1198,7 +1214,7 @@ public class OID4VCIssuerEndpoint {
     private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, UserSessionModel userSession, String scope) {
         try {
             // Look for stored claims in user session notes
-            String claimsKey = "AUTHORIZATION_DETAILS_CLAIMS_" + scope;
+            String claimsKey = AUTHORIZATION_DETAILS_CLAIMS_PREFIX + scope;
             String storedClaimsJson = userSession.getNote(claimsKey);
 
             if (storedClaimsJson != null && !storedClaimsJson.isEmpty()) {

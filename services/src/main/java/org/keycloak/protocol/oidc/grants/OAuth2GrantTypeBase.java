@@ -295,12 +295,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * Process authorization_details from credential offer when authorization_details parameter is not present in the token request.
      * This is used in Pre-Authorized Code Flow where the credential offer contains the authorized credential configuration IDs.
      *
-     * @param userSession      the user session
-     * @param clientSessionCtx the client session context
-     * @param clientSession    the client session that contains the credential offer information
+     * @param clientSession the client session that contains the credential offer information
      * @return the authorization details response if processing was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processAuthorizationDetailsFromCredentialOffer(UserSessionModel userSession, ClientSessionContext clientSessionCtx, AuthenticatedClientSessionModel clientSession) {
+    protected List<AuthorizationDetailsResponse> processAuthorizationDetailsFromCredentialOffer(AuthenticatedClientSessionModel clientSession) {
         try {
             return session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
@@ -308,7 +306,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
                     .filter(processor -> processor instanceof org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor)
                     .map(processor -> (org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor) processor)
-                    .map(processor -> processor.processFromCredentialOffer(userSession, clientSessionCtx, clientSession))
+                    .map(processor -> processor.processFromCredentialOffer(clientSession))
                     .filter(authzDetailsResponse -> authzDetailsResponse != null)
                     .findFirst()
                     .orElse(null);
