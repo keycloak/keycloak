@@ -4,23 +4,6 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== Fine-grained admin permissions: RESET_PASSWORD scope for Users
-
-A new `reset-password` scope has been added to the Users resource type in Fine-Grained Admin Permissions v2. This scope allows administrators to grant password reset permissions independently from the broader `manage` scope.
-
-By default, the behavior remains compatible with previous versions through the `fallbackToManageUsers` configuration option, which is set to `true` by default. When this fallback is enabled, password reset permissions use the existing `manage` scope behavior.
-
-To enable the new granular password reset permissions, set the configuration option:
-
-[source]
-----
-fgap.v2.resetPassword.fallbackToManageUsers=false
-----
-
-When the fallback is disabled, only the explicit `reset-password` scope permissions allows password reset operations, providing more fine-grained control over administrative access.
-
-For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
-
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -231,6 +214,16 @@ to be aligned with the actual number of users returned from searches.
 === Welcome Page changes
 
 The Welcome Page creates regular Admin users instead of temporary ones.
+
+=== Fine-grained admin permissions: new `reset-password` scope for Users
+
+The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader`manage` scope.
+
+By default, a user with the existing, broader `manage` scope for the `USERS` resource type will implicitly have permission to reset a user's password. The system checks for the explicit `reset-password` scope first. If that permission is not found, it falls back to checking if the administrator has the `manage` scope. This ensures that existing administrators with the `manage` scope continue to have the ability to reset passwords without any changes to their permissions.
+
+This implicit fallback mechanism ensures a smooth upgrade process for deployments already using fine-grained permissions. The fallback will be deprecated and removed in a future releases, so it is recommended to review and update administrator permissions to use the new `reset-password` scope where appropriate.
+
+For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
