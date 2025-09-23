@@ -50,7 +50,7 @@ public class AggregatedStepTest {
 
     @Test
     public void testCreate() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(AggregatedStepProviderFactory.ID)
@@ -63,32 +63,33 @@ public class AggregatedStepTest {
                                                 .of(DisableUserStepProviderFactory.ID)
                                                 .build()
                                 ).build())
-                .build()).close();
-
-        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
-        assertThat(workflows, hasSize(1));
-        WorkflowRepresentation workflow = workflows.get(0);
-        assertThat(workflow.getSteps(), hasSize(1));
-        WorkflowStepRepresentation aggregatedStep = workflow.getSteps().get(0);
-        assertThat(aggregatedStep.getUses(), is(AggregatedStepProviderFactory.ID));
-        List<WorkflowStepRepresentation> steps = aggregatedStep.getSteps();
-        assertThat(steps, hasSize(2));
-        assertStep(steps, SetUserAttributeStepProviderFactory.ID, a -> {
-            assertNotNull(a.getConfig());
-            assertThat(a.getConfig().isEmpty(), is(false));
-            assertThat(a.getConfig(), hasEntry("priority", List.of("1")));
-            assertThat(a.getConfig(), hasEntry("message", List.of("message")));
-        });
-        assertStep(steps, DisableUserStepProviderFactory.ID, a -> {
-            assertNotNull(a.getConfig());
-            assertThat(a.getConfig().isEmpty(), is(false));
-            assertThat(a.getConfig(), hasEntry("priority", List.of("2")));
-        });
+                .build())) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+            assertThat(workflows, hasSize(1));
+            WorkflowRepresentation workflow = workflows.get(0);
+            assertThat(workflow.getSteps(), hasSize(1));
+            WorkflowStepRepresentation aggregatedStep = workflow.getSteps().get(0);
+            assertThat(aggregatedStep.getUses(), is(AggregatedStepProviderFactory.ID));
+            List<WorkflowStepRepresentation> steps = aggregatedStep.getSteps();
+            assertThat(steps, hasSize(2));
+            assertStep(steps, SetUserAttributeStepProviderFactory.ID, a -> {
+                assertNotNull(a.getConfig());
+                assertThat(a.getConfig().isEmpty(), is(false));
+                assertThat(a.getConfig(), hasEntry("priority", List.of("1")));
+                assertThat(a.getConfig(), hasEntry("message", List.of("message")));
+            });
+            assertStep(steps, DisableUserStepProviderFactory.ID, a -> {
+                assertNotNull(a.getConfig());
+                assertThat(a.getConfig().isEmpty(), is(false));
+                assertThat(a.getConfig(), hasEntry("priority", List.of("2")));
+            });
+        }
     }
 
     @Test
     public void testCreateAggregatedStepAsSubStep() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(AggregatedStepProviderFactory.ID)
@@ -110,10 +111,11 @@ public class AggregatedStepTest {
                                                 .of(DisableUserStepProviderFactory.ID)
                                                 .build()
                                 ).build())
-                .build()).close();
-
-        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
-        assertThat(workflows, hasSize(1));
+                .build())) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+            assertThat(workflows, hasSize(1));
+        }
     }
 
     @Test
@@ -157,7 +159,7 @@ public class AggregatedStepTest {
                                 ).build())
                 .build())) {
             assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step provider " + SetUserAttributeStepProviderFactory.ID + " does not support aggregated steps"));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Sub-step of aggregated step cannot have a time conditions."));
         }
     }
 

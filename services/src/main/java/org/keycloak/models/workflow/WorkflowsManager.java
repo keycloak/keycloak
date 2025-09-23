@@ -91,11 +91,6 @@ public class WorkflowsManager {
         for (int i = 0; i < steps.size(); i++) {
             WorkflowStep step = steps.get(i);
 
-            if (workflow.getId().equals(parentId)) {
-                // only validate top-level steps, sub-steps are validated as part of the parent step validation
-                validateStep(workflow, step);
-            }
-
             // assign priority based on index.
             step.setPriority(i + 1);
 
@@ -311,6 +306,7 @@ public class WorkflowsManager {
     }
 
     public void updateWorkflow(Workflow workflow, MultivaluedHashMap<String, String> config) {
+        validateWorkflow(toRepresentation(workflow), config);
         ComponentModel component = getWorkflowComponent(workflow.getId());
         component.setConfig(config);
         getRealm().updateComponent(component);
@@ -398,7 +394,7 @@ public class WorkflowsManager {
         List<WorkflowStep> steps = new ArrayList<>();
 
         for (WorkflowStepRepresentation stepRep : rep.getSteps()) {
-            steps.add(toModel(stepRep));
+            steps.add(toModel(workflow, stepRep));
         }
 
         addSteps(workflow, workflow.getId(), steps);
@@ -441,16 +437,6 @@ public class WorkflowsManager {
         }
     }
 
-    private WorkflowStep toModel(WorkflowStepRepresentation rep) {
-        List<WorkflowStep> subSteps = new ArrayList<>();
-
-        for (WorkflowStepRepresentation subStep : ofNullable(rep.getSteps()).orElse(List.of())) {
-            subSteps.add(toModel(subStep));
-        }
-
-        return new WorkflowStep(rep.getUses(), rep.getConfig(), subSteps);
-    }
-
     public void bind(Workflow workflow, ResourceType type, String resourceId) {
         processEvent(List.of(workflow), new AdhocWorkflowEvent(type, resourceId));
     }
@@ -461,7 +447,11 @@ public class WorkflowsManager {
         return type.resolveResource(session, resourceId);
     }
 
-    private void validateStep(Workflow workflow, WorkflowStep step) throws ModelValidationException {
+    private void validateStep(Workflow workflow, WorkflowStep step, boolean topLevel) throws ModelValidationException {
+        if (step.getAfter() < 0) {
+            throw new ModelValidationException("Step 'after' time condition cannot be negative.");
+        }
+
         boolean isAggregatedStep = !step.getSteps().isEmpty();
         boolean isScheduledWorkflow = workflow.isScheduled();
 
@@ -484,13 +474,15 @@ public class WorkflowsManager {
                 throw new ModelValidationException("Sub-steps of aggregated step cannot have time conditions.");
             }
         } else {
-            if (isScheduledWorkflow) {
-                if (step.getConfig().getFirst(CONFIG_AFTER) == null || step.getAfter() < 0) {
+            if (isScheduledWorkflow && topLevel) {
+                if (step.getConfig().getFirst(CONFIG_AFTER) == null) {
                     throw new ModelValidationException("All steps of scheduled workflow must have a valid 'after' time condition.");
                 }
-            } else { // immediate workflow
+            } else { // immediate workflow | sub-step of aggregated step
                 if (step.getConfig().getFirst(CONFIG_AFTER) != null) {
-                    throw new ModelValidationException("Immediate workflow step cannot have a time condition.");
+                    throw new ModelValidationException(topLevel ?
+                            "Immediate workflow step cannot have a time condition." :
+                            "Sub-step of aggregated step cannot have a time conditions.");
                 }
             }
         }
@@ -586,14 +578,21 @@ public class WorkflowsManager {
         }
     }
 
-    public WorkflowStep toStepModel(WorkflowStepRepresentation rep) {
+    public WorkflowStep toModel(Workflow workflow, WorkflowStepRepresentation rep) {
+        return toModel(workflow, rep, true);
+    }
+
+    private WorkflowStep toModel(Workflow workflow, WorkflowStepRepresentation rep, boolean topLevel) {
         List<WorkflowStep> subSteps = new ArrayList<>();
 
         for (WorkflowStepRepresentation subStep : ofNullable(rep.getSteps()).orElse(List.of())) {
-            subSteps.add(toStepModel(subStep));
+            subSteps.add(toModel(workflow, subStep, false));
         }
 
-        return new WorkflowStep(rep.getUses(), rep.getConfig(), subSteps);
+        WorkflowStep step = new WorkflowStep(rep.getUses(), rep.getConfig(), subSteps);
+        validateStep(workflow, step, topLevel);
+
+        return step;
     }
 
     public WorkflowConditionProvider getConditionProvider(String providerId, MultivaluedHashMap<String, String> modelConfig) {

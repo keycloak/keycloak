@@ -44,13 +44,23 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testframework.util.ApiUtil;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 
 @KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
 public class WorkflowStepManagementTest {
@@ -124,6 +134,64 @@ public class WorkflowStepManagementTest {
                 .anyMatch(step -> DisableUserStepProviderFactory.ID.equals(step.getUses()) &&
                                  "Test Step".equals(step.getConfig().getFirst("name")));
         assertTrue(foundOurStep, "Our added step should be present in the workflow");
+    }
+
+    @Test
+    public void testAddStepWithTimeToImmediateWorkflow() {
+        workflowsResource.create(WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .onEvent(ResourceOperationType.USER_ADD.toString())
+                .name("immediate-workflow")
+                .immediate()
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID).build()
+                ).build()).close();
+
+        String immediateWorkflowId = workflowsResource.list().stream()
+                .filter(wf -> "immediate-workflow".equals(wf.getName()))
+                .findFirst()
+                .map(WorkflowRepresentation::getId)
+                .orElse(null);
+        assertThat(immediateWorkflowId, notNullValue());
+
+        WorkflowRepresentation representation = workflowsResource.workflow(immediateWorkflowId).toRepresentation();
+        assertThat(representation.getConfig().getFirst(CONFIG_SCHEDULED), equalTo("false"));
+
+        // Attempt to add a step with 'after' time (should be rejected)
+        WorkflowStepRepresentation stepRep = new WorkflowStepRepresentation();
+        stepRep.setUses(DisableUserStepProviderFactory.ID);
+        stepRep.setConfig("name", "Invalid Step");
+        stepRep.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
+
+        try (Response response = workflowsResource.workflow(immediateWorkflowId).steps().create(stepRep)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            String errorMessage = response.readEntity(String.class);
+            assertThat(errorMessage, containsString("Immediate workflow step cannot have a time condition."));
+        }
+        // Verify step was not added (should still be only the original setup step)
+        List<WorkflowStepRepresentation> allSteps = workflowsResource.workflow(immediateWorkflowId).steps().list();
+        assertThat(allSteps, hasSize(1));
+    }
+
+    @Test
+    public void testAddStepWithoutTimeToScheduledWorkflow() {
+        WorkflowRepresentation representation = workflowsResource.workflow(workflowId).toRepresentation();
+        assertThat(representation.getConfig().getFirst(CONFIG_SCHEDULED), nullValue());//immediate
+
+        // Attempt to add a step without 'after' time (should be rejected)
+        WorkflowStepRepresentation stepRep = WorkflowStepRepresentation.create()
+                .of(NotifyUserStepProviderFactory.ID)
+                .build();
+
+        try (Response response = workflowsResource.workflow(workflowId).steps().create(stepRep)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            String errorMessage = response.readEntity(String.class);
+            assertThat(errorMessage, containsString("All steps of scheduled workflow must have a valid 'after' time condition."));
+        }
+
+        // Verify step was not added (should still be only the original setup step)
+        List<WorkflowStepRepresentation> allSteps = workflowsResource.workflow(workflowId).steps().list();
+        assertThat(allSteps, hasSize(1));
     }
 
     @Test
