@@ -72,7 +72,7 @@ test.describe.serial("Webauthn policies tabs", () => {
 
     await assertNotificationMessage(
       page,
-      "Updated webauthn policies successfully",
+      "Updated WebAuthn policies successfully",
     );
   });
 
@@ -89,7 +89,7 @@ test.describe.serial("Webauthn policies tabs", () => {
 
     await assertNotificationMessage(
       page,
-      "Updated webauthn policies successfully",
+      "Updated WebAuthn policies successfully",
     );
   });
 });
