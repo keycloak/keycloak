@@ -15,7 +15,7 @@
  * the License.
  */
 
-package org.keycloak.testsuite.admin.client;
+package org.keycloak.testsuite;
 
 import org.junit.After;
 import org.junit.Before;
@@ -26,8 +26,6 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;

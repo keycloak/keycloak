@@ -15,14 +15,13 @@
  * the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.testsuite;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.AssertAdminEvents;
