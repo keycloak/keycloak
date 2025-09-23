@@ -16,11 +16,18 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import org.keycloak.authorization.common.DefaultEvaluationContext;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.admin.AdminAuth;
+
+import java.util.List;
 
 class MgmtPermissionsV2 extends MgmtPermissions {
 
@@ -88,5 +95,27 @@ class MgmtPermissionsV2 extends MgmtPermissions {
         if (clientPermissions != null) return clientPermissions;
         clientPermissions = new ClientPermissionsV2(session, realm, authz, this);
         return clientPermissions;
+    }
+
+    @Override
+    public DecisionPermissionCollector getDecision(ResourcePermission permission, ResourceServer resourceServer) {
+        return evaluatePermission(List.of(permission), resourceServer, new DefaultEvaluationContext(identity, session));
+    }
+
+    @Override
+    public DecisionPermissionCollector getDecision(ResourcePermission permission, ResourceServer resourceServer, EvaluationContext context) {
+        return evaluatePermission(List.of(permission), resourceServer, context);
+    }
+
+    @Override
+    public DecisionPermissionCollector evaluatePermission(List<ResourcePermission> permissions, ResourceServer resourceServer, EvaluationContext context) {
+        // Use FGAPEvaluation for alias support
+        RealmModel oldRealm = session.getContext().getRealm();
+        try {
+            session.getContext().setRealm(realm);
+            return authz.evaluators().from(permissions, resourceServer, context).getDecision(resourceServer, null, DecisionPermissionCollector.class);
+        } finally {
+            session.getContext().setRealm(oldRealm);
+        }
     }
 }

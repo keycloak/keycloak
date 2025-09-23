@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -30,7 +31,9 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.UserModelRecord;
+import org.keycloak.services.resources.admin.fgap.ModelRecord.GroupModelRecord;
 
 class UserPermissionsV2 extends UserPermissions {
 
@@ -154,8 +157,8 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD,
-                () -> eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE));
+        // Check USERS.reset-password permission (will automatically check GROUPS.reset-password-members via alias)
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD);
     }
 
     @Override
