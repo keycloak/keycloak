@@ -67,16 +67,7 @@ public class TrustedHostClientRegistrationPolicyTest {
         ComponentModel model = createComponentModel("*.localhost");
         TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
 
-        try {
-            String canonical = java.net.InetAddress.getByName("127.0.0.1").getCanonicalHostName();
-            if (canonical.endsWith(".localhost") || canonical.equals("localhost")) {
-                assertTrue(policy.verifyHost("127.0.0.1"));
-            } else {
-                System.out.println("[TrustedHostClientRegistrationPolicyTest] Skipping verifyHost(127.0.0.1) assertion: canonical hostname is '" + canonical + "'");
-            }
-        } catch (Exception e) {
-            System.out.println("[TrustedHostClientRegistrationPolicyTest] Skipping verifyHost(127.0.0.1) assertion due to exception: " + e);
-        }
+        assertTrue(policy.verifyHost("127.0.0.1"));
         assertFalse(policy.verifyHost("10.0.0.1"));
         policy.checkURLTrusted("https://localhost", policy.getTrustedHosts(), policy.getTrustedDomains());
         policy.checkURLTrusted("https://other.localhost", policy.getTrustedHosts(), policy.getTrustedDomains());
@@ -109,6 +100,19 @@ public class TrustedHostClientRegistrationPolicyTest {
         policy.checkURLTrusted("https://googlebot.com", policy.getTrustedHosts(), policy.getTrustedDomains());
         Assert.assertThrows(ClientRegistrationPolicyException.class, () -> policy.checkURLTrusted("https://www.othergooglebot.com",
                 policy.getTrustedHosts(), policy.getTrustedDomains()));
+    }
+
+    @Test
+    public void testLocalhostDomainFallback() {
+        TrustedHostClientRegistrationPolicyFactory factory = new TrustedHostClientRegistrationPolicyFactory();
+        ComponentModel model = createComponentModel("*.localhost");
+        TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
+
+        // Simulate a hostname that would fail DNS resolution on some platforms
+        // but matches the trusted domain fallback logic
+        assertTrue(policy.verifyHost("other.localhost"));
+        assertTrue(policy.verifyHost("localhost"));
+        assertFalse(policy.verifyHost("otherlocalhost"));
     }
 
     private ComponentModel createComponentModel(String... hosts) {
