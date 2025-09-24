@@ -1,0 +1,49 @@
+[id="con-dpop_{context}"]
+[[_dpop-bound-tokens]]
+= DPoP
+[role="_abstract"]
+
+DPoP binds an access token and a refresh token together with the public part of a client's key pair. This binding prevents an attacker from using stolen tokens.
+
+This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
+
+If you enable *Require DPoP bound tokens* in the Admin Console *Settings* tab under *Capability config*, the workflow is:
+
+. A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
+. {project_name} requests a DPoP proof.
+. {project_name} receives the DPoP proof.
+. {project_name} successfully verifies the DPoP proof.
+
+If verification fails, {project_name} rejects the token.
+
+If *Require DPoP bound tokens* is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} verifies DPoP proof
+and will add the thumbprint to the token. Also, if the switch is off, DPoP binding is not enforced by the {project_name} server for this client. It is recommended to have this switch
+on if you want to make sure that particular client always uses DPoP binding.
+
+Note that this {project_name} switch maps to the switch `dpop_bound_access_tokens` introduced in the DPoP specification in client registration metadata.
+
+In the following cases, {project_name} verifies the client sending the access token or the refresh token:
+
+* A token refresh request is sent to the token endpoint with a holder-of-key refresh token. This verification is done only for public clients as described in the DPoP specification.
+  For confidential clients, the verification is not done as client authentication with proper client credentials is in place to ensure that request comes from the legitimate client.
+  For public clients, both access tokens and refresh tokens are DPoP bound. For confidential clients, only access tokens are DPoP bound.
+* A UserInfo request is sent to UserInfo endpoint with a DPoP bound access token.
+* A logout request is sent to a non-OIDC compliant {project_name} proprietary logout endpoint with a holder-of-key refresh token. This verification is done only for public clients as described above.
+* Request is sent to another {project_name} endpoint secured by the bearer token sent in the `Authorization` header. This applies for example to the admin REST or account REST endpoints.
+
+{project_name} also provides the client policy executor `dpop-bind-enforcer`. With this executor, you can specify the following:
+
+* Newly registered or updated OIDC clients are automatically configured with *Require DPoP bound tokens* switch to ON.
+* DPoP binding is done only for the refresh tokens, but not for access tokens. This binding is useful for public clients to increase security, so that the refresh token is DPoP bound and {project_name}
+requires DPoP in the request for the token request. However, the access token is not DPoP bound, which may be needed for example for compatibility reasons as the corresponding legacy resource servers
+(where access tokens are needed to be sent by the client application), cannot handle DPoP bound access tokens properly.
+* DPoP binding is enforced for the whole Authorization Code flow, which means that clients are enforced to send the `dpop_jkt` parameter in the initial OIDC/OAuth authentication requests.
+
+For the details, see <<_client_policies, Client Policies>>, which contains general details on how to configure and set up client policies in your realm.
+
+See https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP) specification] for more details about DPoP.
+
+[NOTE]
+====
+{project_name} client adapters do not support DPoP holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
+====
