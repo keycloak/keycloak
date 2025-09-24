@@ -65,7 +65,7 @@ By default, no check is returned from the health endpoints.
 
 Due to security measures that remove `curl` and other packages from the {project_name} container image, you are not able to easily run checks against HTTPS endpoints.
 
-If you are not using {project_name} in a container, use whatever you want to access the health check endpoints.
+If you are not using {project_name} in a container, or if you are running the health checks outside of the container, use any tool to access the health check endpoints.
 
 === curl
 
