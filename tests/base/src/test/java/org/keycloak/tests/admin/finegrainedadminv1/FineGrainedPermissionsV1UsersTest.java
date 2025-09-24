@@ -192,7 +192,7 @@ public class FineGrainedPermissionsV1UsersTest extends AbstractFineGrainedAdminT
                 .build();
         String testUserId = ApiUtil.getCreatedId(realm.admin().users().create(user));
         //assign 'query-users' role to test user
-        ClientRepresentation clientRepresentation = realm.admin().clients().findByClientId("realm-management").get(0);
+        ClientRepresentation clientRepresentation = realm.admin().clients().findClientByClientId("realm-management").orElseThrow();
         String realmManagementId = clientRepresentation.getId();
         RoleRepresentation roleRepresentation = realm.admin().clients().get(realmManagementId).roles().get("query-users").toRepresentation();
         realm.admin().users().get(testUserId).roles().clientLevel(realmManagementId).add(Collections.singletonList(roleRepresentation));

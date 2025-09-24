@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.saml;
 
-import java.util.List;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -36,7 +35,6 @@ import static org.keycloak.testsuite.util.SamlClient.Binding;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -128,9 +126,8 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
     @Test
     public void testRedirectLoginNoNameIdPolicyForcePostBinding() throws Exception {
         ClientsResource clients = adminClient.realm(REALM_NAME).clients();
-        List<ClientRepresentation> foundClients = clients.findByClientId(SAML_CLIENT_ID_SALES_POST);
-        assertThat(foundClients, hasSize(1));
-        ClientResource clientRes = clients.get(foundClients.get(0).getId());
+        ClientRepresentation foundClient = clients.findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
+        ClientResource clientRes = clients.get(foundClient.getId());
         ClientRepresentation client = clientRes.toRepresentation();
         client.getAttributes().put(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "true");
         clientRes.update(client);

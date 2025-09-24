@@ -202,7 +202,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         testingClient.server(bc.consumerRealmName()).run(grantReadTokenRole(username));
 
         AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).client("broker-app", "broker-app-secret").doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
-        AtomicReference<String> accessToken = (AtomicReference<String>) new AtomicReference<>(accessTokenResponse.getAccessToken());
+        AtomicReference<String> accessToken = new AtomicReference<>(accessTokenResponse.getAccessToken());
         Client client = KeycloakTestingClient.getRestEasyClientBuilder().register((ClientRequestFilter) request -> request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.get())).build();
 
         try {
@@ -287,8 +287,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     public void loginWithExistingUserWithErrorFromProviderIdP() {
         ClientRepresentation client = adminClient.realm(bc.providerRealmName())
                 .clients()
-                .findByClientId(bc.getIDPClientIdInProviderRealm())
-                .get(0);
+                .findClientByClientId(bc.getIDPClientIdInProviderRealm()).orElseThrow();
 
         adminClient.realm(bc.providerRealmName())
                 .clients()

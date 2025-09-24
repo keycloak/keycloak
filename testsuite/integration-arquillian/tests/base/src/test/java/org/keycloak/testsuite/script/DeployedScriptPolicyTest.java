@@ -23,7 +23,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.PermissionsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -196,8 +195,6 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
     }
 
     private ClientResource getClient(RealmResource realm, String clientId) {
-        ClientsResource clients = realm.clients();
-        return clients.findByClientId(clientId).stream().map(representation -> clients.get(representation.getId())).findFirst()
-                .orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return realm.clients().getByClientId(clientId);
     }
 }

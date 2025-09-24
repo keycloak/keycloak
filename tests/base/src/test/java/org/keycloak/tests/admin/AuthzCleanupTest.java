@@ -62,7 +62,7 @@ public class AuthzCleanupTest {
     @Test
     public void testCreate() throws Exception {
         ClientsResource clients = managedRealm.admin().clients();
-        ClientRepresentation client = clients.findByClientId(clientId).get(0);
+        ClientRepresentation client = clients.findClientByClientId(clientId).orElseThrow();
         ResourceServerRepresentation settings = JsonSerialization.readValue(AuthzCleanupTest.class.getResourceAsStream("authz/acme-resource-server-cleanup-test.json"), ResourceServerRepresentation.class);
 
         clients.get(client.getId()).authorization().importSettings(settings);

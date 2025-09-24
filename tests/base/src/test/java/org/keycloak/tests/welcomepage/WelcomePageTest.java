@@ -78,7 +78,7 @@ public class WelcomePageTest {
         var users = adminClient.realms().realm("master").users();
         users.searchByUsername(Config.getAdminUsername(), true).stream().findFirst().ifPresent(admin -> users.delete(admin.getId()));
         var clients = adminClient.realms().realm("master").clients();
-        clients.findByClientId(Config.getAdminClientId()).stream().findFirst().ifPresent(client -> clients.delete(client.getId()));
+        clients.findClientByClientId(Config.getAdminClientId()).ifPresent(c -> clients.delete(c.getId()));
 
         driver.open(keycloakUrls.getBaseUrl());
 

@@ -125,7 +125,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testManageOnlyOneClient() {
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient").orElseThrow();
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
         ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myclient.getId());
@@ -224,7 +224,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testViewAllClients() {
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient").orElseThrow();
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
         // the following operations should fail as the permission wasn't granted yet
@@ -306,7 +306,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testMapRolesOnlyOneClient() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient").orElseThrow();
 
         // create a role
         RoleRepresentation role = new RoleRepresentation();
@@ -336,7 +336,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         // to add a client role ('myclient') 'roleA' as a composite role of 'roleB' (client role of 'realmClient' client)
         // it is required to have permission to manage the `realmClient` and to map-roles-composite of the `myclient`
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient").orElseThrow();
 
         // create two roles, each for seprate client
         RoleRepresentation roleA = new RoleRepresentation();
@@ -378,7 +378,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testEvaluateAllResourcePermissionsForSpecificResourcePermission() {
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient").orElseThrow();
         UserRepresentation adminUser = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Only My Admin", adminUser.getId());
         ScopePermissionRepresentation allResourcesPermission = createAllPermission(client, clientsType, allowPolicy, Set.of(MANAGE, MAP_ROLES));
@@ -431,7 +431,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testManageClientWithAuthorizationSettings() {
-        ClientRepresentation myResourceServer = realm.admin().clients().findByClientId("myresourceserver").get(0);
+        ClientRepresentation myResourceServer = realm.admin().clients().findClientByClientId("myresourceserver").orElseThrow();
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myResourceServer.getId());
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());

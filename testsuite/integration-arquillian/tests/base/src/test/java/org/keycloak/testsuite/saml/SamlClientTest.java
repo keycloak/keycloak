@@ -36,7 +36,7 @@ public class SamlClientTest extends AbstractSamlTest {
 
     @Test
     public void testLoginWithOIDCClient() throws ParsingException, ConfigurationException, ProcessingException, IOException {
-        ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
+        ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
         adminClient.realm(REALM_NAME).clients().get(salesRep.getId()).update(ClientBuilder.edit(salesRep)
                         .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
 

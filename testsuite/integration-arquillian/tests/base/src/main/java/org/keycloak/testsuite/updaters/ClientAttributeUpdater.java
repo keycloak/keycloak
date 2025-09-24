@@ -14,9 +14,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-
 /**
  * Updater for client attributes. See {@link ServerResourceUpdater} for further details.
  * @author hmlnarik
@@ -35,10 +32,8 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
     public static ClientAttributeUpdater forClient(Keycloak adminClient, String realm, String clientId) {
         RealmResource realmRes = adminClient.realm(realm);
         ClientsResource clients = realmRes.clients();
-        List<ClientRepresentation> foundClients = clients.findByClientId(clientId);
-        assertThat(foundClients, hasSize(1));
-        ClientResource clientRes = clients.get(foundClients.get(0).getId());
-        
+        ClientResource clientRes = clients.getByClientId(clientId);
+
         return new ClientAttributeUpdater(clientRes, realmRes);
     }
 
@@ -86,7 +81,7 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         this.rep.setRedirectUris(values);
         return this;
     }
-    
+
     public ClientAttributeUpdater filterRedirectUris(Predicate<String> filter) {
         this.rep.setRedirectUris(this.rep.getRedirectUris().stream().filter(filter).collect(Collectors.toList()));
         return this;

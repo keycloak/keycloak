@@ -18,10 +18,12 @@
 package org.keycloak.admin.client.resource;
 
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -60,9 +62,24 @@ public interface ClientsResource {
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults);
 
+    /** @deprecated use {@link #findClientByClientId(String)} */
+    @Deprecated
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
+
+    default Optional<ClientRepresentation> findClientByClientId(String clientId) {
+        List<ClientRepresentation> list = findByClientId(clientId);
+        if (list.isEmpty()) {
+            return Optional.<ClientRepresentation>empty();
+        }
+        return Optional.of(list.get(0));
+    }
+
+    default ClientResource getByClientId(String id) {
+        return get(findClientByClientId(id).map(ClientRepresentation::getId)
+                .orElseThrow(() -> new NotFoundException("client not found " + id)));
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

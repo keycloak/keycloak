@@ -8,7 +8,6 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.HardcodedAttributeMapper;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -55,9 +54,7 @@ public class KcSamlXPathAttributeMapperTest extends AbstractInitializedBaseBroke
         protocolMapper.getConfig().put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "xml-name");
         protocolMapper.getConfig().put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
 
-        ClientRepresentation clientRepresentation = realm.clients().findByClientId(bc.getIDPClientIdInProviderRealm())
-                .get(0);
-        realm.clients().get(clientRepresentation.getId()).getProtocolMappers().createMapper(protocolMapper).close();
+        realm.clients().getByClientId(bc.getIDPClientIdInProviderRealm()).getProtocolMappers().createMapper(protocolMapper).close();
 
         addXpathMapper("firstName");
         addXpathMapper("lastName");

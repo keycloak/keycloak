@@ -1,13 +1,13 @@
 /*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -458,7 +458,7 @@ public class BrokerTest extends AbstractSamlTest {
 
         try (SamlBackchannelArtifactResolveReceiver samlBackchannelArtifactResolveReceiver = new SamlBackchannelArtifactResolveReceiver(
                 8082,
-                realm.clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+                realm.clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow()
         )) {
 
             IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/saml");

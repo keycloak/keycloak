@@ -525,7 +525,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         realm.admin().update(realmRep);
 
         //assign view-users role to myadmin
-        String realmManagementClientId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        String realmManagementClientId = realm.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).orElseThrow().getId();
         RoleRepresentation viewUsersRole = realm.admin().clients().get(realmManagementClientId).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
         realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagementClientId).add(List.of(viewUsersRole));
 

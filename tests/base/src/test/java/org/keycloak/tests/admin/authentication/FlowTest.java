@@ -326,7 +326,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         {
             // used by client override
-            ClientRepresentation client = realmResource.clients().findByClientId("account").get(0);
+            ClientRepresentation client = realmResource.clients().findClientByClientId("account").orElseThrow();
             ClientResource clientResource = realmResource.clients().get(client.getId());
 
             try {

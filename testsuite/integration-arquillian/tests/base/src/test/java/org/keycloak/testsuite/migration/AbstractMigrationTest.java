@@ -162,7 +162,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         }
 
         assertNames(migrationRealm.clients().findAll(), expectedClientIds.toArray(new String[expectedClientIds.size()]));
-        String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
+        String id2 = migrationRealm.clients().findClientByClientId("migration-test-client").orElseThrow().getId();
         assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
         assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user", "offline-test-user");
         assertNames(migrationRealm.groups().groups(), "migration-test-group");
@@ -172,7 +172,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "default-roles-master", "create-realm", "master-test-realm-role", "admin");
         assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", "account-console",
                 "master-realm", "master-test-client", "Migration-realm", "Migration2-realm");
-        String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
+        String id = masterRealm.clients().findClientByClientId("master-test-client").orElseThrow().getId();
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
         assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
         assertNames(masterRealm.groups().groups(), "master-test-group");
@@ -186,10 +186,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         // there should be either new default or left null if not set
         assertThat("Account theme was not modified", rep.getAccountTheme(), anyOf(equalTo("keycloak.v2"), nullValue()));
         // check the client theme is also removed
-        List<ClientRepresentation> client = realm.clients().findByClientId("migration-saml-client");
-        Assert.assertNotNull("migration-saml-client client is missing", client);
-        Assert.assertEquals("migration-saml-client client is missing", 1, client.size());
-        Assert.assertNull("migration-saml-client login theme was not removed", client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY));
+        ClientRepresentation client = realm.clients().findClientByClientId("migration-saml-client").orElseThrow();
+        Assert.assertNull("migration-saml-client login theme was not removed", client.getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY));
     }
 
     protected void testHttpChallengeFlow(RealmResource realm) {
@@ -410,7 +408,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
      * @param testUserProfileMigration whether a migrated realm contains a user profile component or not.
      */
     protected void testMigrationTo23_0_0(boolean testUserProfileMigration) {
-        if (testUserProfileMigration) testUserProfile(migrationRealm2);
+        if (testUserProfileMigration) {
+            testUserProfile(migrationRealm2);
+        }
         testRegistrationProfileFormActionRemoved(migrationRealm2);
     }
 
@@ -495,15 +495,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testDeleteAccount(RealmResource realm) {
-        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
-        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        ClientResource accountResource = realm.clients().getByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
 
         assertNotNull(accountResource.roles().get(AccountRoles.DELETE_ACCOUNT).toRepresentation());
         assertNotNull(realm.flows().getRequiredAction("delete_account"));
     }
 
     private void testAccountClient(RealmResource realm) {
-        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation accountClient = realm.clients().findClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).orElseThrow();
 
         ClientResource accountResource = realm.clients().get(accountClient.getId());
         RoleRepresentation viewAppRole = accountResource.roles().get(AccountRoles.VIEW_APPLICATIONS).toRepresentation();
@@ -520,7 +519,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testAdminClientUrls(RealmResource realm) {
-        ClientRepresentation adminConsoleClient = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation adminConsoleClient = realm.clients().findClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).orElseThrow();
 
         assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
         String baseUrl = "/admin/" + realm.toRepresentation().getRealm() + "/console/";
@@ -532,12 +531,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testAdminClientPkce(RealmResource realm) {
-        ClientRepresentation adminConsoleClient = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation adminConsoleClient = realm.clients().findClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).orElseThrow();
         assertEquals("S256", adminConsoleClient.getAttributes().get(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD));
     }
 
     private void testAccountClientUrls(RealmResource realm) {
-        ClientRepresentation accountConsoleClient = realm.clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation accountConsoleClient = realm.clients().findClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).orElseThrow();
 
         assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
         String baseUrl = "/realms/" + realm.toRepresentation().getRealm() + "/account/";
@@ -547,7 +546,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testAccountConsoleClient(RealmResource realm) {
-        ClientRepresentation accountConsoleClient = realm.clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation accountConsoleClient = realm.clients().findClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).orElseThrow();
 
         assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
         assertEquals("/realms/" + realm.toRepresentation().getRealm() + "/account/", accountConsoleClient.getBaseUrl());
@@ -625,14 +624,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     private void testDecisionStrategySetOnResourceServer() {
         ClientsResource clients = migrationRealm.clients();
-        ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
+        ClientRepresentation clientRepresentation = clients.findClientByClientId("authz-servlet").orElseThrow();
         ResourceServerRepresentation settings = clients.get(clientRepresentation.getId()).authorization().getSettings();
         assertEquals(DecisionStrategy.UNANIMOUS, settings.getDecisionStrategy());
     }
 
     private void testGroupPolicyTypeFineGrainedAdminPermission() {
         ClientsResource clients = migrationRealm.clients();
-        ClientRepresentation clientRepresentation = clients.findByClientId("realm-management").get(0);
+        ClientRepresentation clientRepresentation = clients.findClientByClientId("realm-management").orElseThrow();
         List<ResourceRepresentation> resources = clients.get(clientRepresentation.getId()).authorization().resources().resources();
 
         assertEquals(5, resources.size());
@@ -643,8 +642,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testCliConsoleScopeSize(RealmResource realm) {
-        ClientRepresentation cli = realm.clients().findByClientId(Constants.ADMIN_CLI_CLIENT_ID).get(0);
-        ClientRepresentation console = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation cli = realm.clients().findClientByClientId(Constants.ADMIN_CLI_CLIENT_ID).orElseThrow();
+        ClientRepresentation console = realm.clients().findClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).orElseThrow();
         MappingsRepresentation scopeMappings = realm.clients().get(console.getId()).getScopeMappings().getAll();
         Assert.assertNull(scopeMappings.getClientMappings());
         Assert.assertNull(scopeMappings.getRealmMappings());
@@ -667,9 +666,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testViewGroups(RealmResource realm) {
-        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
-
-        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        ClientResource accountResource = realm.clients().getByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
         RoleRepresentation viewAppRole = accountResource.roles().get(VIEW_GROUPS).toRepresentation();
         assertNotNull(viewAppRole);
     }
@@ -703,9 +700,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testRoleManageAccountLinks(RealmResource... realms) {
         log.info("testing role manage account links");
         for (RealmResource realm : realms) {
-            List<ClientRepresentation> clients = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
-            if (!clients.isEmpty()) {
-                String accountClientId = clients.get(0).getId();
+            ClientRepresentation client = realm.clients().findClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).orElse(null);
+            if (client != null) {
+                String accountClientId = client.getId();
                 ClientResource accountClient = realm.clients().get(accountClientId);
                 accountClient.roles().get(MANAGE_ACCOUNT_LINKS).toRepresentation(); //the role should be presented, it'll throw javax.ws.rs.NotFoundException in case the role is not found
 
@@ -795,8 +792,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     private void testResourceWithMultipleUris() {
         ClientsResource clients = migrationRealm.clients();
-        ClientRepresentation clientRepresentation = clients.findByClientId("authz-servlet").get(0);
-        ResourceRepresentation resource = clients.get(clientRepresentation.getId()).authorization().resources().findByName("Protected Resource").get(0);
+        ResourceRepresentation resource = clients.getByClientId("authz-servlet").authorization().resources().findByName("Protected Resource").get(0);
         assertThat(resource.getUris(), containsInAnyOrder("/*"));
     }
 
@@ -813,9 +809,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                         .map(RoleRepresentation::getName).collect(Collectors.toSet()), hasItem(roleName));
             }
             //test admin roles - master admin client
-            List<ClientRepresentation> clients = realm.clients().findByClientId(realm.toRepresentation().getRealm() + "-realm");
-            if (!clients.isEmpty()) {
-                ClientResource masterAdminClient = realm.clients().get(clients.get(0).getId());
+            ClientRepresentation client = realm.clients().findClientByClientId(realm.toRepresentation().getRealm() + "-realm").orElse(null);
+            if (client != null) {
+                ClientResource masterAdminClient = realm.clients().get(client.getId());
                 masterAdminClient.roles().get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
                 masterAdminClient.roles().get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
                 //test admin roles - admin role composite
@@ -1244,10 +1240,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testExtremelyLongClientAttribute(RealmResource realm) {
         log.info("Testing SAML certfificates attribute");
-
-        realm.clients().findByClientId("migration-saml-client")
-          .forEach(clientRepresentation -> {
-                assertThat(clientRepresentation.getAttributes(), hasEntry("extremely_long_attribute",
+                assertThat(realm.clients().findClientByClientId("migration-saml-client").orElseThrow().getAttributes(), hasEntry("extremely_long_attribute",
                       "     00000     00010     00020     00030     00040     00050     00060     00070     00080     00090"
                     + "     00100     00110     00120     00130     00140     00150     00160     00170     00180     00190"
                     + "     00200     00210     00220     00230     00240     00250     00260     00270     00280     00290"
@@ -1288,7 +1281,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                     + "     03700     03710     03720     03730     03740     03750     03760     03770     03780     03790"
                     + "     03800     03810     03820     03830     03840     03850     03860     03870     03880     03890"
                     + "     03900     03910     03920     03930     03940     03950     03960     03970     03980"));
-          });
     }
 
     protected void testRealmAttributesMigration() {
@@ -1341,9 +1333,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testClientAttributes(RealmResource realm) {
-        List<ClientRepresentation> clients = realm.clients().findByClientId("migration-saml-client");
-        Assert.assertEquals(1, clients.size());
-        ClientRepresentation client = clients.get(0);
+        ClientRepresentation client = realm.clients().findClientByClientId("migration-saml-client").orElseThrow();
+
         Assert.assertNotNull(client.getAttributes().get("saml.artifact.binding.identifier"));
         Assert.assertNotNull(client.getAttributes().get("saml_idp_initiated_sso_url_name"));
         List<String> clientIds = realm.clients().query("saml.artifact.binding.identifier:\"" + client.getAttributes().get("saml.artifact.binding.identifier") + "\"")
@@ -1386,7 +1377,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     private void testLightweightClientAndFullScopeAllowed(RealmResource realm, String clientId) {
-        ClientRepresentation clientRepresentation = realm.clients().findByClientId(clientId).get(0);
+        ClientRepresentation clientRepresentation = realm.clients().findClientByClientId(clientId).orElseThrow();
         assertTrue(clientRepresentation.isFullScopeAllowed());
         assertTrue(Boolean.parseBoolean(clientRepresentation.getAttributes().get(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED)));
     }

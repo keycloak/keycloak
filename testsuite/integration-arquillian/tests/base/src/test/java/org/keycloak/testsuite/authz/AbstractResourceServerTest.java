@@ -28,7 +28,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.resource.ProtectionResource;
@@ -178,14 +177,16 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
             authorization = getAuthzClient().authorization();
         }
 
-        for (PermissionRequest permission : permissions)
+        for (PermissionRequest permission : permissions) {
             authorizationRequest.addPermission(permission.getResourceId(), new ArrayList<String>(permission.getScopes()));
+        }
 
         Metadata metadata = new Metadata();
         metadata.setResponseMode("decision");
         metadata.setPermissionResourceFormat("uri");
-        if (matchingUri != null)
+        if (matchingUri != null) {
             metadata.setPermissionResourceMatchingUri(matchingUri);
+        }
 
         authorizationRequest.setMetadata(metadata);
 
@@ -197,8 +198,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
     }
 
     protected ClientResource getClient(RealmResource realm) {
-        ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return realm.clients().getByClientId("resource-server-test");
     }
 
     protected AuthzClient getAuthzClient() {

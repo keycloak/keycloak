@@ -1199,7 +1199,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         waitUntilElement(By.xpath("//body")).text().contains("Insecure Page");
         Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
 
-        if (System.getProperty("insecure.user.principal.unsupported") == null) waitUntilElement(By.xpath("//body")).text().contains("UserPrincipal");
+        if (System.getProperty("insecure.user.principal.unsupported") == null) {
+            waitUntilElement(By.xpath("//body")).text().contains("UserPrincipal");
+        }
 
         // test logout
 
@@ -1871,7 +1873,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // assign the supervisor role to user bburke - it should be mapped to coordinator next time he logs in.
         UserRepresentation bburke = adminClient.realm(DEMO).users().search("bburke", 0, 1).get(0);
         ClientRepresentation clientRepresentation = adminClient.realm(DEMO)
-                .clients().findByClientId("http://localhost:8280/employee-role-mapping/").get(0);
+                .clients().findClientByClientId("http://localhost:8280/employee-role-mapping/").orElseThrow();
         RoleRepresentation role = adminClient.realm(DEMO).clients().get(clientRepresentation.getId())
                 .roles().get("supervisor").toRepresentation();
 

@@ -143,7 +143,9 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
     private UserRepresentation findUser(RealmRepresentation testRealm, String userName) {
         for (UserRepresentation user : testRealm.getUsers()) {
-            if (user.getUsername().equals(userName)) return user;
+            if (user.getUsername().equals(userName)) {
+                return user;
+            }
         }
         return null;
     }
@@ -550,7 +552,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         transientClient.setAttributes(new HashMap<>());
         transientClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, String.valueOf(true));
         masterRealm.clients().create(transientClient);
-        transientClient = masterRealm.clients().findByClientId(transientClient.getClientId()).get(0);
+        transientClient = masterRealm.clients().findClientByClientId(transientClient.getClientId()).orElseThrow();
 
         UserRepresentation userRep = masterRealm.clients().get(transientClient.getId()).getServiceAccountUser();
         masterRealm.users().get(userRep.getId()).roles().realmLevel().add(Collections.singletonList(masterRealm.roles().get(AdminRoles.ADMIN).toRepresentation()));

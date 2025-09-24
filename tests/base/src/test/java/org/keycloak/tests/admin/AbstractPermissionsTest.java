@@ -68,7 +68,7 @@ public class AbstractPermissionsTest {
             String roleUserUuid = ApiUtil.getCreatedId(response);
             managedMasterRealm.cleanup().add(r -> r.users().delete(roleUserUuid));
 
-            String clientUuid = managedMasterRealm.admin().clients().findByClientId(REALM_NAME + "-realm").get(0).getId();
+            String clientUuid = managedMasterRealm.admin().clients().findClientByClientId(REALM_NAME + "-realm").orElseThrow().getId();
             RoleRepresentation roleRep = managedMasterRealm.admin().clients().get(clientUuid).roles().get(role).toRepresentation();
             managedMasterRealm.admin().users().get(roleUserUuid).roles().clientLevel(clientUuid).add(Collections.singletonList(roleRep));
         }

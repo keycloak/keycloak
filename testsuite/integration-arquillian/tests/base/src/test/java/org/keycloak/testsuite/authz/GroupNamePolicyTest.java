@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
@@ -229,8 +228,8 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     }
 
     private ClientResource getClient(RealmResource realm) {
-        ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return realm.clients().getByClientId("resource-server-test");
+
     }
 
     private AuthzClient getAuthzClient() {

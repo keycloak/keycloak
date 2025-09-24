@@ -102,9 +102,9 @@ public class LogoutTest extends AbstractSamlTest {
 
     @Before
     public void setup() {
-        salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
-        sales2Rep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST2).get(0);
-        salesSigRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST_SIG).get(0);
+        salesRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST).orElseThrow();
+        sales2Rep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST2).orElseThrow();
+        salesSigRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST_SIG).orElseThrow();
 
         adminClient.realm(REALM_NAME)
           .clients().get(salesRep.getId())
@@ -690,7 +690,7 @@ public class LogoutTest extends AbstractSamlTest {
 
     @Test
     public void testLogoutMandatoryDestinationUnsetRedirect() throws IOException {
-        testLogoutDestination(REDIRECT, 
+        testLogoutDestination(REDIRECT,
           builder -> builder
                        .transformObject(logoutReq -> { logoutReq.setDestination(null); })
                        .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY),
@@ -700,7 +700,7 @@ public class LogoutTest extends AbstractSamlTest {
 
     @Test
     public void testLogoutMandatoryDestinationSetRedirect() throws IOException {
-        testLogoutDestination(REDIRECT, 
+        testLogoutDestination(REDIRECT,
           builder -> builder.signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY),
           LogoutTest::assertSamlLogoutRequest
         );
