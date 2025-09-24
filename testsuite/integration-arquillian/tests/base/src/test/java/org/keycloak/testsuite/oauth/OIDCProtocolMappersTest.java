@@ -1821,6 +1821,57 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         assertEquals("hardcoded-bar", accessToken.getOtherClaims().get("hardcoded-foo"));
     }
 
+    @Test
+    public void testStaticScopeUsingDynamicScopeFormatWithDedicatedMappers() {
+        RealmResource realm = adminClient.realm("test");
+        ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
+        ClientRepresentation client = clientResource.toRepresentation();
+
+        // make sure the name of the client maps to the prefix of the dynamic scope name
+        client.setName("test");
+        clientResource.update(client);
+
+        // creates a client scope using the dynamic scope format and add it to the client as optional scope
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("test:create-mapper");
+        scopeRep.setProtocol("openid-connect");
+        scopeRep.setProtocolMappers(Collections.singletonList(createHardCodedMapper("from-mapper", "from-mapper", "value")));
+        try (Response resp1 = realm.clientScopes().create(scopeRep)) {
+            assertEquals(201, resp1.getStatus());
+            String clientScopeId = ApiUtil.getCreatedId(resp1);
+            getCleanup().addClientScopeId(clientScopeId);
+            clientResource.addOptionalClientScope(clientScopeId);
+        }
+
+        // creates a dedicated mapper to the client
+        ProtocolMappersResource dedicatedClientMappers = clientResource.getProtocolMappers();
+        dedicatedClientMappers.createMapper(createHardCodedMapper("from-dedicated-mapper", "from-dedicated-mapper", "value")).close();
+
+        // request the test:create-mapper scope so that mappers are included
+        oauth.scope("openid " + scopeRep.getName());
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        assertTrue(response.getScope().contains(scopeRep.getName()));
+
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+        assertNotNull(idToken.getOtherClaims());
+        assertNotNull(idToken.getOtherClaims().get("from-mapper"));
+        // claim mapped by client scope mapper
+        assertEquals("value", idToken.getOtherClaims().get("from-mapper"));
+        assertNotNull(idToken.getOtherClaims().get("from-dedicated-mapper"));
+        // claim mapped by dedicated client mapper
+        assertEquals("value", idToken.getOtherClaims().get("from-dedicated-mapper"));
+
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertTrue(response.getScope().contains(scopeRep.getName()));
+        assertNotNull(accessToken.getOtherClaims());
+        assertNotNull(accessToken.getOtherClaims().get("from-mapper"));
+        // claim mapped by client scope mapper
+        assertEquals("value", accessToken.getOtherClaims().get("from-mapper"));
+        assertNotNull(idToken.getOtherClaims().get("from-dedicated-mapper"));
+        // claim mapped by dedicated client mapper
+        assertEquals("value", idToken.getOtherClaims().get("from-dedicated-mapper"));
+    }
+
     private void assertRoles(List<String> actualRoleList, String ...expectedRoles){
         Assert.assertNames(actualRoleList, expectedRoles);
     }
@@ -1838,4 +1889,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         return oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
     }
 
+    public ProtocolMapperRepresentation createHardCodedMapper(String name, String claim, String value) {
+        return createHardcodedClaim(name, claim, value, "String", true, true, true);
+    }
 }
