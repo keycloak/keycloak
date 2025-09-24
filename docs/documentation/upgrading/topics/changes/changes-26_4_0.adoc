@@ -12,24 +12,6 @@ This change enhances security by preventing unintended disclosure of authenticat
 If you are relying on the `acr_values` parameter to be propagated to an identity provider, you must now explicitly set `acr_values` request parameter
 to the `Forwarded query parameters` setting in the identity provider configuration.
 
-=== Changes in EDB support
-
-In some previous versions of {project_name}, the EnterpriseDB (EDB) was considered unsupported. This has now changed and
-EDB Advanced is now supported when using the built-in Postgres JDBC driver. If you were using the EDB JDBC driver
-for connecting to EDB in previous versions, some invalid schema changes were applied to your database. If you attempt to
-start {project_name} with these changes either with the Postgres or EDB JDBC driver, the startup will fail with a checksum
-mismatch error. This won't corrupt the database but it won't be possible to start the upgraded server.
-To fix this, perform the following steps before upgrading to 26.4:
-
-* Shutdown your current {project_name} deployment.
-* Export your Realms using `kc.sh|bat export` command.
-See the link:{importexportguide_link}[relevant guide] for more details.
-* Create a new EDB database.
-* Upgrade your {project_name} to 26.4 and configure it to use the new database.
-* Import your previously exported Realms using `kc.sh|bat import` command.
-See the link:{importexportguide_link}[relevant guide] for more details.
-* Start the upgraded {project_name} deployment and make sure everything works as expected.
-
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

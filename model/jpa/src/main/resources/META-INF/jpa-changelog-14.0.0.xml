@@ -64,6 +64,7 @@
         <validCheckSum>7:fad08e83c77d0171ec166bc9bc5d390a</validCheckSum>
         <validCheckSum>7:72553fac2d2281052acbbbb14aa22ccf</validCheckSum>
         <validCheckSum>7:b558ad47ea0e4d3c3514225a49cc0d65</validCheckSum>
+        <validCheckSum>8:f43dfba07ba249d5d932dc489fd2b886</validCheckSum> <!-- EDB previously did not run this change set, now it does -->
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <or>
                 <dbms type="mysql"/>
@@ -82,6 +83,18 @@
         <modifySql dbms="oracle">
             <replace replace="VALUE(255)" with="SUBSTR(VALUE, 1, 250)" />
         </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-supported-dbs-edb-migration">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+            <changeSetExecuted id="14.0.0-KEYCLOAK-18286-supported-dbs" author="keycloak" changeLogFile="META-INF/jpa-changelog-14.0.0.xml" />
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="(value::varchar(250))" valueComputed="(value::varchar(250))" />
+        </createIndex>
     </changeSet>
 
     <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-unsupported-dbs">
