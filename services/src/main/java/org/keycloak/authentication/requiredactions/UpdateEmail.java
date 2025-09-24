@@ -18,6 +18,7 @@
 package org.keycloak.authentication.requiredactions;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -48,6 +49,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.FormMessage;
@@ -69,6 +71,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     public static final String CONFIG_VERIFY_EMAIL = "verifyEmail";
     private static final String FORCE_EMAIL_VERIFICATION = "forceEmailVerification";
+    private static final String PENDING_EMAIL_CACHE_KEY_PREFIX = "update-email-pending-";
 
     public static boolean isEnabled(RealmModel realm) {
         if (!Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
@@ -129,6 +132,12 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             if (profile.getAttributes().isReadOnly(UserModel.EMAIL)) {
                 context.getUser().removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
                 return;
+            }
+
+            // Check if email verification is pending and show message for subsequent visits
+            String pendingEmail = getPendingEmailVerification(context);
+            if (pendingEmail != null) {
+                context.form().setInfo("emailVerificationPending", pendingEmail);
             }
 
             if (session.getAttributeOrDefault(FORCE_EMAIL_VERIFICATION, Boolean.FALSE)) {
@@ -205,7 +214,13 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         }
         context.getEvent().success();
 
+        // Set cache entry only if not already set
+        if (getPendingEmailVerification(context) == null) {
+            setPendingEmailVerification(context, newEmail);
+        }
+
         LoginFormsProvider forms = context.form();
+        
         context.challenge(forms.setAttribute("messageHeader", forms.getMessage("emailUpdateConfirmationSentTitle"))
                 .setInfo("emailUpdateConfirmationSent", newEmail).createForm(Templates.getTemplate(LoginFormsPages.INFO)));
     }
@@ -214,6 +229,8 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
                                                 UserProfile emailUpdateValidationResult) {
 
         updateEmailNow(context.getEvent(), context.getUser(), emailUpdateValidationResult);
+        // Clear pending verification cache since verification is complete
+        clearPendingEmailVerification(context);
         context.success();
     }
 
@@ -281,5 +298,28 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
+    }
+
+    private static String getPendingEmailCacheKey(RequiredActionContext context) {
+        return PENDING_EMAIL_CACHE_KEY_PREFIX + context.getUser().getId();
+    }
+
+    public static void setPendingEmailVerification(RequiredActionContext context, String email) {
+        SingleUseObjectProvider cache = context.getSession().singleUseObjects();
+        // Use same expiration as verification link + small buffer
+        int linkValidityInSecs = context.getRealm().getActionTokenGeneratedByUserLifespan(UpdateEmailActionToken.TOKEN_TYPE);
+        long expirationSeconds = linkValidityInSecs + 300;
+        cache.put(getPendingEmailCacheKey(context), expirationSeconds, Map.of("email", email));
+    }
+
+    private String getPendingEmailVerification(RequiredActionContext context) {
+        SingleUseObjectProvider cache = context.getSession().singleUseObjects();
+        Map<String, String> pendingData = cache.get(getPendingEmailCacheKey(context));
+        return pendingData != null ? pendingData.get("email") : null;
+    }
+
+    private void clearPendingEmailVerification(RequiredActionContext context) {
+        SingleUseObjectProvider cache = context.getSession().singleUseObjects();
+        cache.remove(getPendingEmailCacheKey(context));
     }
 }
