@@ -110,7 +110,7 @@ public class MetricsDistTest {
                 .body(containsString("TYPE vendor_transactions_commit_times_seconds summary"))
 
                 // Caffeine Metrics
-                .body(containsString("TYPE cache_gets_total counter"))
+                .body(containsString("TYPE cache_gets counter"))
                 .body(containsString("TYPE cache_size gauge"))
                 .body(containsString("TYPE cache_evictions summary"))
 
