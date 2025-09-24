@@ -86,7 +86,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static Map<String, String> readProperties() {
-        if (Environment.isRuntimeMode()) {
+        if (!Environment.isRebuild()) {
             InputStream fileStream = loadPersistedConfig();
 
             if (fileStream == null) {
@@ -126,6 +126,12 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
             return null;
         }
 
+        if (!Environment.isWindows()) {
+            return PersistedConfigSource.class.getClassLoader().getResourceAsStream(PERSISTED_PROPERTIES);
+        }
+
+        // https://bugs.openjdk.org/browse/JDK-8338445 - prevents us from picking the properties directly up from the classloader
+        // instead we'll manually open the jar
         try (ZipInputStream is = new ZipInputStream(new FileInputStream(configFile))) {
             ZipEntry entry;
 
