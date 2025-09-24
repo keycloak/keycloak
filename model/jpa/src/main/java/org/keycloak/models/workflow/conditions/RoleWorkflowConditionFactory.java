@@ -18,6 +18,11 @@ public class RoleWorkflowConditionFactory implements WorkflowConditionProviderFa
     }
 
     @Override
+    public RoleWorkflowConditionProvider create(KeycloakSession session, List<String> configParameters) {
+        return new RoleWorkflowConditionProvider(session, configParameters);
+    }
+
+    @Override
     public String getId() {
         return ID;
     }

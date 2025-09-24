@@ -18,6 +18,11 @@ public class GroupMembershipWorkflowConditionFactory implements WorkflowConditio
     }
 
     @Override
+    public GroupMembershipWorkflowConditionProvider create(KeycloakSession session, List<String> configParameters) {
+        return new GroupMembershipWorkflowConditionProvider(session, configParameters);
+    }
+
+    @Override
     public String getId() {
         return ID;
     }
