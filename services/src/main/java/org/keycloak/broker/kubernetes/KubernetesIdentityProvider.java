@@ -3,7 +3,6 @@ package org.keycloak.broker.kubernetes;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
-import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
