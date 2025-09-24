@@ -57,7 +57,7 @@ Clients with the client authentication enabled are referred as confidential clie
 * _OFF_
 +
 For client-side clients that perform browser logins. As it is not possible to ensure that secrets can be kept safe with client-side clients, it is important to restrict access by configuring correct redirect URIs.
-Clients with the client authentication enabled are referred as public clients.
+Clients with the client authentication disabled are referred as public clients.
 
 *Authorization*:: Enables or disables fine-grained authorization support for this client.
 
@@ -78,7 +78,7 @@ Clients with the client authentication enabled are referred as public clients.
 [[_proof-key-for-code-exchange]]
 *PKCE method*
 
-If an attacker steals an authorization code of a legitimate client, Proof Key for Code Exchange (PKCE) prevents the attacker from receiving the tokens that apply to the code. With this option, 
+If an attacker steals an authorization code of a legitimate client, Proof Key for Code Exchange (PKCE) prevents the attacker from receiving the tokens that apply to the code. With this option,
 you can specify which PKCE challenge method is required for this client.
 
 An administrator can select one of these options:
