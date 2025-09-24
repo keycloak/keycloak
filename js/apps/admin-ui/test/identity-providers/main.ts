@@ -58,7 +58,7 @@ export async function createSPIFFEProvider(
 export async function createKubernetesProvider(
   page: Page,
   providerName: string,
-  jwksUrl: string
+  jwksUrl: string,
 ) {
   await clickProviderCard(page, providerName);
   await page.getByTestId("config.jwksUrl").fill(jwksUrl);
