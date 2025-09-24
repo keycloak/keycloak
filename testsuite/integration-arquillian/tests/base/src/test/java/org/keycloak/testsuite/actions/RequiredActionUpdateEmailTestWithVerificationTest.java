@@ -16,6 +16,16 @@
  */
 package org.keycloak.testsuite.actions;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
 import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
@@ -47,6 +57,7 @@ import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -56,17 +67,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
 	@Rule
 	public GreenMailRule greenMail = new GreenMailRule();
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
 	@Page
 	private InfoPage infoPage;
@@ -158,6 +165,18 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     @Test
     public void updateEmailLogoutSessionsNotChecked() throws Exception {
             updateEmail(false);
+    }
+
+    @Test
+    public void pendingVerificationIsNotDisplayedOnFirstVisit() {
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateEmailPage.assertCurrent();
+
+        // Verify no pending verification message is shown on first visit
+        assertThat(updateEmailPage.getInfo(), not(containsString("A verification email was sent to")));
     }
 
 	@Test
@@ -304,7 +323,8 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
             // user is forced to update the email because it was not yet confirmed
-            assertTrue(driver.getPageSource().contains("You need to update your email address to activate your account."));
+            // The pending verification message takes precedence and is more informative
+            assertThat(updateEmailPage.getInfo(), containsString("A verification email was sent to new-email@localhost"));
             updateEmailPage.clickSubmitAction();
             confirmationLink = fetchEmailConfirmationLink("new-email@localhost", greenMail.getLastReceivedMessage());
             driver.navigate().to(confirmationLink);
@@ -343,7 +363,8 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
             user = testRealm().users().search("test-user@localhost").get(0);
             assertEquals(1, user.getRequiredActions().size());
-            assertEquals(RequiredAction.VERIFY_EMAIL.name(), user.getRequiredActions().get(0));
+            // When UPDATE_EMAIL is configured with forced verification, it takes precedence over VERIFY_EMAIL
+            assertEquals(RequiredAction.UPDATE_EMAIL.name(), user.getRequiredActions().get(0));
         } finally {
             requiredAction.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.FALSE.toString());
             authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
@@ -425,4 +446,123 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
         return MailUtils.getPasswordResetEmailLink(message).trim();
     }
+
+    @Test
+    public void testEmailVerificationPendingMessageOnReAuthentication() throws MessagingException, IOException {
+        // Save original configuration to restore later
+        RequiredActionConfigRepresentation originalConfig = testRealm().flows().getRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name());
+        
+        try {
+            // Configure UPDATE_EMAIL to force email verification
+            RequiredActionConfigRepresentation config = new RequiredActionConfigRepresentation();
+            config.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.TRUE.toString());
+            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), config);
+
+            // Create user with empty email and UPDATE_PROFILE required action
+            UserRepresentation user = UserBuilder.create()
+                    .enabled(true)
+                    .username("pendinguser")
+                    .email("") // Start with empty email
+                    .firstName("John")
+                    .lastName("Doe")
+                    .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                    .build();
+            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+
+            loginPage.open();
+            loginPage.login("pendinguser", "password");
+            updateProfilePage.assertCurrent();
+            updateProfilePage.update("John", "Doe", "pending@localhost");
+
+            // Verification email should be sent and email should be set
+            UserRepresentation updatedUser = testRealm().users().get(findUser("pendinguser").getId()).toRepresentation();
+            assertEquals("Email should be set immediately", "pending@localhost", updatedUser.getEmail());
+
+            assertTrue("User should have UPDATE_EMAIL required action", 
+                      updatedUser.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
+
+            infoPage.assertCurrent();
+            
+            // Check that the email confirmation sent message is displayed
+            assertEquals("A confirmation email has been sent to pending@localhost. You must follow the instructions of the former to complete the email update.", 
+                        infoPage.getInfo());
+
+            loginPage.open();
+            loginPage.login("pendinguser", "password");
+
+            // Should be on UPDATE_EMAIL page with pending verification message
+            updateEmailPage.assertCurrent();
+            
+            // Check that the pending verification message is displayed
+            assertThat("Should show pending verification message", 
+                      updateEmailPage.getInfo(), containsString("A verification email was sent to pending@localhost"));
+
+            updateEmailPage.changeEmail("pending@localhost"); // Same email to resend
+            
+            // Should send verification email
+            String confirmationLink = fetchEmailConfirmationLink("pending@localhost", greenMail.getLastReceivedMessage());
+            assertNotNull("Should have received verification email", confirmationLink);
+
+        } finally {
+            // Always restore original configuration and clean up
+            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
+            events.clear();
+            ApiUtil.removeUserByUsername(testRealm(), "pendinguser");
+        }
+    }
+
+    @Test
+    public void testPendingVerificationMessageWithRealmVerificationEnabled() throws MessagingException, IOException {
+        try {
+            // Create user with verified email and UPDATE_EMAIL required action
+            UserRepresentation user = UserBuilder.create()
+                    .enabled(true)
+                    .username("realmverifyuser")
+                    .email("realmverifyuser@localhost")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .emailVerified(true)
+                    .requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name())
+                    .build();
+            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+
+            // Step 1: Login and change email (triggers verification due to realm verification setting)
+            loginPage.open();
+            loginPage.login("realmverifyuser", "password");
+            updateEmailPage.assertCurrent();
+            
+            // Verify no pending message on first visit
+            assertThat("Should not show pending message on first visit", 
+                      updateEmailPage.getInfo(), not(containsString("A verification email was sent to")));
+            
+            updateEmailPage.changeEmail("realmverify@localhost");
+
+            // Should send verification email and show confirmation
+            events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "realmverify@localhost").user(findUser("realmverifyuser").getId()).assertEvent();
+            String confirmationLink = fetchEmailConfirmationLink("realmverify@localhost");
+            assertNotNull("Should have received verification email", confirmationLink);
+
+            // Step 2: Logout and login again (should show pending verification message)
+            testRealm().users().get(findUser("realmverifyuser").getId()).logout();
+            loginPage.open();
+            loginPage.login("realmverifyuser", "password");
+
+            // Should be on UPDATE_EMAIL page with pending verification message
+            updateEmailPage.assertCurrent();
+            
+            // Check that the pending verification message is displayed
+            assertThat("Should show pending verification message with realm verification enabled", 
+                      updateEmailPage.getInfo(), containsString("A verification email was sent to realmverify@localhost"));
+
+            // Step 3: Complete verification to ensure cache is cleared
+            driver.navigate().to(confirmationLink);
+            infoPage.assertCurrent();
+
+        } finally {
+            // Clean up
+            events.clear();
+            ApiUtil.removeUserByUsername(testRealm(), "realmverifyuser");
+        }
+    }
+
 }
