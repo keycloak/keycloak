@@ -73,6 +73,28 @@ image::observability/keycloak-capacity-planning-dashboard.png[Capacity planning 
 . Pick your Prometheus datasource.
 . Click *Import*.
 
+[TIP]
+====
+The Grafana dashboards have labels inserted by Kubernetes.
+It is possible to use them with bare-metal deployment by adding the missing labels in the Prometheus configuration file, as shown below.
+
+.Prometheus Scrape Configuration
+[source,yaml]
+----
+scrape_configs:
+  - job_name: "Keycloak"
+    static_configs:
+      - targets: ["localhost:9000", "localhost:9001", "localhost:9002"]
+        labels:
+          namespace: 'keycloak'
+          container: 'keycloak'
+          job: 'keycloak/keycloak-metrics'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: pod
+----
+====
+
 == Export a dashboard
 
 Exporting a dashboard to JSON format may be useful. For example, you may want to suggest a change in our dashboard repository.

@@ -109,6 +109,11 @@ public class MetricsDistTest {
                 .body(containsString("TYPE vendor_transactions_rollback_times_seconds summary"))
                 .body(containsString("TYPE vendor_transactions_commit_times_seconds summary"))
 
+                // Caffeine Metrics
+                .body(containsString("TYPE cache_gets_total counter"))
+                .body(containsString("TYPE cache_size gauge"))
+                .body(containsString("TYPE cache_evictions summary"))
+
                 // Test histograms are not available without explicitly enabling the option
                 .body(not(containsString("vendor_statistics_miss_times_seconds_bucket")));
 
