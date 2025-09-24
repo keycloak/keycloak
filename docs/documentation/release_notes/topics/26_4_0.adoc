@@ -32,8 +32,7 @@ For more information about conditional flows, see link:{adminguide_link}#conditi
 
 = DPoP is now supported
 
-{project_name} has support for OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP), which was a preview feature since {project_name} 23. Besides that, there
-are some improvements and minor capabilities of DPoP feature like for example:
+{project_name} has support for OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP), which was a preview feature since {project_name} 23. Also, the supported version includes some improvements and minor capabilities of the DPoP feature such as the following:
 
 * Possibility to make just refresh tokens of a public client to be DPoP bound and omit the binding of an access tokens
 * All {project_name} endpoints that are secured by bearer token can now handle DPoP tokens. This includes for example admin REST API and account REST API
@@ -44,15 +43,15 @@ Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[Dmitry Telegin] for their contributions to the DPoP feature.
 endif::[]
 
-For more information, see link:{adminguide_link}#_dpop-bound-tokens[DPoP section] in the documentation.
+For more information, see the link:{adminguide_link}#_dpop-bound-tokens[DPoP section] in the documentation.
 
 = FAPI 2 Final support
 
 {project_name} has support for the latest versions of FAPI 2 specifications. Specification *FAPI 2.0 security profile* is already promoted to Final and {project_name} supports it.
-Specification *FAPI 2.0 Message Signing* was not yet promoted at this time, but latest draft is expected to be promoted to the Final version soon. {project_name} client policies support
-the final versions and corresponding client profiles for FAPI 2 are passing the FAPI conformance testsuite.
+Specification *FAPI 2.0 Message Signing* was not yet promoted at this time, but the latest draft is expected to be promoted to the Final version soon. {project_name} client policies support
+the final versions and corresponding client profiles for FAPI 2 are passing the FAPI conformance test suite.
 
-Besides some very minor polishing of existing policies, {project_name} has now new client profiles `fapi-2-dpop-security-profile` and `fapi-2-dpop-message-signing` for the clients, which use DPoP and want to be FAPI 2 compliant.
+Apart from some very minor polishing of existing policies, {project_name} has new client profiles (`fapi-2-dpop-security-profile` and `fapi-2-dpop-message-signing`) for the clients that use DPoP and are intended to be FAPI 2 compliant.
 
 ifeval::[{project_community}==true]
 Thank you to https://github.com/tnorimat[Takashi Norimatsu] for contributing this.
