@@ -24,7 +24,7 @@ public class KubernetesIdentityProvider extends OIDCIdentityProvider {
 
     private final String globalJwksUrl;
 
-    public KubernetesIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config, String globalJwksUrl) {
+    public KubernetesIdentityProvider(KeycloakSession session, KubernetesIdentityProviderConfig config, String globalJwksUrl) {
         super(session, config);
         this.globalJwksUrl = globalJwksUrl;
     }
