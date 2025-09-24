@@ -10,7 +10,7 @@ Notable changes may include internal behavior changes that prevent common miscon
 
 The `log-console-color` previously defaulted to `false`, but it will now instead check if the terminal supports color.
 
-You may still explicitly disable color support by setting the option to false.
+You may still explicitly disable color support by setting the option to `false`.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
