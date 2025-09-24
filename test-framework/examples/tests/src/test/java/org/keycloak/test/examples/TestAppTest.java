@@ -11,6 +11,7 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
 import org.keycloak.testframework.realm.ManagedRealm;
 
+import java.util.Optional;
 @KeycloakIntegrationTest
 public class TestAppTest {
 
@@ -25,7 +26,7 @@ public class TestAppTest {
 
     @Test
     public void testPushNotBefore() throws InterruptedException {
-        String clientUuid = managedRealm.admin().clients().findByClientId("test-app").stream().findFirst().get().getId();
+        String clientUuid = Optional.ofNullable(managedRealm.admin().clients().findClientByClientId("test-app")).orElseThrow().getId();
         managedRealm.admin().clients().get(clientUuid).pushRevocation();
 
         PushNotBeforeAction adminPushNotBefore = testApp.kcAdmin().getAdminPushNotBefore();

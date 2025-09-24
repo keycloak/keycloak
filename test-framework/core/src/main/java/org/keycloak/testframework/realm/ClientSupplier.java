@@ -1,7 +1,6 @@
 package org.keycloak.testframework.realm;
 
 import jakarta.ws.rs.NotFoundException;
-import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -39,11 +38,11 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
             }
             clientRepresentation.setId(ApiUtil.handleCreatedResponse(response));
         } else {
-            List<ClientRepresentation> clients = realm.admin().clients().findByClientId(attachTo);
-            if (clients.isEmpty()) {
+            ClientRepresentation client = realm.admin().clients().findClientByClientId(attachTo);
+            if (client != null) {
                 throw new IllegalStateException("No client found with client id: " + attachTo);
             }
-            clientRepresentation = clients.get(0);
+            clientRepresentation = client;
         }
 
         instanceContext.addNote("managed", managed);

@@ -96,9 +96,9 @@ public class LogoutTest extends AbstractSamlTest {
 
     @Before
     public void setup() {
-        salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
-        sales2Rep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST2).get(0);
-        salesSigRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST_SIG).get(0);
+        salesRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST);
+        sales2Rep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST2);
+        salesSigRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST_SIG);
 
         adminClient.realm(REALM_NAME)
           .clients().get(salesRep.getId())

@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -2776,7 +2777,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     private ClientResource getClient(RealmResource realm, String clientId) {
         ClientsResource clients = realm.clients();
-        return clients.findByClientId(clientId).stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return Optional.ofNullable(clients.findClientByClientId(clientId))
+                        .map(rep -> clients.get(rep.getId()))
+                        .orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
     }
 
     private AuthzClient getAuthzClient(String configFile) {

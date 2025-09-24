@@ -1770,7 +1770,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(401, response.getStatus());
 
         // update to correct audience
-        org.keycloak.representations.idm.ClientRepresentation clientRep = testRealm().clients().findByClientId("custom-audience").get(0);
+        org.keycloak.representations.idm.ClientRepresentation clientRep = testRealm().clients().findClientByClientId("custom-audience");
         ProtocolMapperRepresentation mapperRep = clientRep.getProtocolMappers().stream().filter(m -> m.getName().equals("aud")).findFirst().orElse(null);
         assertNotNull("Audience mapper not found", mapperRep);
         mapperRep.getConfig().put("included.custom.audience", "account");

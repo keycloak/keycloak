@@ -145,7 +145,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
                         response.set(realm.clients().create(ClientConfigBuilder.create().clientId("foo").build())),
                 Resource.CLIENT, true);
 
-        ClientRepresentation foo = managedRealm1.admin().clients().findByClientId("foo").get(0);
+        ClientRepresentation foo = managedRealm1.admin().clients().findClientByClientId("foo");
 
         invoke(realm -> realm.clients().get(foo.getId()).toRepresentation(), Resource.CLIENT, false);
         invoke(realm -> realm.clients().get(foo.getId()).getInstallationProvider("nosuch"), Resource.CLIENT, false);
@@ -153,7 +153,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> {
             realm.clients().get(foo.getId()).remove();
             realm.clients().create(foo);
-            ClientRepresentation temp = realm.clients().findByClientId("foo").get(0);
+            ClientRepresentation temp = realm.clients().findClientByClientId("foo");
             foo.setId(temp.getId());
         }, Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).generateNewSecret(), Resource.CLIENT, true);
@@ -267,7 +267,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
                 Resource.CLIENT, true);
         invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().realmLevel().remove(List.of()),
                 Resource.CLIENT, true);
-        ClientRepresentation realmAccessClient = adminClient.realms().realm(REALM_NAME) .clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation realmAccessClient = adminClient.realms().realm(REALM_NAME) .clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
         invoke((RealmResource realm) -> realm.clientScopes().get(scope.getId()).getScopeMappings().clientLevel(realmAccessClient.getId()).listAll(),
                 Resource.CLIENT, false);
         invoke((RealmResource realm) ->
@@ -360,7 +360,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         }, Resource.USER, true);
 
         GroupRepresentation group = managedRealm1.admin().getGroupByPath("mygroup");
-        ClientRepresentation realmAccessClient = managedRealm1.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation realmAccessClient = managedRealm1.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
 
         // this should throw forbidden as "create-client" role isn't enough
         invoke(realm -> clients.get(AdminRoles.CREATE_CLIENT).realm(REALM_NAME).groups().groups(),
@@ -449,7 +449,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).roles().realmLevel().add(List.of()), Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).roles().realmLevel().remove(List.of()), Resource.USER, true);
 
-        ClientRepresentation realmAccessClient = managedRealm1.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation realmAccessClient = managedRealm1.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAll(),
                 Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAvailable(),
@@ -577,7 +577,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         Assert.assertNull(serverInfo.getMemoryInfo());
 
         // assign the view-system permission to a test realm user and check the fallback works
-        ClientRepresentation realmMgtRep = adminClient.realm(REALM_NAME).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation realmMgtRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
         ClientResource realmMgtRes = adminClient.realm(REALM_NAME).clients().get(realmMgtRep.getId());
         RoleRepresentation viewSystem = new RoleRepresentation();
         viewSystem.setName(AdminRoles.VIEW_SYSTEM);

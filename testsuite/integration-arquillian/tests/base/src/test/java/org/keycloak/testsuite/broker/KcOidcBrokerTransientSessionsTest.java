@@ -178,7 +178,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         loginPage.open(bc.consumerRealmName());
         logInAsUserInIDPForFirstTime();
 
-        String consumerClientBrokerAppId = adminClient.realm(bc.consumerRealmName()).clients().findByClientId("broker-app").get(0).getId();
+        String consumerClientBrokerAppId = adminClient.realm(bc.consumerRealmName()).clients().findClientByClientId("broker-app").getId();
         String transientUserId = adminClient.realm(bc.consumerRealmName()).clients().get(consumerClientBrokerAppId).getUserSessions(0, 10).get(0).getUserId();
         assertThat(adminClient.realm(bc.consumerRealmName()).users().list(), empty());
 
@@ -220,7 +220,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     private void loginFetchingUserFromUserEndpoint(boolean loginIsDenied) {
         RealmResource realm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = realm.clients();
-        ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
+        ClientRepresentation brokerApp = clients.findClientByClientId("brokerapp");
 
         try {
             IdentityProviderResource identityProviderResource = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
@@ -279,7 +279,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     public void loginFetchingUserFromUserEndpointWithClaimMapper() {
         RealmResource realm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = realm.clients();
-        ClientRepresentation brokerApp = clients.findByClientId("brokerapp").get(0);
+        ClientRepresentation brokerApp = clients.findClientByClientId("brokerapp");
         IdentityProviderResource identityProviderResource = getIdentityProviderResource();
 
         clients.get(brokerApp.getId()).getProtocolMappers().createMapper(createHardcodedClaim("hard-coded", "hard-coded", "hard-coded", "String", true, true, true)).close();
@@ -322,7 +322,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         waitForPage(driver, "sign in to", true);
 
         RealmResource realm = adminClient.realm(bc.providerRealmName());
-        ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
+        ClientRepresentation rep = realm.clients().findClientByClientId(BrokerTestConstants.CLIENT_ID);
         ClientResource clientResource = realm.clients().get(rep.getId());
         ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "azp", "invalid-azp", ProviderConfigProperty.STRING_TYPE, true, true, true);
         clientResource.getProtocolMappers().createMapper(hardCodedAzp);
@@ -346,7 +346,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         waitForPage(driver, "sign in to", true);
 
         RealmResource realm = adminClient.realm(bc.providerRealmName());
-        ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
+        ClientRepresentation rep = realm.clients().findClientByClientId(BrokerTestConstants.CLIENT_ID);
         ClientResource clientResource = realm.clients().get(rep.getId());
         ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "aud", "invalid-aud", ProviderConfigProperty.LIST_TYPE, true, true, true);
         clientResource.getProtocolMappers().createMapper(hardCodedAzp);

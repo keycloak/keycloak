@@ -26,7 +26,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.util.List;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 
@@ -119,9 +118,9 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
     @Test
     public void testRedirectLoginNoNameIdPolicyForcePostBinding() throws Exception {
         ClientsResource clients = adminClient.realm(REALM_NAME).clients();
-        List<ClientRepresentation> foundClients = clients.findByClientId(SAML_CLIENT_ID_SALES_POST);
-        assertThat(foundClients, hasSize(1));
-        ClientResource clientRes = clients.get(foundClients.get(0).getId());
+        ClientRepresentation foundClient = clients.findClientByClientId(SAML_CLIENT_ID_SALES_POST);
+        assertThat(foundClient, notNullValue());
+        ClientResource clientRes = clients.get(foundClient.getId());
         ClientRepresentation client = clientRes.toRepresentation();
         client.getAttributes().put(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "true");
         clientRes.update(client);

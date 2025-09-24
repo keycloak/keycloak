@@ -173,7 +173,7 @@ public class GroupTest extends AbstractGroupTest {
                 .resourcePath(AdminEventPaths.clientResourcePath(clientUuid))
                 .representation(client)
                 .resourceType(ResourceType.CLIENT);
-        client = realm.clients().findByClientId("foo").get(0);
+        client = realm.clients().findClientByClientId("foo");
 
         RoleRepresentation role = RoleConfigBuilder.create().name("foo-role").build();
         realm.clients().get(client.getId()).roles().create(role);

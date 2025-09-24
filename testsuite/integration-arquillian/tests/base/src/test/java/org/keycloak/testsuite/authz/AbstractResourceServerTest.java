@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
@@ -198,7 +199,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
 
     protected ClientResource getClient(RealmResource realm) {
         ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return Optional.ofNullable(clients.findClientByClientId("resource-server-test")).map(representation -> clients.get(representation.getId())).orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
     }
 
     protected AuthzClient getAuthzClient() {

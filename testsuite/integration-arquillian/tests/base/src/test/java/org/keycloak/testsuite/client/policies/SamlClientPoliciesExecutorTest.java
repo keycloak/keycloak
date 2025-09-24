@@ -124,7 +124,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
             testSamlSecureClient(client, c -> realm.clients().create(c));
             // create it
             testClientOperation(client, null, c -> realm.clients().create(c));
-            clientId = realm.clients().findByClientId(client.getClientId()).iterator().next().getId();
+            clientId = realm.clients().findClientByClientId(client.getClientId()).getId();
             client.setId(clientId);
             // test update fails for non-https urls
             testSamlSecureClient(client, c -> updateClient(realm, c));
@@ -152,7 +152,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
 
             // create a client without the executor enabled
             testClientOperation(client, null, c -> realm.clients().create(c));
-            clientId = realm.clients().findByClientId(client.getClientId()).iterator().next().getId();
+            clientId = realm.clients().findClientByClientId(client.getClientId()).getId();
 
             // enable the policy and check redirect is not allowed
             createClientProfileAndPolicyToTest(SamlAvoidRedirectBindingExecutorFactory.PROVIDER_ID, null);
@@ -165,7 +165,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
             client.getAttributes().put(SamlConfigAttributes.SAML_FORCE_POST_BINDING, Boolean.TRUE.toString());
             testClientOperation(client, null, c -> realm.clients().create(c));
             // update without post binding fails
-            clientId = realm.clients().findByClientId(client.getClientId()).iterator().next().getId();
+            clientId = realm.clients().findClientByClientId(client.getClientId()).getId();
             client.setId(clientId);
             client.getAttributes().put(SamlConfigAttributes.SAML_FORCE_POST_BINDING, Boolean.FALSE.toString());
             testClientOperation(client, "Force POST binding is not enabled", c -> updateClient(realm, client));
@@ -192,7 +192,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
 
             // create a client without client signature
             testClientOperation(client, null, c -> realm.clients().create(c));
-            clientId = realm.clients().findByClientId(client.getClientId()).iterator().next().getId();
+            clientId = realm.clients().findClientByClientId(client.getClientId()).getId();
 
             // enable the policy and check login without signature is not allowed
             createClientProfileAndPolicyToTest(SamlSignatureEnforcerExecutorFactory.PROVIDER_ID, null);
@@ -212,7 +212,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
             testSamlAttributeOperation(client, null,
                     SamlConfigAttributes.SAML_SERVER_SIGNATURE,
                     Boolean.TRUE.toString(), Boolean.TRUE.toString(), c -> realm.clients().create(c));
-            clientId = realm.clients().findByClientId(client.getClientId()).iterator().next().getId();
+            clientId = realm.clients().findClientByClientId(client.getClientId()).getId();
             client.setId(clientId);
 
             // test update

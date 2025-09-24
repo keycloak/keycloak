@@ -138,7 +138,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
   private void removeDeleteAccountRoleFromUserClientRoles() {
     UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
     UserResource userResource = testRealm().users().get(user.getId());
-    ClientRepresentation clientRepresentation = testRealm().clients().findByClientId("account").get(0);
+    ClientRepresentation clientRepresentation = testRealm().clients().findClientByClientId("account");
     String deleteRoleId = userResource.roles().clientLevel(clientRepresentation.getId()).listAll().stream().filter(role -> Objects
         .equals(role.getName(), "delete-account")).findFirst().get().getId();
     RoleRepresentation deleteRole = new RoleRepresentation();

@@ -23,6 +23,7 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
@@ -194,7 +195,8 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
 
     private ClientResource getClient(RealmResource realm, String clientId) {
         ClientsResource clients = realm.clients();
-        return clients.findByClientId(clientId).stream().map(representation -> clients.get(representation.getId())).findFirst()
-                .orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return Optional.ofNullable(clients.findClientByClientId(clientId))
+                        .map(rep -> clients.get(rep.getId()))
+                        .orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
     }
 }

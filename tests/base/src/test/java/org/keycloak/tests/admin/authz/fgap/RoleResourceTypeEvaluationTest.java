@@ -59,7 +59,7 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testMapRoleClientScopeAllRoles() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient");
 
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
         // we need to be able to list client scopes
@@ -111,7 +111,7 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        String clientId = realm.admin().clients().findByClientId("realm-management").get(0).getId();
+        String clientId = realm.admin().clients().findClientByClientId("realm-management").getId();
         RoleRepresentation manageRealmRole = realm.admin().clients().get(clientId).roles().get("manage-realm").toRepresentation();
         realm.admin().users().get(myadmin.getId()).roles().clientLevel(clientId).add(List.of(manageRealmRole));
         realmAdminClient.tokenManager().grantToken();
@@ -167,7 +167,7 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testMappingAdminRoles() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        ClientRepresentation realmManagement = realm.admin().clients().findByClientId("realm-management").get(0);
+        ClientRepresentation realmManagement = realm.admin().clients().findClientByClientId("realm-management");
         RoleRepresentation createClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
 
         // create permission to map roles from all clients and to all users
@@ -178,7 +178,7 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         // create a role
         RoleRepresentation role = new RoleRepresentation();
         role.setName("myRole");
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient");
         realm.admin().clients().get(myclient.getId()).roles().create(role);
         role = realm.admin().clients().get(myclient.getId()).roles().get("myRole").toRepresentation();
 

@@ -134,8 +134,8 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         List<UserSessionRepresentation> userSessions = testUser.getUserSessions();
         assertEquals(1, userSessions.size());
         Map<String, String> clients = userSessions.get(0).getClients();
-        assertEquals("test-app", clients.get(realm.clients().findByClientId("test-app").get(0).getId()));
-        assertEquals("test-app-scope", clients.get(realm.clients().findByClientId("test-app-scope").get(0).getId()));
+        assertEquals("test-app", clients.get(realm.clients().findClientByClientId("test-app").getId()));
+        assertEquals("test-app-scope", clients.get(realm.clients().findClientByClientId("test-app-scope").getId()));
 
         isTokenEnabled(tokenResponse1, "test-app");
         isTokenEnabled(tokenResponse2, "test-app-scope");
@@ -146,8 +146,8 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         userSessions = testUser.getUserSessions();
         assertEquals(1, userSessions.size());
         clients = userSessions.get(0).getClients();
-        assertNull(clients.get(realm.clients().findByClientId("test-app").get(0).getId()));
-        assertEquals("test-app-scope", clients.get(realm.clients().findByClientId("test-app-scope").get(0).getId()));
+        assertNull(clients.get(realm.clients().findClientByClientId("test-app").getId()));
+        assertEquals("test-app-scope", clients.get(realm.clients().findClientByClientId("test-app-scope").getId()));
 
         isTokenDisabled(tokenResponse1, "test-app");
         isTokenEnabled(tokenResponse2, "test-app-scope");
