@@ -10,7 +10,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class AggregatedStepProviderFactory implements WorkflowStepProviderFactory<AggregatedStepProvider> {
 
-    public static final String ID = "aggregated-step-provider";
+    public static final String ID = "aggregated";
 
     @Override
     public AggregatedStepProvider create(KeycloakSession session, ComponentModel model) {

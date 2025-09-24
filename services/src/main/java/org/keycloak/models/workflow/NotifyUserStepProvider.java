@@ -17,6 +17,8 @@
 
 package org.keycloak.models.workflow;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.email.EmailException;
@@ -29,8 +31,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.keycloak.models.workflow.WorkflowStep.AFTER_KEY;
 
 public class NotifyUserStepProvider implements WorkflowStepProvider {
 
@@ -153,8 +153,8 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
         boolean foundCurrent = false;
         for (ComponentModel step : steps) {
             if (foundCurrent) {
-                timeToNextNonNotificationStep += step.get(AFTER_KEY, 0L);
-                if (!step.getProviderId().equals("notify-user-step-provider")) {
+                timeToNextNonNotificationStep += step.get(CONFIG_AFTER, 0L);
+                if (!step.getProviderId().equals("notify-user")) {
                     // we found the next non-notification action, accumulate its time and break
                     return Map.of(step, timeToNextNonNotificationStep);
                 }
@@ -169,16 +169,16 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
     
     private String getDefaultSubjectKey(String stepType) {
         return switch (stepType) {
-            case "disable-user-step-provider" -> ACCOUNT_DISABLE_NOTIFICATION_SUBJECT;
-            case "delete-user-step-provider" -> ACCOUNT_DELETE_NOTIFICATION_SUBJECT;
+            case DisableUserStepProviderFactory.ID -> ACCOUNT_DISABLE_NOTIFICATION_SUBJECT;
+            case DeleteUserStepProviderFactory.ID -> ACCOUNT_DELETE_NOTIFICATION_SUBJECT;
             default -> "accountNotificationSubject";
         };
     }
 
     private String getDefaultMessageKey(String stepType) {
         return switch (stepType) {
-            case "disable-user-step-provider" -> ACCOUNT_DISABLE_NOTIFICATION_BODY;
-            case "delete-user-step-provider" -> ACCOUNT_DELETE_NOTIFICATION_BODY;
+            case DisableUserStepProviderFactory.ID -> ACCOUNT_DISABLE_NOTIFICATION_BODY;
+            case DeleteUserStepProviderFactory.ID -> ACCOUNT_DELETE_NOTIFICATION_BODY;
             default -> "accountNotificationBody";
         };
     }

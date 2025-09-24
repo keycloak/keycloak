@@ -1,77 +1,69 @@
 package org.keycloak.representations.workflows;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-public class WorkflowStepRepresentation {
-
-    private static final String AFTER_KEY = "after";
+@JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_STEPS})
+public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
     public static Builder create() {
         return new Builder();
     }
 
-    private String id;
-    private String providerId;
-    private MultivaluedHashMap<String, String> config;
     private List<WorkflowStepRepresentation> steps;
 
     public WorkflowStepRepresentation() {
-        // reflection
+        super(null, null, null);
     }
 
-    public WorkflowStepRepresentation(String providerId) {
-        this(providerId, null);
+    public WorkflowStepRepresentation(String step) {
+        this(step, null);
     }
 
-    public WorkflowStepRepresentation(String providerId, MultivaluedHashMap<String, String> config) {
-        this(null, providerId, config, null);
+    public WorkflowStepRepresentation(String step, MultivaluedHashMap<String, String> config) {
+        this(null, step, config, null);
     }
 
-    public WorkflowStepRepresentation(String id, String providerId, MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
-        this.id = id;
-        this.providerId = providerId;
-        this.config = config;
-        this.steps = steps;
-    }
+    public WorkflowStepRepresentation(String id, String step, MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
+        super(id, step, config);
 
-    public String getId() {
-        return id;
-    }
-
-    public String getProviderId() {
-        return providerId;
-    }
-
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
-    }
-
-    public MultivaluedHashMap<String, String> getConfig() {
-        return config;
-    }
-
-    public void setConfig(MultivaluedHashMap<String, String> config) {
-        this.config = config;
-    }
-
-    public void setConfig(String key, String value) {
-        setConfig(key, Collections.singletonList(value));
-    }
-
-    public void setConfig(String key, List<String> values) {
-        if (this.config == null) {
-            this.config = new MultivaluedHashMap<>();
+        if (steps != null && !steps.isEmpty()) {
+            this.steps = steps;
         }
-        this.config.put(key, values);
     }
 
-    private void setAfter(long ms) {
-        setConfig(AFTER_KEY, String.valueOf(ms));
+    @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
+    @JsonDeserialize(using = MultivaluedHashMapValueDeserializer.class)
+    public MultivaluedHashMap<String, String> getConfig() {
+        return super.getConfig();
+    }
+
+    public String getAfter() {
+        return getConfigValue(CONFIG_AFTER, String.class);
+    }
+
+    public void setAfter(long ms) {
+        setConfig(CONFIG_AFTER, String.valueOf(ms));
+    }
+
+    public String getPriority() {
+        return getConfigValue(CONFIG_PRIORITY, String.class);
+    }
+
+    public void setPriority(long ms) {
+        setConfig(CONFIG_PRIORITY, String.valueOf(ms));
     }
 
     public List<WorkflowStepRepresentation> getSteps() {
@@ -96,9 +88,14 @@ public class WorkflowStepRepresentation {
             return this;
         }
 
+        public Builder id(String id) {
+            step.setId(id);
+            return this;
+        }
+
         public Builder before(WorkflowStepRepresentation targetStep, Duration timeBeforeTarget) {
             // Calculate absolute time: targetStep.after - timeBeforeTarget
-            String targetAfter = targetStep.getConfig().get(AFTER_KEY).get(0);
+            String targetAfter = targetStep.getConfig().get(CONFIG_AFTER).get(0);
             long targetTime = Long.parseLong(targetAfter);
             long thisTime = targetTime - timeBeforeTarget.toMillis();
             step.setAfter(thisTime);
@@ -110,13 +107,13 @@ public class WorkflowStepRepresentation {
             return this;
         }
 
-        public Builder withSteps(WorkflowStepRepresentation... steps) {
-            step.setSteps(Arrays.asList(steps));
+        public Builder withConfig(String key, String... value) {
+            step.setConfig(key, Arrays.asList(value));
             return this;
         }
 
-        public Builder withConfig(String key, List<String> values) {
-            step.setConfig(key, values);
+        public Builder withSteps(WorkflowStepRepresentation... steps) {
+            step.setSteps(Arrays.asList(steps));
             return this;
         }
 

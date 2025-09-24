@@ -9,7 +9,7 @@ import org.keycloak.models.workflow.WorkflowConditionProviderFactory;
 
 public class RoleWorkflowConditionFactory implements WorkflowConditionProviderFactory<RoleWorkflowConditionProvider> {
 
-    public static final String ID = "role-condition";
+    public static final String ID = "has-role";
     public static final String EXPECTED_ROLES = "roles";
 
     @Override

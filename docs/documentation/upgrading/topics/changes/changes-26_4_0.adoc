@@ -225,6 +225,16 @@ This implicit fallback mechanism ensures a smooth upgrade process for deployment
 
 For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
 
+=== Errors when searching users from LDAP will not fail the request anymore and local users will be returned
+
+Until now, failures when searching for users from an LDAP user federation provider caused the whole request to fail and no users were returned.
+In this release, if an error occurs during the search, local users will still be returned and the error will be logged at the `ERROR` level,
+so that administrators can investigate the root cause of the problem and fix any issue with their LDAP configuration or connectivity
+with the LDAP server.
+
+This change improves the resilience of the system when there are temporary issues with the LDAP server, ensuring that local users can still be accessed even if the LDAP search fails.
+If a local user is linked to a failing LDAP provider, the user will be marked as disabled and read-only until the LDAP server is available again.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

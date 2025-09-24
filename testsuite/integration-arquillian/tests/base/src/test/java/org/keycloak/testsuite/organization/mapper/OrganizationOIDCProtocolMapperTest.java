@@ -170,8 +170,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.scope("organization:" + orgA.getAlias());
         loginPage.open(bc.consumerRealmName());
         org.keycloak.testsuite.Assert.assertFalse(loginPage.isPasswordInputPresent());
-        org.keycloak.testsuite.Assert.assertTrue(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
-        org.keycloak.testsuite.Assert.assertFalse(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
+        assertTrue(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
+        assertFalse(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
         assertFalse(driver.getPageSource().contains("Your email domain matches"));
 
         // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization

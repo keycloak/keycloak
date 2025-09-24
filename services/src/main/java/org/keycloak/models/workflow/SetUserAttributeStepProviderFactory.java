@@ -27,7 +27,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class SetUserAttributeStepProviderFactory implements WorkflowStepProviderFactory<SetUserAttributeStepProvider> {
 
-    public static final String ID = "set-user-attr-step-provider";
+    public static final String ID = "set-user-attribute";
 
     @Override
     public SetUserAttributeStepProvider create(KeycloakSession session, ComponentModel model) {

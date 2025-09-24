@@ -1,5 +1,18 @@
 package org.keycloak.representations.workflows;
 
+import static java.util.Optional.ofNullable;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESET_ON;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -7,65 +20,107 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-public class WorkflowRepresentation {
+@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_RESET_ON, CONFIG_SCHEDULED, CONFIG_RECURRING, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
+@JsonIgnoreProperties(CONFIG_WITH)
+public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
     public static Builder create() {
-        return new Builder();
+        return new Builder().of(WorkflowConstants.DEFAULT_WORKFLOW);
     }
 
-    private String id;
-    private String providerId;
-    private MultivaluedHashMap<String, String> config;
     private List<WorkflowStepRepresentation> steps;
+
+    @JsonProperty(CONFIG_IF)
     private List<WorkflowConditionRepresentation> conditions;
 
+    private WorkflowStateRepresentation state;
+
     public WorkflowRepresentation() {
-        // reflection
+        super(null, null, null);
     }
 
-    public WorkflowRepresentation(String providerId) {
-        this(providerId, null);
+    public WorkflowRepresentation(String id, String workflow, MultivaluedHashMap<String, String> config, List<WorkflowConditionRepresentation> conditions, List<WorkflowStepRepresentation> steps) {
+        super(id, workflow, config);
+        this.conditions = conditions;
+        this.steps = steps;
     }
 
-    public WorkflowRepresentation(String providerId, Map<String, List<String>> config) {
-        this(null, providerId, config);
+    public <T> T getOn() {
+        return getConfigValuesOrSingle(CONFIG_ON_EVENT);
     }
 
-    public WorkflowRepresentation(String id, String providerId, Map<String, List<String>> config) {
-        this.id = id;
-        this.providerId = providerId;
-        this.config = new MultivaluedHashMap<>(config);
+    public void setOn(String... events) {
+        setConfigValue(CONFIG_ON_EVENT, Arrays.asList(events));
     }
 
-    public String getId() {
-        return id;
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    public void setOn(List<String> events) {
+        setConfigValue(CONFIG_ON_EVENT, events);
     }
 
-    public void setId(String id) {
-        this.id = id;
+    @JsonIgnore
+    public List<String> getOnValues() {
+        return ofNullable(getConfigValues(CONFIG_ON_EVENT)).orElse(Collections.emptyList());
     }
 
-    public String getProviderId() {
-        return this.providerId;
+    @JsonProperty(CONFIG_RESET_ON)
+    public <T> T getOnEventReset() {
+        return getConfigValuesOrSingle(CONFIG_RESET_ON);
     }
 
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
+    @JsonIgnore
+    public List<String> getOnEventsReset() {
+        return ofNullable(getConfigValues(CONFIG_RESET_ON)).orElse(Collections.emptyList());
+    }
+
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    public void setOnEventReset(List<String> names) {
+        setConfigValue(CONFIG_RESET_ON, names);
+    }
+
+    @JsonIgnore
+    public void setOnEventReset(String... names) {
+        setOnEventReset(Arrays.asList(names));
     }
 
     public String getName() {
-        return Optional.ofNullable(config).orElse(new MultivaluedHashMap<>()).getFirst("name");
+        return getConfigValue(CONFIG_NAME, String.class);
     }
 
     public void setName(String name) {
-        if (this.config == null) {
-            this.config = new MultivaluedHashMap<>();
-        }
-        this.config.putSingle("name", name);
+        setConfigValue(CONFIG_NAME, name);
+    }
+
+    public Boolean getRecurring() {
+        return getConfigValue(CONFIG_RECURRING, Boolean.class);
+    }
+
+    public void setRecurring(Boolean recurring) {
+        setConfigValue(CONFIG_RECURRING, recurring);
+    }
+
+    public Boolean getScheduled() {
+        return getConfigValue(CONFIG_SCHEDULED, Boolean.class);
+    }
+
+    public void setScheduled(Boolean scheduled) {
+        setConfigValue(CONFIG_SCHEDULED, scheduled);
+    }
+
+    public Boolean getEnabled() {
+        return getConfigValue(CONFIG_ENABLED, Boolean.class);
+    }
+
+    public void setEnabled(Boolean enabled) {
+        setConfigValue(CONFIG_ENABLED, enabled);
     }
 
     public void setConditions(List<WorkflowConditionRepresentation> conditions) {
@@ -84,96 +139,101 @@ public class WorkflowRepresentation {
         return steps;
     }
 
-    public MultivaluedHashMap<String, String> getConfig() {
-        return config;
+    public WorkflowStateRepresentation getState() {
+        if (state == null) {
+            state = new WorkflowStateRepresentation(this);
+        }
+
+        if (state.getErrors().isEmpty()) {
+            return null;
+        }
+
+        return state;
     }
 
-    public void addStep(WorkflowStepRepresentation step) {
-        if (steps == null) {
-            steps = new ArrayList<>();
-        }
-        steps.add(step);
+    public void setState(WorkflowStateRepresentation state) {
+        this.state = state;
     }
 
     public static class Builder {
-        private String providerId;
-        private final Map<String, List<String>> config = new HashMap<>();
-        private List<WorkflowConditionRepresentation> conditions = new ArrayList<>();
-        private final Map<String, List<WorkflowStepRepresentation>> steps = new HashMap<>();
+
+        private final Map<WorkflowRepresentation, List<WorkflowStepRepresentation>> steps = new HashMap<>();
         private List<Builder> builders = new ArrayList<>();
+        private WorkflowRepresentation representation;
 
         private Builder() {
         }
 
-        private Builder(String providerId, List<Builder> builders) {
-            this.providerId = providerId;
+        private Builder(WorkflowRepresentation representation, List<Builder> builders) {
+            this.representation = representation;
             this.builders = builders;
         }
 
         public Builder of(String providerId) {
-            Builder builder = new Builder(providerId, builders);
+            WorkflowRepresentation representation = new WorkflowRepresentation();
+            representation.setUses(providerId);
+            Builder builder = new Builder(representation, builders);
             builders.add(builder);
             return builder;
         }
 
         public Builder onEvent(String operation) {
-            List<String> events = config.computeIfAbsent("events", k -> new ArrayList<>());
-
-            events.add(operation);
-
+            representation.addConfigValue(CONFIG_ON_EVENT, operation);
             return this;
         }
 
         public Builder onConditions(WorkflowConditionRepresentation... condition) {
-            if (conditions == null) {
-                conditions = new ArrayList<>();
-            }
-            conditions.addAll(Arrays.asList(condition));
+            representation.setConditions(Arrays.asList(condition));
             return this;
         }
 
         public Builder withSteps(WorkflowStepRepresentation... steps) {
-            this.steps.computeIfAbsent(providerId, (k) -> new ArrayList<>()).addAll(Arrays.asList(steps));
+            this.steps.computeIfAbsent(representation, (k) -> new ArrayList<>()).addAll(Arrays.asList(steps));
             return this;
         }
 
         public Builder withConfig(String key, String value) {
-            config.put(key, Collections.singletonList(value));
+            representation.addConfigValue(key, value);
             return this;
         }
 
-        public Builder withConfig(String key, List<String> value) {
-            config.put(key, value);
+        public Builder withConfig(String key, List<String> values) {
+            representation.setConfigValue(key, values);
             return this;
         }
 
         public Builder name(String name) {
-            return withConfig("name", name);
+            representation.setName(name);
+            return this;
         }
 
         public Builder immediate() {
-            return withConfig("scheduled", "false");
+            representation.setScheduled(false);
+            return this;
         }
 
         public Builder recurring() {
-            return withConfig("recurring", "true");
+            representation.setRecurring(true);
+            return this;
         }
 
-        public List<WorkflowRepresentation> build() {
+        public WorkflowSetRepresentation build() {
             List<WorkflowRepresentation> workflows = new ArrayList<>();
 
             for (Builder builder : builders) {
-                for (Entry<String, List<WorkflowStepRepresentation>> entry : builder.steps.entrySet()) {
-                    WorkflowRepresentation workflow = new WorkflowRepresentation(entry.getKey(), builder.config);
+                if (builder.steps.isEmpty()) {
+                    continue;
+                }
+                for (Entry<WorkflowRepresentation, List<WorkflowStepRepresentation>> entry : builder.steps.entrySet()) {
+                    WorkflowRepresentation workflow = entry.getKey();
 
                     workflow.setSteps(entry.getValue());
-                    workflow.setConditions(builder.conditions);
 
                     workflows.add(workflow);
                 }
             }
 
-            return workflows;
+            return new WorkflowSetRepresentation(workflows);
         }
     }
 }
