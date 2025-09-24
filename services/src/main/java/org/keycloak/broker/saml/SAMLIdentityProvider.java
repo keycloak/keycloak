@@ -167,11 +167,14 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             Boolean forceAuthn = getConfig().isForceAuthn();
             if (protocol.requireReauthentication(null, request.getAuthenticationSession()))
                 forceAuthn = Boolean.TRUE;
+            String prompt = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.PROMPT_PARAM);
+            boolean isPassive = OIDCLoginProtocol.PROMPT_VALUE_NONE.equals(prompt);
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .assertionConsumerUrl(assertionConsumerServiceUrl)
                     .destination(destinationUrl)
                     .issuer(issuerURL)
                     .forceAuthn(forceAuthn)
+                    .isPassive(isPassive)
                     .protocolBinding(protocolBinding)
                     .nameIdPolicy(SAML2NameIDPolicyBuilder
                         .format(nameIDPolicyFormat)
