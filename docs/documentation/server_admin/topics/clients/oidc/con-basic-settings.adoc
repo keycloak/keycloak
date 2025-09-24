@@ -52,7 +52,7 @@ the legacy {project_name} Java OIDC adapters or by the link:https://docs.wildfly
 * _ON_
 +
 For server-side clients that perform browser logins and require client secrets when making an Access Token Request. This setting should be used for server-side applications.
-Clients with the client authentication enabled are referred as confidential clients. For the details about client authentication, See <<_client-credentials, Client credentials section>>.
+Clients with the client authentication enabled are referred as confidential clients. For more details, see <<_client-credentials, Client credentials>>.
 
 * _OFF_
 +
@@ -78,12 +78,12 @@ Clients with the client authentication enabled are referred as public clients.
 [[_proof-key-for-code-exchange]]
 *PKCE method*
 
-If an attacker steals an authorization code of a legitimate client, Proof Key for Code Exchange (PKCE) prevents the attacker from receiving the tokens that apply to the code. This option
-allows to specify which PKCE challenge method is required for this client.
+If an attacker steals an authorization code of a legitimate client, Proof Key for Code Exchange (PKCE) prevents the attacker from receiving the tokens that apply to the code. With this option, 
+you can specify which PKCE challenge method is required for this client.
 
 An administrator can select one of these options:
 
-*(blank)*:: {project_name} does not apply PKCE unless the client sends appropriate PKCE parameters to {project_name}s authorization endpoint. So PKCE is still possible to use, but it is not required.
+*(blank)*:: {project_name} does not apply PKCE unless the client sends the appropriate PKCE parameters to {project_name} authorization endpoint. So PKCE is still possible to use, but it is not required.
 *S256*:: {project_name} applies to the client PKCE whose code challenge method is S256.
 *plain*:: {project_name} applies to the client PKCE whose code challenge method is plain.
 
@@ -91,7 +91,7 @@ See https://datatracker.ietf.org/doc/html/rfc7636[RFC 7636 Proof Key for Code Ex
 
 *Require DPoP bound tokens*
 
-DPoP binds an access token and a refresh token together with the public part of a client's key pair. For the details, see <<_dpop-bound-tokens, DPoP section>>.
+DPoP binds an access token and a refresh token together with the public part of a client's key pair. For the details, see <<_dpop-bound-tokens, DPoP>>.
 
 == Login settings
 
