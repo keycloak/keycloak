@@ -606,14 +606,6 @@
                 <version>${nashorn.version}</version>
             </dependency>
 
-            <!-- BEGIN Remove once org.mariadb.jdbc:mariadb-java-client:3.5.3 is part of Quarkus distribution. See https://github.com/keycloak/keycloak/issues/41371 -->
-            <dependency>
-                <groupId>org.mariadb.jdbc</groupId>
-                <artifactId>mariadb-java-client</artifactId>
-                <version>${mariadb-jdbc.version}</version>
-            </dependency>
-            <!-- END -->
-
             <!-- Twitter -->
             <dependency>
                 <groupId>org.twitter4j</groupId>
