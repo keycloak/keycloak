@@ -18,6 +18,11 @@ public class IdentityProviderWorkflowConditionFactory implements WorkflowConditi
     }
 
     @Override
+    public IdentityProviderWorkflowConditionProvider create(KeycloakSession session, List<String> configParameters) {
+        return new IdentityProviderWorkflowConditionProvider(session, configParameters);
+    }
+
+    @Override
     public String getId() {
         return ID;
     }

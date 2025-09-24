@@ -17,6 +17,23 @@ public class UserAttributeWorkflowConditionFactory implements WorkflowConditionP
     }
 
     @Override
+    public UserAttributeWorkflowConditionProvider create(KeycloakSession session, List<String> configParameters) {
+        if (configParameters.size() % 2 != 0) {
+            throw new IllegalArgumentException("Expected even number of configuration parameters (attribute key/value pairs)");
+        }
+            // Convert list of parameters into map of expected attributes
+        Map<String, List<String>> expectedAttributes = new java.util.HashMap<>();
+        for (int i = 0; i < configParameters.size(); i += 2) {
+            String key = configParameters.get(i);
+            String value = configParameters.get(i + 1);
+            // value can have multiple values separated by comma
+            List<String> values = List.of(value.split(","));
+            expectedAttributes.put(key, values);
+        }
+        return create(session, expectedAttributes);
+    }
+
+    @Override
     public String getId() {
         return ID;
     }
