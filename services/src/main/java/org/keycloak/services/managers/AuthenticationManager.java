@@ -1069,8 +1069,9 @@ public class AuthenticationManager {
 
         event.event(EventType.LOGIN);
         event.session(userSession);
+        Response response = redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, authSession);
         event.success();
-        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, authSession);
+        return response;
     }
 
     // Return null if action is not required. Or the alias of the requiredAction in case it is required.

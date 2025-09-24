@@ -816,6 +816,11 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             //assert cookie not found
             events.expect(EventType.LOGIN_ERROR)
                     .user(new UserRepresentation())
+                    .error(Errors.INVALID_CODE)
+                    .assertEvent();
+
+            events.expect(EventType.LOGIN_ERROR)
+                    .user(new UserRepresentation())
                     .error(Errors.COOKIE_NOT_FOUND)
                     .assertEvent();
         }
