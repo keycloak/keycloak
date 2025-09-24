@@ -16,7 +16,7 @@ If you enable *Require DPoP bound tokens* in the Admin Console *Settings* tab un
 
 If verification fails, {project_name} rejects the token.
 
-If the switch *Require DPoP bound tokens* is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
+If *Require DPoP bound tokens* is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} verifies DPoP proof
 and will add the thumbprint to the token. Also, if the switch is off, DPoP binding is not enforced by the {project_name} server for this client. It is recommended to have this switch
 on if you want to make sure that particular client always uses DPoP binding.
 
