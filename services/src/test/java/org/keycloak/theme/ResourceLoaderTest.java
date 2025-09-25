@@ -51,13 +51,13 @@ public class ResourceLoaderTest {
         assertFileAsStream(new File(tempDirectory.toFile(), "test/../resources/"), "myresource.css", true, true);
 
         // relativize tmp folder to the current working directory, something like ../../../tmp/path
-        Path cwd = Paths.get(".").toAbsolutePath();
-        Path parentAbs = parent.toPath().toAbsolutePath();
-        if (cwd.getRoot() != null && parentAbs.getRoot() != null && !cwd.getRoot().equals(parentAbs.getRoot())) {
-            System.out.println("[ResourceLoaderTest] Skipping relative path assertion: cwd root (" + cwd.getRoot() + ") != parent root (" + parentAbs.getRoot() + ")");
-        } else {
-            Path relativeParent = cwd.relativize(parentAbs);
+        Path currentDir = Paths.get(".").toAbsolutePath();
+        Path parentPath = parent.toPath();
+        if (currentDir.getRoot() != null && currentDir.getRoot().equals(parentPath.getRoot())) {
+            Path relativeParent = currentDir.relativize(parentPath);
             assertFileAsStream(relativeParent.toFile(), "myresource.css", true, true);
+        } else {
+            System.out.println("Skipping relativize test: paths on different roots");
         }
     }
 
