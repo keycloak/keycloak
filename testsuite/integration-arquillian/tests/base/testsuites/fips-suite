@@ -2,6 +2,7 @@ LoginTest
 LoginTotpTest
 PasswordHashingTest
 ClientAuthSignedJWTTest
+ClientAuthEdDSASignedJWTTest
 CredentialsTest
 JavaKeystoreKeyProviderTest
 ServerInfoTest
