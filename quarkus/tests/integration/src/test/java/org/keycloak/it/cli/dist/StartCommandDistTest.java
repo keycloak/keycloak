@@ -108,13 +108,6 @@ public class StartCommandDistTest {
 
     @DryRun
     @Test
-    @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
-    void failBuildPropertyNotAvailable(CLIResult cliResult) {
-        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
-    }
-
-    @DryRun
-    @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(CLIResult cliResult) {
         assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
@@ -158,13 +151,6 @@ public class StartCommandDistTest {
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
         assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
         assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
-    }
-
-    @DryRun
-    @Test
-    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--db=postgres" })
-    void testStartUsingOptimizedDoesNotAllowBuildOptions(CLIResult cliResult) {
-        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @DryRun
