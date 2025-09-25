@@ -5,7 +5,7 @@ metadata:
 spec:
   keycloakCRName: example-kc
   labels:
-    job: "true"
+    example: "test"
   realm:
     id: count0
     realm: count0
