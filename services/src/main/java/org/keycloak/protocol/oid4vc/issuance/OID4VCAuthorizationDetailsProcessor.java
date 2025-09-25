@@ -254,7 +254,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
      * @param clientSession the client session that contains the credential offer information
      * @return the authorization details response if generation was successful, null otherwise
      */
-    public List<AuthorizationDetailsResponse> generateAuthorizationDetailsFromCredentialOffer(AuthenticatedClientSessionModel clientSession) {
+    private List<AuthorizationDetailsResponse> generateAuthorizationDetailsFromCredentialOffer(AuthenticatedClientSessionModel clientSession) {
         logger.info("Processing authorization_details from credential offer");
 
         // Get supported credentials
