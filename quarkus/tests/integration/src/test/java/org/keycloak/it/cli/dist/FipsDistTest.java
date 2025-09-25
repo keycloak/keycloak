@@ -35,7 +35,7 @@ import io.quarkus.test.junit.main.Launch;
 @Tag(DistributionTest.SLOW)
 public class FipsDistTest {
 
-    private static final String BCFIPS_VERSION = "BCFIPS version 2.0";
+    private static final String BCFIPS_VERSION = "BCFIPS version 2.0102";
 
     @Test
     void testFipsNonApprovedMode(KeycloakDistribution dist) {

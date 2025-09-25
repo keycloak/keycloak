@@ -151,8 +151,17 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void createJksEdDSA() throws Exception {
-        // BCFIPS does not support EdEC keys as it does not implement JDK interfaces
         createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
+    }
+
+    @Test
+    public void createPkcs12EdDSA() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
+    }
+
+    @Test
+    public void createBcfksEdDSA() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
     }
 
     private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String keyAlgorithm, boolean vault) throws Exception {
