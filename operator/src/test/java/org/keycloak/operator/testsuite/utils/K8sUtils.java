@@ -127,6 +127,13 @@ public final class K8sUtils {
     }
 
     public static CurlResult inClusterCurl(KubernetesClient k8sClient, String namespace, Map<String, String> labels, String... args) {
+        return inClusterCurlCommand(k8sClient, namespace, labels, "curl", args);
+    }
+
+    public static CurlResult inClusterCurlCommand(KubernetesClient k8sClient, String namespace, Map<String, String> labels, String commandString, String... args) {
+        Log.infof("Executing curl labels: %s commandString: %s args: %s", labels, commandString, String.join(" ", args));
+
+
         Log.infof("Starting cURL in namespace '%s' with labels '%s'", namespace, labels);
         var podName = "curl-pod" + (labels.isEmpty()?"":("-" + UUID.randomUUID()));
         try {
@@ -149,9 +156,11 @@ public final class K8sUtils {
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
 
+            String[] command = Stream.concat(Stream.of(commandString), Stream.of(args)).toArray(String[]::new);
+            Log.infof("Executing curl command: %s", String.join(" ", command));
             try (ExecWatch watch = k8sClient.pods().resource(curlPod).withReadyWaitTimeout(15000)
                     .writingOutput(output)
-                    .exec(Stream.concat(Stream.of("curl"), Stream.of(args)).toArray(String[]::new))) {
+                    .exec(command)) {
                 var exitCode = watch.exitCode().get(5, TimeUnit.SECONDS);
                 return new CurlResult(exitCode, output.toString(StandardCharsets.UTF_8));
             } finally {
@@ -171,7 +180,26 @@ public final class K8sUtils {
                 .withCommand("sh")
                 .withName("curl")
                 .withStdin()
+                // Mount the projected service account token with audience
+                .addNewVolumeMount()
+                    .withName("aud-token")
+                    .withMountPath("/var/run/secrets/tokens")
+                    .withReadOnly(true)
+                .endVolumeMount()
                 .endContainer()
+                // Define the projected volume providing a service account token
+                .addNewVolume()
+                    .withName("aud-token")
+                    .withNewProjected()
+                        .addNewSource()
+                            .withNewServiceAccountToken()
+                                .withAudience("https://example.com:8443/realms/count0")
+                                .withExpirationSeconds(600L)
+                                .withPath("test-aud-token")
+                            .endServiceAccountToken()
+                        .endSource()
+                    .endProjected()
+                .endVolume()
                 .endSpec();
     }
 
