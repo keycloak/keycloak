@@ -32,11 +32,15 @@ const fetchEndpoint = async (
   adminClient: KeycloakAdminClient,
   { id, type, first, max, search, endpoint }: Query,
 ): Promise<any> =>
-  fetchAdminUI(adminClient, `/ui-ext/${endpoint}/${type}/${id}`, {
-    first: (first || 0).toString(),
-    max: (max || 10).toString(),
-    search: search || "",
-  });
+  fetchAdminUI(
+    adminClient,
+    `/ui-ext/${endpoint}/${type}/${encodeURIComponent(id!)}`,
+    {
+      first: (first || 0).toString(),
+      max: (max || 10).toString(),
+      search: search || "",
+    },
+  );
 
 export const getAvailableClientRoles = (
   adminClient: KeycloakAdminClient,
