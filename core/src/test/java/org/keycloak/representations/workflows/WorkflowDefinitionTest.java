@@ -8,13 +8,11 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
 
 public class WorkflowDefinitionTest {
@@ -31,7 +29,6 @@ public class WorkflowDefinitionTest {
         expected.setSteps(null);
         expected.setConditions(null);
         expected.setRecurring(true);
-        expected.setScheduled(true);
         expected.setEnabled(true);
 
         expected.setConditions(Arrays.asList(
@@ -77,10 +74,9 @@ public class WorkflowDefinitionTest {
         assertEquals(expected.getUses(), actual.getUses());
         assertTrue(actual.getOn() instanceof String);
         assertEquals(expected.getOn(), (String) actual.getOn());
-        assertArrayEquals(((List) expected.getOnEventReset()).toArray(), ((List) actual.getOnEventReset()).toArray());
+        assertArrayEquals(((List<?>) expected.getOnEventReset()).toArray(), ((List<?>) actual.getOnEventReset()).toArray());
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getRecurring(), actual.getRecurring());
-        assertEquals(expected.getScheduled(), actual.getScheduled());
         assertEquals(expected.getEnabled(), actual.getEnabled());
 
         List<WorkflowConditionRepresentation> actualConditions = actual.getConditions();
@@ -140,33 +136,4 @@ public class WorkflowDefinitionTest {
         System.out.println(json);
     }
 
-    @Test
-    public void testAggregatedAction() throws IOException {
-        WorkflowRepresentation expected = new WorkflowRepresentation();
-        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        config.put("k1", Collections.singletonList("v1"));
-        WorkflowStepRepresentation aggregated = new WorkflowStepRepresentation("step-1", config);
-
-        config = new MultivaluedHashMap<>();
-        config.put("k1", Collections.singletonList("v1"));
-        aggregated.setSteps(Arrays.asList(new WorkflowStepRepresentation("sub-step-1", new MultivaluedHashMap<>(config)), new WorkflowStepRepresentation("sub-step-2", new MultivaluedHashMap<>(config))));
-
-        expected.setSteps(Collections.singletonList(aggregated));
-
-        String json = JsonSerialization.writeValueAsPrettyString(expected);
-        WorkflowRepresentation actual = JsonSerialization.readValue(json, WorkflowRepresentation.class);
-
-        List<WorkflowStepRepresentation> actualSteps = actual.getSteps();
-        assertNotNull(actualSteps);
-        actualSteps = actualSteps.stream().sorted(Comparator.comparing(WorkflowStepRepresentation::getUses)).collect(Collectors.toList());
-        List<WorkflowStepRepresentation> expectedSteps = expected.getSteps().stream().sorted(Comparator.comparing(WorkflowStepRepresentation::getUses)).collect(Collectors.toList());
-
-        assertEquals(expectedSteps.size(), actualSteps.size());
-        assertEquals(expectedSteps.get(0).getUses(), actualSteps.get(0).getUses());
-        assertEquals(expectedSteps.get(0).getConfig().get("k1"), actualSteps.get(0).getConfig().get("k1"));
-        assertEquals(expectedSteps.get(0).getSteps().size(), actualSteps.get(0).getSteps().size());
-        assertEquals(expectedSteps.get(0).getSteps().get(0).getConfig().get("k1"), actualSteps.get(0).getSteps().get(0).getConfig().get("k1"));
-
-        System.out.println(json);
-    }
 }

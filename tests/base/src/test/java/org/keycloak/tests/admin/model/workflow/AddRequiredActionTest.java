@@ -23,8 +23,6 @@ import static org.hamcrest.Matchers.is;
 @KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
 public class AddRequiredActionTest {
 
-    private static final String REALM_NAME = "default";
-
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
@@ -32,7 +30,6 @@ public class AddRequiredActionTest {
     public void testStepRun() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .immediate()
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(AddRequiredActionStepProviderFactory.ID)

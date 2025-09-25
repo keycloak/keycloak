@@ -64,7 +64,6 @@ public class WorkflowResource {
      * @param resourceId the resource id
      * @param notBefore optional notBefore time in milliseconds to schedule the first workflow step,
      *                  it overrides the first workflow step time configuration (after).
-     *                  if set and the workflow is not scheduled (immediate) a Bad Request response will be returned
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -77,9 +76,6 @@ public class WorkflowResource {
         }
 
         if (notBefore != null) {
-            if (!workflow.isScheduled()) {
-                throw ErrorResponse.error("Immediate workflows does not support binding with provided time.", Response.Status.BAD_REQUEST);
-            }
             workflow.setNotBefore(notBefore);
         }
 

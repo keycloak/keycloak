@@ -44,10 +44,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 
 public class WorkflowsManager {
 
@@ -87,7 +84,7 @@ public class WorkflowsManager {
     }
 
     // This method takes an ordered list of steps. First step in the list has the highest priority, last step has the lowest priority
-    private void addSteps(Workflow workflow, String parentId, List<WorkflowStep> steps) {
+    private void addSteps(Workflow workflow, List<WorkflowStep> steps) {
         for (int i = 0; i < steps.size(); i++) {
             WorkflowStep step = steps.get(i);
 
@@ -95,33 +92,27 @@ public class WorkflowsManager {
             step.setPriority(i + 1);
 
             // persist the new step component.
-            step = addStep(parentId, step);
-
-            addSteps(workflow, step.getId(), step.getSteps());
+            addStep(workflow, step);
         }
     }
 
-    private WorkflowStep addStep(String parentId, WorkflowStep step) {
+    private WorkflowStep addStep(Workflow workflow, WorkflowStep step) {
         RealmModel realm = getRealm();
-        ComponentModel parentModel = realm.getComponent(parentId);
+        ComponentModel workflowModel = realm.getComponent(workflow.getId());
 
-        if (parentModel == null) {
-            throw new ModelValidationException("Parent component not found: " + parentId);
+        if (workflowModel == null) {
+            throw new ModelValidationException("Workflow with id '%s' not found.".formatted(workflow.getId()));
         }
 
         ComponentModel stepModel = new ComponentModel();
 
         stepModel.setId(step.getId());//need to keep stable UUIDs not to break a link in state table
-        stepModel.setParentId(parentModel.getId());
+        stepModel.setParentId(workflowModel.getId());
         stepModel.setProviderId(step.getProviderId());
         stepModel.setProviderType(WorkflowStepProvider.class.getName());
         stepModel.setConfig(step.getConfig());
 
-        WorkflowStep persisted = new WorkflowStep(realm.addComponentModel(stepModel));
-
-        persisted.setSteps(step.getSteps());
-
-        return persisted;
+        return new WorkflowStep(realm.addComponentModel(stepModel));
     }
 
     public List<Workflow> getWorkflows() {
@@ -141,11 +132,7 @@ public class WorkflowsManager {
     }
 
     private WorkflowStep toStep(ComponentModel model) {
-        WorkflowStep step = new WorkflowStep(model);
-
-        step.setSteps(getSteps(step.getId()));
-
-        return step;
+        return new WorkflowStep(model);
     }
 
     public WorkflowStep getStepById(String id) {
@@ -160,14 +147,7 @@ public class WorkflowsManager {
     }
 
     private WorkflowStep getFirstStep(Workflow workflow) {
-        WorkflowStep step = getSteps(workflow.getId()).get(0);
-        Long notBefore = workflow.getNotBefore();
-
-        if (notBefore != null) {
-            step.setAfter(notBefore);
-        }
-
-        return step;
+        return getSteps(workflow.getId()).get(0);
     }
 
     private WorkflowProvider getWorkflowProvider(Workflow workflow) {
@@ -228,18 +208,36 @@ public class WorkflowsManager {
                         if (!currentlyAssignedWorkflows.contains(workflow.getId())) {
                             // if workflow is not active for the resource, check if the provider allows activating based on the event
                             if (provider.activateOnEvent(event)) {
-                                if (workflow.isScheduled()) {
-                                    // workflow is scheduled, so we schedule the first step
-                                    log.debugf("Scheduling first step of workflow %s for resource %s based on event %s",
-                                            workflow.getId(), event.getResourceId(), event.getOperation());
-                                    workflowStateProvider.scheduleStep(workflow, getFirstStep(workflow), event.getResourceId());
-                                } else {
-                                    // workflow is not scheduled, so we run all steps immediately
-                                    log.debugf("Running all steps of workflow %s for resource %s based on event %s",
-                                            workflow.getId(), event.getResourceId(), event.getOperation());
-                                    KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), s ->
-                                            getSteps(workflow.getId()).forEach(step -> getStepProvider(step).run(List.of(event.getResourceId())))
-                                    );
+                                WorkflowStep firstStep = getFirstStep(workflow);
+                                for (WorkflowStep step : getSteps(workflow.getId())) {
+                                    // If the workflow has a notBefore set, schedule the first step with it
+                                    if (step.getId().equals(firstStep.getId()) && workflow.getNotBefore() != null && workflow.getNotBefore() > 0) {
+                                        log.debugf("Scheduling first step %s of workflow %s for resource %s based on on event %s with notBefore %d",
+                                                step.getId(), workflow.getId(), event.getResourceId(), event.getOperation(), workflow.getNotBefore());
+                                        Long originalAfter = step.getAfter();
+                                        try {
+                                            step.setAfter(workflow.getNotBefore());
+                                            workflowStateProvider.scheduleStep(workflow, step, event.getResourceId());
+                                            continue;
+                                        } finally {
+                                            // restore the original after value
+                                            step.setAfter(originalAfter);
+                                        }
+                                    }
+                                    if (step.getAfter() > 0) {
+                                        // If a step has a time defined, schedule it and stop processing the other steps of workflow
+                                        log.debugf("Scheduling step %s of workflow %s for resource %s based on event %s",
+                                                step.getId(), workflow.getId(), event.getResourceId(), event.getOperation());
+                                        workflowStateProvider.scheduleStep(workflow, step, event.getResourceId());
+                                        break;
+                                    } else {
+                                        // Otherwise run the step right away
+                                        log.debugf("Running step %s of workflow %s for resource %s based on event %s",
+                                                step.getId(), workflow.getId(), event.getResourceId(), event.getOperation());
+                                        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), s ->
+                                            getStepProvider(step).run(List.of(event.getResourceId()))
+                                        );
+                                    }
                                 }
                             }
                         } else {
@@ -261,33 +259,42 @@ public class WorkflowsManager {
     public void runScheduledSteps() {
             this.getWorkflows().stream().filter(Workflow::isEnabled).forEach(workflow -> {
 
-            for (ScheduledStep scheduled : workflowStateProvider.getDueScheduledSteps(workflow)) {
-                List<WorkflowStep> steps = getSteps(workflow.getId());
+                for (ScheduledStep scheduled : workflowStateProvider.getDueScheduledSteps(workflow)) {
+                    List<WorkflowStep> steps = getSteps(workflow.getId());
 
-                for (int i = 0; i < steps.size(); i++) {
-                    WorkflowStep currentStep = steps.get(i);
+                    for (int i = 0; i < steps.size(); i++) {
+                        WorkflowStep currentStep = steps.get(i);
 
-                    if (currentStep.getId().equals(scheduled.stepId())) {
-                        getStepProvider(currentStep).run(List.of(scheduled.resourceId()));
+                        if (currentStep.getId().equals(scheduled.stepId())) {
+                            getStepProvider(currentStep).run(List.of(scheduled.resourceId()));
 
-                        if (steps.size() > i + 1) {
-                            // schedule the next step using the time offset difference between the steps.
-                            WorkflowStep nextStep = steps.get(i + 1);
-                            workflowStateProvider.scheduleStep(workflow, nextStep, scheduled.resourceId());
-                        } else {
-                            // this was the last step, check if the workflow is recurring - i.e. if we need to schedule the first step again
-                            if (workflow.isRecurring()) {
-                                WorkflowStep firstStep = getFirstStep(workflow);
-                                workflowStateProvider.scheduleStep(workflow, firstStep, scheduled.resourceId());
-                            } else {
-                                // not recurring, remove the state record
-                                workflowStateProvider.remove(workflow.getId(), scheduled.resourceId());
+                            int nextIndex = i + 1;
+                            // Process subsequent steps: run immediately if no time condition, schedule if time condition
+                            while (nextIndex < steps.size()) {
+                                WorkflowStep nextStep = steps.get(nextIndex);
+                                if (nextStep.getAfter() > 0) {
+                                    workflowStateProvider.scheduleStep(workflow, nextStep, scheduled.resourceId());
+                                    break;
+                                } else {
+                                    getStepProvider(nextStep).run(List.of(scheduled.resourceId()));
+                                    nextIndex++;
+                                }
+                            }
+
+                            if (nextIndex == steps.size()) {
+                                // this was the last step, check if the workflow is recurring - i.e. if we need to schedule the first step again
+                                if (workflow.isRecurring()) {
+                                    WorkflowStep firstStep = getFirstStep(workflow);
+                                    workflowStateProvider.scheduleStep(workflow, firstStep, scheduled.resourceId());
+                                } else {
+                                    // not recurring, remove the state record
+                                    workflowStateProvider.remove(workflow.getId(), scheduled.resourceId());
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
     }
 
     public void removeWorkflow(String id) {
@@ -306,7 +313,7 @@ public class WorkflowsManager {
     }
 
     public void updateWorkflow(Workflow workflow, MultivaluedHashMap<String, String> config) {
-        validateWorkflow(toRepresentation(workflow), config);
+        validateWorkflow(toRepresentation(workflow));
         ComponentModel component = getWorkflowComponent(workflow.getId());
         component.setConfig(config);
         getRealm().updateComponent(component);
@@ -370,15 +377,14 @@ public class WorkflowsManager {
     }
 
     public WorkflowStepRepresentation toRepresentation(WorkflowStep step) {
-        List<WorkflowStepRepresentation> steps = step.getSteps().stream().map(this::toRepresentation).toList();
-        return new WorkflowStepRepresentation(step.getId(), step.getProviderId(), step.getConfig(), steps);
+        return new WorkflowStepRepresentation(step.getId(), step.getProviderId(), step.getConfig());
     }
 
     public Workflow toModel(WorkflowRepresentation rep) {
+        validateWorkflow(rep);
+
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
         List<WorkflowConditionRepresentation> conditions = ofNullable(rep.getConditions()).orElse(List.of());
-
-        validateWorkflow(rep, config);
 
         for (WorkflowConditionRepresentation condition : conditions) {
             String conditionProviderId = condition.getUses();
@@ -391,41 +397,18 @@ public class WorkflowsManager {
         }
 
         Workflow workflow = addWorkflow(rep.getUses(), config);
-        List<WorkflowStep> steps = new ArrayList<>();
 
-        for (WorkflowStepRepresentation stepRep : rep.getSteps()) {
-            steps.add(toModel(workflow, stepRep));
-        }
+        List<WorkflowStep> steps = rep.getSteps().stream().map(this::toModel).toList();
 
-        addSteps(workflow, workflow.getId(), steps);
+        addSteps(workflow, steps);
 
         return workflow;
     }
 
-    private void validateWorkflow(WorkflowRepresentation rep, MultivaluedHashMap<String, String> config) {
-        // Validations:
-        //  workflow cannot be both immediate and recurring
-        //  immediate workflow cannot have time conditions
-        //  all steps of scheduled workflow must have time condition
-
-        boolean isImmediate = config.containsKey(CONFIG_SCHEDULED) && !Boolean.parseBoolean(config.getFirst(CONFIG_SCHEDULED));
-        boolean isRecurring = config.containsKey(CONFIG_RECURRING) && Boolean.parseBoolean(config.getFirst(CONFIG_RECURRING));
-        boolean hasTimeCondition = rep.getSteps().stream().allMatch(step -> step.getConfig() != null
-                && step.getConfig().containsKey(CONFIG_AFTER));
-        if (isImmediate && isRecurring) {
-            throw new WorkflowInvalidStateException("Workflow cannot be both immediate and recurring.");
-        }
-        if (isImmediate && hasTimeCondition) {
-            throw new WorkflowInvalidStateException("Immediate workflow cannot have steps with time conditions.");
-        }
-        if (!isImmediate && !hasTimeCondition) {
-            throw new WorkflowInvalidStateException("Scheduled workflow cannot have steps without time conditions.");
-        }
-
+    private void validateWorkflow(WorkflowRepresentation rep) {
         validateEvents(rep.getOnValues());
         validateEvents(rep.getOnEventsReset());
     }
-
 
     private static void validateEvents(List<String> events) {
         for (String event : ofNullable(events).orElse(List.of())) {
@@ -447,52 +430,19 @@ public class WorkflowsManager {
         return type.resolveResource(session, resourceId);
     }
 
-    private void validateStep(Workflow workflow, WorkflowStep step, boolean topLevel) throws ModelValidationException {
+    private void validateStep(WorkflowStep step) throws ModelValidationException {
         if (step.getAfter() < 0) {
             throw new ModelValidationException("Step 'after' time condition cannot be negative.");
         }
-
-        boolean isAggregatedStep = !step.getSteps().isEmpty();
-        boolean isScheduledWorkflow = workflow.isScheduled();
-
+        // verify the step does have valid provider
         getStepProviderFactory(step);
-
-        if (isAggregatedStep) {
-            if (!step.getProviderId().equals(AggregatedStepProviderFactory.ID)) {
-                // for now, only AggregatedStepProvider supports having sub-steps, but we might want to support
-                // in the future more steps from having sub-steps by querying the capability from the provider or via
-                // a marker interface
-                throw new ModelValidationException("Step provider " + step.getProviderId() + " does not support aggregated steps");
-            }
-
-            List<WorkflowStep> subSteps = step.getSteps();
-            // for each sub-step (in case it's not aggregated step on its own) check all it's sub-steps do not have
-            // time conditions, all its sub-steps are meant to be run at once
-            if (subSteps.stream().anyMatch(subStep ->
-                    subStep.getConfig().getFirst(CONFIG_AFTER) != null &&
-                            !subStep.getProviderId().equals(AggregatedStepProviderFactory.ID))) {
-                throw new ModelValidationException("Sub-steps of aggregated step cannot have time conditions.");
-            }
-        } else {
-            if (isScheduledWorkflow && topLevel) {
-                if (step.getConfig().getFirst(CONFIG_AFTER) == null) {
-                    throw new ModelValidationException("All steps of scheduled workflow must have a valid 'after' time condition.");
-                }
-            } else { // immediate workflow | sub-step of aggregated step
-                if (step.getConfig().getFirst(CONFIG_AFTER) != null) {
-                    throw new ModelValidationException(topLevel ?
-                            "Immediate workflow step cannot have a time condition." :
-                            "Sub-step of aggregated step cannot have a time conditions.");
-                }
-            }
-        }
     }
 
-    public WorkflowStep addStepToWorkflow(String workflowId, WorkflowStep step, Integer position) {
-        Objects.requireNonNull(workflowId, "workflowId cannot be null");
+    public WorkflowStep addStepToWorkflow(Workflow workflow, WorkflowStep step, Integer position) {
+        Objects.requireNonNull(workflow, "workflow cannot be null");
         Objects.requireNonNull(step, "step cannot be null");
 
-        List<WorkflowStep> existingSteps = getSteps(workflowId);
+        List<WorkflowStep> existingSteps = getSteps(workflow.getId());
 
         int targetPosition = position != null ? position : existingSteps.size();
         if (targetPosition < 0 || targetPosition > existingSteps.size()) {
@@ -503,32 +453,32 @@ public class WorkflowsManager {
         shiftStepsForInsertion(targetPosition, existingSteps);
 
         step.setPriority(targetPosition + 1);
-        WorkflowStep addedStep = addStep(workflowId, step);
+        WorkflowStep addedStep = addStep(workflow, step);
 
-        updateScheduledStepsAfterStepChange(workflowId);
+        updateScheduledStepsAfterStepChange(workflow.getId());
 
-        log.debugf("Added step %s to workflow %s at position %d", addedStep.getId(), workflowId, targetPosition);
+        log.debugf("Added step %s to workflow %s at position %d", addedStep.getId(), workflow.getId(), targetPosition);
         return addedStep;
     }
 
-    public void removeStepFromWorkflow(String workflowId, String stepId) {
-        Objects.requireNonNull(workflowId, "workflowId cannot be null");
+    public void removeStepFromWorkflow(Workflow workflow, String stepId) {
+        Objects.requireNonNull(workflow, "workflow cannot be null");
         Objects.requireNonNull(stepId, "stepId cannot be null");
 
         RealmModel realm = getRealm();
         ComponentModel stepComponent = realm.getComponent(stepId);
 
-        if (stepComponent == null || !stepComponent.getParentId().equals(workflowId)) {
+        if (stepComponent == null || !stepComponent.getParentId().equals(workflow.getId())) {
             throw new BadRequestException("Step not found or not part of workflow: " + stepId);
         }
 
         realm.removeComponent(stepComponent);
 
         // Reorder remaining steps and update state
-        reorderAllSteps(workflowId);
-        updateScheduledStepsAfterStepChange(workflowId);
+        reorderAllSteps(workflow.getId());
+        updateScheduledStepsAfterStepChange(workflow.getId());
 
-        log.debugf("Removed step %s from workflow %s", stepId, workflowId);
+        log.debugf("Removed step %s from workflow %s", stepId, workflow.getId());
     }
 
     private void shiftStepsForInsertion(int insertPosition, List<WorkflowStep> existingSteps) {
@@ -578,20 +528,9 @@ public class WorkflowsManager {
         }
     }
 
-    public WorkflowStep toModel(Workflow workflow, WorkflowStepRepresentation rep) {
-        return toModel(workflow, rep, true);
-    }
-
-    private WorkflowStep toModel(Workflow workflow, WorkflowStepRepresentation rep, boolean topLevel) {
-        List<WorkflowStep> subSteps = new ArrayList<>();
-
-        for (WorkflowStepRepresentation subStep : ofNullable(rep.getSteps()).orElse(List.of())) {
-            subSteps.add(toModel(workflow, subStep, false));
-        }
-
-        WorkflowStep step = new WorkflowStep(rep.getUses(), rep.getConfig(), subSteps);
-        validateStep(workflow, step, topLevel);
-
+    public WorkflowStep toModel(WorkflowStepRepresentation rep) {
+        WorkflowStep step = new WorkflowStep(rep.getUses(), rep.getConfig());
+        validateStep(step);
         return step;
     }
 

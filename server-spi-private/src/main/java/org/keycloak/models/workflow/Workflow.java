@@ -20,7 +20,6 @@ package org.keycloak.models.workflow;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 
 import java.util.List;
 import java.util.Map;
@@ -31,19 +30,9 @@ import org.keycloak.component.ComponentModel;
 public class Workflow {
 
     private MultivaluedHashMap<String, String> config;
-    private String providerId;
+    private final String providerId;
     private String id;
     private Long notBefore;
-
-    public Workflow() {
-        // reflection
-    }
-
-    public Workflow(String providerId) {
-        this.providerId = providerId;
-        this.id = null;
-        this.config = null;
-    }
 
     public Workflow(ComponentModel c) {
         this.id = c.getId();
@@ -76,10 +65,6 @@ public class Workflow {
 
     public boolean isRecurring() {
         return config != null && Boolean.parseBoolean(config.getFirst(CONFIG_RECURRING));
-    }
-
-    public boolean isScheduled() {
-        return config != null && Boolean.parseBoolean(config.getFirstOrDefault(CONFIG_SCHEDULED, "true"));
     }
 
     public Long getNotBefore() {

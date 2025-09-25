@@ -18,7 +18,6 @@
 package org.keycloak.tests.admin.model.workflow;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -28,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -585,7 +583,6 @@ public class WorkflowManagementTest {
         // create a test workflow with no time conditions - should run immediately when scheduled
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .immediate()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .withConfig("message", "message")
@@ -610,126 +607,6 @@ public class WorkflowManagementTest {
     }
 
     @Test
-    public void testCreateImmediateWorkflowWithTimeConditions() {
-        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
-                .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .immediate()
-                .withSteps(
-                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(3))
-                                .build(),
-                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(7))
-                                .build()
-                ).build();
-
-        try (Response response = managedRealm.admin().workflows().create(workflows)) {
-            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            String error = response.readEntity(String.class);
-            assertThat(error, containsString("Immediate workflow cannot have steps with time conditions"));
-        }
-    }
-
-    @Test
-    public void testUpdateWorkflowFromImmediateToScheduled() {
-        // Create an immediate workflow
-        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
-                .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .immediate()
-                .withSteps(
-                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
-                                .build(),
-                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
-                                .build()
-                ).build();
-
-        WorkflowsResource workflowsResource = managedRealm.admin().workflows();
-        try (Response response = workflowsResource.create(workflows)) {
-            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
-        }
-
-        WorkflowRepresentation workflow = workflowsResource.list().get(0);
-        // Attempt to update the workflow to scheduled
-        workflow.getConfig().putSingle(CONFIG_SCHEDULED, "true");
-
-        try (Response response = workflowsResource.workflow(workflow.getId()).update(workflow)) {
-            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            String error = response.readEntity(String.class);
-            assertThat(error, containsString("Scheduled workflow cannot have steps without time conditions."));
-        }
-    }
-
-    @Test
-    public void testUpdateWorkflowFromScheduledToImmediate() {
-        // Create a scheduled workflow
-        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
-                .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .withSteps(
-                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(1))
-                                .build(),
-                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(1))
-                                .build()
-                ).build();
-
-        WorkflowsResource workflowsResource = managedRealm.admin().workflows();
-        try (Response response = workflowsResource.create(workflows)) {
-            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
-        }
-
-        WorkflowRepresentation workflow = workflowsResource.list().get(0);
-        // Attempt to update the workflow to immediate
-        workflow.setScheduled(false);
-
-        try (Response response = workflowsResource.workflow(workflow.getId()).update(workflow)) {
-            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            String error = response.readEntity(String.class);
-            assertThat(error, containsString("Immediate workflow cannot have steps with time conditions."));
-        }
-    }
-
-    @Test
-    public void testCreateScheduledWorkflowWithoutTimeConditions() {
-        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
-                .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .withSteps(
-                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
-                                .build(),
-                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
-                                .build()
-                ).build();
-
-        try (Response response = managedRealm.admin().workflows().create(workflows)) {
-            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            String error = response.readEntity(String.class);
-            assertThat(error, containsString("Scheduled workflow cannot have steps without time conditions"));
-        }
-    }
-
-    @Test
-    public void testCreateWorkflowMarkedAsBothImmediateAndRecurring() {
-        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
-                .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .immediate()
-                .recurring()
-                .withSteps(
-                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(3))
-                                .build(),
-                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(7))
-                                .build()
-                ).build();
-
-        try (Response response = managedRealm.admin().workflows().create(workflows)) {
-            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            String error = response.readEntity(String.class);
-            assertThat(error, containsString("Workflow cannot be both immediate and recurring."));
-        }
-    }
-
-    @Test
     public void testFailCreateWorkflowWithNegativeTime() {
         WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
@@ -737,14 +614,7 @@ public class WorkflowManagementTest {
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .after(Duration.ofDays(-5))
                                 .withConfig("key", "value")
-                                .withSteps(WorkflowStepRepresentation.create()
-                                                .of(SetUserAttributeStepProviderFactory.ID)
-                                                .withConfig("message", "message")
-                                                .build(),
-                                        WorkflowStepRepresentation.create()
-                                                .of(DisableUserStepProviderFactory.ID)
-                                                .build()
-                                ).build())
+                                .build())
                 .build();
         try (Response response = managedRealm.admin().workflows().create(workflows)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
