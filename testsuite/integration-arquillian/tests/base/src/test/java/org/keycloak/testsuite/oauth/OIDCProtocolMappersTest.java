@@ -1831,26 +1831,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         client.setName("test");
         clientResource.update(client);
 
-        // creates a client scope using the dynamic scope format and add it to the client as optional scope
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName("test:create-mapper");
-        scopeRep.setProtocol("openid-connect");
-        scopeRep.setProtocolMappers(Collections.singletonList(createHardCodedMapper("from-mapper", "from-mapper", "value")));
-        try (Response resp1 = realm.clientScopes().create(scopeRep)) {
-            assertEquals(201, resp1.getStatus());
-            String clientScopeId = ApiUtil.getCreatedId(resp1);
-            getCleanup().addClientScopeId(clientScopeId);
-            clientResource.addOptionalClientScope(clientScopeId);
-        }
+        String expectedScopeName = "test:create-mapper";
+        createClientScope(realm, clientResource, expectedScopeName, "from-mapper", "value", false);
 
         // creates a dedicated mapper to the client
         ProtocolMappersResource dedicatedClientMappers = clientResource.getProtocolMappers();
         dedicatedClientMappers.createMapper(createHardCodedMapper("from-dedicated-mapper", "from-dedicated-mapper", "value")).close();
 
         // request the test:create-mapper scope so that mappers are included
-        oauth.scope("openid " + scopeRep.getName());
+        oauth.scope("openid " + expectedScopeName);
         AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
-        assertTrue(response.getScope().contains(scopeRep.getName()));
+        assertTrue(response.getScope().contains(expectedScopeName));
 
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
         assertNotNull(idToken.getOtherClaims());
@@ -1862,14 +1853,85 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         assertEquals("value", idToken.getOtherClaims().get("from-dedicated-mapper"));
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertTrue(response.getScope().contains(scopeRep.getName()));
+        assertTrue(accessToken.getScope().contains(expectedScopeName));
         assertNotNull(accessToken.getOtherClaims());
         assertNotNull(accessToken.getOtherClaims().get("from-mapper"));
         // claim mapped by client scope mapper
         assertEquals("value", accessToken.getOtherClaims().get("from-mapper"));
-        assertNotNull(idToken.getOtherClaims().get("from-dedicated-mapper"));
+        assertNotNull(accessToken.getOtherClaims().get("from-dedicated-mapper"));
         // claim mapped by dedicated client mapper
-        assertEquals("value", idToken.getOtherClaims().get("from-dedicated-mapper"));
+        assertEquals("value", accessToken.getOtherClaims().get("from-dedicated-mapper"));
+    }
+
+    @Test
+    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsDefaultScope() {
+        RealmResource realm = adminClient.realm("test");
+        ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
+        ClientRepresentation client = clientResource.toRepresentation();
+
+        // make sure the name of the client maps to the prefix of the dynamic scope name
+        client.setName("test");
+        clientResource.update(client);
+
+        // creates a client scope using the dynamic scope format and add it to the client as default scope
+        createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", true);
+        createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", true);
+
+        oauth.scope("openid test:create");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        assertTrue(response.getScope().contains("test:create"));
+
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertTrue(accessToken.getScope().contains("test:create"));
+        assertNotNull(accessToken.getOtherClaims());
+        assertNotNull(accessToken.getOtherClaims().get("from-dynamic-scope"));
+        assertEquals("value", accessToken.getOtherClaims().get("from-dynamic-scope"));
+        assertNotNull(accessToken.getOtherClaims().get("from-scope-mapper"));
+        assertEquals("value", accessToken.getOtherClaims().get("from-scope-mapper"));
+    }
+
+    @Test
+    public void testStaticScopeUsingDynamicScopeFormatPrefixedWithScopeAsOptionalScope() {
+        RealmResource realm = adminClient.realm("test");
+        ClientResource clientResource = findClientResourceByClientId(realm, "test-app");
+        ClientRepresentation client = clientResource.toRepresentation();
+
+        // make sure the name of the client maps to the prefix of the dynamic scope name
+        client.setName("test");
+        clientResource.update(client);
+
+        // creates a client scope using the dynamic scope format and add it to the client as optional scope
+        createClientScope(realm, clientResource, "test", "from-scope-mapper", "value", false);
+        createClientScope(realm, clientResource, "test:create", "from-dynamic-scope", "value", false);
+
+        oauth.scope("openid test:create");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        assertTrue(response.getScope().contains("test:create"));
+
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertTrue(accessToken.getScope().contains("test:create"));
+        assertNotNull(accessToken.getOtherClaims());
+        assertNotNull(accessToken.getOtherClaims().get("from-dynamic-scope"));
+        // claim mapped by client scope mapper
+        assertEquals("value", accessToken.getOtherClaims().get("from-dynamic-scope"));
+    }
+
+    private void createClientScope(RealmResource realm, ClientResource clientResource, String name, String claim, String value, boolean isDefault) {
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName(name);
+        scopeRep.setProtocol("openid-connect");
+        scopeRep.setProtocolMappers(Collections.singletonList(createHardCodedMapper(name + "from-scope-mapper", claim, value)));
+        try (Response resp1 = realm.clientScopes().create(scopeRep)) {
+            assertEquals(201, resp1.getStatus());
+            String clientScopeId = ApiUtil.getCreatedId(resp1);
+            getCleanup().addClientScopeId(clientScopeId);
+
+            if (isDefault) {
+                clientResource.addDefaultClientScope(clientScopeId);
+            } else {
+                clientResource.addOptionalClientScope(clientScopeId);
+            }
+        }
     }
 
     private void assertRoles(List<String> actualRoleList, String ...expectedRoles){

@@ -31,8 +31,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
 import jakarta.persistence.EntityManager;
+
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -190,6 +192,14 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
         ProtocolMapperEntity entity = getProtocolMapperEntity(id);
         if (entity == null) return null;
         return entityToModel(entity);
+    }
+
+    @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return this.entity.getProtocolMappers().stream()
+                .filter((mapper) -> mapper.getProtocolMapper().equals(type))
+                .map(this::entityToModel)
+                .toList();
     }
 
     @Override

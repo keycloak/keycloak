@@ -29,6 +29,7 @@ import org.keycloak.models.utils.RoleUtils;
 import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -39,6 +40,8 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class ClientAdapter implements ClientModel, CachedObject {
+
+    private final LazyModel<ClientModel> modelSupplier;
     protected RealmCacheSession cacheSession;
     protected RealmModel cachedRealm;
 
@@ -49,12 +52,13 @@ public class ClientAdapter implements ClientModel, CachedObject {
         this.cachedRealm = cachedRealm;
         this.cacheSession = cacheSession;
         this.cached = cached;
+        this.modelSupplier = new LazyModel<>(this::getClient);
     }
 
     private void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerClientInvalidation(cached.getId(), cached.getClientId(), cachedRealm.getId());
-            updated = cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -340,7 +344,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
         if (isUpdated()) return updated.getProtocolMappersStream();
-        return cached.getProtocolMappers().stream();
+        return cached.getProtocolMappers(cacheSession.session, modelSupplier);
     }
 
     @Override
@@ -365,18 +369,17 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
-            if (mapping.getId().equals(id)) return mapping;
-        }
-        return null;
+        return cached.getProtocolMapperById(cacheSession.session, modelSupplier, id);
+    }
+
+    @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return cached.getProtocolMapperByType(cacheSession.session, modelSupplier, type);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
-            if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
-        }
-        return null;
+        return cached.getProtocolMapperByName(cacheSession.session, modelSupplier, protocol, name);
     }
 
     @Override
@@ -618,6 +621,10 @@ public class ClientAdapter implements ClientModel, CachedObject {
             return true;
 
         return RoleUtils.hasRole(getRolesStream(), role);
+    }
+
+    private ClientModel getClient() {
+        return cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
     }
 
     @Override
