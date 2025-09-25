@@ -60,7 +60,7 @@ public class AdminEventsTest {
                 .operationType(OperationType.DELETE)
                 .resourceType(ResourceType.USER)
                 .resourcePath("users", userId)
-                .representation(null);
+                .representation(userRep);
     }
 
     @Test
