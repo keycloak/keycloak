@@ -103,7 +103,9 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
     protected int initClusterStartupTime(KeycloakSession session) {
         Integer existingClusterStartTime = (Integer) workCache.get(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY);
         if (existingClusterStartTime != null) {
-            logger.debugf("Loaded cluster startup time: %s", Time.toDate(existingClusterStartTime).toString());
+            if (logger.isDebugEnabled()) {
+                logger.debugf("Loaded cluster startup time: %s", Time.toDate(existingClusterStartTime).toString());
+            }
             return existingClusterStartTime;
         } else {
             // clusterStartTime not yet initialized. Let's try to put our startupTime
@@ -111,10 +113,14 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
             existingClusterStartTime = (Integer) workCache.putIfAbsent(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime);
             if (existingClusterStartTime == null) {
-                logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
+                if (logger.isDebugEnabled()) {
+                    logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
+                }
                 return serverStartTime;
             } else {
-                logger.debugf("Loaded cluster startup time: %s", Time.toDate(existingClusterStartTime).toString());
+                if (logger.isDebugEnabled()) {
+                    logger.debugf("Loaded cluster startup time: %s", Time.toDate(existingClusterStartTime).toString());
+                }
                 return existingClusterStartTime;
             }
         }

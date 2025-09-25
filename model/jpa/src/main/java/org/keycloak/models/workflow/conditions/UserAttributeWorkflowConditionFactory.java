@@ -9,7 +9,7 @@ import org.keycloak.models.workflow.WorkflowConditionProviderFactory;
 
 public class UserAttributeWorkflowConditionFactory implements WorkflowConditionProviderFactory<UserAttributeWorkflowConditionProvider> {
 
-    public static final String ID = "user-attribute-condition";
+    public static final String ID = "has-user-attribute";
 
     @Override
     public UserAttributeWorkflowConditionProvider create(KeycloakSession session, Map<String, List<String>> config) {

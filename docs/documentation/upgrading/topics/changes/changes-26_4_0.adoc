@@ -4,6 +4,14 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== `acr_values` request parameter is not forwarded automatically to identity providers
+
+The `acr_values` request parameter is no longer automatically forwarded to OpenID Connect identity providers during authentication.
+This change enhances security by preventing unintended disclosure of authentication context information to external IDPs.
+
+If you are relying on the `acr_values` parameter to be propagated to an identity provider, you must now explicitly set `acr_values` request parameter
+to the `Forwarded query parameters` setting in the identity provider configuration.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -224,6 +232,27 @@ By default, a user with the existing, broader `manage` scope for the `USERS` res
 This implicit fallback mechanism ensures a smooth upgrade process for deployments already using fine-grained permissions. The fallback will be deprecated and removed in a future releases, so it is recommended to review and update administrator permissions to use the new `reset-password` scope where appropriate.
 
 For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
+
+=== Errors when searching users from LDAP will not fail the request anymore and local users will be returned
+
+Until now, failures when searching for users from an LDAP user federation provider caused the whole request to fail and no users were returned.
+In this release, if an error occurs during the search, local users will still be returned and the error will be logged at the `ERROR` level,
+so that administrators can investigate the root cause of the problem and fix any issue with their LDAP configuration or connectivity
+with the LDAP server.
+
+This change improves the resilience of the system when there are temporary issues with the LDAP server, ensuring that local users can still be accessed even if the LDAP search fails.
+If a local user is linked to a failing LDAP provider, the user will be marked as disabled and read-only until the LDAP server is available again.
+
+=== The `serverinfo` endpoint only returns the system info for administrators in the administrator realm
+
+Starting with this version, the `serverinfo` endpoint, which is used by the admin console to obtain some general information of the {project_name} installation, will only return the system information for administrators in the administration (master) realm. This change was done for security reasons.
+
+If, for whatever reason, an administrator in a common realm needs to access the `systemInfo`, `cpuInfo` or `memoryInfo` fields of the `serverinfo` response, you need to create and assign a new *view-system* role to that admin user:
+
+. In the affected realm, select the management client *realm-management*, and, in the *Roles* tab, create a new role called *view-system*.
+. In *Users* select the administrator account, and, in the *Role mapping* tab, assign the just created *view-system* client role to the admin user.
+
+The previous workaround is marked as deprecated and it can be removed in a future version of {project_name}.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

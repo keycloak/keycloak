@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.Time;
@@ -50,6 +51,7 @@ import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowCondition
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.workflows.WorkflowStateRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -152,11 +154,11 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
 
         // check the workflow is disabled
         workflowRep = consumerRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
-        assertThat(workflowRep.getConfig().getFirst("enabled"), allOf(notNullValue(), is("false")));
-        List<String> validationErrors = workflowRep.getConfig().get("validation_error");
-        assertThat(validationErrors, notNullValue());
-        assertThat(validationErrors, hasSize(1));
-        assertThat(validationErrors.get(0), containsString("Identity provider %s does not exist.".formatted(IDP_OIDC_ALIAS)));
+        assertThat(workflowRep.getEnabled(), allOf(notNullValue(), is(false)));
+        WorkflowStateRepresentation status = workflowRep.getState();
+        assertThat(status, notNullValue());
+        assertThat(status.getErrors(), hasSize(1));
+        assertThat(status.getErrors().get(0), containsString("Identity provider %s does not exist.".formatted(IDP_OIDC_ALIAS)));
     }
 
     @Test
@@ -230,6 +232,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         });
     }
 
+    @Disabled("For now deactivation events is not enabled to any event")
     @Test
     public void testAddRemoveFedIdentityAffectsWorkflowAssociation() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()

@@ -41,10 +41,12 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.services.ErrorResponse;
 
 /**
  * Resource for managing steps within a workflow.
@@ -77,7 +79,7 @@ public class WorkflowStepsResource {
     })
     public List<WorkflowStepRepresentation> getSteps() {
         return workflowsManager.getSteps(workflow.getId()).stream()
-                .map(workflowsManager::toStepRepresentation)
+                .map(workflowsManager::toRepresentation)
                 .toList();
     }
 
@@ -105,14 +107,16 @@ public class WorkflowStepsResource {
             @Parameter(description = "Position to insert the step at (0-based index). If not specified, step is added at the end.")
             @QueryParam("position") Integer position) {
         if (stepRep == null) {
-            throw new BadRequestException("Step representation cannot be null");
+            throw ErrorResponse.error("Step representation cannot be null", Response.Status.BAD_REQUEST);
         }
+        try {
+            WorkflowStep step = workflowsManager.toModel(workflow, stepRep);
+            WorkflowStep addedStep = workflowsManager.addStepToWorkflow(workflow.getId(), step, position);
 
-        WorkflowStep step = workflowsManager.toStepModel(stepRep);
-        WorkflowStep addedStep = workflowsManager.addStepToWorkflow(workflow.getId(), step, position);
-        
-        WorkflowStepRepresentation result = workflowsManager.toStepRepresentation(addedStep);
-        return Response.ok(result).build();
+            return Response.ok(workflowsManager.toRepresentation(addedStep)).build();
+        } catch (ModelException e) {
+            throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     /**
@@ -165,10 +169,11 @@ public class WorkflowStepsResource {
         }
 
         WorkflowStep step = workflowsManager.getStepById(stepId);
+
         if (step == null) {
             throw new BadRequestException("Step not found: " + stepId);
         }
 
-        return workflowsManager.toStepRepresentation(step);
+        return workflowsManager.toRepresentation(step);
     }
 }

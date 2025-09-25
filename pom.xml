@@ -50,6 +50,7 @@
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
+        <project.build-name>Keycloak</project.build-name>
 
         <!-- Following properties are used for downstream build to alter final distribution archive file name and internal base directory of the archive. -->
         <dist.archive.file.prefix>keycloak</dist.archive.file.prefix>

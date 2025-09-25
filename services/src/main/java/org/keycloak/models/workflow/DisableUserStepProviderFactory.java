@@ -27,7 +27,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public class DisableUserStepProviderFactory implements WorkflowStepProviderFactory<DisableUserStepProvider> {
 
-    public static final String ID = "disable-user-step-provider";
+    public static final String ID = "disable-user";
 
     @Override
     public DisableUserStepProvider create(KeycloakSession session, ComponentModel model) {

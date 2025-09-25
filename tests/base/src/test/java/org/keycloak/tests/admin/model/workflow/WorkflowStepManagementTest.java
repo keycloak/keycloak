@@ -34,6 +34,7 @@ import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -43,13 +44,23 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testframework.util.ApiUtil;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 
 @KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
 public class WorkflowStepManagementTest {
@@ -68,7 +79,7 @@ public class WorkflowStepManagementTest {
         workflowsResource = managedRealm.admin().workflows();
         
         // Create a workflow for testing (need at least one step for persistence)
-        List<WorkflowRepresentation> workflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.toString())
                 .name("Test Workflow")
@@ -101,7 +112,7 @@ public class WorkflowStepManagementTest {
         WorkflowStepsResource steps = workflow.steps();
 
         WorkflowStepRepresentation stepRep = new WorkflowStepRepresentation();
-        stepRep.setProviderId(DisableUserStepProviderFactory.ID);
+        stepRep.setUses(DisableUserStepProviderFactory.ID);
         stepRep.setConfig("name", "Test Step");
         stepRep.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
 
@@ -111,7 +122,7 @@ public class WorkflowStepManagementTest {
             
             assertNotNull(addedStep);
             assertNotNull(addedStep.getId());
-            assertEquals(DisableUserStepProviderFactory.ID, addedStep.getProviderId());
+            assertEquals(DisableUserStepProviderFactory.ID, addedStep.getUses());
         }
 
         // Verify step is in workflow (should be 2 total: setup step + our added step)
@@ -120,9 +131,67 @@ public class WorkflowStepManagementTest {
         
         // Verify our added step is present
         boolean foundOurStep = allSteps.stream()
-                .anyMatch(step -> DisableUserStepProviderFactory.ID.equals(step.getProviderId()) && 
+                .anyMatch(step -> DisableUserStepProviderFactory.ID.equals(step.getUses()) &&
                                  "Test Step".equals(step.getConfig().getFirst("name")));
         assertTrue(foundOurStep, "Our added step should be present in the workflow");
+    }
+
+    @Test
+    public void testAddStepWithTimeToImmediateWorkflow() {
+        workflowsResource.create(WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .onEvent(ResourceOperationType.USER_ADD.toString())
+                .name("immediate-workflow")
+                .immediate()
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID).build()
+                ).build()).close();
+
+        String immediateWorkflowId = workflowsResource.list().stream()
+                .filter(wf -> "immediate-workflow".equals(wf.getName()))
+                .findFirst()
+                .map(WorkflowRepresentation::getId)
+                .orElse(null);
+        assertThat(immediateWorkflowId, notNullValue());
+
+        WorkflowRepresentation representation = workflowsResource.workflow(immediateWorkflowId).toRepresentation();
+        assertThat(representation.getConfig().getFirst(CONFIG_SCHEDULED), equalTo("false"));
+
+        // Attempt to add a step with 'after' time (should be rejected)
+        WorkflowStepRepresentation stepRep = new WorkflowStepRepresentation();
+        stepRep.setUses(DisableUserStepProviderFactory.ID);
+        stepRep.setConfig("name", "Invalid Step");
+        stepRep.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
+
+        try (Response response = workflowsResource.workflow(immediateWorkflowId).steps().create(stepRep)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            String errorMessage = response.readEntity(String.class);
+            assertThat(errorMessage, containsString("Immediate workflow step cannot have a time condition."));
+        }
+        // Verify step was not added (should still be only the original setup step)
+        List<WorkflowStepRepresentation> allSteps = workflowsResource.workflow(immediateWorkflowId).steps().list();
+        assertThat(allSteps, hasSize(1));
+    }
+
+    @Test
+    public void testAddStepWithoutTimeToScheduledWorkflow() {
+        WorkflowRepresentation representation = workflowsResource.workflow(workflowId).toRepresentation();
+        assertThat(representation.getConfig().getFirst(CONFIG_SCHEDULED), nullValue());//immediate
+
+        // Attempt to add a step without 'after' time (should be rejected)
+        WorkflowStepRepresentation stepRep = WorkflowStepRepresentation.create()
+                .of(NotifyUserStepProviderFactory.ID)
+                .build();
+
+        try (Response response = workflowsResource.workflow(workflowId).steps().create(stepRep)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            String errorMessage = response.readEntity(String.class);
+            assertThat(errorMessage, containsString("All steps of scheduled workflow must have a valid 'after' time condition."));
+        }
+
+        // Verify step was not added (should still be only the original setup step)
+        List<WorkflowStepRepresentation> allSteps = workflowsResource.workflow(workflowId).steps().list();
+        assertThat(allSteps, hasSize(1));
     }
 
     @Test
@@ -132,7 +201,7 @@ public class WorkflowStepManagementTest {
 
         // Add one more step
         WorkflowStepRepresentation step1 = new WorkflowStepRepresentation();
-        step1.setProviderId(DisableUserStepProviderFactory.ID);
+        step1.setUses(DisableUserStepProviderFactory.ID);
         step1.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
 
         String step1Id;
@@ -162,7 +231,7 @@ public class WorkflowStepManagementTest {
 
         // Add first step at position 0
         WorkflowStepRepresentation step1 = new WorkflowStepRepresentation();
-        step1.setProviderId(NotifyUserStepProviderFactory.ID);
+        step1.setUses(NotifyUserStepProviderFactory.ID);
         step1.setConfig("name", "Step 1");
         step1.setConfig("after", String.valueOf(Duration.ofDays(30).toMillis()));
 
@@ -178,7 +247,7 @@ public class WorkflowStepManagementTest {
 
         // Add second step at position 1
         WorkflowStepRepresentation step2 = new WorkflowStepRepresentation();
-        step2.setProviderId(DisableUserStepProviderFactory.ID);
+        step2.setUses(DisableUserStepProviderFactory.ID);
         step2.setConfig("name", "Step 2");
         step2.setConfig("after", String.valueOf(Duration.ofDays(60).toMillis()));
 
@@ -194,7 +263,7 @@ public class WorkflowStepManagementTest {
 
         // Add third step at position 1 (middle)
         WorkflowStepRepresentation step3 = new WorkflowStepRepresentation();
-        step3.setProviderId(NotifyUserStepProviderFactory.ID);
+        step3.setUses(NotifyUserStepProviderFactory.ID);
         step3.setConfig("name", "Step 3");
         step3.setConfig("after", String.valueOf(Duration.ofDays(45).toMillis())); // Between 30 and 60 days
 
@@ -217,7 +286,7 @@ public class WorkflowStepManagementTest {
         WorkflowStepsResource steps = workflow.steps();
 
         WorkflowStepRepresentation stepRep = new WorkflowStepRepresentation();
-        stepRep.setProviderId(NotifyUserStepProviderFactory.ID);
+        stepRep.setUses(NotifyUserStepProviderFactory.ID);
         stepRep.setConfig("name", "Test Step");
         stepRep.setConfig("after", String.valueOf(Duration.ofDays(15).toMillis()));
 
@@ -231,7 +300,7 @@ public class WorkflowStepManagementTest {
         WorkflowStepRepresentation retrievedStep = steps.get(stepId);
         assertNotNull(retrievedStep);
         assertEquals(stepId, retrievedStep.getId());
-        assertEquals(NotifyUserStepProviderFactory.ID, retrievedStep.getProviderId());
+        assertEquals(NotifyUserStepProviderFactory.ID, retrievedStep.getUses());
         assertEquals("Test Step", retrievedStep.getConfig().getFirst("name"));
     }
 

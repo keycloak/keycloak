@@ -52,7 +52,6 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
@@ -222,10 +221,6 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             // frontchannel logout
             assertTrue(oidcConfig.getFrontChannelLogoutSessionSupported());
             assertTrue(oidcConfig.getFrontChannelLogoutSupported());
-
-            // DPoP - negative test for preview profile - see testDpopSigningAlgValuesSupportedWithDpop for actual test
-            assertNull("dpop_signing_alg_values_supported should not be present unless DPoP feature is enabled",
-                    oidcConfig.getDpopSigningAlgValuesSupported());
         } finally {
             client.close();
         }
@@ -380,7 +375,6 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
     public void testDpopSigningAlgValuesSupportedWithDpop() throws IOException {
         Client client = AdminClientUtil.createResteasyClient();
 

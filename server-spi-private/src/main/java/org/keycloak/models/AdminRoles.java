@@ -42,6 +42,8 @@ public class AdminRoles {
     public static final String VIEW_EVENTS = "view-events";
     public static final String VIEW_IDENTITY_PROVIDERS = "view-identity-providers";
     public static final String VIEW_AUTHORIZATION = "view-authorization";
+    @Deprecated(since = "26.4", forRemoval = true)
+    public static final String VIEW_SYSTEM = "view-system";
 
     public static final String MANAGE_REALM = "manage-realm";
     public static final String MANAGE_USERS = "manage-users";

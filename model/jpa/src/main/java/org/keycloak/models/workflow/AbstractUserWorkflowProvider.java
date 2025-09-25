@@ -17,6 +17,8 @@
 
 package org.keycloak.models.workflow;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +28,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -70,7 +73,8 @@ public abstract class AbstractUserWorkflowProvider extends EventBasedWorkflowPro
     }
 
     private List<Predicate> getConditionsPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> path) {
-        List<String> conditions = getModel().getConfig().getOrDefault("conditions", List.of());
+        MultivaluedHashMap<String, String> config = getModel().getConfig();
+        List<String> conditions = config.getOrDefault(CONFIG_CONDITIONS, List.of());
 
         if (conditions.isEmpty()) {
             return List.of();
@@ -79,7 +83,7 @@ public abstract class AbstractUserWorkflowProvider extends EventBasedWorkflowPro
         List<Predicate> predicates = new ArrayList<>();
 
         for (String providerId : conditions) {
-            WorkflowConditionProvider condition = resolveCondition(providerId);
+            WorkflowConditionProvider condition = getManager().getConditionProvider(providerId, config);
             Predicate predicate = condition.toPredicate(cb, query, path);
 
             if (predicate != null) {

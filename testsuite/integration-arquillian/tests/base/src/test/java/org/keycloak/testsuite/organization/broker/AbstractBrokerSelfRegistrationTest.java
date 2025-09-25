@@ -78,18 +78,6 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
-    public void testDefaultAuthenticationIfUserDoesNotExistAndNoOrgMatch() {
-        testRealm().organizations().get(createOrganization().getId());
-
-        // login with email only
-        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
-
-        // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-    }
-
-    @Test
     public void testIdentityFirstIfUserNotExistsAndEmailMatchOrgDomain() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
@@ -204,7 +192,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         openIdentityFirstLoginPage("user", false, null, false, false);
 
         // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 

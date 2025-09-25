@@ -7,6 +7,7 @@ metrics-for-troubleshooting-keycloak
 metrics-for-troubleshooting-jvm
 metrics-for-troubleshooting-database
 metrics-for-troubleshooting-http
+metrics-for-troubleshooting-cache
 metrics-for-troubleshooting-clustering-and-network
 metrics-for-troubleshooting-embedded-caches
 metrics-for-troubleshooting-embedded-caches-multi-cluster

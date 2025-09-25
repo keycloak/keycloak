@@ -39,6 +39,9 @@ public class WorkflowResource {
         }
     }
 
+    /**
+     * Update the workflow configuration. The method does not update the workflow steps.
+     */
     @PUT
     public void update(WorkflowRepresentation rep) {
         try {

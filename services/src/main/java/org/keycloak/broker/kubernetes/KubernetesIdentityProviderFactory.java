@@ -5,6 +5,7 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderShowInAccountConsole;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
@@ -26,7 +27,7 @@ public class KubernetesIdentityProviderFactory extends AbstractIdentityProviderF
 
     @Override
     public KubernetesIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new KubernetesIdentityProvider(session, new OIDCIdentityProviderConfig(model), globalJwksUrl);
+        return new KubernetesIdentityProvider(session, new KubernetesIdentityProviderConfig(model), globalJwksUrl);
     }
 
     @Override
@@ -45,7 +46,7 @@ public class KubernetesIdentityProviderFactory extends AbstractIdentityProviderF
 
     @Override
     public IdentityProviderModel createConfig() {
-        return new OIDCIdentityProviderConfig();
+        return new KubernetesIdentityProviderConfig();
     }
 
     @Override

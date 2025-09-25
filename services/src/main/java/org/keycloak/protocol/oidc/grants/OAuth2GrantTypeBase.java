@@ -291,6 +291,30 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         return null;
     }
 
+    /**
+     * Handle missing authorization_details parameter by allowing processors to generate authorization details response.
+     * This is used in Pre-Authorized Code Flow where the credential offer contains the authorized credential configuration IDs.
+     *
+     * @param userSession the user session
+     * @param clientSessionCtx the client session context
+     * @return the authorization details response if generation was successful, null otherwise
+     */
+    protected List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        try {
+            return session.getKeycloakSessionFactory()
+                    .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
+                    .sorted((f1, f2) -> f2.order() - f1.order())
+                    .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
+                    .map(processor -> processor.handleMissingAuthorizationDetails(userSession, clientSessionCtx))
+                    .filter(authzDetailsResponse -> authzDetailsResponse != null)
+                    .findFirst()
+                    .orElse(null);
+        } catch (RuntimeException e) {
+            logger.warnf(e, "Error when handling missing authorization_details");
+            return null;
+        }
+    }
+
     @Override
     public void close() {
     }

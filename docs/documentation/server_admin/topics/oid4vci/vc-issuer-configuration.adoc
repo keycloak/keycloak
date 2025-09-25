@@ -457,7 +457,7 @@ Validate the setup by accessing the **issuer metadata endpoint**:
 +
 [source,bash]
 ----
-https://localhost:8443/realms/oid4vc-vci/.well-known/openid-credential-issuer
+https://localhost:8443/.well-known/openid-credential-issuer/realms/oid4vc-vci
 ----
 
 A successful response returns a JSON object containing details such as:

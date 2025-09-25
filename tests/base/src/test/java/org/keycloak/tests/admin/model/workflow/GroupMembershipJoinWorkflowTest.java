@@ -28,6 +28,8 @@ import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionF
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.workflows.WorkflowSetRepresentation;
+import org.keycloak.representations.workflows.WorkflowStateRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -66,7 +68,7 @@ public class GroupMembershipJoinWorkflowTest {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADD.name())
                 .onConditions(WorkflowConditionRepresentation.create()
@@ -151,11 +153,11 @@ public class GroupMembershipJoinWorkflowTest {
 
         // check the workflow is disabled
         workflowRep = managedRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
-        assertThat(workflowRep.getConfig().getFirst("enabled"), allOf(notNullValue(), is("false")));
-        List<String> validationErrors = workflowRep.getConfig().get("validation_error");
-        assertThat(validationErrors, notNullValue());
-        assertThat(validationErrors, hasSize(1));
-        assertThat(validationErrors.get(0), containsString("Group with id %s does not exist.".formatted(groupId)));
+        assertThat(workflowRep.getEnabled(), allOf(notNullValue(), is(false)));
+        WorkflowStateRepresentation status = workflowRep.getState();
+        assertThat(status, notNullValue());
+        assertThat(status.getErrors(), hasSize(1));
+        assertThat(status.getErrors().get(0), containsString("Group with id %s does not exist.".formatted(groupId)));
     }
 
     private static RealmModel configureSessionContext(KeycloakSession session) {

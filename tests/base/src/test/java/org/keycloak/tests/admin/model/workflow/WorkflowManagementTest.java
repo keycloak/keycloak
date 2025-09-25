@@ -22,11 +22,13 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -62,6 +64,8 @@ import org.keycloak.models.workflow.UserCreationTimeWorkflowProviderFactory;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.workflows.WorkflowConstants;
+import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -93,7 +97,7 @@ public class WorkflowManagementTest {
 
     @Test
     public void testCreate() {
-        List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -113,15 +117,16 @@ public class WorkflowManagementTest {
         List<WorkflowRepresentation> actualWorkflows = workflows.list();
         assertThat(actualWorkflows, Matchers.hasSize(1));
 
-        assertThat(actualWorkflows.get(0).getProviderId(), is(UserCreationTimeWorkflowProviderFactory.ID));
+        assertThat(actualWorkflows.get(0).getUses(), is(UserCreationTimeWorkflowProviderFactory.ID));
         assertThat(actualWorkflows.get(0).getSteps(), Matchers.hasSize(2));
-        assertThat(actualWorkflows.get(0).getSteps().get(0).getProviderId(), is(NotifyUserStepProviderFactory.ID));
-        assertThat(actualWorkflows.get(0).getSteps().get(1).getProviderId(), is(DisableUserStepProviderFactory.ID));
+        assertThat(actualWorkflows.get(0).getSteps().get(0).getUses(), is(NotifyUserStepProviderFactory.ID));
+        assertThat(actualWorkflows.get(0).getSteps().get(1).getUses(), is(DisableUserStepProviderFactory.ID));
+        assertThat(actualWorkflows.get(0).getState(), is(nullValue()));
     }
 
     @Test
     public void testCreateWithNoConditions() {
-        List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -132,11 +137,34 @@ public class WorkflowManagementTest {
                                 .build()
                 ).build();
 
-        expectedWorkflows.get(0).setConditions(null);
+        expectedWorkflows.getWorkflows().get(0).setConditions(null);
 
         try (Response response = managedRealm.admin().workflows().create(expectedWorkflows)) {
             assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
         }
+    }
+
+    @Test
+    public void testCreateWithNoWorkflowSetDefaultWorkflow() {
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
+                .of(null)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build();
+
+        expectedWorkflows.getWorkflows().get(0).setConditions(null);
+
+        try (Response response = managedRealm.admin().workflows().create(expectedWorkflows)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        assertEquals(1, managedRealm.admin().workflows().list().size());
+        assertEquals(WorkflowConstants.DEFAULT_WORKFLOW, managedRealm.admin().workflows().list().get(0).getUses());
     }
 
     @Test
@@ -166,7 +194,7 @@ public class WorkflowManagementTest {
         List<WorkflowRepresentation> actualWorkflows = workflows.list();
         assertThat(actualWorkflows, Matchers.hasSize(2));
 
-        WorkflowRepresentation workflow = actualWorkflows.stream().filter(p -> UserCreationTimeWorkflowProviderFactory.ID.equals(p.getProviderId())).findAny().orElse(null);
+        WorkflowRepresentation workflow = actualWorkflows.stream().filter(p -> UserCreationTimeWorkflowProviderFactory.ID.equals(p.getUses())).findAny().orElse(null);
         assertThat(workflow, notNullValue());
         String id = workflow.getId();
         workflows.workflow(id).delete().close();
@@ -187,7 +215,7 @@ public class WorkflowManagementTest {
 
     @Test
     public void testUpdate() {
-        List<WorkflowRepresentation> expectedWorkflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .name("test-workflow")
                 .withSteps(
@@ -438,7 +466,7 @@ public class WorkflowManagementTest {
         mailServer.runCleanup();
 
         // disable the workflow - scheduled steps should be paused and workflow should not activate for new users
-        workflow.getConfig().putSingle("enabled", "false");
+        workflow.setEnabled(false);
         managedRealm.admin().workflows().workflow(workflow.getId()).update(workflow).close();
 
         // create another user - should NOT bind the user to the workflow as it is disabled
@@ -583,7 +611,7 @@ public class WorkflowManagementTest {
 
     @Test
     public void testCreateImmediateWorkflowWithTimeConditions() {
-        List<WorkflowRepresentation> workflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .immediate()
                 .withSteps(
@@ -603,8 +631,67 @@ public class WorkflowManagementTest {
     }
 
     @Test
+    public void testUpdateWorkflowFromImmediateToScheduled() {
+        // Create an immediate workflow
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .immediate()
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .build()
+                ).build();
+
+        WorkflowsResource workflowsResource = managedRealm.admin().workflows();
+        try (Response response = workflowsResource.create(workflows)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        WorkflowRepresentation workflow = workflowsResource.list().get(0);
+        // Attempt to update the workflow to scheduled
+        workflow.getConfig().putSingle(CONFIG_SCHEDULED, "true");
+
+        try (Response response = workflowsResource.workflow(workflow.getId()).update(workflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            String error = response.readEntity(String.class);
+            assertThat(error, containsString("Scheduled workflow cannot have steps without time conditions."));
+        }
+    }
+
+    @Test
+    public void testUpdateWorkflowFromScheduledToImmediate() {
+        // Create a scheduled workflow
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(1))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(1))
+                                .build()
+                ).build();
+
+        WorkflowsResource workflowsResource = managedRealm.admin().workflows();
+        try (Response response = workflowsResource.create(workflows)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        WorkflowRepresentation workflow = workflowsResource.list().get(0);
+        // Attempt to update the workflow to immediate
+        workflow.setScheduled(false);
+
+        try (Response response = workflowsResource.workflow(workflow.getId()).update(workflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            String error = response.readEntity(String.class);
+            assertThat(error, containsString("Immediate workflow cannot have steps with time conditions."));
+        }
+    }
+
+    @Test
     public void testCreateScheduledWorkflowWithoutTimeConditions() {
-        List<WorkflowRepresentation> workflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -622,7 +709,7 @@ public class WorkflowManagementTest {
 
     @Test
     public void testCreateWorkflowMarkedAsBothImmediateAndRecurring() {
-        List<WorkflowRepresentation> workflows = WorkflowRepresentation.create()
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .immediate()
                 .recurring()
@@ -643,8 +730,8 @@ public class WorkflowManagementTest {
     }
 
     @Test
-    public void testFailCreateNegativeTime() {
-        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.create()
+    public void testFailCreateWorkflowWithNegativeTime() {
+        WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
@@ -658,9 +745,10 @@ public class WorkflowManagementTest {
                                                 .of(DisableUserStepProviderFactory.ID)
                                                 .build()
                                 ).build())
-                .build())) {
+                .build();
+        try (Response response = managedRealm.admin().workflows().create(workflows)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step provider " + SetUserAttributeStepProviderFactory.ID + " does not support aggregated steps"));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step 'after' time condition cannot be negative."));
         }
     }
 

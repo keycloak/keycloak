@@ -18,6 +18,7 @@
 package org.keycloak.common.util.reflections;
 
 import java.beans.Introspector;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
@@ -1050,5 +1051,39 @@ public class Reflections {
         }
 
         return Object.class;
+    }
+
+    public static <T> T convertValueToType(Object value, Class<T> type) {
+
+        if (value == null) {
+            return null;
+
+        } else if (value instanceof String) {
+            if (type == String.class) {
+                return type.cast(value);
+            } else if (type == Boolean.class) {
+                return type.cast(Boolean.parseBoolean(value.toString()));
+            } else if (type == Integer.class) {
+                return type.cast(Integer.parseInt(value.toString()));
+            } else if (type == Long.class) {
+                return type.cast(Long.parseLong(value.toString()));
+            }
+        } else if (value instanceof Number) {
+            if (type == Integer.class) {
+                return type.cast(((Number) value).intValue());
+            } else if (type == Long.class) {
+                return type.cast(((Number) value).longValue());
+            } else if (type == String.class) {
+                return type.cast(value.toString());
+            }
+        } else if (value instanceof Boolean) {
+            if (type == Boolean.class) {
+                return type.cast(value);
+            } else if (type == String.class) {
+                return type.cast(value);
+            }
+        }
+
+        throw new RuntimeException("Unable to handle type [" + type + "]");
     }
 }

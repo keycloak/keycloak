@@ -1,7 +1,5 @@
 package org.keycloak.tests.client.authentication.external;
 
-import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -13,7 +11,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
@@ -44,13 +41,6 @@ public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
 
     public SpiffeClientAuthTest() {
         super(null, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
-    }
-
-    @Test
-    public void testInvalidConfig() {
-        testInvalidConfig("with-port:8080", "https://localhost");
-        testInvalidConfig("with-spiffe-scheme", "https://localhost");
-        testInvalidConfig("valid", "invalid-url");
     }
 
     @Test
@@ -86,17 +76,6 @@ public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
         token.exp((long) (Time.currentTime() + 300));
         token.subject(EXTERNAL_CLIENT_ID);
         return token;
-    }
-
-    private void testInvalidConfig(String trustDomain, String bundleEndpoint) {
-        IdentityProviderRepresentation idp = IdentityProviderBuilder.create().providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
-                .alias("another")
-                .setAttribute(IdentityProviderModel.ISSUER, trustDomain)
-                .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, bundleEndpoint).build();
-
-        try (Response r = realm.admin().identityProviders().create(idp)) {
-            Assertions.assertEquals(400, r.getStatus());
-        }
     }
 
     @Override

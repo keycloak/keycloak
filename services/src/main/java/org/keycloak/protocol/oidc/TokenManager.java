@@ -640,7 +640,8 @@ public class TokenManager {
 
         // skip scopes that were explicitly requested using the dynamic scope format
         // we don't want dynamic and default client scopes duplicated
-        clientScopes = clientScopes.filter(scope -> !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR));
+        // always include the dedicated client scope that maps to the client itself
+        clientScopes = clientScopes.filter(scope -> scope.equals(client) || !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR));
 
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
 

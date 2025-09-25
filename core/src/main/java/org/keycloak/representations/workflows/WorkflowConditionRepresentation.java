@@ -1,66 +1,41 @@
 package org.keycloak.representations.workflows;
 
-import java.util.Collections;
-import java.util.HashMap;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class WorkflowConditionRepresentation {
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.keycloak.common.util.MultivaluedHashMap;
+
+@JsonPropertyOrder({CONFIG_USES, CONFIG_WITH})
+public final class WorkflowConditionRepresentation extends AbstractWorkflowComponentRepresentation {
 
     public static Builder create() {
         return new Builder();
     }
 
-    private String id;
-    private String providerId;
-    private Map<String, List<String>> config;
-
     public WorkflowConditionRepresentation() {
-        // reflection
+        super(null, null, null);
     }
 
-    public WorkflowConditionRepresentation(String providerId) {
-        this(providerId, null);
+    public WorkflowConditionRepresentation(String condition) {
+        this(condition, null);
     }
 
-    public WorkflowConditionRepresentation(String providerId, Map<String, List<String>> config) {
-        this(null, providerId, config);
+    public WorkflowConditionRepresentation(String condition, MultivaluedHashMap<String, String> config) {
+        super(null, condition, config);
     }
 
-    public WorkflowConditionRepresentation(String id, String providerId, Map<String, List<String>> config) {
-        this.id = id;
-        this.providerId = providerId;
-        this.config = config;
-    }
-
-    public String getProviderId() {
-        return providerId;
-    }
-
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
-    }
-
-    public Map<String, List<String>> getConfig() {
-        return config;
-    }
-
-    public void setConfig(Map<String, List<String>> config) {
-        this.config = config;
-    }
-
-    public void setConfig(String key, String value) {
-        if (this.config == null) {
-            this.config = new HashMap<>();
-        }
-        this.config.put(key, Collections.singletonList(value));
-    }
-
-    public void setConfig(String key, List<String> values) {
-        if (this.config == null) {
-            this.config = new HashMap<>();
-        }
-        this.config.put(key, values);
+    @Override
+    @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
+    @JsonDeserialize(using = MultivaluedHashMapValueDeserializer.class)
+    public MultivaluedHashMap<String, String> getConfig() {
+        return super.getConfig();
     }
 
     public static class Builder {
@@ -77,13 +52,13 @@ public class WorkflowConditionRepresentation {
             return this;
         }
 
-        public Builder withConfig(String key, List<String> value) {
-            action.setConfig(key, value);
+        public Builder withConfig(String key, String... values) {
+            action.setConfig(key, Arrays.asList(values));
             return this;
         }
 
         public Builder withConfig(Map<String, List<String>> config) {
-            action.setConfig(config);
+            action.setConfig(new MultivaluedHashMap<>(config));
             return this;
         }
 
