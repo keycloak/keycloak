@@ -46,4 +46,15 @@ public interface AuthorizationDetailsProcessor extends Provider {
     List<AuthorizationDetailsResponse> process(UserSessionModel userSession,
                                                ClientSessionContext clientSessionCtx,
                                                String authorizationDetailsParameter);
+
+    /**
+     * Method is invoked in cases when authorization_details parameter is missing in the request. It allows processor to
+     * generate authorization details response in such a case
+     *
+     * @param userSession      the user session
+     * @param clientSessionCtx the client session context
+     * @return authorization details response if this processor can handle current request in case that authorization_details parameter was not provided
+     */
+    List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession,
+                                                                         ClientSessionContext clientSessionCtx);
 }

@@ -214,13 +214,22 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
-        // Process authorization_details using provider discovery (only if present)
+        // Process authorization_details using provider discovery (if present in request)
+        List<AuthorizationDetailsResponse> authorizationDetailsResponse = null;
         if (formParams.getFirst(AUTHORIZATION_DETAILS_PARAM) != null) {
-            List<AuthorizationDetailsResponse> authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
+            authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
             } else {
                 logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", formParams.getFirst(AUTHORIZATION_DETAILS_PARAM));
+            }
+        }
+
+        // If no authorization_details were processed from the request, try to generate them from credential offer
+        if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
+            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
             }
         }
 
