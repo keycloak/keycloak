@@ -248,13 +248,13 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
 
     /**
-     * Process authorization_details from the credential offer when authorization_details parameter is not present in the token request.
+     * Generate authorization_details from the credential offer when authorization_details parameter is not present in the token request.
      * This method generates authorization_details based on the credential_configuration_ids from the credential offer.
      *
      * @param clientSession the client session that contains the credential offer information
-     * @return the authorization details response if processing was successful, null otherwise
+     * @return the authorization details response if generation was successful, null otherwise
      */
-    public List<AuthorizationDetailsResponse> processFromCredentialOffer(AuthenticatedClientSessionModel clientSession) {
+    public List<AuthorizationDetailsResponse> generateAuthorizationDetailsFromCredentialOffer(AuthenticatedClientSessionModel clientSession) {
         logger.info("Processing authorization_details from credential offer");
 
         // Get supported credentials
@@ -328,6 +328,12 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
         logger.debugf("No credential_configuration_ids found in predictable location");
         return null;
+    }
+
+    @Override
+    public List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+        return generateAuthorizationDetailsFromCredentialOffer(clientSession);
     }
 
     @Override

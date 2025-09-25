@@ -227,7 +227,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // If no authorization_details were processed from the request, try to generate them from credential offer
         if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
-            authorizationDetailsResponse = processAuthorizationDetailsFromCredentialOffer(clientSession);
+            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
             }

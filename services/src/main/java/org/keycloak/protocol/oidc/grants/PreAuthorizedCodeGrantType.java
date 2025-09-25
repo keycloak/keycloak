@@ -29,8 +29,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -109,7 +107,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         // If no authorization_details were processed from the request, try to generate them from credential offer
         if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
-            authorizationDetailsResponse = processAuthorizationDetailsFromCredentialOffer(clientSession);
+            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), sessionContext);
         }
 
         AccessTokenResponse tokenResponse;

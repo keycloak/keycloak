@@ -292,26 +292,25 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     }
 
     /**
-     * Process authorization_details from credential offer when authorization_details parameter is not present in the token request.
+     * Handle missing authorization_details parameter by allowing processors to generate authorization details response.
      * This is used in Pre-Authorized Code Flow where the credential offer contains the authorized credential configuration IDs.
      *
-     * @param clientSession the client session that contains the credential offer information
-     * @return the authorization details response if processing was successful, null otherwise
+     * @param userSession the user session
+     * @param clientSessionCtx the client session context
+     * @return the authorization details response if generation was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processAuthorizationDetailsFromCredentialOffer(AuthenticatedClientSessionModel clientSession) {
+    protected List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
             return session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
                     .sorted((f1, f2) -> f2.order() - f1.order())
                     .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                    .filter(processor -> processor instanceof org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor)
-                    .map(processor -> (org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor) processor)
-                    .map(processor -> processor.processFromCredentialOffer(clientSession))
+                    .map(processor -> processor.handleMissingAuthorizationDetails(userSession, clientSessionCtx))
                     .filter(authzDetailsResponse -> authzDetailsResponse != null)
                     .findFirst()
                     .orElse(null);
         } catch (RuntimeException e) {
-            logger.warnf(e, "Error when processing authorization_details from credential offer");
+            logger.warnf(e, "Error when handling missing authorization_details");
             return null;
         }
     }
