@@ -86,7 +86,6 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
 
         // verify user email as we know it is valid as this entry point would never have gotten here.
         user.setEmailVerified(true);
-        user.removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
         tokenContext.getAuthenticationSession().removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
         user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
         tokenContext.getAuthenticationSession().removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);

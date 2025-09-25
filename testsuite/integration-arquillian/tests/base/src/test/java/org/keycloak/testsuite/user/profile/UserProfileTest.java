@@ -792,6 +792,47 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile.update();
 
         assertEquals("E-Mail address should have been changed!", "changed@foo.bar", user.getEmail());
+
+        attributes.put(UserModel.EMAIL_PENDING, "pending@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+        assertNotNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+        attributes.put(UserModel.EMAIL_PENDING, "");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.EMAIL_PENDING));
+            assertNotNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+        }
+
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        try {
+            profile.update();
+            assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+            fail("Should fail");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.EMAIL_PENDING));
+            assertNotNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+        }
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+
     }
 
     @Test

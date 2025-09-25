@@ -21,7 +21,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
@@ -32,6 +34,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.Response.Status;
@@ -91,24 +94,31 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 	}
 
 	@Override
-	protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions) throws Exception {
+	protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) throws Exception {
 		String redirectUri = OAuthClient.APP_ROOT + "/auth?nonce=" + UUID.randomUUID();
 		oauth.redirectUri(redirectUri);
 		loginPage.open();
 
 		loginPage.login("test-user@localhost", "password");
+        updateEmailPage.assertCurrent();
 
-                updateEmailPage.assertCurrent();
-                if (logoutOtherSessions) {
-                        updateEmailPage.checkLogoutSessions();
-                }
-                Assert.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
-                updateEmailPage.changeEmail(newEmail);
+        if (logoutOtherSessions) {
+            updateEmailPage.checkLogoutSessions();
+        }
+
+        Assert.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
+        updateEmailPage.changeEmail(newEmail);
 
 		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail).assertEvent();
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		assertEquals("test-user@localhost", user.getEmail());
 		assertTrue(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
+        assertNotEquals(newEmail, user.getEmail());
+        assertFalse(user.isEmailVerified());
+        Map<String, List<String>> attributes = user.getAttributes();
+        assertNotNull(attributes.get(UserModel.EMAIL_PENDING));
+        assertEquals(1, attributes.get(UserModel.EMAIL_PENDING).size());
+        assertEquals(newEmail, attributes.get(UserModel.EMAIL_PENDING).get(0));
 
 		driver.navigate().to(fetchEmailConfirmationLink(newEmail));
 
@@ -117,6 +127,16 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		infoPage.clickBackToApplicationLink();
 		WaitUtils.waitForPageToLoad();
 		assertEquals(redirectUri, driver.getCurrentUrl());
+
+        if (newEmailAsUsername) {
+            user = ActionUtil.findUserWithAdminClient(adminClient, newEmail);
+        } else {
+            user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        }
+        attributes = user.getAttributes();
+        assertTrue(attributes == null || !attributes.containsKey(UserModel.EMAIL_PENDING));
+        assertEquals(newEmail, user.getEmail());
+        assertTrue(user.isEmailVerified());
 	}
 
 	private void updateEmail(boolean logoutOtherSessions) throws Exception {
@@ -130,7 +150,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
 		// add action and change email
 		configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
-		changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions);
+		changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions, false);
 
 		if (logoutOtherSessions) {
 			events.expectLogout(event1.getSessionId())
@@ -476,7 +496,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
             // Verification email should be sent and email should be set
             UserRepresentation updatedUser = testRealm().users().get(findUser("pendinguser").getId()).toRepresentation();
-            assertEquals("Email should be set immediately", "pending@localhost", updatedUser.getEmail());
+            assertNull("Email should be not set immediately", updatedUser.getEmail());
 
             assertTrue("User should have UPDATE_EMAIL required action", 
                       updatedUser.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
@@ -564,52 +584,4 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             ApiUtil.removeUserByUsername(testRealm(), "realmverifyuser");
         }
     }
-
-    @Test
-    public void testVerificationLinkAndCacheExpiration() throws MessagingException, IOException {
-        try {
-            // Create user with UPDATE_EMAIL required action
-            UserRepresentation user = UserBuilder.create()
-                    .enabled(true)
-                    .username("expirytestuser")
-                    .email("expirytestuser@localhost")
-                    .firstName("John")
-                    .lastName("Doe")
-                    .emailVerified(true)
-                    .requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name())
-                    .build();
-            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
-
-            // Step 1: Login and change email (triggers verification)
-            loginPage.open();
-            loginPage.login("expirytestuser", "password");
-            updateEmailPage.assertCurrent();
-            updateEmailPage.changeEmail("expired@localhost");
-
-            // Should send verification email
-            String confirmationLink = fetchEmailConfirmationLink("expired@localhost");
-            assertNotNull("Should have received verification email", confirmationLink);
-
-            // Step 2: Move time forward to expire both verification link and cache entry
-            setTimeOffset(1000);
-
-            // Step 3: Try to use expired verification link
-            driver.navigate().to(confirmationLink);
-            loginPage.assertCurrent();
-
-            // Step 4: Login again - should not show pending verification message since cache expired
-            loginPage.login("expirytestuser", "password");
-            updateEmailPage.assertCurrent();
-            
-            // Should NOT show pending verification message since cache expired
-            assertThat("Should not show pending verification message after expiration",
-                      updateEmailPage.getInfo(), not(containsString("A verification email was sent to expired@localhost")));
-
-        } finally {
-            events.clear();
-            ApiUtil.removeUserByUsername(testRealm(), "expirytestuser");
-            resetTimeOffset();
-        }
-    }
-
 }

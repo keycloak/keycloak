@@ -194,6 +194,11 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             public String getFederationLink() {
                 return null;
             }
+
+            @Override
+            public Stream<String> getRequiredActionsStream() {
+                return Stream.empty();
+            }
         };
 
         UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
