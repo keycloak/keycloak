@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -29,12 +30,21 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.client.hotrod.security.BasicCallbackHandler;
+import org.infinispan.client.hotrod.security.TokenCallbackHandler;
+import org.infinispan.client.rest.RestClient;
+import org.infinispan.client.rest.RestResponse;
+import org.infinispan.client.rest.RestResponseInfo;
+import org.infinispan.client.rest.configuration.RestClientConfigurationBuilder;
 import org.infinispan.commons.configuration.io.ConfigurationWriter;
+import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.commons.io.StringBuilderWriter;
 import org.infinispan.commons.util.Version;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.configuration.cache.BackupConfigurationBuilder;
 import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.health.CacheHealth;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -210,6 +220,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         logger.debug("Remote Cache feature is enabled");
         var rcm = new RemoteCacheManager(remoteConfig.get());
 
+        checkSitesName(rcm);
+
         // upload the schema before trying to access the caches
         // not caching the list; it is only used during startup
         var entities = List.of(
@@ -329,5 +341,115 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private void addRemoteOperationalInfo(Map<String, String> info) {
         info.put("connectionCount", Integer.toString(remoteCacheManager.getConnectionCount()));
+    }
+
+    /**
+     * Fetches the cache configuration from the Infinispan server and, if they exist, compares if the sites names
+     * matches.
+     */
+    protected static void checkSitesName(RemoteCacheManager rcm) {
+        var restConfigBuilder = new RestClientConfigurationBuilder();
+        var hotRodConfig = rcm.getConfiguration();
+
+        restConfigBuilder.pingOnCreate(true).followRedirects(true).tcpKeepAlive(true);
+        copyHostName(hotRodConfig, restConfigBuilder);
+        copyAuthentication(hotRodConfig, restConfigBuilder);
+        copySsl(hotRodConfig, restConfigBuilder);
+
+        try (var restClient = RestClient.forConfiguration(restConfigBuilder.build())) {
+            var stage = CompletionStages.aggregateCompletionStage();
+            var parser = new ParserRegistry();
+            for (var cacheName : CLUSTERED_CACHE_NAMES) {
+                var cHrConfig = hotRodConfig.remoteCaches().get(cacheName);
+                if (cHrConfig == null || cHrConfig.configuration() == null) {
+                    continue;
+                }
+                var expectedSites = getSitesNames(parser, cHrConfig.configuration(), null); // null means auto-detect format (XML, JSON, YAML)
+                if (expectedSites.isEmpty()) {
+                    // no sites configured
+                    continue;
+                }
+                var future = restClient.cache(cacheName).configuration()
+                        .exceptionally(throwable -> {
+                            logger.errorf(throwable, "Unexpected error fetching cache configuration for cache '%s'", cacheName);
+                            return null;
+                        })
+                        .thenAccept(restResponse -> checkSites(parser, cacheName, expectedSites, restResponse));
+                stage.dependsOn(future);
+            }
+            CompletionStages.join(stage.freeze());
+        } catch (Exception e) {
+            logger.error("Unexpected error verifying cache configuration", e);
+        }
+    }
+
+    private static void copyHostName(org.infinispan.client.hotrod.configuration.Configuration from, RestClientConfigurationBuilder to) {
+        var server = from.servers().get(0);
+        to.addServer().host(server.host()).port(server.port());
+    }
+
+    private static void copyAuthentication(org.infinispan.client.hotrod.configuration.Configuration from, RestClientConfigurationBuilder to) {
+        var authn = from.security().authentication();
+        if (!authn.enabled()) {
+            return;
+        }
+        to.security().authentication().enable()
+                .clientSubject(authn.clientSubject())
+                .mechanism("AUTO");
+        var callback = authn.callbackHandler();
+        if (callback instanceof BasicCallbackHandler bch) {
+            to.security().authentication()
+                    .username(bch.getUsername())
+                    .password(bch.getPassword())
+                    .realm(bch.getRealm());
+        } else if (callback instanceof TokenCallbackHandler tch) {
+            to.security().authentication().username(tch.getToken());
+        }
+    }
+
+    private static void copySsl(org.infinispan.client.hotrod.configuration.Configuration from, RestClientConfigurationBuilder to) {
+        var ssl = from.security().ssl();
+        if (!ssl.enabled()) {
+            return;
+        }
+        to.security().ssl()
+                .enable()
+                .sslContext(ssl.sslContext())
+                .sniHostName(ssl.sniHostName());
+    }
+
+    private static void checkSites(ParserRegistry parser, String cacheName, Set<String> expectedSites, RestResponse restResponse) {
+        if (restResponse == null) {
+            return;
+        }
+        if (restResponse.status() == RestResponseInfo.NOT_FOUND) {
+            // cache not found
+            return;
+        }
+        if (restResponse.status() != RestResponseInfo.OK) {
+            logger.warnf("Unexpected status (%s) fetching cache configuration for cache '%s'", restResponse.status(), cacheName);
+            return;
+        }
+        var restSites = getSitesNames(parser, restResponse.body(), restResponse.contentType());
+        if (!Objects.equals(expectedSites, restSites)) {
+            logger.warnf("Incorrect '%s' option configured. Expected sites are '%s', but the Infinispan cluster reports '%s' for cache '%s'",
+                    CachingOptions.CACHE_REMOTE_BACKUP_SITES.getKey(),
+                    expectedSites,
+                    restSites,
+                    cacheName);
+        }
+    }
+
+    private static Set<String> getSitesNames(ParserRegistry parser, String config, MediaType mediaType) {
+        return parser.parse(config, mediaType)
+                .getNamedConfigurationBuilders()
+                .values()
+                .iterator()
+                .next()
+                .sites()
+                .backups()
+                .stream()
+                .map(BackupConfigurationBuilder::site)
+                .collect(Collectors.toSet());
     }
 }

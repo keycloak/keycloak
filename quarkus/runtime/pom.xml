@@ -622,6 +622,10 @@
             <artifactId>infinispan-cachestore-remote</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-client-rest</artifactId>
+        </dependency>
+        <dependency>
             <!-- adding to avoid warning during compilation about "unknown enum constant org.infinispan.jmx.annotations.DataType.TRAIT" and others -->
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-component-annotations</artifactId>

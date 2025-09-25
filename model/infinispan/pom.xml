@@ -72,6 +72,10 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-client-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
             <artifactId>infinispan-cachestore-remote</artifactId>
         </dependency>
         <!-- required for query/search in the external Infinispan server -->
