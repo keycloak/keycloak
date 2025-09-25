@@ -47,7 +47,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -153,7 +153,7 @@ public class EmailTest extends AbstractI18NTest {
         try {
             UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "login-test");
             CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-            SimpleHttp.Response responseGet = SimpleHttpDefault.doPut(getAuthServerRoot() + "admin/realms/test/users/" + testUser.toRepresentation().getId() + "/execute-actions-email", httpClient)
+            SimpleHttpResponse responseGet = SimpleHttpDefault.doPut(getAuthServerRoot() + "admin/realms/test/users/" + testUser.toRepresentation().getId() + "/execute-actions-email", httpClient)
                     .auth(adminClient.tokenManager().getAccessTokenString())
                     .header("Accept-Language", "de")
                     .json(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()))

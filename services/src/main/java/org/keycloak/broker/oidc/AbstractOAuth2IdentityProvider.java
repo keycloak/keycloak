@@ -21,11 +21,16 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
@@ -36,10 +41,12 @@ import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.MacSignatureSignerContext;
 import org.keycloak.crypto.SignatureProvider;
@@ -48,6 +55,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -69,8 +80,8 @@ import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -78,22 +89,13 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -274,8 +276,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
     }
 
-    protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+    protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
+        SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(getConfig().getTokenUrl())
                 .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
                 .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
         return authenticateTokenRequest(refreshTokenRequest);
@@ -283,8 +285,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            SimpleHttp refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
-            try (SimpleHttp.Response refreshTokenResponse = refreshTokenRequest.asResponse()) {
+            SimpleHttpRequest refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+            try (SimpleHttpResponse refreshTokenResponse = refreshTokenRequest.asResponse()) {
                 String response = refreshTokenResponse.asString();
                 if (response.contains("error")) {
                     ErrorRepresentation error = new ErrorRepresentation();
@@ -592,7 +594,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (token != null) authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, token);
     }
 
-    public SimpleHttp authenticateTokenRequest(final SimpleHttp tokenRequest) {
+    public SimpleHttpRequest authenticateTokenRequest(final SimpleHttpRequest tokenRequest) {
 
         if (getConfig().isJWTAuthentication()) {
             String sha1x509Thumbprint = null;
@@ -722,9 +724,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR);
                 }
 
-                SimpleHttp simpleHttp = generateTokenRequest(authorizationCode);
+                SimpleHttpRequest simpleHttp = generateTokenRequest(authorizationCode);
                 String response;
-                try (SimpleHttp.Response simpleResponse = simpleHttp.asResponse()) {
+                try (SimpleHttpResponse simpleResponse = simpleHttp.asResponse()) {
                     int status = simpleResponse.getStatus();
                     boolean success = status >= 200 && status < 400;
                     response = simpleResponse.asString();
@@ -775,10 +777,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, message);
         }
 
-        public SimpleHttp generateTokenRequest(String authorizationCode) {
+        public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
             KeycloakContext context = session.getContext();
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
-            SimpleHttp tokenRequest = SimpleHttp.doPost(providerConfig.getTokenUrl(), session)
+            SimpleHttpRequest tokenRequest = SimpleHttp.create(session).doPost(providerConfig.getTokenUrl())
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, Urls.identityProviderAuthnResponse(context.getUri().getBaseUri(),
                             providerConfig.getAlias(), context.getRealm().getName()).toString())
@@ -838,7 +840,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
         event.detail("validation_method", "user info");
 
-        SimpleHttp.Response response = null;
+        SimpleHttpResponse response = null;
         int status = 0;
         try {
             String userInfoUrl = getProfileEndpointForValidation(event);
@@ -870,8 +872,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return context;
     }
 
-    protected SimpleHttp buildUserInfoRequest(String subjectToken, String userInfoUrl) {
-        return SimpleHttp.doGet(userInfoUrl, session)
+    protected SimpleHttpRequest buildUserInfoRequest(String subjectToken, String userInfoUrl) {
+        return SimpleHttp.create(session).doGet(userInfoUrl)
                   .header("Authorization", "Bearer " + subjectToken);
     }
 
@@ -997,12 +999,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         try {
 
             // Supporting only access-tokens for now
-            SimpleHttp introspectionRequest = SimpleHttp.doPost(introspectionEndointUrl, session)
+            SimpleHttpRequest introspectionRequest = SimpleHttp.create(session).doPost(introspectionEndointUrl)
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN, idpAccessToken)
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN_TYPE_HINT, AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
             introspectionRequest = authenticateTokenRequest(introspectionRequest);
 
-            try (SimpleHttp.Response introspectionResponse = introspectionRequest.asResponse()) {
+            try (SimpleHttpResponse introspectionResponse = introspectionRequest.asResponse()) {
                 int status = introspectionResponse.getStatus();
 
                 if (status != 200) {

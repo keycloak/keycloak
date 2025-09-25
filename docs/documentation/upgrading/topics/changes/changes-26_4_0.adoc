@@ -254,6 +254,10 @@ If, for whatever reason, an administrator in a common realm needs to access the 
 
 The previous workaround is marked as deprecated and it can be removed in a future version of {project_name}.
 
+=== Refactoring to `SimpleHttp`
+
+The `SimpleHttp` util in the `server-spi-private` module was refactored and moved to the `org.keycloak.http.simple` package.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

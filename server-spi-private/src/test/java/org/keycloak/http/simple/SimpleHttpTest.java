@@ -1,5 +1,6 @@
-package org.keycloak.broker.provider.util;
+package org.keycloak.http.simple;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -70,7 +71,7 @@ public final class SimpleHttpTest {
         @Test
         public void withCharset() throws IOException {
             HttpResponse httpResponse = createBasicResponse(entity);
-            SimpleHttp.Response response = new SimpleHttp.Response(httpResponse, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
+            SimpleHttpResponse response = new SimpleHttpResponse(httpResponse, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE, new ObjectMapper());
             if (success) {
                 assertEquals(original, response.asString());
             } else {
@@ -110,10 +111,10 @@ public final class SimpleHttpTest {
             String expectedResponse = "{\"value\":\"" + value + "\"}";
             HttpClientMock client = new HttpClientMock();
             if (expectedResponse.getBytes(StandardCharsets.UTF_8).length < 1024) {
-                SimpleHttp.Response response = SimpleHttp.doPost("", client, 1024).json(new DummyEntity(value)).asResponse();
+                SimpleHttpResponse response = SimpleHttp.create(client).withMaxConsumedResponseSize(1024).doPost("").json(new DummyEntity(value)).asResponse();
                 assertEquals(expectedResponse, response.asString());
             } else {
-                IOException e = assertThrows(IOException.class, () -> SimpleHttp.doPost("", client, 1024).json(new DummyEntity(value)).asResponse().asString());
+                IOException e = assertThrows(IOException.class, () -> SimpleHttp.create(client).withMaxConsumedResponseSize(1024).doPost("").json(new DummyEntity(value)).asResponse().asString());
                 assertThat(e.getMessage(), startsWith("Response is at least"));
             }
         }
@@ -123,10 +124,10 @@ public final class SimpleHttpTest {
             String expectedResponse = "dummy=" + URLEncoder.encode(value, StandardCharsets.UTF_8);
             HttpClientMock client = new HttpClientMock();
             if (expectedResponse.getBytes(StandardCharsets.UTF_8).length < 1024) {
-                SimpleHttp.Response response = SimpleHttp.doPost("", client, 1024).param("dummy", value).asResponse();
+                SimpleHttpResponse response = SimpleHttp.create(client).withMaxConsumedResponseSize(1024).doPost("").param("dummy", value).asResponse();
                 assertEquals(expectedResponse, response.asString());
             } else {
-                IOException e = assertThrows(IOException.class, () -> SimpleHttp.doPost("", client, 1024).json(new DummyEntity(value)).asResponse().asString());
+                IOException e = assertThrows(IOException.class, () -> SimpleHttp.create(client).withMaxConsumedResponseSize(1024).doPost("").json(new DummyEntity(value)).asResponse().asString());
                 assertThat(e.getMessage(), startsWith("Response is at least"));
             }
         }

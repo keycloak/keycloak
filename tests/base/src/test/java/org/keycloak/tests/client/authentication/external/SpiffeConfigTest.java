@@ -2,7 +2,6 @@ package org.keycloak.tests.client.authentication.external;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.client.HttpClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -10,12 +9,13 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.resource.IdentityProvidersResource;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderShowInAccountConsole;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -27,7 +27,6 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.common.BasicUserConfig;
-import org.keycloak.tests.utils.SimpleHttp;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.openqa.selenium.NoSuchElementException;
 
@@ -46,8 +45,8 @@ public class SpiffeConfigTest {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
-    @InjectHttpClient
-    HttpClient httpClient;
+    @InjectSimpleHttp
+    SimpleHttp simpleHttp;
 
     @InjectOAuthClient
     OAuthClient oAuthClient;
@@ -90,7 +89,7 @@ public class SpiffeConfigTest {
     private void checkNoIdpsInAccountConsole() throws IOException {
         String accessToken = oAuthClient.passwordGrantRequest(user.getUsername(), user.getPassword()).send().getAccessToken();
         String accountUrl = realm.getBaseUrl() + "/account//linked-accounts";
-        JsonNode json = SimpleHttp.doGet(accountUrl, httpClient).auth(accessToken).asJson();
+        JsonNode json = simpleHttp.doGet(accountUrl).auth(accessToken).asJson();
         Assertions.assertEquals(0, json.size());
     }
 
