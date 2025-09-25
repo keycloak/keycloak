@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,4 +42,8 @@ public interface ProtocolMapperContainerModel {
     ProtocolMapperModel getProtocolMapperById(String id);
 
     ProtocolMapperModel getProtocolMapperByName(String protocol, String name);
+
+    default List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return List.of();
+    }
 }

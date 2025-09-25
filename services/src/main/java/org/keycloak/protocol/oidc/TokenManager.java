@@ -62,6 +62,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -638,10 +639,13 @@ public class TokenManager {
             return clientScopes;
         }
 
-        // skip scopes that were explicitly requested using the dynamic scope format
+        // skip organization-related scopes that were explicitly requested using the dynamic scope format
         // we don't want dynamic and default client scopes duplicated
-        // always include the dedicated client scope that maps to the client itself
-        clientScopes = clientScopes.filter(scope -> scope.equals(client) || !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR));
+        clientScopes = clientScopes.filter(scope -> {
+            return scope.equals(client)
+                    || !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR)
+                    || scope.getProtocolMapperByType(OrganizationMembershipMapper.PROVIDER_ID).isEmpty();
+        });
 
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
 
