@@ -95,7 +95,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     public void createWebAuthnSameUserLabel() {
         final String SAME_LABEL = "key123";
 
-        SigningInPage.UserCredential webAuthn = addWebAuthnCredential(SAME_LABEL, false);
+        SigningInPage.UserCredential webAuthn = addWebAuthnCredential(SAME_LABEL, true);
         assertThat(webAuthn, notNullValue());
 
         SigningInPage.CredentialType credentialType = webAuthnPwdlessCredentialType;
