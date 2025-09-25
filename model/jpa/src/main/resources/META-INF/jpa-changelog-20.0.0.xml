@@ -43,6 +43,7 @@
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <dbms type="postgresql"/>
             <changeSetExecuted id="20.0.0-12964-supported-dbs" author="keycloak" changeLogFile="META-INF/jpa-changelog-20.0.0.xml"/>
+            <indexExists tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE" />
         </preConditions>
         <dropIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE" />
         <createIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE">
