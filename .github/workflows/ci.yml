@@ -87,34 +87,6 @@ jobs:
         if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/')
         run: git diff --name-only --exit-code -- "**/proto.lock"
 
-  unit-tests:
-    name: Base UT
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
-
-      - name: Run unit tests
-        shell: bash
-        run: |
-          SEP=""
-          PROJECTS=""
-          for i in `find -name '*Test.java' -type f | egrep -v './(operator|testsuite|quarkus|docs|tests|test-framework)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
-            PROJECTS="$PROJECTS$SEP$i"
-            SEP=","
-          done
-
-          ./mvnw test -pl "$PROJECTS" -am
-
   base-integration-tests:
     name: Base IT
     needs: build
@@ -302,6 +274,18 @@ jobs:
         with:
           jdk-dist: ${{ matrix.dist }}
           jdk-version: ${{ matrix.version }}
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          SEP=""
+          PROJECTS=""
+          for i in `find -name '*Test.java' -type f | egrep -v './(operator|testsuite|quarkus|docs|tests|test-framework)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
+            PROJECTS="$PROJECTS$SEP$i"
+            SEP=","
+          done
+
+          ./mvnw test -pl "$PROJECTS" -am
 
       - name: Prepare Quarkus distribution with current JDK
         run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
@@ -953,7 +937,6 @@ jobs:
     needs:
       - conditional
       - build
-      - unit-tests
       - base-integration-tests
       - adapter-integration-tests
       - adapter-integration-tests-strict-cookies
