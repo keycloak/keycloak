@@ -1,0 +1,13 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Better HTTP performance
+
+For the HTTP layer, you can now use Jackson JSON reflection-free serializers, improving request handling efficiency.
+This change increases throughput by ~5%, stabilizes response times, and reduces system resource usage.
+
+In order to apply it, you need to explicitly enable the feature `http-optimized-serializers`.
+
+NOTE: This feature is *preview* as we gather more feedback about potential issues. We appreciate any feedback.
+
+For more details, see the https://www.keycloak.org/server/configuration-production[Configuring Keycloak for production] guide.

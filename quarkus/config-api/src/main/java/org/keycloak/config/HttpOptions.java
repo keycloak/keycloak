@@ -150,5 +150,4 @@ public class HttpOptions {
             .description("Service level objectives for HTTP server requests. Use this instead of the default histogram, or use it in combination to add additional buckets. " +
                     "Specify a list of comma-separated values defined in milliseconds. Example with buckets from 5ms to 10s: 5,10,25,50,250,500,1000,2500,5000,10000")
             .build();
-
 }
