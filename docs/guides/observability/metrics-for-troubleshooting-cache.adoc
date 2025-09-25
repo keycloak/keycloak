@@ -62,7 +62,7 @@ cache_gets_total{result="hit"} / cache_gets_total
 
 === Evictions
 
-When a cache is limited, eviction is the process of removing a least used entry to make space for new entry to be cached.
+When a cache is limited, eviction is the process of removing the least used entries to make space available for new entries to be cached.
 
 |===
 |Metric |Description

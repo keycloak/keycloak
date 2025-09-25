@@ -76,7 +76,7 @@ image::observability/keycloak-capacity-planning-dashboard.png[Capacity planning 
 [TIP]
 ====
 The Grafana dashboards have labels inserted by Kubernetes.
-It is possible to use them with bare-metal deployment by adding the missing labels in the Prometheus configuration file, as shown below.
+It is possible to use the dashboards with bare-metal deployments by adding the missing labels in the Prometheus configuration file, as shown below.
 
 .Prometheus Scrape Configuration
 [source,yaml]
