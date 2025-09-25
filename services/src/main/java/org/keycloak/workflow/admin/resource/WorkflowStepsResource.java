@@ -110,8 +110,8 @@ public class WorkflowStepsResource {
             throw ErrorResponse.error("Step representation cannot be null", Response.Status.BAD_REQUEST);
         }
         try {
-            WorkflowStep step = workflowsManager.toModel(workflow, stepRep);
-            WorkflowStep addedStep = workflowsManager.addStepToWorkflow(workflow.getId(), step, position);
+            WorkflowStep step = workflowsManager.toModel(stepRep);
+            WorkflowStep addedStep = workflowsManager.addStepToWorkflow(workflow, step, position);
 
             return Response.ok(workflowsManager.toRepresentation(addedStep)).build();
         } catch (ModelException e) {
@@ -140,7 +140,7 @@ public class WorkflowStepsResource {
             throw new BadRequestException("Step ID cannot be null or empty");
         }
 
-        workflowsManager.removeStepFromWorkflow(workflow.getId(), stepId);
+        workflowsManager.removeStepFromWorkflow(workflow, stepId);
         return Response.noContent().build();
     }
 

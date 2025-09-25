@@ -7,7 +7,6 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NA
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESET_ON;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
@@ -28,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_RESET_ON, CONFIG_SCHEDULED, CONFIG_RECURRING, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
+@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_RESET_ON, CONFIG_RECURRING, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
@@ -105,14 +104,6 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     public void setRecurring(Boolean recurring) {
         setConfigValue(CONFIG_RECURRING, recurring);
-    }
-
-    public Boolean getScheduled() {
-        return getConfigValue(CONFIG_SCHEDULED, Boolean.class);
-    }
-
-    public void setScheduled(Boolean scheduled) {
-        setConfigValue(CONFIG_SCHEDULED, scheduled);
     }
 
     public Boolean getEnabled() {
@@ -204,11 +195,6 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
         public Builder name(String name) {
             representation.setName(name);
-            return this;
-        }
-
-        public Builder immediate() {
-            representation.setScheduled(false);
             return this;
         }
 

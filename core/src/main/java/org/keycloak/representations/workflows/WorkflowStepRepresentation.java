@@ -8,7 +8,6 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WI
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -22,26 +21,16 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
         return new Builder();
     }
 
-    private List<WorkflowStepRepresentation> steps;
-
     public WorkflowStepRepresentation() {
-        super(null, null, null);
+        this(null, null, null);
     }
 
-    public WorkflowStepRepresentation(String step) {
-        this(step, null);
+    public WorkflowStepRepresentation(String uses) {
+        this(null, uses, null);
     }
 
-    public WorkflowStepRepresentation(String step, MultivaluedHashMap<String, String> config) {
-        this(null, step, config, null);
-    }
-
-    public WorkflowStepRepresentation(String id, String step, MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
-        super(id, step, config);
-
-        if (steps != null && !steps.isEmpty()) {
-            this.steps = steps;
-        }
+    public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
+        super(id, uses, config);
     }
 
     @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
@@ -64,14 +53,6 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
 
     public void setPriority(long ms) {
         setConfig(CONFIG_PRIORITY, String.valueOf(ms));
-    }
-
-    public List<WorkflowStepRepresentation> getSteps() {
-        return steps;
-    }
-
-    public void setSteps(List<WorkflowStepRepresentation> steps) {
-        this.steps = steps;
     }
 
     public static class Builder {
@@ -109,11 +90,6 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
 
         public Builder withConfig(String key, String... value) {
             step.setConfig(key, Arrays.asList(value));
-            return this;
-        }
-
-        public Builder withSteps(WorkflowStepRepresentation... steps) {
-            step.setSteps(Arrays.asList(steps));
             return this;
         }
 

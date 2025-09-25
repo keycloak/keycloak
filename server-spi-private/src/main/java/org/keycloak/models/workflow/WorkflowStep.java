@@ -20,26 +20,18 @@ package org.keycloak.models.workflow;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 
-import java.util.List;
-
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 
 public class WorkflowStep implements Comparable<WorkflowStep> {
 
     private String id;
-    private String providerId;
+    private final String providerId;
     private MultivaluedHashMap<String, String> config;
-    private List<WorkflowStep> steps = List.of();
 
-    public WorkflowStep() {
-        // reflection
-    }
-
-    public WorkflowStep(String providerId, MultivaluedHashMap<String, String> config, List<WorkflowStep> steps) {
+    public WorkflowStep(String providerId, MultivaluedHashMap<String, String> config) {
         this.providerId = providerId;
         this.config = config;
-        this.steps = steps;
     }
 
     public WorkflowStep(ComponentModel model) {
@@ -93,17 +85,6 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
 
     public Long getAfter() {
         return Long.valueOf(getConfig().getFirstOrDefault(CONFIG_AFTER, "0"));
-    }
-
-    public List<WorkflowStep> getSteps() {
-        if (steps == null) {
-            return List.of();
-        }
-        return steps;
-    }
-
-    public void setSteps(List<WorkflowStep> steps) {
-        this.steps = steps;
     }
 
     @Override
