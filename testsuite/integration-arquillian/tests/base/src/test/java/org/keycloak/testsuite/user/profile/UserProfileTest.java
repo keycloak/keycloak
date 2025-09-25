@@ -50,6 +50,7 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -58,6 +59,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
@@ -758,12 +760,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testUpdateEmail(KeycloakSession session) {
-        Map<String, Object> attributes = new HashMap<>();
+        RealmModel realm = session.getContext().getRealm();
+        RequiredActionProviderModel actionConfig = realm.getRequiredActionProviderByAlias(RequiredAction.UPDATE_EMAIL.name());
 
-        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
-        attributes.put(UserModel.FIRST_NAME, "John");
-        attributes.put(UserModel.LAST_NAME, "Doe");
-        attributes.put(UserModel.EMAIL, "canchange@foo.bar");
+        actionConfig.setEnabled(true);
+
+        realm.updateRequiredActionProvider(actionConfig);
 
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
@@ -773,25 +775,59 @@ public class UserProfileTest extends AbstractUserProfileTest {
         // configure email r/w for user
         provider.setConfiguration(config);
 
-        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, "myemail@foo.bar");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
         UserModel user = profile.create();
+        assertEquals(attributes.get(UserModel.EMAIL), user.getEmail());
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE));
-
-        profile = provider.create(UserProfileContext.USER_API, attributes, user);
-
-        Set<String> attributesUpdated = new HashSet<>();
-
-        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE, TermsAndConditions.USER_ATTRIBUTE, UserModel.EMAIL_PENDING));
 
         attributes.put("email", "changed@foo.bar");
 
         profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.EMAIL));
+        }
 
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.EMAIL));
+        }
+
+        attributes.remove(UserModel.EMAIL);
+        attributes.put(UserModel.EMAIL_PENDING, "pending@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
         profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
 
-        assertEquals("E-Mail address should have been changed!", "changed@foo.bar", user.getEmail());
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+        assertNotNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+        attributes.put(UserModel.EMAIL_PENDING, "");
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
     }
 
     @Test

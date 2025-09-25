@@ -45,7 +45,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateEmailTest {
 
     @Override
-    protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions) {
+    protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) {
         loginPage.open();
 
         loginPage.login("test-user@localhost", "password");
@@ -69,7 +69,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
 
         // add the action and change it
         configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
-        changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions);
+        changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions, false);
 
         if (logoutOtherSessions) {
             events.expectLogout(event1.getSessionId())
