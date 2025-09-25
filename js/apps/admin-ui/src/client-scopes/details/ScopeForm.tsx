@@ -1,14 +1,6 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import {
-  ActionGroup,
-  Alert,
-  Button,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
-} from "@patternfly/react-core";
-import { useEffect, useState, useCallback } from "react";
+import { ActionGroup, Button } from "@patternfly/react-core";
+import { useEffect, useCallback } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -44,7 +36,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
   const { control, handleSubmit, setValue, formState } = form;
   const { isDirty, isValid } = formState;
-  const { realm, realmRepresentation } = useRealm();
+  const { realm } = useRealm();
 
   const providers = useLoginProviders();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -65,20 +57,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: "false",
   });
 
-  // Watch for protocol selection to conditionally show OID4VCI fields
-  const selectedProtocol: string | undefined = useWatch({
+  const selectedProtocol = useWatch({
     control,
     name: "protocol",
     defaultValue: clientScope?.protocol ?? providers[0],
   });
 
-  // OID4VC feature checks - reactive shortcuts
   const isOid4vcProtocol = () => selectedProtocol === OID4VC_PROTOCOL;
-  const isOid4vcFeatureEnabled = () => isFeatureEnabled(Feature.OpenId4VCI);
-  const isOid4vcRealmEnabled = () =>
-    realmRepresentation?.verifiableCredentialsEnabled === true;
-  const isOid4vcEnabled = () =>
-    isOid4vcFeatureEnabled() && isOid4vcRealmEnabled();
+  const isOid4vcEnabled = () => isFeatureEnabled(Feature.OpenId4VCI);
 
   const setDynamicRegex = (value: string, append: boolean) =>
     setValue(
@@ -93,19 +79,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
 
-  // Modal state management
-  const [oid4vcInfoModalOpen, setOid4vcInfoModalOpen] = useState(false);
-  const [modalClosedForProtocol, setModalClosedForProtocol] = useState<
-    string | null
-  >(null);
-
-  const handleFormSubmit = useCallback(
-    (data: ClientScopeDefaultOptionalType) => {
-      save(data);
-    },
-    [save],
-  );
-
   const handleProtocolSelect = useCallback(
     (
       value: string | string[],
@@ -113,47 +86,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     ) => {
       const protocolValue = Array.isArray(value) ? value[0] : value;
       onChangeHandler(protocolValue);
-
-      // Show modal only when OID4VC protocol is selected and user hasn't closed it
-      if (
-        protocolValue === OID4VC_PROTOCOL &&
-        isOid4vcEnabled() &&
-        modalClosedForProtocol !== OID4VC_PROTOCOL
-      ) {
-        setOid4vcInfoModalOpen(true);
-      } else if (protocolValue !== OID4VC_PROTOCOL) {
-        setOid4vcInfoModalOpen(false);
-      }
     },
-    [isOid4vcEnabled, modalClosedForProtocol],
+    [],
   );
-
-  const closeModal = useCallback(() => {
-    setOid4vcInfoModalOpen(false);
-    setModalClosedForProtocol(selectedProtocol || null);
-  }, [selectedProtocol]);
 
   return (
     <FormAccess
       role="manage-clients"
-      onSubmit={handleSubmit(handleFormSubmit)}
+      onSubmit={handleSubmit(save)}
       isHorizontal
     >
       <FormProvider {...form}>
-        {/* OID4VC Feature Disabled Alert */}
-        {isOid4vcProtocol() && !isOid4vcEnabled() && (
-          <Alert
-            variant="warning"
-            title={t("oid4vcFeatureDisabled")}
-            isInline
-            component="h2"
-          >
-            {!isOid4vcFeatureEnabled()
-              ? t("oid4vcGlobalFeatureDisabledHelp")
-              : t("oid4vcRealmFeatureDisabledHelp")}
-          </Alert>
-        )}
-
         <TextControl
           name="name"
           label={t("name")}
@@ -223,10 +166,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             label={t("protocol")}
             labelIcon={t("protocolHelp")}
             controller={{ defaultValue: providers[0] }}
-            options={providers.map((option) => ({
-              key: option,
-              value: getProtocolName(t, option),
-            }))}
+            options={providers
+              .filter((option) => {
+                if (option === OID4VC_PROTOCOL) {
+                  return isOid4vcEnabled();
+                }
+                return true;
+              })
+              .map((option) => ({
+                key: option,
+                value: getProtocolName(t, option),
+              }))}
             onSelect={handleProtocolSelect}
           />
         )}
@@ -266,7 +216,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           min={0}
         />
 
-        {/* OID4VCI Credential Configuration Section */}
         {isOid4vcProtocol() && isOid4vcEnabled() && (
           <>
             <TextControl
@@ -334,30 +283,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           </Button>
         </ActionGroup>
       </FormProvider>
-
-      {/* OID4VC Configuration Info Modal */}
-      <Modal
-        variant={ModalVariant.medium}
-        title={t("oid4vcConfigurationNote")}
-        aria-label={t("oid4vcConfigurationNote")}
-        isOpen={oid4vcInfoModalOpen}
-        onClose={closeModal}
-        actions={[
-          <Button
-            id="modal-close"
-            data-testid="close-button"
-            key="close"
-            variant="primary"
-            onClick={closeModal}
-          >
-            {t("close")}
-          </Button>,
-        ]}
-      >
-        <TextContent>
-          <Text>{t("oid4vcConfigurationNoteHelp")}</Text>
-        </TextContent>
-      </Modal>
     </FormAccess>
   );
 };

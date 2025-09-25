@@ -26,6 +26,7 @@ import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import useToggle from "../../utils/useToggle";
 import { getProtocolName } from "../utils";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 import "./client-scopes.css";
 
@@ -61,10 +62,13 @@ export const AddScopeDialog = ({
   isClientScopesConditionType,
 }: AddScopeDialogProps) => {
   const { t } = useTranslation();
+  const isFeatureEnabled = useIsFeatureEnabled();
   const [addToggle, setAddToggle] = useState(false);
   const [rows, setRows] = useState<ClientScopeRepresentation[]>([]);
   const [filterType, setFilterType] = useState(FilterType.Name);
   const [protocolType, setProtocolType] = useState(ProtocolType.All);
+
+  const isOid4vcEnabled = isFeatureEnabled(Feature.OpenId4VCI);
 
   const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
     useToggle();
@@ -117,20 +121,32 @@ export const AddScopeDialog = ({
     toggleIsProtocolTypeDropdownOpen();
   };
 
-  const protocolTypeOptions = [
-    <SelectOption key={1} value={ProtocolType.SAML}>
-      {t("protocolTypes.saml")}
-    </SelectOption>,
-    <SelectOption key={2} value={ProtocolType.OpenIDConnect}>
-      {t("protocolTypes.openid-connect")}
-    </SelectOption>,
-    <SelectOption key={3} value={ProtocolType.OID4VC}>
-      {t("protocolTypes.oid4vc")}
-    </SelectOption>,
-    <SelectOption key={4} value={ProtocolType.All}>
-      {t("protocolTypes.all")}
-    </SelectOption>,
-  ];
+  const protocolTypeOptions = useMemo(() => {
+    const options = [
+      <SelectOption key={1} value={ProtocolType.SAML}>
+        {t("protocolTypes.saml")}
+      </SelectOption>,
+      <SelectOption key={2} value={ProtocolType.OpenIDConnect}>
+        {t("protocolTypes.openid-connect")}
+      </SelectOption>,
+    ];
+
+    if (isOid4vcEnabled) {
+      options.push(
+        <SelectOption key={3} value={ProtocolType.OID4VC}>
+          {t("protocolTypes.oid4vc")}
+        </SelectOption>,
+      );
+    }
+
+    options.push(
+      <SelectOption key={4} value={ProtocolType.All}>
+        {t("protocolTypes.all")}
+      </SelectOption>,
+    );
+
+    return options;
+  }, [t, isOid4vcEnabled]);
 
   return (
     <Modal
