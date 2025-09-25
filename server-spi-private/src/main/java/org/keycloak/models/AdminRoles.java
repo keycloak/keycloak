@@ -35,12 +35,14 @@ public class AdminRoles {
     public static String CREATE_REALM = "create-realm";
     public static String CREATE_CLIENT = "create-client";
 
-    public static String VIEW_REALM = "view-realm";
-    public static String VIEW_USERS = "view-users";
-    public static String VIEW_CLIENTS = "view-clients";
-    public static String VIEW_EVENTS = "view-events";
-    public static String VIEW_IDENTITY_PROVIDERS = "view-identity-providers";
-    public static String VIEW_AUTHORIZATION = "view-authorization";
+    public static final String VIEW_REALM = "view-realm";
+    public static final String VIEW_USERS = "view-users";
+    public static final String VIEW_CLIENTS = "view-clients";
+    public static final String VIEW_EVENTS = "view-events";
+    public static final String VIEW_IDENTITY_PROVIDERS = "view-identity-providers";
+    public static final String VIEW_AUTHORIZATION = "view-authorization";
+    @Deprecated(since = "26.2.9", forRemoval = true)
+    public static final String VIEW_SYSTEM = "view-system";
 
     public static String MANAGE_REALM = "manage-realm";
     public static String MANAGE_USERS = "manage-users";

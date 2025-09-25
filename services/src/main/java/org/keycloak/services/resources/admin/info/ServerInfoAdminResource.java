@@ -34,7 +34,9 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.policy.PasswordPolicyProviderFactory;
@@ -62,7 +64,10 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.GET;
@@ -92,9 +97,11 @@ public class ServerInfoAdminResource {
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
 
     private final KeycloakSession session;
+    private final AdminAuth auth;
 
-    public ServerInfoAdminResource(KeycloakSession session) {
+    public ServerInfoAdminResource(KeycloakSession session, AdminAuth auth) {
         this.session = session;
+        this.auth = auth;
     }
 
     /**
@@ -109,8 +116,13 @@ public class ServerInfoAdminResource {
     @Operation( summary = "Get themes, social providers, auth providers, and event listeners available on this server")
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
-        info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
-        info.setMemoryInfo(MemoryInfoRepresentation.create());
+        RealmModel userRealm = session.getContext().getRealm();
+        if (RealmManager.isAdministrationRealm(userRealm)
+                || AdminPermissions.evaluator(session, userRealm, auth).hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
+            // system information is only for admins in the administration realm or fallback view-system role
+            info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
+            info.setMemoryInfo(MemoryInfoRepresentation.create());
+        }
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
 

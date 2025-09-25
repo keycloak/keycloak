@@ -1,0 +1,15 @@
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== The `serverinfo` endpoint only returns the system info for administrators in the administrator realm
+
+Starting with this version, the `serverinfo` endpoint, which is used by the admin console to obtain some general information of the {project_name} installation, will only return the system information for administrators in the administration (master) realm. This change was done for security reasons.
+
+If, for whatever reason, an administrator in a common realm needs to access the `systemInfo`, `cpuInfo` or `memoryInfo` fields of the `serverinfo` response, you need to create and assign a new *view-system* role to that admin user:
+
+. In the affected realm, select the management client *realm-management*, and, in the *Roles* tab, create a new role called *view-system*.
+. In *Users* select the administrator account, and, in the *Role mapping* tab, assign the just created *view-system* client role to the admin user.
+
+The previous workaround is marked as deprecated and it can be removed in a future version of {project_name}.
