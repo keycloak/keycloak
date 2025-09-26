@@ -97,11 +97,10 @@ The Containerfile https://docs.docker.com/reference/dockerfile/#healthcheck[`+HE
 
 The above code depends on the values of the {project_name} options such as `http-relative-path` (`http-management-relative-path`) and `http-management-port`. In case those are changed the code needs to be modified accordingly.
 
-If you enable TLS, the management interface will also use TLS. Depending upon how the management interface endpoints are intended to be used you can still have plain HTTP health checks if:
+If you enable TLS as shown in <@links.server id="enabletls" />, the management interface will also use TLS. Depending upon how the management interface endpoints are intended to be used you can still have plain HTTP health checks if:
 
 - the management interface uses HTTP, not HTTPS, by setting `http-management-scheme` to `http`.
-- or the health checks are enabled for the main interface by setting `http-management-health-enabled` to `false` and accessible via HTTP with setting `http-enabled` to `true`. 
-In this scenario external traffic to the HTTP port (defaults to 8080) or to the health endpoints (defaults to /health) should not be allowed by your proxy.
+- or the health checks are enabled for the main interface by setting `http-management-health-enabled` to `false` and accessible via HTTP with setting `http-enabled` to `true`. In this scenario external traffic to the HTTP port (defaults to 8080) or to the health endpoints (defaults to /health) should not be allowed by your proxy.
 
 == Available Checks
 
