@@ -125,7 +125,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .withNamespace(primary.getMetadata().getNamespace())
                 // this is labeling the instance as the realm import, not the keycloak
                 .withLabels(Utils.allInstanceLabels(primary))
-                .withLabels(primary.getMetadata().getLabels())
+                .withLabels(primary.getSpec().getLabels())
                 .endMetadata()
                 .withNewSpec()
                 .withTemplate(keycloakPodTemplate)
