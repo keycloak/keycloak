@@ -48,28 +48,63 @@ const RoleDescription = ({ role }: { role: RoleRepresentation }) => {
   );
 };
 
-type AddRoleButtonProps = Omit<
-  DropdownProps,
-  "children" | "toggle" | "isOpen" | "onOpenChange"
-> & {
-  label?: string;
-  variant?: "default" | "plain" | "primary" | "plainText" | "secondary";
+type MenuItem = {   // NEW
+  id: string;
+  label: React.ReactNode;
+  onSelect: () => void;
+  isVisible?: boolean;
   isDisabled?: boolean;
-  onFilerTypeChange: (type: FilterType) => void;
+  testId?: string;
 };
 
-export const AddRoleButton = ({
+type AddRoleButtonProps = Omit<DropdownProps, "children" | "toggle" | "isOpen" | "onOpenChange"> & {
+   label?: string;
+   variant?: "default" | "plain" | "primary" | "plainText" | "secondary";
+   isDisabled?: boolean;
+   onFilerTypeChange: (type: FilterType) => void;
+   items?: MenuItem[];              // NEW (optional)
+   canViewRealmRoles?: boolean;     // NEW (optional)
+};
+
+
+  
+  export const AddRoleButton = ({
   label,
   variant,
   isDisabled,
   onFilerTypeChange,
+  items, // NEW
+  canViewRealmRoles: canViewRealmRolesProp, // NEW
   ...rest
 }: AddRoleButtonProps) => {
   const { t } = useTranslation();
   const [open, toggle] = useToggle();
 
   const { hasAccess } = useAccess();
-  const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
+  // const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
+  const canViewRealmRoles =
+    typeof canViewRealmRolesProp === "boolean"
+      ? canViewRealmRolesProp
+      : hasAccess("view-realm") || hasAccess("query-users");
+
+
+  const menuItems: MenuItem[] =
+    items ?? [
+      {
+        id: "clients",
+        label: t("clientRoles"),
+        onSelect: () => onFilerTypeChange("clients"),
+        testId: "client-role",
+      },
+      {
+        id: "roles",
+        label: t("realmRoles"),
+        onSelect: () => onFilerTypeChange("roles"),
+        testId: "roles-role",
+        isVisible: canViewRealmRoles,
+      },
+    ];
+
 
   return (
     <Dropdown
@@ -88,27 +123,23 @@ export const AddRoleButton = ({
       isOpen={open}
       {...rest}
     >
-      <DropdownList>
-        <DropdownItem
-          data-testid="client-role"
-          component="button"
-          onClick={() => {
-            onFilerTypeChange("clients");
-          }}
-        >
-          {t("clientRoles")}
-        </DropdownItem>
-        {canViewRealmRoles && (
+    <DropdownList>
+      {menuItems
+        .filter((i) => i.isVisible !== false)
+        .map((i) => (
           <DropdownItem
-            data-testid="roles-role"
+            key={i.id}
             component="button"
+            data-testid={i.testId}
+            isDisabled={i.isDisabled}
             onClick={() => {
-              onFilerTypeChange("roles");
+              toggle(); // close menu
+              i.onSelect();
             }}
           >
-            {t("realmRoles")}
+            {i.label}
           </DropdownItem>
-        )}
+        ))}
       </DropdownList>
     </Dropdown>
   );
