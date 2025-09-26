@@ -20,11 +20,11 @@ public class Option<T> {
     private final boolean caseInsensitiveExpectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
     private final Set<String> connectedOptions;
-    private String namedKey;
+    private String wildcardKey;
 
     public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description,
                   Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues,
-                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String namedKey) {
+                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String wildcardKey) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -37,7 +37,7 @@ public class Option<T> {
         this.caseInsensitiveExpectedValues = caseInsensitiveExpectedValues;
         this.deprecatedMetadata = deprecatedMetadata;
         this.connectedOptions = connectedOptions;
-        this.namedKey = namedKey;
+        this.wildcardKey = wildcardKey;
     }
 
     public Class<T> getType() {
@@ -105,15 +105,15 @@ public class Option<T> {
     /**
      * Get sibling option name that is able to use a named key - like using wildcards
      * Useful mainly for references in docs
-     * f.e. {@code db-username} has named option {@code db-username-<datasource>}
+     * f.e. {@code db-username} has wildcard option {@code db-username-<datasource>}
      */
-    public Optional<String> getNamedKey() {
-        return Optional.ofNullable(namedKey);
+    public Optional<String> getWildcardKey() {
+        return Optional.ofNullable(wildcardKey);
     }
 
     // used for setting the named key implicitly
-    void setNamedKey(String namedKey) {
-        this.namedKey = namedKey;
+    void setWildcardKey(String wildcardKey) {
+        this.wildcardKey = wildcardKey;
     }
 
     public OptionBuilder<T> toBuilder() {
@@ -126,7 +126,7 @@ public class Option<T> {
                 .strictExpectedValues(strictExpectedValues)
                 .caseInsensitiveExpectedValues(caseInsensitiveExpectedValues)
                 .deprecatedMetadata(deprecatedMetadata)
-                .namedKey(namedKey);
+                .wildcardKey(wildcardKey);
 
         if (hidden) {
             builder.hidden();

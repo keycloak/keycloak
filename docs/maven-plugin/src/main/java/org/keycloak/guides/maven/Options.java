@@ -53,7 +53,7 @@ public class Options {
                         m.isStrictExpectedValues(),
                         m.getEnabledWhen().orElse(""),
                         m.getDeprecatedMetadata().orElse(null),
-                        m.getOption().getNamedKey().orElse(null)))
+                        m.getOption().getWildcardKey().orElse(null)))
                 .forEach(o -> options.computeIfAbsent(o.category, k -> new TreeSet<>(Comparator.comparing(Option::getKey))).add(o));
 
         ProviderManager providerManager = Providers.getProviderManager(Thread.currentThread().getContextClassLoader());
@@ -191,7 +191,7 @@ public class Options {
         private final String enabledWhen;
         private final DeprecatedMetadata deprecated;
 
-        private final String namedKey;
+        private final String wildcardKey;
 
         public Option(String key,
                       OptionCategory category,
@@ -203,7 +203,7 @@ public class Options {
                       boolean strictExpectedValues,
                       String enabledWhen,
                       DeprecatedMetadata deprecatedMetadata,
-                      String namedKey) {
+                      String wildcardKey) {
             this.key = key;
             this.category = category;
             this.build = build;
@@ -214,7 +214,7 @@ public class Options {
             this.strictExpectedValues = strictExpectedValues;
             this.enabledWhen = enabledWhen;
             this.deprecated = deprecatedMetadata;
-            this.namedKey = namedKey;
+            this.wildcardKey = wildcardKey;
         }
 
         public boolean isBuild() {
@@ -279,8 +279,8 @@ public class Options {
             return deprecated;
         }
 
-        public String getNamedKey() {
-            return namedKey;
+        public String getWildcardKey() {
+            return wildcardKey;
         }
     }
 

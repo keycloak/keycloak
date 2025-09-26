@@ -14,7 +14,7 @@ public class TransactionOptions {
             .description("If set to true, XA datasources will be used.")
             .buildTime(true)
             .defaultValue(Boolean.FALSE)
-            .namedKey(TRANSACTION_XA_ENABLED_DATASOURCE.getKey())
+            .wildcardKey(TRANSACTION_XA_ENABLED_DATASOURCE.getKey())
             .build();
 
     public static String getNamedTxXADatasource(String namedProperty) {

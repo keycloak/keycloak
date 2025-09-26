@@ -33,7 +33,7 @@ public class OptionBuilder<T> {
     private boolean strictExpectedValues;
     private boolean caseInsensitiveExpectedValues;
     private DeprecatedMetadata deprecatedMetadata;
-    private String namedKey;
+    private String wildcardKey;
 
     public static <A> OptionBuilder<List<A>> listOptionBuilder(String key, Class<A> type) {
         return new OptionBuilder(key, List.class, type);
@@ -149,10 +149,10 @@ public class OptionBuilder<T> {
     }
 
     /**
-     * For more details, see the {@link Option#getNamedKey()}
+     * For more details, see the {@link Option#getWildcardKey()}
      */
-    public OptionBuilder<T> namedKey(String namedKey) {
-        this.namedKey = namedKey;
+    public OptionBuilder<T> wildcardKey(String wildcardKey) {
+        this.wildcardKey = wildcardKey;
         return this;
     }
 
@@ -191,7 +191,7 @@ public class OptionBuilder<T> {
             }
         }
 
-        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, namedKey);
+        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey);
     }
 
 }
