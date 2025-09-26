@@ -121,6 +121,14 @@ public class ProxyHostnameV2DistTest {
         assertXForwardedHeaders();
     }
 
+    @Test
+    @Launch({ "start-dev", "--hostname=fixed", "--proxy-headers=xforwarded" })
+    public void testXForwardedProxyHeadersWithHostname() {
+        given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://fixed:8080/prefix/admin"));
+        given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://fixed:123/admin"));
+        given().header("X-Forwarded-Proto", "https").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("https://fixed/admin"));
+    }
+
     private void assertForwardedHeader() {
         // trigger a login error
         assertForwardedHeader("http://mykeycloak.org:8080/realms/master/protocol/openid-connect/auth?client_id=security-admin-console", "https://test:1234/admin", ADDRESS);
@@ -139,6 +147,7 @@ public class ProxyHostnameV2DistTest {
     }
 
     private void assertXForwardedHeaders() {
+        given().header("X-Forwarded-Prefix", "/prefix").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://localhost:8080/prefix/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("http://mykeycloak.org:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("http://localhost:8080").then().header(HttpHeaders.LOCATION, containsString("http://test:123/admin"));
         given().header("X-Forwarded-Host", "test:123").when().get("https://localhost:8443").then().header(HttpHeaders.LOCATION, containsString("https://test:123/admin"));

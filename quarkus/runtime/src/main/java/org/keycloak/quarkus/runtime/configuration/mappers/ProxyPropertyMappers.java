@@ -41,6 +41,10 @@ final class ProxyPropertyMappers implements PropertyMapperGrouping{
                         .to("quarkus.http.proxy.allow-x-forwarded")
                         .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(ProxyOptions.Headers.xforwarded, v, c))
                         .build(),
+                fromOption(ProxyOptions.PROXY_X_FORWARDED_PREFIX_HEADER_ENABLED)
+                        .to("quarkus.http.proxy.enable-forwarded-prefix")
+                        .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(ProxyOptions.Headers.xforwarded, v, c))
+                        .build(),
                 fromOption(ProxyOptions.PROXY_TRUSTED_HEADER_ENABLED)
                         .to("quarkus.http.proxy.enable-trusted-proxy-header")
                         .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(null, v, c))

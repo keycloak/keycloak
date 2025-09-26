@@ -12,6 +12,10 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== `X-Forwarded-Prefix` Header is now supported
+
+With `proxy-headers` set to `xforwarded`, the server can determine the proxy context path from the `X-Forwarded-Prefix` header.
+
 === New database indexes on the `BROKER_LINK` table
 
 The `BROKER_LINK` table now contains two additional indexes `IDX_BROKER_LINK_USER_ID` and `IDX_BROKER_LINK_IDENTITY_PROVIDER` to improve performance.
