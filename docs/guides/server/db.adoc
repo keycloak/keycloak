@@ -25,6 +25,8 @@ The server has built-in support for different databases. You can query the avail
 |PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 17.x, 16.x, 15.x, 14.x, 13.x
 |EnterpriseDB Advanced | `postgres` | ${properties["edb.version"]} | 17
 |Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
+|Azure SQL Database | `mssql` | latest | latest
+|Azure SQL Managed Instance | `mssql` | latest | latest
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
