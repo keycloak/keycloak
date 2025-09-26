@@ -16,21 +16,10 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
 import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
-
 import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -42,9 +31,9 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
 import org.keycloak.authentication.requiredactions.UpdateEmail;
-import org.keycloak.broker.provider.util.SimpleHttp.Response;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -60,8 +49,19 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -193,7 +193,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         String confirmationLink = fetchEmailConfirmationLink("new@localhost");
 
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            try (Response response = SimpleHttpDefault.doHead(confirmationLink, httpClient).asResponse()) {
+            try (SimpleHttpResponse response = SimpleHttpDefault.doHead(confirmationLink, httpClient).asResponse()) {
                 assertEquals(Status.OK.getStatusCode(), response.getStatus());
             }
         }

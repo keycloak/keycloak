@@ -68,7 +68,11 @@ import java.util.zip.GZIPInputStream;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vlastimil Elias (velias at redhat dot com)
  * @author David Klassen (daviddd.kl@gmail.com)
+ *
+ * @deprecated An updated version of SimpleHttp is available in {@link org.keycloak.http.simple.SimpleHttp}. This
+ * version will be deleted in Keycloak 27.0
  */
+@Deprecated
 public class SimpleHttp {
 
     private static final ObjectMapper mapper = new ObjectMapper();

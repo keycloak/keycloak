@@ -23,12 +23,10 @@ import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
-
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
-
 import org.keycloak.services.validation.Validation;
 
 import java.util.Optional;
@@ -73,7 +71,7 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     @Override
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
-            JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).auth(accessToken).asJson();
+            JsonNode profile = SimpleHttp.create(session).doGet(PROFILE_URL).auth(accessToken).asJson();
             if (profile.has("error") && !profile.get("error").isNull()) {
                 throw new IdentityBrokerException("Error in Microsoft Graph API response. Payload: " + profile.toString());
             }

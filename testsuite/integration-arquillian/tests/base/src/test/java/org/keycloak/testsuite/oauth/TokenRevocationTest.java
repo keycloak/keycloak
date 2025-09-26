@@ -53,9 +53,9 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -367,7 +367,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         // Test account REST not possible
         String accountUrl = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account";
-        SimpleHttp accountRequest = SimpleHttpDefault.doGet(accountUrl, restHttpClient)
+        SimpleHttpRequest accountRequest = SimpleHttpDefault.doGet(accountUrl, restHttpClient)
                 .auth(accessTokenString)
                 .acceptJson();
         assertEquals(Status.UNAUTHORIZED.getStatusCode(), accountRequest.asStatus());

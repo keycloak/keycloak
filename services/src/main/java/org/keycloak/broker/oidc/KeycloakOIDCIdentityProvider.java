@@ -20,12 +20,12 @@ package org.keycloak.broker.oidc;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -129,7 +129,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         }
 
         @Override
-        public SimpleHttp generateTokenRequest(String authorizationCode) {
+        public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
             return super.generateTokenRequest(authorizationCode)
                     .param(AdapterConstants.CLIENT_SESSION_STATE, "n/a");  // hack to get backchannel logout to work
 

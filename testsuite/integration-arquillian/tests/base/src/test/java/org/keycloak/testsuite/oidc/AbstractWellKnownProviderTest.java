@@ -31,10 +31,9 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.Constants;
@@ -301,11 +300,11 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         OIDCConfigurationRepresentation representation = SimpleHttpDefault.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
         String jwksUri = representation.getJwksUri();
 
-        SimpleHttp.Response response = SimpleHttpDefault.doGet(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
+        SimpleHttpResponse response = SimpleHttpDefault.doGet(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
         assertEquals(APPLICATION_JWKS, response.getFirstHeader(CONTENT_TYPE));
 
         // Test HEAD method works (Issue 41537)
-        SimpleHttp.Response responseHead = SimpleHttpDefault.doHead(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
+        SimpleHttpResponse responseHead = SimpleHttpDefault.doHead(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
         assertEquals(Response.Status.OK.getStatusCode(), responseHead.getStatus());
         assertEquals(APPLICATION_JWKS, responseHead.getFirstHeader(CONTENT_TYPE));
     }

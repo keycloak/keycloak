@@ -2,6 +2,7 @@ package org.keycloak.testframework;
 
 import org.keycloak.testframework.admin.AdminClientFactorySupplier;
 import org.keycloak.testframework.admin.AdminClientSupplier;
+import org.keycloak.testframework.http.SimpleHttpSupplier;
 import org.keycloak.testframework.infinispan.InfinispanExternalServerSupplier;
 import org.keycloak.testframework.database.DevFileDatabaseSupplier;
 import org.keycloak.testframework.database.DevMemDatabaseSupplier;
@@ -45,7 +46,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new AdminEventsSupplier(),
                 new HttpClientSupplier(),
                 new HttpServerSupplier(),
-                new InfinispanExternalServerSupplier()
+                new InfinispanExternalServerSupplier(),
+                new SimpleHttpSupplier()
         );
     }
 

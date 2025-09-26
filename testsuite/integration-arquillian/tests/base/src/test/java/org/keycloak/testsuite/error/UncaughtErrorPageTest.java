@@ -14,8 +14,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -169,7 +169,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         URI uri = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/testing/uncaught-error").build();
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response response = SimpleHttpDefault.doGet(uri.toString(), client).header("Accept", MediaType.TEXT_HTML_UTF_8).asResponse();
+            SimpleHttpResponse response = SimpleHttpDefault.doGet(uri.toString(), client).header("Accept", MediaType.TEXT_HTML_UTF_8).asResponse();
 
             for (BrowserSecurityHeaders header : BrowserSecurityHeaders.values()) {
                 String expectedValue = header.getDefaultValue();

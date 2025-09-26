@@ -19,9 +19,9 @@ package org.keycloak.ipatuura_user_spi;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.component.ComponentValidationException;
@@ -75,7 +75,7 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
             throws ComponentValidationException {
         Ipatuura ipatuura = new Ipatuura(session, config);
 
-        SimpleHttp.Response response;
+        SimpleHttpResponse response;
 
         try {
             response = ipatuura.clientRequest("", "GET", null);
