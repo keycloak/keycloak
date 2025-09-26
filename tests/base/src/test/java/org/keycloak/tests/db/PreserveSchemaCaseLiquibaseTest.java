@@ -5,6 +5,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
+import org.keycloak.testframework.database.EnterpriseDbTestDatabase;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -36,7 +37,7 @@ public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
     private static class PreserveSchemaCaseDatabaseConfig implements DatabaseConfig {
         @Override
         public DatabaseConfigBuilder configure(DatabaseConfigBuilder database) {
-            if (dbType().equals(PostgresTestDatabase.NAME)) {
+            if (dbType().equals(PostgresTestDatabase.NAME) || dbType().equals(EnterpriseDbTestDatabase.NAME)) {
                 return database.initScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
             }
             return database.database("keycloak-t");
