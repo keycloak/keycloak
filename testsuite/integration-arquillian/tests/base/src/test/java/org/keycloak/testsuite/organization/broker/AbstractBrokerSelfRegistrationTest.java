@@ -78,6 +78,30 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testLoginHintSentToBrokerIfUserAlreadyAMember() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.LOGIN_HINT, "true");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        String userId = ApiUtil.getCreatedId(testRealm().users().create(UserBuilder.create()
+                .username("test")
+                .email("test@neworg.org")
+                .enabled(true)
+                .firstName("f")
+                .lastName("l")
+                .build()));
+        organization.members().addMember(userId).close();
+
+        // login hint will automatically redirect user to broker
+        oauth.realm(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.loginForm().loginHint("test@neworg.org").open();
+
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+    }
+
+    @Test
     public void testIdentityFirstIfUserNotExistsAndEmailMatchOrgDomain() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idpRep = organization.identityProviders().getIdentityProviders().get(0);
