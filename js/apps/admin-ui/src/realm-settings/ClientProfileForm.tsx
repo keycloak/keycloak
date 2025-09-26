@@ -96,31 +96,35 @@ export default function ClientProfileForm() {
   const [key, setKey] = useState(0);
   const reload = () => setKey(key + 1);
 
-  useFetch(
-    () =>
-      adminClient.clientPolicies.listProfiles({ includeGlobalProfiles: true }),
-    (profiles) => {
-      setProfiles({
-        globalProfiles: profiles.globalProfiles,
-        profiles: profiles.profiles?.filter((p) => p.name !== profileName),
-      });
-      const globalProfile = profiles.globalProfiles?.find(
-        (p) => p.name === profileName,
-      );
-      const profile = profiles.profiles?.find((p) => p.name === profileName);
-      setIsGlobalProfile(globalProfile !== undefined);
-      setValue("name", globalProfile?.name ?? profile?.name ?? "");
-      setValue(
-        "description",
-        globalProfile?.description ?? profile?.description ?? "",
-      );
-      setValue(
-        "executors",
-        globalProfile?.executors ?? profile?.executors ?? [],
-      );
-    },
-    [key],
-  );
+useFetch(
+  () =>
+    adminClient.clientPolicies.listProfiles({ includeGlobalProfiles: true }),
+  (profiles) => {
+    const globalProfiles = profiles?.globalProfiles ?? [];
+    const localProfiles  = profiles?.profiles ?? [];
+
+    setProfiles({
+      globalProfiles,
+      profiles: localProfiles.filter((p) => p.name !== profileName),
+    });
+
+    const isNamed = (p: { name?: string }) => p.name === profileName;
+
+    const global = globalProfiles.find(isNamed);
+    setIsGlobalProfile(global !== undefined);
+
+    const src = (global ?? localProfiles.find(isNamed)) ?? {};
+
+    form.reset({
+      ...defaultValues,
+      ...src,
+      description: src.description ?? "",
+      executors: src.executors ?? [],
+    });
+  },
+  [key]
+);
+
 
   const save = async (form: ClientProfileForm) => {
     const updatedProfiles = form;

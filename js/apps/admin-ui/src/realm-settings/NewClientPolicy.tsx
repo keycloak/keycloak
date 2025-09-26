@@ -112,49 +112,41 @@ export default function NewClientPolicy() {
   useFetch(
     async () => {
       const [policies, profiles] = await Promise.all([
-        adminClient.clientPolicies.listPolicies({
-          includeGlobalPolicies: true,
-        }),
-        adminClient.clientPolicies.listProfiles({
-          includeGlobalProfiles: true,
-        }),
+        adminClient.clientPolicies.listPolicies({ includeGlobalPolicies: true }),
+        adminClient.clientPolicies.listProfiles({ includeGlobalProfiles: true }),
       ]);
-
       return { policies, profiles };
     },
     ({ policies, profiles }) => {
-      let currentPolicy = policies.policies?.find(
-        (item) => item.name === policyName,
-      );
-      if (currentPolicy === undefined) {
-        currentPolicy = policies.globalPolicies?.find(
-          (item) => item.name === policyName,
-        );
-        setIsGlobalPolicy(currentPolicy !== undefined);
-      }
-
       const allClientProfiles = [
-        ...(profiles.globalProfiles ?? []),
-        ...(profiles.profiles ?? []),
+        ...(profiles.globalProfiles || []),
+        ...(profiles.profiles || []),
       ];
-
       const allClientPolicies = [
-        ...(policies.globalPolicies ?? []),
-        ...(policies.policies ?? []),
+        ...(policies.globalPolicies || []),
+        ...(policies.policies || []),
       ];
 
-      setPolicies(policies.policies ?? []);
-      setGlobalPolicies(policies.globalPolicies ?? []);
+      const foundPolicy = [
+        ...(policies.policies || []),
+        ...(policies.globalPolicies || []),
+      ].find((p) => p.name === policyName);
+
+      setPolicies(policies.policies || []);
+      setGlobalPolicies(policies.globalPolicies || []);
       setAllPolicies(allClientPolicies);
-      if (currentPolicy) {
-        setupForm(currentPolicy);
-        setClientProfiles(allClientProfiles);
-        setCurrentPolicy(currentPolicy);
-        setShowAddConditionsAndProfilesForm(true);
-      }
+      setIsGlobalPolicy(!!policies.globalPolicies?.some((p) => p.name === policyName));
+
+      if (!foundPolicy) return;
+
+      setupForm(foundPolicy);
+      setClientProfiles(allClientProfiles);
+      setCurrentPolicy(foundPolicy);
+      setShowAddConditionsAndProfilesForm(true);
     },
     [],
   );
+
 
   const setupForm = (policy: ClientPolicyRepresentation) => {
     form.reset(policy);

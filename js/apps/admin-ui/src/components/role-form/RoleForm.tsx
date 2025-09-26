@@ -2,7 +2,7 @@ import { ActionGroup, Button, PageSection } from "@patternfly/react-core";
 import {
   SubmitHandler,
   UseFormReturn,
-  useFormContext,
+  //useFormContext,
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -23,14 +23,23 @@ export type RoleFormProps = {
   cancelLink: To;
   role: "manage-realm" | "manage-clients";
   editMode: boolean;
+  /** Optional override for the create title (defaults to t("createRole")) */
+  titleKey?: string;
+  /** Optional override for description max length (defaults to 255) */
+  descriptionMaxLength?: number;
+  /** Optional predicate to disable description (defaults to name.includes("default-roles")) */
+  isDescriptionDisabled?: (roleName?: string) => boolean;
 };
 
 export const RoleForm = ({
-  form: { formState },
+  form: { formState, control, handleSubmit }, //Added control
   onSubmit,
   cancelLink,
   role,
   editMode,
+  titleKey, // NEW
+  descriptionMaxLength, // NEW
+  isDescriptionDisabled, // NEW
 }: RoleFormProps) => {
   const { t } = useTranslation();
   const { control, handleSubmit } = useFormContext<AttributeForm>();
@@ -43,7 +52,8 @@ export const RoleForm = ({
 
   return (
     <>
-      {!editMode && <ViewHeader titleKey={t("createRole")} />}
+      {/* {!editMode && <ViewHeader titleKey={t("createRole")} />} */}
+      {!editMode && <ViewHeader titleKey={titleKey ?? t("createRole")} />}
       <PageSection variant="light">
         <FormAccess
           isHorizontal
@@ -70,11 +80,15 @@ export const RoleForm = ({
             label={t("description")}
             rules={{
               maxLength: {
-                value: 255,
-                message: t("maxLength", { length: 255 }),
+                value: descriptionMaxLength ?? 255, //NEW
+                message: t("maxLength", { length: descriptionMaxLength ?? 255 }), //NEW
               },
             }}
-            isDisabled={roleName?.includes("default-roles") ?? false}
+            isDisabled={ //NEW
+              (isDescriptionDisabled
+                ? isDescriptionDisabled(roleName)
+                : roleName?.includes("default-roles")) ?? false
+            }
           />
           <ActionGroup>
             <FormSubmitButton
