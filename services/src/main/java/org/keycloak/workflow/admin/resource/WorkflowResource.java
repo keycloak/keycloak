@@ -45,7 +45,7 @@ public class WorkflowResource {
     @PUT
     public void update(WorkflowRepresentation rep) {
         try {
-            manager.updateWorkflow(workflow, rep.getConfig());
+            manager.updateWorkflow(workflow, rep);
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }

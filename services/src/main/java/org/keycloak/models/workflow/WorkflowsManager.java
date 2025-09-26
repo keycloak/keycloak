@@ -45,6 +45,8 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 
 public class WorkflowsManager {
 
@@ -250,7 +252,7 @@ public class WorkflowsManager {
                     } catch (WorkflowInvalidStateException e) {
                         workflow.setEnabled(false);
                         workflow.setError(e.getMessage());
-                        updateWorkflow(workflow, workflow.getConfig());
+                        updateWorkflowConfig(workflow, workflow.getConfig());
                         log.warnf("Workflow %s was disabled due to: %s", workflow.getId(), e.getMessage());
                     }
                 });
@@ -312,8 +314,29 @@ public class WorkflowsManager {
         return new Workflow(getWorkflowComponent(id));
     }
 
-    public void updateWorkflow(Workflow workflow, MultivaluedHashMap<String, String> config) {
-        validateWorkflow(toRepresentation(workflow));
+    public void updateWorkflow(Workflow workflow, WorkflowRepresentation representation) {
+
+        WorkflowRepresentation currentRep = toRepresentation(workflow);
+
+        // we compare the representation, removing first the entries we allow updating. If anything else changes, we throw a validation exception
+        String currentName = currentRep.getName(); currentRep.getConfig().remove(CONFIG_NAME);
+        String newName = representation.getName(); representation.getConfig().remove(CONFIG_NAME);
+        Boolean currentEnabled = currentRep.getEnabled(); currentRep.getConfig().remove(CONFIG_ENABLED);
+        Boolean newEnabled = representation.getEnabled(); representation.getConfig().remove(CONFIG_ENABLED);
+
+        if (!currentRep.equals(representation)) {
+            throw new ModelValidationException("Workflow update can only change 'name' and 'enabled' config entries.");
+        }
+
+        if (!Objects.equals(currentName, newName) || !Objects.equals(currentEnabled, newEnabled)) {
+            // only update component if something changed
+            representation.setName(newName);
+            representation.setEnabled(newEnabled);
+            this.updateWorkflowConfig(workflow, representation.getConfig());
+        }
+    }
+
+    private void updateWorkflowConfig(Workflow workflow, MultivaluedHashMap<String, String> config) {
         ComponentModel component = getWorkflowComponent(workflow.getId());
         component.setConfig(config);
         getRealm().updateComponent(component);

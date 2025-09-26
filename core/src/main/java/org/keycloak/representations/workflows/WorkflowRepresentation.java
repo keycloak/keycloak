@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -144,6 +145,20 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     public void setState(WorkflowStateRepresentation state) {
         this.state = state;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof WorkflowRepresentation)) {
+            return false;
+        }
+        WorkflowRepresentation that = (WorkflowRepresentation) obj;
+        // TODO: include state in comparison?
+        return Objects.equals(getUses(), that.getUses()) && Objects.equals(getConfig(), that.getConfig())
+            && Objects.equals(getConditions(), that.getConditions()) && Objects.equals(getSteps(), that.getSteps());
     }
 
     public static class Builder {
