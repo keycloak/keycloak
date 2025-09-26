@@ -175,14 +175,22 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
             logger.debugf("Trying verify request from address '%s' of host '%s' by domains", hostAddress, hostname);
 
+            // On Windows, reverse lookup for loopback may return the IP (e.g., 127.0.0.1) instead of 'localhost'. Normalize to 'localhost' for consistent domain checks.
+            if (hostname.equals(address.getHostAddress()) && address.isLoopbackAddress()) {
+                hostname = "localhost";
+            }
+
             if (hostname.equals(address.getHostAddress())) {
                 logger.debugf("The hostAddress '%s' was not resolved to a hostname", hostAddress);
                 return null;
             }
 
-            if (Arrays.stream(InetAddress.getAllByName(hostname)).filter(a -> address.equals(a)).findAny().isEmpty()) {
-                logger.debugf("The hostAddress '%s' is not among the direct lookups returned resolving '%s'", hostAddress, hostname);
-                return null;
+            // For loopback, skip strict forward-confirm check after normalizing to 'localhost' to avoid platform differences.
+            if (!address.isLoopbackAddress()) {
+                if (Arrays.stream(InetAddress.getAllByName(hostname)).filter(a -> address.equals(a)).findAny().isEmpty()) {
+                    logger.debugf("The hostAddress '%s' is not among the direct lookups returned resolving '%s'", hostAddress, hostname);
+                    return null;
+                }
             }
 
             for (String confDomain : trustedDomains) {
@@ -192,7 +200,17 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
                 }
             }
         } catch (UnknownHostException uhe) {
-            logger.debugf(uhe, "Request of address '%s' came from unknown host. Skip verification by domains", hostAddress);
+            logger.debugf(uhe, "Request of address '%s' came from unknown host. Skip verification by domains unless it's within localhost domain", hostAddress);
+
+            String lower = hostAddress == null ? null : hostAddress.toLowerCase();
+            if (lower != null && ("localhost".equals(lower) || lower.endsWith(".localhost"))) {
+                for (String confDomain : trustedDomains) {
+                    if (checkTrustedDomain(lower, confDomain)) {
+                        logger.debugf("Treating host '%s' as loopback due to localhost domain and returning success by trusted domain '%s'", lower, confDomain);
+                        return lower;
+                    }
+                }
+            }
         }
 
         return null;
