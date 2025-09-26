@@ -12,6 +12,19 @@ This change enhances security by preventing unintended disclosure of authenticat
 If you are relying on the `acr_values` parameter to be propagated to an identity provider, you must now explicitly set `acr_values` request parameter
 to the `Forwarded query parameters` setting in the identity provider configuration.
 
+=== Re-created indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables
+
+In some previous versions of {project_name}, the EnterpriseDB (EDB) was considered unsupported. This has now changed and
+EDB Advanced is supported starting with this release. If the EDB JDBC driver was used for connecting to EDB in previous versions,
+some invalid schema changes were applied to the database. To mitigate this, some indexes are automatically re-created during
+the schema migration to this version. **This happens regardless if you previously used EDB or not, all {project_name}
+instances are affected.**
+
+This affects indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables. If those tables contain more than 300000 entries,
+{project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement
+on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
