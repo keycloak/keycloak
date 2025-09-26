@@ -410,7 +410,7 @@ Therefore, you can enable the additional datasource `user-store` as follows (`po
 
 <@kc.start parameters="--db-kind-user-store=postgres"/>
 
-After specifying the DB kind for the datasource, the same properties as for the default datasource are automatically set based on the DB kind.
+After specifying the db-kind for the datasource, all database-kind–specific defaults (such as the driver and dialect) are automatically applied, just like for the main datasource.
 
 === Accessing the new entity manager
 
