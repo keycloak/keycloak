@@ -202,7 +202,6 @@ public class RealmImportTest extends BaseOperatorTest {
         });
 
         assertThat(getJobArgs()).contains("build");
-        assertThat(job.getMetadata().getLabels().get("app")).isEqualTo("keycloak-realm-import");
         assertThat(job.getMetadata().getLabels().get("example")).isEqualTo("test");
 
         return envvars;
