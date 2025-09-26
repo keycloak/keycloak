@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -92,7 +93,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      * There are the declarations for creating the built-in validations for read-only attributes. Regardless of the context where
      * user profiles are used. They are related to internal attributes with hard conditions on them in terms of management.
      */
-    private static final String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason" };
+    private static final String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason", UserModel.EMAIL_PENDING };
     private static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
@@ -479,6 +480,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
+        metadata.addAttribute(UserModel.EMAIL_PENDING, -1, this::isUpdateEmailFeatureEnabled, this::isUpdateEmailFeatureEnabled)
+                .setAttributeDisplayName("${emailPendingVerification}")
+                .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
                 DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
@@ -558,5 +562,19 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         return rawAnnotations;
+    }
+
+    private boolean isUpdateEmailFeatureEnabled(AttributeContext context) {
+        Entry<String, List<String>> attribute = context.getAttribute();
+
+        if (attribute.getValue().isEmpty()) {
+            return false;
+        }
+
+        KeycloakSession session = context.getSession();
+        KeycloakContext context1 = session.getContext();
+        RealmModel realm = context1.getRealm();
+
+        return UpdateEmail.isEnabled(realm);
     }
 }

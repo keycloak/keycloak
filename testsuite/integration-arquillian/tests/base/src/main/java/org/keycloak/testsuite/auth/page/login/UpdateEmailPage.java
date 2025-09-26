@@ -39,6 +39,9 @@ public class UpdateEmailPage extends LogoutSessionsPage {
     @FindBy(id = "kc-submit")
     private WebElement submitButton;
 
+    @FindBy(className = "kc-feedback-text")
+    private WebElement feedbackMessage;
+
     @Override
     public boolean isCurrent() {
         return driver.getCurrentUrl().contains("login-actions/required-action")
@@ -78,6 +81,14 @@ public class UpdateEmailPage extends LogoutSessionsPage {
 
     public void clickSubmitAction() {
         clickLink(submitButton);
+    }
+
+    public String getInfo() {
+        try {
+            return getTextFromElement(feedbackMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
 }

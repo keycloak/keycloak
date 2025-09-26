@@ -286,11 +286,11 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
         UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
         UserRepresentation john = johnResource.toRepresentation(true);
-        Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
+        Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL, UserModel.EMAIL_PENDING);
         johnResource.remove();
 
         try {
-            john = johnResource.toRepresentation(true);
+            johnResource.toRepresentation(true);
             Assert.fail("should remove the user");
         } catch (NotFoundException expected) {
         }

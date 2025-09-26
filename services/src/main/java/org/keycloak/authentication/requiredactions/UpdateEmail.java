@@ -17,9 +17,13 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import static org.keycloak.services.messages.Messages.EMAIL_VERIFICATION_PENDING;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
@@ -71,6 +75,10 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     private static final String FORCE_EMAIL_VERIFICATION = "forceEmailVerification";
 
     public static boolean isEnabled(RealmModel realm) {
+        if (realm == null) {
+            return false;
+        }
+
         if (!Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
             return false;
         }
@@ -115,28 +123,51 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
+        UserModel user = context.getUser();
 
+        if (user.getFirstAttribute(UserModel.EMAIL_PENDING) != null) {
+            user.addRequiredAction(RequiredAction.UPDATE_EMAIL);
+            return;
+        }
+
+        Stream<String> actions = user.getRequiredActionsStream();
+
+        if (actions.anyMatch(RequiredAction.UPDATE_EMAIL.name()::equals)) {
+            user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
+        }
     }
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         if (isEnabled(context.getRealm())) {
-            KeycloakSession session = context.getSession();
+            UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+            UserModel user = context.getUser();
+            UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_EMAIL, user);
 
             // skip and clear UPDATE_EMAIL required action if email is readonly
-            UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
-            UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_EMAIL, context.getUser());
             if (profile.getAttributes().isReadOnly(UserModel.EMAIL)) {
-                context.getUser().removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
+                user.removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
                 return;
             }
 
-            if (session.getAttributeOrDefault(FORCE_EMAIL_VERIFICATION, Boolean.FALSE)) {
+            MultivaluedMap<String, String> formData = new MultivaluedHashMap<>(context.getHttpRequest().getDecodedFormParameters());
+            String newEmail = formData.getFirst(UserModel.EMAIL);
+
+            if (newEmail != null) {
+                // Remove VERIFY_EMAIL to ensure UPDATE_EMAIL takes precedence when both realm verification and forced verification are enabled.
+                user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+                setPendingEmailVerification(context, newEmail);
                 sendEmailUpdateConfirmation(context, false);
-                return;
-            }
+            } else {
+                // Check if email verification is pending and show message for subsequent visits
+                String pendingEmail = getPendingEmailVerification(context);
 
-            context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
+                if (pendingEmail != null) {
+                    context.form().setInfo(EMAIL_VERIFICATION_PENDING, pendingEmail);
+                }
+
+                context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
+            }
         }
     }
 
@@ -205,7 +236,10 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         }
         context.getEvent().success();
 
+        setPendingEmailVerification(context, newEmail);
+
         LoginFormsProvider forms = context.form();
+        
         context.challenge(forms.setAttribute("messageHeader", forms.getMessage("emailUpdateConfirmationSentTitle"))
                 .setInfo("emailUpdateConfirmationSent", newEmail).createForm(Templates.getTemplate(LoginFormsPages.INFO)));
     }
@@ -214,6 +248,8 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
                                                 UserProfile emailUpdateValidationResult) {
 
         updateEmailNow(context.getEvent(), context.getUser(), emailUpdateValidationResult);
+        // Clear pending verification cache since verification is complete
+        clearPendingEmailVerification(context);
         context.success();
     }
 
@@ -228,11 +264,12 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     public static void updateEmailNow(EventBuilder event, UserModel user, UserProfile emailUpdateValidationResult) {
-
+        user.removeRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
         String oldEmail = user.getEmail();
         String newEmail = emailUpdateValidationResult.getAttributes().getFirst(UserModel.EMAIL);
         event.event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail);
         emailUpdateValidationResult.update(false, new EventAuditingAttributeChangeListener(emailUpdateValidationResult, event));
+        user.removeAttribute(UserModel.EMAIL_PENDING);
     }
 
     @Override
@@ -281,5 +318,19 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
+    }
+
+    private void setPendingEmailVerification(RequiredActionContext context, String email) {
+        UserModel user = context.getUser();
+        user.setSingleAttribute(UserModel.EMAIL_PENDING, email);
+        user.setEmailVerified(false);
+    }
+
+    private String getPendingEmailVerification(RequiredActionContext context) {
+        return context.getUser().getFirstAttribute(UserModel.EMAIL_PENDING);
+    }
+
+    private void clearPendingEmailVerification(RequiredActionContext context) {
+        context.getUser().removeAttribute(UserModel.EMAIL_PENDING);
     }
 }

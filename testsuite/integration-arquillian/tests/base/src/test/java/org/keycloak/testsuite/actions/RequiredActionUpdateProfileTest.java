@@ -116,7 +116,9 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
     @Test
     public void updateProfile() {
         loginPage.open();
-
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        user.setEmailVerified(true);
+        adminClient.realm("test").users().get(user.getId()).update(user);
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         updateProfilePage.assertCurrent();
@@ -133,7 +135,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         events.expectLogin().assertEvent();
 
         // assert user is really updated in persistent store
-        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("new@email.com", user.getEmail());

@@ -80,14 +80,13 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
             UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, formData, user);
 
+            if (isForceEmailVerification) {
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
+            }
+
             profile.update(false, new EventAuditingAttributeChangeListener(profile, event));
 
             context.success();
-
-            if (isForceEmailVerification && !realm.isVerifyEmail()) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
-                UpdateEmail.forceEmailVerification(context.getSession());
-            }
         } catch (ValidationException pve) {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 

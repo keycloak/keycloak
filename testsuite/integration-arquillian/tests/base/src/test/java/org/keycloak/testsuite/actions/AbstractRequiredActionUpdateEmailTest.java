@@ -197,7 +197,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 			String lastName = user.getLastName();
 			assertNotNull(firstName);
 			assertNotNull(lastName);
-			changeEmailUsingRequiredAction("new@localhost", true);
+			changeEmailUsingRequiredAction("new@localhost", true, true);
 			user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
 			Assert.assertNotNull(user);
 			firstName = user.getFirstName();
@@ -209,5 +209,5 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		}
 	}
 
-	protected abstract void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions) throws Exception;
+	protected abstract void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) throws Exception;
 }
