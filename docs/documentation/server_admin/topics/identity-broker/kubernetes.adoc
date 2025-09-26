@@ -22,6 +22,6 @@ A Kubernetes identity provider supports authenticating clients with Kubernetes s
 |The alias for the identity provider is used to link a client to the provider
 
 |Kubernetes JWKS URL
-|The Kubernetes JWKS URL when accessing an external Kubernetes cluster. The JWKS endpoint must not require authentication
+|The Kubernetes JWKS URL when accessing an external Kubernetes cluster. The JWKS endpoint must not require authentication. If the Kubernetes JWKS URL is not defined, it defaults to `https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/openid/v1/jwks` with Token-based authentication using `/var/run/secrets/kubernetes.io/serviceaccount/token`.
 
 |===
