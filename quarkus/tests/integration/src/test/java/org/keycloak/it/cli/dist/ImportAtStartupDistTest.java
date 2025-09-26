@@ -82,7 +82,7 @@ public class ImportAtStartupDistTest {
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
     void testImportFromFileCreatedByExportAllRealms(KeycloakDistribution dist) throws IOException {
         dist.run("start-dev", "--import-realm");
-        dist.run("--profile=dev", "export", "--file=../data/import/realm.json");
+        dist.run("--profile=dev", "export", "--file=../data/import/realm.json", "--verbose");
 
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
