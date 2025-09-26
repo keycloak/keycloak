@@ -193,7 +193,7 @@ include::../examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 +
 [IMPORTANT]
 ====
-It requires {project_name} to be deployed in both cluster because the {project_name} does not start until all caches are present in both cluster.
+It requires {project_name} to be deployed in both clusters because the {project_name} does not start until all caches are present in both clusters.
 ====
 +
 To {infinispan-operator-docs}#creating-caches_creating-caches[`Cache` CR] is the recommend way to proceed in {kubernetes}.
