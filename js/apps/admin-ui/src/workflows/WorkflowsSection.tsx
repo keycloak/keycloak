@@ -62,10 +62,10 @@ export default function WorkflowsSection() {
       try {
         await adminClient.workflows.delById({ id: selectedWorkflow!.id! });
         setSelectedWorkflow(undefined);
-        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
+        addAlert(t("workflowDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("roleDeleteError", error);
+        addError("workflowDeleteError", error);
       }
     },
   });
