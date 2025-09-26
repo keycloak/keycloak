@@ -78,7 +78,6 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         // The Job should not be selected with app=keycloak
         labels.put("app", "keycloak-realm-import");
-        labels.putAll(primary.getSpec().getLabels());
 
         var kc = ContextUtils.getKeycloak(context);
         handleJobScheduling(kc, Optional.ofNullable(kc.getSpec().getImportSpec()).map(ImportSpec::getSchedulingSpec), keycloakPodTemplate.getSpec());
@@ -126,6 +125,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .withNamespace(primary.getMetadata().getNamespace())
                 // this is labeling the instance as the realm import, not the keycloak
                 .withLabels(Utils.allInstanceLabels(primary))
+                .withLabels(primary.getMetadata().getLabels())
                 .endMetadata()
                 .withNewSpec()
                 .withTemplate(keycloakPodTemplate)
