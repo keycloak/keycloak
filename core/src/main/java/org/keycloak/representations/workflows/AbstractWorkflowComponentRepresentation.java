@@ -1,10 +1,12 @@
 package org.keycloak.representations.workflows;
 
 import static org.keycloak.common.util.reflections.Reflections.isArrayType;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -18,7 +20,7 @@ public abstract class AbstractWorkflowComponentRepresentation {
     private String id;
     private String uses;
 
-    @JsonProperty("with")
+    @JsonProperty(CONFIG_IF)
     private MultivaluedHashMap<String, String> config;
 
     public AbstractWorkflowComponentRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
@@ -115,7 +117,7 @@ public abstract class AbstractWorkflowComponentRepresentation {
         }
 
         if (isArrayType(values.getClass())) {
-            this.config.put(key, Arrays.stream(values).map(Object::toString).collect(Collectors.toList()));
+            this.config.put(key, Arrays.stream(values).filter(Objects::nonNull).map(Object::toString).collect(Collectors.toList()));
         } else {
             this.config.putSingle(key, values[0].toString());
         }

@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -241,6 +242,32 @@ public class WorkflowManagementTest {
         actualWorkflows = workflows.list();
         workflow = actualWorkflows.get(0);
         assertThat(workflow.getName(), is("changed"));
+
+        // now let's try to update another property that we can't update
+        String previousOn = workflow.getOn();
+        workflow.setOn(ResourceOperationType.USER_LOGIN.toString());
+        try (Response response = workflows.workflow(workflow.getId()).update(workflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+        }
+
+        // restore previous value, but change the conditions
+        workflow.setOn(previousOn);
+        workflow.setConditions(Collections.singletonList(
+                WorkflowConditionRepresentation.create().of(IdentityProviderWorkflowConditionFactory.ID)
+                        .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, "someidp")
+                        .build()
+        ));
+        try (Response response = workflows.workflow(workflow.getId()).update(workflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+        }
+
+        // revert conditions, but change one of the steps
+        workflow.setConditions(null);
+        workflow.getSteps().get(0).setAfter(Duration.ofDays(8).toMillis());
+        try (Response response = workflows.workflow(workflow.getId()).update(workflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+        }
+
     }
 
     @Test

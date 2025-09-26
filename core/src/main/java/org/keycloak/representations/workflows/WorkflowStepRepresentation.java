@@ -8,13 +8,14 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WI
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-@JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_STEPS})
+@JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
 public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
     public static Builder create() {
@@ -53,6 +54,18 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
 
     public void setPriority(long ms) {
         setConfig(CONFIG_PRIORITY, String.valueOf(ms));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof WorkflowStepRepresentation)) {
+            return false;
+        }
+        WorkflowStepRepresentation that = (WorkflowStepRepresentation) obj;
+        return Objects.equals(getUses(), that.getUses()) && Objects.equals(getConfig(), that.getConfig());
     }
 
     public static class Builder {

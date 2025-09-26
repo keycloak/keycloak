@@ -6,6 +6,7 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WI
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -29,6 +30,18 @@ public final class WorkflowConditionRepresentation extends AbstractWorkflowCompo
 
     public WorkflowConditionRepresentation(String condition, MultivaluedHashMap<String, String> config) {
         super(null, condition, config);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof WorkflowConditionRepresentation)) {
+            return false;
+        }
+        WorkflowConditionRepresentation that = (WorkflowConditionRepresentation) obj;
+        return Objects.equals(getUses(), that.getUses()) && Objects.equals(getConfig(), that.getConfig());
     }
 
     @Override
