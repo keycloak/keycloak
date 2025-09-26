@@ -364,7 +364,7 @@ When you complete the part with the `persistence.xml` file, you need to set up {
 
 The additional datasource properties might be specified via the standard config sources like CLI, `keycloak.conf`, or environment variables.
 
-The most important database options that configure the default datasource contain the **Named key** parameter in the list of relevant options that reference a key for the additional named datasources at the end of this guide.
+In order to see how you can configure database properties for the additional named datasources, you can see the associated property in the option description **Named key** in the _Relevant options_ section at the end of this guide.
 
 ==== 1. JPA `persistence.xml` file
 
