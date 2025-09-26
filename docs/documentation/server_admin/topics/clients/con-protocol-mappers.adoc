@@ -62,6 +62,20 @@ Service account sessions provide the following details:
 * *clientAddress*: The remote host IP of the service account's authenticated device.
 * *clientHost*: The remote host name of the service account's authenticated device.
 
+== SAML AuthnContext mapper
+
+By default, {project_name} will set the AuthnContext with AuthnContextClassRef set to `urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified`.
+
+To specify a different value based on specific authenticator reference types completed by the user during authentication, add the *Authenticator reference type to AuthnContext mapper*.
+
+Use this, for example, to forward information about a successful multifactor authentication to Entra ID as shown in the following example:
+
+Authenticator reference types:: `otp`, `recovery-authn-codes`, `webauthn`, `webauthn-passwordless`
+
+Authn Context:: `+http://schemas.microsoft.com/claims/multipleauthn+`
+
+See https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-mfa-expected-inbound-assertions[Satisfy Microsoft Entra ID multifactor authentication (MFA) controls with MFA claims from a federated IdP] for additional information.
+
 == Script mapper
 
 Use the *Script Mapper* to map claims to tokens by running user-defined JavaScript code. For more details about deploying scripts to the server, see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
