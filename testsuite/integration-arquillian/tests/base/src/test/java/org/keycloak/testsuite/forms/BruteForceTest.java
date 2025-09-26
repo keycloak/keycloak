@@ -707,7 +707,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         continueLoginWithInvalidTotp();
         events.clear();
         continueLoginWithInvalidTotp();
-        assertUserDisabledEvent(Errors.INVALID_AUTHENTICATION_SESSION);
+        assertUserDisabledEvent(Errors.USER_TEMPORARILY_DISABLED);
     }
 
     private void checkEmailPresent(String subject) {
