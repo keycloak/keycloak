@@ -25,6 +25,57 @@ This affects indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables. If
 on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
+=== Configuration changes for additional datasources
+
+In previous releases, the only possible way to configure additional datasources was using raw Quarkus properties that are generally considered unsupported. At the same time, adding additional datasources was supported which led to unclear situation.
+
+To provide supported and user friendly way to configure additional datasources, we introduced new dedicated server options for that. Configuring additional datasources using the original approach via the Quarkus properties is considered **unsupported** starting with this release.
+
+Check the following examples on how to migrate your configuration:
+
+==== 1. Use new {project_name} options (preferred)
+The supported way to configure additional datasources is by using the new configuration options.
+
+You can migrate from this configuration in `conf/quarkus.properties`:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=postgresql
+quarkus.datasource.user-store.username=my-username
+quarkus.datasource.user-store.jdbc.url=jdbc:postgresql://my-remote-postgres:5432/user-store
+quarkus.datasource.user-store.jdbc.transactions=xa
+----
+
+to this configuration in `conf/keycloak.conf`:
+
+[source,properties]
+----
+db-kind-user-store=postgres
+db-username-user-store=my-username
+db-url-full-user-store=jdbc:postgresql://my-remote-postgres:5432/user-store
+# transactions XA is enabled by default for datasources
+----
+
+For more information about the datasource options, check the link:https://www.keycloak.org/server/db#configure-multiple-datasources[Configure multiple datasources] guide.
+
+==== 2. Remove quoting in `quarkus.properties` (unsupported)
+If you are not able to migrate to the {project_name} datasource options right now, remove the additional datasource name quoting to avoid a clash of the datasource options mapping to prevent any issue.
+
+It means that you should migrate your configuration in `conf/quarkus.properties`:
+[source,properties]
+----
+quarkus.datasource."user-store".db-kind=postgresql
+quarkus.datasource."user-store".username=my-username
+----
+
+to a version without the quotation:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=postgresql
+quarkus.datasource.user-store.username=my-username
+----
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

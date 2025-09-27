@@ -206,6 +206,7 @@ public class DatabaseOptions {
                 }
 
                 option = builder.build();
+                parentOption.setWildcardKey(option.getKey());
                 cachedDatasourceOptions.put(key.get(), option);
             }
             return Optional.of((Option<T>) option);
