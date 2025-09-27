@@ -121,6 +121,21 @@ public class RealmImportTest extends BaseOperatorTest {
 
         // Assert
         assertWorkingRealmImport(kc);
+    }
+
+    @DisabledIfApiServerTest
+    @Test
+    public void testSignedJWTs() {
+        // Arrange
+        var kc = getTestKeycloakDeployment(false);
+
+        deployKeycloak(k8sclient, kc, false);
+
+        // Act
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
+
+        // Assert
+        assertWorkingRealmImport(kc);
         assertSignedJWT(kc);
     }
 
