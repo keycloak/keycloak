@@ -10,8 +10,11 @@ import java.util.concurrent.TimeUnit;
 
 public class RemoteKeycloakServer implements KeycloakServer {
 
+    private boolean enableTls = false;
+
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
+        enableTls = keycloakServerConfigBuilder.tlsEnabled();
         if (!verifyRunningKeycloak()) {
             printStartupInstructions(keycloakServerConfigBuilder);
             waitForStartup();
@@ -24,12 +27,25 @@ public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        return "http://localhost:8080";
+        if (isTlsEnabled()) {
+            return "https://localhost:8443";
+        } else {
+            return "http://localhost:8080";
+        }
     }
 
     @Override
     public String getManagementBaseUrl() {
-        return "http://localhost:9000";
+        if (isTlsEnabled()) {
+            return "https://localhost:9000";
+        } else {
+            return "http://localhost:9000";
+        }
+    }
+
+    @Override
+    public boolean isTlsEnabled() {
+        return enableTls;
     }
 
     private void printStartupInstructions(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {

@@ -3,6 +3,7 @@ package org.keycloak.testframework.server;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
+
 public class DistributionKeycloakServerSupplier extends AbstractKeycloakServerSupplier {
 
     private static final Logger LOGGER = Logger.getLogger(DistributionKeycloakServerSupplier.class);
