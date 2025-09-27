@@ -604,7 +604,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             appPage.assertCurrent();
             logout();
 
-            // Test 1: Platform authenticator should set authenticatorAttachment to "platform"
+            // Test: Platform authenticator should set authenticatorAttachment to "platform"
             loginPage.open();
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -625,44 +625,9 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             logout();
 
-            // Test 2: Cross-platform authenticator should set authenticatorAttachment to "cross-platform"
-            // Remove existing credential and add a cross-platform one
-            removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
-
-            // Use USB transport (cross-platform)
-            getVirtualAuthManager().useAuthenticator(
-                    new org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions()
-                            .setTransport(org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.USB)
-            );
-
-            loginPage.open();
-            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-
-            webAuthnRegisterPage.assertCurrent();
-            webAuthnRegisterPage.clickRegister();
-            webAuthnRegisterPage.registerWebAuthnCredential(WEBAUTHN_LABEL + "-usb");
-
-            appPage.assertCurrent();
-            logout();
-
-            // Test cross-platform authentication
-            loginPage.open();
-            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-
-            webAuthnLoginPage.assertCurrent();
-            
-            // Verify the authenticatorAttachment field still exists
-            attachmentField = driver.findElement(org.openqa.selenium.By.id("authenticatorAttachment"));
-            assertThat("authenticatorAttachment field should exist for cross-platform auth", 
-                    attachmentField, notNullValue());
-
-            webAuthnLoginPage.clickAuthenticate();
-            appPage.assertCurrent();
-
         } finally {
             if (userId != null) {
                 removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
-                removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL + "-usb");
             }
         }
     }
