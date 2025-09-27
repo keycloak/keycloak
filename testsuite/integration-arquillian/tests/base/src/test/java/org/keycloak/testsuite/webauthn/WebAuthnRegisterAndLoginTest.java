@@ -604,24 +604,20 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             appPage.assertCurrent();
             logout();
 
-            // Test: Platform authenticator should set authenticatorAttachment to "platform"
             loginPage.open();
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
             webAuthnLoginPage.assertCurrent();
             
-            // Check that the authenticatorAttachment field exists in the form
+            webAuthnLoginPage.clickAuthenticate();
+            
             org.openqa.selenium.WebElement attachmentField = driver.findElement(
                     org.openqa.selenium.By.id("authenticatorAttachment"));
             assertThat("authenticatorAttachment field should exist", attachmentField, notNullValue());
-
-            webAuthnLoginPage.clickAuthenticate();
+            
+            String attachmentValue = attachmentField.getAttribute("value");
+            assertThat("authenticatorAttachment should be set to platform", attachmentValue, is("platform"));
             appPage.assertCurrent();
-
-            // Verify that the field was set during authentication
-            // Note: In a real test environment, we would need to intercept the form submission
-            // or check server-side logs to verify the field value. For this test, we verify
-            // that the field exists and the authentication succeeded with a platform authenticator.
 
             logout();
 
