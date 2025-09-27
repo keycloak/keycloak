@@ -572,4 +572,98 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             userResource.removeCredential(credentialRep.getId());
         }
     }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void testAuthenticatorAttachmentFieldInAuthentication() throws IOException {
+        String userId = null;
+        final String WEBAUTHN_LABEL = "webauthn-test";
+
+        try (RealmAttributeUpdater rau = updateRealmWithDefaultWebAuthnSettings(testRealm()).update()) {
+
+            // Register user with WebAuthn credential using platform authenticator (INTERNAL transport)
+            registerDefaultUser();
+            userId = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost").getId();
+
+            // Add WebAuthn credential using platform authenticator
+            getVirtualAuthManager().useAuthenticator(
+                    new org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions()
+                            .setTransport(org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.INTERNAL)
+                            .setHasResidentKey(true)
+                            .setHasUserVerification(true)
+                            .setIsUserVerified(true)
+            );
+
+            loginPage.open();
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+
+            webAuthnRegisterPage.assertCurrent();
+            webAuthnRegisterPage.clickRegister();
+            webAuthnRegisterPage.registerWebAuthnCredential(WEBAUTHN_LABEL);
+
+            appPage.assertCurrent();
+            logout();
+
+            // Test 1: Platform authenticator should set authenticatorAttachment to "platform"
+            loginPage.open();
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+
+            webAuthnLoginPage.assertCurrent();
+            
+            // Check that the authenticatorAttachment field exists in the form
+            org.openqa.selenium.WebElement attachmentField = driver.findElement(
+                    org.openqa.selenium.By.id("authenticatorAttachment"));
+            assertThat("authenticatorAttachment field should exist", attachmentField, notNullValue());
+
+            webAuthnLoginPage.clickAuthenticate();
+            appPage.assertCurrent();
+
+            // Verify that the field was set during authentication
+            // Note: In a real test environment, we would need to intercept the form submission
+            // or check server-side logs to verify the field value. For this test, we verify
+            // that the field exists and the authentication succeeded with a platform authenticator.
+
+            logout();
+
+            // Test 2: Cross-platform authenticator should set authenticatorAttachment to "cross-platform"
+            // Remove existing credential and add a cross-platform one
+            removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
+
+            // Use USB transport (cross-platform)
+            getVirtualAuthManager().useAuthenticator(
+                    new org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions()
+                            .setTransport(org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.USB)
+            );
+
+            loginPage.open();
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+
+            webAuthnRegisterPage.assertCurrent();
+            webAuthnRegisterPage.clickRegister();
+            webAuthnRegisterPage.registerWebAuthnCredential(WEBAUTHN_LABEL + "-usb");
+
+            appPage.assertCurrent();
+            logout();
+
+            // Test cross-platform authentication
+            loginPage.open();
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+
+            webAuthnLoginPage.assertCurrent();
+            
+            // Verify the authenticatorAttachment field still exists
+            attachmentField = driver.findElement(org.openqa.selenium.By.id("authenticatorAttachment"));
+            assertThat("authenticatorAttachment field should exist for cross-platform auth", 
+                    attachmentField, notNullValue());
+
+            webAuthnLoginPage.clickAuthenticate();
+            appPage.assertCurrent();
+
+        } finally {
+            if (userId != null) {
+                removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
+                removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL + "-usb");
+            }
+        }
+    }
 }
