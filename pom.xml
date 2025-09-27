@@ -82,10 +82,10 @@
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
 
-        <bouncycastle.pkixfips.version>2.0.7</bouncycastle.pkixfips.version>
-        <bouncycastle.bcfips.version>2.0.0</bouncycastle.bcfips.version>
-        <bouncycastle.bctls-fips.version>2.0.19</bouncycastle.bctls-fips.version>
-        <bouncycastle.bcutilfips.version>2.0.3</bouncycastle.bcutilfips.version>
+        <bouncycastle.pkixfips.version>2.1.10</bouncycastle.pkixfips.version>
+        <bouncycastle.bcfips.version>2.1.2</bouncycastle.bcfips.version>
+        <bouncycastle.bctls-fips.version>2.1.22</bouncycastle.bctls-fips.version>
+        <bouncycastle.bcutilfips.version>2.1.5</bouncycastle.bcutilfips.version>
 
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.3.230</h2.version>
