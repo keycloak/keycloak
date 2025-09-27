@@ -51,8 +51,14 @@ public class ResourceLoaderTest {
         assertFileAsStream(new File(tempDirectory.toFile(), "test/../resources/"), "myresource.css", true, true);
 
         // relativize tmp folder to the current working directory, something like ../../../tmp/path
-        Path relativeParent = Paths.get(".").toAbsolutePath().relativize(parent.toPath());
-        assertFileAsStream(relativeParent.toFile(), "myresource.css", true, true);
+        Path currentDir = Paths.get(".").toAbsolutePath();
+        Path parentPath = parent.toPath();
+        if (currentDir.getRoot() != null && currentDir.getRoot().equals(parentPath.getRoot())) {
+            Path relativeParent = currentDir.relativize(parentPath);
+            assertFileAsStream(relativeParent.toFile(), "myresource.css", true, true);
+        } else {
+            System.out.println("Skipping relativize test: paths on different roots");
+        }
     }
 
     private void assertResourceAsStream(String parent, String resource, boolean expectValid, boolean expectResourceToExist) throws IOException {
