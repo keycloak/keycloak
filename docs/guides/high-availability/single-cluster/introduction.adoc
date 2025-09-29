@@ -29,7 +29,7 @@ AWS Region or an equivalent low-latency setup.
 
 We regularly test {project_name} with the following configuration:
 
-* An OpenShift cluster deployed across three availability zones
+* An OpenShift cluster deployed across three AWS availability zones in the same region.
 ** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
 using ROSA HCP.
 
