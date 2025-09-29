@@ -144,6 +144,22 @@ The SAML clients can now be configured to automatically download the signing and
 
 For more information, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] in the {adminguide_name}.
 
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) remains an experimental feature in {project_name}, but it received lots of additional improvements in this release.
+For the details, please see the link:{adminguide_link}#_oid4vci[The documentation] with the steps on how to try this feature.
+
+You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join and provide the feedback.
+
+We hope to improve on this feature even more and possibly promote to preview in the {project_name} 26.5.0 release. Especially since the OID4VCI specification was recently promoted
+to the https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html[Final version].
+
+Many thanks to all members of the OAuth SIG group for the participation in the development and discussions about this feature. Especially thanks to
+https://github.com/forkimenjeckayang[https://github.com/forkimenjeckayang], https://github.com/Awambeng[Awambeng Rodrick], https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/Ogenbertrand[Ogen Bertrand],
+https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/wistefan[Stefan Wiedemann] and https://github.com/VinodAnandan[Vinod Anandan].
+endif::[]
+
 = Operator creates a ServiceMonitor automatically
 
 The Operator now provisions a `ServiceMonitor` for the management endpoint if metrics are enabled and the
