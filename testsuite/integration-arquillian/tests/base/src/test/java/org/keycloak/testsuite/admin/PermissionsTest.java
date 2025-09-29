@@ -24,13 +24,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -58,11 +60,11 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -71,9 +73,9 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -93,7 +95,6 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.jgroups.util.UUID;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -1891,6 +1892,46 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.localization().deleteRealmLocalizationTexts("en");
             }
         }, clients.get("REALM2"), false);
+    }
+
+    @Test
+    public void testServerInfo() throws Exception {
+        // user in master with no permission => forbidden
+        Assert.assertThrows(ForbiddenException.class, () -> clients.get("master-none").serverInfo().getInfo());
+        // user in master with any permission can see the system info
+        ServerInfoRepresentation serverInfo = clients.get("master-view-realm").serverInfo().getInfo();
+        Assert.assertNotNull(serverInfo.getSystemInfo());
+        Assert.assertNotNull(serverInfo.getMemoryInfo());
+
+        // user in test realm with no permission => forbidden
+        Assert.assertThrows(ForbiddenException.class, () -> clients.get("none").serverInfo().getInfo());
+        // user in test realm with any permission cannot see the system info
+        serverInfo = clients.get("view-realm").serverInfo().getInfo();
+        Assert.assertNull(serverInfo.getSystemInfo());
+        Assert.assertNull(serverInfo.getMemoryInfo());
+        serverInfo = clients.get("manage-users").serverInfo().getInfo();
+        Assert.assertNull(serverInfo.getSystemInfo());
+        Assert.assertNull(serverInfo.getMemoryInfo());
+
+        // assign the view-system permission to a test realm user and check the fallback works
+        ClientRepresentation realmMgtRep = adminClient.realm(REALM_NAME).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientResource realmMgtRes = adminClient.realm(REALM_NAME).clients().get(realmMgtRep.getId());
+        RoleRepresentation viewSystem = new RoleRepresentation();
+        viewSystem.setName(AdminRoles.VIEW_SYSTEM);
+        realmMgtRes.roles().create(viewSystem);
+        viewSystem = realmMgtRes.roles().get(AdminRoles.VIEW_SYSTEM).toRepresentation();
+        UserRepresentation userRep = adminClient.realm(REALM_NAME).users().search("view-realm", Boolean.TRUE).get(0);
+        UserResource userRes = adminClient.realm(REALM_NAME).users().get(userRep.getId());
+        userRes.roles().clientLevel(realmMgtRep.getId()).add(Collections.singletonList(viewSystem));
+        try (Keycloak keycloak = Keycloak.getInstance(getAuthServerContextRoot() + "/auth", REALM_NAME,
+                userRep.getUsername(), "password", "test-client", TLSUtils.initializeTLS())) {
+            serverInfo = keycloak.serverInfo().getInfo();
+            Assert.assertNotNull(serverInfo.getSystemInfo());
+            Assert.assertNotNull(serverInfo.getMemoryInfo());
+        } finally {
+            userRes.roles().clientLevel(realmMgtRep.getId()).remove(Collections.singletonList(viewSystem));
+            realmMgtRes.roles().get(AdminRoles.VIEW_SYSTEM).remove();
+        }
     }
 
     private void verifyAnyAdminRoleReqired(Invocation invocation) {
