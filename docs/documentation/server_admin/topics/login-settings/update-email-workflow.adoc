@@ -12,6 +12,15 @@ Applications are able to send their users to the email update form by leveraging
 To enable `Update Email` capability for a realm, go to the `Authentication` menu in the administration console and click on `Required actions` tab.
 Switch the toggle for `Update Email` required action to `enabled`.
 
+=== Forcing users to re-authenticate before updating email
+
+When the `Update Email` required action is enabled, users will be forced to re-authenticate before being able to update their email.
+This is a security measure to prevent account takeover in case the user credentials are not known by the attacker but the user session is hijacked.
+
+By default, the user will be asked to re-authenticate if the last authentication is older than 5 minutes (300 seconds). You
+can change this value by setting the `Maximum Age of Authentication` setting in the `Update Email` required action configuration.
+By setting this value to `0`, the user will always be asked to re-authenticate before updating the email.
+
 === Verifying Emails
 
 If the realm has email verification disabled, this action will allow to update the email without verification.

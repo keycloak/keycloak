@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.util.ArrayList;
 import static org.keycloak.services.messages.Messages.EMAIL_VERIFICATION_PENDING;
 
 import java.util.List;
@@ -239,7 +240,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         setPendingEmailVerification(context, newEmail);
 
         LoginFormsProvider forms = context.form();
-        
+
         context.challenge(forms.setAttribute("messageHeader", forms.getMessage("emailUpdateConfirmationSentTitle"))
                 .setInfo("emailUpdateConfirmationSent", newEmail).createForm(Templates.getTemplate(LoginFormsPages.INFO)));
     }
@@ -298,21 +299,19 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     @Override
-    public int getMaxAuthAge(KeycloakSession session) {
-        // always require re-authentication
-        return 0;
-    }
-
-    @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-        return ProviderConfigurationBuilder.create()
+        List<ProviderConfigProperty> config = new ArrayList<>(RequiredActionFactory.MAX_AUTH_AGE_CONFIG_PROPERTIES);
+
+        config.addAll(ProviderConfigurationBuilder.create()
                 .property()
                 .name("verifyEmail")
                 .label("Force Email Verification")
                 .helpText("If enabled, the user will be forced to verify the email regardless if email verification is enabled at the realm level or not. Otherwise, verification will be based on the realm level setting.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue(Boolean.FALSE)
-                .add().build();
+                .add().build());
+
+        return config;
     }
 
     @Override
