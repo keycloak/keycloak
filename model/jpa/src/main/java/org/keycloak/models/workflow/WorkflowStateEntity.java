@@ -30,14 +30,15 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "WORKFLOW_STATE")
-@IdClass(WorkflowStateEntity.PrimaryKey.class)
 public class WorkflowStateEntity {
 
     @Id
+    @Column(name = "EXECUTION_ID")
+    private String executionId;
+
     @Column(name = "RESOURCE_ID")
     private String resourceId;
 
-    @Id
     @Column(name = "WORKFLOW_ID")
     private String workflowId;
 
@@ -52,6 +53,14 @@ public class WorkflowStateEntity {
 
     @Column(name = "SCHEDULED_STEP_TIMESTAMP")
     private long scheduledStepTimestamp;
+
+    public String getExecutionId() {
+        return executionId;
+    }
+
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
+    }
 
     public String getResourceId() {
         return resourceId;
@@ -99,49 +108,6 @@ public class WorkflowStateEntity {
 
     public void setScheduledStepTimestamp(long scheduledStepTimestamp) {
         this.scheduledStepTimestamp = scheduledStepTimestamp;
-    }
-
-    public static class PrimaryKey implements Serializable {
-
-        private String resourceId;
-        private String workflowId;
-
-        public PrimaryKey() {
-        }
-
-        public PrimaryKey(String resourceId, String workflowId) {
-            this.resourceId = resourceId;
-            this.workflowId = workflowId;
-        }
-
-        public String getResourceId() {
-            return resourceId;
-        }
-
-        public void setResourceId(String resourceId) {
-            this.resourceId = resourceId;
-        }
-
-        public String getWorkflowId() {
-            return workflowId;
-        }
-
-        public void setWorkflowId(String workflowId) {
-            this.workflowId = workflowId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            PrimaryKey that = (PrimaryKey) o;
-            return Objects.equals(resourceId, that.resourceId) && Objects.equals(workflowId, that.workflowId);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(resourceId, workflowId);
-        }
     }
 
     @Override

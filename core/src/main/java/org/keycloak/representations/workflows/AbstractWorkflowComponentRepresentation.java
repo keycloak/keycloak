@@ -1,7 +1,7 @@
 package org.keycloak.representations.workflows;
 
 import static org.keycloak.common.util.reflections.Reflections.isArrayType;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,7 +20,7 @@ public abstract class AbstractWorkflowComponentRepresentation {
     private String id;
     private String uses;
 
-    @JsonProperty(CONFIG_IF)
+    @JsonProperty(CONFIG_WITH)
     private MultivaluedHashMap<String, String> config;
 
     public AbstractWorkflowComponentRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
