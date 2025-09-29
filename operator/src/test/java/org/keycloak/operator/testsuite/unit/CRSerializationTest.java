@@ -33,6 +33,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
@@ -109,7 +110,9 @@ public class CRSerializationTest {
         assertEquals(1,keycloak.getSpec().getLivenessProbeSpec().getProbeFailureThreshold());
         assertEquals(40,keycloak.getSpec().getStartupProbeSpec().getProbePeriodSeconds());
         assertEquals(2,keycloak.getSpec().getStartupProbeSpec().getProbeFailureThreshold());
-
+        assertEquals("MY_ENV_VAR", keycloak.getSpec().getEnv().get(0).getName());
+        assertEquals("--- {}\n", Serialization.asYaml(keycloak.getSpec().getUpdateSpec().getSchedulingSpec()));
+        assertEquals("x", keycloak.getSpec().getSchedulingSpec().getPriorityClassName());
     }
 
     @Test
@@ -288,6 +291,18 @@ public class CRSerializationTest {
         var revision = updateSpec.getRevision();
         assertNotNull(revision);
         assertEquals("1", revision);
+    }
+
+    @Test
+    public void serviceMonitorSpecification() {
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr.yml"), Keycloak.class);
+
+        ServiceMonitorSpec serviceMonitorSpec = keycloak.getSpec().getServiceMonitorSpec();
+        assertThat(serviceMonitorSpec, notNullValue());
+
+        assertThat(serviceMonitorSpec.isEnabled(), is(true));
+        assertThat(serviceMonitorSpec.getInterval(), is(ServiceMonitorSpec.DEFAULT_INTERVAL));
+        assertThat(serviceMonitorSpec.getScrapeTimeout(), is(ServiceMonitorSpec.DEFAULT_SCRAPE_TIMEOUT));
     }
 
     private static void assertNetworkPolicyRules(Collection<NetworkPolicyPeer> rules) {

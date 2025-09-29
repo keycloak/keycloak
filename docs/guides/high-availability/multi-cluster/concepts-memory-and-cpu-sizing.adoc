@@ -1,0 +1,67 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for sizing CPU and memory resources"
+summary="Understand concepts for avoiding resource exhaustion and congestion."
+tileVisible="false" >
+
+Use this as a starting point to size a product environment.
+Adjust the values for your environment as needed based on your load tests.
+
+[#multi-cluster-performance-recommendations]
+== Performance recommendations
+
+include::../partials/concepts/perf_recommendations.adoc[]
+
+[#multi-cluster-measture-running-instance]
+=== Measuring the activity of a running {project_name} instance
+
+<#include "/high-availability/partials/concepts/perf_measuring_running_instance.adoc" />
+
+[#multi-cluster-single-site-calculation]
+=== Calculation example (single cluster)
+
+include::../partials/concepts/perf_single_cluster_calculation.adoc[]
+
+=== Sizing a multi-cluster setup
+
+To create the sizing an active-active Keycloak setup with two AZs in one AWS region, following these steps:
+
+* Create the same number of Pods with the same memory sizing as above on the second site.
+
+* The database sizing remains unchanged. Both sites will connect to the same database writer instance.
+
+In regard to the sizing of CPU requests and limits, there are different approaches depending on the expected failover behavior:
+
+Fast failover and more expensive::
+Keep the CPU requests and limits as above for the second site. This way any remaining site can take over the traffic from the primary site immediately without the need to scale.
+
+Slower failover and more cost-effective::
+Reduce the CPU requests and limits as above by 50% for the second site. When one of the sites fails, scale the remaining site from 3 Pod to 6 Pods either manually, automated, or using a Horizontal Pod Autoscaler. This requires enough spare capacity on the cluster or cluster auto-scaling capabilities.
+
+Alternative setup for some environments::
+Reduce the CPU requests by 50% for the second site, but keep the CPU limits as above. This way, the remaining site can take the traffic, but only at the downside that the Nodes will experience CPU pressure and therefore slower response times during peak traffic.
+The benefit of this setup is that the number of Pods does not need to scale during failovers which is simpler to set up.
+
+== Reference architecture
+
+The following setup was used to retrieve the settings above to run tests of about 10 minutes for different scenarios:
+
+* OpenShift 4.17.x deployed on AWS via ROSA.
+* Machine pool with `c7g.2xlarge` instances.^*^
+* {project_name} deployed with the Operator and 3 pods in a high-availability setup with two sites in active/active mode.
+* OpenShift's reverse proxy runs in the passthrough mode where the TLS connection of the client is terminated at the Pod.
+* Database Amazon Aurora PostgreSQL in a multi-AZ setup.
+* Default user password hashing with Argon2 and 5 hash iterations and minimum memory size 7 MiB https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id[as recommended by OWASP] (which is the default).
+* Client credential grants do not use refresh tokens (which is the default).
+* Database seeded with 20,000 users and 20,000 clients.
+* Infinispan local caches at default of 10,000 entries, so not all clients and users fit into the cache, and some requests will need to fetch the data from the database.
+* All authentication sessions in distributed caches as per default, with two owners per entries, allowing one failing Pod without losing data.
+* All user and client sessions are stored in the database and are not cached in-memory as this was tested in a multi-cluster setup.
+Expect a slightly higher performance for single-site setups as a fixed number of user and client sessions will be cached.
+* OpenJDK 21
+
+^*^ For non-ARM CPU architectures on AWS (`c7i`/`c7a` vs. `c7g`) we found that client credential grants and refresh token workloads were able to deliver up to two times the number of operations per CPU core, while password hashing was delivering a constant number of operations per CPU core. Depending on your workload and your cloud pricing, please run your own tests and make your own calculations for mixed workloads to find out which architecture delivers a better pricing for you.
+
+</@tmpl.guide>

@@ -27,11 +27,13 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ImportSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.Truststore;
@@ -66,6 +68,10 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> additionalOptions = new ArrayList<ValueOrSecret>(); // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+
+    @JsonPropertyDescription("Environment variables for the Keycloak server.\n" +
+            "Values can be either direct values or references to secrets. Use additionalOptions for first-class options rather than KC_ values here.")
+    private List<ValueOrSecret> env = new ArrayList<ValueOrSecret>();
 
     @JsonProperty("http")
     @JsonPropertyDescription("In this section you can configure Keycloak features related to HTTP and HTTPS")
@@ -120,8 +126,12 @@ public class KeycloakSpec {
     @JsonPropertyDescription("In this section you can configure Keycloak's scheduling")
     private SchedulingSpec schedulingSpec;
 
+    @JsonProperty("import")
+    @JsonPropertyDescription("In this section you can configure import Jobs")
+    private ImportSpec importSpec;
+
     @JsonProperty("bootstrapAdmin")
-    @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for inital cluster creation.")
+    @JsonPropertyDescription("In this section you can configure Keycloak's bootstrap admin - will be used only for initial cluster creation.")
     private BootstrapAdminSpec bootstrapAdminSpec;
 
     @JsonProperty("networkPolicy")
@@ -140,7 +150,6 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration for readiness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
     private ProbeSpec readinessProbeSpec;
 
-
     @JsonProperty("livenessProbe")
     @JsonPropertyDescription("Configuration for liveness probe, by default it is 10 for periodSeconds and 3 for failureThreshold")
     private ProbeSpec livenessProbeSpec;
@@ -149,6 +158,9 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration for startup probe, by default it is 1 for periodSeconds and 600 for failureThreshold")
     private ProbeSpec startupProbeSpec;
 
+    @JsonProperty("serviceMonitor")
+    @JsonPropertyDescription("Configuration related to the generated ServiceMonitor")
+    private ServiceMonitorSpec serviceMonitorSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -243,6 +255,14 @@ public class KeycloakSpec {
             this.additionalOptions = new ArrayList<>();
         }
         return additionalOptions;
+    }
+
+    public List<ValueOrSecret> getEnv() {
+        return env;
+    }
+
+    public void setEnv(List<ValueOrSecret> env) {
+        this.env = env;
     }
 
     public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
@@ -348,5 +368,22 @@ public class KeycloakSpec {
 
     public void setStartupProbeSpec(ProbeSpec startupProbeSpec) {
         this.startupProbeSpec = startupProbeSpec;
+    }
+
+    public ImportSpec getImportSpec() {
+        return importSpec;
+    }
+
+    public void setImportSpec(ImportSpec importSpec) {
+        this.importSpec = importSpec;
+    }
+
+
+    public ServiceMonitorSpec getServiceMonitorSpec() {
+        return serviceMonitorSpec;
+    }
+
+    public void setServiceMonitorSpec(ServiceMonitorSpec serviceMonitorSpec) {
+        this.serviceMonitorSpec = serviceMonitorSpec;
     }
 }

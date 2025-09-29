@@ -17,11 +17,13 @@
 
 package org.keycloak.jose.jwk;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class JSONWebKeySet {
 
     @JsonProperty("keys")

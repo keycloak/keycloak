@@ -55,7 +55,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
+import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -424,7 +424,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user) throws MessagingException, IOException {
-        acceptInvitation(organization, user, "Sign in to");
+        acceptInvitation(organization, user, "Account Management");
     }
 
     private void acceptInvitation(OrganizationResource organization, UserRepresentation user, String pageTitle) throws MessagingException, IOException {

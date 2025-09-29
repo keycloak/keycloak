@@ -1,0 +1,18 @@
+<@profile.ifProduct>
+
+== Maximum load
+
+* 100,000 users
+* 300 requests per second
+
+</@profile.ifProduct>
+<@profile.ifCommunity>
+
+== Tested load
+
+We regularly test {project_name} with the following load:
+
+* 100,000 users
+* 300 requests per second
+
+</@profile.ifCommunity>

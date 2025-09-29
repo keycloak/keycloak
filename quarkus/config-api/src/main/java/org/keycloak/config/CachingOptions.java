@@ -1,12 +1,14 @@
 package org.keycloak.config;
 
 import java.io.File;
+import java.util.List;
 
 import com.google.common.base.CaseFormat;
 
 public class CachingOptions {
 
     public static final String CACHE_CONFIG_FILE_PROPERTY = "cache-config-file";
+    public static final String CACHE_CONFIG_MUTATE_PROPERTY = "cache-config-mutate";
 
     public static final String CACHE_EMBEDDED_PREFIX = "cache-embedded";
     private static final String CACHE_EMBEDDED_MTLS_PREFIX = CACHE_EMBEDDED_PREFIX + "-mtls";
@@ -27,6 +29,7 @@ public class CachingOptions {
     public static final String CACHE_REMOTE_USERNAME_PROPERTY = CACHE_REMOTE_PREFIX + "-username";
     public static final String CACHE_REMOTE_PASSWORD_PROPERTY = CACHE_REMOTE_PREFIX + "-password";
     public static final String CACHE_REMOTE_TLS_ENABLED_PROPERTY = CACHE_REMOTE_PREFIX + "-tls-enabled";
+    public static final String CACHE_REMOTE_BACKUP_SITES_PROPERTY = CACHE_REMOTE_PREFIX + "-backup-sites";
 
     private static final String CACHE_METRICS_PREFIX = "cache-metrics";
     public static final String CACHE_METRICS_HISTOGRAMS_ENABLED_PROPERTY = CACHE_METRICS_PREFIX + "-histograms-enabled";
@@ -76,6 +79,12 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description("Defines the file from which cache configuration should be loaded from. "
                     + "The configuration file is relative to the 'conf/' directory.")
+            .build();
+
+    public static final Option<Boolean> CACHE_CONFIG_MUTATE = new OptionBuilder<>(CACHE_CONFIG_MUTATE_PROPERTY, Boolean.class)
+            .category(OptionCategory.CACHE)
+            .description("Determines whether changes to the default cache configurations are allowed. This is only recommended for advanced use-cases where the default cache configurations are proven to be problematic. The only supported way to change the default cache configurations is via the other 'cache-...' options.")
+            .defaultValue(Boolean.FALSE)
             .build();
 
     public static final Option<Boolean> CACHE_EMBEDDED_MTLS_ENABLED = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_ENABLED_PROPERTY, Boolean.class)
@@ -171,6 +180,11 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description("Enable TLS support to communicate with a secured remote Infinispan server. Recommended to be enabled in production.")
             .defaultValue(Boolean.TRUE)
+            .build();
+
+    public static final Option<List<String>> CACHE_REMOTE_BACKUP_SITES = OptionBuilder.listOptionBuilder(CACHE_REMOTE_BACKUP_SITES_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("Configures a list of backup sites names to where the external Infinispan cluster backups the Keycloak data.")
             .build();
 
     public static Option<Integer> maxCountOption(String cache) {

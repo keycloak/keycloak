@@ -284,7 +284,7 @@ _Default_: `$\{name}+`
 | `vc.format`
 | optional
 | Defines the VC format (e.g., `jwt_vc`). +
-_Default_: `vc+sd-jwt`
+_Default_: `dc+sd-jwt`
 
 | `vc.verifiable_credential_type`
 | optional
@@ -323,12 +323,12 @@ _Default_: _none_
 
 | `vc.sd_jwt.number_of_decoys`
 | optional
-| Used only with format `vc+sd-jwt`. Number of decoy hashes in the SD-JWT. +
+| Used only with format `dc+sd-jwt`. Number of decoy hashes in the SD-JWT. +
 _Default_: `10`
 
 | `vc.credential_build_config.sd_jwt.visible_claims`
 | optional
-| Used only with format `vc+sd-jwt`. Claims always disclosed in the SD-JWT body. +
+| Used only with format `dc+sd-jwt`. Claims always disclosed in the SD-JWT body. +
 _Default_: `id,iat,nbf,exp,jti`
 
 | `vc.credential_build_config.hash_algorithm`
@@ -457,7 +457,7 @@ Validate the setup by accessing the **issuer metadata endpoint**:
 +
 [source,bash]
 ----
-https://localhost:8443/realms/oid4vc-vci/.well-known/openid-credential-issuer
+https://localhost:8443/.well-known/openid-credential-issuer/realms/oid4vc-vci
 ----
 
 A successful response returns a JSON object containing details such as:

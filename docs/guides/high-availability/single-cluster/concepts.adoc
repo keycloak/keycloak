@@ -1,0 +1,192 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Concepts for single-cluster deployments"
+summary="Understand single-cluster deployment with synchronous replication."
+tileVisible="false" >
+
+This topic describes a single-cluster setup and the behavior to expect.
+It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
+
+[#single-cluster-when-to-use]
+== When to use this setup
+
+<@profile.ifProduct>
+
+Use this setup to deploy {project_name} to an {kubernetes} cluster.
+
+</@profile.ifProduct>
+
+<@profile.ifCommunity>
+
+Use this setup to deploy {project_name} to a setup with transparent networking.
+
+To provide a more concrete example, the following chapter assumes a deployment contained within a single {kubernetes} cluster.
+The same concepts could be applied to a set of virtual or physical machines and a manual or scripted deployment.
+
+</@profile.ifCommunity>
+
+== Single or multiple availability-zones
+
+The behaviour and high-availability performance of the {project_name} deployment are ultimately determined by the configuration of
+the {kubernetes} cluster. Typically, {kubernetes} clusters are deployed on a single availability-zone, however in order to
+increase fault-tolerance, it is possible to https://kubernetes.io/docs/setup/best-practices/multiple-zones/[deploy the cluster across multiple availability-zones].
+
+The {project_name} Operator defines the following topology spread constraints by default to prefer that {project_name} pods are
+deployed on distinct nodes and distinct availability-zones when possible:
+
+[source,yaml]
+----
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: "ScheduleAnyway"
+          labelSelector:
+            matchLabels:
+              app: "keycloak"
+              app.kubernetes.io/managed-by: "keycloak-operator"
+              app.kubernetes.io/instance: "keycloak"
+              app.kubernetes.io/component: "server"
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: "ScheduleAnyway"
+          labelSelector:
+            matchLabels:
+              app: "keycloak"
+              app.kubernetes.io/managed-by: "keycloak-operator"
+              app.kubernetes.io/instance: "keycloak"
+              app.kubernetes.io/component: "server"
+----
+
+[IMPORTANT]
+====
+In order to configure high-availability with multiple availability-zones, it is crucial that the Database is also able to
+withstand zone failures as {project_name} depends on the underlying database to remain available.
+====
+
+== Failures which this setup can survive
+Deploying {project_name} on a single cluster in a single zone, or across multiple availability-zones, or data centers with
+the required network latency and database configuration, changes the high-availability characteristics significantly,
+therefore we consider these architectures independently.
+
+=== Single Zone
+
+During testing of the high availability <@links.ha id="single-cluster-introduction" anchor="single-cluster-configuration" />, we observed the following
+restore times for the events described:
+
+[%autowidth]
+|===
+| Failure | Recovery | RPO^1^ | RT^2^
+
+| {project_name} Pod
+| Multiple {project_name} Pods run in a cluster. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
+| No data loss
+| Less than 30 seconds
+
+| {kubernetes} Node
+| Multiple {project_name} Pods run in a cluster. If the host node dies, then all pods on that node will fail and some incoming requests might receive an error message or are delayed for some seconds.
+| No data loss
+| Less than 30 seconds
+
+| {project_name} Clustering Connectivity
+| If the connectivity between {kubernetes} nodes is lost, data cannot be sent between {project_name} pods hosted on those nodes.
+Incoming requests might receive an error message or be delayed for some seconds.
+The {project_name} will eventually remove the unreachable pods from its local view and will stop sending data to them.
+| No data loss
+| Seconds to minutes
+
+|===
+
+.Table footnotes:
+^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
+^2^ Maximum Recovery Time observed. +
+
+=== Multiple Zones
+
+During testing of the high availability <@links.ha id="multi-cluster-introduction" anchor="multi-cluster-supported-configuration" />, we observed the following
+restore times for the events described:
+
+[%autowidth]
+|===
+| Failure | Recovery | RPO^1^ | RT^2^
+
+| Database node^3^
+| If the writer instance fails, the database can promote a reader instance in the same or other zone to be the new writer.
+| No data loss
+| Seconds to minutes (depending on the database)
+
+| {project_name} pod
+| Multiple {project_name} instances run in a cluster. If one instance fails some incoming requests might receive an error message or are delayed for some seconds.
+| No data loss
+| Less than 30 seconds
+
+| {kubernetes} Node
+| Multiple {project_name} pods run in a cluster. If the host node dies, then all pods on that node will fail and some incoming requests might receive an error message or are delayed for some seconds.
+| No data loss
+| Less than 30 seconds
+
+| Availability zone failure
+| If an availability-zone fails, all {project_name} pods hosted in that zone will also fail. Deploying at least the same number
+of {project_name} replicas as availability-zones should ensure that no data is lost and minimal downtime occurs as there will
+be other pods available to service requests.
+| No data loss
+| Seconds
+
+| Connectivity database
+| If the connectivity between availability-zones is lost, the synchronous replication will fail.
+Some requests might receive an error message or be delayed for a few seconds.
+Manual operations might be necessary depending on the database.
+| No data loss^3^
+| Seconds to minutes (depending on the database)
+
+| {project_name} Clustering Connectivity
+| If the connectivity between {kubernetes} nodes is lost, data cannot be sent between {project_name} pods hosted on those nodes.
+Incoming requests might receive an error message or be delayed for some seconds.
+The {project_name} will eventually remove the unreachable pods from its local view and will stop sending data to them.
+| No data loss
+| Seconds to minutes
+
+|===
+
+.Table footnotes:
+^1^ Tested Recovery Point Objective, assuming all parts of the setup were healthy at the time this occurred. +
+^2^ Maximum Recovery Time observed. +
+^3^ Assumes that the database is also replicated across multiple availability-zones
+
+== Known limitations
+
+. Downtime during rollouts of {project_name} upgrades
++
+This can be overcome for patch releases by enabling <@links.server id="update-compatibility" anchor="rolling-updates-for-patch-releases" />.
++
+. Multiple node failures can result in a loss of entries from the `authenticationSessions`, `loginFailures`
+and `actionTokens` caches if the number of node failures is greater than or equal to the cache's configured `num_owners`,
+which by default is 2.
++
+. Deployments using the default `topologySpreadConstraints` with `whenUnsatisfiable: ScheduleAnyway`, may experience
+data-loss on node/availability-zone failure if multiple pods are scheduled on the failed node/zone.
++
+Users can mitigate against this scenario by defining `topologySpreadConstraints` with `whenUnsatisfiable: DoNotSchedule`,
+to ensure that pods are always evenly scheduled across zones and nodes. However, this can result in some {project_name}
+instances not being deployed if the constraints cannot be satisfied.
++
+As Infinispan is unaware of the network topology when distributing cache entries, it is still possible for data-loss to
+occur on node/availability-zone failure if all `num_owner` copies of cached data are stored in the failed node/zone.
+You can restrict the total number of {project_name} instances to the number of nodes or availability-zones available by
+defining a `requiredDuringSchedulingIgnoredDuringExecution` for nodes and zones. However, this comes at the expense of
+scalability as the number of {project_name} instances that can be provisioned will be restricted to the number of
+nodes/availability-zones in your {kubernetes} cluster.
++
+See the Operator <@links.operator id="advanced-configuration" anchor="_scheduling" /> details of how to configure custom
+anti-affinity `topologySpreadConstraints` policies.
+
+. The Operator does not configure the site's name (see <@links.server id="caching" anchor="cache-topology" />) in the Pods as its value is not available via the https://kubernetes.io/docs/concepts/workloads/pods/downward-api/[Downward API].
+The machine name option is configured using the `spec.nodeName` from the node where the Pod is scheduled.
+
+== Next steps
+
+Continue reading in the <@links.ha id="single-cluster-building-blocks" /> {section} to find blueprints for the different building blocks.
+
+</@tmpl.guide>

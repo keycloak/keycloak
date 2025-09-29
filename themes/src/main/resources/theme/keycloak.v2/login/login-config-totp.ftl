@@ -60,8 +60,9 @@
                     </label>
                 </div>
                 <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('totp')>pf-m-error</#if>">
-                    <input type="text" required id="totp" name="totp" autocomplete="off"
+                    <input type="text" required id="totp" name="totp" autocomplete="one-time-code"
                            aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
+                           inputmode="numeric"
                     />
 
                     <@field.errorIcon error=kcSanitize(messagesPerField.get('totp'))?no_esc/>
@@ -108,7 +109,7 @@
                         />
                         <button type="submit"
                                 class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
-                                id="cancelTOTPBtn" name="cancel-aia" value="true" />${msg("doCancel")}
+                                id="cancelTOTPBtn" name="cancel-aia" value="true">${msg("doCancel")}
                         </button>
                     <#else>
                         <input type="submit"

@@ -31,10 +31,9 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.Constants;
@@ -51,8 +50,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
@@ -222,10 +220,6 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             // frontchannel logout
             assertTrue(oidcConfig.getFrontChannelLogoutSessionSupported());
             assertTrue(oidcConfig.getFrontChannelLogoutSupported());
-
-            // DPoP - negative test for preview profile - see testDpopSigningAlgValuesSupportedWithDpop for actual test
-            assertNull("dpop_signing_alg_values_supported should not be present unless DPoP feature is enabled",
-                    oidcConfig.getDpopSigningAlgValuesSupported());
         } finally {
             client.close();
         }
@@ -306,8 +300,13 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         OIDCConfigurationRepresentation representation = SimpleHttpDefault.doGet(getAuthServerRoot().toString() + "realms/test/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
         String jwksUri = representation.getJwksUri();
 
-        SimpleHttp.Response response = SimpleHttpDefault.doGet(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
+        SimpleHttpResponse response = SimpleHttpDefault.doGet(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
         assertEquals(APPLICATION_JWKS, response.getFirstHeader(CONTENT_TYPE));
+
+        // Test HEAD method works (Issue 41537)
+        SimpleHttpResponse responseHead = SimpleHttpDefault.doHead(jwksUri, client).header(ACCEPT, APPLICATION_JWKS).asResponse();
+        assertEquals(Response.Status.OK.getStatusCode(), responseHead.getStatus());
+        assertEquals(APPLICATION_JWKS, responseHead.getFirstHeader(CONTENT_TYPE));
     }
 
     @Test
@@ -375,7 +374,6 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.DPOP, skipRestart = true)
     public void testDpopSigningAlgValuesSupportedWithDpop() throws IOException {
         Client client = AdminClientUtil.createResteasyClient();
 
@@ -384,7 +382,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // DPoP
             Assert.assertNames(oidcConfig.getDpopSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
-                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
+                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.EdDSA);
         } finally {
             client.close();
         }
@@ -405,9 +403,13 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         }
     }
 
+    protected URI getOIDCDiscoveryUri(UriBuilder builder) {
+        return RealmsResource.wellKnownProviderUrl(builder).build("test", this.getWellKnownProviderId());
+    }
+
     private String getOIDCDiscoveryConfiguration(Client client, String uriTemplate) {
         UriBuilder builder = UriBuilder.fromUri(uriTemplate);
-        URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", this.getWellKnownProviderId());
+        URI oidcDiscoveryUri = getOIDCDiscoveryUri(builder);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
 
         Response response = oidcDiscoveryTarget.request().get();

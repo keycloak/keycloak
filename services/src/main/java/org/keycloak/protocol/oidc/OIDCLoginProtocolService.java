@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import jakarta.ws.rs.HEAD;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;

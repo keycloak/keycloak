@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -100,6 +99,28 @@ public class PropertyMapper<T> {
         this.namedProperty = namedProperty;
     }
 
+    /**
+     * This is the heart of the property mapping logic. In the first step, we need to find the value of the property and then transform it into a form of our needs.
+     * <p>
+     *
+     * <b>1. Find value</b>
+     * <p>
+     * In preference order we are looking for:
+     * <pre>
+     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ] ---> [ {@link #to} ]
+     * (explicit)     (derived)           (fallback)         (fallback)
+     * </pre>
+     * <p>
+     *
+     * <b>2. Transform found value</b>
+     * <p>
+     * If we found a value for the attribute name, it needs to be transformed via {@link #transformValue} method. How to transform it?
+     * <ul>
+     *   <li>If the name matches {@link #from} or we using the {@link #mapFrom} value, then apply the {@link PropertyMapper.Builder#transformer} or the {@link PropertyMapper.Builder#mapFrom(Option, ValueMapper)}
+     *   <li>If the value contains an expression, expand it using SmallRye logic
+     *   <li>Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
+     * </ul>
+     */
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
 
@@ -126,7 +147,7 @@ public class PropertyMapper<T> {
                     context, false);
         }
 
-        if (config != null) {
+        if (config != null || name.equals(from)) {
             return config;
         }
 
@@ -261,7 +282,8 @@ public class PropertyMapper<T> {
         boolean mapped = false;
         // fall back to the transformer when no mapper is explicitly specified in .mapFrom()
         var theMapper = parentValue && parentMapper != null ? this.parentMapper : this.mapper;
-        if (theMapper != null && (!name.equals(getFrom()) || parentValue)) {
+        // since our mapping logic assumes fully resolved values, we cannot reliably map if Expressions are disabled
+        if (Expressions.isEnabled() && theMapper != null && (!name.equals(getFrom()) || parentValue)) {
             mappedValue = theMapper.map(getNamedProperty().orElse(null), value, context);
             mapped = true;
         }
@@ -279,10 +301,6 @@ public class PropertyMapper<T> {
 
         if (!mapped && name.equals(configValue.getName())) {
             return configValue;
-        }
-
-        if (!isBuildTime() && Environment.isRebuild()) {
-            value = null; // prevent quarkus from recording these raw values as runtime defaults
         }
 
         // by unsetting the ordinal this will not be seen as directly modified by the user
@@ -359,8 +377,7 @@ public class PropertyMapper<T> {
         }
 
         /**
-         * NOTE: This transformer will not apply to the mapFrom value. When using
-         * {@link #mapFrom} you generally need a transformer specifically for the parent
+         * When using {@link #mapFrom} you generally need a transformer specifically for the parent
          * value, see {@link #mapFrom(Option, BiFunction)}
          * <p>
          * The value passed into the transformer may be null if the property has no value set, and no default
@@ -369,6 +386,12 @@ public class PropertyMapper<T> {
             return transformer((name, value, context) -> mapper.apply(value, context));
         }
 
+        /**
+         * When using {@link #mapFrom} you generally need a transformer specifically for the parent
+         * value, see {@link #mapFrom(Option, BiFunction)}
+         * <p>
+         * The value passed into the transformer may be null if the property has no value set, and no default
+         */
         public Builder<T> transformer(ValueMapper mapper) {
             this.mapper = mapper;
             return this;
@@ -376,6 +399,11 @@ public class PropertyMapper<T> {
 
         public Builder<T> paramLabel(String label) {
             this.paramLabel = label;
+            return this;
+        }
+
+        public Builder<T> removeMapFrom() {
+            this.mapFrom = null;
             return this;
         }
 
@@ -594,6 +622,10 @@ public class PropertyMapper<T> {
      */
     public PropertyMapper<?> forKey(String key) {
         return this;
+    }
+
+    public boolean hasConnectedOptions() {
+        return !option.getConnectedOptions().isEmpty();
     }
 
     String getMapFrom() {

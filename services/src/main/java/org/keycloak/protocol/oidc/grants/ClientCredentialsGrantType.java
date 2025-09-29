@@ -47,6 +47,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
+
 /**
  * OAuth 2.0 Client Credentials Grant
  * https://datatracker.ietf.org/doc/html/rfc6749#section-4.4
@@ -202,9 +204,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
      * until RAR is fully implemented.
      */
     private void setAuthorizationDetailsNoteIfIncluded(AuthenticationSessionModel authSession) {
-        String authorizationDetails = formParams.getFirst(OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM);
+        String authorizationDetails = formParams.getFirst(AUTHORIZATION_DETAILS_PARAM);
         if (authorizationDetails != null) {
-            authSession.setClientNote(OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM, authorizationDetails);
+            authSession.setClientNote(AUTHORIZATION_DETAILS_PARAM, authorizationDetails);
         }
     }
 }

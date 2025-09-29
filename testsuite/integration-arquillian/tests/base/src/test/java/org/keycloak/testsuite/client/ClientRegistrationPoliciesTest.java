@@ -383,6 +383,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         List<String> clientScopes = getProviderConfigProperty(clientScopeRep, ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
         Assert.assertFalse(clientScopes.isEmpty());
         Assert.assertTrue(clientScopes.contains(OAuth2Constants.SCOPE_PROFILE));
+        Assert.assertTrue(clientScopes.contains(OAuth2Constants.SCOPE_OPENID));
         Assert.assertFalse(clientScopes.contains("foo"));
         Assert.assertFalse(clientScopes.contains("bar"));
 

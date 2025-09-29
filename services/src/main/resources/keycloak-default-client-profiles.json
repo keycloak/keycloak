@@ -139,7 +139,81 @@
     },
     {
       "name": "fapi-2-security-profile",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile' specification.",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile Final' specification.",
+      "executors": [
+        {
+          "executor": "confidential-client",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-client-authenticator",
+          "configuration": {
+            "allowed-client-authenticators": [
+              "client-jwt",
+              "client-x509"
+            ],
+            "default-client-authenticator": "client-jwt"
+          }
+        },
+        {
+          "executor": "secure-client-uris",
+          "configuration": {}
+        },
+        {
+          "executor": "secure-signature-algorithm",
+          "configuration": {
+            "default-algorithm": "PS256"
+          }
+        },
+        {
+          "executor": "secure-signature-algorithm-signed-jwt",
+          "configuration": {
+            "require-client-assertion": false
+          }
+        },
+        {
+          "executor": "consent-required",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "full-scope-disabled",
+          "configuration": {
+            "auto-configure": true
+          }
+        },
+        {
+          "executor": "reject-implicit-grant",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "holder-of-key-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "pkce-enforcer",
+          "configuration": {
+            "auto-configure": "true"
+          }
+        },
+        {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
+        },
+        {
+          "executor" : "secure-par-content",
+          "configuration" : {}
+        }
+      ]
+    },
+    {
+      "name": "fapi-2-message-signing",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing Final' specification.",
       "executors": [
         {
           "executor": "confidential-client",
@@ -204,76 +278,6 @@
         {
           "executor" : "secure-par-content",
           "configuration" : {}
-        }
-      ]
-    },
-    {
-      "name": "fapi-2-message-signing",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing' specification.",
-      "executors": [
-        {
-          "executor": "confidential-client",
-          "configuration": {}
-        },
-        {
-          "executor": "secure-client-authenticator",
-          "configuration": {
-            "allowed-client-authenticators": [
-              "client-jwt",
-              "client-x509"
-            ],
-             "default-client-authenticator": "client-jwt"
-          }
-        },
-        {
-          "executor": "secure-client-uris",
-          "configuration": {}
-        },
-        {
-          "executor": "secure-signature-algorithm",
-          "configuration": {
-            "default-algorithm": "PS256"
-          }
-        },
-        {
-          "executor": "secure-signature-algorithm-signed-jwt",
-          "configuration": {
-              "require-client-assertion": false
-          }
-        },
-        {
-          "executor": "consent-required",
-          "configuration": {
-            "auto-configure": true
-          }
-        },
-        {
-          "executor": "full-scope-disabled",
-          "configuration": {
-            "auto-configure": true
-          }
-        },
-        {
-          "executor": "reject-implicit-grant",
-          "configuration": {
-            "auto-configure": "true"
-          }
-        },
-        {
-          "executor": "holder-of-key-enforcer",
-          "configuration": {
-            "auto-configure": "true"
-          }
-        },
-        {
-          "executor": "pkce-enforcer",
-          "configuration": {
-            "auto-configure": "true"
-          }
-        },
-        {
-          "executor" : "secure-par-content",
-          "configuration" : {}
         },
         {
           "executor": "secure-request-object",
@@ -282,6 +286,10 @@
             "available-period": "3600",
             "encryption-required": false
           }
+        },
+        {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
         }
       ]
     },
@@ -360,7 +368,9 @@
         {
           "executor": "dpop-bind-enforcer",
           "configuration": {
-            "auto-configure": "true"
+            "auto-configure": "true",
+            "enforce-authorization-code-binding-to-dpop": "false",
+            "allow-only-refresh-token-binding": "false"
           }
         },
         {
@@ -379,7 +389,7 @@
     },
     {
       "name": "fapi-2-dpop-security-profile",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile' with DPoP specification.",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Security Profile Final' using DPoP specification.",
       "executors": [
         {
           "executor": "confidential-client",
@@ -436,20 +446,26 @@
           }
         },
         {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
+        },
+        {
           "executor": "secure-par-content",
           "configuration": {}
         },
         {
           "executor": "dpop-bind-enforcer",
           "configuration": {
-            "auto-configure": "true"
+            "auto-configure": "true",
+            "enforce-authorization-code-binding-to-dpop": "false",
+            "allow-only-refresh-token-binding": "false"
           }
         }
       ]
     },
     {
       "name": "fapi-2-dpop-message-signing",
-      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing' with DPoP specification.",
+      "description": "Client profile, which enforce clients to conform 'FAPI 2.0 Message Signing Final' with DPoP specification.",
       "executors": [
         {
           "executor": "confidential-client",
@@ -520,8 +536,14 @@
         {
           "executor": "dpop-bind-enforcer",
           "configuration": {
-            "auto-configure": "true"
+            "auto-configure": "true",
+            "enforce-authorization-code-binding-to-dpop": "false",
+            "allow-only-refresh-token-binding": "false"
           }
+        },
+        {
+          "executor": "secure-client-authentication-assertion",
+          "configuration": {}
         }
       ]
     },

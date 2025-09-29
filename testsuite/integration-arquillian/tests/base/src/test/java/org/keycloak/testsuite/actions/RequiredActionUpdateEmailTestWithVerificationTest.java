@@ -16,22 +16,14 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
 import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
-
+import jakarta.ws.rs.core.Response.Status;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,19 +33,35 @@ import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToke
 import org.keycloak.authentication.requiredactions.UpdateEmail;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -173,6 +181,26 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("The link you clicked is an old stale link and is no longer valid. Maybe you have already verified your email.", errorPage.getError());
 		assertTrue(ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 	}
+
+    @Test
+    public void testSkipHeadRequestWhenFollowingVerificationLink() throws MessagingException, IOException {
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+
+        updateEmailPage.assertCurrent();
+        updateEmailPage.changeEmail("new@localhost");
+
+        String confirmationLink = fetchEmailConfirmationLink("new@localhost");
+
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            try (SimpleHttpResponse response = SimpleHttpDefault.doHead(confirmationLink, httpClient).asResponse()) {
+                assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            }
+        }
+
+        driver.navigate().to(confirmationLink);
+        infoPage.assertCurrent();
+    }
 
     @Test
     public void testForceEmailVerification() throws MessagingException, IOException {
@@ -343,6 +371,45 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("Email already exists.", errorPage.getError());
 		assertTrue(ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
 	}
+
+    @Test
+    public void testForceEmailVerificationWithUpdateProfileAndExistingEmail() {
+        // Save original configuration to restore later
+        RequiredActionConfigRepresentation originalConfig = testRealm().flows().getRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name());
+
+        try {
+            // Configure UPDATE_EMAIL to force email verification
+            RequiredActionConfigRepresentation config = new RequiredActionConfigRepresentation();
+            config.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.TRUE.toString());
+            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), config);
+
+            // Create user with UPDATE_PROFILE required action
+            UserRepresentation user = UserBuilder.create()
+                    .enabled(true)
+                    .username("profile-test-user@localhost")
+                    .email("profile-test-user@localhost")
+                    .firstName("Tom")
+                    .lastName("Brady")
+                    .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                    .build();
+            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+
+            // Login and update profile (first and last name only, no email)
+            loginPage.open();
+            loginPage.login("profile-test-user@localhost", "password");
+
+            updateProfilePage.update("Updated", "Name");
+
+            if (errorPage.isCurrent()) {
+                fail("There should not be an exception thrown. Error: " + errorPage.getError());
+            }
+        } finally {
+            // Always restore original configuration
+            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
+            events.clear();
+            ApiUtil.removeUserByUsername(testRealm(), "profile-test-user@localhost");
+        }
+    }
 
 	private String fetchEmailConfirmationLink(String emailRecipient) throws MessagingException, IOException {
 		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();

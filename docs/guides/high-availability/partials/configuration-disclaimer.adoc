@@ -1,0 +1,7 @@
+<@profile.ifProduct>
+Any deviation from the configuration above is not tested and any issue with {project_name} may need to be replicated in a tested environment for support.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+While equivalent setups should work, you will need to verify the performance and failure behavior of your environment.
+We provide functional tests, failure tests and load tests in the https://github.com/keycloak/keycloak-benchmark[Keycloak Benchmark Project].
+</@profile.ifCommunity>

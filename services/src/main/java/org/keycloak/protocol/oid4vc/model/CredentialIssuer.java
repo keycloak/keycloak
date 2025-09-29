@@ -52,20 +52,20 @@ public class CredentialIssuer {
     @JsonProperty("notification_endpoint")
     private String notificationEndpoint;
 
-    @JsonProperty("credential_response_encryption")
-    private CredentialResponseEncryption credentialResponseEncryption;
-
     @JsonProperty("batch_credential_issuance")
     private BatchCredentialIssuance batchCredentialIssuance;
-
-    @JsonProperty("signed_metadata")
-    private String signedMetadata;
 
     @JsonProperty("credential_configurations_supported")
     private Map<String, SupportedCredentialConfiguration> credentialsSupported;
 
     @JsonProperty("display")
     private List<DisplayObject> display;
+
+    @JsonProperty("credential_response_encryption")
+    private CredentialResponseEncryptionMetadata credentialResponseEncryption;
+
+    @JsonProperty("credential_request_encryption")
+    private CredentialRequestEncryptionMetadata credentialRequestEncryption;
 
     public String getCredentialIssuer() {
         return credentialIssuer;
@@ -121,30 +121,12 @@ public class CredentialIssuer {
         return this;
     }
 
-    public CredentialResponseEncryption getCredentialResponseEncryption() {
-        return credentialResponseEncryption;
-    }
-
-    public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryption credentialResponseEncryption) {
-        this.credentialResponseEncryption = credentialResponseEncryption;
-        return this;
-    }
-
     public BatchCredentialIssuance getBatchCredentialIssuance() {
         return batchCredentialIssuance;
     }
 
     public CredentialIssuer setBatchCredentialIssuance(BatchCredentialIssuance batchCredentialIssuance) {
         this.batchCredentialIssuance = batchCredentialIssuance;
-        return this;
-    }
-
-    public String getSignedMetadata() {
-        return signedMetadata;
-    }
-
-    public CredentialIssuer setSignedMetadata(String signedMetadata) {
-        this.signedMetadata = signedMetadata;
         return this;
     }
 
@@ -169,46 +151,22 @@ public class CredentialIssuer {
         return this;
     }
 
-    /**
-     * Represents the credential_response_encryption metadata parameter.
-     */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class CredentialResponseEncryption {
-        @JsonProperty("alg_values_supported")
-        private List<String> algValuesSupported;
+    public CredentialResponseEncryptionMetadata getCredentialResponseEncryption() {
+        return credentialResponseEncryption;
+    }
 
-        @JsonProperty("enc_values_supported")
-        private List<String> encValuesSupported;
+    public CredentialIssuer setCredentialResponseEncryption(CredentialResponseEncryptionMetadata credentialResponseEncryption) {
+        this.credentialResponseEncryption = credentialResponseEncryption;
+        return this;
+    }
 
-        @JsonProperty("encryption_required")
-        private Boolean encryptionRequired;
+    public CredentialRequestEncryptionMetadata getCredentialRequestEncryption() {
+        return credentialRequestEncryption;
+    }
 
-        public List<String> getAlgValuesSupported() {
-            return algValuesSupported;
-        }
-
-        public CredentialResponseEncryption setAlgValuesSupported(List<String> algValuesSupported) {
-            this.algValuesSupported = algValuesSupported;
-            return this;
-        }
-
-        public List<String> getEncValuesSupported() {
-            return encValuesSupported;
-        }
-
-        public CredentialResponseEncryption setEncValuesSupported(List<String> encValuesSupported) {
-            this.encValuesSupported = encValuesSupported;
-            return this;
-        }
-
-        public Boolean getEncryptionRequired() {
-            return encryptionRequired;
-        }
-
-        public CredentialResponseEncryption setEncryptionRequired(Boolean encryptionRequired) {
-            this.encryptionRequired = encryptionRequired;
-            return this;
-        }
+    public CredentialIssuer setCredentialRequestEncryption(CredentialRequestEncryptionMetadata credentialRequestEncryption) {
+        this.credentialRequestEncryption = credentialRequestEncryption;
+        return this;
     }
 
     /**

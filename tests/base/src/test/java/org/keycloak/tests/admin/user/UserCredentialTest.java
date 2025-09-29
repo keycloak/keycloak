@@ -307,7 +307,7 @@ public class UserCredentialTest extends AbstractUserTest {
             builder.password("password");
             builder.name("John", "Doh");
             builder.email("john-doh@localhost");
-            builder.emailVerified();
+            builder.emailVerified(true);
 
             return builder;
         }
@@ -321,7 +321,7 @@ public class UserCredentialTest extends AbstractUserTest {
             builder.password("password");
             builder.name("Tom", "Brady");
             builder.email("test-user@localhost");
-            builder.emailVerified();
+            builder.emailVerified(true);
 
             return builder;
         }
@@ -335,7 +335,7 @@ public class UserCredentialTest extends AbstractUserTest {
             builder.password("password");
             builder.name("Otp", "1");
             builder.email("otp1@redhat.com");
-            builder.emailVerified();
+            builder.emailVerified(true);
             builder.totpSecret("DJmQfC73VGFhw7D4QJ8A");
 
             return builder;
@@ -350,7 +350,7 @@ public class UserCredentialTest extends AbstractUserTest {
             builder.password("password");
             builder.name("Otp", "2");
             builder.email("otp2@redhat.com");
-            builder.emailVerified();
+            builder.emailVerified(true);
             builder.totpSecret("DJmQfC73VGFhw7D4QJ8A");
             builder.totpSecret("ABCQfC73VGFhw7D4QJ8A");
 

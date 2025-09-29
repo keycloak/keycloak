@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -32,7 +33,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
-public final class LoggingPropertyMappers {
+public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
     private static final String CONSOLE_ENABLED_MSG = "Console log handler is activated";
     private static final String FILE_ENABLED_MSG = "File log handler is activated";
@@ -41,12 +42,11 @@ public final class LoggingPropertyMappers {
 
     private final static Map<String, Map<String, String>> rootLogLevels = new HashMap<String, Map<String,String>>();
 
-    private LoggingPropertyMappers() {
-    }
 
-    public static PropertyMapper<?>[] getMappers() {
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
         rootLogLevels.clear(); // reset the cached root log level and categories
-        PropertyMapper<?>[] defaultMappers = new PropertyMapper[]{
+        return List.of(
                 fromOption(LoggingOptions.LOG)
                         .paramLabel("<handler>")
                         .build(),
@@ -86,7 +86,7 @@ public final class LoggingPropertyMappers {
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_COLOR)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
-                        .to("quarkus.log.console.color")
+                        .to("quarkus.console.color")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_ENABLED)
                         .mapFrom(LoggingOptions.LOG, LoggingPropertyMappers.resolveLogHandler(LoggingOptions.DEFAULT_LOG_HANDLER.name()))
@@ -258,11 +258,9 @@ public final class LoggingPropertyMappers {
                         .isEnabled(LoggingPropertyMappers::isMdcActive, "MDC logging is enabled")
                         .to("kc.spi-mapped-diagnostic-context--default--mdc-keys")
                         .paramLabel("keys")
-                        .build(),
+                        .build()
 
-        };
-
-        return defaultMappers;
+        );
     }
 
     public static boolean isConsoleEnabled() {

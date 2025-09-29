@@ -56,6 +56,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,11 @@ import java.util.zip.GZIPInputStream;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vlastimil Elias (velias at redhat dot com)
  * @author David Klassen (daviddd.kl@gmail.com)
+ *
+ * @deprecated An updated version of SimpleHttp is available in {@link org.keycloak.http.simple.SimpleHttp}. This
+ * version will be deleted in Keycloak 27.0
  */
+@Deprecated
 public class SimpleHttp {
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -167,6 +172,31 @@ public class SimpleHttp {
         return null;
     }
 
+    public Map<String, String> getHeaders() {
+        if (headers == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(headers);
+    }
+
+    public String getParam(String name) {
+        if (params == null) {
+            return null;
+        }
+        return params.get(name);
+    }
+
+    public Map<String, String> getParams() {
+        if (params == null) {
+            return null;
+        }
+        return Collections.unmodifiableMap(params);
+    }
+
+    public Object getEntity() {
+        return entity;
+    }
+
     public SimpleHttp json(Object entity) {
         this.entity = entity;
         return this;
@@ -174,6 +204,11 @@ public class SimpleHttp {
 
     public SimpleHttp entity(HttpEntity entity) {
         this.entity = entity;
+        return this;
+    }
+
+    public SimpleHttp params(Map<String, String> params) {
+        this.params = params;
         return this;
     }
 

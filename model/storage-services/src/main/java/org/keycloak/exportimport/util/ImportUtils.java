@@ -36,10 +36,8 @@ import org.keycloak.storage.datastore.DefaultExportImportManager;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -147,20 +145,9 @@ public class ImportUtils {
                 // Case with more realms in stream
                 parser.nextToken();
 
-                List<RealmRepresentation> realmReps = new ArrayList<RealmRepresentation>();
                 while (parser.getCurrentToken() == JsonToken.START_OBJECT) {
                     RealmRepresentation realmRep = parser.readValueAs(RealmRepresentation.class);
                     parser.nextToken();
-
-                    // Ensure that master realm is imported first
-                    if (Config.getAdminRealm().equals(realmRep.getRealm())) {
-                        realmReps.add(0, realmRep);
-                    } else {
-                        realmReps.add(realmRep);
-                    }
-                }
-
-                for (RealmRepresentation realmRep : realmReps) {
                     result.put(realmRep.getRealm(), realmRep);
                 }
             } else if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
@@ -174,7 +161,6 @@ public class ImportUtils {
 
         return result;
     }
-
 
     // Assuming that it's invoked inside transaction
     public static void importUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is, boolean federated, Consumer<KeycloakSession> onUserCreated) throws IOException {

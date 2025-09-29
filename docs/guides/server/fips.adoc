@@ -129,7 +129,7 @@ By using TRACE level, you can check that the startup log contains `KC` provider 
 
 [source]
 ----
-KC(BCFIPS version 2.0 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
+KC(BCFIPS version 2.0102 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ----
 
 === Cryptography restrictions in strict mode
@@ -194,8 +194,6 @@ property above for adding XMLDSig provider into that file. Then start your {proj
 For Kerberos/SPNEGO, the security provider `SunJGSS` is not yet fully FIPS compliant. Hence it is not recommended to add it to your list of security providers
 if you want to be FIPS compliant. The `KERBEROS` feature is disabled by default in {project_name} when it is executed on FIPS platform and when security provider is not
 available. Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=2051628[bugzilla].
-
-The algorithm `EdDSA` cannot be used in FIPS mode. Although the current `BCFIPS` provider supports `Ed25519` and `Ed448` curves, the resulting keys do not implement the standard JDK interfaces to manage them (`EdECKey`, `EdECPublicKey`, `EdECPrivateKey`,...), and {project_name} cannot use them for signatures.
 
 == Run the CLI on the FIPS host
 

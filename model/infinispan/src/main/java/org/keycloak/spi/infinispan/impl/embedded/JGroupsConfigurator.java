@@ -17,17 +17,29 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
+import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
 import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_NODE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_SITE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.MACHINE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.NODE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.RACK_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.SITE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.TRACING;
 
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -41,7 +53,9 @@ import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.remoting.transport.jgroups.EmbeddedJGroupsChannelConfigurator;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
+import org.jgroups.Address;
 import org.jgroups.Global;
+import org.jgroups.JChannel;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.protocols.TCP;
@@ -49,11 +63,13 @@ import org.jgroups.protocols.TCP_NIO2;
 import org.jgroups.protocols.UDP;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.DefaultSocketFactory;
+import org.jgroups.util.ExtendedUUID;
 import org.jgroups.util.SocketFactory;
+import org.jgroups.util.UUID;
 import org.keycloak.Config;
+import org.keycloak.common.util.Retry;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -63,10 +79,12 @@ import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
 import org.keycloak.jgroups.header.TracerHeader;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.impl.Util;
+import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 
 /**
  * Utility class to configure JGroups based on the Keycloak configuration.
@@ -76,6 +94,7 @@ public final class JGroupsConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String TLS_PROTOCOL_VERSION = "TLSv1.3";
     private static final String TLS_PROTOCOL = "TLS";
+    public static final String JGROUPS_ADDRESS_SEQUENCE = "JGROUPS_ADDRESS_SEQUENCE";
 
     private JGroupsConfigurator() {
     }
@@ -89,6 +108,26 @@ public final class JGroupsConfigurator {
     }
 
     /**
+     * Checks if Infinispan is configured with or without a clustering.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} with the Infinispan configuration.
+     * @return {@code true} if Infinispan is configured without clustering.
+     */
+    public static boolean isLocal(ConfigurationBuilderHolder holder) {
+        return transportOf(holder).getTransport() == null;
+    }
+
+    /**
+     * Checks if Infinispan is configured with or without a clustering.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} with the Infinispan configuration.
+     * @return {@code true} if Infinispan is configured with clustering enabled.
+     */
+    public static boolean isClustered(ConfigurationBuilderHolder holder) {
+        return transportOf(holder).getTransport() != null;
+    }
+
+    /**
      * Configures JGroups based on the Keycloak configuration.
      *
      * @param config  The Keycloak configuration.
@@ -96,12 +135,15 @@ public final class JGroupsConfigurator {
      * @param session The {@link KeycloakSession} sessions for Database access.
      */
     public static void configureJGroups(Config.Scope config, ConfigurationBuilderHolder holder, KeycloakSession session) {
+        if (isLocal(holder)) {
+            return;
+        }
         var stack = config.get(DefaultCacheEmbeddedConfigProviderFactory.STACK);
         if (stack != null) {
             transportOf(holder).stack(stack);
         }
         configureTransport(config);
-        boolean tracingEnabled = config.getBoolean(DefaultCacheEmbeddedConfigProviderFactory.TRACING, false);
+        boolean tracingEnabled = config.getBoolean(TRACING, false);
         configureDiscovery(holder, session, tracingEnabled);
         configureTls(holder, session);
         warnDeprecatedStack(holder);
@@ -114,30 +156,29 @@ public final class JGroupsConfigurator {
      * @param holder The {@link ConfigurationBuilderHolder} where the transport is configured.
      */
     public static void configureTopology(Config.Scope config, ConfigurationBuilderHolder holder) {
-        if (System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME) != null) {
+        if (System.getProperty(JBOSS_SITE_NAME) != null) {
             throw new IllegalArgumentException(
                     String.format("System property %s is in use. Use --spi-cache-embedded-%s-site-name config option instead",
-                            InfinispanConnectionProvider.JBOSS_SITE_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
+                            JBOSS_SITE_NAME, PROVIDER_ID));
         }
-        if (System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME) != null) {
+        if (System.getProperty(JBOSS_NODE_NAME) != null) {
             throw new IllegalArgumentException(
                     String.format("System property %s is in use. Use --spi-cache-embedded-%s-node-name config option instead",
-                            InfinispanConnectionProvider.JBOSS_NODE_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
+                            JBOSS_NODE_NAME, PROVIDER_ID));
         }
         var transport = transportOf(holder);
-        var nodeName = config.get(DefaultCacheEmbeddedConfigProviderFactory.NODE_NAME);
-        if (nodeName != null) {
-            transport.nodeName(nodeName);
-        }
         //legacy option, for backwards compatibility --spi-connections-infinispan-quarkus-site-name
         var legacySiteName = Config.scope(InfinispanConnectionSpi.SPI_NAME, "quarkus").get("site-name");
         if (legacySiteName != null) {
-            logger.warn("--spi-connections-infinispan-quarkus-site-name is deprecated and may be removed in the future. Use --spi-cache-embedded-%s-site-name".formatted(DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID));
+            logger.warn("--spi-connections-infinispan-quarkus-site-name is deprecated and may be removed in the future. Use --spi-cache-embedded-%s-site-name".formatted(PROVIDER_ID));
         }
-        var siteName = config.get(DefaultCacheEmbeddedConfigProviderFactory.SITE_NAME, legacySiteName);
-        if (siteName != null) {
+        var siteName = config.get(SITE_NAME, legacySiteName);
+        if (siteName != null && !siteName.isEmpty()) {
             transport.siteId(siteName);
         }
+        readConfigAndSet(config, RACK_NAME, transport::rackId);
+        readConfigAndSet(config, MACHINE_NAME, transport::machineId);
+        readConfigAndSet(config, NODE_NAME, transport::nodeName);
     }
 
     static void createJGroupsProperties(ProviderConfigurationBuilder builder) {
@@ -201,10 +242,51 @@ public final class JGroupsConfigurator {
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
         var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
-        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp), null);
+
+        String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
+
+        Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
+                s -> prepareJGroupsAddress(s, clusterName)),
+                50, 10);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(stackName, stack, connectionFactory, isUdp, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
+    }
+
+    /**
+     * Generate the next sequence of the address, and place it into the JGROUPS_PING table so other nodes can see it.
+     * If we are the first = smallest entry, the other nodes will wait for us to become a coordinator
+     * for max_join_attempts x all_clients_retry_timeout = 10 x 100 ms = 1 second. Otherwise, we will wait for that
+     * one second. This prevents a split-brain scenario on a concurrent startup.
+     */
+    private static Address prepareJGroupsAddress(KeycloakSession session, String clusterName) {
+        var storage = session.getProvider(ServerConfigStorageProvider.class);
+        String seq = storage.loadOrCreate(JGROUPS_ADDRESS_SEQUENCE, () -> "0");
+        long value = Long.parseLong(seq) + 1;
+        String newSeq = Long.toString(value);
+        storage.replace(JGROUPS_ADDRESS_SEQUENCE, seq, newSeq);
+
+        var cp = session.getProvider(JpaConnectionProvider.class);
+        var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", cp.getEntityManager());
+        String statement = String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName);
+
+        ExtendedUUID address = new ExtendedUUID(0, value);
+
+
+        cp.getEntityManager().runWithConnection(o -> {
+            Connection con = (Connection) o;
+            try (PreparedStatement s = con.prepareStatement(statement)) {
+                s.setString(1, org.jgroups.util.Util.addressToString(new UUID(address.getMostSignificantBits(), address.getLeastSignificantBits()))); // address
+                s.setString(2, "(starting)"); // name
+                s.setString(3, clusterName); // cluster name
+                s.setString(4, "127.0.0.1:0"); // ip = new IpAddress("localhost", 0).toString()
+                s.setBoolean(5, false); // coord
+                s.execute();
+            }
+        });
+
+        return address;
     }
 
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled) {
@@ -286,13 +368,28 @@ public final class JGroupsConfigurator {
         return "jdbc-ping".equals(stackName) || "jdbc-ping-udp".equals(stackName);
     }
 
+    private static void readConfigAndSet(Config.Scope scope, String configKey, Consumer<String> consumer) {
+        String value = scope.get(configKey);
+        if (value != null && !value.isEmpty()) {
+            consumer.accept(value);
+        }
+    }
+
     private static class JpaFactoryAwareJGroupsChannelConfigurator extends EmbeddedJGroupsChannelConfigurator {
 
         private final JpaConnectionProviderFactory factory;
+        private final Address address;
 
-        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp) {
+        public JpaFactoryAwareJGroupsChannelConfigurator(String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory factory, boolean isUdp, Address address) {
             super(name, stack, null, isUdp ? "udp" : "tcp");
             this.factory = Objects.requireNonNull(factory);
+            this.address = address;
+        }
+
+        @Override
+        protected JChannel amendChannel(JChannel channel) {
+            channel.addAddressGenerator(() -> address);
+            return super.amendChannel(channel);
         }
 
         @Override

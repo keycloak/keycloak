@@ -20,4 +20,5 @@ export default {
   guides: `${keycloakHomepageURL}/guides`,
   community: `${keycloakHomepageURL}/community`,
   blog: `${keycloakHomepageURL}/blog`,
+  workflowsUrl: `https://github.com/keycloak/keycloak/issues/39888`,
 };

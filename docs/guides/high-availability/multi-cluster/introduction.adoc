@@ -1,0 +1,137 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Multi-cluster deployments"
+summary="Connect multiple {project_name} deployments in independent {kubernetes} clusters" >
+
+{project_name} supports deployments that consist of multiple {project_name} instances that connect to each other using its embedded Infinispan caches. Load balancers can distribute the load evenly across those instances.
+Those setups are intended for transparent networks, see <@links.ha id="single-cluster-introduction" /> for more details.
+
+A multi-cluster setup adds additional components, which allows non-transparent networks to be bridged,
+in order to provide additional high availability that may be needed for some environments.
+
+== When to use a multi-cluster setup
+
+The multi-cluster deployment capabilities of {project_name} are targeted at use cases that:
+
+* Are constrained to a single
+<@profile.ifProduct>
+AWS Region.
+</@profile.ifProduct>
+<@profile.ifCommunity>
+AWS Region or an equivalent low-latency setup.
+</@profile.ifCommunity>
+* Permit planned outages for maintenance.
+* Fit within a defined user and request count.
+* Can accept the impact of periodic outages.
+* Deployed in data centers with the required network latency and database configuration
+
+[#multi-cluster-tested-configuration]
+== Tested Configuration
+
+We regularly test {project_name} with the following configuration:
+
+* Two OpenShift single-AZ clusters, in the same AWS Region
+** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
+using ROSA HCP.
+
+** All worker nodes reside in a single Availability Zone.
+** OpenShift version 4.17.
+
+* Amazon Aurora PostgreSQL database
+** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone
+** Version ${properties["aurora-postgresql.version"]}
+
+* AWS Global Accelerator, sending traffic to both ROSA clusters
+
+* AWS Lambda triggered by ROSA's Prometheus and Alert Manager to automate failover
+
+[#multi-cluster-supported-configuration]
+== Supported Configuration
+
+The following configurations are supported:
+
+* Two {kubernetes} single-AZ clusters, in the same AWS Region
+** Provisioned with https://www.redhat.com/en/technologies/cloud-computing/openshift/aws[Red Hat OpenShift Service on AWS] (ROSA),
+either ROSA HCP or ROSA classic.
+
+** Each {kubernetes} cluster has all its workers in a single Availability Zone.
+<@profile.ifProduct>
+** OpenShift version
+4.17 (or later).
+</@profile.ifProduct>
+<@profile.ifCommunity>
+** Kubernetes version 1.30
+</@profile.ifCommunity>
+
+* Amazon Aurora PostgreSQL database
+** High availability with a primary DB instance in one availability zone, and a synchronously replicated reader in the second availability zone
+** Version ${properties["aurora-postgresql.version"]}
+
+* AWS Global Accelerator, sending traffic to both ROSA clusters
+
+* AWS Lambda to automate failover
+
+<#include "/high-availability/partials/configuration-disclaimer.adoc" />
+
+Read more on each item in the <@links.ha id="multi-cluster-building-blocks" /> {section}.
+
+[#multi-cluster-load]
+<#include "/high-availability/partials/tested-load.adoc" />
+
+<@profile.ifCommunity>
+While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} name instances and databases.
+</@profile.ifCommunity>
+
+See the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section} for more information.
+
+[#multi-cluster-limitations]
+== Limitations
+
+<@profile.ifCommunity>
+Even with the additional redundancy of the two sites, downtimes can still occur:
+</@profile.ifCommunity>
+
+* During upgrades of {project_name} or {jdgserver_name} both sites needs to be taken offline for the duration of the upgrade.
+* During certain failure scenarios, there may be downtime of up to 5 minutes.
+* After certain failure scenarios, manual intervention may be required to restore redundancy by bringing the failed site back online.
+* During certain switchover scenarios, there may be downtime of up to 5 minutes.
+
+For more details on limitations see the <@links.ha id="multi-cluster-concepts" /> {section}.
+
+== Next steps
+
+The different {sections} introduce the necessary concepts and building blocks.
+For each building block, a blueprint shows how to set a fully functional example.
+Additional performance tuning and security hardening are still recommended when preparing a production setup.
+
+<@profile.ifCommunity>
+== Concept and building block overview
+
+* <@links.ha id="multi-cluster-concepts" />
+* <@links.ha id="multi-cluster-building-blocks" />
+* <@links.ha id="multi-cluster-concepts-database-connections" />
+* <@links.ha id="multi-cluster-concepts-threads" />
+* <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" />
+* <@links.ha id="multi-cluster-concepts-infinispan-cli-batch" />
+
+== Blueprints for building blocks
+
+* <@links.ha id="multi-cluster-deploy-aurora" />
+* <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc" />
+* <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" />
+* <@links.ha id="multi-cluster-deploy-aws-accelerator-loadbalancer" />
+* <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda" />
+
+== Operational procedures
+
+* <@links.ha id="multi-cluster-operate-synchronize" />
+* <@links.ha id="multi-cluster-operate-site-offline" />
+* <@links.ha id="multi-cluster-operate-site-online" />
+* <@links.ha id="multi-cluster-health-checks" />
+
+</@profile.ifCommunity>
+
+</@tmpl.guide>

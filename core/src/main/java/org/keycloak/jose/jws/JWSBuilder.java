@@ -33,6 +33,7 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,7 +44,7 @@ public class JWSBuilder {
     protected String kid;
     protected String x5t;
     protected JWK jwk;
-    protected List<X509Certificate> x5c;
+    protected List<String> x5c;
     protected String contentType;
     protected byte[] contentBytes;
 
@@ -68,12 +69,29 @@ public class JWSBuilder {
     }
 
     public JWSBuilder x5c(List<X509Certificate> x5c) {
-        this.x5c = x5c;
+        this.x5c = x5c.stream()
+                .map(x509Certificate -> {
+                    try {
+                        return Base64.encodeBytes(x509Certificate.getEncoded());
+                    } catch (CertificateEncodingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toList());
         return this;
     }
 
     public JWSBuilder contentType(String type) {
         this.contentType = type;
+        return this;
+    }
+
+    public JWSBuilder header(JWSHeader header) {
+        this.type = header.getType();
+        this.kid = header.getKeyId();
+        this.jwk = header.getKey();
+        this.x5c = header.getX5c();
+        this.contentType = header.getContentType();
         return this;
     }
 
@@ -108,15 +126,11 @@ public class JWSBuilder {
         if (x5c != null && !x5c.isEmpty()) {
             builder.append(",\"x5c\" : [");
             for (int i = 0; i < x5c.size(); i++) {
-                X509Certificate certificate = x5c.get(i);
+                String certificate = x5c.get(i);
                 if (i > 0) {
                     builder.append(",");
                 }
-                try {
-                    builder.append("\"").append(Base64.encodeBytes(certificate.getEncoded())).append("\"");
-                } catch (CertificateEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                builder.append("\"").append(certificate).append("\"");
             }
             builder.append("]");
         }

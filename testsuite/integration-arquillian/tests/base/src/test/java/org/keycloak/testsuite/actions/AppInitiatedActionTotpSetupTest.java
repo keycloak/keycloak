@@ -16,14 +16,13 @@
  */
 package org.keycloak.testsuite.actions;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -33,17 +32,24 @@ import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.openqa.selenium.By;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -85,6 +91,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Page
     protected RegisterPage registerPage;
+
+    @Page
+    protected SetupRecoveryAuthnCodesPage setupRecoveryAuthnCodesPage;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -174,8 +183,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         configureRealmEnableRequiredActionByAlias("CONFIGURE_TOTP", false);
         // Set "Browser - Conditional OTP" execution requirement to CONDITIONAL
         configureRealmSetExecutionRequirementByDisplayName("browser", "Browser - Conditional 2FA", AuthenticationExecutionModel.Requirement.CONDITIONAL);
-        // Set "Condition - user configured" execution requirement to DISABLED
+        // Set "Condition - user configured" and "Condition - current credential" execution requirement to DISABLED to have no condition
         configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - user configured", AuthenticationExecutionModel.Requirement.DISABLED);
+        configureRealmSetExecutionRequirementByDisplayName("browser", "Condition - credential", AuthenticationExecutionModel.Requirement.DISABLED);
         // Set "OTP Form" execution requirement to ALTERNATIVE
         configureRealmSetExecutionRequirementByDisplayName("browser", "OTP Form", AuthenticationExecutionModel.Requirement.ALTERNATIVE);
     }
@@ -612,6 +622,63 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
                 .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);
 
+    }
+
+    @Test(expected = AssertionError.class)
+    public void setupTotpRegisterVerifyRecoveryCodesSetupDisabled() {
+        setupTotpRegisterVerifyRecoveryCodesSetup(false);
+    }
+
+    @Test
+    public void setupTotpRegisterVerifyRecoveryCodesSetupEnabled() {
+        setupTotpRegisterVerifyRecoveryCodesSetup(true);
+    }
+
+    private void setupTotpRegisterVerifyRecoveryCodesSetup(boolean enforceRecoveryCodesSetup) {
+        configureTotpActionToEnforceRecoveryCodes(enforceRecoveryCodesSetup);
+
+        try {
+            // Login
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            // Configure OTP as AIA
+            doAIA();
+            totpPage.assertCurrent();
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+
+            // The next page should be the setup page for recovery codes
+            setupRecoveryAuthnCodesPage.assertCurrent();
+            setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
+
+            // call the action the second time, now no recovery code setup should be shown
+            doAIA();
+            totpPage.assertCurrent();
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+            try {
+                // This should now fail
+                setupRecoveryAuthnCodesPage.assertCurrent();
+                Assert.fail("Expected AssertionError was not thrown");
+            } catch (AssertionError e) {
+                Assert.assertTrue(e.getMessage().startsWith("Expected SetupRecoveryAuthnCodesPage"));
+            }
+        } finally {
+            // finally, reset totp action config
+            configureTotpActionToEnforceRecoveryCodes(false);
+        }
+    }
+
+    private void configureTotpActionToEnforceRecoveryCodes(boolean enforceRecoveryCodes) {
+        List<RequiredActionProviderRepresentation> requiredActions = testRealm().flows().getRequiredActions();
+        RequiredActionProviderRepresentation totpAction = requiredActions.stream().filter(ra -> ra.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())).findFirst().orElseThrow();
+        totpAction.setConfig(Map.of(UpdateTotp.ADD_RECOVERY_CODES, Boolean.toString(enforceRecoveryCodes)));
+        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
+        testRealm().flows().getExecutions("browser").forEach(exe -> {
+            if (Objects.equals(exe.getProviderId(), RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)) {
+                exe.setRequirement(enforceRecoveryCodes ? "ALTERNATIVE" : "DISABLED");
+                testRealm().flows().updateExecutions("browser", exe);
+            }
+        });
     }
 
 }

@@ -17,16 +17,27 @@
 package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -37,6 +48,9 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.jwe.JWE;
@@ -68,16 +82,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -90,7 +94,7 @@ import java.util.Optional;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String SCOPE_OPENID = "openid";
@@ -98,7 +102,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String USER_INFO = "UserInfo";
     public static final String FEDERATED_ACCESS_TOKEN_RESPONSE = "FEDERATED_ACCESS_TOKEN_RESPONSE";
     public static final String VALIDATED_ID_TOKEN = "VALIDATED_ID_TOKEN";
-    public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
     public static final String EXCHANGE_PROVIDER = "EXCHANGE_PROVIDER";
     public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
     private static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
@@ -156,7 +159,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         String url = logoutUri.build().toString();
         try {
-            int status = SimpleHttp.doGet(url, session).asStatus();
+            int status = SimpleHttp.create(session).doGet(url).asStatus();
             boolean success = status >= 200 && status < 400;
             if (!success) {
                 logger.warn("Failed backchannel broker logout to: " + url);
@@ -301,13 +304,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    protected SimpleHttp getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttp refreshTokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
-                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
-                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
-        return authenticateTokenRequest(refreshTokenRequest);
-    }
-
     @Override
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
@@ -365,8 +361,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         @Override
-        public SimpleHttp generateTokenRequest(String authorizationCode) {
-            SimpleHttp simpleHttp = super.generateTokenRequest(authorizationCode);
+        public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
+            SimpleHttpRequest simpleHttp = super.generateTokenRequest(authorizationCode);
             return simpleHttp;
         }
 
@@ -518,7 +514,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty()) {
 
                 if (accessToken != null) {
-                    SimpleHttp.Response response = executeRequest(userInfoUrl, SimpleHttp.doGet(userInfoUrl, session).header("Authorization", "Bearer " + accessToken));
+                    SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken));
                     String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
                     MediaType contentMediaType;
                     try {
@@ -595,8 +591,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return getConfig().getUserInfoUrl();
     }
 
-    private SimpleHttp.Response executeRequest(String url, SimpleHttp request) throws IOException {
-        SimpleHttp.Response response = request.asResponse();
+    private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
+        SimpleHttpResponse response = request.asResponse();
         if (response.getStatus() != 200) {
             String msg = "failed to invoke url [" + url + "]";
             try {
@@ -1039,6 +1035,35 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return null;
         }
 
-        return (Boolean) token.getOtherClaims().get(IDToken.EMAIL_VERIFIED);
+        Object emailVerified = token.getOtherClaims().get(IDToken.EMAIL_VERIFIED);
+
+        if (emailVerified == null) {
+            return null;
+        }
+
+        return Boolean.valueOf(emailVerified.toString());
     }
+
+    @Override
+    public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
+        OIDCIdentityProviderConfig config = getConfig();
+
+        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, v -> verify(v.getJws()),
+                config.getIssuer(), config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
+            return false;
+        }
+
+        if (!config.isSupportsClientAssertions()) {
+            throw new RuntimeException("Issuer does not support client assertions");
+        }
+
+        if (!config.isValidateSignature()) {
+            throw new RuntimeException("Signature validation not enabled for issuer");
+        }
+
+        return validator.validate();
+    }
+
 }

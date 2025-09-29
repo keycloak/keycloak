@@ -140,16 +140,30 @@ if not "x%JAVA_OPTS_APPEND%" == "x" (
     set JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_APPEND%
 )
 
-if NOT "x%DEBUG%" == "x" (
-    set DEBUG_MODE=%DEBUG%
+if NOT "x%KC_DEBUG%" == "x" (
+    set DEBUG_MODE=%KC_DEBUG%
+) else (
+    if NOT "x%DEBUG%" == "x" (
+        set DEBUG_MODE=%DEBUG%
+    )
 )
 
-if NOT "x%DEBUG_PORT%" == "x" (
-    set DEBUG_PORT_VAR=%DEBUG_PORT%
+if NOT "x%KC_DEBUG_PORT%" == "x" (
+    set DEBUG_PORT_VAR=%KC_DEBUG_PORT%
+    set DEBUG_ADDRESS=0.0.0.0:!DEBUG_PORT_VAR!
+) else (
+    if NOT "x%DEBUG_PORT%" == "x" (
+        set DEBUG_PORT_VAR=%DEBUG_PORT%
+        set DEBUG_ADDRESS=0.0.0.0:!DEBUG_PORT_VAR!
+    )
 )
 
-if NOT "x%DEBUG_SUSPEND%" == "x" (
-    set DEBUG_SUSPEND_VAR=%DEBUG_SUSPEND%
+if NOT "x%KC_DEBUG_SUSPEND%" == "x" (
+    set DEBUG_SUSPEND_VAR=%KC_DEBUG_SUSPEND%
+) else (
+    if NOT "x%DEBUG_SUSPEND%" == "x" (
+        set DEBUG_SUSPEND_VAR=%DEBUG_SUSPEND%
+    )
 )
 
 rem Set debug settings if not already set
@@ -193,9 +207,6 @@ set KC_HOME_DIR=%KC_HOME_DIR:\=/%
 rem The property 'java.util.concurrent.ForkJoinPool.common.threadFactory' is set here, as a Java Agent or enabling JMX might initialize the factory before Quarkus can set the property in JDK21+.
 set JAVA_RUN_OPTS=-Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory %JAVA_OPTS% -Dkc.home.dir="%KC_HOME_DIR%" -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
 
-set OPTIMIZED_OPTION=--optimized
-set HELP_LONG_OPTION=--help
-set BUILD_OPTION=build
 set IS_HELP_SHORT=false
 
 echo %CONFIG_ARGS% | findstr /r "\<-h\>" > nul
@@ -209,21 +220,16 @@ if "%PRINT_ENV%" == "true" (
     echo Using JAVA_RUN_OPTS: !JAVA_RUN_OPTS!
 )
 
-set START_SERVER=true
+"%JAVA%" !JAVA_RUN_OPTS!
 
-if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
-
-    "%JAVA%" -Dkc.config.build-and-exit=true !JAVA_RUN_OPTS!
-
-    if not !errorlevel! == 0 (
-        set START_SERVER=false
-    )
-
-    set JAVA_RUN_OPTS=-Dkc.config.built=true !JAVA_RUN_OPTS!
+rem only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed
+if not !errorlevel! == 10 (
+     exit /B !errorlevel!
 )
 
-if "%START_SERVER%" == "true" (
-    "%JAVA%" !JAVA_RUN_OPTS!
-)
+set JAVA_RUN_OPTS=-Dkc.config.built=true !JAVA_RUN_OPTS!
+
+"%JAVA%" !JAVA_RUN_OPTS!
+exit /B !errorlevel!
 
 :END

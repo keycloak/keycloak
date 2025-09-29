@@ -567,8 +567,8 @@ More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.
 In order to reproduce some specific cookies behaviour in browsers (like SameSite policies or 3rd party cookie blocking),
 some subset of tests needs to be ran with different hosts for auth server and app/IdP server in order to simulate third
 party contexts. Those hosts must be different from localhost as that host has some special treatment from browsers. At
-the same time both hosts must use different domains to be considered cross-origin, e.g. `127.0.0.1.nip.io` and
-`127.0.0.1.xip.io`. NOT `app1.127.0.0.1.nip.io` and `app2.127.0.0.1.nip.io`!!
+the same time both hosts must use different domains to be considered cross-origin, e.g. `localtest.me` and
+`127.0.0.1.xip.io`. NOT `app1.localtest.me` and `app2.localtest.me`!!
 
 Also, those new cookies policies are currently not yet enabled by default (which will change in the near future). To test
 those policies, you need the latest stable Firefox together with `firefox-strict-cookies` profile. This profile sets the
@@ -603,7 +603,7 @@ we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everyw
 ### Tips & Tricks:
 Although it _should_ work in general, you may experience an exception like this:
 ```
-java.lang.RuntimeException: java.net.UnknownHostException: keycloak.127.0.0.1.nip.io: nodename nor servname provided, 
+java.lang.RuntimeException: java.net.UnknownHostException: keycloak.localtest.me: nodename nor servname provided, 
 or not known at org.keycloak.testsuite.util.OAuthClient.doWellKnownRequest(OAuthClient.java:1032)
 at org.keycloak.testsuite.url.DefaultHostnameTest.assertBackendForcedToFrontendWithMatchingHostname(
 DefaultHostnameTest.java:226)
@@ -656,7 +656,7 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 -Dauth.server.fips.mode=strict \
 -Dauth.server.supported.keystore.types=BCFKS \
 -Dauth.server.keystore.type=bcfks \
--Dauth.server.supported.rsa.key.sizes=2048,4096
+-Dauth.server.supported.rsa.key.sizes=2048,3072,4096
 ```
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```

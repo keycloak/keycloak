@@ -1,10 +1,10 @@
-import { Locator, Page, expect } from "@playwright/test";
+import { type Locator, type Page, expect } from "@playwright/test";
 import {
   assertSelectValue,
   selectItem,
   switchOff,
   switchOn,
-} from "../utils/form";
+} from "../utils/form.ts";
 
 function getTermsOfServiceUrl(page: Page) {
   return page.getByTestId("attributes.tosUri");
@@ -66,8 +66,14 @@ export async function clickClientSignature(page: Page) {
   await switchOff(page, "#clientSignature");
 }
 
-export async function assertCertificate(page: Page, exists = true) {
-  await expect(page.getByTestId("certificate")).toHaveCount(exists ? 0 : 1);
+// Assert that the number of certificates enabled matches the number of certificates displayed
+export async function assertCertificates(page: Page) {
+  const certsEnabled = [
+    await page.getByTestId("encryptAssertions").isChecked(),
+    await page.getByTestId("clientSignature").isChecked(),
+  ].filter(Boolean).length;
+
+  await expect(page.getByTestId("certificate")).toHaveCount(certsEnabled);
 }
 
 export async function clickEncryptionAssertions(page: Page) {
@@ -79,7 +85,12 @@ export async function clickOffEncryptionAssertions(page: Page) {
 }
 
 export async function clickGenerate(page: Page) {
+  const responsePromise = page.waitForResponse(
+    (res) => res.url().includes("/generate") && res.status() === 200,
+    { timeout: 60000 },
+  );
   await page.getByTestId("generate").click();
+  await responsePromise;
 }
 
 export async function assertNameIdFormatDropdown(page: Page) {

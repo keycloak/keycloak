@@ -24,6 +24,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicMarkableReference;
@@ -612,6 +613,11 @@ public class ClientModelLazyDelegate implements ClientModel {
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
         return getDelegate().getProtocolMapperById(id);
+    }
+
+    @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return getDelegate().getProtocolMapperByType(type);
     }
 
     @Override

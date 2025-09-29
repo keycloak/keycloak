@@ -26,7 +26,7 @@ import picocli.CommandLine;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class AbstractNonServerCommand extends AbstractStartCommand {
+public abstract class AbstractNonServerCommand extends AbstractAutoBuildCommand {
 
     @CommandLine.Mixin
     OptimizedMixin optimizedMixin = new OptimizedMixin();
@@ -56,4 +56,5 @@ public abstract class AbstractNonServerCommand extends AbstractStartCommand {
 
     public void onStart(QuarkusKeycloakApplication application) {
     }
+
 }

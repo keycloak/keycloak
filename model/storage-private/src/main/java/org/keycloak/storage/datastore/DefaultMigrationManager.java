@@ -44,6 +44,7 @@ import org.keycloak.migration.migrators.MigrateTo26_0_0;
 import org.keycloak.migration.migrators.MigrateTo26_1_0;
 import org.keycloak.migration.migrators.MigrateTo26_2_0;
 import org.keycloak.migration.migrators.MigrateTo26_3_0;
+import org.keycloak.migration.migrators.MigrateTo26_4_0;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
@@ -127,6 +128,7 @@ public class DefaultMigrationManager implements MigrationManager {
             new MigrateTo26_1_0(),
             new MigrateTo26_2_0(),
             new MigrateTo26_3_0(),
+            new MigrateTo26_4_0(),
     };
 
     private final KeycloakSession session;
@@ -223,9 +225,9 @@ public class DefaultMigrationManager implements MigrationManager {
 
     public static ModelVersion convertRHSSOVersionToKeycloakVersion(String version) {
         // look for the keycloakVersion pattern to identify it as RH SSO
-        for (Pattern pattern : PATTERN_MATCHER.keySet()) {
-            if (pattern.matcher(version).find()) {
-                return PATTERN_MATCHER.get(pattern);
+        for (var entry : PATTERN_MATCHER.entrySet()) {
+            if (entry.getKey().matcher(version).find()) {
+                return entry.getValue();
             }
         }
         // chceck if the version is in format for CD releases, e.g.: "keycloakVersion": "6"

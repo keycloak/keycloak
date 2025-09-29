@@ -19,7 +19,7 @@ package org.keycloak.testsuite.keys;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import java.security.KeyFactory;
 import java.security.interfaces.ECPublicKey;

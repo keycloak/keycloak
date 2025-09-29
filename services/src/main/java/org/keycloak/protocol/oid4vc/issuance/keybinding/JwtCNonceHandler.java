@@ -56,7 +56,7 @@ import java.util.Random;
  */
 public class JwtCNonceHandler implements CNonceHandler {
 
-    public static final String SOURCE_ENDPOINT = "source_endpoint";
+    public static final String SOURCE_ENDPOINT = Oid4VciConstants.SOURCE_ENDPOINT;
 
     public static final int NONCE_DEFAULT_LENGTH = 50;
 

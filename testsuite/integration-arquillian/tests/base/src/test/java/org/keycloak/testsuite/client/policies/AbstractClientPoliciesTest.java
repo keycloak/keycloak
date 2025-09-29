@@ -497,7 +497,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return new JWSBuilder().kid(kid).jsonContent(jwt).sign(signer);
     }
 
-    private String getRealmInfoUrl() {
+    protected String getRealmInfoUrl() {
         String authServerBaseUrl = UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth";
         return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build(REALM_NAME).toString();
     }

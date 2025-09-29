@@ -151,6 +151,7 @@ public class RoleContainerResource extends RoleResource {
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found"),
+        @APIResponse(responseCode = "409", description = "Conflict"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response createRole(final RoleRepresentation rep) {
@@ -566,11 +567,11 @@ public class RoleContainerResource extends RoleResource {
                                                     @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                                     @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
                                                     @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults) {
-        
+
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        
+
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
@@ -582,7 +583,7 @@ public class RoleContainerResource extends RoleResource {
         return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
                 .map(toRepresentation);
     }
-    
+
     /**
      * Returns a stream of groups that have the specified role name
      *
@@ -608,17 +609,17 @@ public class RoleContainerResource extends RoleResource {
                                                     @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
                                                     @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults,
                                                     @Parameter(description = "if false, return a full representation of the {@code GroupRepresentation} objects.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
-        
+
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        
+
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        
+
         return session.groups().getGroupsByRoleStream(realm, role, firstResult, maxResults)
                 .map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
-    }   
+    }
 }

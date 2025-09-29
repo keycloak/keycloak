@@ -53,6 +53,23 @@ Stop MySQl:
 
     docker rm -f mariadb
 
+TiDB
+-----
+
+The simplest way to test with TiDB is to use the official [TiDB docker image](https://hub.docker.com/r/pingcap/tidb).
+
+Start TiDB:
+
+    docker run --name tidb -p 4000:4000 -d pingcap/tidb:v8.5.2
+
+Run tests:
+
+    mvn install -Dkeycloak.connectionsJpa.url=jdbc:mysql://`docker inspect --format '{{ .NetworkSettings.IPAddress }}' tidb`:4000/test -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver -Dkeycloak.connectionsJpa.user=root -Dkeycloak.connectionsJpa.password=    
+
+Stop TiDB:
+
+    docker rm -f tidb
+
 Using built-in profiles to run database tests using docker containers
 -------
 

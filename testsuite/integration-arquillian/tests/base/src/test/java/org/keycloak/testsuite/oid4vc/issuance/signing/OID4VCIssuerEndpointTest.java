@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -31,6 +32,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -38,10 +40,17 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -52,6 +61,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactor
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -60,7 +70,6 @@ import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
@@ -82,10 +91,16 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,12 +109,19 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.jose.jwe.JWEConstants.A128GCM;
+import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
+import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
+import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
 /**
@@ -109,6 +131,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected static final TimeProvider TIME_PROVIDER = new OID4VCTest.StaticTimeProvider(1000);
     protected static final String sdJwtCredentialVct = "https://credentials.example.com/SD-JWT-Credential";
+
+    private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
     protected static ClientScopeRepresentation sdJwtTypeCredentialClientScope;
     protected static ClientScopeRepresentation jwtTypeCredentialClientScope;
@@ -209,26 +233,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         setClientOid4vciEnabled(clientId, shouldEnableOid4vci());
     }
 
-    protected String getBearerToken(OAuthClient oAuthClient) {
-        return getBearerToken(oAuthClient, null);
-    }
-
-    protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client) {
-        return getBearerToken(oAuthClient, client, null);
-    }
-
-    protected String getBearerToken(OAuthClient oAuthClient, ClientRepresentation client, String credentialScopeName) {
-        if (client != null) {
-            oAuthClient.client(client.getClientId(), client.getSecret());
-        }
-        if (credentialScopeName != null) {
-            oAuthClient.scope(credentialScopeName);
-        }
-        AuthorizationEndpointResponse authorizationEndpointResponse = oAuthClient.doLogin("john",
-                "password");
-        return oAuthClient.doAccessTokenRequest(authorizationEndpointResponse.getCode()).getAccessToken();
-    }
-
     private ClientResource findClientByClientId(RealmResource realm, String clientId) {
         for (ClientRepresentation c : realm.clients().findAll()) {
             if (clientId.equals(c.getClientId())) {
@@ -325,6 +329,103 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     private void logoutUser(String clientId, String username) {
         UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
         user.logout();
+    }
+
+    public static JWK generateRsaJwk() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+
+        String modulus = Base64Url.encode(publicKey.getModulus().toByteArray());
+        String exponent = Base64Url.encode(publicKey.getPublicExponent().toByteArray());
+
+        RSAPublicJWK jwk = new RSAPublicJWK();
+        jwk.setKeyType("RSA");
+        jwk.setPublicKeyUse("enc");
+        jwk.setAlgorithm("RSA-OAEP");
+        jwk.setModulus(modulus);
+        jwk.setPublicExponent(exponent);
+
+        return jwk;
+    }
+
+    public static Map<String, Object> generateRsaJwkWithPrivateKey() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        String modulus = Base64Url.encode(publicKey.getModulus().toByteArray());
+        String exponent = Base64Url.encode(publicKey.getPublicExponent().toByteArray());
+
+        RSAPublicJWK jwk = new RSAPublicJWK();
+        jwk.setKeyType("RSA");
+        jwk.setPublicKeyUse("enc");
+        jwk.setAlgorithm("RSA-OAEP");
+        jwk.setModulus(modulus);
+        jwk.setPublicExponent(exponent);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("jwk", jwk);
+        result.put("privateKey", privateKey);
+        return result;
+    }
+
+    public static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
+        assertNotNull("Encrypted response should not be null", encryptedResponse);
+        assertEquals("Response should be a JWE", 5, encryptedResponse.split("\\.").length);
+
+        JWE jwe = new JWE(encryptedResponse);
+        jwe.getKeyStorage().setDecryptionKey(privateKey);
+        jwe.verifyAndDecodeJwe();
+        byte[] decryptedContent = jwe.getContent();
+        return JsonSerialization.readValue(decryptedContent, CredentialResponse.class);
+    }
+
+    public static String createEncryptedCredentialRequest(String payload, KeyWrapper encryptionKey) throws Exception {
+        byte[] content = payload.getBytes(StandardCharsets.UTF_8);
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                .keyId(encryptionKey.getKid())
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm(A256GCM)
+                .type(JWT)
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public static String createEncryptedCredentialRequestWithCompression(String payload, KeyWrapper encryptionKey) throws Exception {
+        byte[] content = compressPayload(payload.getBytes(StandardCharsets.UTF_8));
+        LOGGER.debugf("Compressed payload size: %d bytes", content.length);
+
+        JWEHeader header = new JWEHeader.JWEHeaderBuilder()
+                .keyId(encryptionKey.getKid())
+                .algorithm(encryptionKey.getAlgorithm())
+                .encryptionAlgorithm(A256GCM)
+                .compressionAlgorithm("DEF")
+                .type(JWT)
+                .build();
+
+        JWE jwe = new JWE()
+                .header(header)
+                .content(content);
+        jwe.getKeyStorage().setEncryptionKey(encryptionKey.getPublicKey());
+        return jwe.encodeJwe();
+    }
+
+    public static byte[] compressPayload(byte[] payload) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (DeflaterOutputStream deflater = new DeflaterOutputStream(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true))) {
+            deflater.write(payload);
+        }
+        return out.toByteArray();
     }
 
     void setClientOid4vciEnabled(String clientId, boolean enabled) {
@@ -456,13 +557,18 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
         testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getKeyProvider());
 
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100));
+        testRealm.getComponents().add("org.keycloak.keys.KeyProvider",
+                getRsaEncKeyProvider(RSA_OAEP, "enc-key-oaep", 101));
+
         // Find existing client representation
         ClientRepresentation existingClient = testRealm.getClients().stream()
                 .filter(client -> client.getClientId().equals(clientId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Client with ID " + clientId + " not found in realm"));
 
-        // Add role to existing client
+        // Add a role to an existing client
         if (testRealm.getRoles() != null) {
             Map<String, List<RoleRepresentation>> clientRoles = testRealm.getRoles().getClient();
             clientRoles.merge(
@@ -527,5 +633,25 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             assertFalse("Only mappers supported for the requested type should have been evaluated.",
                     credential.getCredentialSubject().getClaims().containsKey("AnotherCredentialType"));
         }
+    }
+
+    protected List<OID4VCAuthorizationDetailsResponse> parseAuthorizationDetails(String responseBody) throws IOException {
+        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+        });
+        Object authDetailsObj = responseMap.get("authorization_details");
+        assertNotNull("authorization_details should be present in the response", authDetailsObj);
+        return JsonSerialization.readValue(
+                JsonSerialization.writeValueAsString(authDetailsObj),
+                new TypeReference<List<OID4VCAuthorizationDetailsResponse>>() {
+                }
+        );
+    }
+
+    protected String getAccessToken(String responseBody) throws IOException {
+        Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+        });
+        String token = (String) responseMap.get("access_token");
+        assertNotNull("Access token should be present", token);
+        return token;
     }
 }

@@ -133,6 +133,8 @@ Theme properties are set in the file `<THEME TYPE>/theme.properties` in the them
 * common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of ${r"`${url.resourcesCommonPath}`"}, which is used typically in freemarker templates (prefix of ${r"`${url.resoucesCommonPath}`"} value is theme root uri).
 * styles - Space-separated list of styles to include
 * locales - Comma-separated list of supported locales
+* contentHashPattern - Regex pattern of a file path in the theme where files have a content hash as part of their file name.
+A content hash is usually an abbreviated hash of the file's contents. The hash will change when the contents of the file have changed, and is usually created using the bundling process of the JavaScript application bundling. When the preview feature `rolling-updates:v2` is enabled, this allows for a more seamless rolling upgrade.
 
 There are a list of properties that can be used to change the css class used for certain element types. For a list of these properties look at the theme.properties
 file in the corresponding type of the keycloak theme (`themes/keycloak/<THEME TYPE>/theme.properties`).
@@ -415,3 +417,47 @@ If enabled, the dark variant of the theme will be applied based on user preferen
 * For more inspiration, see <<_default-themes,Default Themes>> bundled inside {project_name}.
 * {quickstartRepo_link}[{quickstartRepo_name}] - Directory `extension` of the quickstarts repository contains some theme examples, which can be also used as an inspiration.
 </@tmpl.guide>
+
+== Theme SPIs
+
+The following sections show how to achieve finer grained control over your themes.
+
+=== Theme selector
+
+By default the theme configured for the realm is used, with the exception of clients being able to override the login
+theme. This behavior can be changed through the Theme Selector SPI.
+
+This could be used to select different themes for desktop and mobile devices by looking at the user agent
+header, for example.
+
+To create a custom theme selector you need to implement `ThemeSelectorProviderFactory` and `ThemeSelectorProvider`.
+
+=== Theme resources
+
+When implementing custom providers there may often be a need to add additional templates, resources and messages bundles.
+
+ifeval::[{project_product}!=true]
+An example use-case would be a https://www.keycloak.org/docs/latest/server_development/index.html#_auth_spi[custom authenticator] that requires additional templates and resources.
+endif::[]
+
+The easiest way to load additional theme resources is to create a JAR with templates in `theme-resources/templates`
+resources in `theme-resources/resources` and messages bundles in `theme-resources/messages`.
+
+If you want a more flexible way to load templates and resources that can be achieved through the ThemeResourceSPI.
+By implementing `ThemeResourceProviderFactory` and `ThemeResourceProvider` you can decide exactly how to load templates
+and resources.
+
+=== Locale selector
+
+By default, the locale is selected using the `DefaultLocaleSelectorProvider` which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled.
+
+With internationalization enabled, the locale is resolved according to the logic described in the https://www.keycloak.org/docs/latest/server_admin/#_user_locale_selection[Server Administration documentation].
+
+This behavior can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
+
+The `LocaleSelectorProvider` interface has a single method, `resolveLocale`, which must return a locale given a `RealmModel` and a nullable `UserModel`. The actual request is available from the `KeycloakSession#getContext` method.
+
+Custom implementations can extend the `DefaultLocaleSelectorProvider` in order to reuse parts of the default behavior. For example to ignore the `Accept-Language` request header, a custom implementation could extend the default provider, override it's `getAcceptLanguageHeaderLocale`, and return a null value. As a result the locale selection will fall back on the realm's default language.
+
+=== Additional resources for Locale selector
+* For more details on creating and deploying a custom provider, see https://www.keycloak.org/docs/latest/server_development/index.html#_providers[Service Provider Interfaces].

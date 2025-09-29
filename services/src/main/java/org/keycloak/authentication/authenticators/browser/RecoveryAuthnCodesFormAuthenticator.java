@@ -3,10 +3,13 @@ package org.keycloak.authentication.authenticators.browser;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
-import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.RecoveryAuthnCodesCredentialProvider;
+import org.keycloak.credential.RecoveryAuthnCodesCredentialProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -27,7 +30,7 @@ import java.util.Optional;
 
 import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
-public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
+public class RecoveryAuthnCodesFormAuthenticator implements Authenticator, CredentialValidator<RecoveryAuthnCodesCredentialProvider> {
 
     public static final String GENERATED_RECOVERY_AUTHN_CODES_NOTE = "RecoveryAuthnCodes.generatedRecoveryAuthnCodes";
     public static final String GENERATED_AT_NOTE = "RecoveryAuthnCodes.generatedAt";
@@ -172,4 +175,13 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
     public void close() {
     }
 
+    @Override
+    public RecoveryAuthnCodesCredentialProvider getCredentialProvider(KeycloakSession session) {
+        return (RecoveryAuthnCodesCredentialProvider)session.getProvider(CredentialProvider.class, RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
+    }
+
+    @Override
+    public String getType(KeycloakSession session) {
+        return RecoveryAuthnCodesCredentialModel.TYPE;
+    }
 }

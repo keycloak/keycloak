@@ -11,9 +11,13 @@
 .github/workflows/ci.yml                    ci ci-quarkus ci-store ci-sssd ci-webauthn
 .github/workflows/operator-ci.yml           operator
 .github/workflows/js-ci.yml                 js
-.github/workflows/codeql-analysis.yml       codeql-java codeql-javascript codeql-typescript
+.github/workflows/codeql-analysis.yml       codeql-java codeql-javascript codeql-typescript codeql-actions
+.github/codeql/codeql-config-javascript.yml codeql-javascript
+.github/codeql/codeql-config-typescript.yml codeql-typescript
 .github/workflows/guides.yml                guides
 .github/workflows/documentation.yml         documentation
+.github/workflows/*.yml                     codeql-actions
+.github/actions/**/*.yml                    codeql-actions
 
 .mvn/                                       ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-javascript codeql-typescript guides documentation
 mvnw                                        ci ci-quarkus ci-store ci-sssd ci-webauthn operator js codeql-java codeql-javascript codeql-typescript guides documentation

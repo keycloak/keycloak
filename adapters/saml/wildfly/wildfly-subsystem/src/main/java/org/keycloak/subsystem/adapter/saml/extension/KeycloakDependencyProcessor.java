@@ -28,7 +28,6 @@ import org.jboss.as.web.common.WarMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
@@ -36,10 +35,10 @@ import org.jboss.modules.ModuleLoader;
  */
 public abstract class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
-    private static final ModuleIdentifier KEYCLOAK_JBOSS_CORE_ADAPTER = KeycloakSubsystemDefinition.KEYCLOAK_JBOSS_CORE_ADAPTER;
-    private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-adapter-core");
-    private static final ModuleIdentifier KEYCLOAK_API_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-adapter-api-public");
-    private static final ModuleIdentifier KEYCLOAK_COMMON = ModuleIdentifier.create("org.keycloak.keycloak-common");
+    static final String KEYCLOAK_JBOSS_CORE_ADAPTER = "org.keycloak.keycloak-jboss-adapter-core";
+    static final String KEYCLOAK_CORE_ADAPTER = "org.keycloak.keycloak-saml-adapter-core";
+    static final String KEYCLOAK_API_ADAPTER = "org.keycloak.keycloak-saml-adapter-api-public";
+    static final String KEYCLOAK_COMMON = "org.keycloak.keycloak-common";
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {

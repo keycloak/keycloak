@@ -54,6 +54,7 @@ public interface InfinispanConnectionProvider extends Provider {
     String AUTHORIZATION_CACHE_NAME = "authorization";
     String AUTHORIZATION_REVISIONS_CACHE_NAME = "authorizationRevisions";
     int AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX = 20000;
+    int SESSIONS_CACHE_DEFAULT_MAX = 10000;
 
     String ACTION_TOKEN_CACHE = "actionTokens";
     int ACTION_TOKEN_CACHE_DEFAULT_MAX = -1;
@@ -127,6 +128,15 @@ public interface InfinispanConnectionProvider extends Provider {
             OFFLINE_USER_SESSION_CACHE_NAME,
             OFFLINE_CLIENT_SESSION_CACHE_NAME,
             USER_SESSION_CACHE_NAME
+    };
+
+    // caches that allow numOwner attribute to be configurable using options.
+    String[] CLUSTERED_CACHE_NUM_OWNERS = new String[]{
+            USER_SESSION_CACHE_NAME,
+            CLIENT_SESSION_CACHE_NAME,
+            LOGIN_FAILURE_CACHE_NAME,
+            AUTHENTICATION_SESSIONS_CACHE_NAME,
+            ACTION_TOKEN_CACHE,
     };
 
     /**

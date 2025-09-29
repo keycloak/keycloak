@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -34,7 +34,9 @@ public class FeaturesDistTest {
             .filter(feature -> feature.getType() == Profile.Feature.Type.PREVIEW)
             .filter(feature -> {
                 Set<Profile.Feature> versions = Profile.getFeatureVersions(feature.getUnversionedKey());
-                if (versions.size() == 1) return true;
+                if (versions.size() == 1) {
+                    return true;
+                }
                 return versions.iterator().next().getVersion() == feature.getVersion();
             })
             .map(Profile.Feature::getVersionedKey)
@@ -58,12 +60,12 @@ public class FeaturesDistTest {
         assertPreviewFeaturesEnabled(cliResult);
     }
 
-    // Should enable "fips" together with all other "preview" features
+    // Should enable "docker" together with all other "preview" features
     @Test
-    @Launch({StartDev.NAME, "--features=preview,fips"})
-    public void testEnablePreviewFeaturesAndFips(CLIResult cliResult) {
+    @Launch({StartDev.NAME, "--features=preview,docker"})
+    public void testEnablePreviewFeaturesAndDocker(CLIResult cliResult) {
+        cliResult.assertStartedDevMode();
         assertPreviewFeaturesEnabled(cliResult);
-        cliResult.assertError("Failed to configure FIPS.");
     }
 
     @Test

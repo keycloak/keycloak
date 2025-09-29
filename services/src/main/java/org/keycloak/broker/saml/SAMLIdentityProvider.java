@@ -25,7 +25,6 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -45,6 +44,7 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.FederatedIdentityModel;
@@ -285,7 +285,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             if (logoutRequest.getDestination() != null) {
                 singleLogoutServiceUrl = logoutRequest.getDestination().toString();
             }
-            int status = SimpleHttp.doPost(singleLogoutServiceUrl, session)
+            int status = SimpleHttp.create(session).doPost(singleLogoutServiceUrl)
                     .param(GeneralConstants.SAML_REQUEST_KEY, binding.postBinding(SAML2Request.convert(logoutRequest)).encoded())
                     .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
             boolean success = status >=200 && status < 400;
@@ -425,7 +425,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPDescriptor(
                 assertionConsumerServices, singleLogoutServices,
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
-                entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
+                entityId, nameIDPolicyFormat, signingKeys, encryptionKeys, getConfig().getDescriptorCacheSeconds());
 
             // Create the AttributeConsumingService if at least one attribute importer mapper exists
             List<Entry<IdentityProviderMapperModel, SamlMetadataDescriptorUpdater>> metadataAttrProviders = new ArrayList<>();

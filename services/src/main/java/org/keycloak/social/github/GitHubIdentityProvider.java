@@ -31,9 +31,11 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.services.ErrorResponseException;
@@ -76,6 +78,8 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     protected static final String BASE_URL_KEY = "baseUrl";
     /** API URL key in config map. */
     protected static final String API_URL_KEY = "apiUrl";
+    /** API URL key in config map. */
+    protected static final String GITHUB_JSON_FORMAT_KEY = "githubJsonFormat";
     /** Email URL key in config map. */
     protected static final String EMAIL_URL_KEY = "emailUrl";
 
@@ -83,6 +87,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     private final String tokenUrl;
     private final String profileUrl;
     private final String emailUrl;
+    private final boolean githubJsonFormat;
 
     public GitHubIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
         super(session, config);
@@ -99,6 +104,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
         config.setTokenUrl(tokenUrl);
         config.setUserInfoUrl(profileUrl);
         config.getConfig().put(EMAIL_URL_KEY, emailUrl);
+        githubJsonFormat = Boolean.parseBoolean(config.getConfig().getOrDefault(GITHUB_JSON_FORMAT_KEY, "false"));
     }
 
     /**
@@ -130,7 +136,16 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		return profileUrl;
 	}
 
-	@Override
+    @Override
+    public SimpleHttpRequest authenticateTokenRequest(SimpleHttpRequest tokenRequest) {
+        SimpleHttpRequest simpleHttp = super.authenticateTokenRequest(tokenRequest);
+        if (githubJsonFormat) {
+            simpleHttp.acceptJson();
+        }
+        return simpleHttp;
+    }
+
+    @Override
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
 		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"), getConfig());
 
@@ -147,7 +162,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
-		try (SimpleHttp.Response response = SimpleHttp.doGet(profileUrl, session)
+		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(profileUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Accept", "application/json")
                         .asResponse()) {
@@ -171,7 +186,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	}
 
 	private String searchEmail(String accessToken) {
-		try (SimpleHttp.Response response = SimpleHttp.doGet(emailUrl, session)
+		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(emailUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Accept", "application/json")
                         .asResponse()) {
@@ -202,7 +217,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
     private void verifyToken(String accessToken) throws IOException {
         String tokenUrl = DEFAULT_APPLICATIONS_URL + "/" + getConfig().getClientId() + "/token";
-        SimpleHttp.Response response = SimpleHttp.doPost(tokenUrl, session)
+        SimpleHttpResponse response = SimpleHttp.create(session).doPost(tokenUrl)
                 .header("Authorization",  BasicAuthHelper.createHeader(getConfig().getClientId(), getConfig().getClientSecret()))
                 .json(Map.of("access_token", accessToken)).asResponse();
 

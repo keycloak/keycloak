@@ -162,15 +162,14 @@ public class BaseWriter {
         if (otherAttribs != null) {
             List<String> nameSpacesDealt = new ArrayList<>();
 
-            Iterator<QName> keySet = otherAttribs.keySet().iterator();
-            while (keySet != null && keySet.hasNext()) {
-                QName qname = keySet.next();
+            for (var entry : otherAttribs.entrySet()) {
+                QName qname = entry.getKey();
                 String ns = qname.getNamespaceURI();
                 if (!nameSpacesDealt.contains(ns)) {
                     StaxUtil.writeNameSpace(writer, qname.getPrefix(), ns);
                     nameSpacesDealt.add(ns);
                 }
-                String attribValue = otherAttribs.get(qname);
+                String attribValue = entry.getValue();
                 StaxUtil.writeAttribute(writer, qname, attribValue);
             }
         }
@@ -230,11 +229,11 @@ public class BaseWriter {
 
         StaxUtil.writeNameSpace(writer, JBossSAMLURIConstants.XSI_PREFIX.get(), JBossSAMLURIConstants.XSI_NSURI.get());
         StaxUtil.writeNameSpace(writer, "xs", JBossSAMLURIConstants.XMLSCHEMA_NSURI.get());
-        StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
 
         if (attributeValue == null) {
             StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "nil", "true");
         } else {
+            StaxUtil.writeAttribute(writer, "xsi", JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xs:" + attributeValue.getXMLSchemaType().getLocalPart());
             StaxUtil.writeCharacters(writer, attributeValue.toString());
         }
 

@@ -20,7 +20,7 @@ package org.keycloak.quarkus.runtime;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
 import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,9 +97,6 @@ public class KeycloakMain implements QuarkusApplication {
         }
 
         if (cliArgs.isEmpty()) {
-            if (Environment.isRebuildCheck()) {
-                return; // nothing to do - not currently caught by the shell scripts
-            }
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");

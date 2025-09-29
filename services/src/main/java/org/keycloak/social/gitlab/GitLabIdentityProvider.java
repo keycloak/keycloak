@@ -25,11 +25,12 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -134,14 +135,13 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 
 
 	protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
-
-		SimpleHttp.Response response = null;
+		SimpleHttpResponse response = null;
 		int status = 0;
 
 		for (int i = 0; i < 10; i++) {
 			try {
 				String userInfoUrl = getUserInfoUrl();
-				response = SimpleHttp.doGet(userInfoUrl, session)
+				response = SimpleHttp.create(session).doGet(userInfoUrl)
 						.header("Authorization", "Bearer " + accessToken).asResponse();
 				status = response.getStatus();
 			} catch (IOException e) {

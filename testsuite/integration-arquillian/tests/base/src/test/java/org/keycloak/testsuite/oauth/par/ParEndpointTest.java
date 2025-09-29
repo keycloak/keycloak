@@ -26,7 +26,7 @@ import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 
 public class ParEndpointTest {
 

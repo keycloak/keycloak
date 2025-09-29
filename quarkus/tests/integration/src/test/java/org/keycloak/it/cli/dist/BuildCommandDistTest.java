@@ -19,7 +19,7 @@ package org.keycloak.it.cli.dist;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 import org.junit.jupiter.api.Test;
@@ -101,5 +101,13 @@ class BuildCommandDistTest {
         String dbDriver = Database.getDriver("oracle", false).orElse("");
         cliResult.assertError(String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver));
         cliResult.assertNoBuild();
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @WithEnvVars({"KC_LOG_LEVEL", "${KEYCLOAK_LOG_LEVEL:INFO},org.keycloak.events:DEBUG"})
+    @Launch({"build", "--db=dev-file"})
+    void logLevelExpressionWithDefault(CLIResult cliResult) {
+        cliResult.assertBuild();
     }
 }

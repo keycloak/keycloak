@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -34,7 +35,9 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.policy.PasswordPolicyProviderFactory;
@@ -63,7 +66,10 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.GET;
@@ -93,9 +99,11 @@ public class ServerInfoAdminResource {
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
 
     private final KeycloakSession session;
+    private final AdminAuth auth;
 
-    public ServerInfoAdminResource(KeycloakSession session) {
+    public ServerInfoAdminResource(KeycloakSession session, AdminAuth auth) {
         this.session = session;
+        this.auth = auth;
     }
 
     /**
@@ -110,9 +118,14 @@ public class ServerInfoAdminResource {
     @Operation( summary = "Get themes, social providers, auth providers, and event listeners available on this server")
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
-        info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
-        info.setCpuInfo(CpuInfoRepresentation.create());
-        info.setMemoryInfo(MemoryInfoRepresentation.create());
+        RealmModel userRealm = session.getContext().getRealm();
+        if (RealmManager.isAdministrationRealm(userRealm)
+                || AdminPermissions.evaluator(session, userRealm, auth).hasOneAdminRole(AdminRoles.VIEW_SYSTEM)) {
+            // system information is only for admins in the administration realm or fallback view-system role
+            info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp(), Version.VERSION));
+            info.setCpuInfo(CpuInfoRepresentation.create());
+            info.setMemoryInfo(MemoryInfoRepresentation.create());
+        }
         info.setProfileInfo(createProfileInfo());
         info.setFeatures(createFeatureRepresentations());
 
@@ -166,34 +179,36 @@ public class ServerInfoAdminResource {
 
             Map<String, ProviderRepresentation> providers = new HashMap<>();
 
-            if (providerIds != null) {
-                for (String name : providerIds) {
-                    ProviderRepresentation provider = new ProviderRepresentation();
-                    ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
-                    provider.setOrder(pi.order());
-                    if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
-                        provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
-                    }
-                    if (pi instanceof ConfiguredProvider) {
-                        ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
-                        rep.setId(pi.getId());
-                        ConfiguredProvider configured = (ConfiguredProvider)pi;
-                        rep.setHelpText(configured.getHelpText());
-                        List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
-                        if (configProperties == null) configProperties = Collections.EMPTY_LIST;
-                        rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
-                        if (pi instanceof ComponentFactory) {
-                            rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
-                        }
-                        List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
-                        if (reps == null) {
-                            reps = new LinkedList<>();
-                            info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
-                        }
-                        reps.add(rep);
-                    }
-                    providers.put(name, provider);
+            for (String name : providerIds) {
+                ProviderRepresentation provider = new ProviderRepresentation();
+                ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
+                provider.setOrder(pi.order());
+                if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
+                    provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
                 }
+                if (pi instanceof ConfiguredProvider) {
+                    ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+                    rep.setId(pi.getId());
+                    ConfiguredProvider configured = (ConfiguredProvider)pi;
+                    rep.setHelpText(configured.getHelpText());
+                    List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
+                    if (configProperties == null) configProperties = Collections.EMPTY_LIST;
+                    rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
+                    if (pi instanceof ComponentFactory) {
+                        rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
+                    }
+                    if (pi instanceof ConfiguredPerClientProvider) {
+                        List<ProviderConfigProperty> configClientProperties = ((ConfiguredPerClientProvider) pi).getConfigPropertiesPerClient();
+                        rep.setClientProperties(ModelToRepresentation.toRepresentation(configClientProperties));
+                    }
+                    List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
+                    if (reps == null) {
+                        reps = new LinkedList<>();
+                        info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
+                    }
+                    reps.add(rep);
+                }
+                providers.put(name, provider);
             }
             spiRep.setProviders(providers);
 

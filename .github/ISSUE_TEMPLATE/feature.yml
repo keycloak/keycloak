@@ -6,7 +6,28 @@ body:
     id: description
     attributes:
       label: Description
-      description: Describe the feature at a high-level.
+      description: Describe the feature at a high-level
+    validations:
+      required: true
+  - type: textarea
+    id: value_proposition
+    attributes:
+      label: Value Proposition
+      description: Describe what value the feature brings
+    validations:
+      required: true
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals
+      description: Describe what capabilities the feature should provide
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-Goals
+      description: Describe capabilities the feature should not provide, or is out of scope
     validations:
       required: true
   - type: input
@@ -20,16 +41,9 @@ body:
     validations:
       required: false
   - type: textarea
-    id: motivation
+    id: notes
     attributes:
-      label: Motivation
-      description: Describe why the feature should be added.
-    validations:
-      required: false
-  - type: textarea
-    id: details
-    attributes:
-      label: Details
+      label: Notes
       description: Design ideas? Implementation ideas? Anything that will give us more context about the feature you are proposing!
     validations:
       required: false

@@ -137,4 +137,18 @@ public abstract class AbstractCommand implements Callable<Integer> {
         return Environment.PROD_PROFILE_VALUE;
     }
 
+    /**
+     * @return true if the command starts an http server
+     */
+    public boolean isServing() {
+        return false;
+    }
+
+    /**
+     * Controls whether the command actually starts the server
+     */
+    public boolean shouldStart() {
+        return false;
+    }
+
 }

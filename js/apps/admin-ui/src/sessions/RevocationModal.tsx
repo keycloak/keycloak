@@ -41,20 +41,20 @@ export const RevocationModal = ({
       addAlert(t("noAdminUrlSet"), AlertVariant.warning);
     } else if (failedCount > 0) {
       addAlert(
-        t("" + prefixKey + "Success", {
+        t(prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
         AlertVariant.success,
       );
       addAlert(
-        t("" + prefixKey + "Fail", {
+        t(prefixKey + "Fail", {
           failedNodes: result.failedRequests,
         }),
         AlertVariant.danger,
       );
     } else {
       addAlert(
-        t("" + prefixKey + "Success", {
+        t(prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
         AlertVariant.success,

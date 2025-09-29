@@ -6,12 +6,13 @@ import org.keycloak.config.TransactionOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public class TransactionPropertyMappers {
+import java.util.List;
 
-    private TransactionPropertyMappers(){}
+public class TransactionPropertyMappers implements PropertyMapperGrouping {
 
-    public static PropertyMapper<?>[] getTransactionPropertyMappers() {
-        return new PropertyMapper[] {
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(TransactionOptions.TRANSACTION_XA_ENABLED)
                         .to("quarkus.datasource.jdbc.transactions")
                         .transformer(TransactionPropertyMappers::getQuarkusTransactionsValue)
@@ -20,7 +21,7 @@ public class TransactionPropertyMappers {
                         .to("quarkus.datasource.\"<datasource>\".jdbc.transactions")
                         .transformer(TransactionPropertyMappers::getQuarkusTransactionsValue)
                         .build()
-        };
+        );
     }
 
     private static String getQuarkusTransactionsValue(String txValue, ConfigSourceInterceptorContext context) {

@@ -61,7 +61,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         putEnvVar("KC_SPI_CAMEL_CASE_SCOPE_CAMEL_CASE_PROP", "foobar");
         initConfig();
         String value = Config.scope("camelCaseScope").get("camelCaseProp");
-        assertEquals(value, "foobar");
+        assertEquals("foobar", value);
+
+        // root should be at kc - users are not expected to obtain spi options this way
+        value = Config.scope().root().get("spi-camel-case-scope-camel-case-prop");
+        assertEquals("foobar", value);
     }
 
     @Test
@@ -69,7 +73,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         putEnvVar("KC_SPI_CAMEL_CASE_SCOPE__CAMEL_CASE_PROP", "foobar");
         initConfig();
         String value = Config.scope("camelCaseScope").get("camelCaseProp");
-        assertEquals(value, "foobar");
+        assertEquals("foobar", value);
+
+        // root should be at kc - users are not expected to obtain spi options this way
+        value = Config.scope().root().get("spi-camel-case-scope--camel-case-prop");
+        assertEquals("foobar", value);
     }
 
     @Test
@@ -81,8 +89,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testKeycloakConfPlaceholder() {
         assertEquals("info", createConfig().getRawValue("kc.log-level"));
+        assertTrue(Configuration.getConfig().isPropertyPresent("quarkus.log.category.\"io.k8s\".level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
+        Environment.setRebuild();
+        assertNull(Expressions.withoutExpansion(() -> Configuration.getConfigValue("kc.log-level")).getValue());
     }
 
     @Test
@@ -187,6 +198,20 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testProviderDefault() {
+        ConfigArgsConfigSource.setCliArgs("--spi-client-registration--provider-default=openid-connect");
+        initConfig("client-registration");
+        assertEquals("openid-connect", Config.getDefaultProvider("client-registration"));
+    }
+
+    @Test
+    public void testScopePropertyWithPeriod() {
+        ConfigArgsConfigSource.setCliArgs("--spi-client-registration--openid-connect--some-property=value");
+        Config.Scope scope = initConfig("client-registration", "openid-connect");
+        assertEquals("value", scope.get("some.property"));
+    }
+
+    @Test
     public void testPropertyNamesFromConfig() {
         ConfigArgsConfigSource.setCliArgs("--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         Config.Scope config = initConfig("client-registration", "openid-connect");
@@ -235,7 +260,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db=mysql");
         SmallRyeConfig config = createConfig();
         String value = Expressions.withoutExpansion(() -> config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
-        assertEquals("jdbc:mysql://${kc.db-url-host:localhost}:${kc.db-url-port:3306}/${kc.db-url-database:keycloak}${kc.db-url-properties:}", value);
+        assertEquals("mysql", value);
     }
 
     @Test

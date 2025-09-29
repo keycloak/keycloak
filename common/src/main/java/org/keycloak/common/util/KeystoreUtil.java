@@ -86,9 +86,7 @@ public class KeystoreUtil {
     }
 
     public static KeyPair loadKeyPairFromKeystore(String keystoreFile, String storePassword, String keyPassword, String keyAlias, KeystoreFormat format) {
-        InputStream stream = FindFile.findFile(keystoreFile);
-
-        try {
+        try (InputStream stream = FindFile.findFile(keystoreFile)) {
             KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(format);
 
             keyStore.load(stream, storePassword.toCharArray());
@@ -105,7 +103,7 @@ public class KeystoreUtil {
             throw new RuntimeException("Failed to load private key: " + e.getMessage(), e);
         }
     }
-    
+
     public static Optional<KeystoreFormat> getKeystoreFormat(String path) {
         int lastDotIndex = path.lastIndexOf('.');
         if (lastDotIndex > -1) {
@@ -128,7 +126,9 @@ public class KeystoreUtil {
      */
     public static String getKeystoreType(String preferredType, String path, String defaultType) {
         // Configured type has precedence
-        if (preferredType != null) return preferredType;
+        if (preferredType != null) {
+            return preferredType;
+        }
 
         // Fallback to path
         Optional<KeystoreFormat> format = getKeystoreFormat(path);

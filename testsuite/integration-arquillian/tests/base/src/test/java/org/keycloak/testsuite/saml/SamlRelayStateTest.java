@@ -3,7 +3,7 @@ package org.keycloak.testsuite.saml;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.testsuite.admin.concurrency.AbstractConcurrencyTest;
+import org.keycloak.testsuite.AbstractConcurrencyTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;

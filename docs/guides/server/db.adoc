@@ -6,8 +6,7 @@
 
 <@tmpl.guide
     title="Configuring the database"
-    summary="Configure a relational database for {project_name} to store user, client, and realm data."
-    includedOptions="db db-* transaction-xa-enabled">
+    summary="Configure a relational database for {project_name} to store user, client, and realm data.">
 
 This {section} explains how to configure the {project_name} server to store data in a relational database.
 
@@ -17,14 +16,17 @@ The server has built-in support for different databases. You can query the avail
 
 [%autowidth]
 |===
-|Database | Option value | Tested Version
+|Database | Option value | Tested Version | Supported Versions
 
-|MariaDB Server | `mariadb` | ${properties["mariadb.version"]}
-|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]}
-|MySQL | `mysql` | ${properties["mysql.version"]}
-|Oracle Database | `oracle` | ${properties["oracledb.version"]}
-|PostgreSQL | `postgres` | ${properties["postgresql.version"]}
-|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]}
+|MariaDB Server | `mariadb` | ${properties["mariadb.version"]} | 11.8 (LTS), 11.4 (LTS), 10.11 (LTS), 10.6 (LTS)
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
+|MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS)
+|Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note: Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 17.x, 16.x, 15.x, 14.x, 13.x
+|EnterpriseDB Advanced | `postgres` | ${properties["edb.version"]} | 17
+|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
+|Azure SQL Database | `mssql` | latest | latest
+|Azure SQL Managed Instance | `mssql` | latest | latest
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
@@ -48,6 +50,9 @@ one of these databases
 this database
 </@profile.ifCommunity>
 or skip this section if you want to connect to a different database for which the database driver is already included.
+
+NOTE: Overriding the built-in database drivers or supplying your own drivers is considered unsupported.
+The only supported exceptions are explicitly documented in this guide, such as the Oracle Database driver.
 
 === Installing the Oracle Database driver
 
@@ -183,19 +188,6 @@ The following is a sample command for a PostgreSQL database.
 <@kc.start parameters="--db postgres --db-url jdbc:postgresql://mypostgres/mydatabase"/>
 
 Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
-
-== Overriding the default JDBC driver
-
-The server uses a default JDBC driver accordingly to the database you chose.
-
-To set a different driver you can set the `db-driver` with the fully qualified class name of the JDBC driver:
-
-<@kc.start parameters="--db postgres --db-driver=my.Driver"/>
-
-Regardless of the driver you set, the default driver is always available at runtime.
-
-Only set this property if you really need to. For instance, when leveraging the capabilities from a JDBC Driver Wrapper for
-a specific cloud database service.
 
 == Configuring Unicode support for the database
 
@@ -358,4 +350,135 @@ In the same way the migrationExport to point to a specific file and location:
 
 For more information, check the link:{upgrading_guide_link}#_migrate_db[Migrating the database] documentation.
 
+== Configuring the connection pool
+
+=== MySQL and MariaDB
+
+In order to prevent 'No operations allowed after connection closed' exceptions from being thrown, it is necessary to ensure
+that {project_name}'s connection pool has a connection maximum lifetime that is less than the server's configured `wait_timeout`.
+When using the MySQL and MariaDB database, {project_name} configures a default max lifetime of 7 hours and 50 minutes, as
+this is less than the default server value of 8 hours.
+
+If you are explicitly configuring the `wait_timeout` in your database, it is necessary to ensure that you configure a
+`db-pool-max-lifetime` value that is less than the `wait_timeout`. The recommended best practice, is to define this value
+to be your `wait_timeout` minus a few minutes. Failure to correctly configure the `db-pool-max-lifetime` will result in
+{project_name} logging a warning on startup.
+
+== Configure multiple datasources
+
+{project_name} allows you to specify additional datasources in case you need to access another database from your extensions. This is useful when using the main {project_name} datasource is not a viable option for storing custom data, like users.
+
+You can find more details on how to connect to your own users database in the link:{server_developer_guide}#_user-storage-spi[User Storage SPI] documentation.
+
+Defining multiple datasources works like defining a single datasource, with one important change - you have to specify a name for each datasource as part of the config option name.
+
+=== Required configuration
+
+In order to enable an additional datasource, you need to set up 2 things - the JPA `persistence.xml` file and {project_name} configuration.
+The `persistence.xml` file serves to specify persistence units as part of the Jakarta Persistence API standard, and is required for proper configuration propagation to the Hibernate ORM framework.
+When you complete the part with the `persistence.xml` file, you need to set up {project_name} configuration accordingly.
+
+The additional datasource properties might be specified via the standard config sources like CLI, `keycloak.conf`, or environment variables.
+
+The additional datasources can be configured in a similar way as the main datasource.
+This is achieved by using analogous names for config options, which additionally include the name of the additional datasource.
+For example, when the main datasource uses the `db-username`, the additional one would be `db-username-<datasource>`.
+See the Relevant options chapter for the complete list of them.
+
+==== 1. JPA `persistence.xml` file
+
+The `persistence.xml` provides configuration for Jakarta Persistence API (JPA) such as what entities it should manage, the datasource name, JDBC settings, JPA/Hibernate custom settings, and more.
+The file needs to be placed in the `META-INF/persistence.xml` folder of your custom {project_name} extension.
+
+NOTE: Be aware that Quarkus provides the ability to set up the JPA persistence unit via Hibernate ORM properties instead of using the `persistence.xml` file.
+However, the supported way for {project_name} is using the `persistence.xml` file, and if the file is present, the Quarkus properties are ignored.
+
+In {project_name}, most of the configuration is automatic, and you just need to provide fundamental configuration details - the datasource name and transaction type.
+
+{project_name} requires setting the transaction type for the additional datasource to `JTA`.
+You can set the transaction type and datasource name as follows for this minimal `persistence.xml` file:
+
+[source,xml]
+----
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+                         version="3.0">
+    <persistence-unit name="user-store-pu" transaction-type="JTA">
+        <class>org.your.extension.UserEntity</class>
+        <properties>
+            <property name="jakarta.persistence.jtaDataSource" value="user-store" />
+        </properties>
+    </persistence-unit>
+</persistence>
+----
+
+NOTE: To properly set the datasource name, you should set the `jakarta.persistence.jtaDataSource` property.
+If it is not set, the persistence unit name will be used as the datasource name instead (so `user-store-pu` in this case).
+In the example above, the resulting datasource name is `user-store`. The datasource name can be the same as the persistence unit name.
+
+In order to use your own JPA entities, you need to provide the `<class>` properties that mark JPA entities that will be managed by this persistence unit, directed to a specific datasource.
+In the example above, the `org.your.extension.UserEntity` JPA entity will be managed by the persistence unit `user-store-pu`, directed to the `user-store` datasource.
+
+==== 2. Required properties
+
+Once you have set up your `persistence.xml`, the minimal configuration on the {project_name} side is the setup of the DB kind/vendor for the specified datasource.
+You need to specify the build time option `db-kind-<name>`, where the `<name>` is the name of your datasource and must be the **same** as specified in the `persistence.xml` file.
+
+Therefore, you can enable the additional datasource `user-store` as follows (`postgres` as an example):
+
+<@kc.start parameters="--db-kind-user-store=postgres"/>
+
+After specifying the db-kind for the datasource, all database-kind–specific defaults (such as the driver and dialect) are automatically applied, just like for the main datasource.
+
+=== Configuration via environment variables
+If you do not want to configure the datasource via CLI or `keycloak.conf` properties, you can use the environment variables.
+
+You can set the DB kind via environment variables (for the `user-store` datasource) as follows:
+
+[source,bash]
+----
+export KC_DB_KIND_USER_STORE=postgres
+export KC_DB_USERNAME_USER_STORE=my-username
+----
+
+It maps to the `db-kind-user-store` and `db-username-user-store` {project_name} properties due to the default mapping of the `\_` (underscore) to the `-` (dash) for environment variables.
+However, sometimes, the name of the datasource might contain some special characters like `_`, `$` or `.`
+
+In order to have it properly configured via the {project_name} environment variables, you need to explicitly say what the key for the datasource should look like.
+You can use a pair of unique {project_name} environment variables with a special case of the `KCKEY_`.
+
+For instance, for a datasource with the name __user_store$marketing__, you can set environment variables as follows:
+
+[source,bash]
+----
+export KC_USER_STORE_DB_KIND=mariadb
+export KCKEY_USER_STORE_DB_KIND=db-kind-user_store$marketing
+----
+
+You can find more information in the guide <@links.server id="configuration"/>, in subsection _Formats for environment variable keys with special characters_.
+
+=== Backward compatibility for the `quarkus.properties`
+In the past, we instructed users to use raw Quarkus properties to configure additional datasources in some places.
+However, as using Quarkus properties in the `conf/quarkus.properties` file is considered **unsupported**, it is strongly recommended to use the dedicated additional datasources options as described above.
+
+Before you are able to migrate to the dedicated options, you can still specify the datasource settings via the Quarkus properties as follows:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=h2
+quarkus.datasource.user-store.username=sa
+quarkus.datasource.user-store.jdbc.url=jdbc:h2:mem:user-store;DB_CLOSE_DELAY=-1
+quarkus.datasource.user-store.jdbc.transactions=xa
+----
+
+WARNING: Use Quarkus properties **without quotation** for the datasource name, as properties with the quoted datasource name clash with the new datasource options mapping.
+Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.datasource."user-store".db-kind=h2` to prevent any issues.
+
+<@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled" excludedOptions="db-*-<datasource>">
+
+=== Additional datasources options
+<@opts.includeOptions includedOptions="*-<datasource>"/>
+
+</@opts.printRelevantOptions>
 </@tmpl.guide>

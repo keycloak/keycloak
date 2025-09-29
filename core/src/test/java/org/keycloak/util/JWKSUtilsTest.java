@@ -168,7 +168,7 @@ public abstract class JWKSUtilsTest {
 
         key = keyWrappersForUse.getKeyByKidAndAlg(kidEC2, null);
         assertNotNull(key);
-        assertNull(key.getAlgorithmOrDefault());
+        assertEquals("ES384", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidEC2, key.getKid());
         assertEquals("EC", key.getType());

@@ -62,8 +62,8 @@ public class KeyManager {
                 KeyWrapper key = new KeyWrapper();
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
-                if (k.getOtherClaims().get(OKPPublicJWK.CRV) != null) {
-                    key.setCurve((String) k.getOtherClaims().get(OKPPublicJWK.CRV));
+                if (k.getOtherClaim(OKPPublicJWK.CRV, String.class) != null) {
+                    key.setCurve(k.getOtherClaim(OKPPublicJWK.CRV, String.class));
                 }
                 key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);

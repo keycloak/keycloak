@@ -58,6 +58,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-edb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mariadb</artifactId>
         </dependency>
         <dependency>
@@ -75,6 +79,10 @@
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-postgres</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-tidb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>

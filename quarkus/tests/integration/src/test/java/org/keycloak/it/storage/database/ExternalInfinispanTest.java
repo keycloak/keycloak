@@ -46,7 +46,6 @@ public class ExternalInfinispanTest {
             "--cache-remote-tls-enabled=false",
             "--spi-cache-embedded-default-site-name=ISPN",
             "--spi-load-balancer-check-remote-poll-interval=500",
-            "-Dkc.cache-remote-create-caches=true",
             "--verbose"
     })
     void testLoadBalancerCheckFailureWithMultiSite() {
@@ -64,7 +63,6 @@ public class ExternalInfinispanTest {
             "--cache-remote-tls-enabled=false",
             "--spi-cache-embedded-default-site-name=ISPN",
             "--spi-load-balancer-check-remote-poll-interval=500",
-            "-Dkc.cache-remote-create-caches=true",
             "--verbose"
     })
     void testLoadBalancerCheckFailureWithRemoteOnlyCaches() {

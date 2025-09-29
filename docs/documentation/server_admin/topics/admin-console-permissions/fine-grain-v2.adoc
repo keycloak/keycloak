@@ -62,12 +62,13 @@ set of scopes:
 |===
 | *Scope*                   | *Description*                                                                                | *Also granted by*
 
-| *view*                    | Defines if a realm administrator can view users. This scope should be set whenever you want  | `view-members`
-                              to make users available from queries.
+| *view*                    | Defines if a realm administrator can view users. This scope should be set whenever you want to make users available from queries. | `view-members`
 | *manage*                  | Defines if a realm administrator can manage users.                                           | `manage-members`
 | *manage-group-membership* | Defines if a realm administrator can assign or unassign users to/from groups.                | None
 | *map-roles*               | Defines if a realm administrator can assign or unassign roles to/from users.                 | None
 | *impersonate*             | Defines if a realm administrator can impersonate other users.                                | `impersonate-members`
+| *reset-password*          | Defines if a realm administrator can reset user passwords. If no permission with `reset-password` is found, it falls back to check `manage` scope. | None
+
 |===
 
 The user resource type has a strong relationship with some of the permissions you can set to groups. Most of the time,

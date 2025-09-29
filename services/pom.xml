@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-services</artifactId>
     <name>Keycloak REST Services</name>
-    <description/>
+    <description>Keycloak REST Services</description>
 
     <properties>
         <version.swagger.doclet>1.1.2</version.swagger.doclet>
@@ -253,6 +253,10 @@
         <dependency>
             <groupId>com.github.ua-parser</groupId>
             <artifactId>uap-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>

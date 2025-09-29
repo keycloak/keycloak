@@ -1,4 +1,5 @@
 package org.keycloak.testframework.database;
 
-public record DatabaseConfig(String initScript, String database, boolean preventReuse) {
+public interface DatabaseConfig {
+    DatabaseConfigBuilder configure(DatabaseConfigBuilder database);
 }

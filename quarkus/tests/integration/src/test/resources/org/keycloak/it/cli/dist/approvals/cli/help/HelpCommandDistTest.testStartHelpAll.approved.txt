@@ -26,6 +26,12 @@ Cache:
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
+--cache-config-mutate <true|false>
+                     Determines whether changes to the default cache configurations are allowed.
+                       This is only recommended for advanced use-cases where the default cache
+                       configurations are proven to be problematic. The only supported way to
+                       change the default cache configurations is via the other 'cache-...'
+                       options. Default: false.
 --cache-embedded-authorization-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the
                        authorization cache.
@@ -96,6 +102,9 @@ Cache:
 --cache-metrics-histograms-enabled <true|false>
                      Enable histograms for metrics for the embedded caches. Default: false.
                        Available only when metrics are enabled.
+--cache-remote-backup-sites <sites>
+                     Configures a list of backup sites names to where the external Infinispan
+                       cluster backups the Keycloak data. Available only when remote host is set.
 --cache-remote-host <hostname>
                      The hostname of the external Infinispan cluster. Available only when feature
                        'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or
@@ -137,8 +146,8 @@ Database:
 
 --db <vendor>        The database vendor. In production mode the default value of 'dev-file' is
                        deprecated, you should explicitly specify the db instead. Possible values
-                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres. Default:
-                       dev-file.
+                       are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
+                       Default: dev-file.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
@@ -151,6 +160,11 @@ Database:
                      The password of the database user.
 --db-pool-initial-size <size>
                      The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. May be an ISO 8601 duration
+                       value, an integer number of seconds, or an integer followed by one of [ms,
+                       h, m, s, d].
 --db-pool-max-size <size>
                      The maximum size of the connection pool. Default: 100.
 --db-pool-min-size <size>
@@ -175,61 +189,60 @@ Database:
 --db-username <username>
                      The username of the database user.
 
-Database - additional datasources (Preview):
+Database - additional datasources:
 
---db-active-<datasource> <true|false>
-                     Preview: Deactivate specific named datasource <datasource>. Default: true.
 --db-debug-jpql-<datasource> <true|false>
-                     Preview: Used for named <datasource>. Add JPQL information as comments to SQL
+                     Used for named <datasource>. Add JPQL information as comments to SQL
                        statements to debug JPA SQL statement generation. Default: false.
 --db-driver-<datasource> <driver>
-                     Preview: Used for named <datasource>. The fully qualified class name of the
-                       JDBC driver. If not set, a default driver is set accordingly to the chosen
+                     Used for named <datasource>. The fully qualified class name of the JDBC
+                       driver. If not set, a default driver is set accordingly to the chosen
                        database.
+--db-enabled-<datasource> <true|false>
+                     If the named datasource <datasource> should be enabled at runtime. Default:
+                       true.
 --db-kind-<datasource> <vendor>
-                     Preview: Used for named <datasource>. The database vendor. In production mode
-                       the default value of 'dev-file' is deprecated, you should explicitly specify
-                       the db instead. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres. Default: dev-file.
+                     Used for named <datasource>. The database vendor. In production mode the
+                       default value of 'dev-file' is deprecated, you should explicitly specify the
+                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
+                       oracle, postgres, tidb.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
-                     Preview: Used for named <datasource>. Log SQL statements slower than the
-                       configured threshold with logger org.hibernate.SQL_SLOW and log-level info.
-                       Default: 10000.
+                     Used for named <datasource>. Log SQL statements slower than the configured
+                       threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
+                       10000.
 --db-password-<datasource> <password>
-                     Preview: Used for named <datasource>. The password of the database user.
+                     Used for named <datasource>. The password of the database user.
 --db-pool-initial-size-<datasource> <size>
-                     Preview: Used for named <datasource>. The initial size of the connection pool.
+                     Used for named <datasource>. The initial size of the connection pool.
 --db-pool-max-size-<datasource> <size>
-                     Preview: Used for named <datasource>. The maximum size of the connection pool.
-                       Default: 100.
+                     Used for named <datasource>. The maximum size of the connection pool. Default:
+                       100.
 --db-pool-min-size-<datasource> <size>
-                     Preview: Used for named <datasource>. The minimal size of the connection pool.
+                     Used for named <datasource>. The minimal size of the connection pool.
 --db-schema-<datasource> <schema>
-                     Preview: Used for named <datasource>. The database schema to be used.
+                     Used for named <datasource>. The database schema to be used.
 --db-url-database-<datasource> <dbname>
-                     Preview: Used for named <datasource>. Sets the database name of the default
-                       JDBC URL of the chosen vendor. If the `db-url` option is set, this option is
-                       ignored.
---db-url-full-<datasource> <jdbc-url>
-                     Preview: Used for named <datasource>. The full database JDBC URL. If not
-                       provided, a default URL is set based on the selected database vendor. For
-                       instance, if using 'postgres', the default JDBC URL would be 'jdbc:
-                       postgresql://localhost/keycloak'.
---db-url-host-<datasource> <hostname>
-                     Preview: Used for named <datasource>. Sets the hostname of the default JDBC
-                       URL of the chosen vendor. If the `db-url` option is set, this option is
-                       ignored.
---db-url-port-<datasource> <port>
-                     Preview: Used for named <datasource>. Sets the port of the default JDBC URL of
+                     Used for named <datasource>. Sets the database name of the default JDBC URL of
                        the chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-full-<datasource> <jdbc-url>
+                     Used for named <datasource>. The full database JDBC URL. If not provided, a
+                       default URL is set based on the selected database vendor. For instance, if
+                       using 'postgres', the default JDBC URL would be 'jdbc:postgresql:
+                       //localhost/keycloak'.
+--db-url-host-<datasource> <hostname>
+                     Used for named <datasource>. Sets the hostname of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-port-<datasource> <port>
+                     Used for named <datasource>. Sets the port of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
 --db-url-properties-<datasource> <properties>
-                     Preview: Used for named <datasource>. Sets the properties of the default JDBC
-                       URL of the chosen vendor. Make sure to set the properties accordingly to the
-                       format expected by the database vendor, as well as appending the right
-                       character at the beginning of this property value. If the `db-url` option is
-                       set, this option is ignored.
+                     Used for named <datasource>. Sets the properties of the default JDBC URL of
+                       the chosen vendor. Make sure to set the properties accordingly to the format
+                       expected by the database vendor, as well as appending the right character at
+                       the beginning of this property value. If the `db-url` option is set, this
+                       option is ignored.
 --db-username-<datasource> <username>
-                     Preview: Used for named <datasource>. The username of the database user.
+                     Used for named <datasource>. The username of the database user.
 
 Transaction:
 
@@ -305,7 +318,7 @@ HTTP(S):
                      The file path to a private key in PEM format.
 --https-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-* options. May be a java.time.Duration value, an integer
+                       referenced by https-* options. May be an ISO 8601 duration value, an integer
                        number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must
                        be greater than 30 seconds. Use -1 to disable. Default: 1h.
 --https-cipher-suites <ciphers>
@@ -335,6 +348,22 @@ HTTP(S):
                        detected based on the file extension. If 'fips-mode' is set to 'strict' and
                        no value is set, it defaults to 'BCFKS'.
 
+HTTP Access log:
+
+--http-access-log-enabled <true|false>
+                     If HTTP access logging is enabled. By default this will log records in
+                       console. Default: false.
+--http-access-log-exclude <PARAM>
+                     A regular expression that can be used to exclude some paths from logging. For
+                       instance, '/realms/my-realm/.*' will exclude all subsequent endpoints for
+                       realm 'my-realm' from the log. Available only when HTTP Access log is
+                       enabled.
+--http-access-log-pattern <PARAM>
+                     The HTTP access log pattern. You can use the available named formats, or use
+                       custom format described in Quarkus documentation. Possible values are:
+                       common, combined, long, or a custom one. Default: common. Available only
+                       when HTTP Access log is enabled.
+
 Health:
 
 --health-enabled <true|false>
@@ -344,6 +373,10 @@ Health:
 
 Management:
 
+--http-management-health-enabled <true|false>
+                     If health endpoints should be exposed on the management interface. If false,
+                       health endpoints will be exposed on the main interface. Default: true.
+                       Available only when health is enabled.
 --http-management-port <port>
                      Port of the management interface. Relevant only when something is exposed on
                        the management interface - see the guide for details. Default: 9000.
@@ -371,8 +404,8 @@ Management:
                        details. Available only when http-management-scheme is inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-management-* options for the management server. May be a
-                       java.time.Duration value, an integer number of seconds, or an integer
+                       referenced by https-management-* options for the management server. May be
+                       an ISO 8601 duration value, an integer number of seconds, or an integer
                        followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
                        to disable. If not given, the value is inherited from HTTP options. Relevant
                        only when something is exposed on the management interface - see the guide
@@ -527,9 +560,10 @@ Logging:
                        Default: false. Available only when log-mdc preview feature is enabled.
 --log-mdc-keys <keys>
                      Defines which information should be added to the mapped diagnostic context as
-                       a comma-separated list. Possible values are: realm, clientId, userId,
-                       ipAddress, org. Default: realm,org,clientId. Available only when MDC logging
-                       is enabled.
+                       a comma-separated list. Possible values are: realmName, clientId, userId,
+                       ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
+                       Default: realmName,clientId,org,sessionId,authenticationSessionId,
+                       authenticationTabId. Available only when MDC logging is enabled.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.

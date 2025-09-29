@@ -90,6 +90,10 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
                 .attribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, "HS512")
                 .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID))
                 .build());
+        testRealms.add(configureRealm(RealmBuilder.create().name("authz-client-jwt-test-Ed25519"), ClientBuilder.create()
+                .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIH9MIGwoAMCAQICCQDdYD1y8dkE8jAFBgMrZXAwEjEQMA4GA1UEAxMHY2xpZW50NDAgFw0yNTA5MTkwNjIwMjNaGA8yMDc1MDkwNzA2MjAyM1owEjEQMA4GA1UEAxMHY2xpZW50NDAqMAUGAytlcAMhAKjqQuu4BpGsOi0KRwuelXLHW45J6349akYxwadEGordoyEwHzAdBgNVHQ4EFgQUuYEYJBazl+lky1x1tE66zCM3BLUwBQYDK2VwA0EAEOf2nwTiTU+7fAqni3d5N3htu6aCAtUgmPL8VLWlDbj3NpTs7jEIV8oH62Ach/aNFL1ZSrzNEKab19ICxPH8AA==")
+                .authenticatorType(JWTClientAuthenticator.PROVIDER_ID))
+                .build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test"), ClientBuilder.create().secret("secret")).build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-session").accessTokenLifespan(1), ClientBuilder.create().secret("secret")).build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-no-rt").accessTokenLifespan(1), ClientBuilder.create().secret("secret").attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "false")).build());
@@ -168,6 +172,11 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     @Test
     public void testSuccessfulAuthorizationES512Request() throws Exception {
         testSuccessfulAuthorizationRequest("keycloak-with-jwt-es512-authentication.json");
+    }
+
+    @Test
+    public void testSuccessfulAuthorizationEd25519Request() throws Exception {
+        testSuccessfulAuthorizationRequest("keycloak-with-jwt-Ed25519-authentication.json");
     }
 
     @Test

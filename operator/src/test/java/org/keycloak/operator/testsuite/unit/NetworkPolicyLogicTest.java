@@ -144,7 +144,8 @@ public class NetworkPolicyLogicTest {
                 namespaceSelectorWithMatchLabel("kubernetes.io/name", "keycloak")
         ));
         var networkPolicy = assertEnabledAndGet(kc);
-        CRAssert.assertIngressRules(networkPolicy, kc, -1, Constants.KEYCLOAK_HTTPS_PORT, -1);
+        var mgmtPort = legacyOption ? -1 : Constants.KEYCLOAK_MANAGEMENT_PORT;
+        CRAssert.assertIngressRules(networkPolicy, kc, -1, Constants.KEYCLOAK_HTTPS_PORT, mgmtPort);
     }
 
     @Test

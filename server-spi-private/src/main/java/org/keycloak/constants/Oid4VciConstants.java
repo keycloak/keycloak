@@ -29,6 +29,17 @@ public final class Oid4VciConstants {
 
     public static final String CREDENTIAL_SUBJECT = "credentialSubject";
 
+    public static final String SIGNED_METADATA_JWT_TYPE = "openidvci-issuer-metadata+jwt";
+
+    // --- Endpoints/Well-Known ---
+    public static final String WELL_KNOWN_OPENID_CREDENTIAL_ISSUER = "openid-credential-issuer";
+    public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
+    public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = "credential-offer";
+
+    // --- Keybinding/Credential Builder ---
+    public static final String SOURCE_ENDPOINT = "source_endpoint";
+    public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "batch_credential_issuance.batch_size";
+
     private Oid4VciConstants() {
     }
 }

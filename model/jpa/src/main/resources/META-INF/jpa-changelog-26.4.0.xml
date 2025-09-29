@@ -21,4 +21,44 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_4_0_SamlEncryptionAttributes"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.4.0-51321">
+        <createIndex tableName="EVENT_ENTITY" indexName="IDX_EVENT_ENTITY_USER_ID_TYPE">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="TYPE" type="VARCHAR(255)" />
+            <column name="EVENT_TIME" type="BIGINT" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="40343-workflow-state-table" author="keycloak">
+        <createTable tableName="WORKFLOW_STATE">
+            <column name="RESOURCE_ID" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="WORKFLOW_ID" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="WORKFLOW_PROVIDER_ID" type="VARCHAR(255)" />
+            <column name="RESOURCE_TYPE" type="VARCHAR(255)" />
+            <column name="SCHEDULED_STEP_ID" type="VARCHAR(255)" />
+            <column name="SCHEDULED_STEP_TIMESTAMP" type="BIGINT" />
+        </createTable>
+
+        <addPrimaryKey
+                constraintName="PK_WORKFLOW_STEP_STATE"
+                tableName="WORKFLOW_STATE"
+                columnNames="RESOURCE_ID, WORKFLOW_ID" />
+
+        <createIndex indexName="IDX_WORKFLOW_STATE_STEP"
+                     tableName="WORKFLOW_STATE">
+            <column name="WORKFLOW_ID" />
+            <column name="SCHEDULED_STEP_ID" />
+        </createIndex>
+
+        <createIndex indexName="IDX_WORKFLOW_STATE_PROVIDER"
+                     tableName="WORKFLOW_STATE">
+            <column name="RESOURCE_ID" />
+            <column name="WORKFLOW_PROVIDER_ID" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

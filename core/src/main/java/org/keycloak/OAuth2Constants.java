@@ -17,6 +17,10 @@
 
 package org.keycloak;
 
+import org.keycloak.jose.jws.Algorithm;
+
+import static org.keycloak.jose.jws.Algorithm.PS256;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -155,6 +159,17 @@ public interface OAuth2Constants {
     String AUTHENTICATOR_METHOD_REFERENCE = "amr";
 
     String CNF = "cnf";
+
+    // RAR - https://datatracker.ietf.org/doc/html/rfc9396
+    String AUTHORIZATION_DETAILS_PARAM = "authorization_details";
+
+    // DPoP - https://datatracker.ietf.org/doc/html/rfc9449
+    String DPOP_HTTP_HEADER = "DPoP";
+    String DPOP_NONCE_HEADER = "DPoP-Nonce";
+    Algorithm DPOP_DEFAULT_ALGORITHM = PS256;
+    String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
+    String ALGS_ATTRIBUTE = "algs";
+
 }
 
 

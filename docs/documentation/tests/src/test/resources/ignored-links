@@ -36,12 +36,11 @@ https://account.live.com/developers/applications/create
 https://developer.twitter.com/apps/
 https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#rolling-update
 https://stackapps.com/apps/oauth/register
+https://www.npmjs.com/package/*
 # Failing because of broken certificate, can likely be restored later.
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
-# To be removed once KC 26.2 has been released
-https://www.keycloak.org/server/caching#_securing_transport_stacks
-https://www.keycloak.org/observability/grafana-dashboards
-https://www.keycloak.org/securing-apps/token-exchange*
-https://www.keycloak.org/operator/rolling-updates
-https://www.keycloak.org/server/update-compatibility#rolling-updates-for-patch-releases
+# BEGIN - To be removed once KC 26.4 has been released
+https://www.keycloak.org/securing-apps/specifications
+https://www.keycloak.org/server/db#configure-multiple-datasources
+# END

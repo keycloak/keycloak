@@ -2,7 +2,7 @@
 
 == Upgrading {project_name}
 
-This guide describes how to upgrade {project_name}. Use the following procedures in this order:
+This {section} describes how to upgrade {project_name}. Use the following procedures in this order:
 
 . Review the migration changes from the previous version of {project_name}.
 . Upgrade the {project_name} server.

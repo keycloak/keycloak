@@ -1,0 +1,28 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for configuring thread pools"
+summary="Understand concepts for avoiding resource exhaustion and congestion."
+tileVisible="false" >
+
+This section is intended when you want to understand the considerations and best practices on how to configure thread pools connection pools for {project_name}.
+For a configuration where this is applied, visit <@links.ha id="single-cluster-deploy-keycloak" />.
+
+[#single-cluster-threads-concept]
+== Concepts
+
+[#single-cluster-jgroups-communications]
+=== JGroups communications
+
+// remove this paragraph once OpenJDK 17 is no longer supported on the server side.
+// https://github.com/keycloak/keycloak/issues/31101
+
+JGroups communications, which is used in single-cluster setups for the communication between {project_name} nodes,
+benefits from the use of virtual threads which are available in OpenJDK 21 when at least two cores are available for {project_name}.
+This reduces the memory usage and removes the need to configure thread pool sizes.
+Therefore, the use of OpenJDK 21 is recommended.
+
+<#include "/high-availability/partials/concepts/threads.adoc" />
+
+</@tmpl.guide>

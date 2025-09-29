@@ -25,7 +25,9 @@ import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
 import org.keycloak.models.utils.RoleUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -39,16 +41,19 @@ public class ClientScopeAdapter implements ClientScopeModel {
     protected ClientScopeModel updated;
     protected CachedClientScope cached;
 
+    private final Supplier<ClientScopeModel> modelSupplier;
+
     public ClientScopeAdapter(RealmModel cachedRealm, CachedClientScope cached, RealmCacheSession cacheSession) {
         this.cachedRealm = cachedRealm;
         this.cacheSession = cacheSession;
         this.cached = cached;
+        this.modelSupplier = new LazyModel<>(this::getClientScope);
     }
 
     private void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerClientScopeInvalidation(cached.getId(), cachedRealm.getId());
-            updated = cacheSession.getClientScopeDelegate().getClientScopeById(cachedRealm, cached.getId());
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -81,7 +86,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
         if (isUpdated()) return updated.getProtocolMappersStream();
-        return cached.getProtocolMappers().stream();
+        return cached.getProtocolMappers(cacheSession.session, modelSupplier);
     }
 
     @Override
@@ -106,18 +111,17 @@ public class ClientScopeAdapter implements ClientScopeModel {
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
-            if (mapping.getId().equals(id)) return mapping;
-        }
-        return null;
+        return cached.getProtocolMapperById(cacheSession.session, modelSupplier, id);
+    }
+
+    @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return cached.getProtocolMapperByType(cacheSession.session, modelSupplier, type);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
-            if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
-        }
-        return null;
+        return cached.getProtocolMapperByName(cacheSession.session, modelSupplier, protocol, name);
     }
 
     @Override
@@ -224,6 +228,9 @@ public class ClientScopeAdapter implements ClientScopeModel {
         return copy;
     }
 
+    private ClientScopeModel getClientScope() {
+        return cacheSession.getClientScopeDelegate().getClientScopeById(cachedRealm, cached.getId());
+    }
 
     @Override
     public boolean equals(Object o) {

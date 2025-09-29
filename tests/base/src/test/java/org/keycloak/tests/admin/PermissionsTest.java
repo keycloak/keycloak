@@ -17,11 +17,16 @@
 
 package org.keycloak.tests.admin;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jgroups.util.UUID;
+import org.junit.Assert;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
@@ -40,6 +45,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -50,8 +56,9 @@ import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -290,7 +297,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void roles() {
-        RoleRepresentation newRole = RoleBuilder.create().name("sample-role").build();
+        RoleRepresentation newRole = RoleConfigBuilder.create().name("sample-role").build();
         managedRealm1.admin().roles().create(newRole);
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("sample-role"));
 
@@ -320,7 +327,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void rolesById() {
-        RoleRepresentation newRole = RoleBuilder.create().name("role-by-id").build();
+        RoleRepresentation newRole = RoleConfigBuilder.create().name("role-by-id").build();
         managedRealm1.admin().roles().create(newRole);
         RoleRepresentation role = managedRealm1.admin().roles().get("role-by-id").toRepresentation();
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("role-by-id"));
@@ -545,6 +552,51 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.localization().deleteRealmLocalizationTexts("en"), clients.get("master-admin"), true);
         invoke(realm -> realm.localization().deleteRealmLocalizationTexts("en"), clients.get("none"), false);
         invoke(realm -> realm.localization().deleteRealmLocalizationTexts("en"), clients.get("REALM2"), false);
+    }
+
+    @Test
+    public void testServerInfo() throws Exception {
+        // user in master with no permission => forbidden
+        Assert.assertThrows(ForbiddenException.class, () -> clients.get("master-none").serverInfo().getInfo());
+        // user in master with any permission can see the system info
+        ServerInfoRepresentation serverInfo = clients.get("master-view-realm").serverInfo().getInfo();
+        Assert.assertNotNull(serverInfo.getSystemInfo());
+        Assert.assertNotNull(serverInfo.getCpuInfo());
+        Assert.assertNotNull(serverInfo.getMemoryInfo());
+
+        // user in test realm with no permission => forbidden
+        Assert.assertThrows(ForbiddenException.class, () -> clients.get("none").serverInfo().getInfo());
+        // user in test realm with any permission cannot see the system info
+        serverInfo = clients.get("view-realm").serverInfo().getInfo();
+        Assert.assertNull(serverInfo.getSystemInfo());
+        Assert.assertNull(serverInfo.getCpuInfo());
+        Assert.assertNull(serverInfo.getMemoryInfo());
+        serverInfo = clients.get("manage-users").serverInfo().getInfo();
+        Assert.assertNull(serverInfo.getSystemInfo());
+        Assert.assertNull(serverInfo.getCpuInfo());
+        Assert.assertNull(serverInfo.getMemoryInfo());
+
+        // assign the view-system permission to a test realm user and check the fallback works
+        ClientRepresentation realmMgtRep = adminClient.realm(REALM_NAME).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientResource realmMgtRes = adminClient.realm(REALM_NAME).clients().get(realmMgtRep.getId());
+        RoleRepresentation viewSystem = new RoleRepresentation();
+        viewSystem.setName(AdminRoles.VIEW_SYSTEM);
+        realmMgtRes.roles().create(viewSystem);
+        viewSystem = realmMgtRes.roles().get(AdminRoles.VIEW_SYSTEM).toRepresentation();
+        UserRepresentation userRep = adminClient.realm(REALM_NAME).users().search("view-realm", Boolean.TRUE).get(0);
+        UserResource userRes = adminClient.realm(REALM_NAME).users().get(userRep.getId());
+        userRes.roles().clientLevel(realmMgtRep.getId()).add(Collections.singletonList(viewSystem));
+        try (Keycloak keycloak = adminClientFactory.create().realm(REALM_NAME)
+                .username(userRep.getUsername()).password("password").clientId("test-client")
+                .build()) {
+            serverInfo = keycloak.serverInfo().getInfo();
+            Assert.assertNotNull(serverInfo.getSystemInfo());
+            Assert.assertNotNull(serverInfo.getCpuInfo());
+            Assert.assertNotNull(serverInfo.getMemoryInfo());
+        } finally {
+            userRes.roles().clientLevel(realmMgtRep.getId()).remove(Collections.singletonList(viewSystem));
+            realmMgtRes.roles().get(AdminRoles.VIEW_SYSTEM).remove();
+        }
     }
 
     private void verifyAnyAdminRoleReqired(Invocation invocation) {

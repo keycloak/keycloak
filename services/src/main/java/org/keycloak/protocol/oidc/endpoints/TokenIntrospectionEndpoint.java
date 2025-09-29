@@ -40,6 +40,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import java.util.List;
+
 /**
  * A token introspection endpoint based on RFC-7662.
  *
@@ -150,8 +152,8 @@ public class TokenIntrospectionEndpoint {
 
 
     private void checkParameterDuplicated(MultivaluedMap<String, String> formParams) {
-        for (String key : formParams.keySet()) {
-            if (formParams.get(key).size() != 1) {
+        for (List<String> strings : formParams.values()) {
+            if (strings.size() != 1) {
                 throw throwErrorResponseException(Errors.INVALID_REQUEST, "duplicated parameter", Status.BAD_REQUEST);
             }
         }

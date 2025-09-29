@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+
+import jakarta.enterprise.context.ContextNotActiveException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -48,12 +50,15 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(FreeMarkerEmailTemplateProvider.class);
     protected KeycloakSession session;
     /**
      * authenticationSession can be null for some email sendings, it is filled only for email sendings performed as part of the authentication session (email verification, password reset, broker link
@@ -231,8 +236,15 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             attributes.put("properties", theme.getProperties());
             attributes.put("realmName", getRealmName());
             attributes.put("user", new ProfileBean(user, session));
-            KeycloakUriInfo uriInfo = session.getContext().getUri();
-            attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
+
+            try {
+                KeycloakUriInfo uriInfo = session.getContext().getUri();
+                attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
+            } catch (ContextNotActiveException e) {
+                log.debug("No active request, can't make url attribute available to the template");
+                // ignore when running without an active request context such as sending emails from an scheduled task
+                // TODO: make it possible to make the URL available to email templates based on the hostname configured in the realm or at the server level
+            }
 
             String subject = new MessageFormat(messages.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
             String textTemplate = String.format("text/%s", template);

@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-util-embedded-ldap</artifactId>
     <name>Keycloak Util Embedded LDAP</name>
-    <description/>
+    <description>Keycloak Util Embedded LDAP</description>
 
     <dependencies>
         <dependency>
@@ -38,10 +38,6 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

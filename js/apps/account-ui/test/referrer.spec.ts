@@ -1,43 +1,58 @@
 import { expect, test } from "@playwright/test";
+import { login } from "./support/actions.ts";
+import {
+  ADMIN_CLIENT_ID,
+  ADMIN_PASSWORD,
+  ADMIN_USERNAME,
+  DEFAULT_REALM,
+  getAdminUrl,
+} from "./support/common.ts";
 
-import { ADMIN_PASSWORD, ADMIN_USER, DEFAULT_REALM } from "./constants";
-import { login } from "./login";
-import { getAdminUrl } from "./utils";
-
-test.describe("Signing in with referrer link", () => {
+test.describe("Referrer", () => {
   test("shows a referrer link when a matching client exists", async ({
     page,
   }) => {
-    const referrer = "security-admin-console";
-    const referrerUrl = getAdminUrl();
-    const referrerName = "Security Admin Console";
+    const queryParams = new URLSearchParams([
+      ["referrer", ADMIN_CLIENT_ID],
+      ["referrer_uri", getAdminUrl(DEFAULT_REALM).toString()],
+    ]);
 
-    const queryParams = {
-      referrer,
-      referrer_uri: referrerUrl,
-    };
+    // Log in with a referrer to the admin console, and check if the referrer link is displayed.
+    await login(
+      page,
+      DEFAULT_REALM,
+      ADMIN_USERNAME,
+      ADMIN_PASSWORD,
+      queryParams,
+    );
+    await expect(page.getByTestId("referrer-link")).toContainText(
+      "Security Admin Console",
+    );
 
-    await login(page, ADMIN_USER, ADMIN_PASSWORD, DEFAULT_REALM, queryParams);
-    await expect(page.getByTestId("referrer-link")).toContainText(referrerName);
-
-    // Navigate around to ensure the referrer is still shown.
+    // Navigate around and check if the referrer link is still displayed.
     await page.getByTestId("accountSecurity").click();
-    await expect(page.getByTestId("account-security/signing-in")).toBeVisible();
-    await expect(page.getByTestId("referrer-link")).toContainText(referrerName);
+    await page.getByTestId("account-security/signing-in").click();
+    await expect(page.getByTestId("referrer-link")).toContainText(
+      "Security Admin Console",
+    );
   });
 
   test("shows no referrer link when an invalid URL is passed", async ({
     page,
   }) => {
-    const referrer = "security-admin-console";
-    const referrerUrl = "http://i-am-not-an-allowed-url.com";
+    const queryParams = new URLSearchParams([
+      ["referrer", ADMIN_CLIENT_ID],
+      ["referrer_uri", "http://i-am-not-an-allowed-url.com"],
+    ]);
 
-    const queryParams = {
-      referrer,
-      referrer_uri: referrerUrl,
-    };
-
-    await login(page, ADMIN_USER, ADMIN_PASSWORD, DEFAULT_REALM, queryParams);
+    // Log in with an invalid referrer URL, and check if the referrer link is not displayed.
+    await login(
+      page,
+      DEFAULT_REALM,
+      ADMIN_USERNAME,
+      ADMIN_PASSWORD,
+      queryParams,
+    );
     await expect(page.getByText("Manage your basic information")).toBeVisible();
     await expect(page.getByTestId("referrer-link")).toBeHidden();
   });

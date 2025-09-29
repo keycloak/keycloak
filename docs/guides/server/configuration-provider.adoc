@@ -116,10 +116,13 @@ To disable a provider, use the same command and set the `enabled` property to `f
 
 == Installing and uninstalling a provider
 
-Custom providers should be packaged in a Java Archive (JAR) file and copied to the `providers` directory of the distribution. After that,
+Custom providers should be packaged in a Java Archive (JAR) file and copied to the `providers` directory of the distribution. After that if you are using --optimized,
 you must run the `build` command in order to update the server's provider registry with the implementations from the JAR file.
 
 This step is needed in order to optimize the server runtime so that all providers are known ahead-of-time rather than discovered only when starting the server or at runtime.
+
+WARNING: Do not install untrusted provider JARs! There is a single class loader for the entire application, and JARs in the `providers` directory are given precedent over built-in libraries.
+There is also no built-in sandboxing of what state or methods are available to provider logic. Providers can do whatever the server process can which includes direct access to the DB, reading all server configuration (incl. credentials), etc.
 
 To uninstall a provider, you should remove the JAR file from the `providers` directory and run the `build` command again.
 

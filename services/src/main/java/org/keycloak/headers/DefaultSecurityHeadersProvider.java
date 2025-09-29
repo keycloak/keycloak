@@ -30,6 +30,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Collections;
 import java.util.Map;
 
+import static jakarta.ws.rs.HttpMethod.HEAD;
+import static jakarta.ws.rs.HttpMethod.OPTIONS;
 import static org.keycloak.models.BrowserSecurityHeaders.CONTENT_SECURITY_POLICY;
 
 public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
@@ -147,10 +149,17 @@ public class DefaultSecurityHeadersProvider implements SecurityHeadersProvider {
                 status == 400 || status == 401 || status == 403 || status == 404) {
                 return true;
             }
-            if (requestContext.getMethod().equalsIgnoreCase("OPTIONS")) {
-                return true;
+
+            String method = requestContext.getMethod().toUpperCase();
+
+            switch (method) {
+                case OPTIONS:
+                    return true;
+                case HEAD:
+                    return status == 200;
             }
         }
+
         return false;
     }
 

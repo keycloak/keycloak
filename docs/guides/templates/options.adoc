@@ -16,7 +16,7 @@
 <#nested>
 </#macro>
 
-<#macro list options buildIcon=true anchor=true>
+<#macro list options buildIcon=true anchor=true categoryName="">
 [cols="12a,4",role="options"]
 |===
 | |Value
@@ -27,9 +27,11 @@
 
 [.options-description]#${option.description}#
 
-[<#if anchor>#option-extended-${option.key},</#if>role="options-extended"]
+[<#if anchor>#option-extended-${categoryName?lower_case}-${option.key},</#if>role="options-extended"]
 --
 <#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
+
+<#if option.wildcardKey?has_content>*Named key:* [.options-wildcard-key]#`+${option.wildcardKey}+`# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if></#if>
 
 *CLI:* `+${option.keyCli}+` +
 *Env:* `+${option.keyEnv}+`

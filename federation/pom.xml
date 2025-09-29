@@ -30,7 +30,7 @@
 
     <artifactId>keycloak-federation-parent</artifactId>
     <name>Keycloak Federation</name>
-    <description />
+    <description>Keycloak Federation Parent</description>
 
     <modules>
         <module>kerberos</module>

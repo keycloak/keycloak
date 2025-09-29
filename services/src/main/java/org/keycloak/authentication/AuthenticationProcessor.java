@@ -90,7 +90,7 @@ public class AuthenticationProcessor {
     public static final String LAST_PROCESSED_EXECUTION = "last.processed.execution";
     public static final String CURRENT_FLOW_PATH = "current.flow.path";
     public static final String FORKED_FROM = "forked.from";
-    public static final String LAST_AUTHN_CREDENTIAL = "last.authn.credential";
+    public static final String AUTHN_CREDENTIALS = "authn.credentials";
 
     public static final String BROKER_SESSION_ID = "broker.session.id";
     public static final String BROKER_USER_ID = "broker.user.id";
@@ -343,6 +343,7 @@ public class AuthenticationProcessor {
         List<AuthenticationSelectionOption> authenticationSelections;
         String eventDetails;
         String userErrorMessage;
+        Map<Class<?>, Object> state;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
@@ -413,7 +414,7 @@ public class AuthenticationProcessor {
         @Override
         public void success(String credentialType) {
             if (credentialType != null) {
-                getAuthenticationSession().setAuthNote(LAST_AUTHN_CREDENTIAL, credentialType);
+                AuthenticatorUtil.addAuthCredential(getAuthenticationSession(), credentialType);
             }
             this.status = FlowStatus.SUCCESS;
         }
@@ -515,6 +516,22 @@ public class AuthenticationProcessor {
         @Override
         public Map<String, String> getClientAuthAttributes() {
             return AuthenticationProcessor.this.getClientAuthAttributes();
+        }
+
+        @Override
+        public <T> T getState(Class<T> type, ClientAuthenticationFlowContextSupplier<T> supplier) throws Exception {
+            if (state == null) {
+                state = new HashMap<>();
+            }
+
+            T value = type.cast(state.get(type));
+
+            if (value == null) {
+                value = supplier.get(this);
+                state.put(type, value);
+            }
+
+            return value;
         }
 
         @Override
@@ -924,15 +941,11 @@ public class AuthenticationProcessor {
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
         if (flow.getProviderId() == null || flow.getProviderId().equals(AuthenticationFlow.BASIC_FLOW)) {
-            DefaultAuthenticationFlow flowExecution = new DefaultAuthenticationFlow(this, flow);
-            return flowExecution;
-
+            return new DefaultAuthenticationFlow(this, flow);
         } else if (flow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
-            FormAuthenticationFlow flowExecution = new FormAuthenticationFlow(this, execution);
-            return flowExecution;
+            return new FormAuthenticationFlow(this, execution);
         } else if (flow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
-            ClientAuthenticationFlow flowExecution = new ClientAuthenticationFlow(this, flow);
-            return flowExecution;
+            return new ClientAuthenticationFlow(this, flow);
         }
         throw new AuthenticationFlowException("Unknown flow provider type", AuthenticationFlowError.INTERNAL_ERROR);
     }

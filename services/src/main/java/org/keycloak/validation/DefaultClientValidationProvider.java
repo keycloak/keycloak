@@ -27,11 +27,12 @@ import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
 import org.keycloak.protocol.oidc.utils.SubjectType;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.util.ResolveRelative;
-import org.keycloak.services.validation.Validation;
+import org.keycloak.utils.StringUtil;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -126,7 +127,12 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         SAML_ARTIFACT_RESOLUTION_SERVICE_URL_URI(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE,
                 "Artifact Resolution Service is not a valid URL", "samlAssertionConsumerUrlPostURLInvalid",
                 null, null,
-                "Artifact Resolution Service uses an illegal scheme", "samlAssertionConsumerUrlPostURLIllegalSchemeError");
+                "Artifact Resolution Service uses an illegal scheme", "samlAssertionConsumerUrlPostURLIllegalSchemeError"),
+
+        SAML_METADATA_DESCRIPTOR_URL(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL,
+                "Metadata descriptor URL is not a valid URL", SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL,
+                null, null,
+                "Metadata descriptor URL uses an illegal scheme", SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL);
 
         private String fieldId;
 
@@ -181,6 +187,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     // TODO Before adding more validation consider using a library for validation
     @Override
     public ValidationResult validate(ValidationContext<ClientModel> context) {
+        validateClientId(context);
         validateUrls(context);
         validatePairwiseInClientModel(context);
         new CibaClientValidation(context).validate();
@@ -193,6 +200,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
 
     @Override
     public ValidationResult validate(ClientValidationContext.OIDCContext context) {
+        validateClientId(context);
         validateUrls(context);
         validatePairwiseInOIDCClient(context);
         new CibaClientValidation(context).validate();
@@ -200,6 +208,13 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateMinimumAcrValue(context);
 
         return context.toResult();
+    }
+
+    private void validateClientId(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (StringUtil.isBlank(client.getClientId())) {
+            context.addError("Client ID cannot be blank");
+        }
     }
 
     private void validateUrls(ValidationContext<ClientModel> context) {
@@ -238,6 +253,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             checkUri(FieldMessages.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_URI, client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE), context, true, false);
             checkUri(FieldMessages.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_URI, client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE), context, true, false);
             checkUri(FieldMessages.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_URI, client.getAttribute(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE), context, true, false);
+            checkUri(FieldMessages.SAML_METADATA_DESCRIPTOR_URL, client.getAttribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL), context, true, false);
         }
     }
 

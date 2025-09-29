@@ -35,6 +35,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
@@ -71,6 +72,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testServiceAccountAndLogoutSuccess() throws Exception {
         String client1Jwt = getClient1SignedJWT();
+        JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
         AccessTokenResponse response = doClientCredentialsGrantRequest(client1Jwt);
 
         assertEquals(200, response.getStatusCode());
@@ -85,6 +87,9 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1")
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .detail(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
+                .detail(Details.CLIENT_ASSERTION_ISSUER, "client1")
+                .detail(Details.CLIENT_ASSERTION_SUB, "client1")
                 .assertEvent();
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
@@ -278,7 +283,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             clientResource.update(clientRepresentation);
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
             assertEquals(400, response.getStatusCode());
-            assertEquals("invalid signature algorithm", response.getErrorDescription());
+            assertEquals("Invalid signature algorithm", response.getErrorDescription());
         } finally {
             // Revert jwks_url settings
             revertJwksUriSettings(clientRepresentation, clientResource);
@@ -337,19 +342,19 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testClientWithGeneratedKeysJKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.JKS);
-        testClientWithGeneratedKeys("JKS");
+        testClientWithGeneratedKeys("JKS", null, null);
     }
 
     @Test
     public void testClientWithGeneratedKeysPKCS12() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.PKCS12);
-        testClientWithGeneratedKeys("PKCS12");
+        testClientWithGeneratedKeys("PKCS12", 2048, null);
     }
 
     @Test
     public void testClientWithGeneratedKeysBCFKS() throws Exception {
         KeystoreUtils.assumeKeystoreTypeSupported(KeystoreFormat.BCFKS);
-        testClientWithGeneratedKeys(KeystoreFormat.BCFKS.toString());
+        testClientWithGeneratedKeys(KeystoreFormat.BCFKS.toString(), 3072, 5);
     }
 
     @Test
@@ -452,7 +457,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
-        assertError(response,401, "unknown-client", "invalid_client", Errors.CLIENT_NOT_FOUND);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -743,7 +748,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testMissingIssuerClaim() throws Exception {
         AccessTokenResponse response = testMissingClaim("issuer");
-        assertError(response,401, null, OAuthErrorException.INVALID_CLIENT, Errors.CLIENT_NOT_FOUND);
+        assertError(response,401, null, "invalid_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -769,14 +774,6 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     public void testMissingExpirationClaim() throws Exception {
         // Missing only exp; the lifespan should be calculated from issuedAt
         AccessTokenResponse response = testMissingClaim("expiration");
-        assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
-
-        // Test expired lifespan
-        response = testMissingClaim(- 11 - 15, "expiration"); // 15 sec clock skew
-        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
-
-        // Missing exp and issuedAt should return error
-        response = testMissingClaim("expiration", "issuedAt");
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 

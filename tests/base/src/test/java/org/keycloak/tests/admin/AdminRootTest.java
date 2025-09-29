@@ -45,8 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @KeycloakIntegrationTest(config = AdminRootTest.AdminUrlConfig.class)
 public class AdminRootTest {
     // This might not be robust enough. If something made KC on a different port, this would fail.
-    private static final String HOSTNAME = "http://127.0.0.1.nip.io:8080";
-    private static final String HOSTNAME_ADMIN = "http://admin.127.0.0.1.nip.io:8080";
+    private static final String HOSTNAME = "http://localtest.me:8080";
+    private static final String HOSTNAME_ADMIN = "http://admin.localtest.me:8080";
     private static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080";
 
     @InjectHttpClient(followRedirects = false)

@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -33,6 +34,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.CRDPresentActivationCondition;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
@@ -62,7 +64,12 @@ import java.util.concurrent.TimeUnit;
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class),
-        @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class)
+        @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class),
+        @Dependent(
+              type = KeycloakServiceMonitorDependentResource.class,
+              activationCondition = CRDPresentActivationCondition.class,
+              reconcilePrecondition = KeycloakServiceMonitorDependentResource.ReconcilePrecondition.class
+        ),
     })
 public class KeycloakController implements Reconciler<Keycloak> {
 
@@ -284,6 +291,14 @@ public class KeycloakController implements Reconciler<Keycloak> {
                                 if (Optional.ofNullable(cs.getState()).map(ContainerState::getWaiting)
                                         .map(ContainerStateWaiting::getReason).map(String::toLowerCase)
                                         .filter(s -> s.contains("err") || s.equals("crashloopbackoff")).isPresent()) {
+                                    // since we've failed, try to get the previous first, then the current
+                                    String log = null;
+                                    try {
+                                        log = context.getClient().raw(String.format("/api/v1/namespaces/%s/pods/%s/log?previous=true&tailLines=200", p.getMetadata().getNamespace(), p.getMetadata().getName()));
+                                    } catch (KubernetesClientException e) {
+                                        // just ignore
+                                    }
+
                                     Log.infof("Found unhealthy container on pod %s/%s: %s",
                                             p.getMetadata().getNamespace(), p.getMetadata().getName(),
                                             Serialization.asYaml(cs));
@@ -291,6 +306,14 @@ public class KeycloakController implements Reconciler<Keycloak> {
                                             String.format("Waiting for %s/%s due to %s: %s", p.getMetadata().getNamespace(),
                                                     p.getMetadata().getName(), cs.getState().getWaiting().getReason(),
                                                     cs.getState().getWaiting().getMessage()));
+                                    if (log != null) {
+                                        if (log.length() > 2000) {
+                                            log = "... " + log.substring(log.length() - 2000, log.length());
+                                        }
+                                        status.addErrorMessage(
+                                                String.format("Log for %s/%s: %s", p.getMetadata().getNamespace(),
+                                                        p.getMetadata().getName(), log));
+                                    }
                                 }
                             });
                 });

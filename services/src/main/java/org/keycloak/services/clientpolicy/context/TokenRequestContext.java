@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -30,11 +31,12 @@ public class TokenRequestContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;
     private final OAuth2CodeParser.ParseResult parseResult;
+    private final ClientModel client;
 
-    public TokenRequestContext(MultivaluedMap<String, String> params,
-            OAuth2CodeParser.ParseResult parseResult) {
+    public TokenRequestContext(MultivaluedMap<String, String> params, OAuth2CodeParser.ParseResult parseResult, ClientModel client) {
         this.params = params;
         this.parseResult = parseResult;
+        this.client = client;
     }
 
     @Override
@@ -50,4 +52,7 @@ public class TokenRequestContext implements ClientPolicyContext {
         return parseResult;
     }
 
+    public ClientModel getClient() {
+        return client;
+    }
 }

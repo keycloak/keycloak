@@ -24,6 +24,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.UserCredentialManager;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -37,7 +38,6 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.keycloak.broker.provider.util.SimpleHttp;
 
 import org.keycloak.ipatuura_user_spi.authenticator.IpatuuraAuthenticator;
 import org.keycloak.ipatuura_user_spi.schemas.SCIMError;
@@ -201,7 +201,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
     public UserModel addUser(RealmModel realm, String username) {
         Ipatuura ipatuura = this.ipatuura;
 
-        SimpleHttp.Response resp = ipatuura.createUser(username);
+        SimpleHttpResponse resp = ipatuura.createUser(username);
 
         try {
             if (resp.getStatus() != HttpStatus.SC_CREATED) {
@@ -225,7 +225,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
         logger.debugv("Removing user: {0}", user.getUsername());
         Ipatuura ipatuura = this.ipatuura;
 
-        SimpleHttp.Response resp = ipatuura.deleteUser(user.getUsername());
+        SimpleHttpResponse resp = ipatuura.deleteUser(user.getUsername());
         Boolean status = false;
         try {
             status = resp.getStatus() == HttpStatus.SC_NO_CONTENT;
@@ -267,7 +267,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
         Ipatuura ipatuura = this.ipatuura;
 
         SCIMUser user = null;
-        SimpleHttp.Response response;
+        SimpleHttpResponse response;
         try {
             response = ipatuura.clientRequest("/Users", "GET", null);
             user = response.asJson(SCIMUser.class);

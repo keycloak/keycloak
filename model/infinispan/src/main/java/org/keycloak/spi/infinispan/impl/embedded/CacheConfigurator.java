@@ -19,14 +19,17 @@ package org.keycloak.spi.infinispan.impl.embedded;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.AbstractStoreConfiguration;
+import org.infinispan.configuration.cache.BackupConfiguration;
+import org.infinispan.configuration.cache.BackupFailurePolicy;
+import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.HashConfiguration;
+import org.infinispan.configuration.cache.HashConfigurationBuilder;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.transaction.LockingMode;
@@ -34,20 +37,36 @@ import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.config.CachingOptions;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_MAX_COUNT_CACHES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.SESSIONS_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME;
@@ -64,10 +83,10 @@ public final class CacheConfigurator {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
-    // Map with the default cache configuration if the cache is not present in the XML.
-    private static final Map<String, Supplier<ConfigurationBuilder>> DEFAULT_CONFIGS = Map.of(CRL_CACHE_NAME, CacheConfigurator::getCrlCacheConfig);
-    private static final Supplier<ConfigurationBuilder> TO_NULL = () -> null;
     private static final String MAX_COUNT_SUFFIX = "MaxCount";
+    private static final String OWNER_SUFFIX = "Owners";
+    private static final int STATE_TRANSFER_CHUNK_SIZE = 16;
+    private static final int MIN_NUM_OWNERS_REMOTE_CACHE = 2;
 
     private CacheConfigurator() {
     }
@@ -100,10 +119,20 @@ public final class CacheConfigurator {
      *
      * @param holder The {@link ConfigurationBuilderHolder} where the caches will be defined.
      */
-    public static void applyDefaultConfiguration(ConfigurationBuilderHolder holder) {
+    public static void applyDefaultConfiguration(ConfigurationBuilderHolder holder, boolean warnMutate) {
         var configs = holder.getNamedConfigurationBuilders();
-        for (var name : InfinispanConnectionProvider.ALL_CACHES_NAME) {
-            configs.computeIfAbsent(name, cacheName -> DEFAULT_CONFIGS.getOrDefault(cacheName, TO_NULL).get());
+        boolean userProvidedConfig = false;
+        boolean clustered = holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
+        for (var name : ALL_CACHES_NAME) {
+            var config = configs.get(name);
+            if (config == null) {
+                configs.put(name, getCacheConfiguration(name, clustered));
+            } else if (!userProvidedConfig) {
+                userProvidedConfig = true;
+            }
+        }
+        if (warnMutate && userProvidedConfig) {
+            logger.warnf("Modifying the default cache configuration in the config file without setting %s=true is deprecated.", CachingOptions.CACHE_CONFIG_MUTATE_PROPERTY);
         }
     }
 
@@ -157,7 +186,7 @@ public final class CacheConfigurator {
      */
     public static void removeClusteredCaches(ConfigurationBuilderHolder holder) {
         logger.debug("Removing clustered caches");
-        Arrays.stream(InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES).forEach(holder.getNamedConfigurationBuilders()::remove);
+        Arrays.stream(CLUSTERED_CACHE_NAMES).forEach(holder.getNamedConfigurationBuilders()::remove);
     }
 
     /**
@@ -196,8 +225,8 @@ public final class CacheConfigurator {
                 throw cacheNotFound(name);
             }
             if (builder.memory().maxCount() == -1) {
-                logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to 10000 entries.", name);
-                builder.memory().maxCount(10000);
+                logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to %d entries.", name, SESSIONS_CACHE_DEFAULT_MAX);
+                builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
             }
             /* The number of owners for these caches then need to be set to `1` to avoid backup owners with inconsistent data.
              As primary owner evicts a key based on its locally evaluated maxCount setting, it wouldn't tell the backup owner about this, and then the backup owner would be left with a soon-to-be-outdated key.
@@ -239,19 +268,126 @@ public final class CacheConfigurator {
                 throw cacheNotFound(name);
             }
             if (builder.memory().maxCount() == -1) {
-                logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of 10000 for cache %s.", name);
-                builder.memory().maxCount(10000);
+                logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of %d for cache %s.", name, SESSIONS_CACHE_DEFAULT_MAX);
+                builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
             }
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() != 1 &&
                     builder.persistence().stores().stream().noneMatch(p -> p.attributes().attribute(AbstractStoreConfiguration.SHARED).get())
             ) {
-                logger.infof("Setting a memory limit implies to have exactly one owne. Setting num_owners=1 to avoid data loss.", name);
+                logger.infof("Setting a memory limit implies to have exactly one owner. Setting num_owners=1 to avoid data loss.", name);
                 builder.clustering().hash().numOwners(1);
             }
         }
     }
 
+    /**
+     * Configures the caches "actionToken", "authenticationSessions", and "loginFailures" with the minimum number of
+     * owners to prevent data loss in a single instance crash.
+     * <p>
+     * The data in those caches only exist in memory, therefore they must have more than one owner configured.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} where the caches are configured.
+     * @throws IllegalStateException if an Infinispan cache is not defined in the {@code holder}. This could indicate a
+     *                               missing or incorrect configuration.
+     */
+    public static void ensureMinimumOwners(ConfigurationBuilderHolder holder) {
+        for (var name : Arrays.asList(
+                LOGIN_FAILURE_CACHE_NAME,
+                AUTHENTICATION_SESSIONS_CACHE_NAME,
+                ACTION_TOKEN_CACHE)) {
+            var builder = holder.getNamedConfigurationBuilders().get(name);
+            if (builder == null) {
+                throw cacheNotFound(name);
+            }
+            var hashConfig = builder.clustering().hash();
+            var owners = hashConfig.attributes().attribute(HashConfiguration.NUM_OWNERS).get();
+            if (owners < 2) {
+                logger.infof("Setting num_owners=2 (configured value is %s) for cache '%s' to prevent data loss.", owners, name);
+                hashConfig.numOwners(2);
+            }
+        }
+    }
+
+    /**
+     * Configures (and overwrites) the {@link HashConfigurationBuilder#numOwners(int)} based on the SPI configuration
+     * input.
+     *
+     * @param keycloakConfig The Keycloak configuration, which provides the number owners value for the caches.
+     * @param holder         The {@link ConfigurationBuilderHolder} where the caches are configured.
+     */
+    public static void configureNumOwners(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
+        for (var name : CLUSTERED_CACHE_NUM_OWNERS) {
+            var builder = holder.getNamedConfigurationBuilders().get(name);
+            if (builder == null) {
+                throw cacheNotFound(name);
+            }
+            var owners = keycloakConfig.getInt(numOwnerConfigKey(name));
+            if (owners != null) {
+                builder.clustering().hash().numOwners(owners);
+            }
+        }
+    }
+
+    /**
+     * Creates a {@link ConfigurationBuilder} for a cache in a remote Infinispan cluster.
+     * <p>
+     * The returned builder is a template based on the provider's default configuration, which can be freely modified by
+     * the caller before use.
+     *
+     * @param cacheName The name of the cache for which to create the configuration.
+     * @param config    The provider's base configuration scope, which may contain cache-specific customizations.
+     * @param sites     An array of remote site names for cross-site replication backups. If null or empty, cross-site
+     *                  replication will be disabled.
+     * @return A {@link ConfigurationBuilder} for the specified cache, or {@code null} if no configuration exists for
+     * the given {@code cacheName}.
+     */
+    public static ConfigurationBuilder getRemoteCacheConfiguration(String cacheName, Config.Scope config, String[] sites) {
+        return switch (cacheName) {
+            case CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteAuthenticatedClientSessionEntity.class);
+            case USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteUserSessionEntity.class);
+            case AUTHENTICATION_SESSIONS_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RootAuthenticationSessionEntity.class);
+            case LOGIN_FAILURE_CACHE_NAME ->
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, LoginFailureEntity.class);
+            case ACTION_TOKEN_CACHE, WORK_CACHE_NAME -> remoteCacheConfigurationBuilder(cacheName, config, sites, null);
+            default -> null;
+        };
+    }
+
     // private methods below
+
+    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity) {
+        var builder = new ConfigurationBuilder();
+        builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+        builder.clustering().hash().numOwners(Math.max(MIN_NUM_OWNERS_REMOTE_CACHE, config.getInt(numOwnerConfigKey(name), MIN_NUM_OWNERS_REMOTE_CACHE)));
+        builder.clustering().stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
+        builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
+        builder.statistics().enable();
+
+        if (indexedEntity != null) {
+            builder.indexing().enable().addIndexedEntities(Marshalling.protoEntity(indexedEntity));
+        }
+
+        if (sites == null || sites.length == 0) {
+            return builder;
+        }
+
+        // we need transactions for cross-site to detect deadlock and rollback any changes.
+        builder.transaction()
+                .transactionMode(TransactionMode.TRANSACTIONAL)
+                .useSynchronization(false)
+                .lockingMode(LockingMode.PESSIMISTIC);
+        for (var site : sites) {
+            builder.sites().addBackup()
+                    .site(site)
+                    .strategy(BackupConfiguration.BackupStrategy.SYNC)
+                    .backupFailurePolicy(BackupFailurePolicy.FAIL)
+                    .stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
+        }
+        return builder;
+    }
 
     private static void configureRevisionCache(ConfigurationBuilderHolder holder, String baseCache, String revisionCache, long defaultMaxEntries) {
         var baseBuilder = holder.getNamedConfigurationBuilders().get(baseCache);
@@ -276,6 +412,10 @@ public final class CacheConfigurator {
         return name + MAX_COUNT_SUFFIX;
     }
 
+    public static String numOwnerConfigKey(String name) {
+        return name + OWNER_SUFFIX;
+    }
+
     private static IllegalStateException cacheNotFound(String cache) {
         return new IllegalStateException("Infinispan cache '%s' not found.".formatted(cache));
     }
@@ -283,9 +423,7 @@ public final class CacheConfigurator {
     // cache configuration below
 
     public static ConfigurationBuilder getCrlCacheConfig() {
-        var builder = createCacheConfigurationBuilder();
-        builder.memory().whenFull(EvictionStrategy.REMOVE).maxCount(InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX);
-        return builder;
+        return getCacheConfiguration(CRL_CACHE_NAME, true);
     }
 
     public static ConfigurationBuilder getRevisionCacheConfig(long maxEntries) {
@@ -318,4 +456,55 @@ public final class CacheConfigurator {
         return builder;
     }
 
+    /**
+     * Returns a cache's default configuration.
+     * Revision caches are not returned as their configuration depends on their associated cache's configuration.
+     */
+    public static ConfigurationBuilder getCacheConfiguration(String cacheName, boolean clustered) {
+        var builder = new ConfigurationBuilder();
+        switch (cacheName) {
+            // Distributed Caches
+            case CLIENT_SESSION_CACHE_NAME:
+            case USER_SESSION_CACHE_NAME:
+            case OFFLINE_CLIENT_SESSION_CACHE_NAME:
+            case OFFLINE_USER_SESSION_CACHE_NAME:
+                if (clustered) {
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);
+                }
+                builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
+                return builder;
+            case ACTION_TOKEN_CACHE:
+            case AUTHENTICATION_SESSIONS_CACHE_NAME:
+            case LOGIN_FAILURE_CACHE_NAME:
+                if (clustered) {
+                    builder.clustering().cacheMode(CacheMode.DIST_SYNC);
+                }
+                builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
+                return builder;
+            // Local Caches
+            case CRL_CACHE_NAME:
+                builder.simpleCache(true);
+                builder.memory().whenFull(EvictionStrategy.REMOVE).maxCount(CRL_CACHE_DEFAULT_MAX);
+                return builder;
+            case KEYS_CACHE_NAME:
+                builder.simpleCache(true);
+                builder.expiration().maxIdle(KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
+                builder.memory().whenFull(EvictionStrategy.REMOVE).maxCount(KEYS_CACHE_DEFAULT_MAX);
+                return builder;
+            case AUTHORIZATION_CACHE_NAME:
+            case REALM_CACHE_NAME:
+            case USER_CACHE_NAME:
+                builder.simpleCache(true);
+                builder.memory().whenFull(EvictionStrategy.REMOVE).maxCount(10000);
+                return builder;
+            // Replicated caches
+            case WORK_CACHE_NAME:
+                if (clustered) {
+                    builder.clustering().cacheMode(CacheMode.REPL_SYNC);
+                }
+                return builder;
+            default:
+                return null;
+        }
+    }
 }

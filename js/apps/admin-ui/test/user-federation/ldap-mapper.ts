@@ -1,6 +1,6 @@
-import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { Page } from "@playwright/test";
-import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation.js";
+import type { Page } from "@playwright/test";
+import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles.ts";
 
 export async function goToMapperTab(page: Page) {
   await page.getByTestId("ldap-mappers-tab").click();
@@ -14,7 +14,7 @@ export async function fillHardwareAttributeMapper(
   page: Page,
   data: ComponentRepresentation,
 ) {
-  await page.getByTestId("name").fill(data.name || "");
+  if (data.name) await page.getByTestId("name").fill(data.name || "");
   if (data.config?.["user.model.attribute"])
     await page
       .getByTestId("config.user🍺model🍺attribute")

@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { goToClientScopes } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { assertSaveButtonIsDisabled, clickSaveButton } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { goToClientScopes } from "../utils/sidebar.ts";
 import {
   assertRowExists,
   assertTableRowsLength,
@@ -14,7 +14,7 @@ import {
   clickSelectRow,
   getTableData,
   searchItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   assertConsentInputIsVisible,
   assertSwitchDisplayOnConsentScreenIsChecked,
@@ -27,22 +27,22 @@ import {
   selectSecondaryFilterAssignedType,
   selectSecondaryFilterProtocol,
   switchOffDisplayOnConsentScreen,
-} from "./main";
+} from "./main.ts";
 
-enum FilterAssignedType {
-  AllTypes = "All types",
-  Default = "Default",
-  Optional = "Optional",
-  None = "None",
-}
+const FilterAssignedType = {
+  AllTypes: "All types",
+  Default: "Default",
+  Optional: "Optional",
+  None: "None",
+};
 
-enum FilterProtocol {
-  All = "All",
-  SAML = "SAML",
-  OpenID = "OpenID Connect",
-}
+const FilterProtocol = {
+  All: "All",
+  SAML: "SAML",
+  OpenID: "OpenID Connect",
+};
 
-test.describe("Client Scopes test", () => {
+test.describe.serial("Client Scopes test", () => {
   const clientScopeName = "client-scope-test";
   const itemId = `client-scope-test-${uuidv4()}`;
   const clientScope = {
@@ -74,7 +74,7 @@ test.describe("Client Scopes test", () => {
     }
   });
 
-  test.describe("Client Scope filter list items", () => {
+  test.describe.serial("Client Scope filter list items", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToClientScopes(page);
@@ -155,7 +155,7 @@ test.describe("Client Scopes test", () => {
     });
   });
 
-  test.describe("Client Scope modify list items", () => {
+  test.describe.serial("Client Scope modify list items", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToClientScopes(page);
@@ -173,7 +173,7 @@ test.describe("Client Scopes test", () => {
     });
   });
 
-  test.describe("Client Scope creation", () => {
+  test.describe.serial("Client Scope creation", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToClientScopes(page);

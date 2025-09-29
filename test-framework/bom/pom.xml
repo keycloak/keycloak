@@ -59,6 +59,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-db-edb</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-db-mariadb</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
@@ -72,6 +78,12 @@
             <dependency>
                 <groupId>org.keycloak.testframework</groupId>
                 <artifactId>keycloak-test-framework-db-mysql</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-db-tidb</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>

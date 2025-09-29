@@ -382,6 +382,8 @@ public interface UsersResource {
      * @param emailVerified emailVerified field of a user
      * @param username      username field of a user
      * @param enabled       Boolean representing if user is enabled or not
+     * @param idpAlias The alias of an Identity Provider linked to the user. Parameter supported since Keycloak server 26.4.0
+     * @param idpUserId The userId at an Identity Provider linked to the user. Parameter supported since Keycloak server 26.4.0
      * @return number of users matching the given filters
      */
     @Path("count")

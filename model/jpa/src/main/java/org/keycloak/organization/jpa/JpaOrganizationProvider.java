@@ -42,6 +42,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -302,26 +303,28 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     private Predicate buildStringSearchPredicate(CriteriaBuilder builder, CriteriaQuery<?> query, Root<OrganizationEntity> org, String search,
                                                  Boolean exact) {
-        Root<OrganizationDomainEntity> domain = query.from(OrganizationDomainEntity.class);
-
         List<Predicate> predicates = new ArrayList<>();
         RealmModel realm = getRealm();
-        predicates.add(builder.equal(org.get("realmId"), realm.getId()));
-        predicates.add(builder.equal(org.get("id"), domain.get("organization").get("id")));
+        Predicate realmPredicate = builder.equal(org.get("realmId"), realm.getId());
 
+        if (StringUtil.isBlank(search)) {
+            return realmPredicate;
+        }
+
+        predicates.add(realmPredicate);
+
+        Join<OrganizationEntity, OrganizationDomainEntity> domain = org.join("domains", JoinType.LEFT);
         Predicate namePredicate;
         Predicate domainPredicate;
-        if (StringUtil.isBlank(search)) {
-            namePredicate = builder.conjunction();  // constant true
-            domainPredicate = builder.conjunction();
 
-        } else if (Boolean.TRUE.equals(exact)) {
+        if (Boolean.TRUE.equals(exact)) {
             namePredicate = builder.equal(org.get("name"), search);
             domainPredicate = builder.equal(domain.get("name"), search);
         } else {
             namePredicate = builder.like(builder.lower(org.get("name")), "%" + search.toLowerCase() + "%");
             domainPredicate = builder.like(domain.get("name"), "%" + search.toLowerCase() + "%");
         }
+
         predicates.add(builder.or(namePredicate, domainPredicate));
 
         return builder.and(predicates.toArray(new Predicate[0]));

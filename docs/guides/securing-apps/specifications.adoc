@@ -1,0 +1,117 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Specifications implemented"
+priority=130
+summary="List of specifications and standards implemented by {project_name}.">
+
+This {section} presents a list of specifications and standards that {project_name} currently implements. The standards are separated in different sections and, in each one, a table is shown with the following four columns:
+
+* *Specification*: The standard or specification that {project_name} implements.
+* *Status*: The current status of the implementation inside {project_name} (supported, preview, experimental,...). See <@links.server id="features"/> for more information.
+* *Conformity*: Assurance of conformity of the implementation.
+** *Certified (version)*: The specification provides conformance tests that {project_name} executes periodically and for each new version. The version in brackets is the last version of {project_name} certified by the authority.
+** *Passed*: There are conformance tests provided by the authority that {project_name} passes, but no version is certified yet.
+** *Partial*: There are conformance tests but {project_name} is not yet fully passing them.
+** If this column is empty means that {project_name} does not pass any external conformance tests for the spec. Only common project integration tests are executed. Maybe the authority does not provide a conformance tests suite or {project_name} is not interested in passing them.
+* *Comments*: A generic column that can contain details of the implementation or the status. For example parts that are not covered yet or specific behaviors out of the spec.
+
+== OpenID Connect
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect Core]|Supported|Certified (18.0.0)|
+|link:https://openid.net/specs/openid-connect-discovery-1_0.html[OpenID Connect Discovery]|Supported|Certified (18.0.0)|
+|link:http://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration]|Supported|Certified (18.0.0)|
+|link:http://openid.net/specs/openid-connect-session-1_0.html[OpenID Connect Session Management]|Supported|Certified (18.0.0)|
+|link:https://openid.net/specs/openid-connect-rpinitiated-1_0.html[OpenID Connect RP-Initiated Logout]|Supported|Certified (18.0.0)|
+|link:http://openid.net/specs/openid-connect-backchannel-1_0.html[OpenID Connect Back-Channel Logout]|Supported|Certified (18.0.0)|
+|link:http://openid.net/specs/openid-connect-frontchannel-1_0.html[OpenID Connect Front-Channel Logout]|Supported|Certified (18.0.0)|
+|link:https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html[OpenID Connect Client-Initiated Backchannel Authentication Flow]|Supported|Certified (18.0.0)|
+|link:https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html[OAuth 2.0 Multiple Response Type Encoding Practices]|Supported|Certified (18.0.0)|
+|link:https://openid.net/specs/oauth-v2-form-post-response-mode-1_0.html[OAuth 2.0 Form Post Response Mode]|Supported|Certified (18.0.0)|
+|link:https://openid.net/specs/openid-connect-prompt-create-1_0.html[Initiating User Registration via OpenID Connect 1.0]|Supported||
+|link:https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html[OpenID for Verifiable Credential Issuance] (OID4VCI)|Experimental||
+|===
+
+== OAuth
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://datatracker.ietf.org/doc/html/rfc6749[The OAuth 2.0 Authorization Framework (RFC 6749)]|Supported||
+|link:https://www.ietf.org/archive/id/draft-ietf-oauth-v2-1-13.html[The OAuth 2.1 Authorization Framework] (Draft)|Supported||
+|link:https://tools.ietf.org/html/rfc6750[The OAuth 2.0 Authorization Framework: Bearer Token Usage (RFC 6750)]|Supported||
+|link:https://tools.ietf.org/html/rfc7662[OAuth 2.0 Token Introspection (RFC 7662)]|Supported||
+|link:https://tools.ietf.org/html/rfc7009[OAuth 2.0 Token Revocation (RFC 7009)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc7636[Proof Key for Code Exchange by OAuth Public Clients (RFC 7636)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol (RFC 7591)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol (RFC 7592)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc8705[OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens (RFC 8705)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc9126[OAuth 2.0 Pushed Authorization Requests (RFC 9126)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc7521[Assertion Framework for OAuth 2.0 Client Authentication and Authorization Grants (RFC 7521)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc7523[JSON Web Token (JWT) Profile for OAuth 2.0 Client Authentication and Authorization Grants (RFC 7523)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc8414[OAuth 2.0 Authorization Server Metadata (RFC 8414)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant (RFC 8628)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc8693[OAuth 2.0 Token Exchange (RFC 8693)]|Supported (see comments)||Token exchange V2 only supports the internal to internal use-case, so the specification is only partially supported now. See <@links.securingapps id="token-exchange" /> for more information.
+|link:https://datatracker.ietf.org/doc/html/rfc9101[The OAuth 2.0 Authorization Framework: JWT-Secured Authorization Request (JAR) (RFC 9101)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc9207[OAuth 2.0 Authorization Server Issuer Identification (RFC 9207)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP) (RFC 9449)]|Preview||
+|===
+
+== Financial-grade API (FAPI)
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://openid.net/specs/openid-financial-api-part-1-1_0-final.html[Financial-grade API Security Profile 1.0 - Part 1: Baseline]|Supported|Certified (15.0.2)|
+|link:https://openid.net/specs/openid-financial-api-part-2-1_0.html[Financial-grade API Security Profile 1.0 - Part 2: Advanced]|Supported|Certified (15.0.2)|
+|link:https://openid.net/specs/oauth-v2-jarm.html[Financial-grade API: JWT Secured Authorization Response Mode for OAuth 2.0 (JARM)]|Supported|Certified (15.0.2)|
+|link:https://openid.net/specs/openid-financial-api-ciba.html[Financial-grade API: Client Initiated Backchannel Authentication Profile] (Draft)|Supported|Certified (15.0.2)|
+|link:https://openid.net/specs/fapi-security-profile-2_0-final.html[FAPI 2.0 Security Profile]|Supported|Passed|
+|link:https://openid.net/specs/fapi-message-signing-2_0-final.html[FAPI 2.0 Message Signing]|Supported|Passed|
+|===
+
+== Security Assertion Markup Language (SAML)
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://www.oasis-open.org/standard/saml/[Security Assertion Markup Language (SAML) v2.0]|Supported||This standard covers multiple bindings and contexts. {project_name} implements a full range of them but there are missing parts for sure.
+|===
+
+== User Managed Access (UMA)
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://docs.kantarainitiative.org/uma/wg/rec-oauth-uma-grant-2.0.html[User-Managed Access (UMA) 2.0 Grant for OAuth 2.0 Authorization]|Supported||
+|link:https://docs.kantarainitiative.org/uma/wg/rec-oauth-uma-federated-authz-2.0.html[Federated Authorization for User-Managed Access (UMA) 2.0]|Supported||
+|===
+
+== JSON Web
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://datatracker.ietf.org/doc/html/rfc7515[JSON Web Signature (JWS) (RFC 7515)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/rfc7516[JSON Web Encryption (JWE) (RFC 7516)]|Supported||
+|https://datatracker.ietf.org/doc/html/rfc7517[JSON Web Key (JWK) (RFC 7517)]|Supported||
+|https://datatracker.ietf.org/doc/html/rfc7518[JSON Web Algorithms (JWA) (RFC 7518)]|Supported||
+|link:https://tools.ietf.org/html/rfc7519[JSON Web Token (RFC 7519)]|Supported||
+|link:https://www.rfc-editor.org/rfc/rfc8037.html[CFRG Elliptic Curve Diffie-Hellman (ECDH) and Signatures in JSON Object Signing and Encryption (JOSE) (RFC 8037)]|Supported||
+|===
+
+== Misc
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://csrc.nist.gov/pubs/fips/140-2/upd2/final[Security Requirements for Cryptographic Modules (FIPS 140-2)]|Supported|Certified|{project_name} uses link:https://www.bouncycastle.org[Bouncy Castle (BC)] FIPS libraries to provide FIPS 140-2. BC is indeed a certified FIPS 140-3 implementation, but also needs a certified stack (Operative system and Java VM). See <@links.server id="fips" /> for more information.
+|link:https://www.w3.org/TR/webauthn-2/[Web Authentication:
+An API for accessing Public Key Credentials Level 2]|Supported||This specification has conformance tests but {project_name} is not using them. {project_name} acts as a WebAuthn's Relying Party (RP) for this specification.
+|===
+
+</@tmpl.guide>

@@ -88,8 +88,8 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
 
     private static final String MY_APP = "myapp";
     private static final String EXT_SSO = "sso";
-    private static final String EXT_SSO_URL = "http://localhost-" + EXT_SSO + ".127.0.0.1.nip.io";
-    private static final String DUMMY_URL = "http://localhost-" + EXT_SSO + "-dummy.127.0.0.1.nip.io";
+    private static final String EXT_SSO_URL = "http://localhost-" + EXT_SSO + ".localtest.me";
+    private static final String DUMMY_URL = "http://localhost-" + EXT_SSO + "-dummy.localtest.me";
     private static final String FLOW_AUTO_LINK = "AutoLink";
 
     private String idpAlias;

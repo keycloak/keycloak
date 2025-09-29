@@ -62,6 +62,8 @@ public class KeycloakSanitizerPolicy {
 
   private static final Pattern NAME = Pattern.compile("[a-zA-Z0-9\\-_\\$]+");
 
+  private static final Pattern TARGET = Pattern.compile("_blank");
+
   private static final Pattern ALIGN = Pattern.compile(
       "(?i)center|left|right|justify|char");
 
@@ -102,6 +104,7 @@ public class KeycloakSanitizerPolicy {
           .allowStandardUrlProtocols()
           .allowAttributes("nohref").onElements("a")
           .allowAttributes("name").matching(NAME).onElements("a")
+          .allowAttributes("target").matching(TARGET).onElements("a")
           .allowAttributes(
               "onfocus", "onblur", "onclick", "onmousedown", "onmouseup")
               .matching(HISTORY_BACK).onElements("a")

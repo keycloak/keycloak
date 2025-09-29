@@ -72,7 +72,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  *
@@ -310,7 +310,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
         exportImport.runImport();
 
         List<ComponentRepresentation> userProfileComponents = realmRes.components().query(TEST_REALM, "org.keycloak.userprofile.UserProfileProvider");
-        assertThat(userProfileComponents, 	notNullValue());
+        assertThat(userProfileComponents,   notNullValue());
         assertThat(userProfileComponents, hasSize(1));
         MultivaluedHashMap<String, String> config = userProfileComponents.get(0).getConfig();
         assertThat(config, notNullValue());

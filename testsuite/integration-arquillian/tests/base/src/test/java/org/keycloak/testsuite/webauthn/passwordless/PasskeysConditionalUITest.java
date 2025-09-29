@@ -31,7 +31,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.PageUtils;
@@ -44,7 +44,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
  *
  * @author rmartinc
  */
-@EnableFeature(value = Profile.Feature.PASSKEYS, skipRestart = true)
+@EnableFeature(value = Profile.Feature.PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR, skipRestart = true)
 @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
 public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
 

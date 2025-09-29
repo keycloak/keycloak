@@ -36,11 +36,13 @@
         <module>bom</module>
         <module>core</module>
         <module>junit5-config</module>
+        <module>db-edb</module>
         <module>db-mariadb</module>
         <module>db-mssql</module>
         <module>db-mysql</module>
         <module>db-oracle</module>
         <module>db-postgres</module>
+        <module>db-tidb</module>
         <module>email-server</module>
         <module>examples</module>
         <module>oauth</module>

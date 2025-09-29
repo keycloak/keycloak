@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { goToClients, goToRealm } from "../utils/sidebar";
-import { assertEmptyTable, clickTableRowItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
+import { assertEmptyTable, clickTableRowItem } from "../utils/table.ts";
 import {
   assertAccessTokenSignatureAlgorithm,
   assertAdvancedSwitchesOn,
@@ -34,9 +34,9 @@ import {
   revertOid4vci,
   assertOid4vciEnabled,
   switchOid4vciEnabled,
-} from "./advanced";
+} from "./advanced.ts";
 
-test.describe("Advanced tab test", () => {
+test.describe.serial("Advanced tab test", () => {
   const clientId = `advanced-tab-${uuidv4()}`;
 
   test.beforeAll(() =>
@@ -109,7 +109,7 @@ test.describe("Advanced tab test", () => {
   });
 });
 
-test.describe("Client Offline Session Max", () => {
+test.describe.serial("Client Offline Session Max", () => {
   const realmName = `client-offline-session-${uuidv4()}`;
   const clientId = `clientId-${uuidv4()}`;
 
@@ -134,7 +134,7 @@ test.describe("Client Offline Session Max", () => {
   });
 });
 
-test.describe("OpenID for Verifiable Credentials", () => {
+test.describe.serial("OpenID for Verifiable Credentials", () => {
   const realmName = `oid4vci-test-${uuidv4()}`;
   const clientIdOpenIdConnect = `client-oidc-${uuidv4()}`;
   test.beforeAll(async () => {
@@ -148,7 +148,7 @@ test.describe("OpenID for Verifiable Credentials", () => {
 
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
-  test.describe("with protocol openid-connect", () => {
+  test.describe.serial("with protocol openid-connect", () => {
     test.beforeEach(async ({ page }) => {
       await login(page);
       await goToRealm(page, realmName);

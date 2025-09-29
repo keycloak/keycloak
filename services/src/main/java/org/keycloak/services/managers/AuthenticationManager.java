@@ -25,7 +25,6 @@ import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
-import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.TokenVerifier.TokenTypeCheck;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -109,7 +108,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -271,7 +269,7 @@ public class AuthenticationManager {
             ClientConnection connection, HttpHeaders headers,
             boolean logoutBroker) {
 
-        return backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, userSession == null ? false : userSession.isOffline());
+        return backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, userSession != null && userSession.isOffline());
     }
 
     /**
@@ -886,7 +884,8 @@ public class AuthenticationManager {
             return null;
         }
 
-        AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, null, true, tokenString, session.getContext().getRequestHeaders(), VALIDATE_IDENTITY_COOKIE);
+        AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, null, true, tokenString,
+                session.getContext().getRequestHeaders(), verifier -> verifier.withChecks(VALIDATE_IDENTITY_COOKIE));
         if (authResult == null || authResult.getSession() == null) {
             expireIdentityCookie(session);
             return null;
@@ -1160,7 +1159,7 @@ public class AuthenticationManager {
                     getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
 
             // Skip grant screen if everything was already approved by this user
-            if (clientScopesToApprove.size() > 0) {
+            if (!clientScopesToApprove.isEmpty()) {
                 String execution = AuthenticatedClientSessionModel.Action.OAUTH_GRANT.name();
 
                 ClientSessionCode<AuthenticationSessionModel> accessCode =
@@ -1481,14 +1480,15 @@ public class AuthenticationManager {
     }
 
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
-                                                 String checkAudience, boolean isCookie, String tokenString, HttpHeaders headers, Predicate<? super AccessToken>... additionalChecks) {
+                                                 String checkAudience, boolean isCookie, String tokenString, HttpHeaders headers, Consumer<TokenVerifier<AccessToken>> verifierConsumer) {
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
               .withDefaultChecks()
               .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
               .checkActive(checkActive)
-              .checkTokenType(checkTokenType)
-              .withChecks(additionalChecks);
+              .checkTokenType(checkTokenType);
+
+            verifierConsumer.accept(verifier);
 
             if (checkAudience != null) {
                 verifier.audience(checkAudience);
@@ -1725,7 +1725,7 @@ public class AuthenticationManager {
         Map<String, AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions();
 
         return clientSessions.values().stream().filter(c -> c.getClient().equals(client))
-                .map((c) -> c.getNotes().get(OIDCLoginProtocol.SCOPE_PARAM))
+                .map((c) -> c.getNote(OIDCLoginProtocol.SCOPE_PARAM))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
