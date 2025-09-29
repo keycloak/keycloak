@@ -17,7 +17,9 @@
 package org.keycloak.social.google;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -25,19 +27,16 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.representations.JsonWebToken;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.services.ErrorResponseException;
 
 import java.util.List;
@@ -104,7 +103,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
         try {
-            JsonNode tokenInfo = SimpleHttp.doGet(TOKEN_INFO_URL, session)
+            JsonNode tokenInfo = SimpleHttp.create(session).doGet(TOKEN_INFO_URL)
                     .header("Authorization", "Bearer " + tokenExchangeContext.getParams().getSubjectToken())
                     .asJson();
             if (tokenInfo == null || !tokenInfo.has(JsonWebToken.AUD) || !tokenInfo.get(JsonWebToken.AUD).asText().equals(getConfig().getClientId())) {

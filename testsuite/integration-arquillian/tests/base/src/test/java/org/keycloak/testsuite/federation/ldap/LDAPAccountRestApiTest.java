@@ -33,9 +33,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.admin.client.resource.UserProfileResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.KerberosFederationProvider;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -343,7 +343,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     }
 
     private void updateProfileExpectError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
-        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+        SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
     }

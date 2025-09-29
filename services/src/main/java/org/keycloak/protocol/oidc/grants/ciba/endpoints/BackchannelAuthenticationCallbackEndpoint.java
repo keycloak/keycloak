@@ -21,10 +21,11 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -221,7 +222,7 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
         ClientNotificationEndpointRequest clientNotificationRequest = new ClientNotificationEndpointRequest();
         clientNotificationRequest.setAuthReqId(deviceModel.getAuthReqId());
 
-        SimpleHttp simpleHttp = SimpleHttp.doPost(clientNotificationEndpoint, session)
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(clientNotificationEndpoint)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .json(clientNotificationRequest)
                 .auth(deviceModel.getClientNotificationToken());
