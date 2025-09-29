@@ -194,7 +194,7 @@ public class ClientScopeEvaluateResource {
 
         return sessionAware(user, scopeParam, "", (userSession, clientSessionCtx, audienceClients) -> {
             AccessToken userInfo = new AccessToken();
-            TokenManager tokenManager = new TokenManager();
+            TokenManager tokenManager = org.keycloak.protocol.oidc.TokenManager.resolve(session, logger);
 
             userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
             return tokenManager.generateUserInfoClaims(userInfo, user);
@@ -226,7 +226,7 @@ public class ClientScopeEvaluateResource {
 
         return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
         {
-            TokenManager tokenManager = new TokenManager();
+            TokenManager tokenManager = org.keycloak.protocol.oidc.TokenManager.resolve(session, logger);;
             TokenManager.AccessTokenResponseBuilder response = tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
                     .generateAccessToken().generateIDToken();
             IDToken idToken = response.getIdToken();
@@ -264,7 +264,7 @@ public class ClientScopeEvaluateResource {
 
         return sessionAware(user, scopeParam, audience, (userSession, clientSessionCtx, audienceClients) ->
         {
-            TokenManager tokenManager = new TokenManager();
+            TokenManager tokenManager = org.keycloak.protocol.oidc.TokenManager.resolve(session, logger);
             AccessToken accessToken =  tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
                     .generateAccessToken().getAccessToken();
             validateAudience(accessToken, audienceClients);
@@ -413,4 +413,5 @@ public class ClientScopeEvaluateResource {
             this.protocolMapper = protocolMapper;
         }
     }
+
 }

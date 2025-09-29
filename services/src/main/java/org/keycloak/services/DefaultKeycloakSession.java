@@ -319,7 +319,10 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public TokenManager tokens() {
         if (tokenManager == null) {
-            tokenManager = new DefaultTokenManager(this);
+            tokenManager = getProvider(org.keycloak.models.TokenManager.class);
+            if (tokenManager == null) {
+                tokenManager = new DefaultTokenManager(this);
+            }
         }
         return tokenManager;
     }
