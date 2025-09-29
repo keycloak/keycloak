@@ -71,7 +71,7 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://openid.net/specs/oauth-v2-jarm.html[Financial-grade API: JWT Secured Authorization Response Mode for OAuth 2.0 (JARM)]|Supported|Certified (15.0.2)|
 |link:https://openid.net/specs/openid-financial-api-ciba.html[Financial-grade API: Client Initiated Backchannel Authentication Profile] (Draft)|Supported|Certified (15.0.2)|
 |link:https://openid.net/specs/fapi-security-profile-2_0-final.html[FAPI 2.0 Security Profile]|Supported|Passed|
-|link:https://openid.bitbucket.io/fapi/fapi-2_0-message-signing.html[FAPI 2.0 Message Signing] (Draft)|Supported|Passed|
+|link:https://openid.net/specs/fapi-message-signing-2_0-final.html[FAPI 2.0 Message Signing]|Supported|Passed|
 |===
 
 == Security Assertion Markup Language (SAML)
