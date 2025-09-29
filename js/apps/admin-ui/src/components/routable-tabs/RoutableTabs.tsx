@@ -58,7 +58,6 @@ export const RoutableTabs = ({
     .map((child) => child.props.eventKey.toString());
 
   const matchedTabs = tabs
-    .filter((tab) => matchPath({ path: tab.metadata.path }, pathname))
     .filter((tab) =>
         eventKeys.some((eventKey) =>
             matchPath({ path: tab.metadata.path }, eventKey),
