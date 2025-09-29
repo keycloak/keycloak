@@ -47,8 +47,8 @@ For more information, see the link:{adminguide_link}#_dpop-bound-tokens[DPoP sec
 
 = FAPI 2 Final support
 
-{project_name} has support for the latest versions of FAPI 2 specifications. Specification *FAPI 2.0 security profile* is already promoted to Final and {project_name} supports it.
-Specification *FAPI 2.0 Message Signing* was not yet promoted at this time, but the latest draft is expected to be promoted to the Final version soon. {project_name} client policies support
+{project_name} has support for the latest versions of FAPI 2 specifications. Specifications *FAPI 2.0 Security Profile* and *FAPI 2.0 Message Signing* are already promoted to Final and {project_name} supports them.
+{project_name} client policies support
 the final versions and corresponding client profiles for FAPI 2 are passing the FAPI conformance test suite.
 
 Apart from some very minor polishing of existing policies, {project_name} has new client profiles (`fapi-2-dpop-security-profile` and `fapi-2-dpop-message-signing`) for the clients that use DPoP and are intended to be FAPI 2 compliant.
