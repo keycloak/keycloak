@@ -339,6 +339,12 @@ The options `+--spi-user-sessions--infinispan--offline-session-cache-entry-lifes
 
 As an alternative, use the `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` options to limit the memory usage if the default of 10,000 cache offline user and client sessions does not work in your scenario.
 
+=== Timestamp in the AuthenticatedClientSessionModel
+
+The timestamp of the last refresh token update of OpenID Connect clients is currently available via `AuthenticatedClientSessionModel#getTimestamp()` and `AuthenticatedClientSessionModel#setTimestamp()`.
+
+This is now deprecated for removal without a replacement.
+
 === Passkeys Conditional UI Authenticator requires a feature
 
 The *Passkeys Conditional UI Authenticator* authenticator was deprecated in the version 26.3.0, but you can still use it if you enable
