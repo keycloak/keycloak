@@ -34,30 +34,30 @@ public interface WorkflowStateProvider extends Provider {
     void removeByResource(String resourceId);
 
     /**
-     * Removes the record identified by the specified {@code workflowId} and {@code resourceId}.
-     * @param workflowId the id of the workflow.
-     * @param resourceId the id of the resource.
-     */
-    void remove(String workflowId, String resourceId);
-
-    /**
      * Removes any record identified by the specified {@code workflowId}.
      * @param workflowId the id of the workflow.
      */
-    void remove(String workflowId);
+    void removeByWorkflow(String workflowId);
+
+    /**
+     * Removes the record identified by the specified {@code executionId}.
+     */
+    void remove(String executionId);
 
     /**
      * Deletes all state records associated with the current realm bound to the session.
      */
     void removeAll();
 
-    void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId);
+    void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId);
 
     ScheduledStep getScheduledStep(String workflowId, String resourceId);
 
     List<ScheduledStep> getScheduledStepsByResource(String resourceId);
 
     List<ScheduledStep> getScheduledStepsByWorkflow(String workflowId);
+
+    List<ScheduledStep> getScheduledStepsByStep(String stepId);
 
     default List<ScheduledStep> getScheduledStepsByWorkflow(Workflow workflow) {
         if (workflow == null) {
@@ -69,5 +69,5 @@ public interface WorkflowStateProvider extends Provider {
 
     List<ScheduledStep> getDueScheduledSteps(Workflow workflow);
 
-    record ScheduledStep(String workflowId, String stepId, String resourceId) {}
+    record ScheduledStep(String workflowId, String stepId, String resourceId, String executionId) {}
 }

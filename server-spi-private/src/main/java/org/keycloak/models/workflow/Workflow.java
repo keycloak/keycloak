@@ -19,6 +19,7 @@ package org.keycloak.models.workflow;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
 
 import java.util.List;
@@ -57,6 +58,10 @@ public class Workflow {
 
     public MultivaluedHashMap<String, String> getConfig() {
         return config;
+    }
+
+    public String getName() {
+        return config != null ? config.getFirst(CONFIG_NAME) : null;
     }
 
     public boolean isEnabled() {
