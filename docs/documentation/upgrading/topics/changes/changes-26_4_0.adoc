@@ -104,6 +104,12 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== Bouncy Castle libraries updated to 2.1.x
+
+If you are running {project_name} in FIPS 140-2 mode, note to update your Bouncy Castle libraries to the versions listed in the release documentation.
+
+With the upgrade to Bouncy Castle 2.1.x, EdDSA is now supported in FIPS 140-2 mode.
+
 === MySQL and MariaDB wait_timeout validation
 
 In order to prevent connections being closed unexpectedly by the database server, it is necessary to ensure that the {project_name}
