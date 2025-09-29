@@ -33,6 +33,7 @@ public class JavaAlgorithm {
     public static final String Ed25519 = "Ed25519";
     public static final String Ed448 = "Ed448";
     public static final String AES = "AES";
+    public static final String ECDSA = "ECDSA";
 
     public static final String SHA256 = "SHA-256";
     public static final String SHA384 = "SHA-384";
@@ -135,6 +136,7 @@ public class JavaAlgorithm {
             case KeyType.RSA:
                 return KeyType.RSA;
             case KeyType.EC:
+            case ECDSA:
                 return KeyType.EC;
             case Algorithm.EdDSA:
             case Algorithm.Ed448:
