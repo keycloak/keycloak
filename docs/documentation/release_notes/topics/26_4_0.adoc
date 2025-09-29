@@ -175,6 +175,7 @@ When this option is set, Infinispan will automatically replicate the cache data 
 With this release, we added support for the following new database vendors:
 
 * EnterpriseDB (EDB) Advanced 17.6
+* Azure SQL Database and Azure SQL Managed Instance
 
 = Additional datasources configuration is supported
 
