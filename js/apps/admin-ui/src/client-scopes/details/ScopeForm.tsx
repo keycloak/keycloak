@@ -1,6 +1,6 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import { ActionGroup, Button } from "@patternfly/react-core";
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -60,11 +60,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const selectedProtocol = useWatch({
     control,
     name: "protocol",
-    defaultValue: clientScope?.protocol ?? providers[0],
   });
 
-  const isOid4vcProtocol = () => selectedProtocol === OID4VC_PROTOCOL;
-  const isOid4vcEnabled = () => isFeatureEnabled(Feature.OpenId4VCI);
+  const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
+  const isOid4vcEnabled = isFeatureEnabled(Feature.OpenId4VCI);
 
   const setDynamicRegex = (value: string, append: boolean) =>
     setValue(
@@ -78,17 +77,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
-
-  const handleProtocolSelect = useCallback(
-    (
-      value: string | string[],
-      onChangeHandler: (value: string | string[]) => void,
-    ) => {
-      const protocolValue = Array.isArray(value) ? value[0] : value;
-      onChangeHandler(protocolValue);
-    },
-    [],
-  );
 
   return (
     <FormAccess
@@ -167,17 +155,13 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             labelIcon={t("protocolHelp")}
             controller={{ defaultValue: providers[0] }}
             options={providers
-              .filter((option) => {
-                if (option === OID4VC_PROTOCOL) {
-                  return isOid4vcEnabled();
-                }
-                return true;
-              })
+              .filter((option) =>
+                option === OID4VC_PROTOCOL ? isOid4vcEnabled : true,
+              )
               .map((option) => ({
                 key: option,
                 value: getProtocolName(t, option),
               }))}
-            onSelect={handleProtocolSelect}
           />
         )}
         <DefaultSwitchControl
@@ -216,7 +200,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           min={0}
         />
 
-        {isOid4vcProtocol() && isOid4vcEnabled() && (
+        {isOid4vcProtocol && isOid4vcEnabled && (
           <>
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
