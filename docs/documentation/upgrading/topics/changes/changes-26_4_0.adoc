@@ -289,8 +289,8 @@ If you have an SMTP server configured for your realm, perform the following migr
 === Aligning the count of users with the actual number of users returned from searches
 
 When searching for users in the Admin Console or by the User API, the count of users returned from the
-`/admin/realms/{realm}/users/count` endpoint is now aligned with the actual number of users returned when executing
-searches by `/admin/realms/{realm}/users`.
+`+/admin/realms/{realm}/users/count+` endpoint is now aligned with the actual number of users returned when executing
+searches by `+/admin/realms/{realm}/users+`.
 
 If you are relying on the users count endpoint, make sure to review your clients so that they expect the users count
 to be aligned with the actual number of users returned from searches.
