@@ -118,18 +118,11 @@ Using that option results in stricter security requirements on cryptography and 
 NOTE: In strict mode, the default keystore type (as well as default truststore type) is BCFKS. If you want to use a different keystore type
 it is required to use the option `--https-key-store-type` with appropriate type. A similar command might be needed for the truststore as well if you want to use it.
 
-When starting the server, you can include TRACE level in the startup command. For example:
-
-[source,bash,subs=+attributes]
-----
---log-level=INFO,org.keycloak.common.crypto.CryptoIntegration:TRACE
-----
-
-By using TRACE level, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
+When starting the server, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
 
 [source]
 ----
-KC(BCFIPS version 2.0102 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
+KeycloakFipsSecurityProvider created: KC(BCFIPS version 2.0102 Approved Mode, FIPS-JVM: enabled) version 1.0
 ----
 
 === Cryptography restrictions in strict mode

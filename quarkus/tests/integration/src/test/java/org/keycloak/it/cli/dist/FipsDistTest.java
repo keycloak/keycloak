@@ -30,7 +30,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 
-@DistributionTest(keepAlive = true, defaultOptions = { "--db=dev-file", "--features=fips", "--http-enabled=true", "--hostname-strict=false", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
+@DistributionTest(keepAlive = true, defaultOptions = { "--db=dev-file", "--features=fips", "--http-enabled=true", "--hostname-strict=false" })
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.SLOW)
 public class FipsDistTest {
@@ -44,8 +44,7 @@ public class FipsDistTest {
             cliResult.assertStarted();
             // Not shown as FIPS is not a preview anymore
             cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips:v1", 0);
-            cliResult.assertMessage("Java security providers: [ \n"
-                    + " KC(" + BCFIPS_VERSION + ", FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
+            cliResult.assertMessage("KeycloakFipsSecurityProvider created: KC(" + BCFIPS_VERSION + ", FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0");
         });
     }
 
@@ -57,8 +56,7 @@ public class FipsDistTest {
 
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertMessage("password must be at least 112 bits");
-            cliResult.assertMessage("Java security providers: [ \n"
-                    + " KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
+            cliResult.assertMessage("KeycloakFipsSecurityProvider created: KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0");
 
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "adminadminadmin");
             cliResult = dist.run("start", "--fips-mode=strict");
