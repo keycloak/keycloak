@@ -66,7 +66,7 @@ endif::[]
 == Federated client authentication (preview)
 
 Identity providers are now able to federate client authentication. This allows clients to authenticate with SPIFFE JWT SVIDs,
-Kubernetes service account tokens, or tokens issued by a OpenID Connect identity provider.
+Kubernetes service account tokens, or tokens issued by an OpenID Connect identity provider.
 
 == Automatic certificate management for SAML clients
 
