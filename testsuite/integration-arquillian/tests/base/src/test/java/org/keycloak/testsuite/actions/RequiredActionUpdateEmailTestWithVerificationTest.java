@@ -517,6 +517,10 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             // Check that the pending verification message is displayed
             assertThat("Should show pending verification message", 
                       updateEmailPage.getInfo(), containsString("A verification email was sent to pending@localhost"));
+            
+            // Check that the email field is pre-filled with the pending email, not the old email
+            assertEquals("Email field should be pre-filled with pending email", 
+                        "pending@localhost", updateEmailPage.getEmail());
 
             updateEmailPage.changeEmail("pending@localhost"); // Same email to resend
             
