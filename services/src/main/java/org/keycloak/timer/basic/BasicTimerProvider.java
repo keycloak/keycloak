@@ -23,6 +23,9 @@ import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -54,7 +57,7 @@ public class BasicTimerProvider implements TimerProvider {
             }
         };
 
-        TimerTaskContextImpl taskContext = new TimerTaskContextImpl(runnable, task, intervalMillis);
+        TimerTaskContextImpl taskContext = new TimerTaskContextImpl(runnable, task, Instant.now().toEpochMilli() , intervalMillis);
         TimerTaskContextImpl existingTask = factory.putTask(taskName, taskContext);
         if (existingTask != null) {
             logger.debugf("Existing timer task '%s' found. Cancelling it", taskName);
@@ -87,4 +90,10 @@ public class BasicTimerProvider implements TimerProvider {
         // do nothing
     }
 
+    @Override
+    public List<TimerTaskContext> getTasks() {
+        List<TimerTaskContext> taskContexts = new ArrayList<>();
+        factory.getTasks().forEach(task -> taskContexts.add((TimerTaskContext) task));
+        return taskContexts;
+    }
 }
