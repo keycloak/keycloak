@@ -88,7 +88,7 @@ NOTE: If you configure mTLS with `https-client-auth` set to `required`, this con
 
 === HEALTHCHECK
 
-The Containerfile https://docs.docker.com/reference/dockerfile/#healthcheck[`+HEALTHCHECK+`] instruction defines a command that will be periodically executed inside the container as it runs. While the {project_name} container does not have any CLI HTTP clients installed, it is possible to leverage BASH support for redirects to TCP sockets and craft a simple HTTP request to the healthcheck endpoint:
+The Containerfile `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. While the {project_name} container does not have any CLI HTTP clients installed, it is possible to leverage BASH support for redirects to TCP sockets and craft a simple HTTP request to the healthcheck endpoint:
 
 [source, bash]
 ----
