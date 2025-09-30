@@ -29,7 +29,7 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 In previous releases, the only possible way to configure additional datasources was using raw Quarkus properties that are generally considered unsupported. At the same time, adding additional datasources was supported which led to unclear situation.
 
-To provide supported and user friendly way to configure additional datasources, we introduced new dedicated server options for that. Configuring additional datasources using the original approach via the Quarkus properties is considered **unsupported** starting with this release.
+To provide a supported and user-friendly way to configure additional datasources, we introduced new dedicated server options for that. Configuring additional datasources using the original approach via the Quarkus properties is considered **unsupported** starting with this release.
 
 Check the following examples on how to migrate your configuration:
 
@@ -103,6 +103,18 @@ When running PostgreSQL reader and writer instances, {project_name} needs to alw
 Starting with this release, and when using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
+
+=== Bouncy Castle libraries updated to 2.1.x
+
+If you are running {project_name} in FIPS 140-2 mode, note to update your Bouncy Castle libraries to the versions listed in the release documentation.
+
+With the upgrade to Bouncy Castle 2.1.x, EdDSA is now supported in FIPS 140-2 mode.
+
+== Creating remote caches automatically on the first startup
+
+When using remote caches, {project_name} now automatically creates the necessary caches during startup if they do not already exist on the {jdgserver_name} server.
+
+For a multi-cluster setup, it is still recommended to create the caches using Cache CRs in advance to verify the correct initialization of the caches and to avoid start-up errors while the caches are present in only one of the sites.
 
 === MySQL and MariaDB wait_timeout validation
 
@@ -277,8 +289,8 @@ If you have an SMTP server configured for your realm, perform the following migr
 === Aligning the count of users with the actual number of users returned from searches
 
 When searching for users in the Admin Console or by the User API, the count of users returned from the
-`/admin/realms/{realm}/users/count` endpoint is now aligned with the actual number of users returned when executing
-searches by `/admin/realms/{realm}/users`.
+`+/admin/realms/{realm}/users/count+` endpoint is now aligned with the actual number of users returned when executing
+searches by `+/admin/realms/{realm}/users+`.
 
 If you are relying on the users count endpoint, make sure to review your clients so that they expect the users count
 to be aligned with the actual number of users returned from searches.
@@ -289,7 +301,7 @@ The Welcome Page creates regular Admin users instead of temporary ones.
 
 === Fine-grained admin permissions: new `reset-password` scope for Users
 
-The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader`manage` scope.
+The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader `manage` scope.
 
 By default, a user with the existing, broader `manage` scope for the `USERS` resource type will implicitly have permission to reset a user's password. The system checks for the explicit `reset-password` scope first. If that permission is not found, it falls back to checking if the administrator has the `manage` scope. This ensures that existing administrators with the `manage` scope continue to have the ability to reset passwords without any changes to their permissions.
 
