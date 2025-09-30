@@ -164,10 +164,15 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
                 String pendingEmail = getPendingEmailVerification(context);
 
                 if (pendingEmail != null) {
-                    context.form().setInfo(EMAIL_VERIFICATION_PENDING, pendingEmail);
+                    // Create form data with pending email to pre-fill the form
+                    MultivaluedMap<String, String> formDataWithPendingEmail = new MultivaluedHashMap<>();
+                    formDataWithPendingEmail.putSingle(UserModel.EMAIL, pendingEmail);
+                    context.challenge(context.form().setInfo(EMAIL_VERIFICATION_PENDING, pendingEmail)
+                            .setFormData(formDataWithPendingEmail)
+                            .createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
+                } else {
+                    context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
                 }
-
-                context.challenge(context.form().createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
             }
         }
     }
