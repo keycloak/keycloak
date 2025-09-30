@@ -29,7 +29,7 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 
 In previous releases, the only possible way to configure additional datasources was using raw Quarkus properties that are generally considered unsupported. At the same time, adding additional datasources was supported which led to unclear situation.
 
-To provide supported and user friendly way to configure additional datasources, we introduced new dedicated server options for that. Configuring additional datasources using the original approach via the Quarkus properties is considered **unsupported** starting with this release.
+To provide a supported and user-friendly way to configure additional datasources, we introduced new dedicated server options for that. Configuring additional datasources using the original approach via the Quarkus properties is considered **unsupported** starting with this release.
 
 Check the following examples on how to migrate your configuration:
 
@@ -301,7 +301,7 @@ The Welcome Page creates regular Admin users instead of temporary ones.
 
 === Fine-grained admin permissions: new `reset-password` scope for Users
 
-The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader`manage` scope.
+The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader `manage` scope.
 
 By default, a user with the existing, broader `manage` scope for the `USERS` resource type will implicitly have permission to reset a user's password. The system checks for the explicit `reset-password` scope first. If that permission is not found, it falls back to checking if the administrator has the `manage` scope. This ensures that existing administrators with the `manage` scope continue to have the ability to reset passwords without any changes to their permissions.
 
