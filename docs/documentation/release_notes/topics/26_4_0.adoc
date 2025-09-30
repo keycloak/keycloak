@@ -3,31 +3,22 @@
 
 This release features new capabilities focused on security enhancements, deeper integration, and improved server administration. The highlights of this release are:
 
-* Passkeys for seamless, passwordless authentication of users
-* Federated Client Authentication to use SPIFFE or Kubernetes service account tokens for client authentication
-* Simplified deployments across multiple availability zones to boost availability
+* Passkeys for seamless, passwordless authentication of users.
+* Federated Client Authentication to use SPIFFE or Kubernetes service account tokens for client authentication.
+* Simplified deployments across multiple availability zones to boost availability.
+* FAPI 2 Final: Keycloak now supports the final specifications of FAPI 2.0 Security Profile and FAPI 2.0 Message Signing.
+* DPoP: The OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP) is now fully supported. Improvements include the ability to bind only refresh tokens for public clients, and securing all Keycloak endpoints with DPoP tokens.
 
-Read on to learn more about each new feature, and https://www.keycloak.org/docs/latest/upgrading/index.html[find additional details in the upgrading guide] if you are upgrading from a previous release of {project_name}.
+
+Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
 
 = Security and Standards
-
-The new release significantly extends Keycloak's security features and compliance with modern standards.
-
-* Passkeys Integration Passkeys are now fully supported and integrate into {project_name} login forms, supporting both conditional and modal UIs.
-
-* FAPI 2 Final: Keycloak now supports the final specifications of FAPI 2.0 Security Profile and FAPI 2.0 Message Signing.
-
-* DPoP: The OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP), previously a preview feature, is now fully supported. Improvements include the ability to bind only refresh tokens for public clients, and securing all Keycloak endpoints with DPoP tokens.
 
 == Passkeys integration (supported)
 
 Passkeys are now seamlessly integrated in the {project_name} login forms using both conditional and modal UIs. To activate the integration in the realm, go to *Authentication*, *Policies*, *Webauthn Passwordless Policy* and switch *Enable Passkeys* to enabled.
 
 For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys].
-
-== FIPS 140-2 mode now supports EdDSA
-
-With the upgrade to Bouncy Castle 2.1.x, the algorithm EdDSA can now be used.
 
 == FAPI 2 Final (supported)
 
@@ -58,6 +49,10 @@ endif::[]
 
 For more information, see the link:{adminguide_link}#_dpop-bound-tokens[DPoP section] in the documentation.
 
+== FIPS 140-2 mode now supports EdDSA
+
+With the upgrade to Bouncy Castle 2.1.x, the algorithm EdDSA can now be used.
+
 == Listing supported OAuth standards on one page
 
 A new guide lists https://www.keycloak.org/securing-apps/specifications[all implemented OpenID Connect related specifications].
@@ -65,41 +60,30 @@ ifeval::[{project_community}==true]
 Thank you to https://github.com/tnorimat[Takashi Norimatsu] for contributing this.
 endif::[]
 
-= Integration and Administration
+= Integration
 
-Improvements to integration features and server management streamline deployment and user experience.
 
-* Federated Client Authentication (Preview): Identity providers can now federate client authentication, allowing clients to use credentials like SPIFFE JWT SVIDs or Kubernetes service account tokens for authentication.
-
-* Automatic Certificate Management for SAML Clients: SAML clients can now be configured to automatically download signing and encrypting certificates from an SP entity metadata descriptor URL, simplifying certificate rotation.
-
-* Authorization Server for MCP: Keycloak can now serve as an authorization server for the Model Context Protocol (MCP), an open-source standard for connecting AI applications to external systems, by complying with the RFC 8414 OAuth 2.0 Authorization Server Metadata specification.
-
-* Enhanced Update Email Workflow: A more secure and consistent flow for users updating their email addresses, requiring both re-authentication and email verification.
-
-== Integration
-
-=== Federated client authentication (preview)
+== Federated client authentication (preview)
 
 Identity providers are now able to federate client authentication. This allows clients to authenticate with SPIFFE JWT SVIDs,
 Kubernetes service account tokens, or tokens issued by a OpenID Connect identity provider.
 
-=== Automatic certificate management for SAML clients
+== Automatic certificate management for SAML clients
 
 The SAML clients can now be configured to automatically download the signing and encrypting certificates from the SP entity metadata descriptor endpoint. In order to use this new feature, in the client *Settings* tab, section *Signature and Encryption*, configure the *Metadata descriptor URL* option (the URL where the SP metadata information with the certificates is published) and activate *Use metadata descriptor URL*. The certificates will be automatically downloaded and cached in the `public-key-storage` SPI from that URL.
 This also allows for seamless rotation of certificates.
 
 For more information, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] in the {adminguide_name}.
 
-=== Serving as an authorization server in MCP
+== Serving as an authorization server in MCP
 
 MCP (Model Context Protocol) is an open-source standard for connecting AI applications to external systems. Using MCP, AI applications can connect to data sources, tools and workflows enabling them to access key information and perform tasks.
 
 To comply with MCP specification, this version provides its OAuth 2.0 Server Metadata via a well-known URI whose format complies with RFC 8414 OAuth 2.0 Authorization Server Metadata specification. Therefore, Keycloak users can now use Keycloak as an authorization server for MCP.
 
-== Administration
+= Administration
 
-=== Update Email Workflow (supported)
+== Update Email Workflow (supported)
 
 Users can now update their email addresses in a more secure and consistent flow. Accounts are forced to both re-authenticate and verify their emails before any account updates.
 
@@ -109,7 +93,7 @@ ifeval::[{project_community}==true]
 This feature is currently preview, and expected to become supported in 26.5.
 endif::[]
 
-=== Optional email domain for organizations
+== Optional email domain for organizations
 
 In earlier versions, each organization required at least one email domain, which was a limitation for some scenarios.
 Starting with this release, an email domain is optional.
@@ -119,28 +103,28 @@ endif::[]
 
 When no domain is specified, organization members will not be validated against domain restrictions during authentication and profile validation.
 
-=== Hiding identity providers from the Account Console
+== Hiding identity providers from the Account Console
 
 You can now control which identity providers appear in the Account Console based on different options using
 the `Show in Account console` setting. You can choose to show only those linked with a user or hide them completely.
 
 For more information, see link:{adminguide_link}#_general-idp-config[General configuration].
 
-=== Enforce recovery codes setup after setting up OTP
+== Enforce recovery codes setup after setting up OTP
 
 If you have enabled OTPs and recovery codes as a second factor for authentication, you can configure the OTP required action to ask users to set up recovery codes once they set up an OTP.
 ifeval::[{project_community}==true]
 Thank you to https://github.com/dasniko[Niko Köbler] for contributing this.
 endif::[]
 
-=== New conditional authenticator
+== New conditional authenticator
 
 The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the Passkeys feature. It is added by {project_name} to the default browser flow to skip 2FA in case a passkey was used to log in as the primary credential.
 
 For more information about conditional flows, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
 
 ifeval::[{project_community}==true]
-=== Translations managed by Weblate
+== Translations managed by Weblate
 
 The {project_name} distribution now includes 35 community translations, with Kazakh, Azerbaijani and Slovenian added in this release.
 Community volunteers now maintain some of the translations in https://hosted.weblate.org/projects/keycloak/[Weblate] to keep them up to date.
@@ -149,14 +133,6 @@ If you want to volunteer to maintain an existing or a new translation via Weblat
 endif::[]
 
 = Configuring and Running
-
-This release introduces critical enhancements for operating Keycloak in modern environments.
-
-* Clustering Enhancements: Keycloak and the Keycloak Operator now support deployments across multiple availability zones in Kubernetes and detection of split-brains.
-
-* Support for additional Databases: New supported database vendors include EnterpriseDB and Azure SQL.
-
-* Additional customizations on HTTPS, TLS termination and health endpoints to serve for the needs of different runtime environments.
 
 == Enhancements for single-cluster and multi-cluster setups
 
@@ -229,11 +205,6 @@ This was possible only through specifying unsupported raw Quarkus properties in 
 Read more about it in the link:https://www.keycloak.org/server/db#configure-multiple-datasources[Configure multiple datasources] guide.
 
 = Observability
-
-Enhanced observability helps you to maintain a performant and secure environment.
-
-* The Operator now automatically provisions a ServiceMonitor when metrics are enabled.
-* Keycloak supports HTTP access logging for security auditing and traffic analysis.
 
 == Operator creates a ServiceMonitor automatically
 
