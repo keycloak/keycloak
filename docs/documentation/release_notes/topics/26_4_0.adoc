@@ -6,7 +6,6 @@ This release features new capabilities focused on security enhancements, deeper 
 * Passkeys for seamless, passwordless authentication of users
 * Federated Client Authentication to use SPIFFE or Kubernetes service account tokens for client authentication
 * Simplified deployments across multiple availability zones to boost availability
-* Serving as an authorization server when connecting AI application via the Model Context Protocol (MCP)
 
 Read on to learn more about each new feature, and https://www.keycloak.org/docs/latest/upgrading/index.html[find additional details in the upgrading guide] if you are upgrading from a previous release of {project_name}.
 
