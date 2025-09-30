@@ -81,6 +81,8 @@ MCP (Model Context Protocol) is an open-source standard for connecting AI applic
 
 To comply with MCP specification, this version provides its OAuth 2.0 Server Metadata via a well-known URI whose format complies with RFC 8414 OAuth 2.0 Authorization Server Metadata specification. Therefore, Keycloak users can now use Keycloak as an authorization server for MCP.
 
+The latest MCP specification 2025-06-18 additionally requires support for resource indicators which are currently not implemented in {project_name}.
+
 = Administration
 
 == Update Email Workflow (supported)
