@@ -29,12 +29,14 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceWrapper;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.representations.idm.authorization.Permission;
 
 class FineGrainedAdminPermissionEvaluator {
@@ -80,11 +82,11 @@ class FineGrainedAdminPermissionEvaluator {
      *
      * @param modelId the model id
      * @param context the context
-     * @param scope the scope
+     * @param scopeName the scope
      * @param defaultValue the default value
      * @return
      */
-    boolean hasPermission(String modelId, String resourceType, EvaluationContext context, String scope, Supplier<Boolean> defaultValue) {
+    boolean hasPermission(String modelId, String resourceType, EvaluationContext context, String scopeName, Supplier<Boolean> defaultValue) {
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -98,8 +100,13 @@ class FineGrainedAdminPermissionEvaluator {
         Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, server, resourceType);
         Resource resource = modelId == null ? resourceTypeResource : resourceStore.findByName(server, modelId);
 
+        Scope scope = resourceTypeResource.getScopes()
+                .stream()
+                .filter(s -> s.getName().equals(scopeName)).findAny()
+                .orElseThrow(() -> new ModelIllegalStateException("Scope '%s' is not defined for resource type '%s'".formatted(scopeName, resourceType)));
+
         if (modelId != null && resource == null) {
-            resource = new ResourceWrapper(modelId, modelId, new HashSet<>(resourceTypeResource.getScopes()), server);
+            resource = new ResourceWrapper(modelId, modelId, Set.of(scope), server);
         }
 
         DecisionPermissionCollector decision = (context == null) ?
@@ -109,14 +116,14 @@ class FineGrainedAdminPermissionEvaluator {
 
         for (Permission permission : permissions) {
             if (permission.getResourceId().equals(resource.getId())) {
-                if (permission.getScopes().contains(scope)) {
+                if (permission.getScopes().contains(scopeName)) {
                     return true;
                 }
             }
         }
 
         if (defaultValue != null) {
-            if (!decision.isEvaluated(scope)) {
+            if (!decision.isEvaluated(scopeName)) {
                 return defaultValue.get();
             }
         }
