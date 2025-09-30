@@ -27,4 +27,4 @@ There are two sample projects in link:{quickstartRepo_link}[{quickstartRepo_name
 
 |===
 
-In order to connect to the external database, you should use the {project_name} properties for the additional datasources described in the link:https://www.keycloak.org/server/db#configure-multiple-datasources[Configure multiple datasources] guide.
+In order to connect to the external database, you should use the {project_name} properties for the additional datasources described in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.

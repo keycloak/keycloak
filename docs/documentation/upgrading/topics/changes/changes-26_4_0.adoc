@@ -43,7 +43,7 @@ db-url-full-user-store=jdbc:postgresql://my-remote-postgres:5432/user-store
 # transactions XA is enabled by default for datasources
 ----
 
-For more information about the datasource options, check the link:https://www.keycloak.org/server/db#configure-multiple-datasources[Configure multiple datasources] guide.
+For more information about the datasource options, check the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
 
 ==== 2. Remove quoting in `quarkus.properties` (unsupported)
 If you are not able to migrate to the {project_name} datasource options right now, remove the additional datasource name quoting to avoid a clash of the datasource options mapping to prevent any issue.

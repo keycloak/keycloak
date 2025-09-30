@@ -405,6 +405,7 @@ If you are explicitly configuring the `wait_timeout` in your database, it is nec
 to be your `wait_timeout` minus a few minutes. Failure to correctly configure the `db-pool-max-lifetime` will result in
 {project_name} logging a warning on startup.
 
+[[multiple-datasources]]
 == Configure multiple datasources
 
 {project_name} allows you to specify additional datasources in case you need to access another database from your extensions. This is useful when using the main {project_name} datasource is not a viable option for storing custom data, like users.
