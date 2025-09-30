@@ -29,4 +29,4 @@ echo "--3-- $(readlink -f $( which javac ))"
 
 echo "Running build command for MSQL database"
 
-java -jar quarkus/server/target/lib/quarkus-run.jar build --db=mysql
+java -jar quarkus/server/target/lib/quarkus-run.jar build --db=mysql --health-enabled=true --metrics-enabled=true
