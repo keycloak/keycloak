@@ -110,6 +110,12 @@ If you are running {project_name} in FIPS 140-2 mode, note to update your Bouncy
 
 With the upgrade to Bouncy Castle 2.1.x, EdDSA is now supported in FIPS 140-2 mode.
 
+== Creating remote caches automatically on the first startup
+
+When using remote caches, {project_name} now automatically creates the necessary caches during startup if they do not already exist on the {jdgserver_name} server.
+
+For a multi-cluster setup, it is still recommended to create the caches using Cache CRs in advance to verify the correct initialization of the caches and to avoid start-up errors while the caches are present in only one of the sites.
+
 === MySQL and MariaDB wait_timeout validation
 
 In order to prevent connections being closed unexpectedly by the database server, it is necessary to ensure that the {project_name}
