@@ -19,7 +19,7 @@ export const HelpLinkTextInput = ({
       label={t(name)}
       labelIcon={
         <Trans i18nKey={`${name}Help`}>
-          Default value prevents pages from being included
+          Default value prevents pages from being included<br />
           <FormattedLink href={url} title={t("learnMore")} />
         </Trans>
       }
