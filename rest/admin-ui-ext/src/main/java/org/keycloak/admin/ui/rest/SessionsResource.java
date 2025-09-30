@@ -59,8 +59,9 @@ public class SessionsResource {
             )}
     )
     public Stream<SessionRepresentation> realmSessions(@QueryParam("type") @DefaultValue("ALL") final SessionType type,
-                                                       @QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
-                                                       @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
+                                                       @QueryParam("search") @DefaultValue("") final String search,
+                                                       @QueryParam("first") @DefaultValue("0") int first,
+                                                       @QueryParam("max") @DefaultValue("10") int max) {
         auth.realm().requireViewRealm();
 
         Stream<ClientIdSessionType> sessionIdStream = Stream.<ClientIdSessionType>builder().build();
@@ -115,8 +116,9 @@ public class SessionsResource {
     )
     public Stream<SessionRepresentation> clientSessions(@QueryParam("clientId") final String clientId,
                                                         @QueryParam("type") @DefaultValue("ALL") final SessionType type,
-                                                        @QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
-                                                        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
+                                                        @QueryParam("search") @DefaultValue("") final String search,
+                                                        @QueryParam("first") @DefaultValue("0") int first,
+                                                        @QueryParam("max") @DefaultValue("10") int max) {
         ClientModel clientModel = realm.getClientById(clientId);
         auth.clients().requireView(clientModel);
 
@@ -134,7 +136,10 @@ public class SessionsResource {
         return applySearch(search, result).distinct().skip(first).limit(max);
     }
 
-    private static Stream<SessionRepresentation> applySearch(String search, Stream<SessionRepresentation> result) {
+    private Stream<SessionRepresentation> applySearch(String search, Stream<SessionRepresentation> result) {
+        result = result.filter(sessionRep ->
+            auth.users().canView(session.users().getUserById(realm, sessionRep.getUserId()))
+        );
         if (!StringUtil.isBlank(search)) {
             String searchTrimmed = search.trim();
             result = result.filter(s -> s.getUsername().contains(searchTrimmed) || s.getIpAddress().contains(searchTrimmed)
