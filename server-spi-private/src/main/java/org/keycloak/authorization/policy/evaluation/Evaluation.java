@@ -101,7 +101,7 @@ public interface Evaluation {
     }
 
     /**
-     * If the given scope should not be granted when the given {@code deniedPolicy} denies access to a resource or a specific scope.
+     * If the given scope should not be granted when the given {@code deniedPolicy} is associated with a resource group.
      *
      * @param deniedPolicy the policy granting access
      * @param deniedScope the scope that should be granted
