@@ -52,6 +52,10 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
 
+            if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
+                return;
+            }
+
             if (!SUPPORTED_ASSERTION_TYPES.contains(clientAssertionState.getClientAssertionType())) {
                 return;
             }
