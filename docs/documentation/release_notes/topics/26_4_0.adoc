@@ -21,7 +21,7 @@ The new release significantly extends Keycloak's security features and complianc
 
 == Passkeys integration (supported)
 
-Passkeys now seamlessly in the {project_name} login forms using both conditional and modal UIs. To activate the integration in the realm, go to *Authentication*, *Policies*, *Webauthn Passwordless Policy* and switch *Enable Passkeys* to enabled.
+Passkeys are now seamlessly integrated in the {project_name} login forms using both conditional and modal UIs. To activate the integration in the realm, go to *Authentication*, *Policies*, *Webauthn Passwordless Policy* and switch *Enable Passkeys* to enabled.
 
 For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys].
 
