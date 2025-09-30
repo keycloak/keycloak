@@ -136,7 +136,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         event.user(tokenUser);
         event.detail(Details.USERNAME, tokenUser.getUsername());
-        if (tokenSession.getPersistenceState() != UserSessionModel.SessionPersistenceState.TRANSIENT) {
+        if (token.getSessionId() != null) {
             event.session(tokenSession);
         }
         event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
@@ -275,7 +275,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
             checkRequestedAudiences(responseBuilder);
 
-            if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT && !isOfflineSession) {
+            if (encoder.getTokenContextFromTokenId(responseBuilder.getAccessToken().getId()).getSessionType() == AccessTokenContext.SessionType.TRANSIENT) {
                 responseBuilder.getAccessToken().setSessionId(null);
                 event.session((String) null);
             }
