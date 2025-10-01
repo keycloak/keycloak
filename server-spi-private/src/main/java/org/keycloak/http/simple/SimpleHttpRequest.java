@@ -38,7 +38,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.common.util.Base64;
+import org.keycloak.util.BasicAuthHelper.RFC6749;
 
 import java.io.IOException;
 import java.net.URI;
@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -148,8 +149,7 @@ public class SimpleHttpRequest {
     }
 
     public SimpleHttpRequest authBasic(final String username, final String password) {
-        final String basicCredentials = String.format("%s:%s", username, password);
-        header("Authorization", "Basic " + Base64.encodeBytes(basicCredentials.getBytes()));
+        header("Authorization", Objects.requireNonNull(RFC6749.createHeader(username, password), "unable to encode header"));
         return this;
     }
 
