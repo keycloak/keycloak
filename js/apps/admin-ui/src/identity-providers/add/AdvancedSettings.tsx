@@ -144,14 +144,12 @@ export const AdvancedSettings = ({
           fieldType="boolean"
         />
       )}
+      <SwitchField
+        field="config.acceptsPromptNoneForwardFromClient"
+        label="acceptsPromptNone"
+      />
       {!isOIDC && !isSAML && !isOAuth2 && (
-        <>
-          <SwitchField
-            field="config.acceptsPromptNoneForwardFromClient"
-            label="acceptsPromptNone"
-          />
-          <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
-        </>
+        <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
       )}
       {isOIDC && (
         <SwitchField field="config.isAccessTokenJWT" label="isAccessTokenJWT" />
