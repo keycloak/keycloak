@@ -439,6 +439,7 @@
                                          -->
                                         <toc/>
                                         <toc-position>left</toc-position>
+                                        <sectanchors />
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
                                         <!-- Boolean attributes are passed as defined/undefined to AsciiDoc, not at their literal value -->
                                         <project_community>true</project_community>
