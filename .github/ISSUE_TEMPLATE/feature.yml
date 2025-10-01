@@ -1,6 +1,7 @@
 name: Feature Request
 description: Request a new feature to be added to Keycloak
 labels: ["kind/feature", "status/triage"]
+type: feature
 body:
   - type: textarea
     id: description
