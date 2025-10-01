@@ -1,6 +1,7 @@
 name: Enhancement Request
 description: Request an enhancement to an existing feature
 labels: ["kind/enhancement", "status/triage"]
+type: enhancement
 body:
   - type: textarea
     id: description

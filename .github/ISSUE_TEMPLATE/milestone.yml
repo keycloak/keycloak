@@ -1,6 +1,7 @@
 name: Milestone
 description: Milestones are used to break up larger features
 labels: ["kind/milestone", "status/triage"]
+type: milestone
 body:
   - type: textarea
     id: description
