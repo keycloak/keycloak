@@ -102,7 +102,7 @@ if not "x%JAVA_OPTS%" == "x" (
     rem If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
     rem To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
     rem As of KC25 and JDK17, G1GC, ZGC and Shenandoah GC seem to be eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning in reclaiming dead objects.
-    set "JAVA_OPTS=-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:FlightRecorderOptions=stackdepth=512"
+    set "JAVA_OPTS=-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:FlightRecorderOptions=stackdepth=512 -Djdk.tls.rejectClientInitiatedRenegotiation=true"
 
     if "x%JAVA_OPTS_KC_HEAP%" == "x" (
         if "!KC_RUN_IN_CONTAINER!" == "true" (
