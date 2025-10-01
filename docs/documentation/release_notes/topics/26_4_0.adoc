@@ -68,6 +68,10 @@ endif::[]
 Identity providers are now able to federate client authentication. This allows clients to authenticate with SPIFFE JWT SVIDs,
 Kubernetes service account tokens, or tokens issued by an OpenID Connect identity provider.
 
+ifeval::[{project_community}==true]
+This feature is currently preview, and expected to become supported in 26.5.
+endif::[]
+
 == Automatic certificate management for SAML clients
 
 The SAML clients can now be configured to automatically download the signing and encrypting certificates from the SP entity metadata descriptor endpoint. In order to use this new feature, in the client *Settings* tab, section *Signature and Encryption*, configure the *Metadata descriptor URL* option (the URL where the SP metadata information with the certificates is published) and activate *Use metadata descriptor URL*. The certificates will be automatically downloaded and cached in the `public-key-storage` SPI from that URL.
@@ -90,10 +94,6 @@ The latest MCP specification 2025-06-18 additionally requires support for resour
 Users can now update their email addresses in a more secure and consistent flow. Accounts are forced to both re-authenticate and verify their emails before any account updates.
 
 For more information, see link:{adminguide_link}#_update-email-workflow[Update Email Workflow].
-
-ifeval::[{project_community}==true]
-This feature is currently preview, and expected to become supported in 26.5.
-endif::[]
 
 == Optional email domain for organizations
 
