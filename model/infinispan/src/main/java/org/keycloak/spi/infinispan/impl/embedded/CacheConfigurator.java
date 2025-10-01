@@ -53,6 +53,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX;
@@ -122,7 +123,7 @@ public final class CacheConfigurator {
     public static void applyDefaultConfiguration(ConfigurationBuilderHolder holder, boolean warnMutate) {
         var configs = holder.getNamedConfigurationBuilders();
         boolean userProvidedConfig = false;
-        boolean clustered = holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
+        boolean clustered = isClustered(holder);
         for (var name : ALL_CACHES_NAME) {
             var config = configs.get(name);
             if (config == null) {
@@ -169,7 +170,7 @@ public final class CacheConfigurator {
         if (cacheBuilder == null) {
             throw cacheNotFound(WORK_CACHE_NAME);
         }
-        if (holder.getGlobalConfigurationBuilder().cacheContainer().transport().getTransport() == null) {
+        if (!isClustered(holder)) {
             // non-clustered, Keycloak started in dev mode?
             return;
         }
@@ -200,13 +201,25 @@ public final class CacheConfigurator {
      *                               the {@code holder}. This could indicate a missing or incorrect configuration.
      */
     public static void configureCacheMaxCount(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder, Stream<String> caches) {
+        boolean clustered = isClustered(holder);
         for (var it = caches.iterator(); it.hasNext(); ) {
             var name = it.next();
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
-            setMemoryMaxCount(keycloakConfig, name, builder);
+            var maxCount = keycloakConfig.getLong(maxCountConfigKey(name));
+            if (maxCount != null) {
+                if (maxCount < 0) {
+                    // Prevent users setting an unbounded max-count for any cache that already has a default max-count defined
+                    maxCount = getCacheConfiguration(name, clustered).memory().maxCount();
+                    if (maxCount > -1)
+                        logger.infof("Ignoring unbounded max-count for cache '%s', reverting to default max of %d entries.", name, maxCount);
+                } else {
+                    logger.debugf("Overwriting max-count for cache '%s' to %s entries", name, maxCount);
+                }
+                builder.memory().maxCount(maxCount);
+            }
         }
     }
 
@@ -217,13 +230,14 @@ public final class CacheConfigurator {
      * @throws IllegalStateException if an Infinispan cache from the provided {@code caches} stream is not defined in
      *                               the {@code holder}. This could indicate a missing or incorrect configuration.
      */
-    public static void configureSessionsCachesForPersistentSessions(ConfigurationBuilderHolder holder) {
+    public static void configureSessionsCachesForPersistentSessions(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
         logger.debug("Configuring session cache (persistent user sessions)");
-        for (var name : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
+        for (var name : CLUSTERED_MAX_COUNT_CACHES) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
+            setMemoryMaxCount(keycloakConfig, name, builder);
             if (builder.memory().maxCount() == -1) {
                 logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to %d entries.", name, SESSIONS_CACHE_DEFAULT_MAX);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
@@ -243,13 +257,15 @@ public final class CacheConfigurator {
      * @throws IllegalStateException if an Infinispan cache from the provided {@code caches} stream is not defined in
      *                               the {@code holder}. This could indicate a missing or incorrect configuration.
      */
-    public static void configureSessionsCachesForVolatileSessions(ConfigurationBuilderHolder holder) {
+    public static void configureSessionsCachesForVolatileSessions(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
         logger.debug("Configuring session cache (volatile user sessions)");
         for (var name : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME)) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
+
+            setMemoryMaxCount(keycloakConfig, name, builder);
             if (builder.memory().maxCount() != -1) {
                 logger.infof("Persistent user sessions disabled and memory limit is set. Ignoring cache limits to avoid losing sessions for cache %s.", name);
                 builder.memory().maxCount(-1);
@@ -262,11 +278,13 @@ public final class CacheConfigurator {
             }
         }
 
-        for (var name : Arrays.asList( OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
+        for (var name : Arrays.asList(OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
+
+            setMemoryMaxCount(keycloakConfig, name, builder);
             if (builder.memory().maxCount() == -1) {
                 logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of %d for cache %s.", name, SESSIONS_CACHE_DEFAULT_MAX);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
@@ -401,9 +419,8 @@ public final class CacheConfigurator {
     }
 
     private static void setMemoryMaxCount(Config.Scope keycloakConfig, String name, ConfigurationBuilder builder) {
-        var maxCount = keycloakConfig.getInt(maxCountConfigKey(name));
+        var maxCount = keycloakConfig.getLong(maxCountConfigKey(name));
         if (maxCount != null) {
-            logger.debugf("Overwriting max-count for cache '%s' to %s entries", name, maxCount);
             builder.memory().maxCount(maxCount);
         }
     }
@@ -506,5 +523,9 @@ public final class CacheConfigurator {
             default:
                 return null;
         }
+    }
+
+    private static boolean isClustered(ConfigurationBuilderHolder holder) {
+        return holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
     }
 }

@@ -17,6 +17,13 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_MAX_COUNT_CACHES;
+import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.createJGroupsProperties;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Paths;
@@ -25,7 +32,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.micrometer.core.instrument.Metrics;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.StatisticsConfigurationBuilder;
 import org.infinispan.configuration.global.ShutdownHookBehavior;
@@ -51,11 +57,7 @@ import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderFactory;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.impl.Util;
 
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
-import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.createJGroupsProperties;
+import io.micrometer.core.instrument.Metrics;
 
 /**
  * The default implementation of {@link CacheEmbeddedConfigProviderFactory}.
@@ -122,7 +124,7 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         var builder = ProviderConfigurationBuilder.create();
         Util.copyFromOption(builder, CONFIG, "file", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_CONFIG_FILE, false);
         Util.copyFromOption(builder, HISTOGRAMS, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED, false);
-        Stream.concat(Arrays.stream(LOCAL_CACHE_NAMES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
+        Stream.concat(Arrays.stream(LOCAL_MAX_COUNT_CACHES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
                 .forEach(name -> Util.copyFromOption(builder, CacheConfigurator.maxCountConfigKey(name), "max-count", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.maxCountOption(name), false));
         Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS)
                 .forEach(name -> builder.property()
@@ -170,13 +172,13 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     private static ConfigurationBuilderHolder configureSingleSiteWithVolatileSessions(ConfigurationBuilderHolder holder, Config.Scope keycloakConfig, KeycloakSessionFactory factory) {
         singleSiteConfiguration(keycloakConfig, holder, factory);
-        CacheConfigurator.configureSessionsCachesForVolatileSessions(holder);
+        CacheConfigurator.configureSessionsCachesForVolatileSessions(keycloakConfig, holder);
         return holder;
     }
 
     private static ConfigurationBuilderHolder configureSingleSiteWithPersistentSessions(ConfigurationBuilderHolder holder, Config.Scope keycloakConfig, KeycloakSessionFactory factory) {
         singleSiteConfiguration(keycloakConfig, holder, factory);
-        CacheConfigurator.configureSessionsCachesForPersistentSessions(holder);
+        CacheConfigurator.configureSessionsCachesForPersistentSessions(keycloakConfig, holder);
         return holder;
     }
 
@@ -221,7 +223,6 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     private static void singleSiteConfiguration(Config.Scope config, ConfigurationBuilderHolder holder, KeycloakSessionFactory factory) {
         logger.debug("Configuring Infinispan for single-site deployment");
         CacheConfigurator.checkCachesExist(holder, Arrays.stream(ALL_CACHES_NAME));
-        CacheConfigurator.configureCacheMaxCount(config, holder, Arrays.stream(CLUSTERED_MAX_COUNT_CACHES));
         CacheConfigurator.configureNumOwners(config, holder);
         CacheConfigurator.validateWorkCacheConfiguration(holder);
         CacheConfigurator.ensureMinimumOwners(holder);
