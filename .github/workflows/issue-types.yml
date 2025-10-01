@@ -1,0 +1,41 @@
+name: Sync issue types with labels
+
+on:
+  issues:
+    types: [typed,untyped]
+
+permissions:
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Update kind labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPO="${{ github.repository }}"
+          ACTION="${{ github.event.action }}"
+          ISSUE="${{ github.event.issue.number }}"
+
+          if [ "$ACTION" == "typed" ]; then
+            TYPE="${{ github.event.type.name }}"
+            ARGS="--add-label kind/$TYPE"
+          else
+            TYPE=""
+            ARGS=""         
+          fi
+
+          for l in $(gh issue view -R $REPO $ISSUE --json labels -q '.labels[].name' | grep '^kind/'); do
+            if [ "$l" != "kind/$TYPE" ]; then
+              ARGS="$ARGS --remove-label \"$l\""
+            fi
+          done
+          
+          gh issue edit -R $REPO $ISSUE $ARGS
