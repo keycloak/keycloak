@@ -5,7 +5,7 @@ on:
     types: [typed,untyped]
 
 permissions:
-  contents: read
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.issue.number }}
@@ -34,7 +34,7 @@ jobs:
 
           for l in $(gh issue view -R $REPO $ISSUE --json labels -q '.labels[].name' | grep '^kind/'); do
             if [ "$l" != "kind/$TYPE" ]; then
-              ARGS="$ARGS --remove-label $l"
+              ARGS="$ARGS --remove-label \"$l\""
             fi
           done
           
