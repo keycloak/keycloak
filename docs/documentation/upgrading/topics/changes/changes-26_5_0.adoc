@@ -1,0 +1,26 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== `log-console-color` will automatically enable if supported by the terminal
+
+The `log-console-color` previously defaulted to `false`, but it will now instead check if the terminal supports color.
+
+You may still explicitly disable color support by setting the option to `false`.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+
