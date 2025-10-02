@@ -87,4 +87,27 @@ export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6A
 
 See <@links.server id="caching" anchor="network-bind-address"/> for more details.
 
+== Better HTTP performance
+NOTE: This section is describing a feature which is currently in *preview* as we gather more feedback about potential issues. We appreciate any feedback.
+
+In production environments, the performance of the HTTP layer is critical.
+Every request passes through it, making it a key factor in overall system responsiveness, scalability, and user experience.
+
+This feature introduces Jackson JSON reflection-free serializers to optimize HTTP processing.
+By removing the overhead of reflection during serialization/deserialization, it delivers measurable benefits:
+
+- ~5% increase in throughput
+- More stable response times
+- Reduced system resource usage
+
+These improvements help ensure smoother, more predictable performance at scale while also lowering the operational cost of running production systems.
+
+The only known tradeoff is that build(augmentation) time increased by ~6% as certain actions were moved to the build time instead of runtime.
+
+You can enable this feature as follows:
+
+<@kc.start parameters="--features=http-optimized-serializers"/>
+
+The feature is *disabled by default*, as we gather more feedback.
+
 </@tmpl.guide>
