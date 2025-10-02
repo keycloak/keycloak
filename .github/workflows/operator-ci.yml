@@ -96,7 +96,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni cilium --cpus=max
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni calico --cpus=max
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
