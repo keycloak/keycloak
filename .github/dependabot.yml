@@ -5,16 +5,24 @@ updates:
     open-pull-requests-limit: 999
     rebase-strategy: disabled
     schedule:
-      interval: daily
+      interval: weekly
       time: "00:00"
       timezone: Etc/GMT
     labels:
       - area/dependencies
       - area/ci
+    groups:
+      github-actions-security-updates:
+        applies-to: security-updates
+        patterns: "*"
+      github-actions-version-updates:
+        applies-to: version-updates
+        patterns: "*"
+
   - package-ecosystem: npm
     directory: js
     schedule:
-      interval: daily
+      interval: weekly
       time: "00:00"
       timezone: Etc/GMT
     open-pull-requests-limit: 999
@@ -22,6 +30,13 @@ updates:
     labels:
       - area/dependencies
       - team/ui
+    groups:
+      npm-security-updates:
+        applies-to: security-updates
+        patterns: "*"
+      npm-version-updates:
+        applies-to: version-updates
+        patterns: "*"
     ignore:
       - dependency-name: "@patternfly/*"
         update-types: ["version-update:semver-major"]
