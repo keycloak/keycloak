@@ -20,6 +20,7 @@ package org.keycloak.timer;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -47,13 +48,13 @@ public interface TimerProvider extends Provider {
      */
     public TimerTaskContext cancelTask(String taskName);
 
-    public List<TimerTaskContext> getTasks();
+    public Map<String, TimerTaskContext> getTasks();
 
     interface TimerTaskContext {
 
         Runnable getRunnable();
 
-        long getStartDateMillis();
+        long getStartTimeMillis();
 
         long getIntervalMillis();
     }

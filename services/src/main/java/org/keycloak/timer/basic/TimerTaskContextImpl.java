@@ -28,13 +28,13 @@ public class TimerTaskContextImpl implements TimerProvider.TimerTaskContext {
 
     private final Runnable runnable;
     final TimerTask timerTask;
-    private final long startDateMillis;
+    private final long startTimeMillis;
     private final long intervalMillis;
 
-    public TimerTaskContextImpl(Runnable runnable, TimerTask timerTask, long startDateMillis, long intervalMillis) {
+    public TimerTaskContextImpl(Runnable runnable, TimerTask timerTask, long startTimeMillis, long intervalMillis) {
         this.runnable = runnable;
         this.timerTask = timerTask;
-        this.startDateMillis = startDateMillis;
+        this.startTimeMillis = startTimeMillis;
         this.intervalMillis = intervalMillis;
     }
 
@@ -43,8 +43,8 @@ public class TimerTaskContextImpl implements TimerProvider.TimerTaskContext {
         return runnable;
     }
 
-    public long getStartDateMillis() {
-        return startDateMillis;
+    public long getStartTimeMillis() {
+        return startTimeMillis;
     }
 
     @Override

@@ -18,6 +18,7 @@
 package org.keycloak.timer.basic;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.ScheduledTask;
@@ -25,9 +26,13 @@ import org.keycloak.timer.TimerProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,7 +62,7 @@ public class BasicTimerProvider implements TimerProvider {
             }
         };
 
-        TimerTaskContextImpl taskContext = new TimerTaskContextImpl(runnable, task, Instant.now().toEpochMilli() , intervalMillis);
+        TimerTaskContextImpl taskContext = new TimerTaskContextImpl(runnable, task, Time.currentTimeMillis(), intervalMillis);
         TimerTaskContextImpl existingTask = factory.putTask(taskName, taskContext);
         if (existingTask != null) {
             logger.debugf("Existing timer task '%s' found. Cancelling it", taskName);
@@ -91,9 +96,7 @@ public class BasicTimerProvider implements TimerProvider {
     }
 
     @Override
-    public List<TimerTaskContext> getTasks() {
-        List<TimerTaskContext> taskContexts = new ArrayList<>();
-        factory.getTasks().forEach(task -> taskContexts.add((TimerTaskContext) task));
-        return taskContexts;
+    public Map<String, TimerTaskContext> getTasks() {
+        return Collections.unmodifiableMap(new HashMap<>(factory.getTasks()));
     }
 }
