@@ -49,17 +49,17 @@ public class TlsEnabledTest {
     public void testCertSupplier() throws KeyStoreException {
         Assertions.assertNotNull(managedCertificates);
 
-        KeyStore keyStore = managedCertificates.getKeyStore();
-        Assertions.assertNotNull(keyStore);
+        KeyStore trustStore = managedCertificates.getClientTrustStore();
+        Assertions.assertNotNull(trustStore);
 
-        X509Certificate cert = managedCertificates.getCertificate();
+        X509Certificate cert = managedCertificates.getKeycloakServerCertificate();
         Assertions.assertNotNull(cert);
-        Assertions.assertEquals(cert.getSerialNumber(), ((X509Certificate) keyStore.getCertificate(ManagedCertificates.CERT_ENTRY)).getSerialNumber());
+        Assertions.assertEquals(cert.getSerialNumber(), ((X509Certificate) trustStore.getCertificate(ManagedCertificates.CERT_ENTRY)).getSerialNumber());
     }
 
     @Test
     public void testCertDetails() throws CertificateNotYetValidException, CertificateExpiredException {
-        X509Certificate cert = managedCertificates.getCertificate();
+        X509Certificate cert = managedCertificates.getKeycloakServerCertificate();
 
         cert.checkValidity();
         Assertions.assertEquals("CN=localhost", cert.getSubjectX500Principal().getName());
@@ -83,7 +83,7 @@ public class TlsEnabledTest {
 
     @Test
     public void testOAuthClient() {
-        oAuthClient.doWellKnownRequest();
+        Assertions.assertTrue(oAuthClient.doWellKnownRequest().getTokenEndpoint().startsWith("https://"));
     }
 
 

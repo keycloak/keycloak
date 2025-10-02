@@ -1,25 +1,24 @@
 package org.keycloak.testframework.https;
 
+import org.apache.http.ssl.SSLContextBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
+import javax.net.ssl.SSLContext;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -29,89 +28,111 @@ public class ManagedCertificates {
 
     private final CryptoProvider cryptoProvider;
 
-    private KeyStore keyStore;
-    private X509Certificate certificate;
-    private KeyPair keyPair;
+    private KeyStore serverKeyStore;
+    private KeyStore clientsTrustStore;
 
-    private final static Path KEYSTORE_FILE_PATH = Paths.get(System.getProperty("java.io.tmpdir"), "kc-server-testing.keystore");
-    public final static char[] KEYSTORE_PASSWORD = "password".toCharArray();
-    public final static char[] PRVKEY_PASSWORD = "password".toCharArray();
+    private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
+    private final static Path SERVER_KEYSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-server-keystore.jks");
+    private final static Path CLIENTS_TRUSTSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-clients-truststore.jks");
 
+    private final static char[] PASSWORD = "password".toCharArray();
+
+    private final static String PRV_KEY_ENTRY = "prvKey";
     public final static String CERT_ENTRY = "cert";
-    public final static String PRV_KEY_ENTRY = "prvKey";
 
 
     public ManagedCertificates() throws ManagedCertificatesException {
-        cryptoProvider = new DefaultCryptoProvider();
         if (!CryptoIntegration.isInitialised()) {
-            CryptoIntegration.setProvider(cryptoProvider);
+            CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
-        initKeyStore();
+        cryptoProvider = CryptoIntegration.getProvider();
+        initServerCerts();
     }
 
-    public Path getKeycloakServerKeyStorePath() {
-        return KEYSTORE_FILE_PATH;
+    public String getKeycloakServerKeyStorePath() {
+        return SERVER_KEYSTORE_FILE_PATH.toString();
     }
 
-    public KeyStore getKeyStore() {
-        return keyStore;
+    public String getKeycloakServerKeyStorePassword() {
+        return String.valueOf(PASSWORD);
     }
 
-    public X509Certificate getCertificate() {
-        return certificate;
+    public KeyStore getClientTrustStore() {
+        return clientsTrustStore;
     }
 
-    private void initKeyStore() throws ManagedCertificatesException {
+    public X509Certificate getKeycloakServerCertificate() {
         try {
-            keyStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
+            return (X509Certificate) serverKeyStore.getCertificate(CERT_ENTRY);
+        } catch (KeyStoreException e) {
+            throw new ManagedCertificatesException(e);
+        }
+    }
 
-            if (Files.exists(KEYSTORE_FILE_PATH)) {
-                loadKeyStoreContents();
+    public SSLContext getClientSSLContext() {
+        try {
+            return SSLContextBuilder.create()
+                    .loadTrustMaterial(clientsTrustStore, null)
+                    .build();
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+            throw new ManagedCertificatesException(e);
+        }
+    }
+
+    private void initServerCerts() throws ManagedCertificatesException {
+        try {
+            serverKeyStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
+            clientsTrustStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
+
+            if (Files.exists(SERVER_KEYSTORE_FILE_PATH) && Files.exists(CLIENTS_TRUSTSTORE_FILE_PATH)) {
+                LOGGER.debugv("Existing Server KeyStore files found in {0}", KEYSTORES_DIR);
+
+                loadKeyStore(serverKeyStore, SERVER_KEYSTORE_FILE_PATH, PASSWORD);
+                loadKeyStore(clientsTrustStore, CLIENTS_TRUSTSTORE_FILE_PATH, PASSWORD);
             } else {
-                generateKeyStoreContents();
+                LOGGER.debugv("Generating Server KeyStore files in {0}", KEYSTORES_DIR);
+
+                generateKeystore(serverKeyStore, clientsTrustStore, "localhost");
+                // store the generated keystore and truststore in a temp folder
+                try (FileOutputStream fos = new FileOutputStream(SERVER_KEYSTORE_FILE_PATH.toFile())) {
+                    serverKeyStore.store(fos, PASSWORD);
+                }
+                try (FileOutputStream fos = new FileOutputStream(CLIENTS_TRUSTSTORE_FILE_PATH.toFile())) {
+                    clientsTrustStore.store(fos, PASSWORD);
+                }
             }
         } catch (Exception e) {
             throw new ManagedCertificatesException(e);
         }
     }
 
-    private void loadKeyStoreContents() throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException, IOException, CertificateException {
-        LOGGER.debugv("Existing KeyStore file found in {0}", KEYSTORE_FILE_PATH);
-        try (FileInputStream fis = new FileInputStream(KEYSTORE_FILE_PATH.toFile())) {
-            keyStore.load(fis, KEYSTORE_PASSWORD);
-            // if this is failing delete the existing keystore, or implement a fallback mechanism to generate a new one instead
+    private void loadKeyStore(KeyStore keyStore, Path keyStorePath, char[] keyStorePasswd) throws NoSuchAlgorithmException, IOException, CertificateException {
+        try (FileInputStream fis = new FileInputStream(keyStorePath.toFile())) {
+            keyStore.load(fis, keyStorePasswd);
         }
-
-        certificate = (X509Certificate) keyStore.getCertificate(CERT_ENTRY);
-        PublicKey pubKey = certificate.getPublicKey();
-        PrivateKey prvKey = (PrivateKey) keyStore.getKey(PRV_KEY_ENTRY, PRVKEY_PASSWORD);
-        keyPair = new KeyPair(pubKey, prvKey);
     }
 
-    private void generateKeyStoreContents() throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, IOException, KeyStoreException, Exception {
-        LOGGER.debugv("Generating KeyStore file in {0}", KEYSTORE_FILE_PATH);
+    private void generateKeystore(KeyStore keyStore, KeyStore trustStore, String subject) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, IOException, KeyStoreException, Exception {
         keyStore.load(null);
-        generateKeyPair();
-        createKeycloakServerCertificate();
+        trustStore.load(null);
 
-        keyStore.setCertificateEntry(CERT_ENTRY, certificate);
-        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), PRVKEY_PASSWORD, new X509Certificate[]{certificate});
+        KeyPair keyPair = generateKeyPair();
+        X509Certificate cert = generateX509CertificateCertificate(keyPair, subject);
 
-        // store the generated keystore in a temp folder
-        try (FileOutputStream fos = new FileOutputStream(KEYSTORE_FILE_PATH.toFile())) {
-            keyStore.store(fos, KEYSTORE_PASSWORD);
-        }
+        keyStore.setCertificateEntry(CERT_ENTRY, cert);
+        trustStore.setCertificateEntry(CERT_ENTRY, cert);
+        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), PASSWORD, new X509Certificate[]{cert});
     }
 
-    private void generateKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
-        keyPair = cryptoProvider.getKeyPairGen("RSA").generateKeyPair();
+    private KeyPair generateKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
+        return cryptoProvider.getKeyPairGen("RSA").generateKeyPair();
     }
 
-    private void createKeycloakServerCertificate() throws Exception {
+    private X509Certificate generateX509CertificateCertificate(KeyPair keyPair, String subject) throws Exception {
         // generate a v1 certificate
-        X509Certificate caCert = cryptoProvider.getCertificateUtils().generateV1SelfSignedCertificate(keyPair, "localhost");
+        X509Certificate caCert = cryptoProvider.getCertificateUtils().generateV1SelfSignedCertificate(keyPair, subject);
 
         // generate a v3 certificate
-        certificate = cryptoProvider.getCertificateUtils().generateV3Certificate(keyPair, keyPair.getPrivate(), caCert, "localhost");
+        return cryptoProvider.getCertificateUtils().generateV3Certificate(keyPair, keyPair.getPrivate(), caCert, subject);
     }
 }

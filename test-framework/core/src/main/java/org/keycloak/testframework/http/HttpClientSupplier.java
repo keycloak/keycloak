@@ -4,9 +4,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.ssl.SSLContextBuilder;
 import org.keycloak.testframework.annotations.InjectHttpClient;
-import org.keycloak.testframework.https.ManagedCertificatesException;
 import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -16,10 +14,6 @@ import org.keycloak.testframework.server.KeycloakServer;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 
 public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient> {
 
@@ -29,22 +23,15 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
 
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         if (server.isTlsEnabled()) {
-            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
-            try {
-                KeyStore serverKeyStore = managedCert.getKeyStore();
-                SSLContext sslContext = SSLContextBuilder.create()
-                        .loadTrustMaterial(serverKeyStore, null)
-                        .build();
+            ManagedCertificates managedCerts = instanceContext.getDependency(ManagedCertificates.class);
 
-                SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
-                        sslContext,
-                        SSLConnectionSocketFactory.getDefaultHostnameVerifier()
-                );
+            SSLContext sslContext = managedCerts.getClientSSLContext();
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+                    sslContext,
+                    SSLConnectionSocketFactory.getDefaultHostnameVerifier()
+            );
 
-                builder.setSSLSocketFactory(sslSocketFactory);
-            } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
-                throw new ManagedCertificatesException(e);
-            }
+            builder.setSSLSocketFactory(sslSocketFactory);
         }
 
         if (!instanceContext.getAnnotation().followRedirects()) {

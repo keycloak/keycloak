@@ -2,10 +2,10 @@ package org.keycloak.testframework.server;
 
 import org.jboss.logging.Logger;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.infinispan.InfinispanServer;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.infinispan.InfinispanServer;
 import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -14,8 +14,6 @@ import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
-
-import java.nio.file.Path;
 
 public abstract class AbstractKeycloakServerSupplier implements Supplier<KeycloakServer, KeycloakIntegrationTest> {
 
@@ -51,16 +49,17 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(instanceContext.getRegistry());
         command = interceptor.intercept(command, instanceContext);
 
+        if (command.tlsEnabled()) {
+            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath());
+            command.option("https-key-store-password", managedCert.getKeycloakServerKeyStorePassword());
+        }
+
         command.log().fromConfig(Config.getConfig());
 
         getLogger().info("Starting Keycloak test server");
         if (getLogger().isDebugEnabled()) {
             getLogger().debugv("Startup command and options: \n\t{0}", String.join("\n\t", command.toArgs()));
-        }
-
-        if (command.tlsEnabled()) {
-            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
-            command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath().toString());
         }
 
         long start = System.currentTimeMillis();

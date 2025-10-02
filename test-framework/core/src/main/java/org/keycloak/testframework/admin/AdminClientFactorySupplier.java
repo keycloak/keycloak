@@ -7,7 +7,7 @@ import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.server.KeycloakServer;
 
-import java.security.KeyStore;
+import javax.net.ssl.SSLContext;
 
 public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, InjectAdminClientFactory> {
 
@@ -17,11 +17,11 @@ public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, 
 
         if (!server.isTlsEnabled()) {
             return new AdminClientFactory(server.getBaseUrl());
+        } else {
+            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            SSLContext sslContext = managedCert.getClientSSLContext();
+            return new AdminClientFactory(server.getBaseUrl(), sslContext);
         }
-
-        ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
-        KeyStore serverKeyStore = managedCert.getKeyStore();
-        return new AdminClientFactory(server.getBaseUrl(), serverKeyStore);
     }
 
     @Override

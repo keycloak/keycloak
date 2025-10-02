@@ -2,6 +2,7 @@ package org.keycloak.testframework.server;
 
 import io.quarkus.maven.dependency.Dependency;
 
+import javax.net.ssl.SSLException;
 import java.net.ConnectException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -86,6 +87,10 @@ public class RemoteKeycloakServer implements KeycloakServer {
             return true;
         } catch (ConnectException e) {
             return false;
+        } catch (SSLException ignored) {
+            // if the kc server is running with https, it is not this class' responsibility to check the certificate
+            // we're just checking that keycloak is running
+            return true;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
