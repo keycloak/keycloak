@@ -36,6 +36,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationInvitationProvider;
+import org.keycloak.organization.OrganizationInvitationModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -120,6 +122,20 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                     .createInfoPage();
         }
 
+        // Validate that the invitation still exists in the database if invitation ID is present
+        if (token.getInvitationId() != null) {
+            OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+            OrganizationInvitationModel invitation = invitationProvider.getById(token.getInvitationId(), organization);
+            
+            if (invitation == null || invitation.isExpired()) {
+                event.user(user).error(Errors.INVALID_TOKEN);
+                return session.getProvider(LoginFormsProvider.class)
+                        .setAuthenticationSession(authSession)
+                        .setInfo("The invitation has expired or is no longer valid.")
+                        .createInfoPage();
+            }
+        }
+
         final UriInfo uriInfo = tokenContext.getUriInfo();
         final RealmModel realm = tokenContext.getRealm();
 
@@ -142,6 +158,12 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
 
         // if we made it this far then go ahead and add the user to the organization
         orgProvider.addMember(orgProvider.getById(token.getOrgId()), user);
+
+        // Delete the invitation since it has been used
+        if (token.getInvitationId() != null) {
+            OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+            invitationProvider.deleteInvitation(organization, token.getInvitationId());
+        }
 
         String redirectUri = token.getRedirectUri();
 
