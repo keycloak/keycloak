@@ -279,6 +279,10 @@ Predefined named patterns:
 * `combined` - prints basic information about the request + information about referer and user agent
 * `long` - prints comprehensive information about the request with all its headers
 
+WARNING: HTTP headers can contain sensitive data such as tokens and cookies.
+Including them in access logs is *not recommended*, as leaked logs could allow attackers to hijack sessions.
+The `long` pattern logs all request headers and should only be used with caution.
+
 You can even specify your own pattern with your required data to be logged, such as:
 
 <@kc.start parameters="--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'"/>
