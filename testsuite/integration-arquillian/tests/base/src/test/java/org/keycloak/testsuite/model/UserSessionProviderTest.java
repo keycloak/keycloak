@@ -526,6 +526,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
                 kcSession.getContext().setRealm(r);
                 r.setSsoSessionMaxLifespanRememberMe(r.getSsoSessionMaxLifespan() * 4);
                 r.setSsoSessionIdleTimeoutRememberMe(r.getSsoSessionIdleTimeout() * 4);
+                r.setRememberMe(true);
             });
 
             // create an user session with remember-me enabled that is older than the default 'max lifespan' timeout but not older than the 'max lifespan remember-me' timeout.
@@ -597,6 +598,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
                 kcSession.getContext().setRealm(r);
                 r.setSsoSessionMaxLifespanRememberMe(previousMaxLifespan);
                 r.setSsoSessionIdleTimeoutRememberMe(previousMaxIdle);
+                r.setRememberMe(false);
             });
         }
     }
