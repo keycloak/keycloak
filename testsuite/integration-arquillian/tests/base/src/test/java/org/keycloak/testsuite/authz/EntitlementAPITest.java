@@ -37,6 +37,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -59,13 +62,23 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheSession;
+import org.keycloak.models.cache.infinispan.authorization.entities.ResourceQuery;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -97,7 +110,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -2647,6 +2659,54 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertEquals(1, permissions.size());
         assertEquals(1, permissions.get(0).getScopes().size());
         assertEquals("scope1", permissions.get(0).getScopes().iterator().next());
+    }
+
+    @Test
+    public void testDeleteConcurrency() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        CountDownLatch successfulIterations = new CountDownLatch(200);
+        AtomicBoolean stop = new AtomicBoolean(false);
+
+        // Thread that will be creating and deleting a resource
+        new Thread(() -> {
+            while (!stop.get()) {
+                String resourceName = "Test Resource";
+                List<ResourceRepresentation> test = authorization.resources().findByName(resourceName);
+
+                if (test.isEmpty()) {
+                    ResourceRepresentation resource = new ResourceRepresentation();
+                    resource.setName(resourceName);
+                    authorization.resources().create(resource).close();
+                } else {
+                    authorization.resources().resource(test.get(0).getId()).remove();
+                }
+            }
+        }).start();
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        for (int i = 0; i < 3; i++) {
+            // Thread that will be requesting permissions against the resource being created and deleted
+            new Thread(() -> {
+                while (!stop.get()) {
+                    try {
+                        authzClient.authorization().authorize();
+                        successfulIterations.countDown();
+                    } catch (Exception ignore) {
+                        // unexpected failures will end execution and the latch will not be decremented
+                        stop.set(true);
+                        return;
+                    }
+                }
+            }).start();
+        }
+
+        try {
+            assertTrue(successfulIterations.await(15, TimeUnit.SECONDS));
+        } finally {
+            stop.set(true);
+        }
     }
 
     private void testRptRequestWithResourceName(String configFile) {
