@@ -165,8 +165,8 @@ public class ExportImportUtil {
 
         // Test role mappings
         UserRepresentation admin = findByUsername(realmRsc, "admin");
-        // user without creation timestamp in import
-        Assert.assertNull(admin.getCreatedTimestamp());
+
+        Assert.assertNotNull(admin.getCreatedTimestamp());
         Set<RoleRepresentation> allRoles = allRoles(realmRsc, admin);
         Assert.assertEquals(3, allRoles.size());
         Assert.assertTrue(containsRole(allRoles, findRealmRole(realmRsc, "admin")));
