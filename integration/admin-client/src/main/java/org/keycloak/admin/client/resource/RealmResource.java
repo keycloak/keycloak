@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.keycloak.admin.ui.rest.model.SessionRepresentation;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -384,6 +385,11 @@ public interface RealmResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     GlobalRequestResult logoutAll();
+
+    @Path("ui-ext/sessions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<SessionRepresentation> sessions();
 
     /**
      * Delete given user session

@@ -79,6 +79,10 @@
             <artifactId>resteasy-jaxb-provider</artifactId>
             <version>${resteasy.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
