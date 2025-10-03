@@ -20,7 +20,6 @@ import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.admin.ApiUtil;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 

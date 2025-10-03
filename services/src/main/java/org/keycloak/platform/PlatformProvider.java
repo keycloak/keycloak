@@ -19,7 +19,6 @@ package org.keycloak.platform;
 
 import java.io.File;
 
-import org.keycloak.Config;
 
 public interface PlatformProvider {
 

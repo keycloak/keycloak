@@ -19,12 +19,7 @@ package org.keycloak.connections.jpa.updater.liquibase;
 
 import java.util.HashSet;
 import java.util.Set;
-import liquibase.database.DatabaseConnection;
 import liquibase.database.core.MySQLDatabase;
-import liquibase.database.core.PostgresDatabase;
-import liquibase.exception.DatabaseException;
-import liquibase.executor.ExecutorService;
-import liquibase.statement.core.RawSqlStatement;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

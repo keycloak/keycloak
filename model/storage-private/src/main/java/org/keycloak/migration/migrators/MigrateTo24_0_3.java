@@ -24,7 +24,6 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultRequiredActions;
-import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

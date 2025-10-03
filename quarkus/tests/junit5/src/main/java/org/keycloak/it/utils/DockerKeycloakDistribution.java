@@ -2,7 +2,6 @@ package org.keycloak.it.utils;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
-import io.quarkus.bootstrap.utils.BuildToolHelper;
 import io.restassured.RestAssured;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;

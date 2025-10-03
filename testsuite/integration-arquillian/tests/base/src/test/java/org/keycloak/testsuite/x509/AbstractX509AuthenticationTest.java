@@ -28,7 +28,6 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -68,7 +67,6 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.UserProfileConstants;
-import org.keycloak.utils.StringUtil;
 import org.openqa.selenium.WebDriver;
 
 import java.lang.reflect.Field;

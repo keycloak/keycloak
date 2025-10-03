@@ -20,7 +20,6 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 import java.util.ArrayList;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.ProviderConfigProperty;
 

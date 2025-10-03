@@ -16,7 +16,6 @@
  */
 package org.keycloak.broker.provider;
 
-import static java.util.Optional.ofNullable;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;

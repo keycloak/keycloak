@@ -25,7 +25,6 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
-import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -34,7 +33,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public class GeneratedEcdsaKeyProvider extends AbstractEcKeyProvider {

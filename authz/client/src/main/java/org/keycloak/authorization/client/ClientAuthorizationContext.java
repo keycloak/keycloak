@@ -16,7 +16,6 @@
  */
 package org.keycloak.authorization.client;
 
-import java.util.Map;
 
 import org.keycloak.AuthorizationContext;
 import org.keycloak.representations.AccessToken;

@@ -20,7 +20,6 @@ package org.keycloak.adapters.saml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;

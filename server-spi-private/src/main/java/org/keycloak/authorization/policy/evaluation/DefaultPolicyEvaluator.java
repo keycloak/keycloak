@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;

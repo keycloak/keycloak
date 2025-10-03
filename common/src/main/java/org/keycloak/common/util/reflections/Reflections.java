@@ -18,7 +18,6 @@
 package org.keycloak.common.util.reflections;
 
 import java.beans.Introspector;
-import java.io.IOException;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;

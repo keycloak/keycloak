@@ -57,12 +57,10 @@ import org.keycloak.testsuite.UndertowRequestFilter;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
-import org.keycloak.util.JsonSerialization;
 
 import io.undertow.servlet.api.InstanceHandle;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.ServletException;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
