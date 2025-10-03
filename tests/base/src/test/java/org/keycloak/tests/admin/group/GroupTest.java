@@ -54,6 +54,7 @@ import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
@@ -116,6 +117,9 @@ public class GroupTest extends AbstractGroupTest {
 
     
     @Test
+    // Keycloak CI issue #42166 - MSSQL docker image time to time has a deadlock failure,
+    // it's due to a lack of resources of a generic startup on runner.
+    @DisabledForDatabases("mssql")
     public void createMultiDeleteMultiReadMulti() {
         // create multiple groups
         List<String> groupUuuids = new ArrayList<>();
