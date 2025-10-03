@@ -140,12 +140,6 @@ public class TracingSpec {
         return headers;
     }
 
-    // headers in format key=val delimited by comma
-    @JsonIgnore
-    public String getHeadersString() {
-        return convertTracingAttributesToString(getHeaders());
-    }
-
     public void setHeaders(List<ValueOrSecret> headers) {
         this.headers = headers;
     }

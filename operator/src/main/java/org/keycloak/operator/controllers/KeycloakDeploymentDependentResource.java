@@ -457,7 +457,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
         var distConfigurator = ContextUtils.getDistConfigurator(context);
-        var firstClasssEnvVars = distConfigurator.configureDistOptions(keycloakCR);
+        var firstClassEnvVars = distConfigurator.configureDistOptions(keycloakCR);
+        var helperEnvVars = distConfigurator.getHelperEnvVars();
 
         var additionalEnvVars = getDefaultAndAdditionalEnvVars(keycloakCR);
 
@@ -465,8 +466,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var env = keycloakCR.getSpec().getEnv().stream().map(KeycloakDeploymentDependentResource::toEnvVar);
 
-        // accumulate the env vars in priority order - unsupported, first class, additional, env
-        LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
+        // accumulate the env vars in priority order - unsupported, first class, additional, helper, env
+        LinkedHashMap<String, EnvVar> varMap = Stream.of(unsupportedEnv.stream(), firstClassEnvVars.stream(), additionalEnvVars.stream(), helperEnvVars.stream(), env)
+                .flatMap(Function.identity())
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
         String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
@@ -524,7 +526,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     }
 
     static EnvVar toEnvVar(ValueOrSecret v) {
-        var envBuilder = new EnvVarBuilder().withName(v.getName());
+        return toEnvVar(v.getName(), v);
+    }
+
+    static EnvVar toEnvVar(String customName, ValueOrSecret v) {
+        var envBuilder = new EnvVarBuilder().withName(customName);
         var secret = v.getSecret();
         if (secret != null) {
             envBuilder.withValueFrom(
@@ -550,15 +556,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // set env vars
         List<EnvVar> envVars = serverConfigsList.stream()
                 .flatMap(v -> {
-                    var envBuilder = new EnvVarBuilder().withName(getKeycloakOptionEnvVarName(v.getName()));
-                    var secret = v.getSecret();
-                    if (secret != null) {
-                        envBuilder.withValueFrom(
-                                new EnvVarSourceBuilder().withSecretKeyRef(secret).build());
-                    } else {
-                        envBuilder.withValue(v.getValue());
-                    }
-                    EnvVar mainVar = envBuilder.build();
+                    EnvVar mainVar = toEnvVar(v);
                     if (!defaultKeys.contains(v.getName())) {
                         EnvVar keyVar = new EnvVarBuilder()
                                 .withName("KCKEY_" + mainVar.getName().substring(KeycloakDistConfigurator.KC_PREFIX.length()))

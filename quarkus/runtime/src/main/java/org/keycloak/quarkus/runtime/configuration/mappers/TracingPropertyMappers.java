@@ -102,6 +102,7 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
                 fromOption(TRACING_HEADERS)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
                         .to("quarkus.otel.exporter.otlp.traces.headers")
+                        .isMasked(true) // it may contain sensitive headers
                         .paramLabel("headers")
                         .build()
         );
