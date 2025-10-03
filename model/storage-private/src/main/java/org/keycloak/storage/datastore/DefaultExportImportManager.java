@@ -974,7 +974,9 @@ public class DefaultExportImportManager implements ExportImportManager {
         // Import users just to user storage. Don't federate
         UserModel user = UserStoragePrivateUtil.userLocalStorage(session).addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
         user.setEnabled(userRep.isEnabled() != null && userRep.isEnabled());
-        user.setCreatedTimestamp(userRep.getCreatedTimestamp());
+        if (userRep.getCreatedTimestamp() != null) {
+            user.setCreatedTimestamp(userRep.getCreatedTimestamp());
+        }
         user.setEmail(userRep.getEmail());
         if (userRep.isEmailVerified() != null) user.setEmailVerified(userRep.isEmailVerified());
         user.setFirstName(userRep.getFirstName());
