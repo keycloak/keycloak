@@ -5,9 +5,10 @@
 <#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
-title="Console logging 🖥️"
+title="Console logging"
 summary="Print logs to a console output"
-tileVisible="false" >
+tileVisible="false"
+levelOffset=2 >
 
 The console log handler is enabled by default, providing unstructured log messages for the console.
 The more specific console handler configuration mentioned below will only take effect when the console logging is enabled (console logging is enabled by default).

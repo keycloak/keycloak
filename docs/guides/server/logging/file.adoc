@@ -5,9 +5,10 @@
 <#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
-title="File logging 📄"
+title="File logging"
 summary="Store logs into a file"
-tileVisible="false" >
+tileVisible="false"
+levelOffset=2 >
 
 As an alternative to logging to the console, you can use structured/unstructured logging to a file stored in the filesystem.
 The more specific file handler configuration mentioned below will only take effect when the file logging is enabled.
