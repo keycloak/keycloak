@@ -19,6 +19,7 @@ package org.keycloak.operator.controllers;
 import io.fabric8.kubernetes.api.model.ContainerState;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -34,6 +35,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.CRDPresentActivationCondition;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
@@ -51,6 +53,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.update.UpdateLogicFactory;
 
+import java.net.HttpURLConnection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -67,11 +70,34 @@ import java.util.concurrent.TimeUnit;
         @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class),
         @Dependent(
               type = KeycloakServiceMonitorDependentResource.class,
-              activationCondition = CRDPresentActivationCondition.class,
+              activationCondition = KeycloakController.ExceptionAwareCRDPresentActivationCondition.class,
               reconcilePrecondition = KeycloakServiceMonitorDependentResource.ReconcilePrecondition.class
         ),
     })
 public class KeycloakController implements Reconciler<Keycloak> {
+
+    public static class ExceptionAwareCRDPresentActivationCondition<R extends HasMetadata, P extends HasMetadata> extends CRDPresentActivationCondition<R, P> {
+
+        boolean logged = false;
+
+        @Override
+        public boolean isMet(DependentResource<R, P> dependentResource, P primary, Context<P> context) {
+            try {
+                return super.isMet(dependentResource, primary, context);
+            } catch (KubernetesClientException e) {
+                if (e.getCode() == HttpURLConnection.HTTP_FORBIDDEN) {
+                    if (!logged) {
+                        logged = true;
+                        Log.info(
+                                "Operator service account lacks permission for %s. If that is added later, you will need to restart the operator."
+                                        .formatted(HasMetadata.getFullResourceName(dependentResource.resourceType())));
+                    }
+                    return false;
+                }
+                throw e; // allow the default handling, but realistically it's better to return false, than allow retries to be exhausted
+            }
+        }
+    }
 
     public static final String OPENSHIFT_DEFAULT = "openshift-default";
 
