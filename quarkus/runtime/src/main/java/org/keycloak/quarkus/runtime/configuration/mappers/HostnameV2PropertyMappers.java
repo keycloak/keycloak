@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.HostnameV2Options;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
@@ -101,6 +102,13 @@ public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
                     warn.accept("Likely misconfiguration detected. When using an edge proxy, you must use `proxy-headers`.");
                 }
                 // else might be allowable if HOST is overwritten
+            }
+
+            if (proxyHeaders == null && !url.getPath().isEmpty() && Boolean.valueOf(Configuration.getConfigValue(HostnameV2Options.HOSTNAME_BACKCHANNEL_DYNAMIC).getValue())) {
+                // TODO: compare in a normalized fashion
+                if (!url.getPath().equals(Configuration.getConfigValue(HttpOptions.HTTP_RELATIVE_PATH).getValue())) {
+                    warn.accept("Likely misconfiguration detected. When using a `hostname` that includes a path that does not match the `http-relative-path` you must use `proxy-headers` to properly detect backchannel requests.");
+                }
             }
 
             return true;
