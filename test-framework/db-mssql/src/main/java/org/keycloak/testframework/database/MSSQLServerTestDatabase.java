@@ -17,6 +17,8 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
     @SuppressWarnings("resource")
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
+        // Keycloak CI issue #42166: potentially adjust MSSQL resources if necessary -> append to constructor:
+        // .withCreateContainerCmdModifier(cmd -> {cmd.getHostConfig().withMemory(1073741824L).withMemorySwap(2147483648L).withCpuCount(1L);})
         return new MSSQLServerContainer<>(DockerImageName.parse(ContainerImages.getContainerImageName(NAME))).withPassword(getPassword()).withEnv("MSSQL_PID", "Express").acceptLicense();
     }
 
