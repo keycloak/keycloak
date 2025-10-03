@@ -187,10 +187,12 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
             if (UPDATE_PROFILE.equals(c.getContext())) {
                 if (!isNewUser(c)) {
                     if (c.getUser().getEmail() == null || c.getUser().getEmail().isEmpty()) {
-                        // show email field in UPDATE_PROFILE page if the email is not set for the user
-                        return true;
+                        // show email field in UPDATE_PROFILE page if the email is not set for the user and is not read-only
+                        if (UserModel.EMAIL.equals(c.getAttribute().getKey()) && !c.getMetadata().isReadOnly(c)) {
+                            return true;
+                        }
                     }
-                } else if (UserModel.EMAIL.equals(c.getAttribute().getKey()) && c.getAttribute().getValue().isEmpty()) {
+                } else if (UserModel.EMAIL.equals(c.getAttribute().getKey()) && c.getAttribute().getValue().isEmpty() && !c.getMetadata().isReadOnly(c)) {
                     return true;
                 }
             }

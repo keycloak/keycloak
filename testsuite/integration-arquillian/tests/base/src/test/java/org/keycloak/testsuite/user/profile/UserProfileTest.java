@@ -2452,6 +2452,52 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled() {
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        try {
+            getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled);
+        } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+        }
+    }
+
+    private static void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, String> attributes = new HashMap<>();
+        
+        // Enable UPDATE_EMAIL feature
+        RealmModel realm = session.getContext().getRealm();
+        realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name()).setEnabled(true);
+        
+        // Create user without email
+        attributes.put(UserModel.USERNAME, userName);
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        // Deliberately not setting email to test empty email scenario
+        
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        
+        // Configure email as read-only for users (only admins can edit)
+        UPConfig upConfig = provider.getConfiguration();
+        UPAttribute emailAttr = upConfig.getAttribute(UserModel.EMAIL);
+        if (emailAttr == null) {
+            emailAttr = new UPAttribute(UserModel.EMAIL);
+            upConfig.addOrReplaceAttribute(emailAttr);
+        }
+        emailAttr.setPermissions(new UPAttributePermissions(Set.of(), Set.of("admin")));
+        provider.setConfiguration(upConfig);
+
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, user);
+        Map<String, List<String>> readableAttributes = profile.getAttributes().getReadable();
+        
+        // Email should NOT be visible in UPDATE_PROFILE context when empty and read-only
+        assertFalse("Email field should be hidden when empty, read-only, and UPDATE_EMAIL is enabled",
+                readableAttributes.containsKey(UserModel.EMAIL));
+    }
+
+    @Test
     public void testMultivalued() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testMultivalued);
     }
