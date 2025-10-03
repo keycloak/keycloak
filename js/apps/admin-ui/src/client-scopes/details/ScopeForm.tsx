@@ -24,6 +24,8 @@ import { convertAttributeNameToForm, convertToFormValues } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { toClientScopes } from "../routes/ClientScopes";
 
+const OID4VC_PROTOCOL = "oid4vc";
+
 type ScopeFormProps = {
   clientScope?: ClientScopeRepresentation;
   save: (clientScope: ClientScopeDefaultOptionalType) => void;
@@ -55,6 +57,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: "false",
   });
 
+  const selectedProtocol = useWatch({
+    control,
+    name: "protocol",
+  });
+
+  const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
+  const isOid4vcEnabled = isFeatureEnabled(Feature.OpenId4VCI);
+
   const setDynamicRegex = (value: string, append: boolean) =>
     setValue(
       convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -66,7 +76,8 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
-  }, [clientScope]);
+  }, [clientScope, setValue]);
+
   return (
     <FormAccess
       role="manage-clients"
@@ -143,10 +154,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             label={t("protocol")}
             labelIcon={t("protocolHelp")}
             controller={{ defaultValue: providers[0] }}
-            options={providers.map((option) => ({
-              key: option,
-              value: getProtocolName(t, option),
-            }))}
+            options={providers
+              .filter((option) =>
+                option === OID4VC_PROTOCOL ? isOid4vcEnabled : true,
+              )
+              .map((option) => ({
+                key: option,
+                value: getProtocolName(t, option),
+              }))}
           />
         )}
         <DefaultSwitchControl
@@ -184,6 +199,56 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           type="number"
           min={0}
         />
+
+        {isOid4vcProtocol && isOid4vcEnabled && (
+          <>
+            <TextControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.credential_configuration_id",
+              )}
+              label={t("credentialConfigurationId")}
+              labelIcon={t("credentialConfigurationIdHelp")}
+            />
+            <TextControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.credential_identifier",
+              )}
+              label={t("credentialIdentifier")}
+              labelIcon={t("credentialIdentifierHelp")}
+            />
+            <TextControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.issuer_did",
+              )}
+              label={t("issuerDid")}
+              labelIcon={t("issuerDidHelp")}
+            />
+            <TextControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.expiry_in_seconds",
+              )}
+              label={t("credentialLifetime")}
+              labelIcon={t("credentialLifetimeHelp")}
+              type="number"
+              min={1}
+            />
+            <SelectControl
+              id="kc-vc-format"
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.format",
+              )}
+              label={t("supportedFormats")}
+              labelIcon={t("supportedFormatsHelp")}
+              controller={{ defaultValue: "dc+sd-jwt" }}
+              options={[
+                { key: "dc+sd-jwt", value: "SD-JWT VC (dc+sd-jwt)" },
+                { key: "jwt_vc", value: "JWT VC (jwt_vc)" },
+                { key: "ldp_vc", value: "LDP VC (ldp_vc)" },
+              ]}
+            />
+          </>
+        )}
+
         <ActionGroup>
           <FormSubmitButton
             data-testid="save"
