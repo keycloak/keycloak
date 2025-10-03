@@ -57,3 +57,9 @@ If the email attribute is set as required in the user profile configuration, the
 meaning a user won't be able to clear his/her email in update email page. The opposite is true, if the email attribute is set as optional
 in the user profile configuration.
 
+If the email attribute is set as read-only in the user profile configuration, the following behavior applies:
+
+* The `Update email` link will not be displayed in the account console
+* The `UPDATE_EMAIL` required action will be automatically skipped and removed from the user account
+* In the update profile page, if the user's email is initially empty, the email field will be hidden
+
