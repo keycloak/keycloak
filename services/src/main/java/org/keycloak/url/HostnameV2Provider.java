@@ -67,7 +67,7 @@ public class HostnameV2Provider implements HostnameProvider {
                 builder.host("localhost");
                 break;
             case BACKEND:
-                builder = backchannelDynamic ? originalUriInfo.getBaseUriBuilder() : getFrontUriBuilder(originalUriInfo);
+                builder = backchannelDynamic && !isFrontendRequest(originalUriInfo) ? originalUriInfo.getBaseUriBuilder() : getFrontUriBuilder(originalUriInfo);
                 break;
             case FRONTEND:
                 builder = getFrontUriBuilder(originalUriInfo);
@@ -83,6 +83,13 @@ public class HostnameV2Provider implements HostnameProvider {
         }
 
         return builder.build();
+    }
+
+    private boolean isFrontendRequest(UriInfo originalUriInfo) {
+        URI frontend = getFrontUriBuilder(originalUriInfo).build();
+        String frontendAuthority = frontend.getAuthority();
+        String authority = originalUriInfo.getBaseUri().getAuthority();
+        return frontendAuthority.equals(authority);
     }
 
     private UriBuilder getFrontUriBuilder(UriInfo originalUriInfo) {
