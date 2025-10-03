@@ -5,9 +5,10 @@
 <#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
-title="Syslog logging 🖧"
+title="Syslog logging"
 summary="Send logs to a remote Syslog server"
-tileVisible="false" >
+tileVisible="false"
+levelOffset=2 >
 
 {project_name} provides the ability to send logs to a remote Syslog server.
 It utilizes the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].

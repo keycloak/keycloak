@@ -23,11 +23,11 @@ These features make it possible to adapt logging to your operational needs and i
 
 [cols="^1,^1,^1", frame=none, grid=all]
 |===
-| 🖥️ *Console* +
+| *Console* +
 Logs to standard output
-| 📄 *File* +
+| *File* +
 Persists logs to disk
-| 🖧 *Syslog* +
+| *Syslog* +
 Sends logs to Syslog server
 |===
 
