@@ -211,6 +211,13 @@ public class CRSerializationTest {
         assertThat(attributes.size(), is(2));
         assertThat(attributes, hasEntry("service.namespace", "keycloak-namespace"));
         assertThat(attributes, hasEntry("service.name", "custom-service-name"));
+
+        var headers = tracing.getHeaders();
+        assertThat(headers, notNullValue());
+
+        assertThat(headers.size(), is(2));
+        assertThat(headers, hasEntry("Authorization", "Bearer asdlkfjadslfkjdsaflkjasdflkjqweoiru"));
+        assertThat(headers, hasEntry("X-Org-Id", "my-org-id"));
     }
 
     @Test

@@ -177,7 +177,8 @@ public class KeycloakDistConfiguratorTest {
                 "tracing-sampler-type", "parentbased_traceidratio",
                 "tracing-sampler-ratio", "0.01",
                 "tracing-compression", "gzip",
-                "tracing-resource-attributes", "service.namespace=keycloak-namespace,service.name=custom-service-name"
+                "tracing-resource-attributes", "service.namespace=keycloak-namespace,service.name=custom-service-name",
+                "tracing-headers", "Authorization=Bearer asdlkfjadslfkjdsaflkjasdflkjqweoiru,X-Org-Id=my-org-id"
         );
 
         testFirstClassCitizen(expectedValues);
