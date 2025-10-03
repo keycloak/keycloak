@@ -47,7 +47,11 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
 
     @Override
     public List<String> getPostStartCommand() {
-        return List.of("/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", getPassword(), "-No", "-Q", "CREATE DATABASE " + getDatabase());
+        return List.of("/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", getPassword(), "-No", "-Q", "CREATE DATABASE " + getDatabase() +
+                " CONTAINMENT = PARTIAL\n" +
+                "GO\n" +
+                "ALTER DATABASE " + getDatabase() + " SET READ_COMMITTED_SNAPSHOT ON\n" +
+                "GO");
     }
 
     @Override
