@@ -110,6 +110,33 @@ git commit --signoff --message "This is the commit message"
 
 This option adds a `Signed-off-by` trailer at the end of the commit log message.
 
+### Spotless
+
+Spotless is used to check and apply code formatting. To check your code locally before sending a PR run:
+
+```
+./mvnw spotless:check
+```
+
+You can either use your IDE to fix these issues; or Spotless can fix them for you by running:
+
+```
+./mvnw spotless:apply
+```
+
+A good practice is to create a commit with your changes prior to running `spotless:apply` then you can see and
+review what changes Spotless has applied, for example by using a diff tool. Finally, if you are happy with the changes
+Spotless has applied you can amend the changes to your commit by running:
+
+```
+git add -a
+git commit --amend
+```
+
+Note: If you get the error `Could not find goal 'verify' in plugin com.diffplug.spotless:spotless-maven-plugin` you are
+probably running `mvn spotless:check` instead of `./mvnw spotless:check`. This is most likely a bug in Maven or the 
+Spotless plugin.
+ 
 ### Commit messages and issue linking
 
 The format for a commit message should look like:
