@@ -18,7 +18,6 @@
 package org.keycloak.admin.client.resource;
 
 import java.util.List;
-import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;

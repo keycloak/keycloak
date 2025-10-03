@@ -18,9 +18,6 @@
 package org.keycloak.broker.provider.mappersync;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 
 /**

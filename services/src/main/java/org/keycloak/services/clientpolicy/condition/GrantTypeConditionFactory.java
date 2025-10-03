@@ -20,10 +20,7 @@ package org.keycloak.services.clientpolicy.condition;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderFactory;
 
 import java.util.ArrayList;
 import java.util.List;

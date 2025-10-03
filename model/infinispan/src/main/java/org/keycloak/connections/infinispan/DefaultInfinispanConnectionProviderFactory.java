@@ -42,7 +42,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.config.CachingOptions;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
 import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.infinispan.util.InfinispanUtils;
