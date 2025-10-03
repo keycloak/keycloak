@@ -134,7 +134,10 @@ public class KeycloakDistConfigurator {
                 .mapOption("tracing-sampler-type", TracingSpec::getSamplerType)
                 .mapOption("tracing-sampler-ratio", TracingSpec::getSamplerRatio)
                 .mapOption("tracing-compression", TracingSpec::getCompression)
-                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString);
+                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString)
+                .mapOption("tracing-headers", TracingSpec::getHeadersString);
+
+
     }
 
     void configureTransactions() {

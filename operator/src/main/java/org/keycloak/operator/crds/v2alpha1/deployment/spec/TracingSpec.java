@@ -21,8 +21,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -53,6 +56,9 @@ public class TracingSpec {
 
     @JsonPropertyDescription("OpenTelemetry resource attributes present in the exported trace to characterize the telemetry producer.")
     private Map<String, String> resourceAttributes;
+
+    @JsonPropertyDescription("OpenTelemetry headers that will be part of the exporter request (mainly useful for providing Authorization header). Values can be either direct values or references to secrets.")
+    private List<ValueOrSecret> headers = new ArrayList<>();
 
     public Boolean getEnabled() {
         return enabled;
@@ -125,6 +131,23 @@ public class TracingSpec {
 
     public void setResourceAttributes(Map<String, String> resourceAttributes) {
         this.resourceAttributes = resourceAttributes;
+    }
+
+    public List<ValueOrSecret> getHeaders() {
+        if (headers == null) {
+            this.headers = new ArrayList<>();
+        }
+        return headers;
+    }
+
+    // headers in format key=val delimited by comma
+    @JsonIgnore
+    public String getHeadersString() {
+        return convertTracingAttributesToString(getHeaders());
+    }
+
+    public void setHeaders(List<ValueOrSecret> headers) {
+        this.headers = headers;
     }
 
     /**

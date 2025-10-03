@@ -463,7 +463,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         var unsupportedEnv = Optional.ofNullable(baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv()).orElse(List.of());
 
-        var env = keycloakCR.getSpec().getEnv().stream().map(this::toEnvVar);
+        var env = keycloakCR.getSpec().getEnv().stream().map(KeycloakDeploymentDependentResource::toEnvVar);
 
         // accumulate the env vars in priority order - unsupported, first class, additional, env
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
@@ -523,7 +523,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1]));
     }
 
-    private EnvVar toEnvVar(ValueOrSecret v) {
+    static EnvVar toEnvVar(ValueOrSecret v) {
         var envBuilder = new EnvVarBuilder().withName(v.getName());
         var secret = v.getSecret();
         if (secret != null) {

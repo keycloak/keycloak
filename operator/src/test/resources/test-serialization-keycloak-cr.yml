@@ -112,6 +112,9 @@ spec:
     resourceAttributes:
       service.namespace: keycloak-namespace
       service.name: custom-service-name
+    headers:
+      Authorization: Bearer asdlkfjadslfkjdsaflkjasdflkjqweoiru
+      X-Org-Id: my-org-id
   resources:
     requests:
       cpu: "500m"

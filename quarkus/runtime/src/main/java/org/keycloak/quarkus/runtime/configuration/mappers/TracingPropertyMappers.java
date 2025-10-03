@@ -31,6 +31,7 @@ import java.util.List;
 import static org.keycloak.config.TracingOptions.TRACING_COMPRESSION;
 import static org.keycloak.config.TracingOptions.TRACING_ENABLED;
 import static org.keycloak.config.TracingOptions.TRACING_ENDPOINT;
+import static org.keycloak.config.TracingOptions.TRACING_HEADERS;
 import static org.keycloak.config.TracingOptions.TRACING_INFINISPAN_ENABLED;
 import static org.keycloak.config.TracingOptions.TRACING_JDBC_ENABLED;
 import static org.keycloak.config.TracingOptions.TRACING_PROTOCOL;
@@ -97,6 +98,11 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(TracingOptions.TRACING_ENABLED)
                         .to("kc.spi-cache-embedded--default--tracing-enabled")
                         .isEnabled(TracingPropertyMappers::isTracingAndEmbeddedInfinispanEnabled, "tracing and embedded Infinispan is enabled")
+                        .build(),
+                fromOption(TRACING_HEADERS)
+                        .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .to("quarkus.otel.exporter.otlp.traces.headers")
+                        .paramLabel("headers")
                         .build()
         );
     }
