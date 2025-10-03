@@ -12,14 +12,10 @@ public class ResourceLoader {
         if (root == null || resource == null) {
             return null;
         }
-        Path rootPath = Path.of("/", root).normalize().toAbsolutePath();
-        Path resourcePath = rootPath.resolve(resource).normalize().toAbsolutePath();
+        Path rootPath = Path.of(root).normalize();
+        Path resourcePath = rootPath.resolve(resource).normalize();
         if (resourcePath.startsWith(rootPath)) {
-            if (File.separatorChar == '/') {
-                resource = resourcePath.toString().substring(1);
-            } else {
-                resource = resourcePath.toString().substring(2).replace('\\', '/');
-            }
+            resource = resourcePath.toString().replace(File.separatorChar, '/');
             URL url = classLoader().getResource(resource);
             return url != null ? url.openStream() : null;
         } else {
