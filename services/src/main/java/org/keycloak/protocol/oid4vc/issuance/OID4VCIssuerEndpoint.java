@@ -27,6 +27,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -36,6 +37,9 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPost;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyUse;
@@ -172,7 +176,7 @@ public class OID4VCIssuerEndpoint {
     private final int preAuthorizedCodeLifeSpan;
 
     // constant for the OID4VCI enabled attribute key
-    private static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
 
     /**
      * Credential builders are responsible for initiating the production of
@@ -298,22 +302,29 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Handles CORS preflight requests for credential offer URI endpoint.
+     * Preflight requests return CORS headers for all origins (standard CORS behavior).
+     * The actual request will validate origins against client configuration.
+     */
+    @OPTIONS
+    @Path("credential-offer-uri")
+    public Response getCredentialOfferURIPreflight() {
+        configureCors(true);
+        cors.preflight();
+        return cors.add(Response.ok());
+    }
+
+    /**
      * Provides the URI to the OID4VCI compliant credentials offer
      */
     @GET
     @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
     @Path("credential-offer-uri")
     public Response getCredentialOfferURI(@QueryParam("credential_configuration_id") String vcId, @QueryParam("type") @DefaultValue("uri") OfferUriType type, @QueryParam("width") @DefaultValue("200") int width, @QueryParam("height") @DefaultValue("200") int height) {
+        configureCors(true);
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
-
-        // Initialize CORS configuration and validate if the client is enabled for OID4VCI
-        cors = Cors.builder()
-                .auth()
-                .allowedMethods("GET")
-                .auth()
-                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
-
+        cors.allowedOrigins(session, clientSession.getClient());
         checkClientEnabled();
 
         Map<String, SupportedCredentialConfiguration> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
@@ -321,7 +332,11 @@ public class OID4VCIssuerEndpoint {
         if (!credentialsMap.containsKey(vcId)) {
             LOGGER.debugf("No credential with id %s exists.", vcId);
             LOGGER.debugf("Supported credentials are %s.", credentialsMap);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.toString(),
+                    "Invalid credential configuration ID",
+                    Response.Status.BAD_REQUEST);
         }
         SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
 
@@ -350,14 +365,17 @@ public class OID4VCIssuerEndpoint {
             LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert the offer POJO to JSON: %s", e.getMessage());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.toString(),
+                    "Failed to process credential offer",
+                    Response.Status.BAD_REQUEST);
         }
 
         return switch (type) {
             case URI -> getOfferUriAsUri(sessionCode);
             case QR_CODE -> getOfferUriAsQr(sessionCode, width, height);
         };
-
     }
 
     private Response getOfferUriAsUri(String sessionCode) {
@@ -365,10 +383,9 @@ public class OID4VCIssuerEndpoint {
                 .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH)
                 .setNonce(sessionCode);
 
-        return Response.ok()
+        return cors.add(Response.ok()
                 .type(MediaType.APPLICATION_JSON)
-                .entity(credentialOfferURI)
-                .build();
+                .entity(credentialOfferURI));
     }
 
     private Response getOfferUriAsQr(String sessionCode, int width, int height) {
@@ -378,11 +395,35 @@ public class OID4VCIssuerEndpoint {
             BitMatrix bitMatrix = qrCodeWriter.encode("openid-credential-offer://?credential_offer_uri=" + encodedOfferUri, BarcodeFormat.QR_CODE, width, height);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
-            return Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()).build();
+            return cors.add(Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()));
         } catch (WriterException | IOException e) {
             LOGGER.warnf("Was not able to create a qr code of dimension %s:%s.", width, height, e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Was not able to generate qr.").build();
         }
+    }
+
+    /**
+     * Configures basic CORS for error responses before authentication
+     */
+    private void configureCors(boolean authenticated) {
+        cors = Cors.builder()
+                .allowedMethods(HttpGet.METHOD_NAME, HttpOptions.METHOD_NAME)
+                .allowAllOrigins()
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS, HttpHeaders.CONTENT_TYPE);
+        if (authenticated) {
+            cors = cors.auth();
+        }
+    }
+
+    /**
+     * Handles CORS preflight requests for credential offer endpoint
+     */
+    @OPTIONS
+    @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
+    public Response getCredentialOfferPreflight(@PathParam("sessionCode") String sessionCode) {
+        configureCors(false);
+        cors.preflight();
+        return cors.add(Response.ok());
     }
 
     /**
@@ -392,6 +433,8 @@ public class OID4VCIssuerEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
     public Response getCredentialOffer(@PathParam("sessionCode") String sessionCode) {
+        configureCors(false);
+
         if (sessionCode == null) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
@@ -399,9 +442,8 @@ public class OID4VCIssuerEndpoint {
         CredentialsOffer credentialsOffer = getOfferFromSessionCode(sessionCode);
         LOGGER.debugf("Responding with offer: %s", credentialsOffer);
 
-        return Response.ok()
-                .entity(credentialsOffer)
-                .build();
+        return cors.add(Response.ok()
+                .entity(credentialsOffer));
     }
 
     private void checkScope(CredentialScopeModel requestedCredential) {
@@ -445,7 +487,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
 
@@ -953,7 +995,11 @@ public class OID4VCIssuerEndpoint {
                 getAuthenticatedClientSessionByClient(
                         authResult.getClient().getId());
         if (clientSession == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_TOKEN.toString(),
+                    "Invalid or missing token",
+                    Response.Status.BAD_REQUEST);
         }
         return clientSession;
     }
@@ -961,7 +1007,11 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult getAuthResult() {
         AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_TOKEN.toString(),
+                    "Invalid or missing token",
+                    Response.Status.BAD_REQUEST);
         }
 
         // Validate DPoP nonce if present in the DPoP proof
@@ -982,7 +1032,11 @@ public class OID4VCIssuerEndpoint {
                     );
                 } catch (VerificationException e) {
                     LOGGER.debugf("DPoP nonce validation failed: %s", e.getMessage());
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+                    throw new CorsErrorResponseException(
+                            cors,
+                            ErrorType.INVALID_TOKEN.toString(),
+                            "Invalid or missing token",
+                            Response.Status.BAD_REQUEST);
                 }
             }
         }
