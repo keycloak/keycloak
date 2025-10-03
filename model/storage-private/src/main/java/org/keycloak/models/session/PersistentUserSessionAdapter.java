@@ -380,6 +380,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     public void setStarted(int started) {
         getData().setStarted(started);
+        model.setStarted(started);
     }
 
     public void setBrokerSessionId(String brokerSessionId) {
@@ -461,12 +462,12 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             this.rememberMe = rememberMe;
         }
 
-        @Deprecated
+        @Deprecated(since = "26.5", forRemoval = true)
         public int getStarted() {
             return started;
         }
 
-        @Deprecated
+        @Deprecated(since = "26.5", forRemoval = true)
         public void setStarted(int started) {
             this.started = started;
         }
