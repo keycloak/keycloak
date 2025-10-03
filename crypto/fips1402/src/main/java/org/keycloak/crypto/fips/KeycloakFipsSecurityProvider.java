@@ -26,6 +26,7 @@ public class KeycloakFipsSecurityProvider extends Provider {
                 ", FIPS-JVM: " + isSystemFipsEnabled() +
                 ")", 1, "Keycloak pseudo provider");
         this.bcFipsProvider = bcFipsProvider;
+        logger.infof("KeycloakFipsSecurityProvider created: %s", this.toString());
     }
 
     @Override
