@@ -119,7 +119,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
         var builder = new ObjectMetaBuilder();
         builder.withName(name)
                 .withNamespace(keycloak.getMetadata().getNamespace())
-                .addToLabels(keycloak.getSpec().getUpdateSpec().getLabels())
+                .addToLabels(Optional.of(keycloak.getSpec().getUpdateSpec().getLabels()).orElse(Map.of()))
                 .addToLabels(getLabels(keycloak))
                 .withAnnotations(Map.of(KEYCLOAK_CR_HASH_ANNOTATION, keycloakHash(keycloak)));
         return builder.build();
