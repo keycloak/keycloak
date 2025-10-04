@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.27.0</quarkus.version>
-        <quarkus.build.version>3.27.0</quarkus.build.version>
+        <quarkus.version>999-SNAPSHOT</quarkus.version>
+        <quarkus.build.version>999-SNAPSHOT</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -88,7 +88,7 @@
         <bouncycastle.bcutilfips.version>2.1.5</bouncycastle.bcutilfips.version>
 
         <dom4j.version>2.1.3</dom4j.version>
-        <h2.version>2.3.230</h2.version>
+        <h2.version>2.4.240</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <infinispan.version>15.0.19.Final</infinispan.version>
@@ -97,7 +97,7 @@
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
-        <angus.mail.version>2.0.4</angus.mail.version>
+        <angus.mail.version>2.0.5</angus.mail.version>
         <jakarta.xml.ws.version>4.0.0</jakarta.xml.ws.version>
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
@@ -107,7 +107,7 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <log4j2-api.version>2.25.1</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
+        <log4j2-api.version>2.25.2</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
         <resteasy.version>6.2.12.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20240325.1</owasp.html.sanitizer.version>
@@ -121,7 +121,7 @@
         <undertow.version>${undertow-legacy.version}</undertow.version>
         <undertow-legacy.version>2.2.24.Final</undertow-legacy.version>
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
-        <wildfly-elytron.version>2.6.5.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.7.0.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
@@ -161,7 +161,7 @@
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.7</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.8</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.5.6</mariadb-jdbc.version>
@@ -186,7 +186,7 @@
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <!-- Needs to be aligned with Quarkus, handled in quarkus/set-quarkus-version.sh script -->
-        <version.surefire.plugin>3.5.3</version.surefire.plugin>
+        <version.surefire.plugin>3.5.4</version.surefire.plugin>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <assertj-core.version>3.22.0</assertj-core.version>
@@ -1736,4 +1736,5 @@
             </properties>
         </profile>
     </profiles>
+<repositories>             <repository>             <id>sonatype-snapshots</id>             <name>Sonatype Snapshots</name>             <url>https://central.sonatype.com/repository/maven-snapshots/</url>             <snapshots>                 <enabled>true</enabled>                 <updatePolicy>daily</updatePolicy>             </snapshots>             <releases>                 <enabled>false</enabled>             </releases>             </repository>             </repositories>
 </project>
