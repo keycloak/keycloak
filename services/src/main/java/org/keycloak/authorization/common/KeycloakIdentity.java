@@ -46,11 +46,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.jboss.logging.Logger;
+
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class KeycloakIdentity implements Identity {
+
+    private static final Logger logger = Logger.getLogger(KeycloakIdentity.class);
 
     protected final AccessToken accessToken;
     protected final RealmModel realm;
@@ -145,7 +149,8 @@ public class KeycloakIdentity implements Identity {
             AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
             ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel, keycloakSession);
-            this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx);
+            var tm = org.keycloak.protocol.oidc.TokenManager.resolve(keycloakSession, logger);
+            this.accessToken = tm.createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx);
         }
 
         AccessToken.Access realmAccess = this.accessToken.getRealmAccess();

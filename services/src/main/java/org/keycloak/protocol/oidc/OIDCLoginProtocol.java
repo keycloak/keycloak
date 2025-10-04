@@ -266,7 +266,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
         // Implicit or hybrid flow
         if (responseType.isImplicitOrHybridFlow()) {
-            org.keycloak.protocol.oidc.TokenManager tokenManager = new org.keycloak.protocol.oidc.TokenManager();
+            org.keycloak.protocol.oidc.TokenManager tokenManager = org.keycloak.protocol.oidc.TokenManager.resolve(session, logger);
             org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSessionCtx)
                 .generateAccessToken();
 

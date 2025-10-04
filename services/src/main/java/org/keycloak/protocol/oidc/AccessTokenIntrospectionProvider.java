@@ -68,7 +68,8 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
     public AccessTokenIntrospectionProvider(KeycloakSession session) {
         this.session = session;
         this.realm = session.getContext().getRealm();
-        this.tokenManager = new TokenManager();
+        this.tokenManager = org.keycloak.protocol.oidc.TokenManager.resolve(session, logger);
+        ;
     }
 
     @Override

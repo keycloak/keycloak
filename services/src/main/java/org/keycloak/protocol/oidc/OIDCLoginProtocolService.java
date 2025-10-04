@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc;
 
 import jakarta.ws.rs.HEAD;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
@@ -76,12 +77,14 @@ public class OIDCLoginProtocolService {
     private final HttpRequest request;
 
     private final ClientConnection clientConnection;
+    private static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
+
 
     public OIDCLoginProtocolService(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
-        this.tokenManager = new TokenManager();
+        this.tokenManager = org.keycloak.protocol.oidc.TokenManager.resolve(session, logger);
         this.event = event;
         this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();

@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import org.keycloak.provider.Provider;
+
 import java.util.function.BiConsumer;
 
 import org.keycloak.Token;
@@ -24,7 +26,7 @@ import org.keycloak.jose.JOSE;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.representations.LogoutToken;
 
-public interface TokenManager {
+public interface TokenManager extends Provider {
 
     BiConsumer<JOSE, ClientModel> DEFAULT_VALIDATOR = (jwt, client) -> {
         String rawAlgorithm = jwt.getHeader().getRawAlgorithm();
@@ -74,5 +76,9 @@ public interface TokenManager {
     String cekManagementAlgorithm(TokenCategory category);
     String encryptAlgorithm(TokenCategory category);
 
-    LogoutToken initLogoutToken(ClientModel client, UserModel user, AuthenticatedClientSessionModel clientSessionModel);
+    LogoutToken initLogoutToken(ClientModel client, UserModel user,
+                                AuthenticatedClientSessionModel clientSessionModel);
+
+    @Override
+    default void close() {}
 }
