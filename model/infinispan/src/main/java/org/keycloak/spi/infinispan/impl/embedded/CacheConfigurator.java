@@ -482,8 +482,14 @@ public final class CacheConfigurator {
         switch (cacheName) {
             // Distributed Caches
             case CLIENT_SESSION_CACHE_NAME:
-            case USER_SESSION_CACHE_NAME:
             case OFFLINE_CLIENT_SESSION_CACHE_NAME:
+                // Groups keys by user session ID.
+                if (clustered) {
+                    builder.clustering().hash().groups()
+                            .enabled()
+                            .addGrouper(ClientSessionKeyGrouper.INSTANCE);
+                }
+            case USER_SESSION_CACHE_NAME:
             case OFFLINE_USER_SESSION_CACHE_NAME:
                 if (clustered) {
                     builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);

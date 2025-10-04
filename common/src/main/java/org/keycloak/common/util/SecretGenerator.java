@@ -2,9 +2,11 @@ package org.keycloak.common.util;
 
 import java.security.SecureRandom;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public class SecretGenerator {
 
+    public static final Supplier<String> SECURE_ID_GENERATOR = () -> getInstance().generateSecureID();
     public static final int SECRET_LENGTH_256_BITS = 32;
     public static final int SECRET_LENGTH_384_BITS = 48;
     public static final int SECRET_LENGTH_512_BITS = 64;
