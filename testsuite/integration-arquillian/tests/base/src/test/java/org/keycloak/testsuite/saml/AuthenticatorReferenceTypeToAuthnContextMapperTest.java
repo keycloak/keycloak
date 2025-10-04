@@ -23,7 +23,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.credential.OTPCredentialModel;
-import org.keycloak.protocol.saml.mappers.EntraIdMultiFactorAuthnContextMapper;
+import org.keycloak.protocol.saml.mappers.AuthenticatorReferenceTypeToAuthnContextMapper;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Objects;
 
-import static org.keycloak.protocol.saml.mappers.EntraIdMultiFactorAuthnContextMapper.SCHEMAS_MICROSOFT_COM_CLAIMS_MULTIPLEAUTHN;
 import static org.keycloak.testsuite.saml.RoleMapperTest.createSamlProtocolMapper;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
@@ -49,7 +48,7 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
  *
  * @author rmartinc
  */
-public class EntraIdAuthnResponseMapperTest extends AbstractSamlTest {
+public class AuthenticatorReferenceTypeToAuthnContextMapperTest extends AbstractSamlTest {
 
     public static final String SAML_ASSERTION_CONSUMER_URL_EMPLOYEE_2 = AUTH_SERVER_SCHEME + "://localhost:" + (AUTH_SERVER_SSL_REQUIRED ? AUTH_SERVER_PORT : 8080) + "/employee2/";
 
@@ -69,8 +68,10 @@ public class EntraIdAuthnResponseMapperTest extends AbstractSamlTest {
 
 
     @Test
-    public void testEntraId() throws Exception {
-        pmu.add(createSamlProtocolMapper(EntraIdMultiFactorAuthnContextMapper.PROVIDER_ID)).update();
+    public void testNoOtp() throws Exception {
+        pmu.add(createSamlProtocolMapper(AuthenticatorReferenceTypeToAuthnContextMapper.PROVIDER_ID,
+                AuthenticatorReferenceTypeToAuthnContextMapper.CONFIG_AUTHENTICATOR_REFERENCE_TYPES, "otp",
+                AuthenticatorReferenceTypeToAuthnContextMapper.CONFIG_AUTHN_CONTEXT, "target")).update();
         // remove full scope
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_EMPLOYEE_2)
                 .setFullScopeAllowed(false)
@@ -83,6 +84,19 @@ public class EntraIdAuthnResponseMapperTest extends AbstractSamlTest {
 
             verifyAuthn(document, JBossSAMLURIConstants.AC_UNSPECIFIED.get());
 
+        }
+    }
+
+    @Test
+    public void testMappingOfAuthnContext() throws Exception {
+        pmu.add(createSamlProtocolMapper(AuthenticatorReferenceTypeToAuthnContextMapper.PROVIDER_ID,
+                AuthenticatorReferenceTypeToAuthnContextMapper.CONFIG_AUTHENTICATOR_REFERENCE_TYPES, "otp",
+                AuthenticatorReferenceTypeToAuthnContextMapper.CONFIG_AUTHN_CONTEXT, "target")).update();
+        // remove full scope
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_EMPLOYEE_2)
+                .setFullScopeAllowed(false)
+                .update()) {
+
             UserRepresentation userRep = UserBuilder.edit(bburkeUser)
                     .totpSecret("totpSecret")
                     .otpEnabled().build();
@@ -90,13 +104,45 @@ public class EntraIdAuthnResponseMapperTest extends AbstractSamlTest {
             user.update(userRep);
 
             try {
-                document = new SamlClientBuilder()
+                SAMLDocumentHolder document = new SamlClientBuilder()
                         .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_EMPLOYEE_2, SAML_ASSERTION_CONSUMER_URL_EMPLOYEE_2, SamlClient.Binding.POST).build()
                         .login().user(bburkeUser).build()
                         .totp().secret("totpSecret").build()
                         .getSamlResponse(SamlClient.Binding.POST);
 
-                verifyAuthn(document, SCHEMAS_MICROSOFT_COM_CLAIMS_MULTIPLEAUTHN);
+                verifyAuthn(document, "target");
+            } finally {
+                CredentialRepresentation cr = user.credentials().stream().filter(credentialRepresentation -> credentialRepresentation.getType().equals(OTPCredentialModel.TYPE)).findFirst().orElseThrow();
+                user.removeCredential(cr.getId());
+            }
+        }
+    }
+
+    @Test
+    public void testExpiredAuthentication() throws Exception {
+        pmu.add(createSamlProtocolMapper(AuthenticatorReferenceTypeToAuthnContextMapper.PROVIDER_ID,
+                AuthenticatorReferenceTypeToAuthnContextMapper.CONFIG_AUTHENTICATOR_REFERENCE_TYPES, "otp",
+                AuthenticatorReferenceTypeToAuthnContextMapper.CONFIG_AUTHN_CONTEXT, "target",
+                AuthenticatorReferenceTypeToAuthnContextMapper.CONFIG_MAX_AGE, "-1")).update();
+        // remove full scope
+        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_EMPLOYEE_2)
+                .setFullScopeAllowed(false)
+                .update()) {
+
+            UserRepresentation userRep = UserBuilder.edit(bburkeUser)
+                    .totpSecret("totpSecret")
+                    .otpEnabled().build();
+            UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), bburkeUser.getUsername());
+            user.update(userRep);
+
+            try {
+                SAMLDocumentHolder document = new SamlClientBuilder()
+                        .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_EMPLOYEE_2, SAML_ASSERTION_CONSUMER_URL_EMPLOYEE_2, SamlClient.Binding.POST).build()
+                        .login().user(bburkeUser).build()
+                        .totp().secret("totpSecret").build()
+                        .getSamlResponse(SamlClient.Binding.POST);
+
+                verifyAuthn(document, JBossSAMLURIConstants.AC_UNSPECIFIED.get());
             } finally {
                 CredentialRepresentation cr = user.credentials().stream().filter(credentialRepresentation -> credentialRepresentation.getType().equals(OTPCredentialModel.TYPE)).findFirst().orElseThrow();
                 user.removeCredential(cr.getId());
@@ -110,7 +156,7 @@ public class EntraIdAuthnResponseMapperTest extends AbstractSamlTest {
                 .filter(Objects::nonNull)
                 .flatMap(assertionType -> assertionType.getStatements().stream())
                 .filter(statementAbstractType -> statementAbstractType instanceof AuthnStatementType authnStatementType && authnStatementType.getAuthnContext().getSequence().getClassRef().getValue().equals(URI.create(uri)))
-                .findAny().orElseThrow(() -> new RuntimeException("didn't find authn"));
+                .findAny().orElseThrow(() -> new RuntimeException("didn't find authn '" + uri + "'"));
     }
 
 }
