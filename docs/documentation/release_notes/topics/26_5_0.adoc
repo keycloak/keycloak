@@ -1,0 +1,8 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+== Improved Vault Provider Key Validation Check
+
+Vault key validation now strictly prohibits the use of characters that could enable path traversal, such as '/' and '\', in vault expressions. This robust security measure prevents unauthorized access to secrets outside the corresponding realm and delivers a significant improvement for Windows environments.
+
+For consistency, both '/' and '\' are now blocked on all platforms. This is a breaking change: keys containing '\' that previously worked on Linux will now be rejected everywhere. Update your vault keys to avoid using path separator characters for maximum compatibility.
