@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.controllers;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,10 +117,13 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     }
 
     private static ObjectMeta createMetadata(String name, Keycloak keycloak) {
+        var lables = new HashMap<String ,String >();
+        var optionalSpec = Optional.ofNullable(keycloak.getSpec().getUpdateSpec());
+        optionalSpec.map(UpdateSpec::getLabels).ifPresent(lables::putAll);
         var builder = new ObjectMetaBuilder();
         builder.withName(name)
                 .withNamespace(keycloak.getMetadata().getNamespace())
-                .addToLabels(Optional.of(keycloak.getSpec().getUpdateSpec().getLabels()).orElse(Map.of()))
+                .addToLabels(lables)
                 .addToLabels(getLabels(keycloak))
                 .withAnnotations(Map.of(KEYCLOAK_CR_HASH_ANNOTATION, keycloakHash(keycloak)));
         return builder.build();
