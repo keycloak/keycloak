@@ -270,7 +270,7 @@ public class UpdateTest extends BaseOperatorTest {
         var updateSpec = new UpdateSpec();
         updateSpec.setStrategy(updateStrategy);
         Map<String, String> labels = new java.util.HashMap<>(Map.of());
-        labels.put("test", "example");
+        labels.put("example", "test");
         updateSpec.setLabels(labels);
         if (updateStrategy == UpdateStrategy.EXPLICIT) {
             updateSpec.setRevision("0");
