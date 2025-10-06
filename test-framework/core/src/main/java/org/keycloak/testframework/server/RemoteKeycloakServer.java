@@ -2,6 +2,7 @@ package org.keycloak.testframework.server;
 
 import io.quarkus.maven.dependency.Dependency;
 
+import javax.net.ssl.SSLException;
 import java.net.ConnectException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -10,8 +11,11 @@ import java.util.concurrent.TimeUnit;
 
 public class RemoteKeycloakServer implements KeycloakServer {
 
+    private boolean enableTls = false;
+
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
+        enableTls = keycloakServerConfigBuilder.tlsEnabled();
         if (!verifyRunningKeycloak()) {
             printStartupInstructions(keycloakServerConfigBuilder);
             waitForStartup();
@@ -24,12 +28,25 @@ public class RemoteKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        return "http://localhost:8080";
+        if (isTlsEnabled()) {
+            return "https://localhost:8443";
+        } else {
+            return "http://localhost:8080";
+        }
     }
 
     @Override
     public String getManagementBaseUrl() {
-        return "http://localhost:9000";
+        if (isTlsEnabled()) {
+            return "https://localhost:9000";
+        } else {
+            return "http://localhost:9000";
+        }
+    }
+
+    @Override
+    public boolean isTlsEnabled() {
+        return enableTls;
     }
 
     private void printStartupInstructions(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
@@ -70,6 +87,10 @@ public class RemoteKeycloakServer implements KeycloakServer {
             return true;
         } catch (ConnectException e) {
             return false;
+        } catch (SSLException ignored) {
+            // if the kc server is running with https, it is not this class' responsibility to check the certificate
+            // we're just checking that keycloak is running
+            return true;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
