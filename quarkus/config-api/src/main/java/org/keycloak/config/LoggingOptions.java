@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static java.lang.String.format;
@@ -133,8 +134,8 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_CONSOLE_COLOR = new OptionBuilder<>("log-console-color", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description("Enable or disable colors when logging to console.")
-            .defaultValue(Boolean.FALSE) // :-(
+            .description("Enable or disable colors when logging to console. If this is not present then an attempt will be made to guess if the terminal supports color.")
+            .defaultValue(Optional.empty())
             .build();
 
     public static final Option<Boolean> LOG_CONSOLE_ENABLED = new OptionBuilder<>("log-console-enabled", Boolean.class)
