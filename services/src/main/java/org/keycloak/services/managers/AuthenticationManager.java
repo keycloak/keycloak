@@ -19,6 +19,8 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
@@ -78,6 +80,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
@@ -1069,6 +1072,24 @@ public class AuthenticationManager {
 
         event.event(EventType.LOGIN);
         event.session(userSession);
+
+        // Store all successfully executed authenticator types in the credential type of the login success event.
+        List<String> successes = authSession.getExecutionStatus().entrySet().stream()
+                .filter(e -> e.getValue() == CommonClientSessionModel.ExecutionStatus.SUCCESS)
+                .map(s -> realm.getAuthenticationExecutionById(s.getKey()).getAuthenticator())
+                .filter(Objects::nonNull)
+                .map(a -> {
+                    ProviderFactory<Authenticator> providerFactory = session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, a);
+                    if (providerFactory instanceof ConfigurableAuthenticatorFactory caf) {
+                        return caf.getReferenceCategory();
+                    } else {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .sorted()
+                .toList();
+        event.detail(Details.CREDENTIAL_TYPE, successes);
         event.success();
         return redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, clientConnection, event, authSession);
     }

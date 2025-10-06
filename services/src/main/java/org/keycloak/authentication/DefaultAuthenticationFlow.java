@@ -20,6 +20,7 @@ package org.keycloak.authentication;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
+import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
@@ -140,6 +141,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         Authenticator authenticator = createAuthenticator(factory);
         AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
         result.setAuthenticationSelections(createAuthenticationSelectionList(model));
+        if (authenticator instanceof CredentialValidator<?> cv) {
+            result.getEvent().detail(Details.CREDENTIAL_TYPE, cv.getType(result.getSession()));
+        }
 
         if (factory instanceof AuthenticationFlowCallbackFactory) {
             AuthenticatorUtil.setAuthCallbacksFactoryIds(processor.getAuthenticationSession(), factory.getId());
