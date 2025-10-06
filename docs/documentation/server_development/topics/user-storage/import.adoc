@@ -49,6 +49,8 @@ begin first by modifying the `createAdapter()` method.
     }
 ----
 
+NOTE: To use `UserStoragePrivateUtil` class, you need to add the `org.keycloak:keycloak-model-storage-private` artifact as a dependency in your project.
+
 In this method we call the `UserStoragePrivateUtil.userLocalStorage(session)` method to obtain a reference to local {project_name}
 user storage. We see if the user is stored locally, if not, we add it locally. Do not set the `id` of the local user.
 Let {project_name} automatically generate the `id`.  Also note that we call
