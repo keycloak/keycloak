@@ -819,6 +819,22 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile.update();
         assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
 
+        config.getAttribute(UserModel.EMAIL).getPermissions().setEdit(Set.of(ROLE_ADMIN));
+        provider.setConfiguration(config);
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertEquals("myemail@foo.bar", user.getFirstAttribute(UserModel.EMAIL));
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+        assertFalse(profile.getAttributes().getWritable().containsKey(UserModel.EMAIL));
+        user.setEmail(null);
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL));
+        assertFalse(profile.getAttributes().getWritable().containsKey(UserModel.EMAIL));
+        config.getAttribute(UserModel.EMAIL).getPermissions().setEdit(Set.of(ROLE_USER, ROLE_ADMIN));
+        provider.setConfiguration(config);
+        user.setEmail("myemail@foo.bar");
+
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
         profile.update();
         assertNotNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
