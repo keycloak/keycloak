@@ -306,6 +306,15 @@ In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths
 
 <@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc*">
 
+=== Console
+<@opts.includeOptions includedOptions="log-console-*"/>
+
+=== File
+<@opts.includeOptions includedOptions="log-file log-file-*"/>
+
+=== Syslog
+<@opts.includeOptions includedOptions="log-syslog-*"/>
+
 === HTTP Access log
 <@opts.includeOptions includedOptions="http-access-log-*"/>
 
