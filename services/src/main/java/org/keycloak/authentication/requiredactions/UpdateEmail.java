@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -60,6 +61,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.Urls;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
@@ -157,7 +159,6 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             if (newEmail != null) {
                 // Remove VERIFY_EMAIL to ensure UPDATE_EMAIL takes precedence when both realm verification and forced verification are enabled.
                 user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-                setPendingEmailVerification(context, newEmail);
                 sendEmailUpdateConfirmation(context, false);
             } else {
                 // Check if email verification is pending and show message for subsequent visits
@@ -238,6 +239,10 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         } catch (EmailException e) {
             logger.error("Failed to send email for email update", e);
             context.getEvent().error(Errors.EMAIL_SEND_FAILED);
+            context.failure(Messages.EMAIL_SENT_ERROR);
+            context.challenge(context.form()
+                    .setError(Messages.EMAIL_SENT_ERROR)
+                    .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR));
             return;
         }
         context.getEvent().success();
