@@ -34,8 +34,8 @@ public class SdJwtUtilsTest {
     @Test
     public void testHashDisclosure() {
         String expected = "uutlBuYeMDyjLLTpf6Jxi7yNkEF35jdyWMn9U7b_RYY";
-        byte[] hash = HashUtils.hash("SHA-256", "WyI2cU1RdlJMNWhhaiIsICJmYW1pbHlfbmFtZSIsICJNw7ZiaXVzIl0".getBytes());
-        assertEquals(expected, SdJwtUtils.encodeNoPad(hash));
+    byte[] hash = HashUtils.hash("SHA-256", SdJwtUtils.utf8Bytes("WyI2cU1RdlJMNWhhaiIsICJmYW1pbHlfbmFtZSIsICJNw7ZiaXVzIl0"));
+    assertEquals(expected, SdJwtUtils.encodeNoPad(hash));
     }
 
     /**
@@ -45,8 +45,8 @@ public class SdJwtUtilsTest {
     @Test
     public void testHashDisclosure2() {
         String expected = "w0I8EKcdCtUPkGCNUrfwVp2xEgNjtoIDlOxc9-PlOhs";
-        byte[] hash = HashUtils.hash("SHA-256", "WyJsa2x4RjVqTVlsR1RQVW92TU5JdkNBIiwgIkZSIl0".getBytes());
-        assertEquals(expected, SdJwtUtils.encodeNoPad(hash));
+    byte[] hash = HashUtils.hash("SHA-256", SdJwtUtils.utf8Bytes("WyJsa2x4RjVqTVlsR1RQVW92TU5JdkNBIiwgIkZSIl0"));
+    assertEquals(expected, SdJwtUtils.encodeNoPad(hash));
     }
 
     /**
@@ -74,7 +74,7 @@ public class SdJwtUtilsTest {
 
         // Assert that the base64 URL encoded string from the object matches the
         // expected string
-        assertEquals(expected, SdJwtUtils.encodeNoPad(input.getBytes()));
+    assertEquals(expected, SdJwtUtils.encodeNoPad(input));
     }
 
     /**
@@ -95,7 +95,7 @@ public class SdJwtUtilsTest {
 
         // Assert that the base64 URL encoded string from the object matches the
         // expected string
-        assertEquals(expected, SdJwtUtils.encodeNoPad(input.getBytes()));
+    assertEquals(expected, SdJwtUtils.encodeNoPad(input));
     }
 
     @Test
@@ -107,7 +107,7 @@ public class SdJwtUtilsTest {
 
         // Assert that the base64 URL encoded string from the object matches the
         // expected string
-        assertEquals(expected, SdJwtUtils.encodeNoPad(input.getBytes()));
+    assertEquals(expected, SdJwtUtils.encodeNoPad(input));
     }
 
     @Test
@@ -119,6 +119,6 @@ public class SdJwtUtilsTest {
 
         // Assert that the base64 URL encoded string from the object matches the
         // expected string
-        assertEquals(expected, SdJwtUtils.encodeNoPad(input.getBytes()));
+    assertEquals(expected, SdJwtUtils.encodeNoPad(input));
     }
 }
