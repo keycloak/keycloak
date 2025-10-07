@@ -213,6 +213,10 @@ public class UPConfigUtils {
         if (attributeConfig.getAnnotations()!=null) {
             validateAnnotations(attributeConfig.getAnnotations(), errors, attributeName);
         }
+
+        if (attributeConfig.isMultivalued() && isRootAttribute(attributeName)) {
+            errors.add("Attribute '" + attributeName + "' is a root attribute and cannot be multivalued");
+        }
     }
 
     private static void validateDefaultValue(KeycloakSession session, UPAttribute attributeConfig, List<String> errors) {
