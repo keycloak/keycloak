@@ -1,9 +1,7 @@
 package org.keycloak.services.resource;
 
 import org.keycloak.provider.Provider;
-import org.keycloak.theme.Theme;
 
-import java.io.IOException;
 
 /**
  * <p>A {@link AccountResourceProvider} creates JAX-RS resource instances for the Account endpoints, allowing

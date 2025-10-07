@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.account;
 
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;

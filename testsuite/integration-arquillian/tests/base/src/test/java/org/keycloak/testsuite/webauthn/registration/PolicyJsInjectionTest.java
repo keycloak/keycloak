@@ -28,7 +28,6 @@ import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 import org.keycloak.utils.StringUtil;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
 
 import java.io.Closeable;
 import java.io.IOException;

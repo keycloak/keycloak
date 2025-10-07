@@ -47,6 +47,7 @@
     <properties>
         <central.publishing.plugin.version>0.7.0</central.publishing.plugin.version>
         <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
+        <spotless-plugin.version>3.0.0</spotless-plugin.version>
     </properties>
 
     <distributionManagement>
@@ -76,6 +77,11 @@
                         <serverId>${jboss.releases.repo.id}</serverId>
                         <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

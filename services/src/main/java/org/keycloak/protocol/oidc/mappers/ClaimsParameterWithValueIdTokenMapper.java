@@ -32,7 +32,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
-import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 

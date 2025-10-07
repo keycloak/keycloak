@@ -20,7 +20,6 @@ package org.keycloak.models;
 import org.keycloak.rar.AuthorizationRequestContext;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**

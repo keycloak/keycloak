@@ -21,7 +21,6 @@ package org.keycloak.deployment;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.models.AuthenticatorConfigModel;

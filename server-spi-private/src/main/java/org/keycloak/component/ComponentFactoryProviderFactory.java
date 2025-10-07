@@ -22,7 +22,6 @@ import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import java.util.function.Function;
-import org.keycloak.component.ComponentModel;
 
 /**
  *

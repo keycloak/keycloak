@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;

@@ -16,7 +16,6 @@
  */package org.keycloak.protocol.oauth2;
 
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
-import org.keycloak.wellknown.WellKnownProviderFactory;
 
 /**
  * {@link  OAuth2WellKnownProviderFactory} implementation for the OAuth2 auto discovery

@@ -21,7 +21,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
-import java.net.URI;
 
 /**
  * Builds verifiable credentials for the LDP_VC format.
