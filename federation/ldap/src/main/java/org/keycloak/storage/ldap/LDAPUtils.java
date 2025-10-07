@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -185,7 +186,7 @@ public class LDAPUtils {
                     config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
         }
 
-        return ldapUsername;
+        return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
     }
 
     public static void checkUuid(LDAPObject ldapUser, LDAPConfig config) {
