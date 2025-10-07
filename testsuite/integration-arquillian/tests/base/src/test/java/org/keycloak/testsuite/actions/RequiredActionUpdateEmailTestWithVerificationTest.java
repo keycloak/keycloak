@@ -589,4 +589,37 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             ApiUtil.removeUserByUsername(testRealm(), "realmverifyuser");
         }
     }
+
+    @Test
+    public void testUpdateProfileWithVerificationWhenEmailIsNotSetAndIsWritable() throws MessagingException, IOException {
+        configureRequiredActionsToUser("test-user@localhost", RequiredAction.UPDATE_PROFILE.name());
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
+        UserRepresentation rep = testUser.toRepresentation();
+        rep.setEmail("");
+        testUser.update(rep);
+
+        // login and update profile, email is empty and writable, so email input should be present
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        updateProfilePage.assertCurrent();
+        assertTrue(updateProfilePage.isEmailInputPresent());
+        updateProfilePage.update("Tom", "Brady", "test-user@localhost");
+
+        // Should send verification email and show pending verification message
+        assertThat("Should show pending verification message with realm verification enabled",
+                driver.getPageSource(), containsString("A confirmation email has been sent to test-user@localhost."));
+        String confirmationLink = fetchEmailConfirmationLink("test-user@localhost");
+        rep = testUser.toRepresentation();
+        assertEquals(1, rep.getRequiredActions().size());
+        assertEquals(RequiredAction.UPDATE_EMAIL.name(), rep.getRequiredActions().get(0));
+        assertEquals("test-user@localhost", testUser.toRepresentation().getAttributes().get(UserModel.EMAIL_PENDING).get(0));
+        assertNull(testUser.toRepresentation().getEmail());
+
+        // confirm the email and authenticate to the app
+        driver.navigate().to(confirmationLink);
+        infoPage.assertCurrent();
+        infoPage.clickBackToApplicationLink();
+        appPage.assertCurrent();
+    }
 }

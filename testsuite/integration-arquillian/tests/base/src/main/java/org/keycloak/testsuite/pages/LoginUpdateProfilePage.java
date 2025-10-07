@@ -131,6 +131,15 @@ public class LoginUpdateProfilePage extends AbstractPage {
         }
     }
 
+    public boolean isEmailInputPresent() {
+        try {
+            emailInput.isDisplayed();
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
     public boolean isDepartmentPresent() {
         try {
           isDepartmentEnabled();
