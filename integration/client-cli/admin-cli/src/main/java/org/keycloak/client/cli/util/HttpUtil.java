@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -49,6 +50,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -201,6 +203,10 @@ public class HttpUtil {
         int code = response.getStatusLine().getStatusCode();
         if (code >= 200 && code < 300) {
             return responseStream;
+        } else if (code >= HttpURLConnection.HTTP_MOVED_PERM && code <= HttpURLConnection.HTTP_SEE_OTHER) {
+            throw new RuntimeException(
+                    "Request was unsuccessful as the server responded with a redirect to %s - please check that your server URL is correct."
+                            .formatted(Optional.ofNullable(response.getFirstHeader("Location")).map(org.apache.http.Header::getValue).orElse("UNKNOWN")));
         } else {
             Map<String, String> error = null;
             try {
