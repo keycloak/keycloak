@@ -31,6 +31,8 @@ public class OAuthIdentityProvider {
     private final OAuthIdentityProviderKeys keys;
     private final OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config;
 
+    private int keysRequestCount = 0;
+
     public OAuthIdentityProvider(HttpServer httpServer, OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
         this.config = config;
         if (!CryptoIntegration.isInitialised()) {
@@ -55,6 +57,10 @@ public class OAuthIdentityProvider {
         return new OAuthIdentityProviderKeys(config);
     }
 
+    public int getKeysRequestCount() {
+        return keysRequestCount;
+    }
+
     public void close() {
         httpServer.removeContext("/idp/jwks");
     }
@@ -68,6 +74,8 @@ public class OAuthIdentityProvider {
             OutputStream outputStream = exchange.getResponseBody();
             outputStream.write(keys.getJwksString().getBytes(StandardCharsets.UTF_8));
             outputStream.close();
+
+            keysRequestCount++;
         }
 
     }
