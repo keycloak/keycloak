@@ -67,6 +67,7 @@ import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameVal
 import org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator;
 import org.keycloak.userprofile.validator.UsernameHasValueValidator;
 import org.keycloak.userprofile.validator.UsernameMutationValidator;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
 
@@ -155,15 +156,23 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         if (UpdateEmail.isEnabled(realm)) {
             if (UPDATE_PROFILE.equals(c.getContext())) {
+                UserModel user = c.getUser();
+
                 if (!isNewUser(c)) {
-                    if (c.getUser().getEmail() == null || c.getUser().getEmail().isEmpty()) {
+                    if (StringUtil.isBlank(user.getEmail())) {
                         // allow to set email via UPDATE_PROFILE if the email is not set for the user
                         return true;
                     }
-                } else if (UserModel.EMAIL.equals(c.getAttribute().getKey()) && c.getAttribute().getValue().isEmpty()) {
-                    return true;
+
+                    List<String> values = c.getAttribute().getValue();
+
+                    if (values == null || values.isEmpty()) {
+                        // ignore empty values if the user has an email set, email should be set via update email flow
+                        return false;
+                    }
                 }
             }
+
             return !(UPDATE_PROFILE.equals(c.getContext()) || ACCOUNT.equals(c.getContext()));
         }
 
@@ -185,15 +194,14 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         if (UpdateEmail.isEnabled(session.getContext().getRealm())) {
             if (UPDATE_PROFILE.equals(c.getContext())) {
-                if (!isNewUser(c)) {
-                    if (c.getUser().getEmail() == null || c.getUser().getEmail().isEmpty()) {
-                        // show email field in UPDATE_PROFILE page if the email is not set for the user
-                        return true;
-                    }
-                } else if (UserModel.EMAIL.equals(c.getAttribute().getKey()) && c.getAttribute().getValue().isEmpty()) {
+                List<String> value = c.getAttribute().getValue();
+
+                if (value.isEmpty() && !c.getMetadata().isReadOnly(c)) {
+                    // show email field in UPDATE_PROFILE page if the email is not set for the user and is not read-only
                     return true;
                 }
             }
+
             return !UPDATE_PROFILE.equals(context);
         }
 
