@@ -84,7 +84,10 @@ public class FallbackKeyProviderTest {
                 Algorithm.PS512,
                 Algorithm.ES256,
                 Algorithm.ES384,
-                Algorithm.ES512
+                Algorithm.ES512,
+                Algorithm.ML_DSA_44,
+                Algorithm.ML_DSA_65,
+                Algorithm.ML_DSA_87
         };
 
         oauth.doLogin(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
@@ -105,6 +108,7 @@ public class FallbackKeyProviderTest {
         expected.add("rsa-enc-generated");
         expected.add("hmac-generated-hs512");
         expected.add("aes-generated");
+        expected.add("mldsa-generated");
 
         for (String a : algorithmsToTest) {
             expected.add("fallback-" + a);
