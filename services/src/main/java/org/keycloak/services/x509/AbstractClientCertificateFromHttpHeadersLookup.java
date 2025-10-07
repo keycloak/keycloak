@@ -18,7 +18,6 @@
 
 package org.keycloak.services.x509;
 
-import org.apache.http.client.methods.HttpHead;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.PemException;

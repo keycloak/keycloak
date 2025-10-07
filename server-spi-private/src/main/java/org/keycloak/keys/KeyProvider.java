@@ -20,8 +20,6 @@ package org.keycloak.keys;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.provider.Provider;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**

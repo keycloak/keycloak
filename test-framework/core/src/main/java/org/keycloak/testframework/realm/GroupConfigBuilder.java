@@ -2,8 +2,6 @@ package org.keycloak.testframework.realm;
 
 import org.keycloak.representations.idm.GroupRepresentation;
 
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 

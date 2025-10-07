@@ -23,10 +23,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 /**

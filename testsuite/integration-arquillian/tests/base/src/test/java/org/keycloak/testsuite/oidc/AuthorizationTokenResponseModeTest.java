@@ -34,7 +34,6 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.openqa.selenium.By;
 
-import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 

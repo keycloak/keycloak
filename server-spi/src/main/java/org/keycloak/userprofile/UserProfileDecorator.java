@@ -21,7 +21,6 @@ package org.keycloak.userprofile;
 
 import java.util.List;
 
-import org.keycloak.models.RealmModel;
 
 /**
  * <p>This interface allows user storage providers to customize the user profile configuration and its attributes for realm

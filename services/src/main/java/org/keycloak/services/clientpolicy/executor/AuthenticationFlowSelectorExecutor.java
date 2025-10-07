@@ -18,9 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;

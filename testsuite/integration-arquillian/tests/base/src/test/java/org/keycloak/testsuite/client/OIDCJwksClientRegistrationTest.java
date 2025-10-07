@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -50,7 +49,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientCredentialsProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;

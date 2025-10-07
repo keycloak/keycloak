@@ -10,7 +10,6 @@ import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.entities.RoleQuery;
 import org.keycloak.marshalling.Marshalling;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Predicate;
 

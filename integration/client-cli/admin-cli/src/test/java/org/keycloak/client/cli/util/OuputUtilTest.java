@@ -18,8 +18,6 @@
 package org.keycloak.client.cli.util;
 
 import org.junit.Test;
-import org.keycloak.client.cli.util.OutputUtil;
-import org.keycloak.client.cli.util.ReturnFields;
 
 import java.io.IOException;
 import java.util.ArrayList;
