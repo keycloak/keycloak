@@ -1,5 +1,6 @@
 package org.keycloak.tests.client.authentication.external;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -20,6 +21,8 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
@@ -39,8 +42,25 @@ public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
     @InjectOAuthIdentityProvider(config = SpiffeIdpConfig.class)
     OAuthIdentityProvider identityProvider;
 
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
     public SpiffeClientAuthTest() {
         super(null, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
+    }
+
+    @Test
+    public void testKeysCached() {
+        int initialKeyRequests = identityProvider.getKeysRequestCount();
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertEquals(initialKeyRequests + 1, identityProvider.getKeysRequestCount());
+
+        timeOffSet.set(350);
+
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertEquals(initialKeyRequests + 2, identityProvider.getKeysRequestCount());
     }
 
     @Test
