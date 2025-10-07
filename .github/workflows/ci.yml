@@ -114,14 +114,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          SEP=""
-          PROJECTS=""
-          for i in `find -name '*Test.java' -type f | egrep -v './(operator|testsuite|quarkus|docs|tests|test-framework)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
-            PROJECTS="$PROJECTS$SEP$i"
-            SEP=","
-          done
-
-          ./mvnw test -pl "$PROJECTS" -am
+          ./mvnw test -am -pl "$(.github/scripts/find-modules-with-unit-tests.sh)"
 
   base-integration-tests:
     name: Base IT
@@ -292,7 +285,7 @@ jobs:
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
 
   jdk-integration-tests:
-    name: Java Distribution IT
+    name: Java Distribution IT/UT
     needs: build
     timeout-minutes: 100
     strategy:
@@ -331,6 +324,10 @@ jobs:
       - name: Build with JDK
         run:
           ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
+
+      - name: Run unit tests
+        run: |
+          ./mvnw test -pl "$(.github/scripts/find-modules-with-unit-tests.sh)"
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
