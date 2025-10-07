@@ -23,6 +23,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -75,4 +78,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
         return scheduledTasks.remove(taskName);
     }
 
+    protected Map<String, TimerTaskContextImpl> getTasks(){
+        return scheduledTasks;
+    }
 }
