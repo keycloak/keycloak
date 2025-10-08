@@ -898,7 +898,7 @@ jobs:
 
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
-    if: needs.conditional.outputs.ci-compatibility-matrix != ''
+    if: needs.conditional.outputs.ci-compatibility-matrix != 'skip'
     runs-on: ubuntu-latest
     needs:
       - build
