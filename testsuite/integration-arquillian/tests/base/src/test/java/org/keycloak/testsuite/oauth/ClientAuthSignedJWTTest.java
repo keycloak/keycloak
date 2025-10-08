@@ -419,6 +419,32 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     }
 
     @Test
+    public void testWithClientAndMissingClientAssertionType() throws Exception {
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client1"));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
+
+        assertError(response, 400, "client1", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+    }
+
+    @Test
+    public void testWithClientAndInvalidClientAssertionType() throws Exception {
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client1"));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, "invalid"));
+
+        CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        AccessTokenResponse response = new AccessTokenResponse(resp);
+
+        assertError(response,400, "client1", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+
+    }
+
+    @Test
     public void testMissingClientAssertion() throws Exception {
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
