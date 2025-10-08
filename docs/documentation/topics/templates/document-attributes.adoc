@@ -71,6 +71,8 @@
 :developerguide_actiontoken_name: Action Token Handler SPI
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_handler_spi
 :developerguide_jsproviders_name: JavaScript Providers
+:developerguide_userstoragespi_link: {developerguide_link}#_user-storage-spi
+:developerguide_userstoragespi_name: User Storage SPI
 :developerguide_jsproviders_link: {developerguide_link}#_script_providers
 :importexportguide_link: https://www.keycloak.org/nightly/server/importExport
 :gettingstarted_name: Getting Started Guide
