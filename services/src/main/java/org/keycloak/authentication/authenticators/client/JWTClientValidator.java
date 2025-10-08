@@ -1,6 +1,11 @@
 package org.keycloak.authentication.authenticators.client;
 
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -39,6 +44,11 @@ public class JWTClientValidator extends AbstractJWTClientValidator {
     }
 
     @Override
+    public boolean validate() {
+        return clientAssertionParametersValidation() && super.validate();
+    }
+
+    @Override
     protected boolean isMultipleAudienceAllowed() {
         OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) context.getSession().getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
         OIDCProviderConfig config = loginProtocol.getConfig();
@@ -62,6 +72,46 @@ public class JWTClientValidator extends AbstractJWTClientValidator {
     @Override
     protected String getExpectedSignatureAlgorithm() {
         return OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningAlg();
+    }
+
+    public boolean clientAssertionParametersValidation() {
+        //KEYCLOAK-19461: Needed for quarkus resteasy implementation throws exception when called with mediaType authentication/json in OpenShiftTokenReviewEndpoint
+        if(!isFormDataRequest(context.getHttpRequest())) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type is missing");
+            context.challenge(challengeResponse);
+            return false;
+        }
+
+        var params = context.getHttpRequest().getDecodedFormParameters();
+
+        String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);
+        var clientAssertion = params.getFirst(OAuth2Constants.CLIENT_ASSERTION);
+
+        if (clientAssertionType == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type is missing");
+            context.challenge(challengeResponse);
+            return false;
+        }
+
+        if (!clientAssertionType.equals(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type has value '"
+                                                                                                                                     + clientAssertionType + "' but expected is '" + OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT + "'");
+            context.challenge(challengeResponse);
+            return false;
+        }
+
+        if (clientAssertion == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "client_assertion parameter missing");
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isFormDataRequest(HttpRequest request) {
+        MediaType mediaType = request.getHttpHeaders().getMediaType();
+        return mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
     }
 
 }
