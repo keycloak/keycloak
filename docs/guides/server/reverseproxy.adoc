@@ -233,6 +233,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 | Whether the forwarded certificate is url-encoded or not. In NGINX, this corresponds to the `$ssl_client_cert` and `$ssl_client_escaped_cert` variables. This can also be used for the Traefik PassTlsClientCert middleware, as it sends the client certficate unencoded.
 |===
 
+NOTE: look into <@links.server id="configuration-provider"/>. For example tes parameter like --spi-x509cert-lookup-ngnix-ssl-client-cert=SSL_CLIENT_CERT
 === Configuring the NGINX provider
 
 The NGINX SSL/TLS module does not expose the client certificate chain. {project_name}'s NGINX certificate lookup provider rebuilds it by using the {project_name} truststore.
