@@ -63,7 +63,7 @@ public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
         }
     }
 
-    private static class EndHandler implements ServerRestHandler {
+    public static class EndHandler implements ServerRestHandler {
         @Override
         public void handle(ResteasyReactiveRequestContext requestContext) {
             Span span = (Span) requestContext.getProperty("span");
