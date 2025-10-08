@@ -190,7 +190,7 @@ public class AuthenticationManager {
         }
         if (userSession.getNote(Details.IDENTITY_PROVIDER) != null) {
             String brokerAlias = userSession.getNote(Details.IDENTITY_PROVIDER);
-            if (realm.getFlowByAlias(brokerAlias) == null) {
+            if (realm.getIdentityProviderByAlias(brokerAlias) == null) {
                 // associated idp was removed, invalidate the session.
                 return false;
             }
