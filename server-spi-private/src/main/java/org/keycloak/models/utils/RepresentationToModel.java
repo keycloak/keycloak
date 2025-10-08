@@ -228,6 +228,9 @@ public class RepresentationToModel {
                 }
             }
         }
+        if (group.getDescription() != null) {
+            newGroup.setDescription(group.getDescription());
+        }
         if (group.getSubGroups() != null) {
             for (GroupRepresentation subGroup : group.getSubGroups()) {
                 importGroup(realm, newGroup, subGroup);
