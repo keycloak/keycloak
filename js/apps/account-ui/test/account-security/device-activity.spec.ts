@@ -4,7 +4,7 @@ import { createTestBed } from "../support/testbed.ts";
 
 test.describe("Device activity", () => {
   test("signs out of a single device session", async ({ browser }) => {
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
     const context1 = await browser.newContext();
     const context2 = await browser.newContext();
 
@@ -13,13 +13,13 @@ test.describe("Device activity", () => {
       const page2 = await context2.newPage();
 
       // Log in the first session, and verify it is active.
-      await login(page1, realm);
+      await login(page1, testBed.realm);
       await page1.getByTestId("accountSecurity").click();
       await page1.getByTestId("account-security/device-activity").click();
       await expect(page1.getByTestId("row-0")).toContainText("Current session");
 
       // Log in the second session, and verify it is active.
-      await login(page2, realm);
+      await login(page2, testBed.realm);
       await page2.getByTestId("accountSecurity").click();
       await page2.getByTestId("account-security/device-activity").click();
       await expect(page2.getByTestId("row-0")).toContainText("Current session");
@@ -48,7 +48,7 @@ test.describe("Device activity", () => {
   });
 
   test("signs out of all device sessions", async ({ browser }) => {
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
     const context1 = await browser.newContext();
     const context2 = await browser.newContext();
 
@@ -57,8 +57,8 @@ test.describe("Device activity", () => {
       const page2 = await context2.newPage();
 
       // Log in both sessions, then sign out of all devices from the second session.
-      await login(page1, realm);
-      await login(page2, realm);
+      await login(page1, testBed.realm);
+      await login(page2, testBed.realm);
       await page2.getByTestId("accountSecurity").click();
       await page2.getByTestId("account-security/device-activity").click();
       await page2
