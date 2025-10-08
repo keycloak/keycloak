@@ -1001,9 +1001,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        Map<String, String> filteredAttributes = clientSearchableAttributes == null ? attributes :
-                attributes.entrySet().stream().filter(m -> clientSearchableAttributes.contains(m.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> filteredAttributes = attributes;
+        if (clientSearchableAttributes != null) {
+            Set<String> notAllowed = attributes.keySet().stream().filter(attr -> !clientSearchableAttributes.contains(attr)).collect(Collectors.toSet());
+            if (!notAllowed.isEmpty()) {
+                throw new ModelException("Attributes [" + String.join(", ", notAllowed) + "] not allowed for search");
+            }
+            filteredAttributes = attributes.entrySet().stream().filter(e -> clientSearchableAttributes.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
 
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
