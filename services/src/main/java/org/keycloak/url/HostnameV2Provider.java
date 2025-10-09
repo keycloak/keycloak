@@ -53,7 +53,8 @@ public class HostnameV2Provider implements HostnameProvider {
         this.backchannelDynamic = backchannelDynamic;
     }
 
-    private URI getUri(UriInfo originalUriInfo, UrlType type) {
+    @Override
+    public URI getBaseUri(UriInfo originalUriInfo, UrlType type) {
         UriBuilder builder;
 
         switch (type) {
@@ -131,7 +132,7 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public String getScheme(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getScheme();
+        return getBaseUri(originalUriInfo, type).getScheme();
     }
 
     @Override
@@ -141,7 +142,7 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public String getHostname(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getHost();
+        return getBaseUri(originalUriInfo, type).getHost();
     }
 
     @Override
@@ -151,7 +152,7 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public int getPort(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getPort();
+        return getBaseUri(originalUriInfo, type).getPort();
     }
 
     @Override
@@ -161,11 +162,12 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public String getContextPath(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getPath();
+        return getBaseUri(originalUriInfo, type).getPath();
     }
 
     @Override
     public String getContextPath(UriInfo originalUriInfo) {
         return getContextPath(originalUriInfo, defaultUrlType);
     }
+
 }

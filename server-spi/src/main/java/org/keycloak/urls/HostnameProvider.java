@@ -16,6 +16,8 @@
  */
 package org.keycloak.urls;
 
+import java.net.URI;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.provider.Provider;
 
@@ -117,6 +119,21 @@ public interface HostnameProvider extends Provider {
 
     @Override
     default void close() {
+    }
+
+    /**
+     * Returns the base URI for Keycloak with the scheme, host, port, and context-path set for the given UrlType
+     *
+     * @param originalUriInfo the original URI
+     * @param type type of the request
+     * @return the base URI
+     */
+    default URI getBaseUri(UriInfo delegate, UrlType type) {
+        String scheme = getScheme(delegate, type);
+        String hostname = getHostname(delegate, type);
+        int port = getPort(delegate, type);
+        String contextPath = getContextPath(delegate, type);
+        return delegate.getBaseUriBuilder().scheme(scheme).host(hostname).port(port).replacePath(contextPath).build();
     }
 
 }
