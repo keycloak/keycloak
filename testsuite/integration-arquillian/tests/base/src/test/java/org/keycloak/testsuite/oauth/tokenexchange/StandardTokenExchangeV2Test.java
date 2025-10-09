@@ -75,6 +75,7 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.oauth.TokenExchangeRequest;
+import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -1202,12 +1203,27 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         exchangedToken = verifier.parse().getToken();
         assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
         assertEquals("requester-client", exchangedToken.getIssuedFor());
+
+        // test revocation endpoint
+        isAccessTokenEnabled(response.getAccessToken(), "requester-client", "secret");
+        TokenRevocationResponse revocationResponse = oauth.client("requester-client", "secret").doTokenRevoke(response.getAccessToken());
+        assertNull(revocationResponse.getError());
+        events.expect(EventType.REVOKE_GRANT)
+                .client("requester-client")
+                .user(alice)
+                .assertEvent();
+        isAccessTokenDisabled(response.getAccessToken(), "requester-client", "secret");
     }
 
     private void isAccessTokenEnabled(String accessToken, String clientId, String secret) throws IOException {
         oauth.client(clientId, secret);
         TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessToken).asTokenMetadata();
         assertTrue(rep.isActive());
+        events.expect(EventType.INTROSPECT_TOKEN)
+                .user(AssertEvents.isUUID())
+                .session(AssertEvents.isUUID())
+                .client(clientId)
+                .assertEvent();
     }
 
     private void isAccessTokenDisabled(String accessTokenString, String clientId, String secret) throws IOException {
