@@ -625,7 +625,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     String clientSecret = vaultStringSecret.get().orElse(getConfig().getClientSecret());
                     String header = org.keycloak.util.BasicAuthHelper.RFC6749.createHeader(getConfig().getClientId(), clientSecret);
                     return tokenRequest.header(HttpHeaders.AUTHORIZATION, header);
-                                    }
+                }
                 return tokenRequest
                         .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                         .param(OAUTH2_PARAMETER_CLIENT_SECRET, vaultStringSecret.get().orElse(getConfig().getClientSecret()));
