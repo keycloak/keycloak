@@ -28,8 +28,8 @@ test.describe("OID4VCI Client Scope Functionality", () => {
   test("should display OID4VCI fields when protocol is selected", async ({
     page,
   }) => {
-    const realm = await createTestBed();
-    await login(page, { to: toClientScopes({ realm }) });
+    await using testBed = await createTestBed();
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
 
     await goToClientScopes(page);
     await page.waitForLoadState("domcontentloaded");
@@ -68,10 +68,10 @@ test.describe("OID4VCI Client Scope Functionality", () => {
   });
 
   test("should save and persist OID4VCI field values", async ({ page }) => {
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
     const testClientScopeName = `oid4vci-test-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-    await login(page, { to: toClientScopes({ realm }) });
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
 
     await goToClientScopes(page);
     await page.waitForLoadState("domcontentloaded");
@@ -108,7 +108,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     const currentUrl = page.url();
     const baseUrl = currentUrl.split("#")[0];
-    await page.goto(`${baseUrl}#${toClientScopes({ realm }).pathname!}`);
+    await page.goto(
+      `${baseUrl}#${toClientScopes({ realm: testBed.realm }).pathname!}`,
+    );
     await page.waitForLoadState("domcontentloaded");
 
     await page
@@ -138,9 +140,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
   test("should show OID4VCI protocol when global feature is enabled", async ({
     page,
   }) => {
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
 
-    await login(page, { to: toClientScopes({ realm }) });
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
 
     await goToClientScopes(page);
     await page.waitForLoadState("domcontentloaded");
@@ -160,8 +162,8 @@ test.describe("OID4VCI Client Scope Functionality", () => {
   test("should not display OID4VCI fields when protocol is not OID4VCI", async ({
     page,
   }) => {
-    const realm = await createTestBed();
-    await login(page, { to: toClientScopes({ realm }) });
+    await using testBed = await createTestBed();
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
 
     await goToClientScopes(page);
     await page.waitForLoadState("domcontentloaded");
@@ -198,8 +200,8 @@ test.describe("OID4VCI Client Scope Functionality", () => {
   test("should handle OID4VCI protocol selection correctly", async ({
     page,
   }) => {
-    const realm = await createTestBed();
-    await login(page, { to: toClientScopes({ realm }) });
+    await using testBed = await createTestBed();
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
 
     await goToClientScopes(page);
     await page.waitForLoadState("domcontentloaded");
