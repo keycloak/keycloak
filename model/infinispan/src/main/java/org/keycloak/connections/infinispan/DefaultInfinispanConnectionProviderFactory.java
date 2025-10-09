@@ -33,6 +33,7 @@ import org.infinispan.commons.configuration.io.ConfigurationWriter;
 import org.infinispan.commons.io.StringBuilderWriter;
 import org.infinispan.commons.util.Version;
 import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.health.CacheHealth;
@@ -42,7 +43,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.config.CachingOptions;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
 import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -193,11 +193,20 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             logger.debugf("Infinispan configuration:\n%s", sw);
         }
 
-        var cm = new DefaultCacheManager(holder, true);
+        var cm = getDefaultCacheManager(session, holder);
         cm.getCache(KEYS_CACHE_NAME, true);
         cm.getCache(CRL_CACHE_NAME, true);
 
         logger.debugv("Using container managed Infinispan cache container, lookup={0}", cm);
+        return cm;
+    }
+
+    private static DefaultCacheManager getDefaultCacheManager(KeycloakSession session, ConfigurationBuilderHolder holder) {
+        // This disables the JTA transaction context to avoid binding all JDBC_PING2 interactions to the current transaction
+        DefaultCacheManager[] _cm = new DefaultCacheManager[1];
+        KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () ->
+                _cm[0] = new DefaultCacheManager(holder, true));
+        var cm = _cm[0];
         return cm;
     }
 
