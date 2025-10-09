@@ -8,7 +8,7 @@ To enable load shedding, limit the number of queued requests.
 ----
 spec:
   additionalOptions:
-include::../examples/generated/keycloak.yaml[tag=keycloak-queue-size]
+include::../../examples/generated/keycloak.yaml[tag=keycloak-queue-size]
 ----
 
 All exceeding requests are served with an HTTP 503.
