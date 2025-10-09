@@ -12,6 +12,12 @@ The `log-console-color` previously defaulted to `false`, but it will now instead
 
 You may still explicitly disable color support by setting the option to `false`.
 
+=== User sessions created with "Remember Me" are no longer valid if "Remember Me" is disabled for the realm
+
+When the "Remember Me" option is disabled in the realm settings, all user sessions previously created with the "Remember Me" flag are now considered invalid.
+Users will be required to log in again, and any associated refresh tokens will no longer be usable.
+User sessions created without selecting "Remember Me" are not affected.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
