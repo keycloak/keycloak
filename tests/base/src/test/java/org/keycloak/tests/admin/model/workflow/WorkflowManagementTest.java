@@ -413,7 +413,7 @@ public class WorkflowManagementTest {
                 });
 
                 // assign the workflow to the eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
-                workflowsManager.scheduleAllEligibleResources(workflow);
+                workflowsManager.bindToAllEligibleResources(workflow);
 
                 // check workflow was correctly assigned to the old users, not affecting users already associated with the workflow.
                 scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
