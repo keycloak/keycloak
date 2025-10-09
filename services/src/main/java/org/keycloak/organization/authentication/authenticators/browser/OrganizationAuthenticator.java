@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -160,6 +161,8 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         // make sure the organization is set to the session to make it available to templates
         session.getContext().setOrganization(organization);
 
+        updateUserSelectOrganizationScope(authSession, organization.getAlias());
+
         if (isMembershipRequired(context, organization, user)) {
             return;
         }
@@ -184,6 +187,20 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             context.success();
         } else {
             attempted(context, username);
+        }
+    }
+
+    private void updateUserSelectOrganizationScope(AuthenticationSessionModel authSession, String orgId) {
+        if (!OrganizationScope.ANY.equals(OrganizationScope.valueOfScope(session))) {
+            // there was no user selection, nothing to do
+            return;
+        }
+
+        String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
+        if (scopeParam != null && scopeParam.contains("organization")) {
+            // Transform generic "organization" to specific "organization:orgId"
+            String transformedScope = scopeParam.replaceAll("\\borganization(?!:)\\b", "organization:" + orgId);
+            authSession.setClientNote(OAuth2Constants.SCOPE, transformedScope);
         }
     }
 
