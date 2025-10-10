@@ -107,10 +107,15 @@
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country" value="${(register.formData['user.attributes.country']!'')}"/>
                 </div>
             </div>
+            <#assign captchaProviderId = captchaProviderId!recaptchaProviderId!"" />
             <#if recaptchaRequired??>
             <div class="form-group">
                 <div class="${properties.kcInputWrapperClass!}">
-                    <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                    <#if captchaProviderId == "registration-hcaptcha-action">
+                        <div class="h-captcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                    <#else>
+                        <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                    </#if>
                 </div>
             </div>
             </#if>
