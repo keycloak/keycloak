@@ -34,7 +34,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 
 type AttributeForm = {
   workflowJSON?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export default function WorkflowDetailForm() {
@@ -71,10 +71,6 @@ export default function WorkflowDetailForm() {
 
       setWorkflowJSON(JSON.stringify(workflow, null, 2));
       setEnabled(workflow?.enabled ?? true);
-
-      form.reset({
-        workflowJSON: JSON.stringify(workflow, null, 2),
-      });
     },
     [mode, id],
   );
@@ -117,9 +113,6 @@ export default function WorkflowDetailForm() {
 
       setWorkflowJSON(JSON.stringify(json, null, 2));
       setEnabled(!enabled);
-      form.reset({
-        workflowJSON: JSON.stringify(json, null, 2),
-      });
       addAlert(
         enabled ? t("workflowDisabled") : t("workflowEnabled"),
         AlertVariant.success,
@@ -174,12 +167,12 @@ export default function WorkflowDetailForm() {
                 name="workflowJSON"
                 defaultValue=""
                 control={control}
-                render={({ field }) => (
+                render={() => (
                   <CodeEditor
                     id="workflowJSON"
                     data-testid="workflowJSON"
                     readOnly={mode === "view"}
-                    value={field.value}
+                    value={workflowJSON}
                     onChange={(value) => setWorkflowJSON(value ?? "")}
                     language="json"
                     height={600}
