@@ -92,4 +92,9 @@ public class TracingOptions {
             .defaultValue(true)
             .build();
 
+    public static final Option<List<String>> TRACING_HEADERS = OptionBuilder.listOptionBuilder("tracing-headers", String.class)
+            .category(OptionCategory.TRACING)
+            .description("OpenTelemetry headers that will be part of the exporter request (mainly useful for providing Authorization header). Values in format 'key1=val1,key2=val2'.")
+            .build();
+
 }

@@ -634,6 +634,10 @@ Tracing:
 --tracing-endpoint <url>
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
                        Available only when Tracing is enabled.
+--tracing-headers <headers>
+                     OpenTelemetry headers that will be part of the exporter request (mainly useful
+                       for providing Authorization header). Values in format 'key1=val1,key2=val2'.
+                       Available only when Tracing is enabled.
 --tracing-infinispan-enabled <true|false>
                      Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
                        Available only when tracing and embedded Infinispan is enabled.

@@ -63,6 +63,7 @@ public class KeycloakDistConfigurator {
      */
     @SuppressWarnings("rawtypes")
     private final Map<String, org.keycloak.operator.controllers.KeycloakDistConfigurator.OptionMapper.Mapper> firstClassConfigOptions = new LinkedHashMap<>();
+    private final List<EnvVar> helperEnvVars = new ArrayList<>();
 
     public KeycloakDistConfigurator() {
         // register the configuration mappers for the various parts of the keycloak cr
@@ -134,7 +135,23 @@ public class KeycloakDistConfigurator {
                 .mapOption("tracing-sampler-type", TracingSpec::getSamplerType)
                 .mapOption("tracing-sampler-ratio", TracingSpec::getSamplerRatio)
                 .mapOption("tracing-compression", TracingSpec::getCompression)
-                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString);
+                .mapOption("tracing-resource-attributes", TracingSpec::getResourceAttributesString)
+                .mapOption("tracing-headers", this::getTracingHeaders);
+    }
+
+    private String getTracingHeaders(TracingSpec tracingSpec) {
+        return tracingSpec.getHeaders().stream()
+                .map(header -> {
+                    var containsSecret = header.getSecret() != null;
+                    if (containsSecret) {
+                        String envName = "TRACING_HEADER_" + getKeycloakOptionEnvVarName(header.getName());
+                        helperEnvVars.add(KeycloakDeploymentDependentResource.toEnvVar(envName, header));
+                        return "%s=${%s}".formatted(header.getName(), envName);
+                    } else {
+                        return header.getName() + "=" + header.getValue();
+                    }
+                })
+                .collect(Collectors.joining(","));
     }
 
     void configureTransactions() {
@@ -274,7 +291,11 @@ public class KeycloakDistConfigurator {
     @SuppressWarnings("unchecked")
     public List<EnvVar> configureDistOptions(Keycloak keycloakCR) {
         List<EnvVar> result = new ArrayList<>();
-        firstClassConfigOptions.entrySet().forEach(e -> e.getValue().map(e.getKey(), keycloakCR, result));
+        firstClassConfigOptions.forEach((key, value) -> value.map(key, keycloakCR, result));
         return result;
+    }
+
+    public List<EnvVar> getHelperEnvVars(){
+        return helperEnvVars;
     }
 }

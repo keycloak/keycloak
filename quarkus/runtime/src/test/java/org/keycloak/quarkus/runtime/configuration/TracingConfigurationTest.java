@@ -233,4 +233,22 @@ public class TracingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.log." + loggerType.name() + ".format", "someFormat"
         ));
     }
+
+    @Test
+    public void headers() {
+        putEnvVars(Map.of(
+                "KC_TRACING_ENABLED", "true",
+                "KC_TRACING_HEADERS", "Authorization=Bearer adslkfjoiweqru43843kjcxzv=,Host=localhost:8080"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "tracing-enabled", "true",
+                "tracing-headers", "Authorization=Bearer adslkfjoiweqru43843kjcxzv=,Host=localhost:8080"
+        ));
+
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers","Authorization=Bearer adslkfjoiweqru43843kjcxzv=,Host=localhost:8080");
+    }
+
 }
