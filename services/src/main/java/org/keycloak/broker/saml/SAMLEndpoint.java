@@ -37,7 +37,9 @@ import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -48,6 +50,7 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
@@ -537,7 +540,9 @@ public class SAMLEndpoint {
                 }
                 session.getContext().setAuthenticationSession(authSession);
 
-                if (! isSuccessfulSamlResponse(responseType)) {
+                if (isNoPassiveSamlResponse(responseType)) {
+                    return callback.error(config, OAuthErrorException.LOGIN_REQUIRED);
+                } else if (!isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null || responseType.getStatus().getStatusMessage() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
                     if (Constants.AUTHENTICATION_EXPIRED_MESSAGE.equals(statusMessage)) {
                         return callback.retryLogin(provider, authSession);
@@ -746,15 +751,29 @@ public class SAMLEndpoint {
             return authSession;
         }
 
-
-        private boolean isSuccessfulSamlResponse(ResponseType responseType) {
-            return responseType != null
-              && responseType.getStatus() != null
-              && responseType.getStatus().getStatusCode() != null
-              && responseType.getStatus().getStatusCode().getValue() != null
-              && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
+        private StatusCodeType getSamlResponseStatusCode(ResponseType responseType) {
+            return Optional.ofNullable(responseType)
+                    .map(StatusResponseType::getStatus)
+                    .map(StatusType::getStatusCode)
+                    .orElse(null);
         }
 
+        private boolean isSuccessfulSamlResponse(ResponseType responseType) {
+            var statusCode = Optional.ofNullable(getSamlResponseStatusCode(responseType))
+                    .map(StatusCodeType::getValue)
+                    .map(URI::toString)
+                    .orElse(null);
+            return JBossSAMLURIConstants.STATUS_SUCCESS.get().equals(statusCode);
+        }
+
+        private boolean isNoPassiveSamlResponse(ResponseType responseType) {
+            var secondaryStatusCode = Optional.ofNullable(getSamlResponseStatusCode(responseType))
+                    .map(StatusCodeType::getStatusCode)
+                    .map(StatusCodeType::getValue)
+                    .map(URI::toString)
+                    .orElse(null);
+            return JBossSAMLURIConstants.STATUS_NO_PASSIVE.get().equals(secondaryStatusCode);
+        }
 
         public Response handleSamlResponse(String samlResponse, String relayState, String clientId) {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
