@@ -154,6 +154,9 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public boolean hasOneAdminRole(RealmModel realm, String... adminRoles) {
+        if (adminsRealm == null) {
+            return false;
+        }
         String clientId;
         RealmManager realmManager = new RealmManager(session);
         if (RealmManager.isAdministrationRealm(adminsRealm)) {
@@ -367,7 +370,9 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     @Override
     public boolean isAdmin() {
-        if (RealmManager.isAdministrationRealm(adminsRealm)) {
+        if (adminsRealm == null) {
+            return false;
+        } else if (RealmManager.isAdministrationRealm(adminsRealm)) {
             if (identity.hasRealmRole(AdminRoles.ADMIN) || identity.hasRealmRole(AdminRoles.CREATE_REALM)) {
                 return true;
             }
