@@ -493,11 +493,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                 ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
                 if (brokerClient == null) {
-                    return corsResponse(forbidden("Realm has not migrated to support the broker token exchange service"), clientModel);
+                    forbidden("Realm has not migrated to support the broker token exchange service");
 
                 }
                 if (!canReadBrokerToken(token)) {
-                    return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
+                    forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerAlias + "].");
 
                 }
 
@@ -508,11 +508,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, authResult.getUser(), providerAlias);
 
                     if (identity == null) {
-                        return corsResponse(badRequest("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerAlias + "]."), clientModel);
+                        badRequest("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerAlias + "].");
                     }
 
                     if (identity.getToken() == null) {
-                        return corsResponse(notFound("No token stored for user [" + authResult.getUser().getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
+                        notFound("No token stored for user [" + authResult.getUser().getId() + "] with associated identity provider [" + providerAlias + "].");
                     }
 
                     String oldToken = identity.getToken();
@@ -533,7 +533,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     }
                 }
 
-                return corsResponse(badRequest("Identity Provider [" + providerAlias + "] does not support this operation."), clientModel);
+                badRequest("Identity Provider [" + providerAlias + "] does not support this operation.");
             }
 
             return badRequest("Invalid token.");
