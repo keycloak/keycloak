@@ -368,7 +368,7 @@ to be your `wait_timeout` minus a few minutes. Failure to correctly configure th
 
 {project_name} allows you to specify additional datasources in case you need to access another database from your extensions. This is useful when using the main {project_name} datasource is not a viable option for storing custom data, like users.
 
-You can find more details on how to connect to your own users database in the link:{server_developer_guide}#_user-storage-spi[User Storage SPI] documentation.
+You can find more details on how to connect to your own users database in the link:{developerguide_userstoragespi_link}[{developerguide_userstoragespi_name}] documentation.
 
 Defining multiple datasources works like defining a single datasource, with one important change - you have to specify a name for each datasource as part of the config option name.
 
