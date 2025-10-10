@@ -52,11 +52,11 @@ To authenticate against the Admin REST API using a `client_id` and a `client_sec
 . Make sure the client is configured as follows:
 
 * `client_id` belongs to the realm *master*
-* `client_id` has `Client authentication` on
-* `client_id` has the `Service accounts roles` option enabled
-* Assign `client_id` the `admin` role in the "Service accounts roles" tab.
+* `client_id` has *Client authentication* set to *On*
+* `client_id` has the *Service account roles* option enabled
+* Assign `client_id` the `admin` realm role in the *Service accounts roles* tab.
 
-. Use the `Client Secret` from the "Credentials" tab to verify the service account access:
+. Use the *Client Secret* from the *Credentials* tab to verify the service account access:
 
 [source,bash,subs="attributes+"]
 ----
