@@ -622,4 +622,35 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         infoPage.clickBackToApplicationLink();
         appPage.assertCurrent();
     }
+
+    @Test
+    public void testEmailVerificationCancelledByAdmin() throws Exception {
+        configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+        updateEmailPage.assertCurrent();
+        updateEmailPage.changeEmail("new@localhost");
+
+        events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+        
+        // Verify EMAIL_PENDING attribute is set
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        Map<String, List<String>> attributes = user.getAttributes();
+        assertEquals("EMAIL_PENDING should contain new email", "new@localhost", attributes.get(UserModel.EMAIL_PENDING).get(0));
+        assertTrue("User should have UPDATE_EMAIL required action", user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
+
+        String confirmationLink = fetchEmailConfirmationLink("new@localhost");
+        assertNotNull("Should have received verification email", confirmationLink);
+        
+        // Admin sets EMAIL_PENDING to empty string (simulating admin UI removal)
+        user.singleAttribute(UserModel.EMAIL_PENDING, "");
+        testRealm().users().get(user.getId()).update(user);
+
+        driver.navigate().to(confirmationLink);
+
+        errorPage.assertCurrent();
+        assertEquals("This email verification has been cancelled by an administrator.", errorPage.getError());
+    }
 }

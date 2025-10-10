@@ -8,6 +8,7 @@ import {
   SwitchControl,
   TextControl,
   UserProfileFields,
+  beerify,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -21,7 +22,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { TFunction } from "i18next";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -150,10 +151,45 @@ export const UserForm = ({
       ?.map((a) => a.readOnly)
       .reduce((p, c) => p && c, true);
 
+  const validateAndSave = useCallback(
+    (formData: UserFormFields) => {
+      const originalEmailPendingValue =
+        user?.attributes?.["kc.email.pending"]?.[0];
+
+      if (
+        formData.attributes &&
+        !Array.isArray(formData.attributes) &&
+        originalEmailPendingValue
+      ) {
+        const emailPendingValue = (
+          formData.attributes as Record<string, string | string[]>
+        )[beerify("kc.email.pending")];
+        const currentValue = Array.isArray(emailPendingValue)
+          ? emailPendingValue[0]
+          : emailPendingValue;
+
+        if (currentValue === "") {
+          // Field was cleared - keep as empty string to clear the value
+          (formData.attributes as Record<string, string | string[]>)[
+            beerify("kc.email.pending")
+          ] = "";
+        } else if (currentValue && currentValue !== originalEmailPendingValue) {
+          // Field was modified (not cleared) - revert to original value
+          (formData.attributes as Record<string, string | string[]>)[
+            beerify("kc.email.pending")
+          ] = originalEmailPendingValue;
+        }
+      }
+
+      save(formData);
+    },
+    [save, user],
+  );
+
   return (
     <FormAccess
       isHorizontal
-      onSubmit={handleSubmit(save)}
+      onSubmit={handleSubmit(validateAndSave)}
       role="query-users"
       fineGrainedAccess={user?.access?.manage}
       className="pf-v5-u-mt-lg"
@@ -242,7 +278,20 @@ export const UserForm = ({
             />
             <UserProfileFields
               form={form}
-              userProfileMetadata={userProfileMetadata}
+              userProfileMetadata={{
+                ...userProfileMetadata,
+                attributes: userProfileMetadata.attributes?.map((attr) =>
+                  attr.name === "kc.email.pending"
+                    ? {
+                        ...attr,
+                        annotations: {
+                          ...attr.annotations,
+                          inputHelperTextBefore: "emailPendingVerificationHelp",
+                        },
+                      }
+                    : attr,
+                ),
+              }}
               hideReadOnly={!user}
               supportedLocales={realm.supportedLocales || []}
               currentLocale={whoAmI.locale}
