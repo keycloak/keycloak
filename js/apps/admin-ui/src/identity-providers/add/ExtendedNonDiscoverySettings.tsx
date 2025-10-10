@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
@@ -31,6 +32,9 @@ export const ExtendedNonDiscoverySettings = () => {
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
+
+  const { pathname } = useLocation();
+  const isEntraId = pathname.includes("entraid-oidc");
 
   return (
     <ExpandableSection
@@ -51,6 +55,12 @@ export const ExtendedNonDiscoverySettings = () => {
           label="sendIdTokenOnLogout"
           defaultValue={"true"}
         />
+        {isEntraId && (
+          <SwitchField
+            field="config.sendLogoutHintOnLogout"
+            label="sendLogoutHintOnLogout"
+          />
+        )}
         <SwitchField
           field="config.sendClientIdOnLogout"
           label="sendClientIdOnLogout"
