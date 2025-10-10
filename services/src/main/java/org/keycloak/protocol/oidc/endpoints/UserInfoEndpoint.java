@@ -307,7 +307,7 @@ public class UserInfoEndpoint {
             event.detail(Details.SIGNATURE_ALGORITHM, cfg.getUserInfoSignedResponseAlg());
         } else if (cfg.isUserInfoEncryptionRequired()) {
             try {
-                responseBuilder = Response.ok(jweFromContent(JsonSerialization.writeValueAsString(claims), null))
+                responseBuilder = Response.ok(jweFromContent(JsonSerialization.writeValueAsString(claims), "JWT"))
                         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
             } catch (RuntimeException | IOException ex) {
                 throw error.status(Response.Status.INTERNAL_SERVER_ERROR).build();
