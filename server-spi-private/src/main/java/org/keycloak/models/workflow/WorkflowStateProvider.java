@@ -17,9 +17,9 @@
 
 package org.keycloak.models.workflow;
 
-import org.keycloak.provider.Provider;
-
 import java.util.List;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Interface serves as state check for workflow actions.
