@@ -9,8 +9,8 @@ import { login } from "../utils/login.js";
 test("OID4VCI section visibility and jump link in Tokens tab", async ({
   page,
 }) => {
-  const realm = await createTestBed();
-  await login(page, { to: toRealmSettings({ realm }) });
+  await using testBed = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
   await tokensTab.click();
@@ -28,8 +28,8 @@ test("OID4VCI section visibility and jump link in Tokens tab", async ({
 test("should render fields and save values with correct attribute keys", async ({
   page,
 }) => {
-  const realm = await createTestBed();
-  await login(page, { to: toRealmSettings({ realm }) });
+  await using testBed = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
   await tokensTab.click();
@@ -54,7 +54,7 @@ test("should render fields and save values with correct attribute keys", async (
     page.getByText("Realm successfully updated").first(),
   ).toBeVisible();
 
-  const realmData = await adminClient.getRealm(realm);
+  const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData).toBeDefined();
   // TimeSelector converts values based on selected unit (60 minutes = 3600 seconds, 120 seconds = 120 seconds)
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
@@ -62,8 +62,8 @@ test("should render fields and save values with correct attribute keys", async (
 });
 
 test("should persist values after page refresh", async ({ page }) => {
-  const realm = await createTestBed();
-  await login(page, { to: toRealmSettings({ realm }) });
+  await using testBed = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
   await tokensTab.click();
@@ -89,12 +89,15 @@ test("should persist values after page refresh", async ({ page }) => {
   await page.reload();
 
   // Navigate back to realm settings using the same pattern as login
-  const url = new URL(generatePath(ROOT_PATH, { realm }), SERVER_URL);
-  url.hash = toRealmSettings({ realm }).pathname!;
+  const url = new URL(
+    generatePath(ROOT_PATH, { realm: testBed.realm }),
+    SERVER_URL,
+  );
+  url.hash = toRealmSettings({ realm: testBed.realm }).pathname!;
   await page.goto(url.toString());
 
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
-  const realmData = await adminClient.getRealm(realm);
+  const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
   expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
 
@@ -111,8 +114,8 @@ test("should persist values after page refresh", async ({ page }) => {
 });
 
 test("should validate form fields and save valid values", async ({ page }) => {
-  const realm = await createTestBed();
-  await login(page, { to: toRealmSettings({ realm }) });
+  await using testBed = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
   await tokensTab.click();
@@ -150,7 +153,7 @@ test("should validate form fields and save valid values", async ({ page }) => {
   ).toBeVisible();
 
   // Verify the values were saved correctly
-  const realmData = await adminClient.getRealm(realm);
+  const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
   expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
 
@@ -169,8 +172,8 @@ test("should validate form fields and save valid values", async ({ page }) => {
 test("should show validation error for values below minimum threshold", async ({
   page,
 }) => {
-  const realm = await createTestBed();
-  await login(page, { to: toRealmSettings({ realm }) });
+  await using testBed = await createTestBed();
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
   await tokensTab.click();
