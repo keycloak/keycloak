@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -88,6 +87,9 @@ class FineGrainedAdminPermissionEvaluator {
      */
     boolean hasPermission(String modelId, String resourceType, EvaluationContext context, String scopeName, Supplier<Boolean> defaultValue) {
         if (!root.isAdminSameRealm()) {
+            return false;
+        }
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(root.realm)) {
             return false;
         }
 
