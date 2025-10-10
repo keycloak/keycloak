@@ -57,8 +57,6 @@ public interface WorkflowStateProvider extends Provider {
 
     List<ScheduledStep> getScheduledStepsByWorkflow(String workflowId);
 
-    List<ScheduledStep> getScheduledStepsByStep(String stepId);
-
     default List<ScheduledStep> getScheduledStepsByWorkflow(Workflow workflow) {
         if (workflow == null) {
             return List.of();

@@ -39,18 +39,15 @@ public class DeleteUserStepProvider implements WorkflowStepProvider {
     }
 
     @Override
-    public void run(List<String> ids) {
+    public void run(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
-        for (String id : ids) {
-            UserModel user = session.users().getUserById(realm, id);
-
-            if (user == null) {
-                continue;
-            }
-
-            log.debugv("Deleting user {0} ({1})", user.getUsername(), user.getId());
-            session.users().removeUser(realm, user);
+        if (user == null) {
+            return;
         }
+
+        log.debugv("Deleting user {0} ({1})", user.getUsername(), user.getId());
+        session.users().removeUser(realm, user);
     }
 }

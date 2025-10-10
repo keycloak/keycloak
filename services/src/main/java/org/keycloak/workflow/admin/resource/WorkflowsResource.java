@@ -1,5 +1,9 @@
 package org.keycloak.workflow.admin.resource;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -18,9 +22,6 @@ import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.services.ErrorResponse;
-
-import java.util.List;
-import java.util.Optional;
 
 public class WorkflowsResource {
 
@@ -69,7 +70,7 @@ public class WorkflowsResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<WorkflowRepresentation> list() {
-        return manager.getWorkflows().stream().map(manager::toRepresentation).toList();
+    public Stream<WorkflowRepresentation> list() {
+        return manager.getWorkflows().map(manager::toRepresentation);
     }
 }
