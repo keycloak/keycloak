@@ -67,7 +67,7 @@ public class HostnameV2Provider implements HostnameProvider {
                 builder.host("localhost");
                 break;
             case BACKEND:
-                builder = backchannelDynamic ? originalUriInfo.getBaseUriBuilder() : getFrontUriBuilder(originalUriInfo);
+                builder = backchannelDynamic && !isFrontendRequest(originalUriInfo) ? originalUriInfo.getBaseUriBuilder() : getFrontUriBuilder(originalUriInfo);
                 break;
             case FRONTEND:
                 builder = getFrontUriBuilder(originalUriInfo);
@@ -76,13 +76,29 @@ public class HostnameV2Provider implements HostnameProvider {
                 throw new IllegalArgumentException("Unknown URL type");
         }
 
+        URI uri = builder.build();
         // sanitize ports
-        URI uriPeak = builder.build();
-        if ((uriPeak.getScheme().equals("http") && uriPeak.getPort() == 80) || (uriPeak.getScheme().equals("https") && uriPeak.getPort() == 443)) {
-            builder.port(-1);
+        int normalizedPort = normalizedPort(uri);
+        if (normalizedPort != uri.getPort()) {
+            builder.port(normalizedPort);
+            uri = builder.build();
         }
 
-        return builder.build();
+        return uri;
+    }
+
+    private int normalizedPort(URI uri) {
+        if ((uri.getScheme().equals("http") && uri.getPort() == 80) || (uri.getScheme().equals("https") && uri.getPort() == 443)) {
+            return -1;
+        }
+        return uri.getPort();
+    }
+
+    private boolean isFrontendRequest(UriInfo originalUriInfo) {
+        URI frontend = getFrontUriBuilder(originalUriInfo).build();
+        return frontend.getScheme().equals(originalUriInfo.getBaseUri().getScheme()) &&
+                frontend.getHost().equals(originalUriInfo.getBaseUri().getHost()) &&
+                frontend.getPort() == normalizedPort(originalUriInfo.getBaseUri());
     }
 
     private UriBuilder getFrontUriBuilder(UriInfo originalUriInfo) {
