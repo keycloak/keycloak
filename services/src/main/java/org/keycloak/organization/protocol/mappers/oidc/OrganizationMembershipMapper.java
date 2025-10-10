@@ -111,20 +111,25 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        String orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-        Stream<OrganizationModel> organizations;
+        // First, try to resolve from requested scopes (respects token refresh)
+        List<OrganizationModel> organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx).toList();
 
-        if (orgId == null) {
-            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx);
-        } else {
-            organizations = Stream.of(session.getProvider(OrganizationProvider.class).getById(orgId));
+        // If no organizations found from scopes, fall back to stored session note
+        if (organizations.isEmpty()) {
+            String orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+            if (orgId != null) {
+                OrganizationModel org = session.getProvider(OrganizationProvider.class).getById(orgId);
+                if (org != null) {
+                    organizations = List.of(org);
+                }
+            }
         }
 
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
         ProtocolMapperModel effectiveModel = getEffectiveModel(session, realm, model);
         UserModel user = userSession.getUser();
-        Object claim = resolveValue(effectiveModel, user, organizations.toList());
+        Object claim = resolveValue(effectiveModel, user, organizations);
 
         if (claim == null) {
             return;

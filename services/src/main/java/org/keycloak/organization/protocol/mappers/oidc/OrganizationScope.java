@@ -67,7 +67,22 @@ public enum OrganizationScope {
                 return getProvider(session).getByMember(user);
             },
             (organizations) -> true,
-            (session, current, previous) -> valueOfScope(session, current) == null ? previous : current),
+            (session, current, previous) -> {
+                OrganizationScope currentScope = valueOfScope(session, current);
+                
+                // Only handle organization scopes, ignore non-organization scopes
+                if (currentScope == null) {
+                    return null;
+                }
+                
+                // Reject ANY scope requests - they require user selection which isn't available during refresh
+                if (currentScope != null && currentScope.name().equals("ANY")) {
+                    return null;
+                }
+                
+                // Allow SINGLE (narrowing) or ALL (maintaining) scopes
+                return current;
+            }),
 
     /**
      * Maps to a specific organization the user is a member. When this scope is requested by clients, only the
@@ -98,7 +113,16 @@ public enum OrganizationScope {
                     return current;
                 }
 
-                if (OrganizationScope.ALL.equals(valueOfScope(session, current))) {
+                OrganizationScope currentScope = valueOfScope(session, current);
+                
+                if (OrganizationScope.ALL.equals(currentScope)) {
+                    return previous;
+                }
+
+                // Handle the case where current is ANY scope ("organization") and previous is a SINGLE scope ("organization:foo")
+                // When the current scope is just "organization" and the previous scope has a specific org like "organization:foo",
+                // we should preserve the specific organization from the previous scope
+                if (currentScope != null && currentScope.valueMatcher.test("")) {
                     return previous;
                 }
 
@@ -143,7 +167,9 @@ public enum OrganizationScope {
                     return current;
                 }
 
-                if (OrganizationScope.ALL.equals(valueOfScope(session, current))) {
+                OrganizationScope currentScope = valueOfScope(session, current);
+                
+                if (OrganizationScope.ALL.equals(currentScope)) {
                     return previous;
                 }
 
