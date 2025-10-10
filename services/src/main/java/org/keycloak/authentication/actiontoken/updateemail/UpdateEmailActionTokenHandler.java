@@ -66,6 +66,13 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
 
         String newEmail = token.getNewEmail();
 
+        // Check if EMAIL_PENDING attribute exists and matches the token's new email
+        // This prevents the token from being used if an admin has removed the pending verification
+        String pendingEmail = user.getFirstAttribute(UserModel.EMAIL_PENDING);
+        if (pendingEmail == null || !Objects.equals(pendingEmail, newEmail)) {
+            return forms.setError(Messages.EMAIL_VERIFICATION_CANCELLED).createErrorPage(Response.Status.BAD_REQUEST);
+        }
+
         UserProfile emailUpdateValidationResult;
         try {
             emailUpdateValidationResult = UpdateEmail.validateEmailUpdate(session, user, newEmail);
