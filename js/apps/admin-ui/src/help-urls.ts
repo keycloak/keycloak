@@ -20,5 +20,5 @@ export default {
   guides: `${keycloakHomepageURL}/guides`,
   community: `${keycloakHomepageURL}/community`,
   blog: `${keycloakHomepageURL}/blog`,
-  workflowsUrl: `https://github.com/keycloak/keycloak/issues/39888`,
+  workflowsUrl: `https://www.keycloak.org/2025/10/workflows-experimental-26-4`,
 };
