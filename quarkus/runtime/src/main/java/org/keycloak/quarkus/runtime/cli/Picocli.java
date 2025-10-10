@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static java.lang.String.format;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
@@ -54,6 +53,7 @@ import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
+import org.keycloak.quarkus.runtime.cli.command.HelpAllMixin;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
@@ -167,15 +167,19 @@ public class Picocli {
             }
 
             AbstractCommand currentCommand = null;
+            CommandLine commandLine = null;
             if (currentSpec != null) {
-                CommandLine commandLine = currentSpec.commandLine();
-                addCommandOptions(cliArgs, commandLine);
+                commandLine = currentSpec.commandLine();
 
                 if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
                     currentCommand = ac;
                 }
             }
+            // init the config before adding options to properly sanitize mappers
             initConfig(cliArgs, currentCommand);
+            if (commandLine != null) {
+                addCommandOptions(cliArgs, commandLine);
+            }
         });
     }
 
@@ -235,34 +239,8 @@ public class Picocli {
             return;
         }
 
-        final List<String> ignoredBuildTime = new ArrayList<>();
-
         if (!options.includeBuildTime) {
-            // check for provider changes, or overrides of existing persisted options
-            // we have to ignore things like the profile properties because the commands set them at runtime
-            checkChangesInBuildOptions((key, oldValue, newValue) -> {
-                if (key.startsWith(KC_PROVIDER_FILE_PREFIX)) {
-                    boolean changed = false;
-                    if (newValue == null || oldValue == null) {
-                        changed = true;
-                    } else if (!warnedTimestampChanged && timestampChanged(oldValue, newValue)) {
-                        if (Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false)) {
-                            warnedTimestampChanged = true;
-                            warn(PROVIDER_TIMESTAMP_WARNING);
-                        } else {
-                            changed = true;
-                        }
-                    }
-                    if (changed) {
-                        throw new PropertyException(PROVIDER_TIMESTAMP_ERROR);
-                    }
-                } else if (newValue != null && !isIgnoredPersistedOption(key)
-                        && isUserModifiable(Configuration.getConfigValue(key))
-                        // let quarkus handle this - it's unsupported for direct usage in keycloak
-                        && !key.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
-                    ignoredBuildTime.add(key);
-                }
-            });
+            validateBuildtime();
         }
 
         final boolean disabledMappersInterceptorEnabled = DisabledMappersInterceptor.isEnabled(); // return to the state before the disable
@@ -350,10 +328,7 @@ public class Picocli {
             if (!missingOption.isEmpty()) {
                 throw new PropertyException("The following options are required: \n%s".formatted(String.join("\n", missingOption)));
             }
-            if (!ignoredBuildTime.isEmpty()) {
-                throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
-                        String.join(", ", ignoredBuildTime)));
-            } else if (!ignoredRunTime.isEmpty()) {
+            if (!ignoredRunTime.isEmpty()) {
                 info(format("The following run time options were found, but will be ignored during build time: %s\n",
                         String.join(", ", ignoredRunTime)));
             }
@@ -378,6 +353,40 @@ public class Picocli {
         }
     }
 
+    private void validateBuildtime() {
+        final List<String> ignoredBuildTime = new ArrayList<>();
+        // check for provider changes, or overrides of existing persisted options
+        // we have to ignore things like the profile properties because the commands set them at runtime
+        checkChangesInBuildOptions((key, oldValue, newValue) -> {
+            if (key.startsWith(KC_PROVIDER_FILE_PREFIX)) {
+                boolean changed = false;
+                if (newValue == null || oldValue == null) {
+                    changed = true;
+                } else if (!warnedTimestampChanged && timestampChanged(oldValue, newValue)) {
+                    if (Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false)) {
+                        warnedTimestampChanged = true;
+                        warn(PROVIDER_TIMESTAMP_WARNING);
+                    } else {
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    throw new PropertyException(PROVIDER_TIMESTAMP_ERROR);
+                }
+            } else if (newValue != null && !isIgnoredPersistedOption(key)
+                    && isUserModifiable(Configuration.getConfigValue(key))
+                    // let quarkus handle this - it's unsupported for direct usage in keycloak
+                    && !key.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                ignoredBuildTime.add(key);
+            }
+        });
+
+        if (!ignoredBuildTime.isEmpty()) {
+            throw new PropertyException(format("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: %s\n",
+                    String.join(", ", ignoredBuildTime)));
+        }
+    }
+
     static boolean timestampChanged(String oldValue, String newValue) {
         long longNewValue = Long.valueOf(newValue);
         long longOldValue = Long.valueOf(oldValue);
@@ -398,6 +407,10 @@ public class Picocli {
             final List<String> ignoredRunTime, final Set<String> disabledBuildTime, final Set<String> disabledRunTime,
             final Set<String> deprecatedInUse, final Set<String> missingOption,
             final Set<PropertyMapper<?>> disabledMappers, PropertyMapper<?> mapper, String from) {
+        if (mapper.isBuildTime() && !options.includeBuildTime) {
+            return; // no need to validate as we've already checked for changes in the build time state
+        }
+
         ConfigValue configValue = getUnmappedValue(from);
         String configValueStr = configValue.getValue();
 
@@ -407,17 +420,13 @@ public class Picocli {
         }
 
         if (disabledMappers.contains(mapper)) {
-            if (PropertyMappers.getMapper(from) != null) {
-                return; // we found enabled mapper with the same name
-            }
-
-            // only check build-time for a rebuild, we'll check the runtime later
-            if (configValueStr != null && (!mapper.isRunTime() || !isRebuild())) {
-                if (PropertyMapper.isCliOption(configValue)) {
-                    throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), List.of(mapper.getCliFormat()));
-                } else {
-                    handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
-                }
+            // add an error message if there's a value, no enabled propertymapper, and it's not a cli value
+            // as some cli options may be directly on the command and not
+            // backed by a property mapper - if they are disabled that should have already been handled as
+            // an unrecognized arg
+            if (configValueStr != null && PropertyMappers.getMapper(from) == null
+                    && !PropertyMapper.isCliOption(configValue)) {
+                handleDisabled(mapper.isRunTime() ? disabledRunTime : disabledBuildTime, mapper);
             }
             return;
         }
@@ -938,7 +947,9 @@ public class Picocli {
                         .orElse(Environment.PROD_PROFILE_VALUE));
 
         Environment.setProfile(profile);
-        parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        if (!cliArgs.contains(HelpAllMixin.HELP_ALL_OPTION)) {
+            parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        }
     }
 
 }
