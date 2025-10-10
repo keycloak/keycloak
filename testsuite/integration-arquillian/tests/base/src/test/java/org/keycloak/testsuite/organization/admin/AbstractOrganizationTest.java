@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -180,14 +181,14 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected MemberRepresentation addMember(OrganizationResource organization, String email) {
-        return addMember(organization, null, email, null, null, true);
+        return addMember(organization, null, email, null, null, true,null);
     }
 
     protected MemberRepresentation addMember(OrganizationResource organization, String email, String firstName, String lastName) {
-        return addMember(organization, null, email, firstName, lastName, true);
+        return addMember(organization, null, email, firstName, lastName, true, null);
     }
 
-    protected MemberRepresentation addMember(OrganizationResource organization, String username, String email, String firstName, String lastName, boolean isSetCredentials) {
+    protected MemberRepresentation addMember(OrganizationResource organization, String username, String email, String firstName, String lastName, boolean isSetCredentials, Map<String, List<String>> attributes) {
         UserRepresentation expected = new UserRepresentation();
 
         expected.setEmail(email);
@@ -197,6 +198,10 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         expected.setLastName(lastName);
         if (isSetCredentials) {
             Users.setPasswordFor(expected, memberPassword);
+        }
+
+        if (attributes != null) {
+            expected.setAttributes(attributes);
         }
 
         try (Response response = testRealm().users().create(expected)) {
@@ -215,6 +220,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             assertEquals(userId, actual.getId());
             assertEquals(expected.getUsername(), actual.getUsername());
             assertEquals(expected.getEmail(), actual.getEmail());
+            assertEquals(expected.getAttributes(), actual.getAttributes());
 
             return actual;
         }
