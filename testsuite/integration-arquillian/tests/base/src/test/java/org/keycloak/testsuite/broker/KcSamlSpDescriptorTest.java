@@ -131,6 +131,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getName(), is("email_attr_name"));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getFriendlyName(), is("email_attr_friendlyname"));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getNameFormat(), is(JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.getUri().toString()));
+            Assert.assertNull(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).isIsRequired());            
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName(), notNullValue());
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is("My Attribute Set"));
         }
@@ -171,6 +172,43 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
     }
 
     @Test
+    public void testAttributeConsumingServiceMappersWithIsRequiredInSpMetadataWithServiceName() throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.ATTRIBUTE_CONSUMING_SERVICE_INDEX, "12").setAttribute(SAMLIdentityProviderConfig.ATTRIBUTE_CONSUMING_SERVICE_NAME, "My Attribute Set")
+                .update())
+        {
+            IdentityProviderMapperRepresentation attrMapperEmail = new IdentityProviderMapperRepresentation();
+            attrMapperEmail.setName("attribute-mapper-email");
+            attrMapperEmail.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+            attrMapperEmail.setConfig(ImmutableMap.<String,String>builder()
+                    .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString())
+                    .put(UserAttributeMapper.ATTRIBUTE_NAME, "email_attr_name")
+                    .put(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME, "email_attr_friendlyname")
+                    .put(UserAttributeMapper.USER_ATTRIBUTE, "email")
+                    .put(UserAttributeMapper.IS_REQUIRED, Boolean.TRUE.toString())
+                    .build());
+            attrMapperEmail.setIdentityProviderAlias(bc.getIDPAlias());
+
+            identityProviderResource.addMapper(attrMapperEmail);
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getAttributeConsumingService(), not(empty()));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getIndex(), is(12));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), notNullValue());
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), not(empty()));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getName(), is("email_attr_name"));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getFriendlyName(), is("email_attr_friendlyname"));
+            Assert.assertTrue(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).isIsRequired());
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName(), notNullValue());
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is("My Attribute Set"));
+        }
+    }
+
+    @Test
     public void testAttributeConsumingServiceAttributeRoleMapperInSpMetadataWithServiceName() throws IOException, ParsingException, URISyntaxException {
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
             .setAttribute(SAMLIdentityProviderConfig.ATTRIBUTE_CONSUMING_SERVICE_INDEX, "9").setAttribute(SAMLIdentityProviderConfig.ATTRIBUTE_CONSUMING_SERVICE_NAME, "My Attribute Set")
@@ -197,6 +235,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), not(empty()));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getName(), is("role_attr_name"));
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getFriendlyName(), is("role_attr_friendlyname"));
+            Assert.assertNull(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).isIsRequired());
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName(), notNullValue());
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is("My Attribute Set"));
         }
