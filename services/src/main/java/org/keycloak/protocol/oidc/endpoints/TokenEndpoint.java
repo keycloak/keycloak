@@ -145,7 +145,7 @@ public class TokenEndpoint {
         DPoPUtil.handleDPoPHeader(session, event, cors, clientConfig);
 
         OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes,
-                                                                      formParams, event, cors, tokenManager);
+                formParams, event, cors, tokenManager);
         return grant.process(context);
     }
 

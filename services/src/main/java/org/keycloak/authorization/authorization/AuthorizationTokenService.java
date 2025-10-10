@@ -152,15 +152,16 @@ public class AuthorizationTokenService {
             }
 
             IDToken idToken;
-
+            var tm = org.keycloak.protocol.oidc.TokenManager.resolve(keycloakSession, logger);
             try {
-                idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, subjectToken);
+                idToken = tm.verifyIDTokenSignature(keycloakSession, subjectToken);
             } catch (Exception cause) {
                 fireErrorEvent(request.getEvent(), Errors.INVALID_SIGNATURE, cause);
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid signature", Status.BAD_REQUEST);
             }
 
             KeycloakIdentity identity;
+
 
             try {
                 identity = new KeycloakIdentity(keycloakSession, idToken);

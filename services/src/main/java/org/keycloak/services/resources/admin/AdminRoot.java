@@ -74,7 +74,6 @@ public class AdminRoot {
     protected KeycloakSession session;
 
     public AdminRoot() {
-        this.tokenManager = new TokenManager();
     }
 
     public static UriBuilder adminBaseUrl(UriInfo uriInfo) {
@@ -234,8 +233,9 @@ public class AdminRoot {
             throw new NotFoundException();
         }
 
+        var tm = org.keycloak.protocol.oidc.TokenManager.resolve(session, logger);
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new RealmsAdminResourcePreflight(session, null, tokenManager, request);
+            return new RealmsAdminResourcePreflight(session, null, tm, request);
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
@@ -247,7 +247,7 @@ public class AdminRoot {
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
 
-        return new RealmsAdminResource(session, auth, tokenManager);
+        return new RealmsAdminResource(session, auth, tm);
     }
 
     @Path("{any:.*}")

@@ -342,7 +342,8 @@ public class PolicyEvaluationService {
                     AuthenticationManager.setClientScopesInSession(keycloakSession, authSession);
                     ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
 
-                    accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, clientModel, userModel, userSession, clientSessionCtx);
+                    var tm = org.keycloak.protocol.oidc.TokenManager.resolve(keycloakSession, logger);
+                    accessToken = tm.createClientAccessToken(keycloakSession, realm, clientModel, userModel, userSession, clientSessionCtx);
                 }
             }
         }
@@ -421,3 +422,4 @@ public class PolicyEvaluationService {
         }
     }
 }
+
