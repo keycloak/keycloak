@@ -354,9 +354,21 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         return hasPermission(group, MANAGE_MEMBERS_SCOPE);
     }
 
+    private boolean canMapRolesFromGroup(GroupModel group) {
+        while (group != null) {
+            if (!group.getRoleMappingsStream().allMatch(s -> root.roles().canMapRole(s))) {
+                return false;
+            }
+            group = group.getParent();
+        }
+        return true;
+    }
+
     @Override
     public boolean canManageMembership(GroupModel group) {
-        if (canManage(group)) return true;
+        if (canManage(group) && canMapRolesFromGroup(group)) {
+            return true;
+        }
 
         if (!root.isAdminSameRealm()) {
             return false;

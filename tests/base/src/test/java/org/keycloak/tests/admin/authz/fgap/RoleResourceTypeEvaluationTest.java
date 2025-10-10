@@ -33,6 +33,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,6 +42,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE;
@@ -193,5 +195,31 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
+    }
+
+    @Test
+    public void testMappingCompositeRoleWithAdminRoles() throws Exception {
+        UserRepresentation user = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation realmManagement = realm.admin().clients().findByClientId("realm-management").get(0);
+
+        // create a composite with create-client management role
+        RoleRepresentation compositeRole = new RoleRepresentation();
+        compositeRole.setName("create-client-composite");
+        compositeRole.setClientRole(false);
+        compositeRole.setComposite(true);
+        RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+        composites.setClient(Map.of("realm-management", List.of(AdminRoles.CREATE_CLIENT)));
+        compositeRole.setComposites(composites);
+        realm.admin().roles().create(compositeRole);
+        RoleRepresentation created = realm.admin().roles().get(compositeRole.getName()).toRepresentation();
+        realm.cleanup().add(r -> r.roles().deleteRole(compositeRole.getId()));
+
+        // assign manage users to myadmin
+        RoleRepresentation manageUsersClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().users().get(user.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(manageUsersClientRole));
+        realm.cleanup().add(r -> r.users().get(user.getId()).roles().clientLevel(realmManagement.getId()).remove(List.of(manageUsersClientRole)));
+
+        // check the role with admin roles is not assigned
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).users().get(user.getId()).roles().realmLevel().add(List.of(created)));
     }
 }
