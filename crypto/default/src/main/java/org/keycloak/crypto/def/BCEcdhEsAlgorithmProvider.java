@@ -130,7 +130,7 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
     private static KeyPair generateEcKeyPair(ECParameterSpec params) {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-            SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+            SecureRandom randomGen = new SecureRandom();
             keyGen.initialize(params, randomGen);
             return keyGen.generateKeyPair();
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {

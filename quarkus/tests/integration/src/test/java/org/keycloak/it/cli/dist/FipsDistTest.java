@@ -21,7 +21,7 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.keycloak.crypto.fips.KeycloakFipsSecurityProvider;
+import org.keycloak.crypto.fips.FIPS1402Provider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -44,7 +44,7 @@ public class FipsDistTest {
             cliResult.assertStarted();
             // Not shown as FIPS is not a preview anymore
             cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips:v1", 0);
-            cliResult.assertMessage("KeycloakFipsSecurityProvider created: KC(" + BCFIPS_VERSION + ", FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0");
+            cliResult.assertMessage("FIPS1402Provider created: KC(" + BCFIPS_VERSION + ", FIPS-JVM: " + FIPS1402Provider.isSystemFipsEnabled() + ")");
         });
     }
 
@@ -56,7 +56,7 @@ public class FipsDistTest {
 
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
             cliResult.assertMessage("password must be at least 112 bits");
-            cliResult.assertMessage("KeycloakFipsSecurityProvider created: KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0");
+            cliResult.assertMessage("FIPS1402Provider created: KC(" + BCFIPS_VERSION + " Approved Mode, FIPS-JVM: " + FIPS1402Provider.isSystemFipsEnabled() + ")");
 
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "adminadminadmin");
             cliResult = dist.run("start", "--fips-mode=strict");
