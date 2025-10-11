@@ -32,15 +32,6 @@ class AdminClient {
     return this.#client.auth(credentials);
   }
 
-  async loginUser(username: string, password: string, clientId: string) {
-    return this.#client.auth({
-      username: username,
-      password: password,
-      grantType: "password",
-      clientId: clientId,
-    });
-  }
-
   async createRealm(realm: string, payload?: RealmRepresentation) {
     await this.#login();
     return await this.#client.realms.create({ realm, ...payload });
@@ -82,11 +73,6 @@ class AdminClient {
     if (client) {
       await this.#client.clients.del({ id: client.id! });
     }
-  }
-
-  async getClient(clientName: string) {
-    await this.#login();
-    return (await this.#client.clients.find({ clientId: clientName }))[0];
   }
 
   async createGroup(groupName: string, realm: string = this.#client.realmName) {
@@ -508,16 +494,6 @@ class AdminClient {
     );
   }
 
-  async inRealm<T>(realm: string, fn: () => Promise<T>) {
-    const prevRealm = this.#client.realmName;
-    this.#client.realmName = realm;
-    try {
-      return await fn();
-    } finally {
-      this.#client.realmName = prevRealm;
-    }
-  }
-
   async createOrganization(
     org: OrganizationRepresentation & { realm?: string },
   ) {
@@ -539,11 +515,6 @@ class AdminClient {
     }
   }
 
-  async getServerInfo() {
-    await this.#login();
-    return await this.#client.serverInfo.find();
-  }
-
   async copyFlow(
     name: string,
     newName: string,
@@ -555,28 +526,6 @@ class AdminClient {
       newName: newName,
       realm: realmName,
     });
-  }
-
-  async getFlow(name: string, realmName: string = this.#client.realmName) {
-    await this.#login();
-    const flows = await this.#client.authenticationManagement.getFlows({
-      realm: realmName,
-    });
-    return flows.find((flow) => flow.alias === name);
-  }
-
-  async deleteFlow(name: string, realmName: string = this.#client.realmName) {
-    await this.#login();
-    const flows = await this.#client.authenticationManagement.getFlows({
-      realm: realmName,
-    });
-    const flow = flows.find((f) => f.alias === name)!;
-    if (flow) {
-      await this.#client.authenticationManagement.deleteFlow({
-        flowId: flow.id!,
-        realm: realmName,
-      });
-    }
   }
 
   async deleteAllTokens(realm: string = this.#client.realmName) {
