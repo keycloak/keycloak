@@ -314,6 +314,7 @@ public class TokenManager {
 
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
+        session.getContext().setUserSession(validation.userSession);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
