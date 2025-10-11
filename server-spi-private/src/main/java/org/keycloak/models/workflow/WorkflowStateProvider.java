@@ -17,9 +17,9 @@
 
 package org.keycloak.models.workflow;
 
-import org.keycloak.provider.Provider;
-
 import java.util.List;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Interface serves as state check for workflow actions.
@@ -56,8 +56,6 @@ public interface WorkflowStateProvider extends Provider {
     List<ScheduledStep> getScheduledStepsByResource(String resourceId);
 
     List<ScheduledStep> getScheduledStepsByWorkflow(String workflowId);
-
-    List<ScheduledStep> getScheduledStepsByStep(String stepId);
 
     default List<ScheduledStep> getScheduledStepsByWorkflow(Workflow workflow) {
         if (workflow == null) {

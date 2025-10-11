@@ -53,27 +53,24 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
     }
 
     @Override
-    public void run(List<String> userIds) {
+    public void run(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
         EmailTemplateProvider emailProvider = session.getProvider(EmailTemplateProvider.class).setRealm(realm);
 
         String subjectKey = getSubjectKey();
         String bodyTemplate = getBodyTemplate();
         Map<String, Object> bodyAttributes = getBodyAttributes();
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
-        for (String id : userIds) {
-            UserModel user = session.users().getUserById(realm, id);
-
-            if (user != null && user.getEmail() != null) {
-                try {
-                    emailProvider.setUser(user).send(subjectKey, bodyTemplate, bodyAttributes);
-                    log.debugv("Notification email sent to user {0} ({1})", user.getUsername(), user.getEmail());
-                } catch (EmailException e) {
-                    log.errorv(e, "Failed to send notification email to user {0} ({1})", user.getUsername(), user.getEmail());
-                }
-            } else if (user != null && user.getEmail() == null) {
-                log.warnv("User {0} has no email address, skipping notification", user.getUsername());
+        if (user != null && user.getEmail() != null) {
+            try {
+                emailProvider.setUser(user).send(subjectKey, bodyTemplate, bodyAttributes);
+                log.debugv("Notification email sent to user {0} ({1})", user.getUsername(), user.getEmail());
+            } catch (EmailException e) {
+                log.errorv(e, "Failed to send notification email to user {0} ({1})", user.getUsername(), user.getEmail());
             }
+        } else if (user != null && user.getEmail() == null) {
+            log.warnv("User {0} has no email address, skipping notification", user.getUsername());
         }
     }
 

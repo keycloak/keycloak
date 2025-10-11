@@ -253,7 +253,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);
             WorkflowsManager manager = new WorkflowsManager(session);
-            Workflow workflow = manager.getWorkflows().get(0);
+            Workflow workflow = manager.getWorkflows().toList().get(0);
             UserModel alice = session.users().getUserByUsername(realm, "alice");
             assertNotNull(alice);
 

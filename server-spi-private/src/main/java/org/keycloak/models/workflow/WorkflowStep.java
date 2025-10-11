@@ -20,6 +20,8 @@ package org.keycloak.models.workflow;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 
+import java.util.Objects;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 
@@ -90,5 +92,16 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
     @Override
     public int compareTo(WorkflowStep other) {
         return Integer.compare(this.getPriority(), other.getPriority());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof WorkflowStep that)) return false;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

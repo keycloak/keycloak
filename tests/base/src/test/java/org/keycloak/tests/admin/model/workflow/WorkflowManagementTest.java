@@ -204,7 +204,7 @@ public class WorkflowManagementTest {
             configureSessionContext(session);
             WorkflowsManager manager = new WorkflowsManager(session);
 
-            List<Workflow> registeredWorkflows = manager.getWorkflows();
+            List<Workflow> registeredWorkflows = manager.getWorkflows().toList();
             assertEquals(1, registeredWorkflows.size());
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
             List<ScheduledStep> steps = stateProvider.getScheduledStepsByWorkflow(id);
@@ -292,12 +292,13 @@ public class WorkflowManagementTest {
             WorkflowsManager manager = new WorkflowsManager(session);
             UserModel user = session.users().getUserByUsername(realm,"testuser");
 
-            List<Workflow> registeredWorkflows = manager.getWorkflows();
+            List<Workflow> registeredWorkflows = manager.getWorkflows().toList();
             assertEquals(1, registeredWorkflows.size());
 
             Workflow workflow = registeredWorkflows.get(0);
-            assertEquals(2, manager.getSteps(workflow.getId()).size());
-            WorkflowStep notifyStep = manager.getSteps(workflow.getId()).get(0);
+            List<WorkflowStep> steps = manager.getSteps(workflow.getId()).toList();
+            assertEquals(2, steps.size());
+            WorkflowStep notifyStep = steps.get(0);
 
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
             ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
@@ -312,7 +313,7 @@ public class WorkflowManagementTest {
                 user = session.users().getUserById(realm, user.getId());
 
                 // Verify that the next step was scheduled for the user
-                WorkflowStep disableStep = manager.getSteps(workflow.getId()).get(1);
+                WorkflowStep disableStep = manager.getSteps(workflow.getId()).toList().get(1);
                 scheduledStep = stateProvider.getScheduledStep(workflow.getId(), user.getId());
                 assertNotNull(scheduledStep, "A step should have been scheduled for the user " + user.getUsername());
                 assertEquals(disableStep.getId(), scheduledStep.stepId(), "The second step should have been scheduled");
@@ -378,12 +379,13 @@ public class WorkflowManagementTest {
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = configureSessionContext(session);
             WorkflowsManager workflowsManager = new WorkflowsManager(session);
-            List<Workflow> registeredWorkflows = workflowsManager.getWorkflows();
+            List<Workflow> registeredWorkflows = workflowsManager.getWorkflows().toList();
             assertEquals(1, registeredWorkflows.size());
             Workflow workflow = registeredWorkflows.get(0);
 
-            assertEquals(2, workflowsManager.getSteps(workflow.getId()).size());
-            WorkflowStep notifyStep = workflowsManager.getSteps(workflow.getId()).get(0);
+            List<WorkflowStep> steps = workflowsManager.getSteps(workflow.getId()).toList();
+            assertEquals(2, steps.size());
+            WorkflowStep notifyStep = steps.get(0);
 
             // check no workflows are yet attached to the previous users, only to the ones created after the workflow was in place
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
@@ -402,7 +404,7 @@ public class WorkflowManagementTest {
                 workflowsManager.runScheduledSteps();
 
                 // check the same users are now scheduled to run the second step.
-                WorkflowStep disableStep = workflowsManager.getSteps(workflow.getId()).get(1);
+                WorkflowStep disableStep = workflowsManager.getSteps(workflow.getId()).toList().get(1);
                 scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
                 assertEquals(3, scheduledSteps.size());
                 scheduledSteps.forEach(scheduledStep -> {
@@ -413,7 +415,7 @@ public class WorkflowManagementTest {
                 });
 
                 // assign the workflow to the eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
-                workflowsManager.scheduleAllEligibleResources(workflow);
+                workflowsManager.bindToAllEligibleResources(workflow);
 
                 // check workflow was correctly assigned to the old users, not affecting users already associated with the workflow.
                 scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
@@ -501,7 +503,7 @@ public class WorkflowManagementTest {
             RealmModel realm = configureSessionContext(session);
             WorkflowsManager manager = new WorkflowsManager(session);
 
-            List<Workflow> registeredWorkflow = manager.getWorkflows();
+            List<Workflow> registeredWorkflow = manager.getWorkflows().toList();
             assertEquals(1, registeredWorkflow.size());
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
             List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(registeredWorkflow.get(0));
@@ -584,8 +586,8 @@ public class WorkflowManagementTest {
                 manager.runScheduledSteps();
 
                 UserModel user = session.users().getUserByUsername(realm, "testuser");
-                Workflow workflow = manager.getWorkflows().get(0);
-                WorkflowStep step = manager.getSteps(workflow.getId()).get(0);
+                Workflow workflow = manager.getWorkflows().toList().get(0);
+                WorkflowStep step = manager.getSteps(workflow.getId()).toList().get(0);
 
                 // Verify that the step was scheduled again for the user
                 WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
