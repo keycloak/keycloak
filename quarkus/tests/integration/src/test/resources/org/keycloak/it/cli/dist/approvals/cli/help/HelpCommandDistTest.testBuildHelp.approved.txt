@@ -94,6 +94,12 @@ Vault:
 
 --vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 
+Logging:
+
+--log-export-enabled <true|false>
+                     PREVIEW. Enables exporting logs to a destination handling telemetry data
+                       (OpenTelemetry Logs). Default: false.
+
 Tracing:
 
 --tracing-enabled <true|false>
