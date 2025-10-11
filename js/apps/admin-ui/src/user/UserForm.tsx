@@ -21,7 +21,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { TFunction } from "i18next";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -34,7 +34,11 @@ import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { FederatedUserLink } from "./FederatedUserLink";
-import { UserFormFields, toUserFormFields } from "./form-state";
+import {
+  UserFormFields,
+  toUserFormFields,
+  toUserRepresentation,
+} from "./form-state";
 import { toUsers } from "./routes/Users";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
@@ -149,6 +153,46 @@ export const UserForm = ({
     !user?.userProfileMetadata?.attributes
       ?.map((a) => a.readOnly)
       .reduce((p, c) => p && c, true);
+
+  const handleRemovePendingEmailVerification = useCallback(async () => {
+    try {
+      const currentFormData = form.getValues();
+
+      if (user?.id) {
+        await adminClient.users.update(
+          { id: user.id },
+          toUserRepresentation(currentFormData),
+        );
+
+        if (refresh) {
+          refresh();
+        }
+      }
+
+      addAlert(t("pendingEmailVerificationRemoved"));
+    } catch (error) {
+      addError("removePendingEmailVerificationError", error);
+    }
+  }, [adminClient.users, user?.id, form, refresh, addAlert, addError, t]);
+
+  useEffect(() => {
+    const handleRemoveEvent = (event: any) => {
+      if (event.detail?.attributeName === "kc.email.pending") {
+        void handleRemovePendingEmailVerification();
+      }
+    };
+
+    window.addEventListener(
+      "removePendingEmailVerification",
+      handleRemoveEvent,
+    );
+    return () => {
+      window.removeEventListener(
+        "removePendingEmailVerification",
+        handleRemoveEvent,
+      );
+    };
+  }, [handleRemovePendingEmailVerification]);
 
   return (
     <FormAccess

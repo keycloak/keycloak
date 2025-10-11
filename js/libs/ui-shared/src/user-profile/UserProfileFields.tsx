@@ -108,9 +108,14 @@ export const UserProfileFields = ({
     }
 
     // Hide read-only attributes if 'hideReadOnly' is enabled.
+    // Also filter out EMAIL_PENDING as we'll render it manually at the end
     const attributes = hideReadOnly
-      ? userProfileMetadata.attributes.filter(({ readOnly }) => !readOnly)
-      : userProfileMetadata.attributes;
+      ? userProfileMetadata.attributes.filter(
+          ({ readOnly, name }) => !readOnly && name !== "kc.email.pending",
+        )
+      : userProfileMetadata.attributes.filter(
+          ({ name }) => name !== "kc.email.pending",
+        );
 
     return [
       // Insert an empty group for attributes without a group.
@@ -146,17 +151,43 @@ export const UserProfileFields = ({
                   {label(t, group.displayDescription, "")}
                 </Text>
               )}
-              {attributes.map((attribute) => (
-                <FormField
-                  key={attribute.name}
-                  t={t}
-                  form={form}
-                  supportedLocales={supportedLocales}
-                  currentLocale={currentLocale}
-                  renderer={renderer}
-                  attribute={attribute}
-                />
-              ))}
+              {attributes.flatMap((attribute) => {
+                const elements = [
+                  <FormField
+                    key={attribute.name}
+                    t={t}
+                    form={form}
+                    supportedLocales={supportedLocales}
+                    currentLocale={currentLocale}
+                    renderer={renderer}
+                    attribute={attribute}
+                  />,
+                ];
+
+                // If this is the email field, add EMAIL_PENDING right after it
+                if (attribute.name === "email") {
+                  const emailPendingAttribute =
+                    userProfileMetadata.attributes?.find(
+                      (attr) => attr.name === "kc.email.pending",
+                    );
+
+                  if (emailPendingAttribute) {
+                    elements.push(
+                      <FormField
+                        key="kc.email.pending"
+                        t={t}
+                        form={form}
+                        supportedLocales={supportedLocales}
+                        currentLocale={currentLocale}
+                        renderer={renderer}
+                        attribute={emailPendingAttribute}
+                      />,
+                    );
+                  }
+                }
+
+                return elements;
+              })}
             </div>
           ),
         }))}
