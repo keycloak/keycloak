@@ -30,6 +30,14 @@ Use it together with the other building blocks outlined in the <@links.ha id="si
 
 . Build a custom {project_name} image which is link:{links_server_db_url}#preparing-keycloak-for-amazon-aurora-postgresql[prepared for usage with the Amazon Aurora PostgreSQL database].
 
+. Secure the Amazon Aurora PostgreSQL database connection by downloading the https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html[certificate bundles].
+Create a `ConfigMap` with the certificate bundle using:
++
+[source,bash]
+----
+kubectl --namespace keycloak create configmap keycloak-aurora-rootcert --from-file aurora.pem=/path/to/bundle.pem
+----
+
 . Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
 +
 [source,yaml]
@@ -53,8 +61,8 @@ spec:
       memory: "2250M"
   db:
     vendor: postgres
-    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak
-    poolMinSize: 30 # <1>
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslrootcert=/opt/keycloak/conf/truststores/configmap-keycloak-aurora-rootcert/aurora.pem # <1>
+    poolMinSize: 30 # <2>
     poolInitialSize: 30
     poolMaxSize: 30
     usernameSecret:
@@ -63,12 +71,12 @@ spec:
     passwordSecret:
       name: keycloak-db-secret
       key: password
-  image: <KEYCLOAK_IMAGE_HERE> # <2>
-  startOptimized: false # <2>
+  image: <KEYCLOAK_IMAGE_HERE> # <3>
+  startOptimized: false # <3>
   additionalOptions:
     - name: log-console-output
       value: json
-    - name: metrics-enabled # <3>
+    - name: metrics-enabled # <4>
       value: 'true'
     - name: event-metrics-user-enabled
       value: 'true'
@@ -77,13 +85,21 @@ spec:
   http:
     tlsSecret: keycloak-tls-secret
   instances: 3
+  truststores:
+    aurora:
+      configMap:
+        name: keycloak-aurora-rootcert # <5>
+
 ----
-<1> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+<1> Secure the database connection with the `sslmode=verify-full` and `sslrootcert` properties.
+<2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
 Adjust this number to meet the needs of your system.
 As most requests will not touch the database due to the {project_name} embedded cache, this change can server several hundreds of requests per second.
 See the <@links.ha id="single-cluster-concepts-database-connections" /> {section} for details.
-<2> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
-<3> To be able to analyze the system under load, enable the metrics endpoint.
+<3> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
+<4> To be able to analyze the system under load, enable the metrics endpoint.
+<5> Specify the `ConfigMap` name that contains the Amazon Aurora PostgreSQL database certificate bundle.
+The Operator will automatic mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
 
 <#include "/high-availability/partials/building-blocks/verifying-deployment.adoc" />
 

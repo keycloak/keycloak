@@ -275,6 +275,26 @@ You can override this behavior by setting your own value for `targetServerType` 
 The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
 ====
 
+[TIP]
+.Secure Your PostgreSQL Connection
+====
+To secure your database connection, configure your PostgreSQL server to use TLS and perform full server certificate verification on the client side.
+
+**Server-side Configuration (Prerequisites):**
+Before using the properties below, ensure your PostgreSQL server is configured for TLS.
+
+**Client-side Configuration:**
+Secure the connection by adding the following properties to your connection URL:
+
+[source]
+----
+db-url=jdbc:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificate
+----
+
+* `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
+* `sslrootcert=/path/to/certificate`: The path to the server's public certificate file on the client machine.
+====
+
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
 
@@ -301,6 +321,25 @@ See the <@links.server id="containers" /> {section} for details on how to build 
 `db-driver`:: Set to `software.amazon.jdbc.Driver` to use the AWS JDBC wrapper.
 
 NOTE: When overriding the `wrapperPlugins` option of the AWS JDBC Driver, always include the `failover` or `failover2` plugin to ensure that {project_name} always connects to the writer instance even in failover or switchover scenarios.
+
+[TIP]
+.Secure Your Aurora PostgreSQL Connection
+====
+Amazon Aurora PostgreSQL 17.0 or later requires TLS connections by default.
+
+While this encrypts the connection, you must still perform a full server certificate verification.
+To do this download the https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html[certificate bundle] for your AWS region.
+
+Secure the connection by adding the `sslmode=verify-full` and `sslrootcert=/path/to/certificate` properties to your connection URL:
+
+[source]
+----
+db-url=jdbc:aws-wrapper:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificate
+----
+
+* `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
+* `sslrootcert=/path/to/certificate`: The path to the downloaded certificate bundle.
+====
 
 == Preparing for MySQL server
 
