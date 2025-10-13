@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.util.List;
 
 public class DisableUserStepProvider implements WorkflowStepProvider {
 
