@@ -27,6 +27,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +50,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -464,22 +468,36 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         keycloak = null;
     }
 
+    private Path inDistZipDirectory(Path distPath) throws IOException {
+        Supplier<RuntimeException> noDirectories = () -> new RuntimeException(String.format("ZIP file %s doesn't contain any directories", distPath));
+        try (FileSystem zipfs = ZipUtils.newFileSystem(distPath)) {
+            for (Path rootDir : zipfs.getRootDirectories()) {
+                try (Stream<Path> stream = Files.list(rootDir)) {
+                    Optional<Path> p = stream.filter(Files::isDirectory).findFirst();
+                    return p.orElseThrow(noDirectories);
+                }
+            }
+        }
+        throw noDirectories.get();
+    }
+
     private Path prepareDistribution() {
         try {
             Path distRootPath = Paths.get(System.getProperty("java.io.tmpdir")).resolve("kc-tests");
             distRootPath.toFile().mkdirs();
 
-            File distFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".zip");
-            String distDirName;
-
-            if (distFile.exists()) {
-                distDirName = distFile.getName();
+            File distFile;
+            if (System.getProperty("product.dist.zip") != null) {
+                distFile = new File(System.getProperty("product.dist.zip"));
             } else {
-                distFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
-                distDirName = distFile.getName().replace("-quarkus-dist", "");
+                distFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".zip");
             }
-            distRootPath.toFile().mkdirs();
-            Path dPath = distRootPath.resolve(distDirName.substring(0, distDirName.lastIndexOf('.')));
+
+            if (!distFile.exists()) {
+                distFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
+            }
+
+            Path dPath = distRootPath.resolve(inDistZipDirectory(distFile.toPath()));
 
             if (!inited || (reCreate || !dPath.toFile().exists())) {
                 FileUtil.deleteDirectory(dPath);
