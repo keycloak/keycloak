@@ -2,6 +2,7 @@ package org.keycloak.broker.spiffe;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.nio.charset.StandardCharsets;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.AbstractJWTClientValidator;
@@ -26,28 +27,34 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * Implementation for https://datatracker.ietf.org/doc/draft-schwenkschuster-oauth-spiffe-client-auth/
  *
  * Main differences for SPIFFE JWT SVIDs and regular client assertions:
  * <ul>
-*  <li><code>jwt-spiffe</code> client assertion type</li>
+ * <li><code>jwt-spiffe</code> client assertion type</li>
  * <li><code>iss</code> claim is optional, uses SPIFFE IDs, which includes trust domain instead</li>
  * <li><code>jti</code> claim is optional, and SPIFFE vendors re-use/cache tokens</li>
  * <li><code>sub</code> is a SPIFFE ID with the syntax <code>spiffe://trust-domain/workload-identity</code></li>
  * <li>Keys are fetched from a SPIFFE bundle endpoint, where the JWKS has additional SPIFFE specific fields (<code>spiffe_sequence</code> and <code>spiffe_refresh_hint</code>, the JWK does not set the <code>alg></code></li>
  * </ul>
  */
-public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityProviderConfig>, ClientAssertionIdentityProvider {
+public class SpiffeIdentityProvider
+    implements
+        IdentityProvider<SpiffeIdentityProviderConfig>,
+        ClientAssertionIdentityProvider {
 
-    private static final Logger LOGGER = Logger.getLogger(SpiffeIdentityProvider.class);
+    private static final Logger LOGGER = Logger.getLogger(
+        SpiffeIdentityProvider.class
+    );
 
     private final KeycloakSession session;
     private final SpiffeIdentityProviderConfig config;
 
-    public SpiffeIdentityProvider(KeycloakSession session, SpiffeIdentityProviderConfig config) {
+    public SpiffeIdentityProvider(
+        KeycloakSession session,
+        SpiffeIdentityProviderConfig config
+    ) {
         this.session = session;
         this.config = config;
     }
@@ -58,10 +65,19 @@ public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityPr
     }
 
     @Override
-    public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
-        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, this::verifySignature,
-                    null, config.getAllowedClockSkew(), true);
-        validator.setExpectedClientAssertionType(SpiffeConstants.CLIENT_ASSERTION_TYPE);
+    public boolean verifyClientAssertion(
+        ClientAuthenticationFlowContext context
+    ) throws Exception {
+        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(
+            context,
+            this::verifySignature,
+            null,
+            config.getAllowedClockSkew(),
+            true
+        );
+        validator.setExpectedClientAssertionType(
+            SpiffeConstants.CLIENT_ASSERTION_TYPE
+        );
 
         String trustedDomain = config.getTrustDomain();
 
@@ -74,57 +90,137 @@ public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityPr
     }
 
     private boolean verifySignature(AbstractJWTClientValidator validator) {
+        JWSInput jws = null;
         try {
             String bundleEndpoint = config.getBundleEndpoint();
-            JWSInput jws = validator.getState().getJws();
+            jws = validator.getState().getJws();
             JWSHeader header = jws.getHeader();
             String kid = header.getKeyId();
             String alg = header.getRawAlgorithm();
 
-            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(validator.getContext().getRealm().getId(), config.getInternalId());
+            LOGGER.infof(
+                "Verifying signature with kid='%s' and alg='%s' from bundle endpoint: %s",
+                kid,
+                alg,
+                bundleEndpoint
+            );
 
-            PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new SpiffeBundleEndpointLoader(session, bundleEndpoint));
-
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
-            if (signatureProvider == null) {
-                LOGGER.debugf("Failed to verify token, signature provider not found for algorithm %s", alg);
+            if (kid == null || kid.isEmpty()) {
+                LOGGER.warn(
+                    "JWT is missing 'kid' in header, cannot perform key lookup."
+                );
                 return false;
             }
 
-            return signatureProvider.verifier(publicKey).verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature());
+            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(
+                validator.getContext().getRealm().getId(),
+                config.getInternalId()
+            );
+
+            PublicKeyStorageProvider keyStorage = session.getProvider(
+                PublicKeyStorageProvider.class
+            );
+            KeyWrapper publicKey = keyStorage.getPublicKey(
+                modelKey,
+                kid,
+                alg,
+                new SpiffeBundleEndpointLoader(session, bundleEndpoint)
+            );
+
+            if (publicKey == null) {
+                LOGGER.warnf(
+                    "Could not find public key for kid='%s' using bundle: %s",
+                    kid,
+                    bundleEndpoint
+                );
+                return false;
+            }
+            LOGGER.infof("Successfully fetched public key for kid: %s", kid);
+
+            SignatureProvider signatureProvider = session.getProvider(
+                SignatureProvider.class,
+                alg
+            );
+            if (signatureProvider == null) {
+                LOGGER.warnf(
+                    "Failed to verify token, signature provider not found for algorithm %s",
+                    alg
+                );
+                return false;
+            }
+
+            boolean isValid = signatureProvider
+                .verifier(publicKey)
+                .verify(
+                    jws
+                        .getEncodedSignatureInput()
+                        .getBytes(StandardCharsets.UTF_8),
+                    jws.getSignature()
+                );
+            if (!isValid) {
+                LOGGER.warnf("Signature verification FAILED for kid: %s", kid);
+            }
+            return isValid;
         } catch (Exception e) {
-            LOGGER.debug("Failed to verify token signature", e);
+            // Log the actual JWS content on error for easier debugging
+            String jwsContent = (jws != null)
+                ? jws.getEncodedSignatureInput()
+                : "JWS not available";
+            LOGGER.warnf(
+                e,
+                "Failed to verify token signature due to an exception. JWS Input: %s",
+                jwsContent
+            );
             return false;
         }
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
 
     @Override
-    public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context) {
+    public void preprocessFederatedIdentity(
+        KeycloakSession session,
+        RealmModel realm,
+        BrokeredIdentityContext context
+    ) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
+    public void authenticationFinished(
+        AuthenticationSessionModel authSession,
+        BrokeredIdentityContext context
+    ) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+    public void importNewUser(
+        KeycloakSession session,
+        RealmModel realm,
+        UserModel user,
+        BrokeredIdentityContext context
+    ) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+    public void updateBrokeredUser(
+        KeycloakSession session,
+        RealmModel realm,
+        UserModel user,
+        BrokeredIdentityContext context
+    ) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
+    public Object callback(
+        RealmModel realm,
+        AuthenticationCallback callback,
+        EventBuilder event
+    ) {
         throw new UnsupportedOperationException();
     }
 
@@ -134,17 +230,30 @@ public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityPr
     }
 
     @Override
-    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+    public Response retrieveToken(
+        KeycloakSession session,
+        FederatedIdentityModel identity
+    ) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+    public void backchannelLogout(
+        KeycloakSession session,
+        UserSessionModel userSession,
+        UriInfo uriInfo,
+        RealmModel realm
+    ) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
+    public Response keycloakInitiatedBrowserLogout(
+        KeycloakSession session,
+        UserSessionModel userSession,
+        UriInfo uriInfo,
+        RealmModel realm
+    ) {
         throw new UnsupportedOperationException();
     }
 

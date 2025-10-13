@@ -1,5 +1,11 @@
 package org.keycloak.authentication.authenticators.client;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
@@ -19,28 +25,42 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.resources.IdentityBrokerService;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+public class FederatedJWTClientAuthenticator
+    extends AbstractClientAuthenticator
+    implements EnvironmentDependentProviderFactory {
 
-public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator implements EnvironmentDependentProviderFactory {
-
-    private static final Logger LOGGER = Logger.getLogger(FederatedJWTClientAuthenticator.class);
+    private static final Logger LOGGER = Logger.getLogger(
+        FederatedJWTClientAuthenticator.class
+    );
 
     public static final String PROVIDER_ID = "federated-jwt";
 
-    public static final String JWT_CREDENTIAL_ISSUER_KEY = "jwt.credential.issuer";
-    public static final String JWT_CREDENTIAL_SUBJECT_KEY = "jwt.credential.sub";
+    public static final String JWT_CREDENTIAL_ISSUER_KEY =
+        "jwt.credential.issuer";
+    public static final String JWT_CREDENTIAL_SUBJECT_KEY =
+        "jwt.credential.sub";
 
     private static final List<ProviderConfigProperty> CLIENT_CONFIG = List.of(
-            new ProviderConfigProperty(JWT_CREDENTIAL_ISSUER_KEY, "Identity provider", "Issuer of the client assertion", ProviderConfigProperty.STRING_TYPE, null),
-            new ProviderConfigProperty(JWT_CREDENTIAL_SUBJECT_KEY, "Federated subject", "External clientId (subject)", ProviderConfigProperty.STRING_TYPE, null)
+        new ProviderConfigProperty(
+            JWT_CREDENTIAL_ISSUER_KEY,
+            "Identity provider",
+            "Issuer of the client assertion",
+            ProviderConfigProperty.STRING_TYPE,
+            null
+        ),
+        new ProviderConfigProperty(
+            JWT_CREDENTIAL_SUBJECT_KEY,
+            "Federated subject",
+            "External clientId (subject)",
+            ProviderConfigProperty.STRING_TYPE,
+            null
+        )
     );
 
-    private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT, SpiffeConstants.CLIENT_ASSERTION_TYPE);
+    private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(
+        OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT,
+        SpiffeConstants.CLIENT_ASSERTION_TYPE
+    );
 
     @Override
     public String getId() {
@@ -50,58 +70,168 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         try {
-            ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
+            ClientAssertionState clientAssertionState = context.getState(
+                ClientAssertionState.class,
+                ClientAssertionState.supplier()
+            );
 
-            if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
+            if (
+                clientAssertionState == null ||
+                clientAssertionState.getClientAssertionType() == null
+            ) {
+                LOGGER.debugf(
+                    "Request is not a client assertion authentication. Skipping."
+                );
+                context.attempted();
                 return;
             }
 
-            if (!SUPPORTED_ASSERTION_TYPES.contains(clientAssertionState.getClientAssertionType())) {
+            if (
+                !SUPPORTED_ASSERTION_TYPES.contains(
+                    clientAssertionState.getClientAssertionType()
+                )
+            ) {
+                LOGGER.debugf(
+                    "Client assertion type '%s' is not supported by this authenticator. Skipping.",
+                    clientAssertionState.getClientAssertionType()
+                );
+                context.attempted();
                 return;
             }
 
-            final String issuer = clientAssertionState.getToken().getIssuer() != null ?
-                    clientAssertionState.getToken().getIssuer() :
-                    toIssuer(clientAssertionState.getToken().getSubject());
-            if (issuer == null) return;
+            final String issuer = clientAssertionState.getToken().getIssuer() !=
+                null
+                ? clientAssertionState.getToken().getIssuer()
+                : toIssuer(clientAssertionState.getToken().getSubject());
+            if (issuer == null) {
+                LOGGER.debug(
+                    "Could not determine issuer from client assertion subject: %s. Skipping.",
+                    clientAssertionState.getToken().getSubject()
+                );
+                context.attempted();
+                return;
+            }
 
-            AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
+            AlternativeLookupProvider lookupProvider = context
+                .getSession()
+                .getProvider(AlternativeLookupProvider.class);
 
-            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(context.getSession(), issuer);
-            ClientAssertionIdentityProvider identityProvider = getClientAssertionIdentityProvider(context.getSession(), identityProviderModel);
-            if (identityProvider == null) return;
-
-            String federatedClientId = clientAssertionState.getToken().getSubject();
-
-            ClientModel client = lookupProvider.lookupClientFromClientAttributes(
+            IdentityProviderModel identityProviderModel =
+                lookupProvider.lookupIdentityProviderFromIssuer(
                     context.getSession(),
-                    Map.of(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, identityProviderModel.getAlias(), FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, federatedClientId));
-            if (client == null) return;
+                    issuer
+                );
+            if (identityProviderModel == null) {
+                LOGGER.debug(
+                    "No Identity Provider found with issuer '%s'. Skipping.",
+                    issuer
+                );
+                context.attempted();
+                return;
+            }
+
+            ClientAssertionIdentityProvider identityProvider =
+                getClientAssertionIdentityProvider(
+                    context.getSession(),
+                    identityProviderModel
+                );
+            if (identityProvider == null) {
+                LOGGER.debugf(
+                    "IdP '%s' was found but does not support client assertions. Skipping.",
+                    identityProviderModel.getAlias()
+                );
+                context.attempted();
+                return;
+            }
+
+            String federatedClientId = clientAssertionState
+                .getToken()
+                .getSubject();
+
+            ClientModel client =
+                lookupProvider.lookupClientFromClientAttributes(
+                    context.getSession(),
+                    Map.of(
+                        FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY,
+                        identityProviderModel.getAlias(),
+                        FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY,
+                        federatedClientId
+                    )
+                );
+            if (client == null) {
+                LOGGER.debugf(
+                    "No client found with attributes: issuer='%s', subject='%s'. Skipping.",
+                    identityProviderModel.getAlias(),
+                    federatedClientId
+                );
+                context.attempted();
+                return;
+            }
 
             clientAssertionState.setClient(client);
 
-            if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) return;
+            if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) {
+                LOGGER.debugf(
+                    "Client '%s' is not configured for this authenticator (is '%s'). Skipping.",
+                    client.getClientId(),
+                    client.getClientAuthenticatorType()
+                );
+                context.attempted();
+                return;
+            }
+
+            LOGGER.infof(
+                "Found client '%s' configured for federated JWT authentication via IdP '%s'. Verifying assertion...",
+                client.getClientId(),
+                identityProviderModel.getAlias()
+            );
 
             if (identityProvider.verifyClientAssertion(context)) {
+                LOGGER.infof(
+                    "Client assertion verified successfully for client '%s'.",
+                    client.getClientId()
+                );
                 context.success();
             } else {
-                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                LOGGER.debugf(
+                    "Client assertion verification FAILED for client '%s' by IdP '%s'.",
+                    client.getClientId(),
+                    identityProviderModel.getAlias()
+                );
+                context.failure(
+                    AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS
+                );
             }
         } catch (Exception e) {
-            LOGGER.warn("Authentication failed", e);
+            LOGGER.error(
+                "Authentication failed due to an unexpected exception",
+                e
+            );
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
         }
     }
 
-    private ClientAssertionIdentityProvider getClientAssertionIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel) {
+    private ClientAssertionIdentityProvider getClientAssertionIdentityProvider(
+        KeycloakSession session,
+        IdentityProviderModel identityProviderModel
+    ) {
         if (identityProviderModel == null) {
             return null;
         }
-        IdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel);
-        if (identityProvider instanceof ClientAssertionIdentityProvider clientAssertionProvider) {
+        IdentityProvider<?> identityProvider =
+            IdentityBrokerService.getIdentityProvider(
+                session,
+                identityProviderModel
+            );
+        if (
+            identityProvider instanceof
+                ClientAssertionIdentityProvider clientAssertionProvider
+        ) {
             return clientAssertionProvider;
         } else {
-            throw new RuntimeException("Provider does not support client assertions");
+            throw new RuntimeException(
+                "Provider does not support client assertions"
+            );
         }
     }
 
@@ -155,10 +285,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
             URI uri = new URI(subject);
             String scheme = uri.getScheme();
             String authority = uri.getRawAuthority();
-            return scheme != null && authority != null ? scheme + "://" + authority : null;
+            return scheme != null && authority != null
+                ? scheme + "://" + authority
+                : null;
         } catch (URISyntaxException e) {
             return null;
         }
     }
-
 }
