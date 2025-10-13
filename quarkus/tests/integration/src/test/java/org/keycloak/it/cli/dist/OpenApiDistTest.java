@@ -28,12 +28,12 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import java.io.IOException;
 
 import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(keepAlive = true,
     requestPort = 9000,
-    containerExposedPorts = {8080, 9000})
+    containerExposedPorts = {8080, 9000},
+    defaultOptions = "--features=client-admin-api:v2")
 @Tag(DistributionTest.SLOW)
 public class OpenApiDistTest {
 
@@ -72,7 +72,7 @@ public class OpenApiDistTest {
 
   @DryRun
   @Test
-  @Launch({ "start", "--openapi-ui-enabled=true"})
+  @Launch({ "start-dev", "--openapi-ui-enabled=true"})
   void testOpenApiUiFailsWhenOpenApiIsNotEnabled(CLIResult cliResult) {
     cliResult.assertError("Disabled option: '--openapi-ui-enabled'. Available only when OpenAPI Endpoint is enabled");
   }
