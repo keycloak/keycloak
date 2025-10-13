@@ -21,17 +21,17 @@ package org.keycloak.common.util;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @deprecated Use {@link java.util.Base64#getUrlEncoder()} and {@link java.util.Base64#getUrlDecoder()} instead.
  */
+@Deprecated
 public class Base64Url {
     public static String encode(byte[] bytes) {
-        String s = Base64.encodeBytes(bytes);
-        return encodeBase64ToBase64Url(s);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     public static byte[] decode(String s) {
-        s = encodeBase64UrlToBase64(s);
         try {
-            return Base64.decode(s);
+            return java.util.Base64.getUrlDecoder().decode(s);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -41,7 +41,9 @@ public class Base64Url {
     /**
      * @param base64 String in base64 encoding
      * @return String in base64Url encoding
+     * @deprecated Use {@link java.util.Base64#getUrlEncoder()} instead.
      */
+    @Deprecated
     public static String encodeBase64ToBase64Url(String base64) {
         String s = base64.split("=")[0]; // Remove any trailing '='s
         s = s.replace('+', '-'); // 62nd char of encoding
@@ -53,7 +55,9 @@ public class Base64Url {
     /**
      * @param base64Url String in base64Url encoding
      * @return String in base64 encoding
+     * @deprecated Use {@link java.util.Base64#getUrlDecoder()} instead.
      */
+    @Deprecated
     public static String encodeBase64UrlToBase64(String base64Url) {
         String s = base64Url.replace('-', '+'); // 62nd char of encoding
         s = s.replace('_', '/'); // 63rd char of encoding
