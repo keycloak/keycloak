@@ -1,0 +1,11 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Export traces with custom request headers
+
+It is now possible to set request headers for exporting traces via Open Telemetry Protocol (OTLP).
+It is mainly useful for providing tokens in the request.
+
+You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
+
+For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
