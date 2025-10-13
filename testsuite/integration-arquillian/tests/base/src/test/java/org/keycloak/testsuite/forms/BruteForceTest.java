@@ -67,7 +67,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -707,7 +706,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         continueLoginWithInvalidTotp();
         events.clear();
         continueLoginWithInvalidTotp();
-        assertUserDisabledEvent(Errors.INVALID_AUTHENTICATION_SESSION);
+        assertUserDisabledEvent(Errors.USER_TEMPORARILY_DISABLED);
     }
 
     private void checkEmailPresent(String subject) {

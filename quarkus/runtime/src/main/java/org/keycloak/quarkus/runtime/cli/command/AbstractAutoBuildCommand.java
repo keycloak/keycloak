@@ -39,7 +39,6 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
-import picocli.CommandLine.Help.Ansi;
 
 public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
@@ -82,7 +81,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         if(!isDevMode()) {
             spec.commandLine().getOut().println("Changes detected in configuration. Updating the server image.");
             if (Configuration.isOptimized()) {
-                Picocli.checkChangesInBuildOptionsDuringAutoBuild(spec.commandLine().getOut());
+                picocli.checkChangesInBuildOptionsDuringAutoBuild(spec.commandLine().getOut());
             }
         }
 
@@ -127,19 +126,12 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         validateConfig();
 
         if (isDevProfile()) {
-            picocli.getOutWriter().println(Ansi.AUTO.string(
+            picocli.getOutWriter().println(picocli.getColorMode().string(
                     "@|bold,red Running the server in development mode. DO NOT use this configuration in production.|@"));
         }
         if (shouldStart() && !Boolean.TRUE.equals(dryRunMixin.dryRun)) {
             picocli.start();
         }
-    }
-
-    /**
-     * Controls whether the command actually starts the server
-     */
-    protected boolean shouldStart() {
-        return true;
     }
 
     protected void doBeforeRun() {
@@ -154,6 +146,11 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
     protected EnumSet<OptionCategory> excludedCategories() {
         return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT);
+    }
+
+    @Override
+    public boolean shouldStart() {
+        return true;
     }
 
 }

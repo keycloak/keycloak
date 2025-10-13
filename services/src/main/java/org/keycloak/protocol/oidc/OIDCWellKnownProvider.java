@@ -25,6 +25,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
@@ -57,7 +58,6 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import java.net.URI;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -254,12 +254,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getSupportedAsymmetricAlgorithms() {
-        return getSupportedAlgorithms(SignatureProvider.class, false).stream()
-                .map(algorithm -> new AbstractMap.SimpleEntry<>(algorithm, session.getProvider(SignatureProvider.class, algorithm)))
-                .filter(entry -> entry.getValue() != null)
-                .filter(entry -> entry.getValue().isAsymmetricAlgorithm())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        return CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
     }
 
     private List<String> getSupportedSigningAlgorithms(boolean includeNone) {

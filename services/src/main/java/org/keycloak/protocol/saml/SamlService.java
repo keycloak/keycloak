@@ -68,7 +68,6 @@ import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
-import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
@@ -133,7 +132,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.PublicKey;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -789,7 +787,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
-            SamlProtocolUtils.verifyDocumentSignature(client, documentHolder.getSamlDocument());
+            SamlProtocolUtils.verifyDocumentSignature(session, client, documentHolder.getSamlDocument());
         }
 
         @Override
@@ -834,8 +832,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         @Override
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
-            PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
-            KeyLocator clientKeyLocator = new HardcodedKeyLocator(publicKey);
+            KeyLocator clientKeyLocator = SamlProtocolUtils.createKeyLocatorForClient(session, client, KeyUse.SIG);
             SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, session.getContext().getUri(), GeneralConstants.SAML_REQUEST_KEY);
         }
 
@@ -941,7 +938,8 @@ public class SamlService extends AuthorizationEndpointBase {
                         .build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
                 RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(),
                 true,
-                signingKeys);
+                signingKeys,
+                realm.getAttribute(SamlConfigAttributes.SAML_DESCRIPTOR_CACHE_SECONDS, (Long) null));
         } catch (Exception ex) {
             logger.error("Cannot generate IdP metadata", ex);
             return "";
@@ -1208,7 +1206,7 @@ public class SamlService extends AuthorizationEndpointBase {
         // Check signature within ArtifactResolve request if client requires it
         if (samlClient.requiresClientSignature()) {
             try {
-                SamlProtocolUtils.verifyDocumentSignature(clientModel, artifactResolveHolder.getSamlDocument());
+                SamlProtocolUtils.verifyDocumentSignature(session, clientModel, artifactResolveHolder.getSamlDocument());
             } catch (VerificationException e) {
                 SamlService.logger.error("request validation failed", e);
                 return emptyArtifactResponseMessage(artifactResolveMessage, clientModel);
@@ -1306,7 +1304,7 @@ public class SamlService extends AuthorizationEndpointBase {
             // Encrypt assertion if client requires it
             if (samlClient.requiresEncryption()) {
                 try {
-                    SamlProtocolUtils.setupEncryption(samlClient, bindingBuilder);
+                    SamlProtocolUtils.setupEncryption(session, samlClient, bindingBuilder);
                 } catch (Exception e) {
                     logger.error("Failed to obtain encryption key for client", e);
                     return emptyArtifactResponseMessage(artifactResolveMessage, null);

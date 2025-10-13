@@ -26,6 +26,7 @@ AWS Region or an equivalent low-latency setup.
 * Permit planned outages for maintenance.
 * Fit within a defined user and request count.
 * Can accept the impact of periodic outages.
+* Deployed in data centers with the required network latency and database configuration
 
 [#multi-cluster-tested-configuration]
 == Tested Configuration
@@ -79,6 +80,10 @@ Read more on each item in the <@links.ha id="multi-cluster-building-blocks" /> {
 
 [#multi-cluster-load]
 <#include "/high-availability/partials/tested-load.adoc" />
+
+<@profile.ifCommunity>
+While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} name instances and databases.
+</@profile.ifCommunity>
 
 See the <@links.ha id="multi-cluster-concepts-memory-and-cpu-sizing" /> {section} for more information.
 

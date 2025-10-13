@@ -313,7 +313,7 @@ public class DefaultThemeManager implements ThemeManager {
                 if (l.equals("zh-CN")) {
                     rl = "zh-Hans";
                 } else if (l.equals("zh-TW")) {
-                    rl = "zh-Hans";
+                    rl = "zh-Hant";
                 }
                 Locale loc = Locale.forLanguageTag(rl);
                 label = capitalize(loc.getDisplayName(locale), locale);

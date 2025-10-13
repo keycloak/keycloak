@@ -18,8 +18,6 @@ package org.keycloak.sdjwt;
 
 import java.util.Objects;
 
-import org.keycloak.jose.jws.crypto.HashUtils;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -63,11 +61,11 @@ public abstract class Disclosable {
 
     public String getDisclosureString() {
         String json = toJson();
-        return SdJwtUtils.encodeNoPad(json.getBytes());
+        return SdJwtUtils.encodeNoPad(json);
     }
 
     public String getDisclosureDigest(String hashAlg) {
-        return SdJwtUtils.encodeNoPad(HashUtils.hash(hashAlg, getDisclosureString().getBytes()));
+        return SdJwtUtils.hashAndBase64EncodeNoPad(getDisclosureString(), hashAlg);
     }
 
     @Override

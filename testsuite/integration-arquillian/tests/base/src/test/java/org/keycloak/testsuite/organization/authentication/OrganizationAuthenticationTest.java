@@ -19,6 +19,7 @@ package org.keycloak.testsuite.organization.authentication;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.io.IOException;
@@ -72,8 +73,20 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         openIdentityFirstLoginPage("user", false, null, false, false);
 
         // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testEmptyUserNameValidation() {
+        createOrganization();
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        loginPage.loginUsername("");
+
+        assertEquals("Invalid username.", loginPage.getUsernameInputError());
     }
 
     @Test
@@ -83,7 +96,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
         // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
     }
 
@@ -265,6 +278,21 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.clickSignIn();
         loginPage.login(memberPassword);
         appPage.assertCurrent();
+    }
+
+    @Test
+    public void testRestartLogin() {
+        testRealm().organizations().get(createOrganization().getId());
+
+        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
+
+        // check if the login page is shown
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        loginPage.clickResetLogin();
+        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        Assert.assertFalse(loginPage.isPasswordInputPresent());
     }
 
     private void runOnServer(RunOnServer function) {

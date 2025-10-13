@@ -3,7 +3,6 @@ package org.keycloak.services.clienttype.client;
 import org.jboss.logging.Logger;
 import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
-import org.keycloak.common.util.ObjectUtil;
 
 import java.util.Arrays;
 import java.util.HashMap;

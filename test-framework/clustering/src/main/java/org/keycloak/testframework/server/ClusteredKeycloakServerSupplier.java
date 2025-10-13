@@ -32,9 +32,4 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
     public Logger getLogger() {
         return LOGGER;
     }
-
-    @Override
-    protected String cache() {
-        return "ispn";
-    }
 }

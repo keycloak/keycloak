@@ -32,7 +32,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * This class provides loading of the testRealm called "test".  It also

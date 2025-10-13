@@ -41,11 +41,11 @@ import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesForm
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.Constants;
@@ -70,7 +70,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AccountRestClient;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -821,7 +820,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .accessToken(token1.accessToken)
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
-            try (SimpleHttp.Response response = accountRestClient.removeCredential(otpCredentialId)) {
+            try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
                 Assert.assertEquals(403, response.getStatus());
             }
         }
@@ -832,7 +831,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .accessToken(token2.accessToken)
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
-            try (SimpleHttp.Response response = accountRestClient.removeCredential(otpCredentialId)) {
+            try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
                 Assert.assertEquals(204, response.getStatus());
             }
             Assert.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));

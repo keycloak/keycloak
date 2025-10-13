@@ -61,8 +61,13 @@ For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#
 The logout endpoint logs out the authenticated user.
 
 The user agent can be redirected to the endpoint, which causes the active user session to be logged out. The user agent is then redirected back to the application.
+This is described in more details in the link:{adminguide_link}#rp-initiated-logout[RP-Initiated logout section of the Server administration guide].
 
-The endpoint can also be invoked directly by the application. To invoke this endpoint directly, the refresh token needs to be included as well as the credentials required to authenticate the client.
+WARNING: The endpoint can also be invoked directly by the application. To invoke this endpoint directly, the refresh token needs to be included as well as the credentials required to authenticate the client.
+However this is non-standard legacy format of the logout message supported only because of the legacy {project_name} OIDC Java adapters
+or https://docs.wildfly.org/37/WildFly_Elytron_Security.html#Keycloak_Integration[Elytron Wildfly OIDC adapter]. It is not recommended to use it directly from your applications.
+For logout users, it is recommended to use either OIDC/SAML protocol standard logout or link:{adminguide_link}#viewing-user-sessions[{project_name} Admin console] (or other way of admin REST API)
+or link:{adminguide_link}#_account-service[{project_name} Account console] (or other way of account REST API).
 
 [[_certificate_endpoint]]
 ==== Certificate endpoint

@@ -95,10 +95,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline) {
-        if (clientSessionId == null) {
-            return null;
-        }
+    public AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, boolean offline) {
         var clientTx = getClientSessionTransaction(offline);
         var updater = clientTx.get(new ClientSessionKey(userSession.getId(), client.getId()));
         if (updater == null) {
@@ -317,7 +314,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
                         userSessionBuffer.add(userSessionModel.getId());
                         for (var clientSessionModel : userSessionModel.getAuthenticatedClientSessions().values()) {
                             var clientSessionKey = new ClientSessionKey(userSessionModel.getId(), clientSessionModel.getClient().getId());
-                            clientSessionBuffer.add(Map.entry(userSessionModel.getId(), clientSessionModel.getId()));
+                            clientSessionBuffer.add(Map.entry(clientSessionKey.userSessionId(), clientSessionKey.clientId()));
                             var clientSessionEntity = RemoteAuthenticatedClientSessionEntity.createFromModel(clientSessionKey, clientSessionModel);
                             stage.dependsOn(clientSessionCache.putIfAbsentAsync(clientSessionKey, clientSessionEntity));
                         }

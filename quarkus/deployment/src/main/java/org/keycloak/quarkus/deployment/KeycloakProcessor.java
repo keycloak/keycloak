@@ -251,10 +251,6 @@ class KeycloakProcessor {
     void configureProfile(KeycloakRecorder recorder) {
         Profile profile = getCurrentOrCreateFeatureProfile();
 
-        if (!Environment.isRebuildCheck()) {
-            profile.logUnsupportedFeatures();
-        }
-
         // record the features so that they are not calculated again at runtime
         recorder.configureProfile(profile.getName(), profile.getFeatures());
     }

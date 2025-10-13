@@ -15,7 +15,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.LogoutToken;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 

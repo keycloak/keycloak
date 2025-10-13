@@ -233,8 +233,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--cache-remote-password=Password1!");
             commands.add("--cache-remote-tls-enabled=false");
             commands.add("--spi-cache-embedded-default-site-name=test");
-            configuration.appendJavaOpts("-Dkc.cache-remote-create-caches=true");
-            System.setProperty("kc.cache-remote-create-caches", "true");
         }
 
         if (!suiteContext.get().isAuthServerMigrationEnabled()) {

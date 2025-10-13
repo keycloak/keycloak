@@ -17,7 +17,6 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserConsentModel;
 
 import java.util.HashMap;
 import java.util.List;

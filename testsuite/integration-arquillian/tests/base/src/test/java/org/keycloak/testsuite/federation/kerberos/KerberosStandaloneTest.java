@@ -290,7 +290,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         johnResource.remove();
 
         try {
-            john = johnResource.toRepresentation(true);
+            johnResource.toRepresentation(true);
             Assert.fail("should remove the user");
         } catch (NotFoundException expected) {
         }

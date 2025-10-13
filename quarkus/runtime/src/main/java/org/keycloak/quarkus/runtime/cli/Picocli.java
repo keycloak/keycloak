@@ -67,6 +67,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
+import io.quarkus.dev.console.QuarkusConsole;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.mutiny.tuples.Functions.TriConsumer;
@@ -102,6 +103,16 @@ public class Picocli {
     private final List<String> unrecognizedArgs = new ArrayList<>();
     private Optional<AbstractCommand> parsedCommand = Optional.empty();
     private boolean warnedTimestampChanged;
+
+    private Ansi colorMode = hasColorSupport() ? Ansi.ON : Ansi.OFF;
+
+    public static boolean hasColorSupport() {
+        return QuarkusConsole.hasColorSupport();
+    }
+
+    public Ansi getColorMode() {
+        return colorMode;
+    }
 
     public void parseAndRun(List<String> cliArgs) {
         // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
@@ -348,19 +359,19 @@ public class Picocli {
             }
 
             if (!disabledBuildTime.isEmpty()) {
-                outputDisabledProperties(disabledBuildTime, true, getOutWriter());
+                outputDisabledProperties(disabledBuildTime, true);
             } else if (!disabledRunTime.isEmpty()) {
-                outputDisabledProperties(disabledRunTime, false, getOutWriter());
+                outputDisabledProperties(disabledRunTime, false);
             }
 
             if (!deprecatedInUse.isEmpty()) {
-                warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.", getOutWriter());
+                warn("The following used options or option values are DEPRECATED and will be removed or their behaviour changed in a future release:\n" + String.join("\n", deprecatedInUse) + "\nConsult the Release Notes for details.");
             }
             if (!ambiguousSpi.isEmpty()) {
                 warn("The following SPI options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: " + String.join("\n", ambiguousSpi));
             }
             secondClassOptions.forEach((key, firstClass) -> {
-                warn("Please use the first-class option `%s` instead of `%s`".formatted(firstClass, key), getOutWriter());
+                warn("Please use the first-class option `%s` instead of `%s`".formatted(firstClass, key));
             });
         } finally {
             DisabledMappersInterceptor.enable(disabledMappersInterceptorEnabled);
@@ -505,29 +516,25 @@ public class Picocli {
         messages.add(sb.toString());
     }
 
-    public void warn(String text) {
-        warn(text, getOutWriter());
-    }
-
     public void info(String text) {
-        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(colorMode);
         getOutWriter().println(defaultColorScheme.apply("INFO: ", Arrays.asList(Style.fg_green, Style.bold)) + text);
     }
 
     public void error(String text) {
-        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(colorMode);
         getErrWriter().println(defaultColorScheme.apply(text, Arrays.asList(Style.fg_red, Style.bold)));
     }
 
-    private static void warn(String text, PrintWriter outwriter) {
-        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(Help.Ansi.AUTO);
-        outwriter.println(defaultColorScheme.apply("WARNING: ", Arrays.asList(Style.fg_yellow, Style.bold)) + text);
+    public void warn(String text) {
+        ColorScheme defaultColorScheme = picocli.CommandLine.Help.defaultColorScheme(colorMode);
+        getOutWriter().println(defaultColorScheme.apply("WARNING: ", Arrays.asList(Style.fg_yellow, Style.bold)) + text);
     }
 
-    private static void outputDisabledProperties(Set<String> properties, boolean build, PrintWriter outWriter) {
+    private void outputDisabledProperties(Set<String> properties, boolean build) {
         warn(format("The following used %s time options are UNAVAILABLE and will be ignored during %s time:\n %s",
                 build ? "build" : "run", build ? "run" : "build",
-                String.join("\n", properties)), outWriter);
+                String.join("\n", properties)));
     }
 
     public static Properties getNonPersistedBuildTimeOptions() {
@@ -849,7 +856,7 @@ public class Picocli {
         return args;
     }
 
-    public static void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
+    public void checkChangesInBuildOptionsDuringAutoBuild(PrintWriter out) {
         StringBuilder options = new StringBuilder();
 
         checkChangesInBuildOptions((key, oldValue, newValue) -> optionChanged(options, key, oldValue, newValue));
@@ -858,7 +865,7 @@ public class Picocli {
             return;
         }
         out.println(
-                Ansi.AUTO.string(
+                colorMode.string(
                         new StringBuilder("@|bold,red ")
                                 .append("The previous optimized build will be overridden with the following build options:")
                                 .append(options)

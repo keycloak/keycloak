@@ -39,7 +39,6 @@ import javax.xml.stream.XMLStreamWriter;
 import java.net.URI;
 import java.util.List;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
-import javax.xml.crypto.dsig.XMLSignature;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 

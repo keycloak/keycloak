@@ -55,6 +55,16 @@ public class UserConfigBuilder {
         return this;
     }
 
+    public UserConfigBuilder firstName(String firstName) {
+        rep.setFirstName(firstName);
+        return this;
+    }
+
+    public UserConfigBuilder lastName(String lastName) {
+        rep.setLastName(lastName);
+        return this;
+    }
+
     public UserConfigBuilder emailVerified(boolean verified) {
         rep.setEmailVerified(verified);
         return this;

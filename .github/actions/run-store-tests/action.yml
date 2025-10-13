@@ -1,0 +1,85 @@
+name: Store IT
+description: Run Store integration tests
+
+inputs:
+  db:
+    description: The database to use for tests
+    required: true
+
+runs:
+  using: composite
+  steps:
+
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - id: integration-test-setup
+      name: Integration test setup
+      uses: ./.github/actions/integration-test-setup
+
+    - name: Run new base tests
+      shell: bash
+      run: |
+        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkeycloak.distribution.start.timeout=360
+
+    - name: Database container port
+      shell: bash
+      run: |
+        # The Ryuk container process exists temporarily after the JVM terminates, wait for only the database container to remain
+        while [ "$(docker ps -q | wc -l)" -ne 1 ]; do
+          docker ps
+          sleep 10
+        done
+        DATABASE_PORT=$(docker ps -l --format '{{ .ID }}' | xargs docker port | cut -d ':' -f 2)
+        echo "DATABASE_PORT=$DATABASE_PORT" >> $GITHUB_ENV 
+
+    - name: Run base tests
+      shell: bash
+      run: |
+        TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+        echo "Tests: $TESTS"
+        ./mvnw test ${{ env.SUREFIRE_RETRY }} \
+          -Pauth-server-quarkus -Pdb-${{ inputs.db }} \
+          "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
+          -Dtest=$TESTS \
+          -Ddocker.database.skip=true \
+          -Ddocker.database.port=$DATABASE_PORT \
+          -Ddocker.container.testdb.ip=localhost \
+          -Dkeycloak.distribution.start.timeout=360 \
+          -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+    - name: Run cluster JDBC_PING2 UDP smoke test
+      shell: bash
+      run: |
+        ./mvnw test ${{ env.SUREFIRE_RETRY }} \
+          -Pauth-server-cluster-quarkus \
+          -Pdb-${{ inputs.db }} \
+          -Dtest=RealmInvalidationClusterTest \
+          -Dsession.cache.owners=2 \
+          -Dauth.server.quarkus.cluster.stack=jdbc-ping-udp \
+          -Ddocker.database.skip=true \
+          -Ddocker.database.port=$DATABASE_PORT \
+          -Ddocker.container.testdb.ip=localhost \
+          -pl testsuite/integration-arquillian/tests/base \
+          2>&1 | misc/log/trimmer.sh
+
+    - name: Run cluster JDBC_PING2 TCP smoke test
+      shell: bash
+      run: |
+        ./mvnw test ${{ env.SUREFIRE_RETRY }} \
+          -Pauth-server-cluster-quarkus \
+          -Pdb-${{ inputs.db }} \
+          -Dtest=RealmInvalidationClusterTest \
+          -Dsession.cache.owners=2 \
+          -Dauth.server.quarkus.cluster.stack=jdbc-ping \
+          -Ddocker.database.skip=true \
+          -Ddocker.database.port=$DATABASE_PORT \
+          -Ddocker.container.testdb.ip=localhost \
+          -pl testsuite/integration-arquillian/tests/base \
+          2>&1 | misc/log/trimmer.sh
+
+    - uses: ./.github/actions/upload-flaky-tests
+      name: Upload flaky tests
+      env:
+        GH_TOKEN: ${{ github.token }}
+      with:
+        job-name: Store IT

@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.grants;
 
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -35,18 +36,22 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
-import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
+import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 
 /**
  * OAuth 2.0 Authorization Code Grant
@@ -91,9 +96,11 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        UserSessionModel userSession = null;
+        final UserSessionModel userSession;
         if (clientSession != null) {
             userSession = clientSession.getUserSession();
+        } else {
+            userSession = null;
         }
 
         if (userSession == null) {
@@ -179,7 +186,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         DPoPUtil.validateDPoPJkt(codeData.getDpopJkt(), session, event, cors);
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult));
+            session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult, client));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
@@ -188,12 +195,14 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
+        String scopeParam = codeData.getScope();
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
+
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in code-to-token request, it could just theoretically happen that they are not available)
-        String scopeParam = codeData.getScope();
         Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(session, scopeParam, client, user);
         if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopesSupplier.get())) {
             String errorMessage = "Client no longer has requested consent from user";
@@ -202,12 +211,37 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
-
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
+        // Process authorization_details using provider discovery (if present in request)
+        List<AuthorizationDetailsResponse> authorizationDetailsResponse = null;
+        if (formParams.getFirst(AUTHORIZATION_DETAILS_PARAM) != null) {
+            authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            } else {
+                logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", formParams.getFirst(AUTHORIZATION_DETAILS_PARAM));
+            }
+        }
+
+        // If no authorization_details were processed from the request, try to generate them from credential offer
+        if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
+            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            }
+        }
+
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
+    }
+
+    @Override
+    protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
+        List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+        if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+            res.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authDetailsResponse);
+        }
     }
 
     @Override

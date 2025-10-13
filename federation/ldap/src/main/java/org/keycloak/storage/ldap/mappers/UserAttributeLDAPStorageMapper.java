@@ -17,6 +17,8 @@
 
 package org.keycloak.storage.ldap.mappers;
 
+import static java.util.Optional.ofNullable;
+
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -45,7 +47,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -293,7 +294,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 @Override
                 public String getUsername() {
                     if (UserModel.USERNAME.equals(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
+                        return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
+                                .map(String::toLowerCase)
+                                .orElse(null);
                     }
                     return super.getUsername();
                 }
@@ -301,7 +304,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 @Override
                 public String getEmail() {
                     if (UserModel.EMAIL.equals(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
+                        return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
+                                .map(String::toLowerCase)
+                                .orElse(null);
                     }
                     return super.getEmail();
                 }

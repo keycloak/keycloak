@@ -929,8 +929,6 @@ public class LoginActionsService {
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, brokerContext.getBrokerSessionId());
 
-        event.success();
-
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 
             @Override
@@ -967,7 +965,10 @@ public class LoginActionsService {
 
         configureOrganization(brokerContext);
 
-        return processFlow(checks.isActionRequest(), execution, authSession, flowPath, brokerLoginFlow, null, processor);
+        Response response = processFlow(checks.isActionRequest(), execution, authSession, flowPath, brokerLoginFlow, null, processor);
+        event.success();
+
+        return response;
     }
 
     private void configureOrganization(BrokeredIdentityContext brokerContext) {
@@ -1070,9 +1071,9 @@ public class LoginActionsService {
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
-        event.success();
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
+        event.success();
         return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession);
     }
 

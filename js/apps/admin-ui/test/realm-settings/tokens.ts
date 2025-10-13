@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 import { changeTimeUnit, switchOn } from "../utils/form.ts";
 
 export async function goToTokensTab(page: Page) {

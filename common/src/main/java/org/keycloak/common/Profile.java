@@ -91,9 +91,11 @@ public class Profile {
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
 
-        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.EXPERIMENTAL),
+        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.PREVIEW),
 
-        SPIFFE("SPIFFE trust relationship provider", Type.EXPERIMENTAL),
+        SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
+
+        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.EXPERIMENTAL),
 
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
@@ -104,7 +106,7 @@ public class Profile {
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
-        DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
+        DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.DEFAULT),
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
@@ -140,7 +142,7 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
-        RESOURCE_LIFECYCLE("Resource lifecycle management", Type.EXPERIMENTAL),
+        WORKFLOWS("Workflows", Type.EXPERIMENTAL),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
 

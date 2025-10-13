@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -30,10 +32,13 @@ public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresenta
 
     @Override
     public void init(Config.Scope config) {
+        CaffeineStatsCounter metrics = new CaffeineStatsCounter(Metrics.globalRegistry, "userAgent");
         cache = Caffeine.newBuilder()
                 .maximumSize(config.getInt(CACHE_SIZE, DEFAULT_CACHE_SIZE))
+                .recordStats(() -> metrics)
                 .softValues()
                 .build(UA_PARSER::parse);
+        metrics.registerSizeMetric(cache);
     }
 
     @Override

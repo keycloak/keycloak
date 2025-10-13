@@ -1,19 +1,18 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
-  FormPanel,
   HelpItem,
   KeycloakSelect,
   SelectVariant,
+  ScrollForm,
+  useAlerts,
 } from "@keycloak/keycloak-ui-shared";
 import {
-  ActionGroup,
-  Button,
+  AlertVariant,
   FormGroup,
   FormHelperText,
   HelperText,
   HelperTextItem,
   NumberInput,
-  PageSection,
   SelectOption,
   Switch,
   Text,
@@ -24,10 +23,13 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../components/form/FormAccess";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
+import { convertAttributeNameToForm } from "../util";
 import {
   TimeSelector,
   toHumanFormat,
 } from "../components/time-selector/TimeSelector";
+import { TimeSelectorControl } from "../components/time-selector/TimeSelectorControl";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { beerify, sortProviders } from "../util";
@@ -45,6 +47,7 @@ export const RealmSettingsTokensTab = ({
   save,
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation();
+  const { addAlert } = useAlerts();
   const serverInfo = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
   const { whoAmI } = useWhoAmI();
@@ -58,6 +61,11 @@ export const RealmSettingsTokensTab = ({
 
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
+
+  // Show a global error notification if validation fails
+  const onError = () => {
+    addAlert(t("oid4vciFormValidationError"), AlertVariant.danger);
+  };
 
   const offlineSessionMaxEnabled = useWatch({
     control,
@@ -77,9 +85,10 @@ export const RealmSettingsTokensTab = ({
     defaultValue: false,
   });
 
-  return (
-    <PageSection variant="light">
-      <FormPanel title={t("general")} className="kc-sso-session-template">
+  const sections = [
+    {
+      title: t("general"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -236,11 +245,11 @@ export const RealmSettingsTokensTab = ({
             </>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        title={t("refreshTokens")}
-        className="kc-client-session-template"
-      >
+      ),
+    },
+    {
+      title: t("refreshTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -308,11 +317,11 @@ export const RealmSettingsTokensTab = ({
             </FormGroup>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        title={t("accessTokens")}
-        className="kc-offline-session-template"
-      >
+      ),
+    },
+    {
+      title: t("accessTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -437,11 +446,11 @@ export const RealmSettingsTokensTab = ({
             </FormGroup>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        className="kc-login-settings-template"
-        title={t("actionTokens")}
-      >
+      ),
+    },
+    {
+      title: t("actionTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -618,21 +627,69 @@ export const RealmSettingsTokensTab = ({
               )}
             />
           </FormGroup>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              data-testid="tokens-tab-save"
+          {!isFeatureEnabled(Feature.OpenId4VCI) && (
+            <FixedButtonsGroup
+              name="tokens-tab"
+              isSubmit
               isDisabled={!formState.isDirty}
-            >
-              {t("save")}
-            </Button>
-            <Button variant="link" onClick={() => reset(realm)}>
-              {t("revert")}
-            </Button>
-          </ActionGroup>
+              reset={() => reset(realm)}
+            />
+          )}
         </FormAccess>
-      </FormPanel>
-    </PageSection>
+      ),
+    },
+    {
+      title: t("oid4vciAttributes"),
+      isHidden: !isFeatureEnabled(Feature.OpenId4VCI),
+      panel: (
+        <FormAccess
+          isHorizontal
+          role="manage-realm"
+          className="pf-v5-u-mt-lg"
+          onSubmit={handleSubmit(save, onError)}
+        >
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.vc.c-nonce-lifetime-seconds",
+            )}
+            label={t("oid4vciNonceLifetime")}
+            labelIcon={t("oid4vciNonceLifetimeHelp")}
+            controller={{
+              defaultValue: 60,
+              rules: { min: 30 },
+            }}
+            min={30}
+            units={["second", "minute", "hour"]}
+          />
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.preAuthorizedCodeLifespanS",
+            )}
+            label={t("preAuthorizedCodeLifespan")}
+            labelIcon={t("preAuthorizedCodeLifespanHelp")}
+            controller={{
+              defaultValue: 30,
+              rules: { min: 30 },
+            }}
+            min={30}
+            units={["second", "minute", "hour"]}
+          />
+          <FixedButtonsGroup
+            name="tokens-tab"
+            isSubmit
+            isDisabled={!formState.isDirty}
+            reset={() => reset(realm)}
+          />
+        </FormAccess>
+      ),
+    },
+  ];
+
+  return (
+    <ScrollForm
+      label={t("jumpToSection")}
+      className="pf-v5-u-px-lg pf-v5-u-pb-lg"
+      sections={sections}
+    />
   );
 };

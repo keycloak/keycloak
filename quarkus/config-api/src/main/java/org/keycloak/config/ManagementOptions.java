@@ -19,6 +19,8 @@ package org.keycloak.config;
 import java.io.File;
 import java.util.List;
 
+import static org.keycloak.config.OptionsUtil.DURATION_DESCRIPTION;
+
 /**
  * Options for the management interface that handles management endpoints (f.e. health and metrics endpoints)
  */
@@ -105,8 +107,8 @@ public class ManagementOptions {
     public static final Option<String> HTTPS_MANAGEMENT_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-management-certificates-reload-period", String.class)
             .category(OptionCategory.MANAGEMENT)
             .description("Interval on which to reload key store, trust store, and certificate files referenced by https-management-* options for the management server. " +
-                    "May be a java.time.Duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d]. " +
-                    "Must be greater than 30 seconds. Use -1 to disable. " +
+                    DURATION_DESCRIPTION +
+                    " Must be greater than 30 seconds. Use -1 to disable. " +
                     "If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .defaultValue("1h")
             .build();

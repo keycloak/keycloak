@@ -28,7 +28,6 @@ import org.keycloak.services.ServicesLogger;
 
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;

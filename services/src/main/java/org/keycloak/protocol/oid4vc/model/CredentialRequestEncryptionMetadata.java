@@ -19,21 +19,21 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 
 import java.util.List;
 
 /**
  * Represents the credential_request_encryption metadata for an OID4VCI Credential Issuer.
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p}
+ * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p
  *
- * @author <a href="https://github.com/forkimenjeckayang">Forkim Akwichek</a>
+ * @author <a href="mailto:Bertrand.Ogen@adorsys.com">Bertrand Ogen</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialRequestEncryptionMetadata {
 
     @JsonProperty("jwks")
-    private List<JWK> jwks;
+    private JSONWebKeySet jwks;
 
     @JsonProperty("enc_values_supported")
     private List<String> encValuesSupported;
@@ -44,11 +44,11 @@ public class CredentialRequestEncryptionMetadata {
     @JsonProperty("encryption_required")
     private Boolean encryptionRequired;
 
-    public List<JWK> getJwks() {
+    public JSONWebKeySet getJwks() {
         return jwks;
     }
 
-    public CredentialRequestEncryptionMetadata setJwks(List<JWK> jwks) {
+    public CredentialRequestEncryptionMetadata setJwks(JSONWebKeySet jwks) {
         this.jwks = jwks;
         return this;
     }
@@ -71,7 +71,7 @@ public class CredentialRequestEncryptionMetadata {
         return this;
     }
 
-    public Boolean getEncryptionRequired() {
+    public Boolean isEncryptionRequired() {
         return encryptionRequired;
     }
 

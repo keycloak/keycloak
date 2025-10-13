@@ -10,10 +10,9 @@ import static org.keycloak.common.util.UriUtils.checkUrl;
 
 public class SpiffeIdentityProviderConfig extends IdentityProviderModel {
 
-    public static final String TRUST_DOMAIN_KEY = "trustDomain";
     public static final String BUNDLE_ENDPOINT_KEY = "bundleEndpoint";
 
-    private static final Pattern TRUST_DOMAIN_PATTERN = Pattern.compile("[a-z0-9.\\-_]*");
+    private static final Pattern TRUST_DOMAIN_PATTERN = Pattern.compile("spiffe://[a-z0-9.\\-_]*");
 
     public SpiffeIdentityProviderConfig() {
         getConfig().put(IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.NEVER.name());
@@ -42,7 +41,7 @@ public class SpiffeIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public String getTrustDomain() {
-        return getConfig().get(TRUST_DOMAIN_KEY);
+        return getConfig().get(ISSUER);
     }
 
     public String getBundleEndpoint() {

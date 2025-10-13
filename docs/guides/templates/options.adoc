@@ -31,6 +31,8 @@
 --
 <#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
 
+<#if option.wildcardKey?has_content>*Named key:* [.options-wildcard-key]#`+${option.wildcardKey}+`# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if></#if>
+
 *CLI:* `+${option.keyCli}+` +
 *Env:* `+${option.keyEnv}+`
 --

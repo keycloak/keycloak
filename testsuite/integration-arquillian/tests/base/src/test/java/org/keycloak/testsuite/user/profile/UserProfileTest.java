@@ -50,6 +50,7 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -58,6 +59,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
@@ -758,12 +760,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testUpdateEmail(KeycloakSession session) {
-        Map<String, Object> attributes = new HashMap<>();
+        RealmModel realm = session.getContext().getRealm();
+        RequiredActionProviderModel actionConfig = realm.getRequiredActionProviderByAlias(RequiredAction.UPDATE_EMAIL.name());
 
-        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
-        attributes.put(UserModel.FIRST_NAME, "John");
-        attributes.put(UserModel.LAST_NAME, "Doe");
-        attributes.put(UserModel.EMAIL, "canchange@foo.bar");
+        actionConfig.setEnabled(true);
+
+        realm.updateRequiredActionProvider(actionConfig);
 
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
@@ -773,25 +775,75 @@ public class UserProfileTest extends AbstractUserProfileTest {
         // configure email r/w for user
         provider.setConfiguration(config);
 
-        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, "myemail@foo.bar");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
         UserModel user = profile.create();
+        assertEquals(attributes.get(UserModel.EMAIL), user.getEmail());
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE));
-
-        profile = provider.create(UserProfileContext.USER_API, attributes, user);
-
-        Set<String> attributesUpdated = new HashSet<>();
-
-        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.LOCALE, TermsAndConditions.USER_ATTRIBUTE, UserModel.EMAIL_PENDING));
 
         attributes.put("email", "changed@foo.bar");
 
         profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.EMAIL));
+        }
 
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        try {
+            profile.update();
+            fail("Should fail");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.EMAIL));
+        }
+
+        attributes.remove(UserModel.EMAIL);
+        attributes.put(UserModel.EMAIL_PENDING, "pending@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
         profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
 
-        assertEquals("E-Mail address should have been changed!", "changed@foo.bar", user.getEmail());
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+        config.getAttribute(UserModel.EMAIL).getPermissions().setEdit(Set.of(ROLE_ADMIN));
+        provider.setConfiguration(config);
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertEquals("myemail@foo.bar", user.getFirstAttribute(UserModel.EMAIL));
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+        assertFalse(profile.getAttributes().getWritable().containsKey(UserModel.EMAIL));
+        user.setEmail(null);
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL));
+        assertFalse(profile.getAttributes().getWritable().containsKey(UserModel.EMAIL));
+        config.getAttribute(UserModel.EMAIL).getPermissions().setEdit(Set.of(ROLE_USER, ROLE_ADMIN));
+        provider.setConfiguration(config);
+        user.setEmail("myemail@foo.bar");
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+        assertNotNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
+
+        attributes.put(UserModel.EMAIL_PENDING, "");
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update();
+        assertNull(user.getFirstAttribute(UserModel.EMAIL_PENDING));
     }
 
     @Test
@@ -2413,6 +2465,52 @@ public class UserProfileTest extends AbstractUserProfileTest {
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(false);
         }
+    }
+
+    @Test
+    public void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled() {
+        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        try {
+            getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled);
+        } finally {
+            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+        }
+    }
+
+    private static void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, String> attributes = new HashMap<>();
+        
+        // Enable UPDATE_EMAIL feature
+        RealmModel realm = session.getContext().getRealm();
+        realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name()).setEnabled(true);
+        
+        // Create user without email
+        attributes.put(UserModel.USERNAME, userName);
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        // Deliberately not setting email to test empty email scenario
+        
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        
+        // Configure email as read-only for users (only admins can edit)
+        UPConfig upConfig = provider.getConfiguration();
+        UPAttribute emailAttr = upConfig.getAttribute(UserModel.EMAIL);
+        if (emailAttr == null) {
+            emailAttr = new UPAttribute(UserModel.EMAIL);
+            upConfig.addOrReplaceAttribute(emailAttr);
+        }
+        emailAttr.setPermissions(new UPAttributePermissions(Set.of(), Set.of("admin")));
+        provider.setConfiguration(upConfig);
+
+        profile = provider.create(UserProfileContext.UPDATE_PROFILE, user);
+        Map<String, List<String>> readableAttributes = profile.getAttributes().getReadable();
+        
+        // Email should NOT be visible in UPDATE_PROFILE context when empty and read-only
+        assertFalse("Email field should be hidden when empty, read-only, and UPDATE_EMAIL is enabled",
+                readableAttributes.containsKey(UserModel.EMAIL));
     }
 
     @Test

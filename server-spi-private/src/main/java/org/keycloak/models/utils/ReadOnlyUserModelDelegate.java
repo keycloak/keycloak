@@ -47,6 +47,11 @@ public class ReadOnlyUserModelDelegate extends UserModelDelegate {
         this.exceptionCreator = exceptionCreator;
     }
 
+    public ReadOnlyUserModelDelegate(UserModel delegate, boolean enabled, Function<String, RuntimeException> exceptionCreator) {
+        this(delegate, exceptionCreator);
+        this.enabled = enabled;
+    }
+
     @Override
     public void setUsername(String username) {
         throw readOnlyException("username");

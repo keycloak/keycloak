@@ -1,7 +1,6 @@
 package org.keycloak.testframework.ui.page;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -16,6 +15,9 @@ public class LoginPage extends AbstractPage {
 
     @FindBy(css = "[type=submit]")
     private WebElement submitButton;
+
+    @FindBy(id = "rememberMe")
+    private WebElement rememberMe;
 
     public LoginPage(WebDriver driver) {
         super(driver);
@@ -38,6 +40,17 @@ public class LoginPage extends AbstractPage {
     public WebElement findSocialButton(String alias) {
         String id = "social-" + alias;
         return driver.findElement(By.id(id));
+    }
+
+    public void rememberMe(boolean value) {
+        boolean selected = isRememberMe();
+        if ((value && !selected) || !value && selected) {
+            rememberMe.click();
+        }
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe.isSelected();
     }
 
     @Override

@@ -29,4 +29,11 @@ public class MySQLDistTest extends MySQLTest {
     public void testKeycloakDbUpdateScript(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
         assertManualDbInitialization(cliResult, rawDistRootPath);
     }
+
+    @Tag(DistributionTest.STORAGE)
+    @Test
+    @Launch({"start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-pool-max-lifetime=28800"})
+    public void testWarningForTooShortLifetime(CLIResult cliResult) {
+        cliResult.assertMessage("set 'db-pool-max-lifetime' to a duration smaller than '28800' seconds.");
+    }
 }

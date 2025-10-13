@@ -19,6 +19,12 @@ export const IntComponent = ({
       label={t(label!)}
       labelIcon={t(helpText!)}
       data-testid={name}
+      rules={{
+        required: {
+          value: !!props.required,
+          message: t("required"),
+        },
+      }}
       {...props}
     />
   );

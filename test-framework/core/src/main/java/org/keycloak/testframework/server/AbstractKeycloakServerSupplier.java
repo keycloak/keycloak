@@ -4,6 +4,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.infinispan.InfinispanServer;
 import org.keycloak.testframework.injection.AbstractInterceptorHelper;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -21,7 +23,6 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         KeycloakServerConfig serverConfig = SupplierHelpers.getInstance(annotation.config());
 
         KeycloakServerConfigBuilder command = KeycloakServerConfigBuilder.startDev()
-                .cache(cache())
                 .bootstrapAdminClient(Config.getAdminClientId(), Config.getAdminClientSecret())
                 .bootstrapAdminUser(Config.getAdminUsername(), Config.getAdminPassword());
 
@@ -35,12 +36,24 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
         command = serverConfig.configure(command);
 
+        // Database startup and Keycloak connection setup
         if (requiresDatabase()) {
             instanceContext.getDependency(TestDatabase.class);
         }
 
+        // External Infinispan startup and Keycloak connection setup
+        if (command.isExternalInfinispanEnabled()) {
+            instanceContext.getDependency(InfinispanServer.class);
+        }
+
         ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(instanceContext.getRegistry());
         command = interceptor.intercept(command, instanceContext);
+
+        if (command.tlsEnabled()) {
+            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath());
+            command.option("https-key-store-password", managedCert.getKeycloakServerKeyStorePassword());
+        }
 
         command.log().fromConfig(Config.getConfig());
 
@@ -79,10 +92,6 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
     public abstract boolean requiresDatabase();
 
     public abstract Logger getLogger();
-
-    protected String cache() {
-        return "local";
-    }
 
     @Override
     public int order() {

@@ -19,6 +19,8 @@ import {
   clickCreateRealmForm,
   fillRealmName,
   goToRealmSection,
+  getTextArea,
+  assertTextAreaContains,
 } from "./realm.ts";
 
 const testRealmName = `Test-realm-${uuid()}`;
@@ -112,5 +114,26 @@ test.describe.serial("Realm tests", () => {
 
     await goToClients(page);
     await assertRowExists(page, "account-console");
+  });
+
+  test("should disable preview if json very long", async ({ page }) => {
+    await page.getByTestId("create").click();
+    await getTextArea(page).fill("{}");
+    await assertTextAreaContains(page, "{}");
+
+    const s = '"attribute-name": "attribute-value",';
+    await getTextArea(page).fill(`{${s.repeat(3000)}"final":"value"}`);
+    await assertTextAreaContains(
+      page,
+      "Preview disabled because content is too long.",
+    );
+
+    await fillRealmName(page, testRealmName);
+    await clickCreateRealmForm(page);
+
+    await assertNotificationMessage(
+      page,
+      "Could not create realm unable to read contents from stream",
+    );
   });
 });

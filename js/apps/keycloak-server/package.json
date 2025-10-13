@@ -12,7 +12,7 @@
     "@types/gunzip-maybe": "^1.4.2",
     "@types/tar-fs": "^2.0.4",
     "gunzip-maybe": "^1.4.2",
-    "tar-fs": "^3.1.0"
+    "tar-fs": "^3.1.1"
   },
   "author": {
     "name": "Red Hat, Inc.",

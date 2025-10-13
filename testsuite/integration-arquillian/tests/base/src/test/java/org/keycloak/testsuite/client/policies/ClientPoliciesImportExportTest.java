@@ -32,7 +32,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * This test class is for testing client policies that are applied when importing and exporting a realm setting file.

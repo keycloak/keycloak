@@ -1,4 +1,3 @@
-SessionTest
 KcSamlBrokerSessionNotOnOrAfterTest
 OidcClaimToUserSessionNoteMapperTest
 KcOidcBrokerTransientSessionsTest
@@ -14,7 +13,6 @@ KcOidcUserSessionLimitsBrokerTest
 KcSamlUserSessionLimitsBrokerTest
 AbstractUserSessionLimitsBrokerTest
 UserSessionLimitsTest
-ConcurrentLoginTest
 RefreshTokenTest
 OfflineTokenTest
 AccessTokenTest

@@ -34,6 +34,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -122,29 +123,33 @@ public class ClientsResource {
 
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || auth.clients().canView();
         Stream<ClientModel> clientModels = Stream.empty();
-
-        if (searchQuery != null) {
-            Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            clientModels = canView
-                    ? realm.searchClientByAttributes(attributes, firstResult, maxResults)
-                    : realm.searchClientByAttributes(attributes, -1, -1);
-        } else if (clientId == null || clientId.trim().equals("")) {
-            clientModels = canView
-                    ? realm.getClientsStream(firstResult, maxResults)
-                    : realm.getClientsStream();
-        } else if (search) {
-            clientModels = canView
-                    ? realm.searchClientByClientIdStream(clientId, firstResult, maxResults)
-                    : realm.searchClientByClientIdStream(clientId, -1, -1);
-        } else {
-            ClientModel client = realm.getClientByClientId(clientId);
-            if (client != null) {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    clientModels = Stream.of(client).filter(auth.clients()::canView);
-                } else {
-                    clientModels = Stream.of(client);
+        try {
+            if (searchQuery != null) {
+                Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+                clientModels = canView
+                        ? realm.searchClientByAttributes(attributes, firstResult, maxResults)
+                        : realm.searchClientByAttributes(attributes, -1, -1);
+            } else if (clientId == null || clientId.trim().equals("")) {
+                clientModels = canView
+                        ? realm.getClientsStream(firstResult, maxResults)
+                        : realm.getClientsStream();
+            } else if (search) {
+                clientModels = canView
+                        ? realm.searchClientByClientIdStream(clientId, firstResult, maxResults)
+                        : realm.searchClientByClientIdStream(clientId, -1, -1);
+            } else {
+                ClientModel client = realm.getClientByClientId(clientId);
+                if (client != null) {
+                    if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+                        clientModels = Stream.of(client).filter(auth.clients()::canView);
+                    } else {
+                        clientModels = Stream.of(client);
+                    }
                 }
             }
+        }
+        catch (ModelException e) {
+            throw new ErrorResponseException(Errors.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         Stream<ClientRepresentation> s = ModelToRepresentation.filterValidRepresentations(clientModels,

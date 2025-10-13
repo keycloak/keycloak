@@ -102,6 +102,9 @@ Cache:
 --cache-metrics-histograms-enabled <true|false>
                      Enable histograms for metrics for the embedded caches. Default: false.
                        Available only when metrics are enabled.
+--cache-remote-backup-sites <sites>
+                     Configures a list of backup sites names to where the external Infinispan
+                       cluster backups the Keycloak data. Available only when remote host is set.
 --cache-remote-host <hostname>
                      The hostname of the external Infinispan cluster. Available only when feature
                        'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or
@@ -157,6 +160,11 @@ Database:
                      The password of the database user.
 --db-pool-initial-size <size>
                      The initial size of the connection pool.
+--db-pool-max-lifetime <duration>
+                     The maximum time a connection remains in the pool, after which it will be
+                       closed upon return and replaced as necessary. May be an ISO 8601 duration
+                       value, an integer number of seconds, or an integer followed by one of [ms,
+                       h, m, s, d].
 --db-pool-max-size <size>
                      The maximum size of the connection pool. Default: 100.
 --db-pool-min-size <size>
@@ -181,62 +189,60 @@ Database:
 --db-username <username>
                      The username of the database user.
 
-Database - additional datasources (Preview):
+Database - additional datasources:
 
 --db-debug-jpql-<datasource> <true|false>
-                     Preview: Used for named <datasource>. Add JPQL information as comments to SQL
+                     Used for named <datasource>. Add JPQL information as comments to SQL
                        statements to debug JPA SQL statement generation. Default: false.
 --db-driver-<datasource> <driver>
-                     Preview: Used for named <datasource>. The fully qualified class name of the
-                       JDBC driver. If not set, a default driver is set accordingly to the chosen
+                     Used for named <datasource>. The fully qualified class name of the JDBC
+                       driver. If not set, a default driver is set accordingly to the chosen
                        database.
 --db-enabled-<datasource> <true|false>
-                     Preview: If the named datasource <datasource> should be enabled at runtime.
-                       Default: true.
+                     If the named datasource <datasource> should be enabled at runtime. Default:
+                       true.
 --db-kind-<datasource> <vendor>
-                     Preview: Used for named <datasource>. The database vendor. In production mode
-                       the default value of 'dev-file' is deprecated, you should explicitly specify
-                       the db instead. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres, tidb.
+                     Used for named <datasource>. The database vendor. In production mode the
+                       default value of 'dev-file' is deprecated, you should explicitly specify the
+                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
+                       oracle, postgres, tidb.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
-                     Preview: Used for named <datasource>. Log SQL statements slower than the
-                       configured threshold with logger org.hibernate.SQL_SLOW and log-level info.
-                       Default: 10000.
+                     Used for named <datasource>. Log SQL statements slower than the configured
+                       threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
+                       10000.
 --db-password-<datasource> <password>
-                     Preview: Used for named <datasource>. The password of the database user.
+                     Used for named <datasource>. The password of the database user.
 --db-pool-initial-size-<datasource> <size>
-                     Preview: Used for named <datasource>. The initial size of the connection pool.
+                     Used for named <datasource>. The initial size of the connection pool.
 --db-pool-max-size-<datasource> <size>
-                     Preview: Used for named <datasource>. The maximum size of the connection pool.
-                       Default: 100.
+                     Used for named <datasource>. The maximum size of the connection pool. Default:
+                       100.
 --db-pool-min-size-<datasource> <size>
-                     Preview: Used for named <datasource>. The minimal size of the connection pool.
+                     Used for named <datasource>. The minimal size of the connection pool.
 --db-schema-<datasource> <schema>
-                     Preview: Used for named <datasource>. The database schema to be used.
+                     Used for named <datasource>. The database schema to be used.
 --db-url-database-<datasource> <dbname>
-                     Preview: Used for named <datasource>. Sets the database name of the default
-                       JDBC URL of the chosen vendor. If the `db-url` option is set, this option is
-                       ignored.
---db-url-full-<datasource> <jdbc-url>
-                     Preview: Used for named <datasource>. The full database JDBC URL. If not
-                       provided, a default URL is set based on the selected database vendor. For
-                       instance, if using 'postgres', the default JDBC URL would be 'jdbc:
-                       postgresql://localhost/keycloak'.
---db-url-host-<datasource> <hostname>
-                     Preview: Used for named <datasource>. Sets the hostname of the default JDBC
-                       URL of the chosen vendor. If the `db-url` option is set, this option is
-                       ignored.
---db-url-port-<datasource> <port>
-                     Preview: Used for named <datasource>. Sets the port of the default JDBC URL of
+                     Used for named <datasource>. Sets the database name of the default JDBC URL of
                        the chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-full-<datasource> <jdbc-url>
+                     Used for named <datasource>. The full database JDBC URL. If not provided, a
+                       default URL is set based on the selected database vendor. For instance, if
+                       using 'postgres', the default JDBC URL would be 'jdbc:postgresql:
+                       //localhost/keycloak'.
+--db-url-host-<datasource> <hostname>
+                     Used for named <datasource>. Sets the hostname of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
+--db-url-port-<datasource> <port>
+                     Used for named <datasource>. Sets the port of the default JDBC URL of the
+                       chosen vendor. If the `db-url` option is set, this option is ignored.
 --db-url-properties-<datasource> <properties>
-                     Preview: Used for named <datasource>. Sets the properties of the default JDBC
-                       URL of the chosen vendor. Make sure to set the properties accordingly to the
-                       format expected by the database vendor, as well as appending the right
-                       character at the beginning of this property value. If the `db-url` option is
-                       set, this option is ignored.
+                     Used for named <datasource>. Sets the properties of the default JDBC URL of
+                       the chosen vendor. Make sure to set the properties accordingly to the format
+                       expected by the database vendor, as well as appending the right character at
+                       the beginning of this property value. If the `db-url` option is set, this
+                       option is ignored.
 --db-username-<datasource> <username>
-                     Preview: Used for named <datasource>. The username of the database user.
+                     Used for named <datasource>. The username of the database user.
 
 Transaction:
 
@@ -312,7 +318,7 @@ HTTP(S):
                      The file path to a private key in PEM format.
 --https-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-* options. May be a java.time.Duration value, an integer
+                       referenced by https-* options. May be an ISO 8601 duration value, an integer
                        number of seconds, or an integer followed by one of [ms, h, m, s, d]. Must
                        be greater than 30 seconds. Use -1 to disable. Default: 1h.
 --https-cipher-suites <ciphers>
@@ -398,8 +404,8 @@ Management:
                        details. Available only when http-management-scheme is inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
-                       referenced by https-management-* options for the management server. May be a
-                       java.time.Duration value, an integer number of seconds, or an integer
+                       referenced by https-management-* options for the management server. May be
+                       an ISO 8601 duration value, an integer number of seconds, or an integer
                        followed by one of [ms, h, m, s, d]. Must be greater than 30 seconds. Use -1
                        to disable. If not given, the value is inherited from HTTP options. Relevant
                        only when something is exposed on the management interface - see the guide
@@ -474,7 +480,8 @@ Logging:
                        Default: 512. Available only when Console log handler is activated and
                        asynchronous logging is enabled.
 --log-console-color <true|false>
-                     Enable or disable colors when logging to console. Default: false. Available
+                     Enable or disable colors when logging to console. If this is not present then
+                       an attempt will be made to guess if the terminal supports color. Available
                        only when Console log handler is activated.
 --log-console-format <format>
                      The format of unstructured console log entries. If the format has spaces in

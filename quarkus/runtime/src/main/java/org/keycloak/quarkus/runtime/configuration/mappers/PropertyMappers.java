@@ -5,6 +5,7 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Expressions;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.Option;
@@ -313,6 +314,10 @@ public final class PropertyMappers {
                     PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
                 } else {
                     Environment.getCurrentOrCreateFeatureProfile();
+                    if (!command.shouldStart()) {
+                        // this will use the deferred logger, which means it may not be seen in some circumstances
+                        Profile.getInstance().logUnsupportedFeatures();
+                    }
                 }
 
                 sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers);

@@ -108,14 +108,24 @@ kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resourc
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
 ----
 
-. Install the {project_name} Operator deployment by entering the following command:
+. Install the {project_name} Operator deployment in the `keycloak` namespace by executing the following commands:
 +
 [source,bash,subs="attributes+"]
 ----
-kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
+kubectl create namespace keycloak
+kubectl -n keycloak apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
 ----
 
-The Operator will watch the namespace where it is installed. You may optionally select a namespace with the `-n` option.
+The Operator will watch the namespace where it is installed. You may utilise a different namespace with the `-n` option,
+however you must also update the `ClusterRoleBinding` subject. For example, to install in the namespace `custom-namespace`,
+execute the following commands:
++
+[source,bash,subs="attributes+"]
+----
+kubectl create namespace custom-namespace
+kubectl -n custom-namespace apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
+kubectl patch clusterrolebinding keycloak-operator-clusterrole-binding --type='json' -p='[{"op": "replace", "path": "/subjects/0/namespace", "value":"custom-namespace"}]'
+----
 </@profile.ifCommunity>
 
 === Installing Multiple Operators

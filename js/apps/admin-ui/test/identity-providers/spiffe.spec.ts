@@ -15,7 +15,13 @@ test.afterAll(() => adminClient.deleteIdentityProvider("spiffe"));
 
 test.describe.serial("SPIFFE identity provider test", () => {
   test("should create a SPIFFE provider", async ({ page }) => {
-    await createSPIFFEProvider(page, "spiffe", "mytrust", "https://mytrust");
+    await createSPIFFEProvider(
+      page,
+      "spiffe",
+      "spiffe://mytrust2",
+      "https://mytrust",
+    );
+
     await assertNotificationMessage(
       page,
       "Identity provider successfully created",
@@ -24,7 +30,7 @@ test.describe.serial("SPIFFE identity provider test", () => {
     await goToIdentityProviders(page);
     await clickTableRowItem(page, "Spiffe");
 
-    await page.getByTestId("config.trustDomain").fill("mytrust2");
+    await page.getByTestId("config.issuer").fill("spiffe://mytrust2");
     await page.getByTestId("config.bundleEndpoint").fill("https://mytrust2");
 
     await clickSaveButton(page);

@@ -33,6 +33,7 @@ public class JavaAlgorithm {
     public static final String Ed25519 = "Ed25519";
     public static final String Ed448 = "Ed448";
     public static final String AES = "AES";
+    public static final String ECDSA = "ECDSA";
 
     public static final String SHA256 = "SHA-256";
     public static final String SHA384 = "SHA-384";
@@ -127,6 +128,22 @@ public class JavaAlgorithm {
                 return AES;
             default:
                 throw new IllegalArgumentException("Unknown algorithm " + algorithm);
+        }
+    }
+
+    public static String getKeyType(String keyAlgorithm) {
+        switch (keyAlgorithm) {
+            case KeyType.RSA:
+                return KeyType.RSA;
+            case KeyType.EC:
+            case ECDSA:
+                return KeyType.EC;
+            case Algorithm.EdDSA:
+            case Algorithm.Ed448:
+            case Algorithm.Ed25519:
+                return KeyType.OKP;
+            default:
+                return KeyType.OCT;
         }
     }
 

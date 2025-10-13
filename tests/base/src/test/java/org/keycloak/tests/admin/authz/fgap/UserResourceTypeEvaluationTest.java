@@ -19,6 +19,7 @@ package org.keycloak.tests.admin.authz.fgap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,22 +38,29 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
 @KeycloakIntegrationTest
@@ -63,6 +71,9 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     private final String usersType = AdminPermissionsSchema.USERS.getType();
 
@@ -163,9 +174,9 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(newUserId).toRepresentation().getEmail());
 
         // remove the user permission
-        getScopePermissionsResource(client).findAll(null, null, null, null, null).forEach(permission -> {
-            getScopePermissionsResource(client).findById(permission.getId()).remove();
-        });
+        getScopePermissionsResource(client).findAll(null, null, null, null, null).forEach(permission ->
+            getScopePermissionsResource(client).findById(permission.getId()).remove()
+        );
 
         // updating the user should be denied
         try {
@@ -463,5 +474,64 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(client, userAlice.admin().toRepresentation().getId(), usersType, Set.of(VIEW), allowMyAdminPermission);
 
         users.get(search.get(0).getId()).resetPassword(credential);
+    }
+
+    @Test
+    public void testAdminGroupViewPermission() {
+        // Create group 'test_admins'
+        GroupRepresentation testAdminsGroup = new GroupRepresentation();
+        testAdminsGroup.setName("test_admins");
+        testAdminsGroup.setId(ApiUtil.handleCreatedResponse(realm.admin().groups().add(testAdminsGroup)));
+
+        // Add user 'myadmin' as a member of 'test_admins'
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        realm.admin().users().get(myadmin.getId()).joinGroup(testAdminsGroup.getId());
+
+        // Create user permission allowing to 'view' all users by members of 'test_admins' group
+        GroupPolicyRepresentation allowAdmins = createGroupPolicy(realm, client, "Allow 'test_admins'", testAdminsGroup.getId(), Logic.POSITIVE);
+        createAllPermission(client, usersType, allowAdmins, Set.of(VIEW));
+
+        // Create group permission denying to 'manage' specific group: 'test_admins' by members of 'test_admins'
+        GroupPolicyRepresentation denyAdmins = createGroupPolicy(realm, client, "Deny Policy", testAdminsGroup.getId(), Logic.NEGATIVE);
+        createGroupPermission(testAdminsGroup, Set.of(MANAGE), denyAdmins);
+
+        UserRepresentation representation = realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).toRepresentation();
+        assertThat(representation, notNullValue());
+    }
+
+    @Test
+    public void testViewUserWithAdminRoleAfterDisablingFgap() {
+        // setup permission to allow view all users by myadmin
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(client, usersType, allowMyAdminPermission, Set.of(VIEW));
+
+        // get userAlice user by myadmin
+        UserRepresentation representation = realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).toRepresentation();
+        assertThat(representation, notNullValue());
+
+        // disable FGAP for realm
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        realmRep.setAdminPermissionsEnabled(Boolean.FALSE);
+        realm.admin().update(realmRep);
+
+        //assign view-users role to myadmin
+        String realmManagementClientId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewUsersRole = realm.admin().clients().get(realmManagementClientId).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagementClientId).add(List.of(viewUsersRole));
+
+        // get userAlice user by myadmin again - it threw NPE before the fix
+        // need to use separate Keycloak instance so that new role assignment is picked up
+        try (Keycloak keycloak = KeycloakBuilder.builder()
+                .serverUrl(keycloakUrls.getBaseUrl().toString())
+                .realm(realm.getName())
+                .grantType(OAuth2Constants.PASSWORD)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .username(myadmin.getUsername())
+                .password("password")
+                .build()) {
+            representation = keycloak.realm(realm.getName()).users().get(userAlice.getId()).toRepresentation();
+            assertThat(representation, notNullValue());
+        }
     }
 }

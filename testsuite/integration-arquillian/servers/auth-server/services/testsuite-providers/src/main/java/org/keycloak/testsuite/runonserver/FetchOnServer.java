@@ -20,7 +20,6 @@ package org.keycloak.testsuite.runonserver;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.Serializable;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

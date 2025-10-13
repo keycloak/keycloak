@@ -152,6 +152,11 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                 fromOption(CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED)
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
                         .to("kc.spi-cache-embedded--default--metrics-histograms-enabled")
+                        .build(),
+                fromOption(CachingOptions.CACHE_REMOTE_BACKUP_SITES)
+                        .isEnabled(CachingPropertyMappers::remoteHostSet, CachingPropertyMappers.REMOTE_HOST_SET)
+                        .to("kc.spi-cache-remote--default--backup-sites")
+                        .paramLabel("sites")
                         .build()
         );
 
