@@ -23,7 +23,6 @@ import java.util.Map.Entry;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.keycloak.models.Constants;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.auth.page.PasswordFields;
 import org.keycloak.testsuite.util.DroneUtils;

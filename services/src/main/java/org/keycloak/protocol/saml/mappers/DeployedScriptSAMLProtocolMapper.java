@@ -3,7 +3,6 @@ package org.keycloak.protocol.saml.mappers;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.Profile;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.provider.ScriptProviderMetadata;

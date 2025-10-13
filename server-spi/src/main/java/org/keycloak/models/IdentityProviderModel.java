@@ -16,7 +16,6 @@
  */
 package org.keycloak.models;
 
-import java.util.Optional;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;

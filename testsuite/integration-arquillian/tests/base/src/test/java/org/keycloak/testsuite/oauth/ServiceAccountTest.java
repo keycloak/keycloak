@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;

@@ -34,7 +34,6 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

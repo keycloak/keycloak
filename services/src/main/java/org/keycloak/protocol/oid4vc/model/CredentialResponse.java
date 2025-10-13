@@ -19,8 +19,6 @@ package org.keycloak.protocol.oid4vc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.util.JsonSerialization;
 
 import java.util.ArrayList;
 import java.util.List;

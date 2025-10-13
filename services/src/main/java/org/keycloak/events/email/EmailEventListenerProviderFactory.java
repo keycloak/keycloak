@@ -18,7 +18,6 @@
 package org.keycloak.events.email;
 
 import org.keycloak.Config;
-import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventType;

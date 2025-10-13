@@ -30,7 +30,6 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.utils.StreamsUtil;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 

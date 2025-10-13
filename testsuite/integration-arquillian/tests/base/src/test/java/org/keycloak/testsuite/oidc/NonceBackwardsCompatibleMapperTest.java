@@ -17,9 +17,7 @@
 
 package org.keycloak.testsuite.oidc;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Rule;

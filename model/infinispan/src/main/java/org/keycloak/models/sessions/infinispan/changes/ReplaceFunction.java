@@ -1,15 +1,9 @@
 package org.keycloak.models.sessions.infinispan.changes;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
-import org.infinispan.commons.marshall.AdvancedExternalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
