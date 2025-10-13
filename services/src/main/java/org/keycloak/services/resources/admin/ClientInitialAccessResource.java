@@ -47,8 +47,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Stream;
 
 /**

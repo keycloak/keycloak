@@ -41,7 +41,6 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.List;
-import java.util.Objects;
 import javax.xml.XMLConstants;
 import javax.xml.crypto.dsig.XMLSignature;
 

@@ -5,7 +5,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
-import org.keycloak.testframework.database.EnterpriseDbDatabaseSupplier;
 import org.keycloak.testframework.database.EnterpriseDbTestDatabase;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;

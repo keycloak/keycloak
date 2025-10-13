@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -68,8 +67,6 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

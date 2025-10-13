@@ -19,12 +19,8 @@ package org.keycloak.broker.provider.mappersync;
 
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
 

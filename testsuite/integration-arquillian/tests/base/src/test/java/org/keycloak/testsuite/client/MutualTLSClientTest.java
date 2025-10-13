@@ -30,7 +30,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
  * Mutual TLS Client tests.

@@ -2,7 +2,6 @@ package org.keycloak.jose;
 
 import java.io.Serializable;
 
-import org.keycloak.jose.jws.Algorithm;
 
 /**
  * This interface represents a JOSE header.

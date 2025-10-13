@@ -1,6 +1,5 @@
 package org.keycloak.tests.admin.user;
 
-import io.restassured.internal.common.assertion.Assertion;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
