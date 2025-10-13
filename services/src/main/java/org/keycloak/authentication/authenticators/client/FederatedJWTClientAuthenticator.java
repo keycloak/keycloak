@@ -104,7 +104,7 @@ public class FederatedJWTClientAuthenticator
                 ? clientAssertionState.getToken().getIssuer()
                 : toIssuer(clientAssertionState.getToken().getSubject());
             if (issuer == null) {
-                LOGGER.debug(
+                LOGGER.debugf(
                     "Could not determine issuer from client assertion subject: %s. Skipping.",
                     clientAssertionState.getToken().getSubject()
                 );
@@ -122,7 +122,7 @@ public class FederatedJWTClientAuthenticator
                     issuer
                 );
             if (identityProviderModel == null) {
-                LOGGER.debug(
+                LOGGER.debugf(
                     "No Identity Provider found with issuer '%s'. Skipping.",
                     issuer
                 );
