@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin.fgap;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.RoleModel;
 
 import java.util.Map;
 

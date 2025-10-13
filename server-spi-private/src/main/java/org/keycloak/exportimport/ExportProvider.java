@@ -17,7 +17,6 @@
 
 package org.keycloak.exportimport;
 
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 
 import java.io.IOException;

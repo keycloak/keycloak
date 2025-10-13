@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;

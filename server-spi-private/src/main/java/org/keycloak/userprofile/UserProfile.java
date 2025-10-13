@@ -17,8 +17,6 @@
 
 package org.keycloak.userprofile;
 
-import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AbstractUserRepresentation;

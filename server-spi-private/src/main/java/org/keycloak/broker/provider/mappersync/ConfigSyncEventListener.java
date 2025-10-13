@@ -18,14 +18,11 @@
 package org.keycloak.broker.provider.mappersync;
 
 import org.jboss.logging.Logger;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Event listener which synchronizes mapper configs, when references change.

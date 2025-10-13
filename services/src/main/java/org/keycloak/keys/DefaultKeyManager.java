@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 
 import javax.crypto.SecretKey;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.util.Comparator;
