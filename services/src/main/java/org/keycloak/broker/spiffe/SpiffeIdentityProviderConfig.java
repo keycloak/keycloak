@@ -11,6 +11,7 @@ import static org.keycloak.common.util.UriUtils.checkUrl;
 public class SpiffeIdentityProviderConfig extends IdentityProviderModel {
 
     public static final String BUNDLE_ENDPOINT_KEY = "bundleEndpoint";
+    public static final String TRUST_DOMAIN_KEY = "trustDomain";
 
     private static final Pattern TRUST_DOMAIN_PATTERN = Pattern.compile("spiffe://[a-z0-9.\\-_]*");
 
@@ -41,7 +42,7 @@ public class SpiffeIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public String getTrustDomain() {
-        return getConfig().get(ISSUER);
+        return getConfig().get(TRUST_DOMAIN_KEY);
     }
 
     public String getBundleEndpoint() {
@@ -53,8 +54,8 @@ public class SpiffeIdentityProviderConfig extends IdentityProviderModel {
         super.validate(realm);
 
         String trustDomain = getTrustDomain();
-        if (trustDomain == null || !TRUST_DOMAIN_PATTERN.matcher(trustDomain).matches()) {
-            throw new IllegalArgumentException("Invalid trust domain name");
+        if (trustDomain == null || trustDomain.isBlank() || !TRUST_DOMAIN_PATTERN.matcher(trustDomain).matches()) {
+            throw new IllegalArgumentException("Invalid SPIFFE Trust Domain format. Must match 'spiffe://...'");
         }
 
         checkUrl(realm.getSslRequired(), getBundleEndpoint(), BUNDLE_ENDPOINT_KEY);
