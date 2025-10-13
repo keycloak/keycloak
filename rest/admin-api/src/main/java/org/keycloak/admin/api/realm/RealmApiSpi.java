@@ -4,6 +4,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import static org.keycloak.admin.api.AdminRootV2.isAdminApiV2Enabled;
+
 public class RealmApiSpi implements Spi {
     public static final String NAME = "admin-api-realm";
 
@@ -25,5 +27,10 @@ public class RealmApiSpi implements Spi {
     @Override
     public boolean isInternal() {
         return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isAdminApiV2Enabled();
     }
 }

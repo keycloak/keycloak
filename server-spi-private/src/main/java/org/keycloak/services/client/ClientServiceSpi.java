@@ -1,5 +1,6 @@
 package org.keycloak.services.client;
 
+import org.keycloak.common.Profile;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
@@ -24,5 +25,10 @@ public class ClientServiceSpi implements Spi {
     @Override
     public boolean isInternal() {
         return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2);
     }
 }

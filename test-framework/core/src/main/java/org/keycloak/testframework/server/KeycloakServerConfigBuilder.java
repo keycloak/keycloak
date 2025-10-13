@@ -251,10 +251,10 @@ public class KeycloakServerConfigBuilder {
 
     private Set<String> toFeatureStrings(Profile.Feature... features) {
         return Arrays.stream(features).map(f -> {
-            if (Profile.getFeatureVersions(f.getKey()).size() > 1) {
+            if (f.getVersion() > 1 || Profile.getFeatureVersions(f.getKey()).size() > 1) {
                 return f.getVersionedKey();
             }
-            return f.name().toLowerCase().replace('_', '-');
+            return f.getUnversionedKey();
         }).collect(Collectors.toSet());
     }
 

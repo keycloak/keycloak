@@ -1,5 +1,6 @@
 package org.keycloak.admin.api;
 
+import org.keycloak.common.Profile;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -25,5 +26,10 @@ public class AdminApiSpi implements Spi {
     @Override
     public boolean isInternal() {
         return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2); // There's currently only Client API for the new Admin API v2
     }
 }

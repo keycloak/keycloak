@@ -29,17 +29,20 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.api.client.ClientApi;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.error.ValidationExceptionHandler;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest()
+@KeycloakIntegrationTest(config = AdminV2Test.AdminV2Config.class)
 public class AdminV2Test {
 
     private static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/v2";
@@ -146,6 +149,13 @@ public class AdminV2Test {
             var violations = body.violations();
             assertThat(violations.size(), is(1));
             assertThat(violations.iterator().next(), is("appUrl: must be a valid URL"));
+        }
+    }
+
+    public static class AdminV2Config implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2);
         }
     }
 }
