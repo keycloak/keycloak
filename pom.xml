@@ -241,6 +241,14 @@
         <!-- Set to true on release to update proto.lock files -->
         <commitProtoLockChanges>false</commitProtoLockChanges>
         <skipProtoLock>false</skipProtoLock>
+        <error-prone.configuration-args>
+            -Xep:ConstantNaming:OFF
+            <!-- -Xep:ConstantNaming:ERROR-->
+            -XepDisableAllChecks <!-- remove after achieving error prone. -->
+            <!-- introduce new with: -->
+            <!-- -XepPatchChecks:ConstantNaming-->
+            <!-- -XepPatchLocation:IN_PLACE-->
+        </error-prone.configuration-args>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1527,6 +1535,29 @@
                         <java>
                             <removeUnusedImports />
                         </java>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>com.google.errorprone</groupId>
+                                <artifactId>error_prone_core</artifactId>
+                                <version>2.42.0</version>
+                            </path>
+                            <path>
+                                <groupId>tech.picnic.error-prone-support</groupId>
+                                <artifactId>error-prone-contrib</artifactId>
+                                <version>0.25.0</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <compilerArgs>
+                            <arg>--should-stop=ifError=FLOW</arg>
+                            <arg>-XDcompilePolicy=simple</arg>
+                            <arg>-Xplugin:ErrorProne ${error-prone.configuration-args}</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
             </plugins>

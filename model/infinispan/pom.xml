@@ -150,6 +150,16 @@
                             <artifactId>protostream-processor</artifactId>
                             <version>${protostream.version}</version>
                         </path>
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>2.42.0</version>
+                        </path>
+                        <path>
+                            <groupId>tech.picnic.error-prone-support</groupId>
+                            <artifactId>error-prone-contrib</artifactId>
+                            <version>0.25.0</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
