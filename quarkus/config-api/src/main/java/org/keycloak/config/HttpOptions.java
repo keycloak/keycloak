@@ -61,8 +61,10 @@ public class HttpOptions {
 
     public static final Option<List<String>> HTTPS_PROTOCOLS = OptionBuilder.listOptionBuilder("https-protocols", String.class)
             .category(OptionCategory.HTTP)
-            .description("The list of protocols to explicitly enable.")
-            .defaultValue(Arrays.asList("TLSv1.3,TLSv1.2"))
+            .description("The list of protocols to explicitly enable. If a value is not supported by the JRE / security configuration, it will be silently ignored.")
+            .expectedValues(Arrays.asList("TLSv1.3", "TLSv1.2"))
+            .strictExpectedValues(false)
+            .defaultValue(Arrays.asList("TLSv1.3", "TLSv1.2"))
             .build();
 
     public static final Option<String> HTTPS_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-certificates-reload-period", String.class)
