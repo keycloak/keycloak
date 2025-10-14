@@ -11,7 +11,7 @@ tileVisible="false"
 levelOffset=2 >
 
 The console log handler is enabled by default, providing unstructured log messages for the console.
-The more specific console handler configuration mentioned below will only take effect when the console logging is enabled (console logging is enabled by default).
+As shown in the following section, the more specific console handler configuration takes effect only when the console logging is enabled. Console logging is enabled by default.
 
 == Configuring the console log format
 {project_name} uses a pattern-based logging formatter that generates human-readable text logs by default.
