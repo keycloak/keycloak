@@ -55,6 +55,14 @@ public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
     }
 
     @Test
+    public void testWithIssClaim() {
+        JsonWebToken jwt = createDefaultToken();
+        jwt.issuer("https://nosuch");
+        assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
+        assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), "https://nosuch", EXTERNAL_CLIENT_ID, events.poll());
+    }
+
+    @Test
     public void testReuse() {
         JsonWebToken jwt = createDefaultToken();
         assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
