@@ -75,7 +75,7 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
             session.sessions().createUserSession(
                                                 null, realm,
                                                 session.users().getUserByUsername(realm, "user1"),
-                                                "user1", "127.0.0.1", "form", true, null, null,
+                                                "user1", "127.0.0.1", "form", false, null, null,
                                                 UserSessionModel.SessionPersistenceState.PERSISTENT);
 
         realm.setSsoSessionIdleTimeout(Integer.MAX_VALUE);
