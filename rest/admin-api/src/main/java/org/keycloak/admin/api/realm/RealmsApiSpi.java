@@ -1,6 +1,5 @@
 package org.keycloak.admin.api.realm;
 
-import org.keycloak.common.Profile;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;

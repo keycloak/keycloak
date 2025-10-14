@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.QueryParam;
 import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
