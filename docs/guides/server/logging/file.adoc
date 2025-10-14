@@ -26,7 +26,7 @@ To change where the log file is created and the file name, perform these steps:
 
 . Create a writable directory to store the log file.
 +
-If the directory is not writable, {project_name} will start correctly, but it will issue an error and no log file will be created.
+If the directory is not writable, {project_name} starts correctly, but it issues an error and no log file is created.
 
 . Enter this command:
 +
