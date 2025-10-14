@@ -71,6 +71,7 @@ import org.keycloak.models.sessions.infinispan.query.ClientSessionQueries;
 import org.keycloak.models.sessions.infinispan.query.UserSessionQueries;
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProviderFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.storage.infinispan.jgroups.JGroupsConfigurator;
 
@@ -339,7 +340,24 @@ public class CacheManagerFactory {
         checkForRemoteStores(builder);
         configureMetrics(builder);
 
-        return new DefaultCacheManager(builder, isStartEagerly());
+        return getDefaultCacheManager(session, builder);
+    }
+
+    private static DefaultCacheManager getDefaultCacheManager(KeycloakSession session, ConfigurationBuilderHolder holder) {
+        if (session == null) {
+            // If there is no session, this is not using JDBC_PING, and therefore we do not need and also can not suspend the JTA transaction context
+            return getDefaultCacheManager(holder);
+        }
+        // This disables the JTA transaction context to avoid binding all JDBC_PING2 interactions to the current transaction
+        DefaultCacheManager[] _cm = new DefaultCacheManager[1];
+        KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () ->
+                _cm[0] = getDefaultCacheManager(holder)
+        );
+        return _cm[0];
+    }
+
+    private static DefaultCacheManager getDefaultCacheManager(ConfigurationBuilderHolder holder) {
+        return new DefaultCacheManager(holder, isStartEagerly());
     }
 
     /**
