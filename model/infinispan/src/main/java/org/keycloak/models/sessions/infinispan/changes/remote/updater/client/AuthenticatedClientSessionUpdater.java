@@ -210,6 +210,8 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<ClientSession
 
     @Override
     public void restartClientSession() {
+        changes.clear();
+        resetState();
         addAndApplyChange(RemoteAuthenticatedClientSessionEntity::restart);
     }
 
