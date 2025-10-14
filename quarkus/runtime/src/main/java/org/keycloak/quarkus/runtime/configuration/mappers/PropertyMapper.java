@@ -579,6 +579,9 @@ public class PropertyMapper<T> {
             }
             try {
                 if (option.getComponentType() != String.class && option.getExpectedValues().isEmpty()) {
+                    if (v.isEmpty()) {
+                        throw new PropertyException("Invalid empty value for option %s".formatted(getOptionAndSourceMessage(configValue)));
+                    }
                     try {
                         Configuration.getConfig().convert(v, option.getComponentType());
                     } catch (Exception e) {

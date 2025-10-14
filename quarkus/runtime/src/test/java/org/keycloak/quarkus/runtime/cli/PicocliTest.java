@@ -200,6 +200,14 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testEmptyValue() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("Invalid empty value for option '--http-port'"));
+    }
+
+    @Test
     public void failWrongEnumValue() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-console-level=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
