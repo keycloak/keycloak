@@ -19,7 +19,7 @@ jobs:
     steps:
       - id: latest-release
         run: |
-          branch="$(gh api --paginate repos/keycloak/keycloak/branches -q '.[].name' | grep '^release/' | sort -r -V)"
+          branch="$(gh api --paginate repos/keycloak/keycloak/branches -q '.[].name' | grep '^release/' | sort -r -V | head -n 1)"
           echo "branch=$branch"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
         env:
