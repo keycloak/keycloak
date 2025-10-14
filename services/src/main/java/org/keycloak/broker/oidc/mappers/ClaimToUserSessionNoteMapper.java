@@ -1,8 +1,7 @@
 package org.keycloak.broker.oidc.mappers;
 
-import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
-
 import org.jboss.logging.Logger;
+import org.keycloak.broker.oidc.EntraOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -20,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
+
 public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
 
     private static final Logger LOG = Logger.getLogger(ClaimToUserSessionNoteMapper.class);
@@ -27,6 +28,7 @@ public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
     private static final String CLAIMS_PROPERTY_NAME = "claims";
     private static final String ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME = "are.claim.values.regex";
     private static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID,
+            EntraOIDCIdentityProviderFactory.PROVIDER_ID,
             OIDCIdentityProviderFactory.PROVIDER_ID};
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
