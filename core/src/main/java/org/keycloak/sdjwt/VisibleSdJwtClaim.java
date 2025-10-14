@@ -16,11 +16,11 @@
  */
 package org.keycloak.sdjwt;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * 

@@ -18,9 +18,9 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.Objects;
-
 import org.keycloak.common.util.ObjectUtil;
+
+import java.util.Objects;
 
 /**
  * Value object to represent an OID (object identifier) as used to describe LDAP schema, extension and features.

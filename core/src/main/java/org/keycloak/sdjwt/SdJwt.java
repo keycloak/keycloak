@@ -16,14 +16,6 @@
  */
 package org.keycloak.sdjwt;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -33,6 +25,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Main entry class for selective disclosure jwt (SD-JWT).

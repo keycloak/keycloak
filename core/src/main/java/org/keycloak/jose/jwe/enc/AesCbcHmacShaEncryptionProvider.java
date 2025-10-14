@@ -17,6 +17,11 @@
 
 package org.keycloak.jose.jwe.enc;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.JWEUtils;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -28,16 +33,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
-
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.JWEUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -17,12 +17,11 @@
 
 package org.keycloak.util;
 
-import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -30,6 +29,8 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jwk.OKPPublicJWK;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.crypto.HashUtils;
+
+import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.security.PublicKey;

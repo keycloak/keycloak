@@ -18,9 +18,9 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

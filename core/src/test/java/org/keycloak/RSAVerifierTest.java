@@ -17,11 +17,6 @@
 
 package org.keycloak;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.CertificateUtils;
@@ -34,6 +29,12 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;

@@ -17,16 +17,17 @@
 
 package org.keycloak.representations.idm;
 
+import org.keycloak.json.StringListMapDeserializer;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.json.StringListMapDeserializer;
 
 public abstract class AbstractUserRepresentation {
 

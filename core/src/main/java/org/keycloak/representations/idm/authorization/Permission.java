@@ -16,14 +16,14 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

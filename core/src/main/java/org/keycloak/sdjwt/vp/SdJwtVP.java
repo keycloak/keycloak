@@ -16,19 +16,6 @@
  */
 package org.keycloak.sdjwt.vp;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -43,6 +30,19 @@ import org.keycloak.sdjwt.SdJwtVerificationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>

@@ -17,9 +17,10 @@
 
 package org.keycloak.representations;
 
+import org.keycloak.TokenCategory;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenCategory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -16,9 +16,10 @@
  */
 package org.keycloak.jose.jwk;
 
+import org.keycloak.crypto.KeyUse;
+
 import java.security.Key;
 import java.security.PublicKey;
-import org.keycloak.crypto.KeyUse;
 
 /**
  * <p>Unsupported implementation for old jdk versions.</p>

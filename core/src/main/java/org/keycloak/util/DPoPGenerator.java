@@ -17,10 +17,6 @@
 
 package org.keycloak.util;
 
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
@@ -36,6 +32,10 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.representations.dpop.DPoP;
+
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.PrivateKey;
 
 import static org.keycloak.OAuth2Constants.DPOP_DEFAULT_ALGORITHM;
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;

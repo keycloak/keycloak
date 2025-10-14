@@ -16,9 +16,10 @@
  */
 package org.keycloak.jose.jwk;
 
+import org.keycloak.crypto.KeyUse;
+
 import java.security.Key;
 import java.security.PublicKey;
-import org.keycloak.crypto.KeyUse;
 
 /**
  * <p>Interface for the EdECUtils that will be implemented only for JDK 15+.</p>

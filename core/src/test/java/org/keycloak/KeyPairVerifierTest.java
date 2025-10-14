@@ -17,11 +17,12 @@
 
 package org.keycloak;
 
+import org.keycloak.common.VerificationException;
+import org.keycloak.rule.CryptoInitRule;
+
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.VerificationException;
-import org.keycloak.rule.CryptoInitRule;
 
 /**
  * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)

@@ -16,10 +16,11 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.List;
 

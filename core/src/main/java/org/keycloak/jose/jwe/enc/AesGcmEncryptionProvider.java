@@ -17,20 +17,19 @@
 
 package org.keycloak.jose.jwe.enc;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.JWEUtils;
+
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.JWEUtils;
 
 public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider {
 

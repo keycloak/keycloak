@@ -17,11 +17,6 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
@@ -30,6 +25,12 @@ import org.keycloak.sdjwt.SdJws;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.rmi.UnknownHostException;
 import java.util.Arrays;

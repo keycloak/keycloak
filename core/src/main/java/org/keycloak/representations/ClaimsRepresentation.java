@@ -18,10 +18,10 @@
 
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Claims parameter as described in the OIDC specification https://openid.net/specs/openid-connect-core-1_0.html#ClaimsParameter

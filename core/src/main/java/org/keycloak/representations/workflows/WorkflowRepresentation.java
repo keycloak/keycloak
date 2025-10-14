@@ -1,16 +1,12 @@
 package org.keycloak.representations.workflows;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESET_ON;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,12 +17,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.keycloak.common.util.MultivaluedHashMap;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESET_ON;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+
+import static java.util.Optional.ofNullable;
 
 @JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_RESET_ON, CONFIG_RECURRING, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
@@ -158,7 +160,7 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         WorkflowRepresentation that = (WorkflowRepresentation) obj;
         // TODO: include state in comparison?
         return Objects.equals(getUses(), that.getUses()) && Objects.equals(getConfig(), that.getConfig())
-            && Objects.equals(getConditions(), that.getConditions()) && Objects.equals(getSteps(), that.getSteps());
+                && Objects.equals(getConditions(), that.getConditions()) && Objects.equals(getSteps(), that.getSteps());
     }
 
     public static class Builder {

@@ -16,8 +16,9 @@
  */
 package org.keycloak.crypto;
 
-import java.io.IOException;
 import org.keycloak.common.crypto.CryptoIntegration;
+
+import java.io.IOException;
 
 /**
  *

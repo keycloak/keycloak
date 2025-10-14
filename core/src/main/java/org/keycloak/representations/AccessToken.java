@@ -17,10 +17,11 @@
 
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenCategory;
 import org.keycloak.representations.idm.authorization.Permission;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 import java.util.Collection;

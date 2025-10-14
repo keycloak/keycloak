@@ -17,8 +17,9 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.common.VerificationException;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.HashMap;
 import java.util.Map;

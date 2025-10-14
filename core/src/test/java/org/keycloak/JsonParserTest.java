@@ -17,8 +17,6 @@
 
 package org.keycloak;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
@@ -30,6 +28,9 @@ import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -17,11 +17,11 @@
 
 package org.keycloak.jose.jwe;
 
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+
 import java.security.Key;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

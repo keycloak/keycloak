@@ -18,19 +18,17 @@
 package org.keycloak;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.exceptions.TokenSignatureInvalidException;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.TokenUtil;
-
-import javax.crypto.SecretKey;
 
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
@@ -40,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.SecretKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

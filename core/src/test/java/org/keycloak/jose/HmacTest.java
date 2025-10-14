@@ -17,19 +17,19 @@
 
 package org.keycloak.jose;
 
-import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.rule.CryptoInitRule;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import org.jboss.logging.Logger;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.util.UUID;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

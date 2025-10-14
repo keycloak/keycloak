@@ -17,10 +17,6 @@
 
 package org.keycloak.protocol.oidc.client.authentication;
 
-import java.security.KeyPair;
-import java.security.PublicKey;
-import java.util.Map;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
@@ -37,6 +33,10 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+
+import java.security.KeyPair;
+import java.security.PublicKey;
+import java.util.Map;
 
 /**
  * Client authentication based on JWT signed by client private key .

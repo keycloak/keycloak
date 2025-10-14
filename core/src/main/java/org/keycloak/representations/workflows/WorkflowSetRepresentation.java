@@ -1,8 +1,8 @@
 package org.keycloak.representations.workflows;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
+import java.util.List;
 
 public final class WorkflowSetRepresentation {
 

@@ -16,9 +16,10 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import org.keycloak.util.EnumWithStableIndex;
+
 import java.util.Map;
 import java.util.Objects;
-import org.keycloak.util.EnumWithStableIndex;
 
 /**
  * The decision strategy dictates how the policies associated with a given policy are evaluated and how a final decision

@@ -16,6 +16,12 @@
  */
 package org.keycloak.jose.jwk;
 
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -27,11 +33,6 @@ import java.security.spec.EdECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.NamedParameterSpec;
 import java.util.Optional;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
 
 /**
  * <p>Class that uses Java 15+ EdEC classes and implements the EdECUtils interface.</p>

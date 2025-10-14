@@ -1,17 +1,18 @@
 package org.keycloak.representations.workflows;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.keycloak.common.util.MultivaluedHashMap;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 @JsonPropertyOrder({CONFIG_USES, CONFIG_WITH})
 public final class WorkflowConditionRepresentation extends AbstractWorkflowComponentRepresentation {

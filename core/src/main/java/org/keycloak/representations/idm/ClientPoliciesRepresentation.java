@@ -17,11 +17,12 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.util.JsonSerialization;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Client Policies' (the set of all Client Policy) external representation class

@@ -18,13 +18,13 @@
  */
 package org.keycloak.representations.userprofile.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Configuration of the User Profile for one realm.

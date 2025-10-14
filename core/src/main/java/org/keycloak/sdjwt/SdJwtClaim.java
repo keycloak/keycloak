@@ -16,9 +16,9 @@
  */
 package org.keycloak.sdjwt;
 
-import java.util.List;
-
 import com.fasterxml.jackson.databind.JsonNode;
+
+import java.util.List;
 
 /**
  * Represents a top level claim in the payload of a JWT.

@@ -18,11 +18,12 @@
  */
 package org.keycloak.representations.userprofile.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Configuration of permissions for the attribute

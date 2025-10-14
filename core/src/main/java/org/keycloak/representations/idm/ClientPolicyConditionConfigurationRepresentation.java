@@ -18,12 +18,12 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Just adds some type-safety to the ClientPolicyConditionConfiguration
