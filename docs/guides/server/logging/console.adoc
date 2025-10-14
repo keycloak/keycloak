@@ -93,7 +93,7 @@ Log level for console log handler can be specified by `--log-console-level` prop
 
 <@kc.start parameters="--log-console-level=warn"/>
 
-For more information, see the section <<Specify log level for each handler>> above.
+For more information, see <<Specify log level for each handler>>.
 
 
 <@opts.printRelevantOptions includedOptions="log-console-*" excludedOptions="log-console-async*">
