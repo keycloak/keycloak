@@ -133,7 +133,7 @@ To use unstructured logging, enter the following command:
 2024-04-05T12:31:38.473+02:00 host keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
 ----
 
-As you can see, the timestamp is present twice, so you can amend it correspondingly via the `--log-syslog-format` property.
+As you can see, the timestamp is present twice, so you can amend it correspondingly by the `--log-syslog-format` property.
 
 
 <@opts.printRelevantOptions includedOptions="log-syslog-*" excludedOptions="log-syslog-async*">
