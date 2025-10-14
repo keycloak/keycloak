@@ -93,10 +93,10 @@ spec:
   additionalOptions:
     - name: spi-connections-http-client--default--connection-pool-size
       secret: # Secret reference
-        name: http-client-secret # name of the Secret
-        key: poolSize # name of the Key in the Secret
+        name: http-client-secret # Name of the Secret
+        key: poolSize # Name of the Key in the Secret
     - name: spi-email-template--mycustomprovider--enabled
-      value: true # plain text value
+      value: 'true' # Plain text value. Use quotes for numbers and boolean values.
 ----
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
        For details on various configuration formats, see <@links.server id="configuration"/>.
