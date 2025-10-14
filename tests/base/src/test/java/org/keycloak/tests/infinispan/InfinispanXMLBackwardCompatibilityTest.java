@@ -12,7 +12,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 @KeycloakIntegrationTest(config = InfinispanXMLBackwardCompatibilityTest.ServerConfigWithCustomInfinispanXML.class)
 public class InfinispanXMLBackwardCompatibilityTest {
 
-    private static final String CONFIG_FILE = "/embedded-infinispan-config/infinispan-xml-kc26.xml";
+    private static final String CONFIG_FILE = "/org/keycloak/tests/infinispan/infinispan-xml-kc26.xml";
 
     @InjectRealm
     ManagedRealm realm;

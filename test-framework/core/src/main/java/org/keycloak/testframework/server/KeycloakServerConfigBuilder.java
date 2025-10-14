@@ -28,6 +28,7 @@ public class KeycloakServerConfigBuilder {
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
     private final Set<Dependency> dependencies = new HashSet<>();
+    private final Set<Dependency> clientDependencies = new HashSet<>();
     private final Set<Path> configFiles = new HashSet<>();
     private CacheType cacheType = CacheType.LOCAL;
     private boolean externalInfinispan = false;
@@ -100,6 +101,11 @@ public class KeycloakServerConfigBuilder {
         return this;
     }
 
+    public KeycloakServerConfigBuilder clientDependency(String groupId, String artifactId) {
+        clientDependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
+        return this;
+    }
+
     public KeycloakServerConfigBuilder tlsEnabled(boolean enabled) {
         tlsEnabled = enabled;
         return this;
@@ -109,17 +115,24 @@ public class KeycloakServerConfigBuilder {
         return tlsEnabled ;
     }
 
+    public KeycloakServerConfigBuilder configFile(String filePath) {
+        configFiles.add(convertStringToPath(filePath));
+        return this;
+    }
 
-    public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
+    public KeycloakServerConfigBuilder cacheConfigFile(String filePath) {
+        Path cacheFilePath = convertStringToPath(filePath);
+        configFiles.add(cacheFilePath);
+        option("cache-config-file", cacheFilePath.getFileName().toString());
+        return this;
+    }
+
+    private Path convertStringToPath(String filePath) {
         try {
-            Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
-            configFiles.add(p);
-            option("cache-config-file", p.getFileName().toString());
+            return Paths.get(Objects.requireNonNull(KeycloakServerConfigBuilder.class.getResource(filePath)).toURI());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-
-        return this;
     }
 
     public class LogBuilder {
@@ -222,7 +235,11 @@ public class KeycloakServerConfigBuilder {
         List<String> args = new LinkedList<>();
         args.add(command);
         for (Map.Entry<String, String> e : options.entrySet()) {
-            args.add("--" + e.getKey() + "=" + e.getValue());
+            if (e.getKey().startsWith("-D")) {
+                args.add(e.getKey() + "=" + e.getValue());
+            } else {
+                args.add("--" + e.getKey() + "=" + e.getValue());
+            }
         }
         if (!features.isEmpty()) {
             args.add("--features=" + String.join(",", features));
@@ -236,6 +253,10 @@ public class KeycloakServerConfigBuilder {
 
     Set<Dependency> toDependencies() {
         return dependencies;
+    }
+
+    Set<Dependency> toClientDependencies() {
+        return clientDependencies;
     }
 
     Set<Path> toConfigFiles() {

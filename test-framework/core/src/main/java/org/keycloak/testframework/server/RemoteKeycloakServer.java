@@ -70,6 +70,17 @@ public class RemoteKeycloakServer implements KeycloakServer {
                 sb.append("\n");
             }
         }
+        Set<Dependency> clientDependencies = keycloakServerConfigBuilder.toClientDependencies();
+        if (!clientDependencies.isEmpty()) {
+            sb.append("Requested client dependencies:\n");
+            for (Dependency d : clientDependencies) {
+                sb.append("- ");
+                sb.append(d.getGroupId());
+                sb.append(":");
+                sb.append(d.getArtifactId());
+                sb.append("\n");
+            }
+        }
         Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
         if (!configFiles.isEmpty()) {
             sb.append("Copy following config files to your conf directory:\n");

@@ -625,17 +625,25 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     public void copyProvider(String groupId, String artifactId) {
-        copyProvider(getDistPath(), groupId, artifactId);
+        copyProvider(getDistPath(), "providers", groupId, artifactId);
     }
 
-    private static void copyProvider(Path distPath, String groupId, String artifactId) {
+    public void copyProvider(Path distPath, String groupId, String artifactId) {
+        copyProvider(distPath, "providers", groupId, artifactId);
+    }
+
+    public void copyProvider(String targetFolder, String groupId, String artifactId) {
+        copyProvider(getDistPath(), targetFolder, groupId, artifactId);
+    }
+
+    private static void copyProvider(Path distPath, String targetFolder, String groupId, String artifactId) {
         try {
             Path providerPath = Maven.resolveArtifact(groupId, artifactId);
             if (!Files.isRegularFile(providerPath)) {
                 throw new RuntimeException("Failed to copy JAR file to 'providers' directory; " + providerPath + " is not a file");
             }
 
-            Files.copy(providerPath, distPath.resolve("providers").resolve(artifactId + ".jar"));
+            Files.copy(providerPath, distPath.resolve(targetFolder).resolve(artifactId + ".jar"));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to copy JAR file to 'providers' directory", cause);
         }
