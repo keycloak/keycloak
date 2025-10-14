@@ -103,7 +103,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
                     //.detail(Details.AUTH_TYPE, AuthorizationEndpoint.CODE_AUTH_TYPE)
                     .detail(Details.REDIRECT_URI, defaultRedirectUri)
                     .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
-                    .session(isUUID());
+                    .session(isSessionId());
         }
     }
 
