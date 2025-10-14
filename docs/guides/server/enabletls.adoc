@@ -52,7 +52,7 @@ However, as a temporary work-around, you can enable deprecated protocols by runn
 
 <@kc.start parameters="--https-protocols=<protocol>[,<protocol>]"/>
 
-To also allow TLSv1.2, use a command such as the following: `kc.sh start --https-protocols=TLSv1.3,TLSv1.2`.
+For example to only enable TLSv1.3, use a command such as the following: `kc.sh start --https-protocols=TLSv1.3`.
 
 == Switching the HTTPS port
 {project_name} listens for HTTPS traffic on port `8443`. To change this port, use the following command:
