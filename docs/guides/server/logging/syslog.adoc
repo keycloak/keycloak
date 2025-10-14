@@ -121,7 +121,7 @@ To use structured JSON log output instead, enter the following command:
 2024-04-05T12:32:20.616+02:00 host keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
 ----
 
-When using JSON output, colors are disabled and the format settings set by `--log-syslog-format` will not apply.
+When using JSON output, colors are disabled and the format settings set by `--log-syslog-format` does not apply.
 
 To use unstructured logging, enter the following command:
 
