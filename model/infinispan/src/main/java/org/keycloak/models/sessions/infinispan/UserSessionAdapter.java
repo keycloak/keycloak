@@ -365,7 +365,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
 
         };
 
-        update(task);
+        userSessionUpdateTx.restartEntity(getId(), task);
     }
 
     @Override
