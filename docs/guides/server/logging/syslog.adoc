@@ -11,7 +11,7 @@ tileVisible="false"
 levelOffset=2 >
 
 {project_name} provides the ability to send logs to a remote Syslog server.
-It utilizes the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].
+It uses the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].
 The more specific Syslog handler configuration mentioned below will only take effect when the Syslog logging is enabled.
 
 == Enable the Syslog handler
