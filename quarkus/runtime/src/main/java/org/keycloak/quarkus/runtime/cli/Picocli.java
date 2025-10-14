@@ -39,12 +39,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.keycloak.common.profile.ProfileException;
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
@@ -77,6 +74,7 @@ import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Help.Ansi.Style;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.IFactory;
+import picocli.CommandLine.MissingParameterException;
 import picocli.CommandLine.Model.ArgGroupSpec;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.ISetter;
@@ -99,8 +97,6 @@ public class Picocli {
     }
 
     private final ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
-    private Set<PropertyMapper<?>> allowedMappers;
-    private final List<String> unrecognizedArgs = new ArrayList<>();
     private Optional<AbstractCommand> parsedCommand = Optional.empty();
     private boolean warnedTimestampChanged;
 
@@ -114,17 +110,65 @@ public class Picocli {
         return colorMode;
     }
 
+    private boolean isHelpRequested(ParseResult result) {
+        if (result.isUsageHelpRequested()) {
+            return true;
+        }
+
+        return result.subcommands().stream().anyMatch(this::isHelpRequested);
+    }
+
     public void parseAndRun(List<String> cliArgs) {
-        // perform two passes over the cli args. First without option validation to determine the current command, then with option validation enabled
-        CommandLine cmd = createCommandLine(spec -> {}).setUnmatchedArgumentsAllowed(true);
+        List<String> unrecognizedArgs = new ArrayList<>();
+        CommandLine cmd = createCommandLine(unrecognizedArgs);
+
         String[] argArray = cliArgs.toArray(new String[0]);
 
         try {
-            ParseResult result = cmd.parseArgs(argArray); // process the cli args first to init the config file and perform validation
+            ParseResult result = cmd.parseArgs(argArray);
+
             var commandLineList = result.asCommandLineList();
 
-            // recreate the command specifically for the current
-            cmd = createCommandLineForCommand(cliArgs, commandLineList);
+            CommandLine cl = commandLineList.get(commandLineList.size() - 1);
+
+            AbstractCommand currentCommand = null;
+            if (cl.getCommand() instanceof AbstractCommand ac) {
+                currentCommand = ac;
+            }
+            initConfig(cliArgs, currentCommand);
+
+            if (!unrecognizedArgs.isEmpty()) {
+                IncludeOptions options = Optional.ofNullable(currentCommand).map(c -> getIncludeOptions(cliArgs, c, c.getName())).orElse(new IncludeOptions());
+                Set<OptionCategory> allowedCategories = Set.copyOf(Optional.ofNullable(currentCommand).map(AbstractCommand::getOptionCategories).orElse(List.of()));
+                // TODO: further refactor this as these args should be the source for ConfigArgsConfigSource
+                unrecognizedArgs.removeIf(arg -> {
+                    boolean hasArg = false;
+                    if (arg.contains("=")) {
+                        arg = arg.substring(0, arg.indexOf("="));
+                        hasArg = true;
+                    }
+                    PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(arg);
+                    if (mapper != null) {
+                        if (!allowedCategories.contains(mapper.getCategory()) || (mapper.isBuildTime() && !options.includeBuildTime) || (mapper.isRunTime() && !options.includeRuntime)) {
+                            return false;
+                        }
+                        if (!hasArg) {
+                            addCommandOptions(cliArgs, cl);
+                            throw new MissingParameterException(cl, cl.getCommandSpec().optionsMap().get(arg), null);
+                        }
+                        return true;
+                    }
+                    return false;
+                });
+                if (!unrecognizedArgs.isEmpty()) {
+                    addCommandOptions(cliArgs, cl);
+                    throw new KcUnmatchedArgumentException(cl, unrecognizedArgs);
+                }
+            }
+
+            if (isHelpRequested(result)) {
+                addCommandOptions(cliArgs, cl);
+            }
 
             int exitCode = cmd.execute(argArray);
 
@@ -134,53 +178,6 @@ public class Picocli {
         } catch (ProfileException | PropertyException proEx) {
             usageException(proEx.getMessage(), proEx.getCause());
         }
-    }
-
-    private CommandLine createCommandLineForCommand(List<String> cliArgs, List<CommandLine> commandLineList) {
-        return createCommandLine(spec -> {
-            // use the incoming commandLineList from the initial parsing to determine the current command
-            CommandSpec currentSpec = spec;
-
-            // add help to the root and all commands as it is not inherited
-            addHelp(currentSpec);
-
-            for (CommandLine commandLine : commandLineList.subList(1, commandLineList.size())) {
-                CommandLine subCommand = currentSpec.subcommands().get(commandLine.getCommandName());
-                if (subCommand == null) {
-                    currentSpec = null;
-                    break;
-                }
-
-                currentSpec = subCommand.getCommandSpec();
-
-                currentSpec.addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
-                    @Override
-                    public <T> T set(T value) {
-                        if (value != null) {
-                            unrecognizedArgs.addAll(Arrays.asList((String[]) value));
-                        }
-                        return null; // doesn't matter
-                    }
-                }));
-
-                addHelp(currentSpec);
-            }
-
-            AbstractCommand currentCommand = null;
-            CommandLine commandLine = null;
-            if (currentSpec != null) {
-                commandLine = currentSpec.commandLine();
-
-                if (commandLine != null && commandLine.getCommand() instanceof AbstractCommand ac) {
-                    currentCommand = ac;
-                }
-            }
-            // init the config before adding options to properly sanitize mappers
-            initConfig(cliArgs, currentCommand);
-            if (commandLine != null) {
-                addCommandOptions(cliArgs, commandLine);
-            }
-        });
     }
 
     public Optional<AbstractCommand> getParsedCommand() {
@@ -218,17 +215,6 @@ public class Picocli {
      * @param abstractCommand
      */
     public void validateConfig(List<String> cliArgs, AbstractCommand abstractCommand) {
-        unrecognizedArgs.removeIf(arg -> {
-            if (arg.contains("=")) {
-                arg = arg.substring(0, arg.indexOf("="));
-            }
-            PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(arg);
-            return mapper != null && mapper.hasWildcard() && allowedMappers.contains(mapper);
-        });
-        if (!unrecognizedArgs.isEmpty()) {
-            throw new KcUnmatchedArgumentException(abstractCommand.getCommandLine().orElseThrow(), unrecognizedArgs);
-        }
-
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
@@ -601,7 +587,30 @@ public class Picocli {
         return properties;
     }
 
-    public CommandLine createCommandLine(Consumer<CommandSpec> consumer) {
+    private void updateSpecHelpAndUnmatched(CommandSpec spec, List<String> unrecognizedArgs) {
+        try {
+            spec.addOption(OptionSpec.builder(Help.OPTION_NAMES)
+                    .usageHelp(true)
+                    .description("This help message.")
+                    .build());
+        } catch (DuplicateOptionAnnotationsException e) {
+            // Completion is inheriting mixinStandardHelpOptions = true
+        }
+
+        spec.addUnmatchedArgsBinding(CommandLine.Model.UnmatchedArgsBinding.forStringArrayConsumer(new ISetter() {
+            @Override
+            public <T> T set(T value) {
+                if (value != null) {
+                    unrecognizedArgs.addAll(Arrays.asList((String[]) value));
+                }
+                return null; // doesn't matter
+            }
+        }));
+
+        spec.subcommands().values().forEach(c -> updateSpecHelpAndUnmatched(c.getCommandSpec(), unrecognizedArgs));
+    }
+
+    CommandLine createCommandLine(List<String> unrecognizedArgs) {
         CommandSpec spec = CommandSpec.forAnnotatedObject(new Main(), new IFactory() {
             @Override
             public <K> K create(Class<K> cls) throws Exception {
@@ -612,7 +621,7 @@ public class Picocli {
                 return result;
             }
         }).name(Environment.getCommand());
-        consumer.accept(spec);
+        updateSpecHelpAndUnmatched(spec, unrecognizedArgs);
 
         CommandLine cmd = new CommandLine(spec);
         cmd.setExpandAtFiles(false);
@@ -632,17 +641,6 @@ public class Picocli {
 
     public PrintWriter getOutWriter() {
         return new PrintWriter(System.out, true);
-    }
-
-    private static void addHelp(CommandSpec currentSpec) {
-        try {
-            currentSpec.addOption(OptionSpec.builder(Help.OPTION_NAMES)
-                    .usageHelp(true)
-                    .description("This help message.")
-                    .build());
-        } catch (DuplicateOptionAnnotationsException e) {
-            // Completion is inheriting mixinStandardHelpOptions = true
-        }
     }
 
     private IncludeOptions getIncludeOptions(List<String> cliArgs, AbstractCommand abstractCommand, String commandName) {
@@ -689,10 +687,6 @@ public class Picocli {
         }
 
         addMappedOptionsToArgGroups(commandLine, mappers);
-
-        if (CollectionUtil.isEmpty(allowedMappers)) {
-            allowedMappers = mappers.values().stream().flatMap(List::stream).collect(Collectors.toUnmodifiableSet());
-        }
     }
 
     private static <T extends Map<OptionCategory, List<PropertyMapper<?>>>> void combinePropertyMappers(T origMappers, T additionalMappers) {
