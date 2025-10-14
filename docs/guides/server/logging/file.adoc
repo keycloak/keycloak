@@ -44,7 +44,7 @@ Log level for file log handler can be specified by `--log-file-level` property a
 
 <@kc.start parameters="--log-file-level=warn"/>
 
-For more information, see the section <<Specify log level for each handler>> above.
+For more information, see <<Specify log level for each handler>>.
 
 <@opts.printRelevantOptions includedOptions="log-file-*" excludedOptions="log-file-async*">
 
