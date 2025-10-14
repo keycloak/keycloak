@@ -746,8 +746,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         updatePolicies(json);
     }
 
-    @NotNull
-    private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
+    @NotNull private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
             int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
@@ -779,8 +778,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         return cId;
     }
 
-    @NotNull
-    private ClientRepresentation getClientRepresentation(String clientId) {
+    @NotNull private ClientRepresentation getClientRepresentation(String clientId) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(clientId);
         clientRep.setName(CLIENT_NAME);

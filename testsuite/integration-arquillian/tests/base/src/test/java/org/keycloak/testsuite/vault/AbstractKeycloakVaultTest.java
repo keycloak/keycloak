@@ -78,8 +78,7 @@ public abstract class AbstractKeycloakVaultTest extends AbstractKeycloakTest {
         }
     }
 
-    @NotNull
-    private static VaultTranscriber getVaultTranscriber(KeycloakSession session) throws RuntimeException {
+    @NotNull private static VaultTranscriber getVaultTranscriber(KeycloakSession session) throws RuntimeException {
         return session.vault();
     }
 }

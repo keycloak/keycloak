@@ -496,8 +496,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         return json;
     }
 
-    @NotNull
-    private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
+    @NotNull private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
             int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
@@ -529,8 +528,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         return cId;
     }
 
-    @NotNull
-    private ClientRepresentation getClientRepresentation(String clientId, String clientName, String clientSecret, String signAlg) {
+    @NotNull private ClientRepresentation getClientRepresentation(String clientId, String clientName, String clientSecret, String signAlg) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(clientId);
         clientRep.setName(clientName);

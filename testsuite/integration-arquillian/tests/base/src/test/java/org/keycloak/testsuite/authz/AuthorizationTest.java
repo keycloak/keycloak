@@ -187,8 +187,7 @@ public class AuthorizationTest extends AbstractAuthzTest {
         }
     }
 
-    @NotNull
-    private ResourceRepresentation createResource(String name, String owner, String... scopes) {
+    @NotNull private ResourceRepresentation createResource(String name, String owner, String... scopes) {
         ResourceRepresentation resource = new ResourceRepresentation();
 
         resource.setName(name);

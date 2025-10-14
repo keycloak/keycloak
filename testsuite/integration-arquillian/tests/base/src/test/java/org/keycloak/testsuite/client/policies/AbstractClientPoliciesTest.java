@@ -1495,8 +1495,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         doConfigProfileAndPolicy(profileBuilder, profileConfig);
     }
 
-    @NotNull
-    protected ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
+    @NotNull protected ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
             int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);

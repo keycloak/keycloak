@@ -29,6 +29,5 @@ import org.jboss.arquillian.drone.api.annotation.Qualifier;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
-@Qualifier
-public @interface ThirdBrowser {
+@Qualifier public @interface ThirdBrowser {
 }

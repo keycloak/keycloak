@@ -33,6 +33,5 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
-@Qualifier
-public @interface Different {
+@Qualifier public @interface Different {
 }

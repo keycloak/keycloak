@@ -1832,8 +1832,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
     }
 
-    @NotNull
-    private JSPolicyRepresentation createOnlyOwnerPolicy() {
+    @NotNull private JSPolicyRepresentation createOnlyOwnerPolicy() {
         JSPolicyRepresentation onlyOwnerPolicy = new JSPolicyRepresentation();
 
         onlyOwnerPolicy.setName(KeycloakModelUtils.generateId());
