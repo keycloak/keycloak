@@ -165,7 +165,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             myUpdates.addAndExecute(task);
             return;
         }
-        fetchAndExecute(key, task);
+        lookupAndAndExecuteTask(key, task);
     }
 
     @Override
@@ -179,10 +179,10 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             myUpdates.addAndExecute(task);
             return;
         }
-        fetchAndExecute(key, task);
+        lookupAndAndExecuteTask(key, task);
     }
 
-    private void fetchAndExecute(K key, PersistentSessionUpdateTask<V> task) {
+    private void lookupAndAndExecuteTask(K key, PersistentSessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
         if (wrappedEntity == null) {
