@@ -101,14 +101,48 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
 
             MultivaluedHashMap<String, String> otherAttrs = new MultivaluedHashMap<>();
             otherAttrs.put("postalAddress", List.of("123456", "654321"));
+            String originalUsername = "<b>bobby<em>";
+            String expectedWarnUsername = originalUsername + "_warn_";
 
-            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "<b>bobby<em>", "Valid", "User", "valid@example.com", null, otherAttrs, "1234");
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, originalUsername, "Valid", "User", "valid@example.com", null, otherAttrs, "1234");
 
             UserModel user = session.users().getUserByUsername(appRealm, "<b>bobby<em>");
-            // Test Should return NULL as username contains prohibited characters
-            Assert.assertNull("User with invalid username <b>bobby<em> should not be imported", user);
+
+            Assert.assertNotNull(
+                    "User with invalid username should be imported with a warning suffix",
+                    user
+            );
+
+            Assert.assertEquals(
+                    "Username should be updated with a warning suffix",
+                    expectedWarnUsername,
+                    user.getUsername()
+            );
         });
     }
+
+    @Test
+    public void testValidUsernameImport() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+            MultivaluedHashMap<String, String> otherAttrs = new MultivaluedHashMap<>();
+            otherAttrs.put("postalAddress", List.of("123456", "654321"));
+
+
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "bobby", "Valid", "User", "valid@example.com", null, otherAttrs, "1234");
+
+            UserModel user = session.users().getUserByUsername(appRealm, "bobby");
+
+            Assert.assertNotNull("User with valid username 'bobby' should be imported", user);
+            Assert.assertEquals("bobby", user.getUsername());
+        });
+    }
+
 
     @Test
     public void testUpdatingFirstNameAndLastNamePropagatesToFullnameMapper() {

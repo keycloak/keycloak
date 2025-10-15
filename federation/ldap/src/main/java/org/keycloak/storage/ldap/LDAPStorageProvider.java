@@ -99,10 +99,13 @@ import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.UserProfileUtil;
-import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
+import org.keycloak.userprofile.ValidationException;
 
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
@@ -699,14 +702,27 @@ public class LDAPStorageProvider implements UserStorageProvider,
         NOT_FORCED_RETURN_EXISTING  // the import is not forced and existing user is returned
     };
 
+    protected static UserProfileProvider getUserProfileProvider(KeycloakSession session) {
+        return session.getProvider(UserProfileProvider.class);
+    }
+
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, ImportType importType) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
-        if(!UsernameProhibitedCharactersValidator.INSTANCE.validate(ldapUsername).isValid()){
-            return null;
-        }
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
         if (importType == null) {
             importType = ImportType.FORCED;
+        }
+        UserProfileProvider provider = getUserProfileProvider(session);
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("username", ldapUsername);
+        UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
+        try {
+            profile.validate();
+        } catch (ValidationException ve) {
+            logger.warnf("Validation failed during LDAP import for username '%s': %s",
+                    ldapUsername, ve.getMessage());
+            String warnUsername = ldapUsername + "_warn_";
+            LDAPUtils.setUsername(ldapUser, ldapIdentityStore.getConfig(), warnUsername);
         }
 
         UserModel imported = null;

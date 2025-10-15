@@ -189,6 +189,21 @@ public class LDAPUtils {
         return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
     }
 
+    public static void setUsername(LDAPObject ldapUser, LDAPConfig config, String newUsername) {
+        String usernameAttr = config.getUsernameLdapAttribute();
+
+        if (newUsername == null || newUsername.trim().isEmpty()) {
+            throw new ModelException("Cannot set null or empty username for attribute: " + usernameAttr);
+        }
+
+        ldapUser.setSingleAttribute(usernameAttr, newUsername);
+
+        String rdnLdapAttr = config.getRdnLdapAttribute();
+        if (usernameAttr.equalsIgnoreCase(rdnLdapAttr)) {
+            ldapUser.setRdnAttributeName(rdnLdapAttr);
+        }
+    }
+
     public static void checkUuid(LDAPObject ldapUser, LDAPConfig config) {
         if (ldapUser.getUuid() == null) {
             throw new ModelException("User returned from LDAP has null uuid! Check configuration of your LDAP settings. UUID Attribute must be unique among your LDAP records and available on all the LDAP user records. " +
