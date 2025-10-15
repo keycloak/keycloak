@@ -1,7 +1,8 @@
-import { type Page, expect } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
 
 export async function goToCIBAPolicyTab(page: Page) {
+  await page.getByTestId("policies").click();
   await page.getByTestId("tab-ciba-policy").click();
 }
 

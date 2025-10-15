@@ -70,11 +70,13 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     }
 
     /**
-     * For test purposes
+     * Mainly for test purposes as MicroProfile Config does not seem to provide a way to reload configsources when the config
+     * is released
      */
     public static void reload() {
         CONFIG_SOURCES.clear();
         CONFIG_SOURCE_DISPLAY_NAMES.clear();
+        initializeSources();
     }
 
     @Override

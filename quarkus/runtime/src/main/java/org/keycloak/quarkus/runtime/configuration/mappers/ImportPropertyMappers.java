@@ -50,12 +50,10 @@ public final class ImportPropertyMappers implements PropertyMapperGrouping {
                 fromOption(ImportOptions.FILE)
                         .to("kc.spi-import--single-file--file")
                         .paramLabel("file")
-                        .isEnabled(c -> c instanceof Import)
                         .build(),
                 fromOption(ImportOptions.DIR)
                         .to("kc.spi-import--dir--dir")
                         .paramLabel("dir")
-                        .isEnabled(c -> c instanceof Import)
                         .build(),
                 fromOption(ImportOptions.OVERRIDE)
                         .to("kc.spi-import--single-file--strategy")
@@ -89,7 +87,7 @@ public final class ImportPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isDirProvider() {
-        return !isSingleFileProvider();
+        return isProvider(DIR);
     }
 
     private static boolean isProvider(String provider) {

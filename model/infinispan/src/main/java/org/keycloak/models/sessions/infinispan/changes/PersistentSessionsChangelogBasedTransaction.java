@@ -161,44 +161,25 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         }
 
         SessionUpdatesList<V> myUpdates = getUpdates(task.isOffline()).get(key);
-        if (myUpdates != null) {
-            myUpdates.addAndExecute(task);
-            return;
-        }
-        lookupAndAndExecuteTask(key, task);
-    }
+        if (myUpdates == null) {
+            // Lookup entity from cache
+            SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
+            if (wrappedEntity == null) {
+                LOG.tracef("Not present cache item for key %s", key);
+                return;
+            }
+            // Cache does not contain the offline flag value so adding it
+            wrappedEntity.getEntity().setOffline(task.isOffline());
 
-    @Override
-    public void restartEntity(K key, SessionUpdateTask<V> restartTask) {
-        if (!(restartTask instanceof PersistentSessionUpdateTask<V> task)) {
-            throw new IllegalArgumentException("Task must be instance of PersistentSessionUpdateTask");
-        }
-        var myUpdates = getUpdates(task.isOffline()).get(key);
-        if (myUpdates != null) {
-            myUpdates.getUpdateTasks().clear();
-            myUpdates.addAndExecute(task);
-            return;
-        }
-        lookupAndAndExecuteTask(key, task);
-    }
+            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
 
-    private void lookupAndAndExecuteTask(K key, PersistentSessionUpdateTask<V> task) {
-        // Lookup entity from cache
-        SessionEntityWrapper<V> wrappedEntity = getCache(task.isOffline()).get(key);
-        if (wrappedEntity == null) {
-            LOG.tracef("Not present cache item for key %s", key);
-            return;
+            myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
+            getUpdates(task.isOffline()).put(key, myUpdates);
         }
-        // Cache does not contain the offline flag value so adding it
-        wrappedEntity.getEntity().setOffline(task.isOffline());
-
-        RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
-
-        SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-        getUpdates(task.isOffline()).put(key, myUpdates);
 
         // Run the update now, so reader in same transaction can see it (TODO: Rollback may not work correctly. See if it's an issue..)
-        myUpdates.addAndExecute(task);
+        task.runUpdate(myUpdates.getEntityWrapper().getEntity());
+        myUpdates.add(task);
     }
 
     public void addTask(K key, SessionUpdateTask<V> task, V entity, UserSessionModel.SessionPersistenceState persistenceState) {
@@ -213,7 +194,8 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
 
         if (task != null) {
             // Run the update now, so reader in same transaction can see it
-            myUpdates.addAndExecute(task);
+            task.runUpdate(entity);
+            myUpdates.add(task);
         }
     }
 

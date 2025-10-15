@@ -71,7 +71,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
@@ -87,8 +86,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
@@ -173,7 +170,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String headerValue = response.getHeaderString(header.getHeaderName());
             String expectedValue = header.getDefaultValue();
             if (expectedValue.isEmpty()) {
-                assertNull(headerValue);
+                Assert.assertNull(headerValue);
             } else {
                 Assert.assertNotNull(headerValue);
                 assertThat(headerValue, is(equalTo(expectedValue)));
@@ -255,7 +252,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals("", loginPage.getPassword());
 
         Assert.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
-        assertNull(loginPage.getPasswordInputError());
+        Assert.assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(user2Id).session((String) null).error("invalid_user_credentials")
                 .detail(Details.USERNAME, "login-test2")
@@ -282,7 +279,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals("", loginPage.getPassword());
 
         Assert.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
-        assertNull(loginPage.getPasswordInputError());
+        Assert.assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
                 .detail(Details.USERNAME, "login-test")
@@ -302,7 +299,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assert.assertEquals("", loginPage.getPassword());
 
         Assert.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
-        assertNull(loginPage.getPasswordInputError());
+        Assert.assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
                 .detail(Details.USERNAME, "login-test")
@@ -686,7 +683,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
                 .detail(Details.USERNAME, "login-test")
                 .assertEvent();
         // check remember me is not set although it was sent in the form data
-        assertNull(loginEvent.getDetails().get(Details.REMEMBER_ME));
+        Assert.assertNull(loginEvent.getDetails().get(Details.REMEMBER_ME));
     }
 
     //KEYCLOAK-2741
@@ -767,43 +764,6 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             Assert.assertEquals("login@test.com", loginPage.getUsername());
 
             loginPage.setRememberMe(false);
-        } finally {
-            setRememberMe(false);
-        }
-    }
-
-    @Test
-    public void testLoginAfterDisablingRememberMeInRealmSettings() {
-        setRememberMe(true);
-
-        try {
-            //login with remember me
-            loginPage.open();
-            loginPage.setRememberMe(true);
-            assertTrue(loginPage.isRememberMeChecked());
-            loginPage.login("login@test.com", getPassword("login-test"));
-
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
-            events.expectLogin().user(userId)
-                    .detail(Details.USERNAME, "login@test.com")
-                    .detail(Details.REMEMBER_ME, "true")
-                    .assertEvent();
-
-            AccessTokenResponse response = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
-
-            setRememberMe(false);
-
-            //refresh fail
-            response = oauth.refreshRequest(response.getRefreshToken()).send();
-            assertNull(response.getAccessToken());
-            assertNotNull(response.getError());
-            assertEquals("Session not active", response.getErrorDescription());
-
-            // Assert session removed
-            loginPage.open();
-            assertFalse(loginPage.isRememberMeCheckboxPresent());
-            assertNotEquals("login-test", loginPage.getUsername());
         } finally {
             setRememberMe(false);
         }
@@ -932,7 +892,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
 
         loginPage.assertCurrent();
-        assertNull("Not expected to have error on loginForm.", loginPage.getError());
+        Assert.assertNull("Not expected to have error on loginForm.", loginPage.getError());
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();

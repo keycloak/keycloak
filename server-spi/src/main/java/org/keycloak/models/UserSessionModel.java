@@ -76,10 +76,7 @@ public interface UserSessionModel {
 
     /**
      * Returns map where key is ID of the client (its UUID) and value is ID respective {@link AuthenticatedClientSessionModel} object.
-     * <p>
-     * Any direct modification via the {@link Map} interface will throw an {@link UnsupportedOperationException}. To add a
-     * new mapping, use a method like {@link UserSessionProvider#createClientSession(RealmModel, ClientModel, UserSessionModel)} or
-     * equivalent. To remove a mapping, use {@link AuthenticatedClientSessionModel#detachFromUserSession()}.
+     * @return
      */
     Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
     /**

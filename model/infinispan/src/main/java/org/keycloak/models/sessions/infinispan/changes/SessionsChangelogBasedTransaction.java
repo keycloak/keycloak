@@ -23,6 +23,4 @@ public interface SessionsChangelogBasedTransaction<K, V extends SessionEntity> {
 
     void addTask(K key, SessionUpdateTask<V> task);
 
-    void restartEntity(K key, SessionUpdateTask<V> restartTask);
-
 }

@@ -6,14 +6,12 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 
 import io.smallrye.config.ConfigValue;
 
@@ -34,7 +32,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
     private String toSuffix;
     private Character replacementChar = null;
 
-    public WildcardPropertyMapper(Option<T> option, String to, Function<AbstractCommand, Boolean> enabled, String enabledWhen, ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
+    public WildcardPropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen, ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
             String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
             String description, BooleanSupplier required, String requiredWhen, BiFunction<String, Set<String>, Set<String>> wildcardKeysTransformer, ValueMapper wildcardMapFrom) {
         super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null, null);

@@ -52,12 +52,10 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
                 fromOption(ExportOptions.FILE)
                         .to("kc.spi-export--single-file--file")
                         .paramLabel("file")
-                        .isEnabled(c -> c instanceof Export)
                         .build(),
                 fromOption(ExportOptions.DIR)
                         .to("kc.spi-export--dir--dir")
                         .paramLabel("dir")
-                        .isEnabled(c -> c instanceof Export)
                         .build(),
                 fromOption(ExportOptions.REALM)
                         .to("kc.spi-export--single-file--realm-name")
@@ -111,7 +109,7 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isDirProvider() {
-        return !isSingleFileProvider();
+        return isProvider(DIR);
     }
 
     private static boolean isProvider(String provider) {

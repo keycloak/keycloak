@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.common.util.Time;
@@ -29,6 +28,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
@@ -41,28 +42,31 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     private final KeycloakSession kcSession;
     private final AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
-    private final ClientSessionManager clientSessionManager;
+    private final SessionsChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
     private final boolean offline;
     private final EmbeddedClientSessionKey cacheKey;
 
     public AuthenticatedClientSessionAdapter(KeycloakSession kcSession,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
-                                             ClientSessionManager clientSessionManager,
+                                             SessionsChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
                                              EmbeddedClientSessionKey cacheKey,
                                              boolean offline) {
+        if (userSession == null) {
+            throw new NullPointerException("userSession must not be null");
+        }
 
-        this.userSession = Objects.requireNonNull(userSession, "userSession must not be null");
         this.kcSession = kcSession;
         this.entity = entity;
+        this.userSession = userSession;
         this.client = client;
-        this.clientSessionManager = clientSessionManager;
+        this.clientSessionUpdateTx = clientSessionUpdateTx;
         this.offline = offline;
         this.cacheKey = cacheKey;
     }
 
     private void update(ClientSessionUpdateTask task) {
-        clientSessionManager.addChange(cacheKey, task);
+        clientSessionUpdateTx.addTask(cacheKey, task);
     }
 
     /**
@@ -80,7 +84,9 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         // as nonexistent in org.keycloak.models.sessions.infinispan.UserSessionAdapter.getAuthenticatedClientSessions()
         this.userSession = null;
 
-        clientSessionManager.addChange(cacheKey, Tasks.removeSync(offline));
+        SessionUpdateTask<AuthenticatedClientSessionEntity> removeTask = Tasks.removeSync(offline);
+
+        clientSessionUpdateTx.addTask(cacheKey, removeTask);
     }
 
     @Override
@@ -282,7 +288,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             }
         };
 
-        clientSessionManager.restartEntity(cacheKey, task);
+        update(task);
     }
 
 }

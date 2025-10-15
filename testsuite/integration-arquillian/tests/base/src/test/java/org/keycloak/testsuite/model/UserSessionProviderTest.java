@@ -147,30 +147,23 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
                 kcSession.getContext().setRealm(realm);
-                UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[1].getId());
-                assertSession(userSession, kcSession.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(realm.getClientByClientId("test-app").getId());
-                assertNotNull(clientSession);
+                UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[0].getId());
+                assertSession(userSession, kcSession.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
 
                 // add some dummy session notes just to test if restart bellow will work
                 userSession.setNote("k1", "v1");
                 userSession.setNote("k2", "v2");
                 userSession.setNote("k3", "v3");
 
-                // A user session can be restarted AuthenticationProcessor.attachSession()
-                // It invokes TokenManager.attachAuthenticationSession() that will restart an existing client session (if not valid) or create a new one.
-                // We test both cases here. "test-app" is restarted and "third-party" is a new client session
                 userSession.restartSession(realm, kcSession.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.6", "form", true, null, null);
-                clientSession.restartClientSession();
-                createClientSession(kcSession, realm.getClientByClientId("third-party"), sessions[1], "http://redirect", "state");
             });
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
-                UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[1].getId());
+                UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[0].getId());
 
                 assertThat(userSession.getNotes(), Matchers.anEmptyMap());
 
-                assertSession(userSession, kcSession.users().getUserByUsername(realm, "user2"), "127.0.0.6", started + 100, started + 100, "test-app", "third-party");
+                assertSession(userSession, kcSession.users().getUserByUsername(realm, "user2"), "127.0.0.6", started + 100, started + 100);
             });
         } finally {
             Time.setOffset(0);

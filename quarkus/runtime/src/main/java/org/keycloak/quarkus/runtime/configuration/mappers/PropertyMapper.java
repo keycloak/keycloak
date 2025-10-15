@@ -30,7 +30,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.keycloak.config.DeprecatedMetadata;
@@ -38,7 +37,6 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -55,7 +53,7 @@ public class PropertyMapper<T> {
 
     protected final Option<T> option;
     private final String to;
-    private Function<AbstractCommand, Boolean> enabled;
+    private BooleanSupplier enabled;
     private String enabledWhen;
     private final ValueMapper mapper;
     private final String mapFrom;
@@ -78,7 +76,7 @@ public class PropertyMapper<T> {
                 mapper.requiredWhen, from, namedProperty);
     }
 
-    PropertyMapper(Option<T> option, String to, Function<AbstractCommand, Boolean> enabled, String enabledWhen,
+    PropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
                    ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
                    String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
                    String description, BooleanSupplier required, String requiredWhen, String from, String namedProperty) {
@@ -161,12 +159,12 @@ public class PropertyMapper<T> {
         return this.option;
     }
 
-    public void setEnabled(Function<AbstractCommand, Boolean> enabled) {
+    public void setEnabled(BooleanSupplier enabled) {
         this.enabled = enabled;
     }
 
-    public boolean isEnabled(AbstractCommand command) {
-        return enabled.apply(command);
+    public boolean isEnabled() {
+        return enabled.getAsBoolean();
     }
 
     public Optional<String> getEnabledWhen() {
@@ -358,7 +356,7 @@ public class PropertyMapper<T> {
         private String mapFrom = null;
         private ValueMapper parentMapper;
         private boolean isMasked = false;
-        private Function<AbstractCommand, Boolean> enabled = ignored -> true;
+        private BooleanSupplier isEnabled = () -> true;
         private String enabledWhen = "";
         private String paramLabel;
         private BiConsumer<PropertyMapper<T>, ConfigValue> validator = (mapper, value) -> mapper.validateValues(value, mapper::validateExpectedValues);
@@ -430,17 +428,13 @@ public class PropertyMapper<T> {
         }
 
         public Builder<T> isEnabled(BooleanSupplier isEnabled, String enabledWhen) {
-            this.enabled = ignored -> isEnabled.getAsBoolean();
+            this.isEnabled = isEnabled;
             this.enabledWhen=enabledWhen;
             return this;
         }
 
         public Builder<T> isEnabled(BooleanSupplier isEnabled) {
-            return isEnabled(isEnabled, "");
-        }
-
-        public Builder<T> isEnabled(Function<AbstractCommand, Boolean> enabled) {
-            this.enabled = enabled;
+            this.isEnabled = isEnabled;
             return this;
         }
 
@@ -534,12 +528,12 @@ public class PropertyMapper<T> {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
             if (option.getKey().contains(WildcardPropertyMapper.WILDCARD_FROM_START)) {
-                return new WildcardPropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
+                return new WildcardPropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
             }
-            return new PropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
+            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
         }
     }
 
