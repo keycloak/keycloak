@@ -102,7 +102,7 @@ By removing the overhead of reflection during serialization/deserialization, it 
 
 These improvements help ensure smoother, more predictable performance at scale while also lowering the operational cost of running production systems.
 
-The only known tradeoff is that build(augmentation) time increased by ~6% as certain actions were moved to the build time instead of runtime.
+The only known tradeoff is that build time increases by ~6% as certain actions were moved to the build time instead of runtime.
 
 You can enable this feature as follows:
 
