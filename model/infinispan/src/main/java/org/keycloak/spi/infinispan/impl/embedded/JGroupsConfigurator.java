@@ -36,7 +36,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -312,14 +311,8 @@ public final class JGroupsConfigurator {
               ))
         );
 
-        if (!udp && InfinispanUtils.isVirtualThreadsEnabled()) {
-            // TODO revert when https://github.com/infinispan/infinispan/pull/15835 is resolved
-            Map<String, String> tcpProps = new HashMap<>(2);
-            tcpProps.put("enable_suspect_events", "false");
-            if (InfinispanUtils.isVirtualThreadsEnabled())
-                tcpProps.put("bundler_type", "per-destination");
-            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), tcpProps));
-        }
+        if (!udp && InfinispanUtils.isVirtualThreadsEnabled())
+            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
 
         if (tracingEnabled) {
             list.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
