@@ -17,12 +17,13 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.util.JsonSerialization;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Client Profiles' (the set of all Client Profile) external representation class

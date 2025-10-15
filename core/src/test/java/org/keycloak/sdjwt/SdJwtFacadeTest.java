@@ -16,14 +16,15 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;

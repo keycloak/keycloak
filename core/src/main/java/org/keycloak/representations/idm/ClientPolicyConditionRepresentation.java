@@ -18,12 +18,12 @@
 
 package org.keycloak.representations.idm;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

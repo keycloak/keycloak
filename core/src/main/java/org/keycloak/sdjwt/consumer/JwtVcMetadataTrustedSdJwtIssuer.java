@@ -17,8 +17,6 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -27,6 +25,9 @@ import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.JwkParsingUtils;
 import org.keycloak.sdjwt.SdJws;
 import org.keycloak.sdjwt.SdJwtUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;

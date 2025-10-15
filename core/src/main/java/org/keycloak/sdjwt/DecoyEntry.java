@@ -16,9 +16,9 @@
  */
 package org.keycloak.sdjwt;
 
-import java.util.Objects;
-
 import org.keycloak.jose.jws.crypto.HashUtils;
+
+import java.util.Objects;
 
 /**
  * Handles hash production for a decoy entry from the given salt.

@@ -1,8 +1,8 @@
 package org.keycloak.representations.account;
 
-import java.util.List;
-
 import org.keycloak.representations.idm.CredentialRepresentation;
+
+import java.util.List;
 
 public class CredentialMetadataRepresentation {
 

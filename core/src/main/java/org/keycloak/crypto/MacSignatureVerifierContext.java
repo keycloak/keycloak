@@ -18,8 +18,8 @@ package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
 
-import javax.crypto.Mac;
 import java.security.MessageDigest;
+import javax.crypto.Mac;
 
 public class MacSignatureVerifierContext implements SignatureVerifierContext {
 

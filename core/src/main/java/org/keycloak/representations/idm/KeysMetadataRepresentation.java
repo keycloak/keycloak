@@ -17,10 +17,10 @@
 
 package org.keycloak.representations.idm;
 
+import org.keycloak.crypto.KeyUse;
+
 import java.util.List;
 import java.util.Map;
-
-import org.keycloak.crypto.KeyUse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

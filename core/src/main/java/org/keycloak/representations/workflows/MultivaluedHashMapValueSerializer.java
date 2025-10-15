@@ -1,5 +1,11 @@
 package org.keycloak.representations.workflows;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -7,11 +13,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import org.keycloak.common.util.MultivaluedHashMap;
 
 public final class MultivaluedHashMapValueSerializer extends JsonSerializer<MultivaluedHashMap<String, String>> {
 

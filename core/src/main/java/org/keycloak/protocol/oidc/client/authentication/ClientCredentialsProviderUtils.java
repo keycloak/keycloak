@@ -17,14 +17,15 @@
 
 package org.keycloak.protocol.oidc.client.authentication;
 
+import org.keycloak.representations.adapters.config.AdapterConfig;
+
+import org.jboss.logging.Logger;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-
-import org.jboss.logging.Logger;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

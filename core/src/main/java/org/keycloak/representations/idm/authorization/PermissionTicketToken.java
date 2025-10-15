@@ -16,15 +16,16 @@
  */
 package org.keycloak.representations.idm.authorization;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.json.StringListMapDeserializer;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

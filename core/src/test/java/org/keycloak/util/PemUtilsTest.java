@@ -1,20 +1,21 @@
 package org.keycloak.util;
 
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemException;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.rule.CryptoInitRule;
+
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemException;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.rule.CryptoInitRule;
 
 import static org.junit.Assert.assertEquals;
 

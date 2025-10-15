@@ -17,12 +17,12 @@
 
 package org.keycloak.jose.jwe.enc;
 
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
-
-import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEKeyStorage;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

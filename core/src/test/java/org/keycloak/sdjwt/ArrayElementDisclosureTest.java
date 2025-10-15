@@ -16,11 +16,10 @@
  */
 package org.keycloak.sdjwt;
 
-import static org.junit.Assert.assertEquals;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>

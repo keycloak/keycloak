@@ -17,15 +17,15 @@
 
 package org.keycloak.jose.jwe;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.jose.jwe.alg.DirectAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.AesCbcHmacShaEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *

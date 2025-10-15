@@ -34,4 +34,3 @@ public class RequiredActionConfigInfoRepresentation {
         this.properties = properties;
     }
 }
-

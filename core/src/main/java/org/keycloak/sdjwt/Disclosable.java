@@ -16,9 +16,9 @@
  */
 package org.keycloak.sdjwt;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.util.Objects;
 
 /**
  * Handles undisclosed claims and array elements, providing functionality

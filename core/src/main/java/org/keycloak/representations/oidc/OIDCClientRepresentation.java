@@ -17,8 +17,9 @@
 
 package org.keycloak.representations.oidc;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
 import java.util.List;
 

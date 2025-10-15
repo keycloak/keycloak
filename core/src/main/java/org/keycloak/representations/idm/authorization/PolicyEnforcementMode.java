@@ -16,9 +16,10 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import org.keycloak.util.EnumWithStableIndex;
+
 import java.util.Map;
 import java.util.Objects;
-import org.keycloak.util.EnumWithStableIndex;
 
 /**
  * The policy enforcement mode dictates how authorization requests are handled by the server.

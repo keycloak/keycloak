@@ -1,7 +1,11 @@
 package org.keycloak.representations.workflows;
 
-import static org.keycloak.common.util.reflections.Reflections.isArrayType;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.reflections.Reflections;
+
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,11 +13,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.reflections.Reflections;
+import static org.keycloak.common.util.reflections.Reflections.isArrayType;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 public abstract class AbstractWorkflowComponentRepresentation {
 

@@ -19,12 +19,13 @@
 
 package org.keycloak;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import org.keycloak.jose.jws.crypto.HashUtils;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.jose.jws.crypto.HashUtils;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

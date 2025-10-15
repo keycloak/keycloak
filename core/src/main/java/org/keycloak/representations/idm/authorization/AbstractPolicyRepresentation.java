@@ -16,12 +16,12 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

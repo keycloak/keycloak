@@ -17,14 +17,14 @@
 
 package org.keycloak;
 
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.StringPropertyReplacer.PropertyResolver;
+import org.keycloak.common.util.SystemEnvProperties;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.common.util.StringPropertyReplacer.PropertyResolver;
-import org.keycloak.common.util.SystemEnvProperties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

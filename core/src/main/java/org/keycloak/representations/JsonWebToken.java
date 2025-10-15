@@ -17,17 +17,18 @@
 
 package org.keycloak.representations;
 
+import org.keycloak.Token;
+import org.keycloak.TokenCategory;
+import org.keycloak.common.util.Time;
+import org.keycloak.json.StringOrArrayDeserializer;
+import org.keycloak.json.StringOrArraySerializer;
+
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.keycloak.Token;
-import org.keycloak.TokenCategory;
-import org.keycloak.common.util.Time;
-import org.keycloak.json.StringOrArrayDeserializer;
-import org.keycloak.json.StringOrArraySerializer;
 
 import java.io.Serializable;
 import java.util.Arrays;

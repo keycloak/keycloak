@@ -16,9 +16,10 @@
  */
 package org.keycloak.jose.jwk;
 
-import java.math.BigInteger;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.math.BigInteger;
 
 /**
  * <p>Test class for <em>JWKUtil.toIntegerBytes</em> methods.</p>

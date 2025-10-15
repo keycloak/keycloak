@@ -17,10 +17,11 @@
 
 package org.keycloak.jose;
 
-import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
 
 import java.io.IOException;
 
