@@ -1,6 +1,9 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import {
+  UserProfileAttributeMetadata,
+  UserProfileMetadata,
+} from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   FormErrorText,
@@ -8,9 +11,10 @@ import {
   SwitchControl,
   TextControl,
   UserProfileFields,
-  beerify,
+  ContinueCancelModal,
 } from "@keycloak/keycloak-ui-shared";
 import {
+  Alert,
   AlertVariant,
   Button,
   Chip,
@@ -22,7 +26,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { TFunction } from "i18next";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, FormProvider, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -151,45 +155,32 @@ export const UserForm = ({
       ?.map((a) => a.readOnly)
       .reduce((p, c) => p && c, true);
 
-  const validateAndSave = useCallback(
-    (formData: UserFormFields) => {
-      const originalEmailPendingValue =
-        user?.attributes?.["kc.email.pending"]?.[0];
-
-      if (
-        formData.attributes &&
-        !Array.isArray(formData.attributes) &&
-        originalEmailPendingValue
-      ) {
-        const emailPendingValue = (
-          formData.attributes as Record<string, string | string[]>
-        )[beerify("kc.email.pending")];
-        const currentValue = Array.isArray(emailPendingValue)
-          ? emailPendingValue[0]
-          : emailPendingValue;
-
-        if (currentValue === "") {
-          // Field was cleared - keep as empty string to clear the value
-          (formData.attributes as Record<string, string | string[]>)[
-            beerify("kc.email.pending")
-          ] = "";
-        } else if (currentValue && currentValue !== originalEmailPendingValue) {
-          // Field was modified (not cleared) - revert to original value
-          (formData.attributes as Record<string, string | string[]>)[
-            beerify("kc.email.pending")
-          ] = originalEmailPendingValue;
-        }
+  const handleEmailVerificationReset = async () => {
+    try {
+      save(
+        toUserFormFields({
+          ...user,
+          requiredActions: user?.requiredActions?.filter(
+            (action) => action !== "UPDATE_EMAIL",
+          ),
+          attributes: {
+            ...user?.attributes,
+            "kc.email.pending": "",
+          },
+        }),
+      );
+      if (refresh) {
+        refresh();
       }
-
-      save(formData);
-    },
-    [save, user],
-  );
+    } catch (error) {
+      addError("emailPendingVerificationUpdateError", error);
+    }
+  };
 
   return (
     <FormAccess
       isHorizontal
-      onSubmit={handleSubmit(validateAndSave)}
+      onSubmit={handleSubmit(save)}
       role="query-users"
       fineGrainedAccess={user?.access?.manage}
       className="pf-v5-u-mt-lg"
@@ -276,20 +267,36 @@ export const UserForm = ({
               label={t("emailVerified")}
               labelIcon={t("emailVerifiedHelp")}
             />
+            {user?.attributes?.["kc.email.pending"] && (
+              <Alert
+                variant={AlertVariant.warning}
+                isInline
+                isPlain
+                title={t("emailPendingVerificationAlertTitle")}
+              >
+                {t("userNotYetConfirmedNewEmail", {
+                  email: user.attributes!["kc.email.pending"],
+                })}
+                <ContinueCancelModal
+                  buttonTitle={t("emailPendingVerificationResetAction")}
+                  modalTitle={t("confirmEmailPendingVerificationAction")}
+                  continueLabel={t("confirm")}
+                  cancelLabel={t("cancel")}
+                  buttonVariant="link"
+                  onContinue={handleEmailVerificationReset}
+                >
+                  {t("emailPendingVerificationActionMessage")}
+                </ContinueCancelModal>
+              </Alert>
+            )}
             <UserProfileFields
               form={form}
               userProfileMetadata={{
                 ...userProfileMetadata,
-                attributes: userProfileMetadata.attributes?.map((attr) =>
-                  attr.name === "kc.email.pending"
-                    ? {
-                        ...attr,
-                        annotations: {
-                          ...attr.annotations,
-                          inputHelperTextBefore: "emailPendingVerificationHelp",
-                        },
-                      }
-                    : attr,
+                attributes: userProfileMetadata.attributes?.filter(
+                  (attribute: UserProfileAttributeMetadata) => {
+                    return attribute.name !== "kc.email.pending";
+                  },
                 ),
               }}
               hideReadOnly={!user}
