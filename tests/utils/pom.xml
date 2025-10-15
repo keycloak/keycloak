@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -15,52 +15,50 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.keycloak.tests</groupId>
+    <artifactId>keycloak-tests-parent</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <parent>
-        <artifactId>keycloak-tests-parent</artifactId>
-        <groupId>org.keycloak.tests</groupId>
-        <version>999.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+  <artifactId>keycloak-tests-utils</artifactId>
+  <packaging>jar</packaging>
+  <name>Keycloak Testsuite Utilities</name>
+  <description>Keycloak Testsuite Utilities</description>
 
-    <artifactId>keycloak-tests-utils</artifactId>
-    <name>Keycloak Testsuite Utilities</name>
-    <packaging>jar</packaging>
-    <description>Keycloak Testsuite Utilities</description>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.keycloak.testframework</groupId>
-                <artifactId>keycloak-test-framework-bom</artifactId>
-                <version>${project.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
+  <dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-remote-providers</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-junit5</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+      <dependency>
+        <groupId>org.keycloak.testframework</groupId>
+        <artifactId>keycloak-test-framework-bom</artifactId>
+        <version>${project.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.keycloak.testframework</groupId>
+      <artifactId>keycloak-test-framework-remote-providers</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-junit5</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-admin-client-tests</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>

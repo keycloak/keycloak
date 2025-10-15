@@ -16,101 +16,101 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-parent</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
-        <relativePath>../../../../pom.xml</relativePath>
-    </parent>
+  <parent>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-parent</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+    <relativePath>../../../../pom.xml</relativePath>
+  </parent>
 
-    <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
-    <name>Keycloak Wildfly SAML Adapter Subsystem</name>
-    <description>Keycloak Wildfly SAML Adapter Subsystem</description>
-    <packaging>jar</packaging>
+  <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
+  <packaging>jar</packaging>
+  <name>Keycloak Wildfly SAML Adapter Subsystem</name>
+  <description>Keycloak Wildfly SAML Adapter Subsystem</description>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
-                    <enableAssertions>true</enableAssertions>
-                    <systemProperties>
-                        <property>
-                            <name>jboss.home</name>
-                            <value>${jboss.home}</value>
-                        </property>
-                    </systemProperties>
-                    <includes>
-                        <include>**/*TestCase.java</include>
-                    </includes>
-                </configuration>
-            </plugin>            
-        </plugins>
-    </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-controller</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-server</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>${ee.maven.groupId}</groupId>
-            <artifactId>wildfly-web-common</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging-annotations</artifactId>
-            <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
+  <dependencies>
+    <dependency>
+      <groupId>org.wildfly.core</groupId>
+      <artifactId>wildfly-controller</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.wildfly.core</groupId>
+      <artifactId>wildfly-server</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${ee.maven.groupId}</groupId>
+      <artifactId>wildfly-web-common</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging-annotations</artifactId>
+      <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
             projects that depend on this project.-->
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
 
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging-processor</artifactId>
-            <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging-processor</artifactId>
+      <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
             projects that depend on this project.-->
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
 
-        <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
-            <version>${wildfly.common.wildfly.aligned.version}</version>
-        </dependency>
+    <dependency>
+      <groupId>org.wildfly.common</groupId>
+      <artifactId>wildfly-common</artifactId>
+      <version>${wildfly.common.wildfly.aligned.version}</version>
+    </dependency>
 
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-subsystem-test-framework</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-adapter-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
+    <dependency>
+      <groupId>org.wildfly.core</groupId>
+      <artifactId>wildfly-subsystem-test-framework</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-adapter-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <redirectTestOutputToFile>false</redirectTestOutputToFile>
+          <enableAssertions>true</enableAssertions>
+          <systemProperties>
+            <property>
+              <name>jboss.home</name>
+              <value>${jboss.home}</value>
+            </property>
+          </systemProperties>
+          <includes>
+            <include>**/*TestCase.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

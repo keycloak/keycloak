@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 ~ Copyright 2018 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -15,25 +15,23 @@
 ~ See the License for the specific language governing permissions and
 ~ limitations under the License.
 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.keycloak.testsuite</groupId>
+    <artifactId>integration-arquillian-servers-app-server</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+  </parent>
 
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <parent>
-        <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+  <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
+  <packaging>jar</packaging>
+  <name>App Server - SPI</name>
 
-    <artifactId>integration-arquillian-servers-app-server-spi</artifactId>
-    <packaging>jar</packaging>
-    <name>App Server - SPI</name>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.jboss.arquillian.protocol</groupId>
-            <artifactId>arquillian-protocol-servlet</artifactId>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>org.jboss.arquillian.protocol</groupId>
+      <artifactId>arquillian-protocol-servlet</artifactId>
+    </dependency>
+  </dependencies>
 
 </project>

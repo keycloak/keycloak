@@ -15,60 +15,59 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-rest-parent</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
-    </parent>
+  <parent>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-rest-parent</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+  </parent>
 
-    <artifactId>keycloak-rest-admin-ui-ext</artifactId>
-    <name>Admin UI REST extensions</name>
-    <description>Custom REST endpoints for the Admin UI</description>
+  <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+  <name>Admin UI REST extensions</name>
+  <description>Custom REST endpoints for the Admin UI</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi-private</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-services</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.openapi</groupId>
-            <artifactId>microprofile-openapi-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus.resteasy.reactive</groupId>
-            <artifactId>resteasy-reactive-common</artifactId>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi-private</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-services</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.microprofile.openapi</groupId>
+      <artifactId>microprofile-openapi-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus.resteasy.reactive</groupId>
+      <artifactId>resteasy-reactive-common</artifactId>
+    </dependency>
+  </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>smallrye-open-api-maven-plugin</artifactId>
-                <groupId>io.smallrye</groupId>
-                <configuration>
-                    <scanPackages>org.keycloak.admin.ui.rest</scanPackages>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generate-schema</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.smallrye</groupId>
+        <artifactId>smallrye-open-api-maven-plugin</artifactId>
+        <configuration>
+          <scanPackages>org.keycloak.admin.ui.rest</scanPackages>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-schema</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

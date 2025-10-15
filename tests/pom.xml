@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -15,39 +15,37 @@
 ~ See the License for the specific language governing permissions and
 ~ limitations under the License.
 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-parent</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <groupId>org.keycloak.tests</groupId>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <parent>
-        <artifactId>keycloak-parent</artifactId>
-        <groupId>org.keycloak</groupId>
-        <version>999.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+  <artifactId>keycloak-tests-parent</artifactId>
+  <packaging>pom</packaging>
+  <name>Keycloak Tests Parent</name>
+  <description>Keycloak Tests Parent</description>
 
-    <artifactId>keycloak-tests-parent</artifactId>
-    <groupId>org.keycloak.tests</groupId>
-    <packaging>pom</packaging>
-    <name>Keycloak Tests Parent</name>
-    <description>Keycloak Tests Parent</description>
+  <modules>
+    <module>base</module>
+    <module>utils</module>
+    <module>utils-shared</module>
+    <module>custom-providers</module>
+    <module>custom-scripts</module>
+    <module>clustering</module>
+  </modules>
 
-    <modules>
-        <module>base</module>
-        <module>utils</module>
-        <module>utils-shared</module>
-        <module>custom-providers</module>
-        <module>custom-scripts</module>
-        <module>clustering</module>
-    </modules>
-
-    <profiles>
-        <profile>
-            <id>test-migration-util</id>
-            <modules>
-                <module>migration-util</module>
-            </modules>
-        </profile>
-    </profiles>
+  <profiles>
+    <profile>
+      <id>test-migration-util</id>
+      <modules>
+        <module>migration-util</module>
+      </modules>
+    </profile>
+  </profiles>
 
 </project>

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -15,88 +15,86 @@
 ~ See the License for the specific language governing permissions and
 ~ limitations under the License.
 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.keycloak.testsuite</groupId>
+    <artifactId>integration-arquillian-servers-auth-server</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+  </parent>
 
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <parent>
-        <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+  <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
+  <name>Auth Server - Undertow</name>
 
-    <artifactId>integration-arquillian-servers-auth-server-undertow</artifactId>
-    <name>Auth Server - Undertow</name>
+  <properties>
+    <common.resources>${basedir}/../common</common.resources>
+  </properties>
 
-    <properties>
-        <common.resources>${basedir}/../common</common.resources>
-    </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-testsuite-utils</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak.testsuite</groupId>
+      <artifactId>integration-arquillian-util</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.arquillian.junit</groupId>
+      <artifactId>arquillian-junit-container</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.arquillian.container</groupId>
+      <artifactId>undertow-embedded</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-undertow</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-dependencies-server-all</artifactId>
+      <type>pom</type>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak.testsuite</groupId>
+      <artifactId>integration-arquillian-testsuite-providers</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-services</artifactId>
+      <type>test-jar</type>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+  </dependencies>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-testsuite-utils</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>integration-arquillian-util</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.junit</groupId>
-            <artifactId>arquillian-junit-container</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>undertow-embedded</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-undertow</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-dependencies-server-all</artifactId>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>integration-arquillian-testsuite-providers</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-services</artifactId>
-            <type>test-jar</type>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>${common.resources}/keystore</directory>
-            </resource>
-            <resource>
-                <directory>${common.resources}/pki/root/ca</directory>
-                <includes>
-                    <include>certs/clients/*</include>
-                </includes>
-            </resource>
-        </resources>
-    </build>
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>${common.resources}/keystore</directory>
+      </resource>
+      <resource>
+        <directory>${common.resources}/pki/root/ca</directory>
+        <includes>
+          <include>certs/clients/*</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
 
 </project>

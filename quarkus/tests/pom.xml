@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright 2021 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -15,41 +15,38 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-         xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-quarkus-parent</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
 
-    <parent>
-        <artifactId>keycloak-quarkus-parent</artifactId>
-        <groupId>org.keycloak</groupId>
-        <version>999.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-    
-    <name>Keycloak Quarkus Test Parent</name>
-    <description>Keycloak Quarkus Test Parent</description>
+  <artifactId>keycloak-quarkus-test-parent</artifactId>
+  <packaging>pom</packaging>
 
-    <artifactId>keycloak-quarkus-test-parent</artifactId>
-    <packaging>pom</packaging>
+  <name>Keycloak Quarkus Test Parent</name>
+  <description>Keycloak Quarkus Test Parent</description>
 
-    <modules>
-        <module>junit5</module>
-    </modules>
+  <modules>
+    <module>junit5</module>
+  </modules>
 
-    <profiles>
-        <profile>
-            <id>noIntegrations</id>
-            <activation>
-                <property>
-                    <name>!skipQuarkus</name>
-                </property>
-            </activation>
-            <modules>
-                <module>integration</module>
-            </modules>
-        </profile>
-    </profiles>
+  <profiles>
+    <profile>
+      <id>noIntegrations</id>
+      <activation>
+        <property>
+          <name>!skipQuarkus</name>
+        </property>
+      </activation>
+      <modules>
+        <module>integration</module>
+      </modules>
+    </profile>
+  </profiles>
 
 </project>

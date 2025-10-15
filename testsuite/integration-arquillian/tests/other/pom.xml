@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -15,96 +15,94 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
 
-    <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.keycloak.testsuite</groupId>
+    <artifactId>integration-arquillian-tests</artifactId>
+    <version>999.0.0-SNAPSHOT</version>
+  </parent>
 
-    <parent>
-        <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-tests</artifactId>
-        <version>999.0.0-SNAPSHOT</version>
-    </parent>
+  <artifactId>integration-arquillian-tests-other</artifactId>
 
-    <artifactId>integration-arquillian-tests-other</artifactId>
+  <packaging>pom</packaging>
 
-    <packaging>pom</packaging>
+  <name>Other Tests Modules</name>
 
-    <name>Other Tests Modules</name>
-
-    <description>Test modules that depend on the Base TestSuite.
+  <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
 
-    <properties>
-        <app.server>undertow</app.server>
-    </properties>
+  <properties>
+    <app.server>undertow</app.server>
+  </properties>
 
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>unpack-test-resources</id>
-                            <phase>generate-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>integration-arquillian-tests-base</artifactId>
-                                        <version>${project.version}</version>
-                                        <classifier>tests</classifier>
-                                        <includes>arquillian.xml,wildfly-config.xml,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
-                                    </artifactItem>
-                                </artifactItems>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
-
-    <profiles>
-        <profile>
-            <id>dependency-on-base-testsuite</id>
-            <activation>
-                <!-- activated for all submodules with /src -->
-                <file>
-                    <exists>src</exists>
-                </file>
-            </activation>
-            <dependencies>
-                <dependency>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>unpack-test-resources</id>
+              <goals>
+                <goal>unpack</goal>
+              </goals>
+              <phase>generate-resources</phase>
+              <configuration>
+                <artifactItems>
+                  <artifactItem>
                     <groupId>org.keycloak.testsuite</groupId>
                     <artifactId>integration-arquillian-tests-base</artifactId>
                     <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-tests-base</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>jpa-performance</id>
-            <modules>
-                <module>jpa-performance</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>sssd</id>
-            <modules>
-                <module>sssd</module>
-            </modules>
-        </profile>
-    </profiles>
+                    <classifier>tests</classifier>
+                    <includes>arquillian.xml,wildfly-config.xml,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
+                  </artifactItem>
+                </artifactItems>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>dependency-on-base-testsuite</id>
+      <activation>
+        <!-- activated for all submodules with /src -->
+        <file>
+          <exists>src</exists>
+        </file>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.keycloak.testsuite</groupId>
+          <artifactId>integration-arquillian-tests-base</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.keycloak.testsuite</groupId>
+          <artifactId>integration-arquillian-tests-base</artifactId>
+          <version>${project.version}</version>
+          <type>test-jar</type>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>jpa-performance</id>
+      <modules>
+        <module>jpa-performance</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>sssd</id>
+      <modules>
+        <module>sssd</module>
+      </modules>
+    </profile>
+  </profiles>
 
 </project>
