@@ -17,8 +17,14 @@
 
 package org.keycloak.it.junit5.extension;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.Arrays;
 
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.configuration.StringConfiguration;
 import org.jboss.logging.Logger;
@@ -88,6 +94,28 @@ public class InfinispanContainer extends org.infinispan.server.test.core.Infinis
                     LOG.infof("Creating cache '%s'", cacheName);
                     createCache(remoteCacheManager, cacheName);
                 });
+    }
+
+    @Override
+    protected void containerIsStopped(InspectContainerResponse containerInfo) {
+        while(true) {
+            try {
+                try (Socket socket = new Socket()) {
+                    InetAddress inetAddress = InetAddress.getByName("localhost");
+                    SocketAddress socketAddress = new InetSocketAddress(inetAddress, Integer.parseInt(PORT));
+                    socket.bind(socketAddress);
+                    socket.close();
+                    break;
+                }
+            } catch (IOException e) {
+                logger().warn("The socket is still bound");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        }
     }
 
     @Override
