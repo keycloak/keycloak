@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.20.2.2</quarkus.version>
-        <quarkus.build.version>3.20.2.2</quarkus.build.version>
+        <quarkus.version>3.20.3</quarkus.version>
+        <quarkus.build.version>3.20.3</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -161,7 +161,7 @@
         <postgresql-jdbc.version>42.7.7</postgresql-jdbc.version>
         <mariadb.version>11.4</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.5.3</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.5</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
@@ -605,14 +605,6 @@
                 <artifactId>nashorn-core</artifactId>
                 <version>${nashorn.version}</version>
             </dependency>
-
-            <!-- BEGIN Remove once org.mariadb.jdbc:mariadb-java-client:3.5.3 is part of Quarkus distribution. See https://github.com/keycloak/keycloak/issues/41371 -->
-            <dependency>
-                <groupId>org.mariadb.jdbc</groupId>
-                <artifactId>mariadb-java-client</artifactId>
-                <version>${mariadb-jdbc.version}</version>
-            </dependency>
-            <!-- END -->
 
             <!-- Twitter -->
             <dependency>
