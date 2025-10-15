@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring and using token exchange"
@@ -327,22 +328,7 @@ s|Subject impersonation (including direct naked impersonation)   | Not implement
 [[_legacy-token-exchange]]
 == Legacy token exchange
 
-:tech_feature_name: Token Exchange
-:tech_feature_id: token-exchange
-
-[NOTE]
-====
-{tech_feature_name} is
-*Preview*
-and is not fully supported. This feature is disabled by default.
-
-To enable start the server with `--features=preview`
-ifdef::tech_feature_id[]
-or `--features={tech_feature_id}`
-endif::[]
-
-{tech_feature_name} is *Technology Preview* and is not fully supported.
-====
+<@features.techpreview feature="token-exchange"/>
 
 [NOTE]
 ====

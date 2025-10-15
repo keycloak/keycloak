@@ -43,12 +43,19 @@ public class Features {
         return features.stream().filter(f -> f.profileFeature.getUpdatePolicy() == Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE).collect(Collectors.toList());
     }
 
+    public Feature getFeature(String featureId) {
+        return features.stream().filter(f -> f.getName().equals(featureId)).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("Cannot find the '%s' feature for guides".formatted(featureId)));
+    }
+
     public static class Feature {
 
         private final Profile.Feature profileFeature;
+        private final boolean isEnabled;
 
         public Feature(Profile.Feature profileFeature) {
             this.profileFeature = profileFeature;
+            this.isEnabled = Profile.defaults().isFeatureEnabled(profileFeature);
         }
 
         public String getName() {
@@ -65,6 +72,10 @@ public class Features {
 
         public String getUpdatePolicy() {
             return profileFeature.getUpdatePolicy().toString();
+        }
+
+        public boolean isEnabled() {
+            return isEnabled;
         }
 
         private Profile.Feature.Type getType() {

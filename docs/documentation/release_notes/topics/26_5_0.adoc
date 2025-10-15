@@ -3,11 +3,14 @@
 
 = Better HTTP performance
 
-For the HTTP layer, you can now use Jackson JSON reflection-free serializers, improving request handling efficiency.
+You can now enable a more efficient way to handle JSON data in the HTTP layer.
 This change increases throughput by ~5%, stabilizes response times, and reduces system resource usage.
 
 In order to apply it, you need to explicitly enable the feature `http-optimized-serializers`.
 
-NOTE: This feature is *preview* as we gather more feedback about potential issues. We appreciate any feedback.
+NOTE: This feature is *preview*.
+ifeval::[{project_community}==true]
+We gather more feedback about potential issues in https://github.com/keycloak/keycloak/discussions/43484[this discussion]. We appreciate any feedback.
+endif::[]
 
 For more details, see the https://www.keycloak.org/server/configuration-production[Configuring Keycloak for production] guide.
