@@ -19,5 +19,16 @@
     "fs-extra": "^11.3.2",
     "mustache": "^4.2.0",
     "simple-git": "^3.28.0"
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/apps/create-keycloak-theme"
+  },
+  "homepage": "https://www.keycloak.org/"
 }

@@ -133,5 +133,16 @@
     "vite-plugin-checker": "^0.10.3",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^3.2.4"
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/apps/admin-ui"
+  },
+  "homepage": "https://www.keycloak.org/"
 }
