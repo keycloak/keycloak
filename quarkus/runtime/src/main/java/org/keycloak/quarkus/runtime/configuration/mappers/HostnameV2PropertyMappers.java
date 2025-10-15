@@ -104,11 +104,9 @@ public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
                 // else might be allowable if HOST is overwritten
             }
 
-            if (proxyHeaders == null && !url.getPath().isEmpty()
-                    && Boolean.valueOf(Configuration.getConfigValue(HostnameV2Options.HOSTNAME_BACKCHANNEL_DYNAMIC).getValue())
-                    && !normalizePath(url.getPath()).equals(
+            if (proxyHeaders == null && !url.getPath().isEmpty() && !normalizePath(url.getPath()).equals(
                             normalizePath(Configuration.getConfigValue(HttpOptions.HTTP_RELATIVE_PATH).getValue()))) {
-                warn.accept("Likely misconfiguration detected. When using a `hostname` that includes a path that does not match the `http-relative-path` you must use `proxy-headers` to properly detect backchannel requests.");
+                warn.accept("Likely misconfiguration detected. When using a `hostname` that includes a path that does not match the `http-relative-path` you must use `proxy-headers`");
             }
 
             return true;
