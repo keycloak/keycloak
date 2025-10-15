@@ -1526,7 +1526,7 @@
                     <configuration>
                         <java>
                             <removeUnusedImports />
-                            <forbidWildcardImports />
+                            <!--<forbidWildcardImports /> fix with rewrite: https://docs.openrewrite.org/recipes/java/removeunusedimports -->
                         </java>
                         <lineEndings/>
                         <pom>
