@@ -27,7 +27,6 @@ import org.keycloak.sdjwt.consumer.PresentationRequirements;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 
-import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -290,30 +289,28 @@ public class SdJwtVerificationContext {
             JsonNode payload,
             IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts
     ) throws VerificationException {
-        long now = Instant.now().getEpochSecond();
+        int leeway = issuerSignedJwtVerificationOpts.getLeewaySeconds();
+        TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(leeway);
 
         try {
-            if (issuerSignedJwtVerificationOpts.mustValidateIssuedAtClaim()
-                    && now < SdJwtUtils.readTimeClaim(payload, "iat")) {
-                throw new VerificationException("JWT issued in the future");
+            if (issuerSignedJwtVerificationOpts.mustValidateIssuedAtClaim()) {
+                timeClaimVerifier.verifyIssuedAtClaim(payload);
             }
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `iat` claim", e);
         }
 
         try {
-            if (issuerSignedJwtVerificationOpts.mustValidateExpirationClaim()
-                    && now >= SdJwtUtils.readTimeClaim(payload, "exp")) {
-                throw new VerificationException("JWT has expired");
+            if (issuerSignedJwtVerificationOpts.mustValidateExpirationClaim()) {
+                timeClaimVerifier.verifyExpirationClaim(payload);
             }
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `exp` claim", e);
         }
 
         try {
-            if (issuerSignedJwtVerificationOpts.mustValidateNotBeforeClaim()
-                    && now < SdJwtUtils.readTimeClaim(payload, "nbf")) {
-                throw new VerificationException("JWT is not yet valid");
+            if (issuerSignedJwtVerificationOpts.mustValidateNotBeforeClaim()) {
+                timeClaimVerifier.verifyNotBeforeClaim(payload);
             }
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `nbf` claim", e);
@@ -328,17 +325,22 @@ public class SdJwtVerificationContext {
     private void validateKeyBindingJwtTimeClaims(
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
     ) throws VerificationException {
+        JsonNode kbJwtPayload = keyBindingJwt.getPayload();
+
+        int leeway = keyBindingJwtVerificationOpts.getLeewaySeconds();
+        TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(leeway);
+
         // Check that the creation time of the Key Binding JWT, as determined by the iat claim,
         // is within an acceptable window
 
         try {
-            keyBindingJwt.verifyIssuedAtClaim();
+            timeClaimVerifier.verifyIssuedAtClaim(kbJwtPayload);
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `iat` claim", e);
         }
 
         try {
-            keyBindingJwt.verifyAge(keyBindingJwtVerificationOpts.getAllowedMaxAge());
+            timeClaimVerifier.verifyAge(kbJwtPayload, keyBindingJwtVerificationOpts.getAllowedMaxAge());
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT is too old");
         }
@@ -347,7 +349,7 @@ public class SdJwtVerificationContext {
 
         try {
             if (keyBindingJwtVerificationOpts.mustValidateExpirationClaim()) {
-                keyBindingJwt.verifyExpClaim();
+                timeClaimVerifier.verifyExpirationClaim(kbJwtPayload);
             }
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `exp` claim", e);
@@ -355,7 +357,7 @@ public class SdJwtVerificationContext {
 
         try {
             if (keyBindingJwtVerificationOpts.mustValidateNotBeforeClaim()) {
-                keyBindingJwt.verifyNotBeforeClaim();
+                timeClaimVerifier.verifyNotBeforeClaim(kbJwtPayload);
             }
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `nbf` claim", e);

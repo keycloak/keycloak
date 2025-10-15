@@ -241,7 +241,7 @@ public abstract class SdJwtVerificationTest {
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `iat` claim", exception.getMessage());
-            assertEquals("JWT issued in the future", exception.getCause().getMessage());
+            assertEquals("JWT was issued in the future", exception.getCause().getMessage());
         }
     }
 
