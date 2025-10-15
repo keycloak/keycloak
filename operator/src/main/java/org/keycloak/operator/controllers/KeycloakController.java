@@ -34,7 +34,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.CRDPresentActivationCondition;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
@@ -67,8 +66,7 @@ import java.util.concurrent.TimeUnit;
         @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class),
         @Dependent(
               type = KeycloakServiceMonitorDependentResource.class,
-              activationCondition = CRDPresentActivationCondition.class,
-              reconcilePrecondition = KeycloakServiceMonitorDependentResource.ReconcilePrecondition.class
+              activationCondition = KeycloakServiceMonitorDependentResource.ActivationCondition.class
         ),
     })
 public class KeycloakController implements Reconciler<Keycloak> {
@@ -230,6 +228,10 @@ public class KeycloakController implements Reconciler<Keycloak> {
         }
 
         distConfigurator.validateOptions(keycloakCR, status);
+
+        context.managedWorkflowAndDependentResourceContext()
+                .get(KeycloakServiceMonitorDependentResource.SERVICE_MONITOR_WARNING, String.class)
+                .ifPresent(status::addWarningMessage);
     }
 
     public static boolean isRolling(StatefulSet existingDeployment) {

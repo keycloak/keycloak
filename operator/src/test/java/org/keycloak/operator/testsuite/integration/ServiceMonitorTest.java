@@ -8,9 +8,12 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.controllers.KeycloakServiceMonitorDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpecBuilder;
+import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -24,18 +27,23 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     @Test
     public void testServiceMonitorDisabledNoMetrics() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = getTestKeycloakDeployment(true, false);;
+        var kc = getTestKeycloakDeployment(true, false);
         kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("metrics-enabled", "false")));
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         ServiceMonitor sm = getServiceMonitor(kc);
         assertThat(sm).isNull();
+
+        CRAssert.assertKeycloakStatusCondition(
+                k8sclient.resources(Keycloak.class).withName(kc.getMetadata().getName()).get(),
+                KeycloakStatusCondition.HAS_ERRORS, false,
+                KeycloakServiceMonitorDependentResource.WARN_METRICS_NOT_ENABLED);
     }
 
     @Test
     public void testServiceMonitorCreatedWithMetricsEnabled() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = getTestKeycloakDeployment(true, false);;
+        var kc = getTestKeycloakDeployment(true, false);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         Awaitility.await().untilAsserted(() -> {
@@ -48,7 +56,7 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     @Test
     public void testServiceMonitorDisabledExplicitly() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = getTestKeycloakDeployment(true, false);;
+        var kc = getTestKeycloakDeployment(true, false);
         kc.getSpec().setServiceMonitorSpec(
               new ServiceMonitorSpecBuilder()
                     .withEnabled(false)
@@ -61,20 +69,24 @@ public class ServiceMonitorTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testServiceMonitorDisabledLegacyManagement() {
+    public void testServiceMonitorLegacyManagement() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = getTestKeycloakDeployment(true, false);;
-        kc.getSpec().setAdditionalOptions(List.of(new ValueOrSecret("legacy-observability-interface", "true")));
+        var kc = getTestKeycloakDeployment(true, false);
+        kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("legacy-observability-interface", "true"));
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
-        ServiceMonitor sm = getServiceMonitor(kc);
-        assertThat(sm).isNull();
+        Awaitility.await().untilAsserted(() -> {
+            var sm = getServiceMonitor(kc);
+            assertThat(sm).isNotNull();
+            assertThat(sm.getSpec().getEndpoints()).hasSize(1);
+            assertThat(sm.getSpec().getEndpoints().get(0).getPort()).isEqualTo("https");
+        });
     }
 
     @Test
     public void testServiceMonitorConfigProperties() {
         Assumptions.assumeTrue(isServiceMonitorAvailable(k8sclient));
-        var kc = getTestKeycloakDeployment(true, false);;
+        var kc = getTestKeycloakDeployment(true, false);
         kc.getSpec().setServiceMonitorSpec(
               new ServiceMonitorSpecBuilder()
                     .withInterval("1s")
@@ -92,14 +104,14 @@ public class ServiceMonitorTest extends BaseOperatorTest {
         });
     }
 
-    private ServiceMonitor getServiceMonitor(Keycloak kc) {
+    static ServiceMonitor getServiceMonitor(Keycloak kc) {
         return k8sclient.resources(ServiceMonitor.class)
               .inNamespace(kc.getMetadata().getNamespace())
               .withName(kc.getMetadata().getName())
               .get();
     }
 
-    private boolean isServiceMonitorAvailable(KubernetesClient client) {
+    static boolean isServiceMonitorAvailable(KubernetesClient client) {
         return client
               .apiextensions()
               .v1()
