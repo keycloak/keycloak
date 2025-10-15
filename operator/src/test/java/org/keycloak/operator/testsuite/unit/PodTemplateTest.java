@@ -57,6 +57,7 @@ import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.controllers.WatchedResources;
+import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
@@ -416,7 +417,7 @@ public class PodTemplateTest {
     @Test
     public void testHealthOnMain() {
         var result = getDeployment(null, new StatefulSet(),
-                spec -> spec.withAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.HTTP_MANAGEMENT_HEALTH_ENABLED, "false")))
+                spec -> spec.withAdditionalOptions(new ValueOrSecret(CRDUtils.HTTP_MANAGEMENT_HEALTH_ENABLED, "false")))
                 .getSpec()
                 .getTemplate()
                 .getSpec()
