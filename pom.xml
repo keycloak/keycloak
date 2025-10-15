@@ -1526,7 +1526,15 @@
                     <configuration>
                         <java>
                             <removeUnusedImports />
+                            <forbidWildcardImports />
                         </java>
+                        <lineEndings/>
+                        <pom>
+                            <sortPom/>
+                        </pom>
+                        <upToDateChecking>
+                            <enabled>true</enabled>
+                        </upToDateChecking>
                     </configuration>
                 </plugin>
             </plugins>
