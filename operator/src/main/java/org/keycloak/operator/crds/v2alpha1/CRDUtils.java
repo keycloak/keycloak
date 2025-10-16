@@ -21,10 +21,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -47,6 +45,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
  */
 public final class CRDUtils {
     private static final String HEALTH_ENABLED = "health-enabled";
+    public static final String HTTP_MANAGEMENT_HEALTH_ENABLED = "http-management-health-enabled";
     public static final String METRICS_ENABLED = "metrics-enabled";
     public static final String LEGACY_MANAGEMENT_ENABLED = "legacy-observability-interface";
 
@@ -71,11 +70,8 @@ public final class CRDUtils {
             return false;
         }
 
-        // Only metrics and health use the management endpoint.
-        return Stream.of(METRICS_ENABLED, HEALTH_ENABLED)
-                .map(options::get)
-                .filter(Objects::nonNull)
-                .anyMatch(Boolean::parseBoolean);
+        return Boolean.parseBoolean(options.get(METRICS_ENABLED)) || (Boolean.parseBoolean(options.get(HEALTH_ENABLED))
+                && Boolean.parseBoolean(options.getOrDefault(HTTP_MANAGEMENT_HEALTH_ENABLED, Boolean.toString(true))));
     }
 
     public static Map<String, String> configuredOptions(Keycloak keycloak) {

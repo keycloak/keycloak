@@ -93,8 +93,23 @@ public abstract class AbstractJWTClientValidator {
     }
 
     private boolean validateClientAssertionParameters() {
-        return expectedClientAssertionType.equals(clientAssertionState.getClientAssertionType()) &&
-            clientAssertionState.getClientAssertion() != null;
+        String clientAssertionType = clientAssertionState.getClientAssertionType();
+        String clientAssertion = clientAssertionState.getClientAssertion();
+
+        if (clientAssertionType == null) {
+            return failure("Parameter client_assertion_type is missing");
+        }
+
+        if (!expectedClientAssertionType.equals(clientAssertionType)) {
+            return failure("Parameter client_assertion_type has value '"
+                    + clientAssertionType + "' but expected is '" + expectedClientAssertionType + "'");
+        }
+
+        if (clientAssertion == null) {
+            return failure("client_assertion parameter missing");
+        }
+
+        return true;
     }
 
     private boolean validateClient() {

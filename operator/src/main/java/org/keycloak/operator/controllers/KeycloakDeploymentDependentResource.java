@@ -75,6 +75,7 @@ import java.util.stream.Stream;
 
 import static org.keycloak.operator.Utils.addResources;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.LEGACY_MANAGEMENT_ENABLED;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.convertTracingAttributesToString;
 
@@ -83,7 +84,6 @@ import static org.keycloak.operator.crds.v2alpha1.deployment.spec.TracingSpec.co
 )
 public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
-    public static final String HTTP_MANAGEMENT_HEALTH_ENABLED = "http-management-health-enabled";
     public static final String HTTP_MANAGEMENT_SCHEME = "http-management-scheme";
 
     public static final String POD_IP = "POD_IP";
@@ -356,8 +356,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // Set bind address as this is required for JGroups to form a cluster in IPv6 environments
         containerBuilder.addToArgs(0, "-Djgroups.bind.address=$(%s)".formatted(POD_IP));
 
-        var healthEnabled = readConfigurationValue(HTTP_MANAGEMENT_HEALTH_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(true);
-        ManagementEndpoint endpoint = managementEndpoint(keycloakCR, context, healthEnabled);
+        ManagementEndpoint endpoint = managementEndpoint(keycloakCR, context, true);
 
         // probes
         var readinessOptionalSpec = Optional.ofNullable(keycloakCR.getSpec().getReadinessProbeSpec());
@@ -592,7 +591,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         return keycloak.getMetadata().getName();
     }
 
-    private static Optional<String> readConfigurationValue(String key, Keycloak keycloakCR, Context<Keycloak> context) {
+    static Optional<String> readConfigurationValue(String key, Keycloak keycloakCR, Context<Keycloak> context) {
         return Optional.ofNullable(keycloakCR.getSpec()).map(KeycloakSpec::getAdditionalOptions)
                 .flatMap(l -> l.stream().filter(sc -> sc.getName().equals(key)).findFirst().map(serverConfigValue -> {
             if (serverConfigValue.getValue() != null) {
@@ -644,20 +643,27 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, revision);
     }
 
-    record ManagementEndpoint(String relativePath, String protocol, int port) {}
+    record ManagementEndpoint(String relativePath, String protocol, int port, String portName) {}
 
-    static ManagementEndpoint managementEndpoint(Keycloak keycloakCR, Context<Keycloak> context, boolean useMgmtProtocolPort) {
+    static ManagementEndpoint managementEndpoint(Keycloak keycloakCR, Context<Keycloak> context, boolean health) {
         boolean tls = isTlsConfigured(keycloakCR);
         String protocol = tls ? "HTTPS" : "HTTP";
         int port;
+        String portName;
 
-        if (useMgmtProtocolPort) {
+        var legacy = readConfigurationValue(LEGACY_MANAGEMENT_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(false);
+
+        var healthManagementEnabled = readConfigurationValue(CRDUtils.HTTP_MANAGEMENT_HEALTH_ENABLED, keycloakCR, context).map(Boolean::valueOf).orElse(true);
+
+        if (!legacy && (!health || healthManagementEnabled)) {
             port = HttpManagementSpec.managementPort(keycloakCR);
+            portName = Constants.KEYCLOAK_MANAGEMENT_PORT_NAME;
             if (readConfigurationValue(HTTP_MANAGEMENT_SCHEME, keycloakCR, context).filter("http"::equals).isPresent()) {
                 protocol = "HTTP";
             }
         } else {
             port = tls ? HttpSpec.httpsPort(keycloakCR) : HttpSpec.httpPort(keycloakCR);
+            portName = tls ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
         }
 
         var relativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_MANAGEMENT_RELATIVE_PATH_KEY, keycloakCR, context)
@@ -665,6 +671,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
               .map(path -> !path.endsWith("/") ? path + "/" : path)
               .orElse("/");
 
-        return new ManagementEndpoint(relativePath, protocol, port);
+        return new ManagementEndpoint(relativePath, protocol, port, portName);
     }
 }

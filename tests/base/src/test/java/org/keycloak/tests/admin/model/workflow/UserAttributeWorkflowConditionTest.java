@@ -22,6 +22,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.EventBasedWorkflowProviderFactory;
 import org.keycloak.models.workflow.ResourceOperationType;
+import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFactory;
@@ -135,7 +136,6 @@ public class UserAttributeWorkflowConditionTest {
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.name())
-                .recurring()
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(UserAttributeWorkflowConditionFactory.ID)
                         .withConfig(attributes)
@@ -145,6 +145,9 @@ public class UserAttributeWorkflowConditionTest {
                                 .of(SetUserAttributeStepProviderFactory.ID)
                                 .withConfig("notified", "true")
                                 .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create()
+                                .of(RestartWorkflowStepProviderFactory.ID)
                                 .build()
                 ).build();
 

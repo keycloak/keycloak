@@ -52,6 +52,7 @@ import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.EventBasedWorkflowProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.Workflow;
@@ -173,17 +174,19 @@ public class WorkflowManagementTest {
         workflows.create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.toString())
-                .recurring()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
                                 .build()
                 ).of(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_LOGIN.toString())
-                .recurring()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
                                 .build()
                 ).build()).close();
 
@@ -567,10 +570,11 @@ public class WorkflowManagementTest {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.toString())
-                .recurring()
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
                                 .build()
                 ).build()).close();
 
