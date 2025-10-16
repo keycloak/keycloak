@@ -7,7 +7,6 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
-import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.spiffe.SpiffeConstants;
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.common.Profile;
@@ -92,12 +91,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         if (identityProviderModel == null) {
             return null;
         }
-        IdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel);
-        if (identityProvider instanceof ClientAssertionIdentityProvider clientAssertionProvider) {
-            return clientAssertionProvider;
-        } else {
-            throw new RuntimeException("Provider does not support client assertions");
-        }
+        return IdentityBrokerService.getIdentityProvider(session, identityProviderModel, ClientAssertionIdentityProvider.class);
     }
 
     @Override

@@ -21,6 +21,16 @@ This prevents problems with client IDs or passwords that contain, for example, a
 
 To revert to the old behavior, change the client authentication to the deprecated option *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`).
 
+=== Identity Provider refactoring
+
+The private SPI for identity providers have been refactored. This is to allow identity providers to support more use
+-cases than federated user authentication.
+
+For anyone implementing a custom federated user authentication identity provider and are not extending one provided
+by Keycloak or `AbstractIdentityProvider` you need to update your implementation to implement
+the new `UserAuthenticationIdentityProvider` interface (all methods remain the same, they have just been moved).
+
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
