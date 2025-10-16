@@ -14,7 +14,7 @@
                         <#if p.iconClasses?has_content>
                             <span class="${p.iconClasses!}">${p.displayName!}</span>
                         <#else>
-                        <#switch p.alias>
+                        <#switch p.providerId>
                             <#case "google">
                                 <svg viewBox="0 0 48 48" class="google" aria-hidden="true">
                                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
