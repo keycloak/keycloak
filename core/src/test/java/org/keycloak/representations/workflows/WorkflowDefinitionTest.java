@@ -28,7 +28,6 @@ public class WorkflowDefinitionTest {
         expected.setOnEventReset("event-reset-1", "event-reset-2");
         expected.setSteps(null);
         expected.setConditions(null);
-        expected.setRecurring(true);
         expected.setEnabled(true);
 
         expected.setConditions(Arrays.asList(
@@ -76,7 +75,6 @@ public class WorkflowDefinitionTest {
         assertEquals(expected.getOn(), (String) actual.getOn());
         assertArrayEquals(((List<?>) expected.getOnEventReset()).toArray(), ((List<?>) actual.getOnEventReset()).toArray());
         assertEquals(expected.getName(), actual.getName());
-        assertEquals(expected.getRecurring(), actual.getRecurring());
         assertEquals(expected.getEnabled(), actual.getEnabled());
 
         List<WorkflowConditionRepresentation> actualConditions = actual.getConditions();
