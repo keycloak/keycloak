@@ -97,6 +97,27 @@ public class InfinispanContainer extends org.infinispan.server.test.core.Infinis
     }
 
     @Override
+    protected void containerIsStopping(InspectContainerResponse containerInfo) {
+        // graceful shutdown
+        if (containerInfo.getState() != null && Boolean.TRUE.equals(containerInfo.getState().getRunning())) {
+            dockerClient.killContainerCmd(getContainerId()).withSignal("TERM").exec();
+        }
+
+        while (true) {
+            InspectContainerResponse info = dockerClient.inspectContainerCmd(getContainerId()).exec();
+            if (!(info.getState() != null && Boolean.TRUE.equals(info.getState().getRunning()))) {
+                break;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
     protected void containerIsStopped(InspectContainerResponse containerInfo) {
         while(true) {
             try {
@@ -112,6 +133,7 @@ public class InfinispanContainer extends org.infinispan.server.test.core.Infinis
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(ex);
                 }
             }
