@@ -122,6 +122,11 @@ public class UserConfigBuilder {
         return this;
     }
 
+    public UserConfigBuilder serviceAccountId(String serviceAccountClientId) {
+        rep.setServiceAccountClientId(serviceAccountClientId);
+        return this;
+    }
+
     /**
      * Best practice is to use other convenience methods when configuring a user, but while the framework is under
      * active development there may not be a way to perform all updates required. In these cases this method allows
