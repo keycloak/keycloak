@@ -25,7 +25,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.userprofile.UserProfileProvider;

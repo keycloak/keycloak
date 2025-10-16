@@ -37,6 +37,4 @@ public interface WorkflowResource {
     @Consumes(MediaType.APPLICATION_JSON)
     void bind(@PathParam("type") String type, @PathParam("resourceId") String resourceId, Long milliseconds);
 
-    @Path("steps")
-    WorkflowStepsResource steps();
 }

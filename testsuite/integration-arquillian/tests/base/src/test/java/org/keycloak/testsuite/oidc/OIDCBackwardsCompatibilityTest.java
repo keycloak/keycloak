@@ -44,7 +44,6 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import jakarta.ws.rs.core.UriBuilder;
 
 
 /**

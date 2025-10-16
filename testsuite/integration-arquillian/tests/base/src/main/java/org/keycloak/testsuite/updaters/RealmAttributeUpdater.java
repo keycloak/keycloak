@@ -106,6 +106,21 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setWaitIncrementSeconds(Integer value) {
+        rep.setWaitIncrementSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setMaxFailureWaitSeconds(Integer value) {
+        rep.setMaxFailureWaitSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setMaxDeltaTimeSeconds(Integer value) {
+        rep.setMaxDeltaTimeSeconds(value);
+        return this;
+    }
+
     public RealmAttributeUpdater setEventsListeners(List<String> eventListanets) {
         rep.setEventsListeners(eventListanets);
         return this;

@@ -34,6 +34,7 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
     private final K cacheKey;
     private final V cacheValue;
     private final long versionRead;
+    private final UpdaterState initialState;
     private UpdaterState state;
 
     protected BaseUpdater(K cacheKey, V cacheValue, long versionRead, UpdaterState state) {
@@ -41,6 +42,7 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
         this.cacheValue = cacheValue;
         this.versionRead = versionRead;
         this.state = Objects.requireNonNull(state);
+        this.initialState = state;
     }
 
     @Override
@@ -108,6 +110,13 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
                 ", state=" + state +
                 ", versionRead=" + versionRead +
                 '}';
+    }
+
+    /**
+     * Resets the {@link UpdaterState} to its initial value.
+     */
+    protected final void resetState() {
+        state = initialState;
     }
 
     /**

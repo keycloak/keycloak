@@ -16,11 +16,9 @@
 
 package org.keycloak.credential;
 
-import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.server.ServerProperty;
 import org.keycloak.common.util.Base64;
 
-import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticationRequest;
 import com.webauthn4j.data.AuthenticatorTransport;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
@@ -29,7 +27,6 @@ import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import org.keycloak.common.util.CollectionUtil;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 

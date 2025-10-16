@@ -1001,9 +1001,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        Map<String, String> filteredAttributes = clientSearchableAttributes == null ? attributes :
-                attributes.entrySet().stream().filter(m -> clientSearchableAttributes.contains(m.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> filteredAttributes = attributes;
+        if (clientSearchableAttributes != null) {
+            Set<String> notAllowed = attributes.keySet().stream().filter(attr -> !clientSearchableAttributes.contains(attr)).collect(Collectors.toSet());
+            if (!notAllowed.isEmpty()) {
+                throw new ModelException("Attributes [" + String.join(", ", notAllowed) + "] not allowed for search");
+            }
+            filteredAttributes = attributes.entrySet().stream().filter(e -> clientSearchableAttributes.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
 
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
@@ -1315,24 +1320,27 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, true);
         existingClientScopes.putAll(getClientScopes(realm, client, false));
 
-        clientScopes.stream()
-            .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
-            .filter(clientScope -> {
-                if (clientScope.getProtocol() == null) {
-                    // set default protocol if not set. Otherwise, we will get a NullPointer
-                    clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-                }
-                return acceptedClientProtocols.contains(clientScope.getProtocol());
-            })
-            .forEach(clientScope -> {
-                ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
-                entity.setClientScopeId(clientScope.getId());
-                entity.setClientId(client.getId());
-                entity.setDefaultScope(defaultScope);
-                em.persist(entity);
-                em.flush();
-                em.detach(entity);
-            });
+        Set<ClientScopeClientMappingEntity> clientScopeEntities = clientScopes.stream()
+                .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
+                .filter(clientScope -> {
+                    if (clientScope.getProtocol() == null) {
+                        // set default protocol if not set. Otherwise, we will get a NullPointer
+                        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                    }
+                    return acceptedClientProtocols.contains(clientScope.getProtocol());
+                })
+                .map(clientScope -> {
+                    ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
+                    entity.setClientScopeId(clientScope.getId());
+                    entity.setClientId(client.getId());
+                    entity.setDefaultScope(defaultScope);
+                    em.persist(entity);
+                    return entity;
+                }).collect(Collectors.toSet());
+        if (!clientScopeEntities.isEmpty()) {
+            em.flush();
+            clientScopeEntities.forEach(entity -> em.detach(entity));
+        }
     }
 
     @Override

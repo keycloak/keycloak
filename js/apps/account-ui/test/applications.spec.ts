@@ -6,10 +6,10 @@ test.describe("Applications", () => {
   test("shows a list of applications the user has access to", async ({
     page,
   }) => {
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
 
     // Log in and navigate to the applications page.
-    await login(page, realm);
+    await login(page, testBed.realm);
     await page.getByTestId("applications").click();
 
     // Assert that the applications list is displayed and contains the expected application.

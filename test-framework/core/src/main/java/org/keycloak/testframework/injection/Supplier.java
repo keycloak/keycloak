@@ -1,8 +1,6 @@
 package org.keycloak.testframework.injection;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.Set;
 
 public interface Supplier<T, S extends Annotation> {
 

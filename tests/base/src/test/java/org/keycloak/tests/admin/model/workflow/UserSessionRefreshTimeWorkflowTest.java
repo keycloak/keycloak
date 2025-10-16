@@ -29,7 +29,6 @@ import java.time.Duration;
 import java.util.List;
 
 import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -73,7 +72,7 @@ public class UserSessionRefreshTimeWorkflowTest {
     @InjectUser(ref = "alice", config = DefaultUserConfig.class, lifecycle = LifeCycle.METHOD)
     private ManagedUser userAlice;
 
-    @InjectRealm
+    @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
     @InjectWebDriver
@@ -87,16 +86,6 @@ public class UserSessionRefreshTimeWorkflowTest {
 
     @InjectMailServer
     private MailServer mailServer;
-
-    @BeforeEach
-    public void onBefore() {
-        oauth.realm("default");
-
-        runOnServer.run(session -> {
-            WorkflowsManager manager = new WorkflowsManager(session);
-            manager.removeWorkflows();
-        });
-    }
 
     @Test
     public void testDisabledUserAfterInactivityPeriod() {

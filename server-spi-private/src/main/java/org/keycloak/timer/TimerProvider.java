@@ -19,9 +19,7 @@ package org.keycloak.timer;
 
 import org.keycloak.provider.Provider;
 
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -92,7 +92,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
             X500Name subjectDN = new X500Name("CN=" + subject);
 
             // Serial Number
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+            SecureRandom random = new SecureRandom();
             BigInteger serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
 
             // Validity

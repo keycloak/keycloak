@@ -2,7 +2,6 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.IdentityProviderSyncMode;

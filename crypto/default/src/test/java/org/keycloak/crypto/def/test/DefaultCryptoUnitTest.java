@@ -1,7 +1,6 @@
 package org.keycloak.crypto.def.test;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;

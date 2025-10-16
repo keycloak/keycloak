@@ -67,7 +67,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -539,6 +538,22 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         clearUserFailures();
         clearAllUserFailures();
         loginSuccess();
+    }
+
+    // Issue 30939
+    @Test
+    public void testNoOverflowDuringBruteForceCalculation() throws Exception {
+        int waitTime = Integer.MAX_VALUE - 172800; // Max int value without 2 days
+
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+                .setWaitIncrementSeconds(waitTime)
+                .setMaxFailureWaitSeconds(waitTime)
+                .setMaxDeltaTimeSeconds(900) // 15 minutes
+                .update()) {
+            loginInvalidPassword("test-user@localhost");
+            loginInvalidPassword("test-user@localhost");
+            expectTemporarilyDisabled();
+        }
     }
 
     @Test

@@ -7,9 +7,9 @@ import userProfileRealm from "../realms/user-profile-realm.json" with { type: "j
 
 test.describe("Personal info", () => {
   test("sets basic information", async ({ page }) => {
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
 
-    await login(page, realm);
+    await login(page, testBed.realm);
 
     await page.getByTestId("email").fill("edewit@somewhere.com");
     await page.getByTestId("firstName").fill("Erik");
@@ -22,10 +22,13 @@ test.describe("Personal info", () => {
 
 test.describe("Personal info (user profile enabled)", () => {
   test("renders user profile fields", async ({ page }) => {
-    const realm = await createTestBed(userProfileRealm);
+    await using testBed = await createTestBed(userProfileRealm);
 
-    await adminClient.users.updateProfile({ ...userProfile, realm });
-    await login(page, realm);
+    await adminClient.users.updateProfile({
+      ...userProfile,
+      realm: testBed.realm,
+    });
+    await login(page, testBed.realm);
 
     await expect(page.locator("#select")).toBeVisible();
     await expect(page.getByTestId("help-label-select")).toBeVisible();
@@ -36,10 +39,13 @@ test.describe("Personal info (user profile enabled)", () => {
   });
 
   test("renders long select options as typeahead", async ({ page }) => {
-    const realm = await createTestBed(userProfileRealm);
+    await using testBed = await createTestBed(userProfileRealm);
 
-    await adminClient.users.updateProfile({ ...userProfile, realm });
-    await login(page, realm);
+    await adminClient.users.updateProfile({
+      ...userProfile,
+      realm: testBed.realm,
+    });
+    await login(page, testBed.realm);
 
     await page.locator("#alternatelang").click();
     await page.waitForSelector("text=Italiano");
@@ -53,10 +59,13 @@ test.describe("Personal info (user profile enabled)", () => {
   });
 
   test("renders long list of locales as typeahead", async ({ page }) => {
-    const realm = await createTestBed(userProfileRealm);
+    await using testBed = await createTestBed(userProfileRealm);
 
-    await adminClient.users.updateProfile({ ...userProfile, realm });
-    await login(page, realm);
+    await adminClient.users.updateProfile({
+      ...userProfile,
+      realm: testBed.realm,
+    });
+    await login(page, testBed.realm);
 
     await page.locator("#attributes\\.locale").click();
     await page.waitForSelector("text=Italiano");
@@ -70,10 +79,13 @@ test.describe("Personal info (user profile enabled)", () => {
   });
 
   test("saves user profile", async ({ page }) => {
-    const realm = await createTestBed(userProfileRealm);
+    await using testBed = await createTestBed(userProfileRealm);
 
-    await adminClient.users.updateProfile({ ...userProfile, realm });
-    await login(page, realm);
+    await adminClient.users.updateProfile({
+      ...userProfile,
+      realm: testBed.realm,
+    });
+    await login(page, testBed.realm);
 
     await page.locator("#select").click();
     await page.getByRole("option", { name: "two" }).click();
@@ -101,12 +113,12 @@ test.describe("Personal info (user profile enabled)", () => {
 
 test.describe("Realm localization", () => {
   test("changes locale", async ({ page }) => {
-    const realm = await createTestBed({
+    await using testBed = await createTestBed({
       internationalizationEnabled: true,
       supportedLocales: ["en", "nl", "de"],
     });
 
-    await login(page, realm);
+    await login(page, testBed.realm);
     await page.locator("#attributes\\.locale").click();
     page.getByRole("option").filter({ hasText: "Deutsch" });
     await page.getByRole("option", { name: "English" }).click();

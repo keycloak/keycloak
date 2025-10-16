@@ -49,6 +49,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.BaseUpdater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.client.AuthenticatedClientSessionUpdater;
+import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.AuthenticatedClientSessionMapping;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
@@ -468,18 +469,13 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
         return updater;
     }
 
-    private class ClientSessionMapping extends AbstractMap<String, AuthenticatedClientSessionModel> implements Consumer<RemoteAuthenticatedClientSessionEntity> {
+    private class ClientSessionMapping extends AbstractMap<String, AuthenticatedClientSessionModel> implements Consumer<RemoteAuthenticatedClientSessionEntity>, AuthenticatedClientSessionMapping {
 
         private final UserSessionUpdater userSession;
         private boolean coldCache = true;
 
         ClientSessionMapping(UserSessionUpdater userSession) {
             this.userSession = userSession;
-        }
-
-        @Override
-        public void clear() {
-            getTransaction().removeByUserSessionId(getUserSessionId());
         }
 
         @Override
@@ -523,6 +519,11 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
             return keyForClientId(String.valueOf(clientId));
         }
 
+        private ClientSessionKey keyForClientId(Object[] projection) {
+            assert projection.length == 1;
+            return keyForClientId(String.valueOf(projection[0]));
+        }
+
         private void fetchAndCacheClientSessions() {
             var query = ClientSessionQueries.fetchClientSessions(getTransaction().getCache(), getUserSessionId());
             QueryHelper.streamAll(query, batchSize, Function.identity()).forEach(this);
@@ -547,6 +548,21 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
 
         private AuthenticatedClientSessionModel initialize(AuthenticatedClientSessionUpdater updater) {
             return initClientSessionUpdater(updater, userSession);
+        }
+
+        @Override
+        public void onUserSessionRestart() {
+            if (coldCache) {
+                // not all sessions cached in the transaction, we fetch the client ID and mark all them as deleted.
+                var query = ClientSessionQueries.fetchClientSessionsIds(getTransaction().getCache(), getUserSessionId());
+                QueryHelper.streamAll(query, batchSize, this::keyForClientId)
+                        .forEach(getTransaction()::remove);
+                coldCache = false;
+                return;
+            }
+            getTransaction().getClientSessions()
+                    .filter(this::isFromUserSession)
+                    .forEach(BaseUpdater::markDeleted);
         }
     }
 

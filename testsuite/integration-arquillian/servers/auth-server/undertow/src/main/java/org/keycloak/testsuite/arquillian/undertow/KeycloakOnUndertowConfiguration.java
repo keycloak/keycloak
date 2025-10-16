@@ -17,11 +17,6 @@
 
 package org.keycloak.testsuite.arquillian.undertow;
 
-import org.keycloak.util.JsonSerialization;
-import com.fasterxml.jackson.core.type.TypeReference;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.logging.Logger;

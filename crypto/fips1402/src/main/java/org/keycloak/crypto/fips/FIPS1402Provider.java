@@ -1,6 +1,7 @@
 package org.keycloak.crypto.fips;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -46,6 +47,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsRSA;
 import org.bouncycastle.crypto.fips.FipsSHS;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
@@ -91,17 +93,20 @@ public class FIPS1402Provider implements CryptoProvider {
         providers.put(CryptoConstants.ECDH_ES_A192KW, new BCFIPSEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A256KW, new BCFIPSEcdhEsAlgorithmProvider());
 
-        Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
         if (existingBcFipsProvider == null) {
-            checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 2));
+            checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 1));
             Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
-            Security.insertProviderAt(bcJsseProvider, 3);
+            Security.insertProviderAt(bcJsseProvider, 2);
             // force the key and trust manager factories if default values not present in BCJSSE
             modifyKeyTrustManagerSecurityProperties(bcJsseProvider);
             log.debugf("Inserted security providers: %s", Arrays.asList(this.bcFipsProvider.getName(),bcJsseProvider.getName()));
         } else {
             log.debugf("Security provider %s already loaded", existingBcFipsProvider.getName());
         }
+
+        log.infof("FIPS1402Provider created: KC(%s%s, FIPS-JVM: %s)", bcFipsProvider,
+                CryptoServicesRegistrar.isInApprovedOnlyMode() ? " Approved Mode" : "",
+                isSystemFipsEnabled());
     }
 
 
@@ -387,5 +392,24 @@ public class FIPS1402Provider implements CryptoProvider {
         }
         throw new IllegalStateException("Provider " + bcJsseProvider.getName()
                 + " does not provide KeyManagerFactory or TrustManagerFactory algorithms for TLS");
+    }
+
+    public static String isSystemFipsEnabled() {
+        Method isSystemFipsEnabled = null;
+
+        try {
+            Class<?> securityConfigurator = FIPS1402Provider.class.getClassLoader().loadClass("java.security.SystemConfigurator");
+            isSystemFipsEnabled = securityConfigurator.getDeclaredMethod("isSystemFipsEnabled");
+            isSystemFipsEnabled.setAccessible(true);
+            boolean isEnabled = (boolean) isSystemFipsEnabled.invoke(null);
+            return isEnabled ? "enabled" : "disabled";
+        } catch (Throwable ignore) {
+            log.debug("Could not detect if FIPS is enabled from the host", ignore);
+            return "unknown";
+        } finally {
+            if (isSystemFipsEnabled != null) {
+                isSystemFipsEnabled.setAccessible(false);
+            }
+        }
     }
 }

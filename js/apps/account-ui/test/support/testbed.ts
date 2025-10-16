@@ -2,15 +2,24 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { adminClient } from "./admin-client.ts";
 import { DEFAULT_USER } from "./common.ts";
 
+export interface TestBed extends AsyncDisposable {
+  realm: string;
+}
+
 export async function createTestBed(
   overrides?: RealmRepresentation,
-): Promise<string> {
-  const { realmName } = await adminClient.realms.create({
+): Promise<TestBed> {
+  const { realmName: realm } = await adminClient.realms.create({
     enabled: true,
     users: [DEFAULT_USER],
     ...overrides,
     realm: crypto.randomUUID(),
   });
 
-  return realmName;
+  const deleteRealm = () => adminClient.realms.del({ realm });
+
+  return {
+    realm,
+    [Symbol.asyncDispose]: deleteRealm,
+  };
 }
