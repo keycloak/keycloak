@@ -18,6 +18,15 @@ When the "Remember Me" option is disabled in the realm settings, all user sessio
 Users will be required to log in again, and any associated refresh tokens will no longer be usable.
 User sessions created without selecting "Remember Me" are not affected.
 
+=== Correct encoding for OpenID Connect client credentials when acting as a broker
+
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+
+This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
+
+To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
+
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

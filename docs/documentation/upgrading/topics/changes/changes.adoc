@@ -5,10 +5,6 @@
 
 include::changes-26_5_0.adoc[leveloffset=2]
 
-=== Migrating to 26.4.1
-
-include::changes-26_4_1.adoc[leveloffset=2]
-
 === Migrating to 26.4.0
 
 include::changes-26_4_0.adoc[leveloffset=2]
