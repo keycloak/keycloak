@@ -1,11 +1,11 @@
 package org.keycloak.representations.workflows;
 
 import static java.util.Optional.ofNullable;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONCURRENCY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESET_ON;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_RESET_ON, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
+@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
@@ -41,6 +41,9 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     private List<WorkflowConditionRepresentation> conditions;
 
     private WorkflowStateRepresentation state;
+
+    @JsonProperty(CONFIG_CONCURRENCY)
+    private WorkflowConcurrencyRepresentation concurrency;
 
     public WorkflowRepresentation() {
         super(null, null, null);
@@ -68,26 +71,6 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     @JsonIgnore
     public List<String> getOnValues() {
         return ofNullable(getConfigValues(CONFIG_ON_EVENT)).orElse(Collections.emptyList());
-    }
-
-    @JsonProperty(CONFIG_RESET_ON)
-    public <T> T getOnEventReset() {
-        return getConfigValuesOrSingle(CONFIG_RESET_ON);
-    }
-
-    @JsonIgnore
-    public List<String> getOnEventsReset() {
-        return ofNullable(getConfigValues(CONFIG_RESET_ON)).orElse(Collections.emptyList());
-    }
-
-    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-    public void setOnEventReset(List<String> names) {
-        setConfigValue(CONFIG_RESET_ON, names);
-    }
-
-    @JsonIgnore
-    public void setOnEventReset(String... names) {
-        setOnEventReset(Arrays.asList(names));
     }
 
     public String getName() {
@@ -138,6 +121,19 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         this.state = state;
     }
 
+    public WorkflowConcurrencyRepresentation getConcurrency() {
+        return concurrency;
+    }
+
+    public void setConcurrency(WorkflowConcurrencyRepresentation concurrency) {
+        this.concurrency = concurrency;
+    }
+
+    @JsonIgnore
+    public boolean isCancelIfRunning() {
+        return concurrency != null && Boolean.TRUE.equals(concurrency.isCancelIfRunning());
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {
@@ -181,6 +177,11 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
         public Builder onConditions(WorkflowConditionRepresentation... condition) {
             representation.setConditions(Arrays.asList(condition));
+            return this;
+        }
+
+        public Builder concurrency(boolean cancelIfRunning) {
+            representation.setConcurrency(new WorkflowConcurrencyRepresentation(cancelIfRunning));
             return this;
         }
 
