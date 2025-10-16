@@ -42,7 +42,7 @@ public class FipsStrictTestSuite {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.FIPS).tlsEnabled(true)
+            return config.features(Profile.Feature.FIPS)
                 .option("fips-mode", "strict")
                 .option("spi-password-hashing-pbkdf2-max-padding-length", "14")
                 .option("spi-password-hashing-pbkdf2-sha256-max-padding-length", "14")
@@ -58,7 +58,7 @@ public class FipsStrictTestSuite {
 
         @Override
         public CertificatesConfigBuilder configure(CertificatesConfigBuilder config) {
-            return config.keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS);
+            return config.tlsEnabled(true).keystoreFormat(KeystoreUtil.KeystoreFormat.BCFKS);
         }
     }
 }

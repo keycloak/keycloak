@@ -50,10 +50,16 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         ServerConfigInterceptorHelper interceptor = new ServerConfigInterceptorHelper(instanceContext.getRegistry());
         command = interceptor.intercept(command, instanceContext);
 
-        if (command.tlsEnabled()) {
-            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
-            command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath());
-            command.option("https-key-store-password", managedCert.getKeycloakServerKeyStorePassword());
+        ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+        if (managedCert.isTlsEnabled()) {
+            command.option("https-key-store-file", managedCert.getServerKeyStorePath());
+            command.option("https-key-store-password", managedCert.getKeyAndTrustStorePassword());
+
+            if (managedCert.isMTlsEnabled()) {
+                command.option("https-client-auth", "request");
+                command.option("https-trust-store-file", managedCert.getClientTrustStorePath());
+                command.option("https-trust-store-password", managedCert.getKeyAndTrustStorePassword());
+            }
         }
 
         command.log().fromConfig(Config.getConfig());
@@ -66,7 +72,7 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
         long start = System.currentTimeMillis();
 
         KeycloakServer server = getServer();
-        server.start(command);
+        server.start(command, managedCert.isTlsEnabled());
 
         getLogger().infov("Keycloak test server started in {0} ms", System.currentTimeMillis() - start);
 

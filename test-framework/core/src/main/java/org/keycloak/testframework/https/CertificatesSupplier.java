@@ -31,7 +31,7 @@ public class CertificatesSupplier implements Supplier<ManagedCertificates, Injec
 
     @Override
     public boolean compatible(InstanceContext<ManagedCertificates, InjectCertificates> a, RequestedInstance<ManagedCertificates, InjectCertificates> b) {
-        return true;
+        return a.getAnnotation().config().equals(b.getAnnotation().config());
     }
 
     @Override

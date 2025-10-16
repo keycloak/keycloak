@@ -9,7 +9,6 @@ import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
-import org.keycloak.testframework.server.KeycloakServer;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -22,10 +21,9 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
     public HttpClient getValue(InstanceContext<HttpClient, InjectHttpClient> instanceContext) {
         HttpClientBuilder builder = HttpClientBuilder.create();
 
-        KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
-        if (server.isTlsEnabled()) {
-            ManagedCertificates managedCerts = instanceContext.getDependency(ManagedCertificates.class);
+        ManagedCertificates managedCerts = instanceContext.getDependency(ManagedCertificates.class);
 
+        if (managedCerts.isTlsEnabled()) {
             SSLContext sslContext = managedCerts.getClientSSLContext();
             SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
                     sslContext,

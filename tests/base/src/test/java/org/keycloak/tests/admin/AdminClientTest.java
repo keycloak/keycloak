@@ -15,12 +15,7 @@
  * limitations under the License.
  *
  */
-
-package org.keycloak.testsuite.admin;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+package org.keycloak.tests.admin;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Response;
@@ -28,7 +23,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -40,290 +34,323 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.https.CertificatesConfig;
+import org.keycloak.testframework.https.CertificatesConfigBuilder;
+import org.keycloak.testframework.https.InjectCertificates;
+import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test for the various "Advanced" scenarios of java admin-client
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AdminClientTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class AdminClientTest {
 
-    private static String realmName;
+    @InjectRealm(config = TestRealmConfig.class)
+    ManagedRealm testRealm;
 
-    private static String userId;
-    private static String userName;
+    @InjectAdminClientFactory
+    AdminClientFactory adminClientFactory;
 
-    private static String clientUUID;
-    private static String clientId;
-    private static String clientSecret;
+    @InjectCertificates(config = MTlsCertificatesEnabled.class)
+    ManagedCertificates managedCertificates;
 
-    private static String x509ClientUUID;
-    private static String x509ClientId;
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
-    private static String x509UserName;
+    private static final String TEST_USER_USERNAME  = "test-user@localhost";
+    private static final String TEST_USER_PASSWORD = "password";
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    private static final String CLIENT_ID  = "service-account-cl";
+    private static final String CLIENT_SECRET  = "secret1";
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        realmName = "test";
-        RealmBuilder realm = RealmBuilder.create().name(realmName)
-                .testEventListener();
-
-        clientId = "service-account-cl";
-        clientSecret = "secret1";
-        ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
-                .clientId(clientId)
-                .secret(clientSecret)
-                .serviceAccountsEnabled(true)
-                .build();
-        realm.client(enabledAppWithSkipRefreshToken);
-
-        x509ClientId = "x509-client-sa";
-        ClientRepresentation x509ServiceAccountClient = ClientBuilder.create()
-              .clientId(x509ClientId)
-              .serviceAccountsEnabled(true)
-              .build();
-        x509ServiceAccountClient.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-        x509ServiceAccountClient.setAttributes(Map.of(
-            X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)",
-            X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "true"));
-        realm.client(x509ServiceAccountClient);
-
-        userId = KeycloakModelUtils.generateId();
-        userName = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + enabledAppWithSkipRefreshToken.getClientId();
-        UserBuilder serviceAccountUser = UserBuilder.create()
-                .username(userName)
-                .serviceAccountId(enabledAppWithSkipRefreshToken.getClientId())
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-        realm.user(serviceAccountUser);
-
-        // This user is associated with the x509-client-sa service account above and
-        // give the service account a service account role "realm-management:realm-admin".
-        // Without the "realm-management:realm-admin" role we won't be able to test any actual
-        // admin call.
-        x509UserName = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + x509ServiceAccountClient.getClientId();
-        UserBuilder x509ServiceAccountUser = UserBuilder.create()
-            .username(x509UserName)
-            .serviceAccountId(x509ServiceAccountClient.getClientId())
-            .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-        realm.user(x509ServiceAccountUser);
-
-        UserBuilder defaultUser = UserBuilder.create()
-                .id(KeycloakModelUtils.generateId())
-                .username("test-user@localhost")
-                .password("password")
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                .addRoles(OAuth2Constants.OFFLINE_ACCESS);
-        realm.user(defaultUser);
-
-        testRealms.add(realm.build());
-    }
-
-    @Override
-    public void importRealm(RealmRepresentation realm) {
-        super.importRealm(realm);
-        if (Objects.equals(realm.getRealm(), realmName)) {
-            x509ClientUUID = adminClient.realm(realmName).clients().findByClientId(x509ClientId).get(0).getId();
-            clientUUID = adminClient.realm(realmName).clients().findByClientId(clientId).get(0).getId();
-            userId = adminClient.realm(realmName).users().searchByUsername(userName, true).get(0).getId();
-        }
-    }
+    private static final String X509_CLIENT_ID  = "x509-client-sa";
 
     @Test
-    public void clientCredentialsAuthSuccess() throws Exception {
-        try (Keycloak adminClient = AdminClientUtil.createAdminClientWithClientCredentials(realmName, clientId, clientSecret, null)) {
-            // Check possible to load the realm
-            RealmRepresentation realm = adminClient.realm(realmName).toRepresentation();
-            Assert.assertEquals(realmName, realm.getRealm());
+    public void clientCredentialsAuthSuccess() {
+        Keycloak adminClient = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .autoClose()
+                .build();
 
-            setTimeOffset(1000);
+            // Check possible to load the realm
+            RealmRepresentation realm = adminClient.realm(testRealm.getName()).toRepresentation();
+            Assertions.assertEquals(testRealm.getName(), realm.getRealm());
+
+            timeOffSet.set(1000);
 
             // Check still possible to load the realm after original token expired (admin client should automatically re-authenticate)
-            realm = adminClient.realm(realmName).toRepresentation();
-            Assert.assertEquals(realmName, realm.getRealm());
-        }
+            realm = adminClient.realm(testRealm.getName()).toRepresentation();
+            Assertions.assertEquals(testRealm.getName(), realm.getRealm());
     }
 
     @Test
-    public void clientCredentialsClientDisabled() throws Exception {
-        try (Keycloak adminClient = AdminClientUtil.createAdminClientWithClientCredentials(realmName, clientId, clientSecret, null)) {
-            // Check possible to load the realm
-            RealmRepresentation realm = adminClient.realm(realmName).toRepresentation();
-            Assert.assertEquals(realmName, realm.getRealm());
+    public void clientCredentialsClientDisabled() {
+        Keycloak adminClient = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .autoClose()
+                .build();
 
-            // Disable client and check it should not be possible to load the realms anymore
-            setClientEnabled(clientId, false);
+        // Check possible to load the realm
+        RealmRepresentation realm = adminClient.realm(testRealm.getName()).toRepresentation();
+        Assertions.assertEquals(testRealm.getName(), realm.getRealm());
 
-            // Check not possible to invoke anymore
-            try {
-                realm = adminClient.realm(realmName).toRepresentation();
-                Assert.fail("Not expected to successfully get realm");
-            } catch (NotAuthorizedException nae) {
-                // Expected
-            }
+        // Disable client and check it should not be possible to load the realms anymore
+        setClientEnabled(CLIENT_ID, false);
+
+        // Check not possible to invoke anymore
+        try {
+            realm = adminClient.realm(testRealm.getName()).toRepresentation();
+            Assertions.fail("Not expected to successfully get realm");
+        } catch (NotAuthorizedException nae) {
+            // Expected
         } finally {
-            setClientEnabled(clientId, true);
+            setClientEnabled(CLIENT_ID, true);
         }
     }
 
     @Test
-    public void adminAuthCloseUserSession() throws Exception {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(realmName), "test-user@localhost");
-        try (Keycloak keycloak = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
-            // Check possible to load the realm
-            RealmRepresentation realm = keycloak.realm(realmName).toRepresentation();
-            Assert.assertEquals(realmName, realm.getRealm());
+    public void adminAuthCloseUserSession() {
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm.admin(), TEST_USER_USERNAME);
+        try(Keycloak keycloak = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .username(TEST_USER_USERNAME)
+                .password(TEST_USER_PASSWORD)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build()
+        ) {
 
-            Assert.assertEquals(1, user.getUserSessions().size());
+            // Check possible to load the realm
+            RealmRepresentation realm = keycloak.realm(testRealm.getName()).toRepresentation();
+            Assertions.assertEquals(testRealm.getName(), realm.getRealm());
+
+            Assertions.assertEquals(1, user.getUserSessions().size());
         }
-        Assert.assertEquals(0, user.getUserSessions().size());
+
+        Assertions.assertEquals(0, user.getUserSessions().size());
     }
 
     @Test
-    public void adminAuthClientDisabled() throws Exception {
-        try (Keycloak adminClient = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
-            // Check possible to load the realm
-            RealmRepresentation realm = adminClient.realm(realmName).toRepresentation();
-            Assert.assertEquals(realmName, realm.getRealm());
+    public void adminAuthClientDisabled() {
+        Keycloak adminClient = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .username(TEST_USER_USERNAME)
+                .password(TEST_USER_PASSWORD)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build();
 
-            // Disable client and check it should not be possible to load the realms anymore
-            setClientEnabled(Constants.ADMIN_CLI_CLIENT_ID, false);
+        // Check possible to load the realm
+        RealmRepresentation realm = adminClient.realm(testRealm.getName()).toRepresentation();
+        Assertions.assertEquals(testRealm.getName(), realm.getRealm());
 
-            // Check not possible to invoke anymore
-            try {
-                realm = adminClient.realm(realmName).toRepresentation();
-                Assert.fail("Not expected to successfully get realm");
-            } catch (NotAuthorizedException nae) {
-                // Expected
-            }
+        // Disable client and check it should not be possible to load the realms anymore
+        setClientEnabled(Constants.ADMIN_CLI_CLIENT_ID, false);
+
+        // Check not possible to invoke anymore
+        try {
+            realm = adminClient.realm(testRealm.getName()).toRepresentation();
+            Assertions.fail("Not expected to successfully get realm");
+        } catch (NotAuthorizedException nae) {
+            // Expected
         } finally {
             setClientEnabled(Constants.ADMIN_CLI_CLIENT_ID, true);
+            adminClient.close();
         }
     }
 
     @Test
-    public void adminAuthUserDisabled() throws Exception {
-        try (Keycloak adminClient = AdminClientUtil.createAdminClient(false, realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-             Keycloak adminClientOffline = AdminClientUtil.createAdminClient(false, ServerURLs.getAuthServerContextRoot(), realmName, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null, OAuth2Constants.OFFLINE_ACCESS, false);
-        ) {
-            // Check possible to load the realm
-            RealmRepresentation realm = adminClient.realm(realmName).toRepresentation();
-            Assert.assertEquals(realmName, realm.getRealm());
-            realm = adminClientOffline.realm(realmName).toRepresentation();
-            Assert.assertEquals(realmName, realm.getRealm());
+    public void adminAuthUserDisabled() {
+        Keycloak adminClient = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .username(TEST_USER_USERNAME)
+                .password(TEST_USER_PASSWORD)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build();
 
-            // Disable client and check it should not be possible to load the realms anymore
-            setUserEnabled("test-user@localhost", false);
+        Keycloak adminClientOffline = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .username(TEST_USER_USERNAME)
+                .password(TEST_USER_PASSWORD)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .scope(OAuth2Constants.OFFLINE_ACCESS)
+                .build();
 
-            // Check not possible to invoke anymore
-            try {
-                realm = adminClient.realm(realmName).toRepresentation();
-                Assert.fail("Not expected to successfully get realm");
-            } catch (NotAuthorizedException nae) {
-                // Expected
-            }
-            try {
-                realm = adminClientOffline.realm(realmName).toRepresentation();
-                Assert.fail("Not expected to successfully get realm");
-            } catch (NotAuthorizedException nae) {
-                // Expected
-            }
+        // Check possible to load the realm
+        RealmRepresentation realm = adminClient.realm(testRealm.getName()).toRepresentation();
+        Assertions.assertEquals(testRealm.getName(), realm.getRealm());
+        realm = adminClientOffline.realm(testRealm.getName()).toRepresentation();
+        Assertions.assertEquals(testRealm.getName(), realm.getRealm());
+
+        // Disable user and check it should not be possible to load the realms anymore
+        setUserEnabled(TEST_USER_USERNAME, false);
+
+        // Check not possible to invoke anymore
+        try {
+            realm = adminClient.realm(testRealm.getName()).toRepresentation();
+            Assertions.fail("Not expected to successfully get realm");
+        } catch (NotAuthorizedException nae) {
+            // Expected
+        }
+        try {
+            realm = adminClientOffline.realm(testRealm.getName()).toRepresentation();
+            Assertions.fail("Not expected to successfully get realm");
+        } catch (NotAuthorizedException nae) {
+            // Expected
         } finally {
-            setUserEnabled("test-user@localhost", true);
+            setUserEnabled(TEST_USER_USERNAME, true);
+            adminClient.close();
+            adminClientOffline.close();
         }
     }
 
     @Test
-    public void scopedClientCredentialsAuthSuccess() throws Exception {
-        final RealmResource testRealm = adminClient.realm(realmName);
-
+    public void scopedClientCredentialsAuthSuccess() {
         // we need to create custom scope after import, otherwise the default scopes are missing.
         final String scopeName = "myScope";
-        String scopeId = createScope(testRealm, scopeName, KeycloakModelUtils.generateId());
-        testRealm.clients().get(clientUUID).addOptionalClientScope(scopeId);
+        String scopeId = createScope(scopeName, KeycloakModelUtils.generateId());
+        AdminApiUtil.findClientByClientId(testRealm.admin(), CLIENT_ID).addOptionalClientScope(scopeId);
 
         // with scope
-        try (Keycloak adminClient = AdminClientUtil.createAdminClientWithClientCredentials(realmName,
-            clientId, clientSecret, scopeName)) {
+        try (Keycloak adminClient = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .scope(scopeName)
+                .build()) {
             final AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
-            Assert.assertTrue(accessToken.getScope().contains(scopeName));
-            Assert.assertNotNull(adminClient.realm(realmName).clientScopes().get(scopeId).toRepresentation());
+            Assertions.assertTrue(accessToken.getScope().contains(scopeName));
+            Assertions.assertNotNull(adminClient.realm(testRealm.getName()).clientScopes().get(scopeId).toRepresentation());
         }
         // without scope
-        try (Keycloak adminClient = AdminClientUtil.createAdminClientWithClientCredentials(realmName,
-            clientId, clientSecret, null)) {
+        try (Keycloak adminClient = adminClientFactory.create()
+                .realm(testRealm.getName())
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .build()) {
             final AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
-            Assert.assertFalse(accessToken.getScope().contains(scopeName));
-            Assert.assertNotNull(adminClient.realm(realmName).clientScopes().get(scopeId).toRepresentation());
+            Assertions.assertFalse(accessToken.getScope().contains(scopeName));
+            Assertions.assertNotNull(adminClient.realm(testRealm.getName()).clientScopes().get(scopeId).toRepresentation());
         }
     }
 
-    // A client secret in not necessary when authentication is
+    // A client secret is not necessary when authentication is
     // performed via X.509 authorizer.
     @Test
-    public void noClientSecretWithClientCredentialsAuthSuccess() throws Exception {
-        final RealmResource testRealm = adminClient.realm(realmName);
-
+    public void noClientSecretWithClientCredentialsAuthSuccess() {
         final String scopeName = "dummyScope";
-        String scopeId = createScope(testRealm, scopeName, KeycloakModelUtils.generateId());
-        testRealm.clients().get(x509ClientUUID).addOptionalClientScope(scopeId);
+        String scopeId = createScope(scopeName, KeycloakModelUtils.generateId());
+        testRealm.admin().clients().get(testRealm.admin().clients().findByClientId(X509_CLIENT_ID).get(0).getId()).addOptionalClientScope(scopeId);
 
         // with scope and no client secret
-        try (Keycloak adminClient = AdminClientUtil.
-            createMTlsAdminClientWithClientCredentialsWithoutSecret(realmName, x509ClientId, scopeName)) {
+        try (Keycloak adminClient = adminClientFactory.create().realm(testRealm.getName()).grantType(OAuth2Constants.CLIENT_CREDENTIALS).clientId(X509_CLIENT_ID).scope(scopeName).build()) {
             final AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
-            Assert.assertTrue(accessToken.getScope().contains(scopeName));
-            Assert.assertNotNull(adminClient.realm(realmName).clientScopes().get(scopeId).toRepresentation());
+            Assertions.assertTrue(accessToken.getScope().contains(scopeName));
+            Assertions.assertNotNull(adminClient.realm(testRealm.getName()).clientScopes().get(scopeId).toRepresentation());
         }
         // without scope and no client secret
-        try (Keycloak adminClient = AdminClientUtil.
-            createMTlsAdminClientWithClientCredentialsWithoutSecret(realmName, x509ClientId, null)) {
+        try (Keycloak adminClient = adminClientFactory.create().realm(testRealm.getName()).grantType(OAuth2Constants.CLIENT_CREDENTIALS).clientId(X509_CLIENT_ID).scope(null).build()) {
             final AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
-            Assert.assertFalse(accessToken.getScope().contains(scopeName));
-            Assert.assertNotNull(adminClient.realm(realmName).clientScopes().get(scopeId).toRepresentation());
+            Assertions.assertFalse(accessToken.getScope().contains(scopeName));
+            Assertions.assertNotNull(adminClient.realm(testRealm.getName()).clientScopes().get(scopeId).toRepresentation());
         }
-    }
-
-    private void setClientEnabled(String clientId, boolean enabled) {
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realms().realm(realmName), clientId);
-        ClientRepresentation clientRep = client.toRepresentation();
-        clientRep.setEnabled(enabled);
-        client.update(clientRep);
     }
 
     private void setUserEnabled(String username, boolean enabled) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realms().realm(realmName), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm.admin(), username);
         UserRepresentation userRep = user.toRepresentation();
         userRep.setEnabled(enabled);
         user.update(userRep);
     }
 
-    private String createScope(RealmResource testRealm, String scopeName, String scopeId) {
-        final ClientScopeRepresentation testScope =
-            ClientScopeBuilder.create().name(scopeName).protocol("openid-connect").build();
+    private void setClientEnabled(String clientId, boolean enabled) {
+        ClientResource client = AdminApiUtil.findClientByClientId(testRealm.admin(), clientId);
+        ClientRepresentation clientRep = client.toRepresentation();
+        clientRep.setEnabled(enabled);
+        client.update(clientRep);
+    }
+
+    private String createScope(String scopeName, String scopeId) {
+        final ClientScopeRepresentation testScope = new ClientScopeRepresentation();
         testScope.setId(scopeId);
-        try (Response response = testRealm.clientScopes().create(testScope)) {
-            Assert.assertEquals(201, response.getStatus());
-            return ApiUtil.getCreatedId(response);
+        testScope.setName(scopeName);
+        testScope.setProtocol("openid-connect");
+
+        Response response = testRealm.admin().clientScopes().create(testScope);
+        Assertions.assertEquals(201, response.getStatus());
+        return ApiUtil.getCreatedId(response);
+    }
+
+    private static class TestRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.addUser(TEST_USER_USERNAME)
+                    .name("test", "user")
+                    .email("testuser@localhost.com")
+                    .emailVerified(true)
+                    .password(TEST_USER_PASSWORD)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                    .roles(OAuth2Constants.OFFLINE_ACCESS);
+
+            realm.addClient(CLIENT_ID)
+                    .secret(CLIENT_SECRET)
+                    .serviceAccountsEnabled(true);
+
+            realm.addUser(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + CLIENT_ID)
+                    .name("serviceAccount", "user")
+                    .email("serviceAccountUser@localhost.com")
+                    .serviceAccountId(CLIENT_ID)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+
+            realm.addClient(X509_CLIENT_ID)
+                    .serviceAccountsEnabled(true)
+                    .authenticatorType(X509ClientAuthenticator.PROVIDER_ID)
+                    .attribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)")
+                    .attribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "true");
+
+            // This user is associated with the x509-client-sa service account above and
+            // give the service account a service account role "realm-management:realm-admin".
+            // Without the "realm-management:realm-admin" role we won't be able to test any actual
+            // admin call.
+            realm.addUser(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + X509_CLIENT_ID)
+                    .name("x509ServiceAccount", "user")
+                    .email("x509ServiceAccountUser@localhost.com")
+                    .emailVerified(true)
+                    .serviceAccountId(X509_CLIENT_ID)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+
+            return realm;
+        }
+    }
+
+    private static class MTlsCertificatesEnabled implements CertificatesConfig {
+
+        @Override
+        public CertificatesConfigBuilder configure(CertificatesConfigBuilder config) {
+            return config.tlsEnabled(true).mTlsEnabled(true);
         }
     }
 }

@@ -34,7 +34,6 @@ public class KeycloakServerConfigBuilder {
     private final Set<Path> configFiles = new HashSet<>();
     private CacheType cacheType = CacheType.LOCAL;
     private boolean externalInfinispan = false;
-    private boolean tlsEnabled = false;
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -106,15 +105,6 @@ public class KeycloakServerConfigBuilder {
     public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
         dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
         return this;
-    }
-
-    public KeycloakServerConfigBuilder tlsEnabled(boolean enabled) {
-        tlsEnabled = enabled;
-        return this;
-    }
-
-    public boolean tlsEnabled() {
-        return tlsEnabled ;
     }
     
     public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
