@@ -15,4 +15,6 @@ public @interface InjectAdminClientFactory {
     String ref() default "";
 
     LifeCycle lifecycle() default LifeCycle.CLASS;
+
+    boolean mTls() default false;
 }

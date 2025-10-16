@@ -11,16 +11,18 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.SSLContext;
+
+import org.apache.http.ssl.SSLContextBuilder;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
-import org.apache.http.ssl.SSLContextBuilder;
 import org.jboss.logging.Logger;
 
 public class ManagedCertificates {
@@ -54,11 +56,38 @@ public class ManagedCertificates {
         initServerCerts(configBuilder.getKeystoreFormat());
     }
 
+    public SSLContext getClientSSLContext() {
+        try {
+            return SSLContextBuilder.create()
+                    .loadTrustMaterial(clientsTrustStore, null)
+                    .build();
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+            throw new ManagedCertificatesException(e);
+        }
+    }
+
+    public SSLContext getMTlsClientSSLContext() {
+        try {
+            return SSLContextBuilder.create()
+                    .loadTrustMaterial(clientsTruststorePath.toFile(), password)
+                    .loadKeyMaterial(serverKeyStore, password)
+                    .build();
+        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+            throw new ManagedCertificatesException(e);
+        } catch (UnrecoverableKeyException | CertificateException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public String getKeycloakServerKeyStorePath() {
         return serverKeystorePath.toString();
     }
 
-    public String getKeycloakServerKeyStorePassword() {
+    public String getClientTrustStorePath() {
+        return clientsTruststorePath.toString();
+    }
+
+    public String getKeyAndTrustStorePassword() {
         return String.valueOf(password);
     }
 
@@ -70,16 +99,6 @@ public class ManagedCertificates {
         try {
             return (X509Certificate) serverKeyStore.getCertificate(CERT_ENTRY);
         } catch (KeyStoreException e) {
-            throw new ManagedCertificatesException(e);
-        }
-    }
-
-    public SSLContext getClientSSLContext() {
-        try {
-            return SSLContextBuilder.create()
-                    .loadTrustMaterial(clientsTrustStore, null)
-                    .build();
-        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
             throw new ManagedCertificatesException(e);
         }
     }

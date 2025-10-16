@@ -15,7 +15,11 @@ public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, 
     public AdminClientFactory getValue(InstanceContext<AdminClientFactory, InjectAdminClientFactory> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
 
-        if (!server.isTlsEnabled()) {
+        if (instanceContext.getAnnotation().mTls()) {
+            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            SSLContext sslContext = managedCert.getMTlsClientSSLContext();
+            return new AdminClientFactory(server.getBaseUrl(), sslContext);
+        } else if (!server.isTlsEnabled()) {
             return new AdminClientFactory(server.getBaseUrl());
         } else {
             ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
