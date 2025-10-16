@@ -119,6 +119,8 @@ public class InfinispanContainer extends org.infinispan.server.test.core.Infinis
 
     @Override
     protected void containerIsStopped(InspectContainerResponse containerInfo) {
+        // This might rather be a Docker issue if the port is still blocked
+        // https://github.com/docker/for-linux/issues/1180
         while(true) {
             try {
                 try (Socket socket = new Socket()) {
