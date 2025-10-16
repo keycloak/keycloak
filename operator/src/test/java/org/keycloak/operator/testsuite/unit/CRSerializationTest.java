@@ -21,8 +21,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.hamcrest.CoreMatchers;
@@ -211,6 +213,12 @@ public class CRSerializationTest {
         assertThat(attributes.size(), is(2));
         assertThat(attributes, hasEntry("service.namespace", "keycloak-namespace"));
         assertThat(attributes, hasEntry("service.name", "custom-service-name"));
+
+        var additionalOptions = keycloak.getSpec().getAdditionalOptions().stream().collect(Collectors.toMap(ValueOrSecret::getName, e -> e));
+        assertNotNull(additionalOptions);
+        assertThat(additionalOptions.isEmpty(), is(false));
+        assertThat(additionalOptions, hasEntry("tracing-header-Authorization", new ValueOrSecret("tracing-header-Authorization", new SecretKeySelector("tracing-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("tracing-header-X-Org-Id", new ValueOrSecret("tracing-header-X-Org-Id", "my-org-id")));
     }
 
     @Test
