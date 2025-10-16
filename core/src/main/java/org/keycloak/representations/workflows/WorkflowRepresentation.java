@@ -5,7 +5,6 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_EN
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESET_ON;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
@@ -28,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_RESET_ON, CONFIG_RECURRING, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
+@JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_RESET_ON, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
@@ -97,14 +96,6 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     public void setName(String name) {
         setConfigValue(CONFIG_NAME, name);
-    }
-
-    public Boolean getRecurring() {
-        return getConfigValue(CONFIG_RECURRING, Boolean.class);
-    }
-
-    public void setRecurring(Boolean recurring) {
-        setConfigValue(CONFIG_RECURRING, recurring);
     }
 
     public Boolean getEnabled() {
@@ -210,11 +201,6 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
         public Builder name(String name) {
             representation.setName(name);
-            return this;
-        }
-
-        public Builder recurring() {
-            representation.setRecurring(true);
             return this;
         }
 

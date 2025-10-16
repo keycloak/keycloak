@@ -20,7 +20,6 @@ package org.keycloak.models.workflow;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RECURRING;
 
 import java.util.List;
 import java.util.Map;
@@ -66,10 +65,6 @@ public class Workflow {
 
     public boolean isEnabled() {
         return config != null && Boolean.parseBoolean(config.getFirstOrDefault(CONFIG_ENABLED, "true"));
-    }
-
-    public boolean isRecurring() {
-        return config != null && Boolean.parseBoolean(config.getFirst(CONFIG_RECURRING));
     }
 
     public Long getNotBefore() {
