@@ -118,31 +118,6 @@ public class InfinispanContainer extends org.infinispan.server.test.core.Infinis
     }
 
     @Override
-    protected void containerIsStopped(InspectContainerResponse containerInfo) {
-        // This might rather be a Docker issue if the port is still blocked
-        // https://github.com/docker/for-linux/issues/1180
-        while(true) {
-            try {
-                try (Socket socket = new Socket()) {
-                    InetAddress inetAddress = InetAddress.getByName("localhost");
-                    SocketAddress socketAddress = new InetSocketAddress(inetAddress, Integer.parseInt(PORT));
-                    socket.bind(socketAddress);
-                    socket.close();
-                    break;
-                }
-            } catch (IOException e) {
-                logger().warn("The socket is still bound");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(ex);
-                }
-            }
-        }
-    }
-
-    @Override
     public void stop() {
         logger().info("Stopping ISPN container");
 

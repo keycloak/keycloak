@@ -343,7 +343,12 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private static InfinispanContainer configureExternalInfinispan(ExtensionContext context) {
         if (getAnnotationFromTestContext(context, WithExternalInfinispan.class) != null) {
             InfinispanContainer infinispanContainer = new InfinispanContainer();
-            infinispanContainer.start();
+            try {
+                infinispanContainer.start();
+            }  catch (RuntimeException e) {
+                infinispanContainer.stop();
+                throw e;
+            }
             return infinispanContainer;
         }
 
