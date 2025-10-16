@@ -59,7 +59,7 @@ export const BruteForceDetection = ({
     convertToFormValues(realm, setValue);
     setIsBruteForceModeUpdated(false);
   };
-  useEffect(setupForm, []);
+  useEffect(setupForm, [realm]);
 
   const bruteForceMode = (() => {
     if (!form.getValues("bruteForceProtected")) {

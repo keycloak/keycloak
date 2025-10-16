@@ -16,8 +16,6 @@
  */
 package org.keycloak.models;
 
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.role.RoleLookupProvider;

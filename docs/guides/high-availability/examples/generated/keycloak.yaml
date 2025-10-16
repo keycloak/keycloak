@@ -34,6 +34,16 @@ metadata:
   namespace: keycloak
 type: kubernetes.io/tls
 ---
+# Source: keycloak/templates/keycloak-aurora-rootcert.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-aurora-rootcert
+  namespace: keycloak
+binaryData:
+  # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html
+  aurora.pem: ...
+---
 # Source: keycloak/templates/keycloak-providers-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -90,6 +100,24 @@ spec:
     app: keycloak
   sessionAffinity: None
 ---
+# Source: keycloak/templates/postgres/postgres-deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-headless
+  namespace: keycloak
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app: postgres
+---
 # Source: keycloak/templates/postgres/postgres-exporter.yaml
 apiVersion: v1
 kind: Service
@@ -143,91 +171,6 @@ spec:
     app: postgres
   sessionAffinity: None
   type: ClusterIP
----
-# Source: keycloak/templates/sqlpad.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: sqlpad
-  name: sqlpad
-  namespace: keycloak
-spec:
-  ports:
-    - port: 3000
-      protocol: TCP
-      targetPort: 3000
-  selector:
-    app: sqlpad
-  sessionAffinity: None
-  type: ClusterIP
----
-# Source: keycloak/templates/postgres/postgres-deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: postgres
-  name: postgres
-  namespace: keycloak
-spec:
-  progressDeadlineSeconds: 600
-  replicas: 1
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      app: postgres
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: postgres
-    spec:
-      containers:
-        - imagePullPolicy: Always
-          env:
-            - name: POSTGRES_PASSWORD
-              value: secret99
-            - name: POSTGRES_USER
-              value: keycloak
-            - name: POSTGRES_DB
-              value: keycloak
-          image: mirror.gcr.io/postgres:15
-          volumeMounts:
-            # Using volume mount for PostgreSQL's data folder as it is otherwise not writable
-            - mountPath: /var/lib/postgresql
-              name: cache-volume
-          resources:
-            requests:
-              cpu: "2"
-          startupProbe:
-            tcpSocket:
-              port: 5432
-            failureThreshold: 20
-            initialDelaySeconds: 10
-            periodSeconds: 2
-          readinessProbe:
-            tcpSocket:
-              port: 5432
-            failureThreshold: 10
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 5432
-            failureThreshold: 10
-            periodSeconds: 10
-          name: postgres
-          ports:
-            - containerPort: 5432
-              protocol: TCP
-      volumes:
-        - name: cache-volume
-          emptyDir: {}
-      restartPolicy: Always
-      # The rhel9/postgresql-13 is known to take ~30 seconds to shut down
-      # As this is a deployment with ephemeral storage, there is no need to wait as the data will be gone anyway
-      terminationGracePeriodSeconds: 0
 ---
 # Source: keycloak/templates/postgres/postgres-exporter.yaml
 apiVersion: apps/v1
@@ -293,114 +236,77 @@ spec:
           configMap:
             name: postgres-exporter
 ---
-# Source: keycloak/templates/sqlpad.yaml
+# Source: keycloak/templates/postgres/postgres-deployment.yaml
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   labels:
-    app: sqlpad
-  name: sqlpad
+    app: postgres
+  name: postgres
   namespace: keycloak
 spec:
-  progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: sqlpad
-  strategy:
-    type: Recreate
+      app: postgres
+  serviceName: postgres-headless
   template:
     metadata:
       labels:
-        app: sqlpad
+        app: postgres
     spec:
       containers:
-        - env:
-            - name: SQLPAD_ADMIN
-              value: 'admin'
-            - name: SQLPAD_ADMIN_PASSWORD
-              value: 'admin'
-            - name: SQLPAD_PORT
-              value: '3000'
-            - name: SQLPAD_APP_LOG_LEVEL
-              value: debug
-            - name: SQLPAD_WEB_LOG_LEVEL
-              value: warn
-            - name: SQLPAD_SEED_DATA_PATH
-              value: /etc/sqlpad/seed-data
-            - name: SQLPAD_CONNECTIONS__pgdemo__name
-              value: PostgreSQL Keycloak
-            - name: SQLPAD_CONNECTIONS__pgdemo__port
-              value: '5432'
-            - name: SQLPAD_CONNECTIONS__pgdemo__host
-              value: postgres
-            - name: SQLPAD_CONNECTIONS__pgdemo__username
-              value: keycloak
-            - name: SQLPAD_CONNECTIONS__pgdemo__password
+        - imagePullPolicy: Always
+          env:
+            - name: POSTGRES_PASSWORD
               value: secret99
-            - name: SQLPAD_CONNECTIONS__pgdemo__database
+            - name: POSTGRES_USER
               value: keycloak
-            - name: SQLPAD_CONNECTIONS__pgdemo__driver
-              value: postgres
-            - name: SQLPAD_CONNECTIONS__pgdemo__multiStatementTransactionEnabled
-              value: 'true'
-            - name: SQLPAD_CONNECTIONS__pgdemo__idleTimeoutSeconds
-              value: '86400'
-            - name: SQLPAD_QUERY_RESULT_MAX_ROWS
-              value: '100000'
-          image: mirror.gcr.io/sqlpad/sqlpad:6.11.0
-          imagePullPolicy: Always
+            - name: POSTGRES_DB
+              value: keycloak
+          image: mirror.gcr.io/postgres:15
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-data
+          resources:
+            requests:
+              cpu: "2"
           startupProbe:
-            httpGet:
-              path: /
-              port: 3000
+            tcpSocket:
+              port: 5432
             failureThreshold: 20
             initialDelaySeconds: 10
             periodSeconds: 2
           readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
+            tcpSocket:
+              port: 5432
             failureThreshold: 10
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
+            tcpSocket:
+              port: 5432
             failureThreshold: 10
             periodSeconds: 10
-          name: sqlpad
+          name: postgres
           ports:
-            - containerPort: 3000
+            - containerPort: 5432
               protocol: TCP
       restartPolicy: Always
----
-# Source: keycloak/templates/sqlpad.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  labels:
-    app: sqlpad
-  name: sqlpad
-  namespace: keycloak
-spec:
-  defaultBackend:
-    service:
-      name: sqlpad
-      port:
-        number: 3000
-  rules:
-    - host: sqlpad.minikube.nip.io
-      http:
-        paths:
-          - backend:
-              service:
-                name: sqlpad
-                port:
-                  number: 3000
-            path: /
-            pathType: ImplementationSpecific
+      # The rhel9/postgresql-13 is known to take ~30 seconds to shut down
+      # As this is a deployment with ephemeral storage, there is no need to wait as the data will be gone anyway
+      terminationGracePeriodSeconds: 0
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Delete
+    whenScaled: Retain
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
 ---
 # Source: keycloak/templates/keycloak.yaml
 # There are several callouts in this YAML marked with `# <1>' etc. See 'running/keycloak-deployment.adoc` for the details.
@@ -426,8 +332,8 @@ spec:
       memory: "2250M"
   db:
     vendor: postgres
-    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak
-    poolMinSize: 30 # <1>
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslrootcert=/opt/keycloak/conf/truststores/configmap-keycloak-aurora-rootcert/aurora.pem # <1>
+    poolMinSize: 30 # <2>
     poolInitialSize: 30
     poolMaxSize: 30
     usernameSecret:
@@ -436,11 +342,11 @@ spec:
     passwordSecret:
       name: keycloak-db-secret
       key: password
-  image: <KEYCLOAK_IMAGE_HERE> # <2>
-  startOptimized: false # <2>
+  image: <KEYCLOAK_IMAGE_HERE> # <3>
+  startOptimized: false # <3>
   features:
     enabled:
-      - multi-site # <3>
+      - multi-site # <4>
   # tag::keycloak-ispn[]
   additionalOptions:
     # end::keycloak-ispn[]
@@ -458,7 +364,7 @@ spec:
     # tag::keycloak[]
     - name: log-console-output
       value: json
-    - name: metrics-enabled # <4>
+    - name: metrics-enabled # <5>
       value: 'true'
     - name: event-metrics-user-enabled
       value: 'true'
@@ -483,11 +389,19 @@ spec:
     tlsSecret: keycloak-tls-secret
   instances: 3
   # end::keycloak[]
+  serviceMonitor:
+    enabled: true
+  # tag::keycloak[]
+  truststores:
+    aurora:
+      configMap:
+        name: keycloak-aurora-rootcert # <6>
+  # end::keycloak[]
   unsupported:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: 74d09d74f6547eec9888f07648f5f5be52afa1be1a6231f286cbd368e86e6f19-b9788fd7a0f3ed13e27c33f89e0e1019fc1fb7d445005dada32fab73b68c335b-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+          checksum/config: ab21fb8e92d83105cdb82d375d7eba40bef80b0542bc0d594c5e46de50b07d34-93971346f578300330ab5caf025f596730a3c95c08feb9ec53787b03b9f407b8-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       spec:
         containers:
           - env:
@@ -526,37 +440,6 @@ spec:
           - name: keycloak-providers
             configMap:
               name: keycloak-providers
----
-# Source: keycloak/templates/keycloak-monitor.yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: keycloak-metrics
-  namespace: keycloak
-spec:
-  selector:
-    matchLabels:
-      app: keycloak
-  # Use pod target labels "as is" without any renaming
-  # podTargetLabels:
-  #   - app
-  # Since at least Keycloak 26.2 and the latest Quarkus 3.19 version, it requires "OpenMetricsText1.0.0" to retrieve exemplars,
-  # as at least some of the other protocols don't support exemplars.
-  scrapeProtocols:
-    - OpenMetricsText1.0.0
-  podMetricsEndpoints:
-    - port: management
-      scheme: https
-      tlsConfig:
-        insecureSkipVerify: true
-      relabelings:
-        - targetLabel: application
-          # Alternative: hard-coded value
-          # replacement: "keycloak"
-          sourceLabels:
-            - __meta_kubernetes_pod_label_app
-          regex: (.+)
-          replacement: ${1}
 ---
 # Source: keycloak/templates/postgres/postgres-exporter.yaml
 apiVersion: monitoring.coreos.com/v1

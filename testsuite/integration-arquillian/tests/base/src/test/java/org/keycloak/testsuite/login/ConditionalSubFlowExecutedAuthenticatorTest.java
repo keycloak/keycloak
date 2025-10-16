@@ -21,7 +21,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory;

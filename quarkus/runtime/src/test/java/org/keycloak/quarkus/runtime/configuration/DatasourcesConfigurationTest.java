@@ -11,7 +11,9 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -479,7 +481,10 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mysql");
 
         var config = createConfig();
-        Iterable<String> propertyNames = config.getPropertyNames();
+
+        List<String> propertyNames = StreamSupport
+                .stream(config.getPropertyNames().spliterator(), false)
+                .collect(Collectors.toList());
 
         assertThat(propertyNames, hasItems(
                 "kc.db-kind-user-store",
@@ -489,7 +494,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         ));
 
         // verify the db-kind is there only once
-        long quarkusDbKindCount = StreamSupport.stream(propertyNames.spliterator(), false)
+        long quarkusDbKindCount = propertyNames.stream()
                 .filter("quarkus.datasource.\"user-store\".jdbc.url"::equals)
                 .count();
         assertThat(quarkusDbKindCount, is(1L));

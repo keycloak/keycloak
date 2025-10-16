@@ -34,7 +34,6 @@ import org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory;
 import org.keycloak.services.cors.Cors;
 import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
-import java.util.List;
 
 @Provider
 @Path("/.well-known")

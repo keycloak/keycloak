@@ -221,9 +221,12 @@ public class PlainTextVaultProviderTest {
         // then
         assertNotNull(secret);
         assertFalse(secret.get().isPresent());
+        // The validation may be performed by AbstractVaultProvider or FilesPlainTextVaultProvider
         assertTrue(
-                logMessages.stream()
-                        .anyMatch(msg -> msg.contains("Key .../key1 contains invalid file separator character"))
+            logMessages.stream().anyMatch(msg ->
+                msg.contains("Key .../key1 contains invalid file separator character")
+                    || msg.contains("Path traversal attempt detected in secret .../key1")
+            )
         );
     }
 

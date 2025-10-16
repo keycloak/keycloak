@@ -21,7 +21,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.4.0",
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.36.0",
+    "@eslint/js": "^9.37.0",
     "@types/node": "^24.6.2",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
@@ -41,5 +41,16 @@
   },
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/"
+  },
+  "homepage": "https://www.keycloak.org/"
 }

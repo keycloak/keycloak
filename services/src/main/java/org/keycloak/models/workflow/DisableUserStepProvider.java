@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.util.List;
 
 public class DisableUserStepProvider implements WorkflowStepProvider {
 
@@ -39,16 +38,13 @@ public class DisableUserStepProvider implements WorkflowStepProvider {
     }
 
     @Override
-    public void run(List<String> userIds) {
+    public void run(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
-        for (String id : userIds) {
-            UserModel user = session.users().getUserById(realm, id);
-
-            if (user != null && user.isEnabled()) {
-                log.debugv("Disabling user {0} ({1})", user.getUsername(), user.getId());
-                user.setEnabled(false);
-            }
+        if (user != null && user.isEnabled()) {
+            log.debugv("Disabling user {0} ({1})", user.getUsername(), user.getId());
+            user.setEnabled(false);
         }
     }
 }

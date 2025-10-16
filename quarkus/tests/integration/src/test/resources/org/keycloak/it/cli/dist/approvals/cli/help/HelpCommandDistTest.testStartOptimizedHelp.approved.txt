@@ -271,7 +271,9 @@ HTTP(S):
                        no value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
-                     The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
+                     The list of protocols to explicitly enable. If a value is not supported by the
+                       JRE / security configuration, it will be silently ignored. Possible values
+                       are: TLSv1.3, TLSv1.2, or a custom one. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
                      The trust store which holds the certificate information of the certificates to
                        trust.

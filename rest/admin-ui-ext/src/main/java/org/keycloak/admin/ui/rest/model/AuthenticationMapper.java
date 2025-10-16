@@ -7,7 +7,6 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 

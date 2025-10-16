@@ -39,7 +39,6 @@ import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.services.managers.Auth;

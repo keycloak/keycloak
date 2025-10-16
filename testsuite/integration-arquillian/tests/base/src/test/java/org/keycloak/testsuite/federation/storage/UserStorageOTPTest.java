@@ -25,11 +25,9 @@ import java.util.List;
 
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;

@@ -1,9 +1,7 @@
 package org.keycloak.procotol.docker.installation;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.utils.Base32;
 import org.keycloak.protocol.docker.DockerKeyIdentifier;
 
 import java.security.KeyPair;

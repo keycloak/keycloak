@@ -32,7 +32,6 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
-import org.keycloak.storage.ldap.mappers.msad.UserAccountControl;
 
 import javax.naming.AuthenticationException;
 import java.util.Objects;

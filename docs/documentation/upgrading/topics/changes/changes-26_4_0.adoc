@@ -12,19 +12,6 @@ This change enhances security by preventing unintended disclosure of authenticat
 If you are relying on the `acr_values` parameter to be propagated to an identity provider, you must now explicitly set `acr_values` request parameter
 to the `Forwarded query parameters` setting in the identity provider configuration.
 
-=== Re-created indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables
-
-In some previous versions of {project_name}, the EnterpriseDB (EDB) was considered unsupported. This has now changed and
-EDB Advanced is supported starting with this release. If the EDB JDBC driver was used for connecting to EDB in previous versions,
-some invalid schema changes were applied to the database. To mitigate this, some indexes are automatically re-created during
-the schema migration to this version. **This affects you if you are using a Postgres database (including EDB), regardless if you
-used EDB with previous releases.**
-
-This affects indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables. If those tables contain more than 300000 entries,
-{project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement
-on the console during migration to be applied manually after {project_name}'s startup.
-See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
-
 === Configuration changes for additional datasources
 
 In previous releases, the only possible way to configure additional datasources was using raw Quarkus properties that are generally considered unsupported. At the same time, adding additional datasources was supported which led to unclear situation.
@@ -110,7 +97,7 @@ If you are running {project_name} in FIPS 140-2 mode, note to update your Bouncy
 
 With the upgrade to Bouncy Castle 2.1.x, EdDSA is now supported in FIPS 140-2 mode.
 
-== Creating remote caches automatically on the first startup
+=== Creating remote caches automatically on the first startup
 
 When using remote caches, {project_name} now automatically creates the necessary caches during startup if they do not already exist on the {jdgserver_name} server.
 
@@ -309,6 +296,19 @@ This implicit fallback mechanism ensures a smooth upgrade process for deployment
 
 For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
 
+=== Re-created indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables
+
+In some previous versions of {project_name}, the EnterpriseDB (EDB) was considered unsupported. This has now changed and
+EDB Advanced is supported starting with this release. If the EDB JDBC driver was used for connecting to EDB in previous versions,
+some invalid schema changes were applied to the database. To mitigate this, some indexes are automatically re-created during
+the schema migration to this version. **This affects you if you are using a Postgres database (including EDB), regardless if you
+used EDB with previous releases.**
+
+This affects indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables. If those tables contain more than 300000 entries,
+{project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement
+on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 === Errors when searching users from LDAP will not fail the request anymore and local users will be returned
 
 Until now, failures when searching for users from an LDAP user federation provider caused the whole request to fail and no users were returned.
@@ -378,11 +378,4 @@ You should also review the other methods that are deprecated for removal in this
 === Simplified API for AuthenticatedClientSessionModel
 
 The `clientId` note in the authenticated client session is an internal note present only when using the embedded caches, and is now deprecated for removal. Instead, use the `getClient()` method.
-
-// ------------------------ Removed features ------------------------ //
-== Removed features
-
-The following features have been removed from this release.
-
-=== <TODO>
 

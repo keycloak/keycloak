@@ -166,7 +166,7 @@ public class VerifyMessageProperties {
 
     PolicyFactory POLICY_SOME_HTML = new org.owasp.html.HtmlPolicyBuilder()
             .allowElements(
-                    "br", "p", "strong", "b"
+                    "br", "p", "strong", "b", "formattedLink"
             ).toFactory();
 
     PolicyFactory POLICY_NO_HTML = new org.owasp.html.HtmlPolicyBuilder().toFactory();

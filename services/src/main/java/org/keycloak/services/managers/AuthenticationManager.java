@@ -185,6 +185,10 @@ public class AuthenticationManager {
             logger.debug("No user session");
             return false;
         }
+        if (userSession.isRememberMe() && !realm.isRememberMe()) {
+            logger.debugv("Session {0} invalid: created with remember me but remember me is disabled for the realm.", userSession.getId());
+            return false;
+        }
         if (userSession.getNote(Details.IDENTITY_PROVIDER) != null) {
             String brokerAlias = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (realm.getIdentityProviderByAlias(brokerAlias) == null) {

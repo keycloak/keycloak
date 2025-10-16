@@ -21,7 +21,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * Denotes an error found during validation.

@@ -120,19 +120,6 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
                 .toList();
     }
 
-    public List<ScheduledStep> getScheduledStepsByStep(String stepId) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<WorkflowStateEntity> query = cb.createQuery(WorkflowStateEntity.class);
-        Root<WorkflowStateEntity> stateRoot = query.from(WorkflowStateEntity.class);
-
-        Predicate byStep = cb.equal(stateRoot.get("scheduledStepId"), stepId);
-        query.where(byStep);
-
-        return em.createQuery(query).getResultStream()
-                .map(this::toScheduledStep)
-                .toList();
-    }
-
     @Override
     public void removeByResource(String resourceId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();

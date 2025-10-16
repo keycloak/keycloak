@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.function.Function;
 import javax.crypto.Cipher;
@@ -85,18 +84,13 @@ public class SamlEncryptionTest {
     @BeforeClass
     public static void beforeClass() {
         Cipher cipher = null;
-        SecureRandom random = null;
         try {
-            // Apache santuario 2.2.3 needs to have SHA1PRNG (fixed in 3.0.2)
-            // see: https://issues.apache.org/jira/browse/SANTUARIO-589
-            random = SecureRandom.getInstance("SHA1PRNG");
             // FIPS mode removes needed ciphers like "RSA/ECB/OAEPPadding"
             cipher = Cipher.getInstance("RSA/ECB/OAEPPadding");
         } catch (NoSuchAlgorithmException|NoSuchPaddingException e) {
             // ignore
         }
         Assume.assumeNotNull("OAEPPadding not supported", cipher);
-        Assume.assumeNotNull("SHA1PRNG required for Apache santuario xmlsec", random);
     }
 
     private void testEncryption(KeyPair pair, String alg, int keySize, String keyWrapAlg, String keyWrapHashMethod, String keyWrapMgf) throws Exception {

@@ -24,7 +24,6 @@ import org.keycloak.services.util.CacheControlUtil;
 
 import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.Response;
-import java.io.InputStream;
 import java.util.function.Supplier;
 
 public class IframeUtil {

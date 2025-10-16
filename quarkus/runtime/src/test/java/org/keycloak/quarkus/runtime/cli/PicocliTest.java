@@ -483,7 +483,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void wrongLevelForCategory() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak=wrong");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak", "wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.getErrString().contains("Invalid log level: wrong. Possible values are: warn, trace, debug, error, fatal, info."));
     }
@@ -802,7 +802,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         var logHandlerName = logHandler.toString();
         var logHandlerOptionsName = logHandlerOptions.toString();
 
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerOptionsName), "--log-%s-async=true".formatted(logHandlerOptionsName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(logHandlerOptionsName)));
 
@@ -862,6 +862,13 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testImportHelpAllSucceeds() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("import", "--help-all");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString().contains("--db"));
+    }
+
+    @Test
     public void testUnaryBooleanFails() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--health-enabled");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
@@ -880,6 +887,20 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility","check");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Missing required argument: --file"));
+    }
+
+    @Test
+    public void testNoKcDirWarning() {
+        putEnvVar("KC_DIR", "dir");
+        putEnvVar("KC_LOG_LEVEL", "debug");
+        var picocli = build("build", "--db=dev-file");
+        assertFalse(picocli.getOutString(), picocli.getOutString().contains("kc.dir"));
+    }
+
+    @Test
+    public void testUpdatesFileValidation() {
+        NonRunningPicocli picocli = pseudoLaunch("update-compatibility","check", "--file=not-found");
+        assertTrue(picocli.getErrString().contains("Incorrect argument --file."));
     }
 
     @Test

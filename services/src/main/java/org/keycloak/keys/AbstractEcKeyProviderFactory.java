@@ -52,7 +52,7 @@ public abstract class AbstractEcKeyProviderFactory<T extends KeyProvider> implem
     public static KeyPair generateEcKeyPair(String keySpecName) {
         try {
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-            SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+            SecureRandom randomGen = new SecureRandom();
             ECGenParameterSpec ecSpec = new ECGenParameterSpec(keySpecName);
             keyGen.initialize(ecSpec, randomGen);
             return keyGen.generateKeyPair();

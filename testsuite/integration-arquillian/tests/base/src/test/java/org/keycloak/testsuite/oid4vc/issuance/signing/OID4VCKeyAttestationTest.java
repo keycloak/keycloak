@@ -43,7 +43,6 @@ import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 
 import javax.net.ssl.TrustManagerFactory;
-import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;

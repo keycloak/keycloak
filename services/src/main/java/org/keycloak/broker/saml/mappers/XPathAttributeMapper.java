@@ -65,10 +65,10 @@ public class XPathAttributeMapper extends AbstractIdentityProviderMapper impleme
     private static final ThreadLocal<XPathFactory> XPATH_FACTORY = ThreadLocal.withInitial(() -> {
         final XPathFactory xPathFactory = XPathFactory.newInstance();
         xPathFactory.setXPathVariableResolver(variableName -> {
-            throw new RuntimeException("resolveVariable for variable " + variableName + " not supported");
+            throw new UnsupportedOperationException("resolveVariable for variable " + variableName + " not supported");
         });
         xPathFactory.setXPathFunctionResolver((functionName, arity) -> {
-            throw new RuntimeException("resolveFunction for function " + functionName + " not supported");
+            throw new UnsupportedOperationException("resolveFunction for function " + functionName + " not supported");
         });
         return xPathFactory;
     });
@@ -212,7 +212,7 @@ public class XPathAttributeMapper extends AbstractIdentityProviderMapper impleme
                 });
                 Document document = DocumentUtil.getDocument(new StringReader(xml));
                 return xPath.compile(attributeXPath).evaluate(document, XPathConstants.STRING);
-            } catch (XPathExpressionException e) {
+            } catch (XPathExpressionException|UnsupportedOperationException e) {
                 LOGGER.warn("Unparsable element will be ignored", e);
                 return "";
             } catch (Exception e) {

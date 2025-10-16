@@ -5,17 +5,17 @@ import { createTestBed } from "./support/testbed.ts";
 
 test.describe("Groups", () => {
   test("lists groups", async ({ page }) => {
-    const realm = await createTestBed(groupsRealm);
+    await using testBed = await createTestBed(groupsRealm);
 
-    await login(page, realm);
+    await login(page, testBed.realm);
     await page.getByTestId("groups").click();
     await expect(page.getByTestId("group[1].name")).toHaveText("three");
   });
 
   test("lists direct and indirect groups", async ({ page }) => {
-    const realm = await createTestBed(groupsRealm);
+    await using testBed = await createTestBed(groupsRealm);
 
-    await login(page, realm, "alice", "alice");
+    await login(page, testBed.realm, "alice", "alice");
     await page.getByTestId("groups").click();
 
     await expect(

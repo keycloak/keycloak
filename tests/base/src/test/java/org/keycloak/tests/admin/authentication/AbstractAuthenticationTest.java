@@ -30,7 +30,6 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;

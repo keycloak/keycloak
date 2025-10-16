@@ -17,11 +17,10 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
 import org.keycloak.provider.Provider;
 
 public interface WorkflowStepProvider extends Provider {
 
-    void run(List<String> resourceIds);
+    void run(WorkflowExecutionContext context);
 
 }

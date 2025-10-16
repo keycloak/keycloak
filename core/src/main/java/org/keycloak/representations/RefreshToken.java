@@ -20,8 +20,6 @@ package org.keycloak.representations;
 import org.keycloak.TokenCategory;
 import org.keycloak.util.TokenUtil;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

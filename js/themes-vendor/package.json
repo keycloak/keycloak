@@ -36,5 +36,16 @@
     "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-terser": "^0.4.4",
     "rollup": "^4.52.2"
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/themes-vendor"
+  },
+  "homepage": "https://www.keycloak.org/"
 }

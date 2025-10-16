@@ -2,7 +2,6 @@ package org.keycloak.representations.workflows;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 

@@ -19,9 +19,7 @@ package org.keycloak.testsuite.events;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.AdminEventRepresentation;

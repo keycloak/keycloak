@@ -23,8 +23,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;

@@ -190,7 +190,7 @@ public class TestingOIDCEndpointsApplicationResource {
 
     private KeyPair generateEcdsaKey(String ecDomainParamName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-        SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+        SecureRandom randomGen = new SecureRandom();
         ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
         keyGen.initialize(ecSpec, randomGen);
         KeyPair keyPair = keyGen.generateKeyPair();

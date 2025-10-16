@@ -25,7 +25,7 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
  */
 public class Tasks {
 
-    private static final SessionUpdateTask<? extends SessionEntity> ADD_IF_ABSENT_SYNC = new SessionUpdateTask<SessionEntity>() {
+    private static final SessionUpdateTask<? extends SessionEntity> ADD_IF_ABSENT_SYNC = new SessionUpdateTask<>() {
         @Override
         public void runUpdate(SessionEntity entity) {
         }
@@ -37,7 +37,7 @@ public class Tasks {
 
     };
 
-    private static final SessionUpdateTask<? extends SessionEntity> REMOVE_SYNC = new PersistentSessionUpdateTask<SessionEntity>() {
+    private static final SessionUpdateTask<? extends SessionEntity> REMOVE_SYNC = new PersistentSessionUpdateTask<>() {
         @Override
         public void runUpdate(SessionEntity entity) {
         }
@@ -94,8 +94,8 @@ public class Tasks {
      * @param <S>
      * @return
      */
-    public static <S extends SessionEntity> SessionUpdateTask<S> removeSync(boolean offline) {
-        return offline ? (SessionUpdateTask<S>) OFFLINE_REMOVE_SYNC : (SessionUpdateTask<S>) REMOVE_SYNC;
+    public static <S extends SessionEntity> PersistentSessionUpdateTask<S> removeSync(boolean offline) {
+        return offline ? (PersistentSessionUpdateTask<S>) OFFLINE_REMOVE_SYNC : (PersistentSessionUpdateTask<S>) REMOVE_SYNC;
     }
 
 

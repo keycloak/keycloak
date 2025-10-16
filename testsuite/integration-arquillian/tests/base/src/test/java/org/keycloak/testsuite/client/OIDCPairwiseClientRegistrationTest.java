@@ -19,7 +19,6 @@ package org.keycloak.testsuite.client;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
