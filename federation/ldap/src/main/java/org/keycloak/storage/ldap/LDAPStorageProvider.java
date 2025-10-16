@@ -721,8 +721,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         } catch (ValidationException ve) {
             logger.warnf("Validation failed during LDAP import for username '%s': %s",
                     ldapUsername, ve.getMessage());
-            String warnUsername = ldapUsername + "_warn_";
-            LDAPUtils.setUsername(ldapUser, ldapIdentityStore.getConfig(), warnUsername);
+            return null;
         }
 
         UserModel imported = null;
