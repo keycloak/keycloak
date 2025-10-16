@@ -29,7 +29,7 @@ public class FipsStrictTestSuite {
     public static void beforeSuite() {
         SuiteSupport.startSuite()
                 .registerServerConfig(FipsStrictServerConfig.class)
-                .registerSupplierConfig("certificates", FipsStrictCertificatesConfig.class)
+                .registerSupplierConfig("server-certificates", FipsStrictCertificatesConfig.class)
                 .registerSupplierConfig("crypto", "fips", FipsMode.STRICT.name());
     }
 

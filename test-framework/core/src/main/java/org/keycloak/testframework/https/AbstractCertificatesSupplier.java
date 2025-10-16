@@ -8,20 +8,20 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
 
-public class CertificatesSupplier implements Supplier<ManagedCertificates, InjectCertificates> {
+public abstract class AbstractCertificatesSupplier implements Supplier<Certificates, InjectCertificates> {
 
     @Override
-    public ManagedCertificates getValue(InstanceContext<ManagedCertificates, InjectCertificates> instanceContext) {
+    public Certificates getValue(InstanceContext<Certificates, InjectCertificates> instanceContext) {
         CertificatesConfig certConfig = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
         CertificatesConfigBuilder certBuilder = new CertificatesConfigBuilder();
         certBuilder = certConfig.configure(certBuilder);
 
-        String supplierConfig = Config.getSupplierConfig(ManagedCertificates.class);
+        String supplierConfig = Config.getSupplierConfig(ManagedServerCertificates.class);
         if (supplierConfig != null) {
             CertificatesConfig certConfigOverride = SupplierHelpers.getInstance(supplierConfig);
             certConfigOverride.configure(certBuilder);
         }
-        return new ManagedCertificates(certBuilder);
+        return getManagedCertificatesInstance(certBuilder);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class CertificatesSupplier implements Supplier<ManagedCertificates, Injec
     }
 
     @Override
-    public boolean compatible(InstanceContext<ManagedCertificates, InjectCertificates> a, RequestedInstance<ManagedCertificates, InjectCertificates> b) {
+    public boolean compatible(InstanceContext<Certificates, InjectCertificates> a, RequestedInstance<Certificates, InjectCertificates> b) {
         return true;
     }
 
@@ -38,4 +38,6 @@ public class CertificatesSupplier implements Supplier<ManagedCertificates, Injec
     public int order() {
         return SupplierOrder.BEFORE_KEYCLOAK_SERVER;
     }
+
+    public abstract Certificates getManagedCertificatesInstance(CertificatesConfigBuilder certBuilder);
 }

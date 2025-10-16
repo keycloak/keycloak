@@ -14,7 +14,7 @@ import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.https.InjectCertificates;
-import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.https.ManagedServerCertificates;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -40,7 +40,7 @@ public class TlsEnabledTest {
     Keycloak adminClient;
 
     @InjectCertificates
-    ManagedCertificates managedCertificates;
+    ManagedServerCertificates managedServerCertificates;
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
@@ -48,19 +48,19 @@ public class TlsEnabledTest {
 
     @Test
     public void testCertSupplier() throws KeyStoreException {
-        Assertions.assertNotNull(managedCertificates);
+        Assertions.assertNotNull(managedServerCertificates);
 
-        KeyStore trustStore = managedCertificates.getClientTrustStore();
+        KeyStore trustStore = managedServerCertificates.getClientTrustStore();
         Assertions.assertNotNull(trustStore);
 
-        X509Certificate cert = managedCertificates.getKeycloakServerCertificate();
+        X509Certificate cert = managedServerCertificates.getKeycloakServerCertificate();
         Assertions.assertNotNull(cert);
-        Assertions.assertEquals(cert.getSerialNumber(), ((X509Certificate) trustStore.getCertificate(ManagedCertificates.CERT_ENTRY)).getSerialNumber());
+        Assertions.assertEquals(cert.getSerialNumber(), ((X509Certificate) trustStore.getCertificate(ManagedServerCertificates.CERT_ENTRY)).getSerialNumber());
     }
 
     @Test
     public void testCertDetails() throws CertificateNotYetValidException, CertificateExpiredException {
-        X509Certificate cert = managedCertificates.getKeycloakServerCertificate();
+        X509Certificate cert = managedServerCertificates.getKeycloakServerCertificate();
 
         cert.checkValidity();
         Assertions.assertEquals("CN=localhost", cert.getSubjectX500Principal().getName());

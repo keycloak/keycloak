@@ -4,7 +4,7 @@ import java.io.IOException;
 import javax.net.ssl.SSLContext;
 
 import org.keycloak.testframework.annotations.InjectHttpClient;
-import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.https.ManagedServerCertificates;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -24,7 +24,7 @@ public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient
 
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
         if (server.isTlsEnabled()) {
-            ManagedCertificates managedCerts = instanceContext.getDependency(ManagedCertificates.class);
+            ManagedServerCertificates managedCerts = instanceContext.getDependency(ManagedServerCertificates.class);
 
             SSLContext sslContext = managedCerts.getClientSSLContext();
             SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(

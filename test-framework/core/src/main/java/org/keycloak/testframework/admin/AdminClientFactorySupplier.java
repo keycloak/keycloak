@@ -3,7 +3,8 @@ package org.keycloak.testframework.admin;
 import javax.net.ssl.SSLContext;
 
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
-import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.https.ManagedClientCertificates;
+import org.keycloak.testframework.https.ManagedServerCertificates;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -15,10 +16,14 @@ public class AdminClientFactorySupplier implements Supplier<AdminClientFactory, 
     public AdminClientFactory getValue(InstanceContext<AdminClientFactory, InjectAdminClientFactory> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
 
-        if (!server.isTlsEnabled()) {
+        if (instanceContext.getAnnotation().mTls()) {
+            ManagedClientCertificates managedCert = instanceContext.getDependency(ManagedClientCertificates.class);
+            SSLContext sslContext = managedCert.getClientSSLContext();
+            return new AdminClientFactory(server.getBaseUrl(), sslContext);
+        } else if (!server.isTlsEnabled()) {
             return new AdminClientFactory(server.getBaseUrl());
         } else {
-            ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            ManagedServerCertificates managedCert = instanceContext.getDependency(ManagedServerCertificates.class);
             SSLContext sslContext = managedCert.getClientSSLContext();
             return new AdminClientFactory(server.getBaseUrl(), sslContext);
         }
