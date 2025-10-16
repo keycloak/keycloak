@@ -65,10 +65,6 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
 
     private static final int OCSP_RESPONDER_PORT = 8888;
 
-    // OCSP retry settings constants
-    private static final String OCSP_MAX_RETRIES = "x509-cert-auth.ocsp-max-retries";
-    private static final String OCSP_TIMEOUT_MILLIS = "x509-cert-auth.ocsp-timeout-millis";
-
     private Undertow ocspResponder;
 
     @Drone
@@ -98,37 +94,6 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
         assertEquals("invalid_request", response.getError());
 
         assertThat(response.getErrorDescription(), containsString("Certificate's been revoked."));
-    }
-
-    /**
-     * Get authenticator config by ID
-     */
-    protected AuthenticatorConfigRepresentation getConfig(String configId) {
-        return authMgmtResource.getAuthenticatorConfig(configId);
-    }
-
-    @Test
-    public void testOCSPRetrySettingsConfiguration() throws Exception {
-        // Test that the OCSP retry settings can be configured
-        X509AuthenticatorConfigModel config = new X509AuthenticatorConfigModel();
-        config.setOCSPEnabled(true);
-        config.setMappingSourceType(SUBJECTDN_EMAIL);
-        config.setUserIdentityMapperType(USERNAME_EMAIL);
-
-        // Set OCSP retry settings
-        config.getConfig().put(OCSP_MAX_RETRIES, "5");
-        config.getConfig().put(OCSP_TIMEOUT_MILLIS, "3000");
-
-        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-retry-config", config.getConfig());
-        String cfgId = createConfig(directGrantExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
-
-        // Retrieve the config and verify settings were saved correctly
-        AuthenticatorConfigRepresentation savedCfg = getConfig(cfgId);
-
-        // Verify the OCSP retry settings were saved correctly
-        assertEquals("5", savedCfg.getConfig().get(OCSP_MAX_RETRIES));
-        assertEquals("3000", savedCfg.getConfig().get(OCSP_TIMEOUT_MILLIS));
     }
 
     @Test

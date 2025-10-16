@@ -41,31 +41,17 @@ public interface HttpClientProvider extends Provider {
     CloseableHttpClient getHttpClient();
 
     /**
-     * Returns a {@code CloseableHttpClient} with default retry behavior.
-     * The default retry behavior is configured in the factory.
+     * Returns a {@code CloseableHttpClient} with server-wide retry behavior.
+     * The retry behavior is configured globally in the HTTP client factory.
      * <p>
      * <b>The returned {@code HttpClient} instance must never be {@code close()}d by
      * the caller.</b>
      * <p>
      * 
-     * @return A CloseableHttpClient with retry capabilities
+     * @return A CloseableHttpClient with retry capabilities based on global configuration
      */
     default CloseableHttpClient getRetriableHttpClient() {
         return getHttpClient(); // Default implementation for backward compatibility
-    }
-
-    /**
-     * Returns a {@code CloseableHttpClient} with custom retry behavior.
-     * <p>
-     * <b>The returned {@code HttpClient} instance must never be {@code close()}d by
-     * the caller.</b>
-     * <p>
-     * 
-     * @param retryConfig Configuration for retry behavior
-     * @return A CloseableHttpClient with retry capabilities
-     */
-    default CloseableHttpClient getRetriableHttpClient(RetryConfig retryConfig) {
-        return getHttpClient();
     }
 
     /**
@@ -129,22 +115,6 @@ public interface HttpClientProvider extends Provider {
      */
     default long getMaxConsumedResponseSize() {
         return DEFAULT_MAX_CONSUMED_RESPONSE_SIZE;
-    }
-
-    /**
-     * Sets a custom retry configuration to be used for subsequent calls to
-     * getRetriableHttpClient().
-     * <p>
-     * This method allows setting a retry configuration that will be used for all
-     * subsequent calls
-     * to getRetriableHttpClient() that don't explicitly specify a retry
-     * configuration.
-     * <p>
-     * 
-     * @param retryConfig The retry configuration to use
-     */
-    default void setRetryConfig(RetryConfig retryConfig) {
-        // Default implementation does nothing
     }
 
 }

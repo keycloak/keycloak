@@ -106,17 +106,6 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
 
             @Override
-            public CloseableHttpClient getRetriableHttpClient(RetryConfig retryConfig) {
-                // If using default config, return the cached client
-                if (retryConfig == null || defaultRetryConfig.equals(retryConfig)) {
-                    return retriableHttpClient;
-                }
-
-                // Otherwise create a new client with the custom config
-                return DefaultHttpClientFactory.this.createRetriableHttpClient(session, retryConfig);
-            }
-
-            @Override
             public void close() {
 
             }
@@ -189,23 +178,23 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     public void init(Config.Scope config) {
         this.config = config;
 
-        // Initialize default retry configuration
-        int maxRetries = config.getInt("http-client.default-max-retries", 0); // No retries by default
-        boolean retryOnIOException = config.getBoolean("http-client.default-retry-on-io-exception", true);
-        long initialBackoffMillis = config.getLong("http-client.default-initial-backoff-millis", 1000L);
+        // Initialize server-wide retry configuration
+        int maxRetries = config.getInt("max-retries", 0); // No retries by default (opt-in)
+        boolean retryOnIOException = config.getBoolean("retry-on-io-exception", true);
+        long initialBackoffMillis = config.getLong("initial-backoff-millis", 1000L);
 
         // Get backoff multiplier as a string and convert to double (Config.Scope
         // doesn't have getDouble)
-        String backoffMultiplierStr = config.get("http-client.default-backoff-multiplier", "2.0");
+        String backoffMultiplierStr = config.get("backoff-multiplier", "2.0");
         double backoffMultiplier = Double.parseDouble(backoffMultiplierStr);
 
         // Get jitter settings
-        boolean useJitter = config.getBoolean("http-client.default-use-jitter", true);
-        String jitterFactorStr = config.get("http-client.default-jitter-factor", "0.5");
+        boolean useJitter = config.getBoolean("use-jitter", true);
+        String jitterFactorStr = config.get("jitter-factor", "0.5");
         double jitterFactor = Double.parseDouble(jitterFactorStr);
 
-        int connectionTimeoutMillis = config.getInt("http-client.default-connection-timeout-millis", 10000);
-        int socketTimeoutMillis = config.getInt("http-client.default-socket-timeout-millis", 10000);
+        int connectionTimeoutMillis = config.getInt("retry-connection-timeout-millis", 10000);
+        int socketTimeoutMillis = config.getInt("retry-socket-timeout-millis", 10000);
 
         defaultRetryConfig = new RetryConfig.Builder()
                 .maxRetries(maxRetries)
@@ -505,52 +494,52 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .defaultValue(HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE)
                 .add()
                 .property()
-                .name("http-client.default-max-retries")
+                .name("max-retries")
                 .type("int")
-                .helpText("Maximum number of retry attempts for HTTP requests.")
-                .defaultValue(3)
+                .helpText("Maximum number of retry attempts for all outgoing HTTP requests. Set to 0 to disable retries (default).")
+                .defaultValue(0)
                 .add()
                 .property()
-                .name("http-client.default-retry-on-io-exception")
+                .name("retry-on-io-exception")
                 .type("boolean")
                 .helpText("Whether to retry HTTP requests on IO exceptions.")
                 .defaultValue(true)
                 .add()
                 .property()
-                .name("http-client.default-initial-backoff-millis")
+                .name("initial-backoff-millis")
                 .type("long")
                 .helpText("Initial backoff time in milliseconds before the first retry attempt.")
                 .defaultValue(1000L)
                 .add()
                 .property()
-                .name("http-client.default-backoff-multiplier")
+                .name("backoff-multiplier")
                 .type("string")
                 .helpText(
                         "Multiplier for exponential backoff between retry attempts. For example, with an initial backoff of 1000ms and a multiplier of 2.0, the retry delays would be: 1000ms, 2000ms, 4000ms, etc.")
                 .defaultValue("2.0")
                 .add()
                 .property()
-                .name("http-client.default-use-jitter")
+                .name("use-jitter")
                 .type("boolean")
                 .helpText(
                         "Whether to apply jitter to backoff times to prevent synchronized retry storms when multiple clients are retrying at the same time.")
                 .defaultValue(true)
                 .add()
                 .property()
-                .name("http-client.default-jitter-factor")
+                .name("jitter-factor")
                 .type("string")
                 .helpText(
                         "Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff time will be between 50% and 150% of the calculated exponential backoff time.")
                 .defaultValue("0.5")
                 .add()
                 .property()
-                .name("http-client.default-connection-timeout-millis")
+                .name("retry-connection-timeout-millis")
                 .type("int")
                 .helpText("Connection timeout in milliseconds for retriable HTTP clients.")
                 .defaultValue(10000)
                 .add()
                 .property()
-                .name("http-client.default-socket-timeout-millis")
+                .name("retry-socket-timeout-millis")
                 .type("int")
                 .helpText("Socket timeout in milliseconds for retriable HTTP clients.")
                 .defaultValue(10000)

@@ -109,24 +109,6 @@ public class DefaultHttpClientFactoryTest {
 	}
 
 	@Test
-	public void testGetRetriableHttpClientWithCustomConfig() throws IOException {
-		// Create provider with default settings
-		HttpClientProvider provider = createDefaultProvider();
-
-		// Create custom retry config
-		RetryConfig config = new RetryConfig.Builder()
-				.maxRetries(5)
-				.retryOnIOException(false)
-				.build();
-
-		// Get retriable HTTP client with custom config
-		CloseableHttpClient client = provider.getRetriableHttpClient(config);
-
-		// Verify client is not null
-		org.junit.Assert.assertNotNull("Retriable HTTP client with custom config should not be null", client);
-	}
-
-	@Test
 	public void testFactoryInitWithRetryProperties() {
 		// Create factory with custom retry properties
 		Map<String, String> values = new HashMap<>();

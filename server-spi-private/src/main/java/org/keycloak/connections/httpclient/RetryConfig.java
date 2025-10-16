@@ -22,59 +22,49 @@ package org.keycloak.connections.httpclient;
  * <p>
  * This class provides configuration options for HTTP client retry behavior when
  * making requests. It allows customization of the maximum number of retry
- * attempts,
- * whether to retry on IO exceptions, exponential backoff settings, jitter for
- * backoff times,
- * and connection/socket timeouts.
+ * attempts, whether to retry on IO exceptions, exponential backoff settings,
+ * jitter for backoff times, and connection/socket timeouts.
  * <p>
  * The default configuration is 0 retry attempts (no retries) with retries
- * enabled for IO exceptions if configured,
- * with exponential backoff starting at 1000ms and multiplying by 2.0 for each
- * retry.
- * Jitter is enabled by default with a factor of 0.5 to prevent synchronized
- * retry storms.
+ * enabled for IO exceptions if configured, with exponential backoff starting
+ * at 1000ms and multiplying by 2.0 for each retry. Jitter is enabled by
+ * default with a factor of 0.5 to prevent synchronized retry storms.
  * <p>
- * This configuration is used by the
- * {@link HttpClientProvider#getRetriableHttpClient()}
- * and {@link HttpClientProvider#getRetriableHttpClient(RetryConfig)} methods to
- * create
- * HTTP clients with retry capabilities.
+ * This configuration is used internally by {@link HttpClientProvider#getRetriableHttpClient()}
+ * to create HTTP clients with server-wide retry capabilities. The configuration
+ * is set globally through the HTTP client provider SPI configuration.
  * <p>
- * System properties that can be used to configure retry behavior:
+ * Server-wide SPI properties for configuring retry behavior:
  * <ul>
- * <li>{@code max-retries} - Maximum number of retry attempts (default: 0)</li>
- * <li>{@code retry-io-exception} - Whether to retry on IO exceptions (default:
- * true)</li>
- * <li>{@code initial-backoff-millis} - Initial backoff time in milliseconds
- * (default: 1000)</li>
- * <li>{@code backoff-multiplier} - Multiplier for exponential backoff (default:
- * 2.0)</li>
- * <li>{@code jitter-factor} - Random jitter factor to apply to backoff times
- * (default: 0.5)</li>
- * <li>{@code use-jitter} - Whether to apply jitter to backoff times (default:
- * true)</li>
- * <li>{@code connection-timeout-millis} - Connection timeout in milliseconds
- * (default: 10000)</li>
- * <li>{@code socket-timeout-millis} - Socket timeout in milliseconds (default:
- * 10000)</li>
+ * <li>{@code spi-connections-http-client-default-max-retries} - Maximum number
+ * of retry attempts (default: 0)</li>
+ * <li>{@code spi-connections-http-client-default-retry-on-io-exception} - Whether
+ * to retry on IO exceptions (default: true)</li>
+ * <li>{@code spi-connections-http-client-default-initial-backoff-millis} - Initial
+ * backoff time in milliseconds (default: 1000)</li>
+ * <li>{@code spi-connections-http-client-default-backoff-multiplier} - Multiplier
+ * for exponential backoff (default: 2.0)</li>
+ * <li>{@code spi-connections-http-client-default-jitter-factor} - Random jitter
+ * factor to apply to backoff times (default: 0.5)</li>
+ * <li>{@code spi-connections-http-client-default-use-jitter} - Whether to apply
+ * jitter to backoff times (default: true)</li>
+ * <li>{@code spi-connections-http-client-default-retry-connection-timeout-millis} -
+ * Connection timeout in milliseconds for retriable HTTP clients (default: 10000)</li>
+ * <li>{@code spi-connections-http-client-default-retry-socket-timeout-millis} - Socket
+ * timeout in milliseconds for retriable HTTP clients (default: 10000)</li>
  * </ul>
  * <p>
- * Example usage:
+ * Example configuration:
  * 
  * <pre>
- * RetryConfig config = new RetryConfig.Builder()
- *         .maxRetries(5)
- *         .retryOnIOException(true)
- *         .initialBackoffMillis(1000)
- *         .backoffMultiplier(2.0)
- *         .useJitter(true)
- *         .jitterFactor(0.5)
- *         .connectionTimeoutMillis(10000)
- *         .socketTimeoutMillis(10000)
- *         .build();
- *
- * CloseableHttpClient client = httpClientProvider.getRetriableHttpClient(config);
+ * spi-connections-http-client-default-max-retries=3
+ * spi-connections-http-client-default-initial-backoff-millis=1000
+ * spi-connections-http-client-default-backoff-multiplier=2.0
  * </pre>
+ * 
+ * This configuration applies to all outgoing HTTP requests from Keycloak,
+ * including OCSP validation, identity provider communication, and other
+ * external HTTP calls.
  */
 public class RetryConfig {
     private final int maxRetries;

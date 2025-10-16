@@ -143,21 +143,7 @@ Checks the certificate revocation status by using Online Certificate Status Prot
 *OCSP Fail-Open Behavior*::
 By default the OCSP check must return a positive response in order to continue with a successful authentication. Sometimes however this check can be inconclusive: for example, the OCSP server could be unreachable, overloaded, or the client certificate may not contain an OCSP responder URI. When this setting is turned ON, authentication will be denied only if an explicit negative response is received by the OCSP responder and the certificate is definitely revoked. If a valid OCSP response is not available the authentication attempt will be accepted.
 
-*OCSP Max Retries*::
-Maximum number of retry attempts for OCSP requests that fail due to network issues. Default is 0 (no retries). Setting this to a value greater than 0 enables retry behavior, which can improve reliability when connecting to OCSP responders over unreliable networks.
-
-*OCSP Timeout (ms)*::
-Timeout in milliseconds for OCSP requests. This applies to both connection and socket timeouts. Default is 10000 ms (10 seconds). Increase this value if the OCSP responder is slow to respond or decrease it if you need faster failure detection.
-
-==== OCSP Retry Settings
-
-. Click *Authentication* in the menu.
-. Select Flow.
-. Select "X509/Validate Username" or "X509/Validate Username Form" execution settings.
-. Configure OCSP Retry Settings.
-. Click *Save*.
-+
-image:images/x509-ocsp-retry-settings.png[OCSP Retry Settings]
+NOTE: OCSP retry behavior is configured server-wide through the HTTP client provider. See the Server Configuration Guide for details on configuring retry settings for all outgoing HTTP requests, including OCSP validation.
 
 *OCSP Responder URI*::
 Override the value of the OCSP responder URI in the certificate.

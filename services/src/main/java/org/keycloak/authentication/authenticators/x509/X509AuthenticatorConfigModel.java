@@ -139,26 +139,6 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
-    public int getOCSPMaxRetries() {
-        String value = getConfig().get(OCSP_MAX_RETRIES);
-        return value != null ? Integer.parseInt(value) : 0; // Default to 0 retries (no retry)
-    }
-
-    public X509AuthenticatorConfigModel setOCSPMaxRetries(int value) {
-        getConfig().put(OCSP_MAX_RETRIES, Integer.toString(value));
-        return this;
-    }
-
-    public int getOCSPTimeoutMillis() {
-        String value = getConfig().get(OCSP_TIMEOUT_MILLIS);
-        return value != null ? Integer.parseInt(value) : 10000; // Default to 10 seconds
-    }
-
-    public X509AuthenticatorConfigModel setOCSPTimeoutMillis(int value) {
-        getConfig().put(OCSP_TIMEOUT_MILLIS, Integer.toString(value));
-        return this;
-    }
-
     public boolean getCRLDistributionPointEnabled() {
         return Boolean.parseBoolean(getConfig().get(ENABLE_CRLDP));
     }
