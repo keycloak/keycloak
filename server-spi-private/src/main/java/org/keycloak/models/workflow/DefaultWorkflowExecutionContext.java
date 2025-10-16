@@ -10,6 +10,7 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
     private final String executionId;
     private final Workflow workflow;
     private WorkflowStep currentStep;
+    private boolean restarted;
 
     /**
      * A new execution context for a workflow event. The execution ID is randomly generated.
@@ -71,4 +72,18 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
     void setCurrentStep(WorkflowStep step) {
         this.currentStep = step;
     }
+
+    boolean restarted() {
+        return this.restarted;
+    }
+
+    void restart() {
+        this.restarted = true;
+    }
+
+    void resetState() {
+        this.restarted = false;
+        this.currentStep = null;
+    }
 }
+
