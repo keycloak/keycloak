@@ -450,6 +450,10 @@ public class WorkflowsManager {
             }
         }
 
+        if (rep.isCancelIfRunning()) {
+            config.putSingle(WorkflowConstants.CONFIG_CANCEL_IF_RUNNING, "true");
+        }
+
         Workflow workflow = addWorkflow(new Workflow(rep.getUses(), config));
 
         List<WorkflowStep> steps = rep.getSteps().stream().map(this::toModel).toList();
@@ -467,7 +471,6 @@ public class WorkflowsManager {
 
     private void validateWorkflow(WorkflowRepresentation rep) {
         validateEvents(rep.getOnValues());
-        validateEvents(rep.getOnEventsReset());
 
         // if a workflow has a restart step, at least one of the previous steps must be scheduled to prevent an infinite loop of immediate executions
         List<WorkflowStepRepresentation> steps = ofNullable(rep.getSteps()).orElse(List.of());
