@@ -1,6 +1,15 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
+=== Identity Provider refactoring
+
+The private SPI for identity providers have been refactored. This is to allow identity providers to support more use
+-cases than federated user authentication.
+
+For anyone implementing a custom federated user authentication identity provider and are not extending one provided
+by Keycloak or `AbstractIdentityProvider` you need to update your implementation to implement
+the new `UserAuthenticationIdentityProvider` interface (all methods remain the same, they have just been moved).
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
