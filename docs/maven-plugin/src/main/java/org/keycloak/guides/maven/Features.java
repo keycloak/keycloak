@@ -51,11 +51,9 @@ public class Features {
     public static class Feature {
 
         private final Profile.Feature profileFeature;
-        private final boolean isEnabled;
 
         public Feature(Profile.Feature profileFeature) {
             this.profileFeature = profileFeature;
-            this.isEnabled = Profile.defaults().isFeatureEnabled(profileFeature);
         }
 
         public String getName() {
@@ -74,11 +72,7 @@ public class Features {
             return profileFeature.getUpdatePolicy().toString();
         }
 
-        public boolean isEnabled() {
-            return isEnabled;
-        }
-
-        private Profile.Feature.Type getType() {
+        public Profile.Feature.Type getType() {
             return profileFeature.getType();
         }
     }
