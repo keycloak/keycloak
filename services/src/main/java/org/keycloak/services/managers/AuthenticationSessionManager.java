@@ -37,7 +37,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -86,7 +85,7 @@ public class AuthenticationSessionManager {
         }
 
         AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
-        String sessionId = authSessionId.getDecodedId();
+        String sessionId = authSessionId.decodedId();
 
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, sessionId);
 
@@ -110,7 +109,7 @@ public class AuthenticationSessionManager {
         }
 
         AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
-        String sessionId = authSessionId.getDecodedId();
+        String sessionId = authSessionId.decodedId();
 
         AuthenticationSessionModel authSession = getAuthenticationSessionByIdAndClient(realm, sessionId, client, tabId);
 
@@ -158,18 +157,19 @@ public class AuthenticationSessionManager {
         String decodedAuthSessionId = encoder.decodeSessionId(encodedAuthSessionId);
         String reencoded = encoder.encodeSessionId(decodedAuthSessionId);
 
-        if (!KeycloakModelUtils.isValidUUID(decodedAuthSessionId)) {
-            decodedAuthSessionId = decodeBase64AndValidateSignature(decodedAuthSessionId, false);
-        }
+        // TODO should be decoded and validated by now, right!?
+//        if (!KeycloakModelUtils.isValidUUID(decodedAuthSessionId)) {
+//            decodedAuthSessionId = decodeBase64AndValidateSignature(decodedAuthSessionId, false);
+//        }
 
         return new AuthSessionId(decodedAuthSessionId, reencoded);
     }
 
     void reencodeAuthSessionCookie(String oldEncodedAuthSessionId, AuthSessionId newAuthSessionId, RealmModel realm) {
-        if (!oldEncodedAuthSessionId.equals(newAuthSessionId.getEncodedId())) {
+        if (!oldEncodedAuthSessionId.equals(newAuthSessionId.encodedId())) {
             log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", oldEncodedAuthSessionId,
-                    newAuthSessionId.getEncodedId());
-            setAuthSessionCookie(newAuthSessionId.getDecodedId());
+                    newAuthSessionId.encodedId());
+            setAuthSessionCookie(newAuthSessionId.decodedId());
         }
     }
 
@@ -347,7 +347,7 @@ public class AuthenticationSessionManager {
         }
 
         AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
-        String sessionId = authSessionId.getDecodedId();
+        String sessionId = authSessionId.decodedId();
 
         // TODO: remove this code once InfinispanUserSessionProvider is removed or no longer using any remote caches, as other implementations don't need this call.
         // This will remove userSession "locally" if it doesn't exist on remoteCache
