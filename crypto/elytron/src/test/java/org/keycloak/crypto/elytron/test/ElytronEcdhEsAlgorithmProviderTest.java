@@ -25,6 +25,7 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 import org.jose4j.keys.EcKeyUtil;
 import org.jose4j.keys.EllipticCurves;
@@ -32,7 +33,6 @@ import org.jose4j.lang.JoseException;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.elytron.ElytronEcdhEsAlgorithmProvider;
 import org.keycloak.jose.jwe.JWE;
@@ -63,8 +63,8 @@ public class ElytronEcdhEsAlgorithmProviderTest {
         PublicKey encryptionPublicKey = getPublicKey("P-256", "weNJy2HscCSM6AEDTDg04biOvhFhyyWvOHQfeF_PxMQ",
                 "e8lnCO-AlStT-NJVX-crhB7QRYhiix03illJOVAOyck");
         byte[] derivedKey = ElytronEcdhEsAlgorithmProvider.deriveKey(encryptionPublicKey, ephemeralPrivateKey, 128,
-                "A128GCM", Base64Url.decode("QWxpY2U"), Base64Url.decode("Qm9i"));
-        Assert.assertEquals("VqqN6vgjbSBcIijNcacQGg", Base64Url.encode(derivedKey));
+                "A128GCM", Base64.getUrlDecoder().decode("QWxpY2U"), Base64.getUrlDecoder().decode("Qm9i"));
+        Assert.assertEquals("VqqN6vgjbSBcIijNcacQGg", Base64.getUrlEncoder().withoutPadding().encodeToString(derivedKey));
     }
 
     @Test
@@ -90,14 +90,14 @@ public class ElytronEcdhEsAlgorithmProviderTest {
     }
 
     private PublicKey getPublicKey(String crv, String xStr, String yStr) throws JoseException {
-        BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
-        BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
+        BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(xStr));
+        BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(yStr));
         EcKeyUtil ecKeyUtil = new EcKeyUtil();
         return ecKeyUtil.publicKey(x, y, EllipticCurves.getSpec(crv));
     }
 
     private PrivateKey getPrivateKey(String crv, String dStr) throws JoseException {
-        BigInteger d = new BigInteger(1, Base64Url.decode(dStr));
+        BigInteger d = new BigInteger(1, Base64.getUrlDecoder().decode(dStr));
         EcKeyUtil ecKeyUtil = new EcKeyUtil();
         return ecKeyUtil.privateKey(d, EllipticCurves.getSpec(crv));
     }

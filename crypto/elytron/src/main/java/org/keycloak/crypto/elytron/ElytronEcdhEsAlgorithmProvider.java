@@ -33,6 +33,7 @@ import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
+import java.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -42,7 +43,6 @@ import org.jose4j.jwe.kdf.ConcatKeyDerivationFunction;
 import org.jose4j.keys.EcKeyUtil;
 import org.jose4j.keys.EllipticCurves;
 import org.jose4j.lang.JoseException;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwe.JWEHeader;
@@ -117,7 +117,7 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
     }
 
     private byte[] base64UrlDecode(String encoded) {
-        return Base64Url.decode(encoded == null ? "" : encoded);
+        return Base64.getUrlDecoder().decode(encoded == null ? "" : encoded);
     }
 
     private static KeyPair generateEcKeyPair(ECParameterSpec params) {
@@ -147,8 +147,8 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
         int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
         k.setCrv("P-" + fieldSize);
         k.setKeyType(KeyType.EC);
-        k.setX(Base64Url.encode(JWKUtil.toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
-        k.setY(Base64Url.encode(JWKUtil.toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
+        k.setX(Base64.getUrlEncoder().withoutPadding().encodeToString(JWKUtil.toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
+        k.setY(Base64.getUrlEncoder().withoutPadding().encodeToString(JWKUtil.toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
         return k;
     }
 
@@ -167,8 +167,8 @@ public class ElytronEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
             throw new IllegalArgumentException("JWK y must be set");
         }
 
-        BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
-        BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
+        BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(xStr));
+        BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(yStr));
 
         EcKeyUtil ecKeyUtil = new EcKeyUtil();
         try {

@@ -3,7 +3,7 @@ package org.keycloak.jose;
 import java.io.IOException;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.common.util.Base64Url;
+import java.util.Base64;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -31,7 +31,7 @@ public class JOSEParser {
         JsonNode header;
 
         try {
-            header = JsonSerialization.readValue(Base64Url.decode(parts[0]), JsonNode.class);
+            header = JsonSerialization.readValue(Base64.getUrlDecoder().decode(parts[0]), JsonNode.class);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to parse JWT header", cause);
         }

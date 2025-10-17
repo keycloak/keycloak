@@ -30,6 +30,7 @@ import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
@@ -39,7 +40,6 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Environment;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.def.BCEcdhEsAlgorithmProvider;
@@ -78,8 +78,8 @@ public class BCEcdhEsAlgorithmProviderTest {
         PublicKey encryptionPublicKey = getPublicKey("P-256", "weNJy2HscCSM6AEDTDg04biOvhFhyyWvOHQfeF_PxMQ",
                 "e8lnCO-AlStT-NJVX-crhB7QRYhiix03illJOVAOyck");
         byte[] derivedKey = BCEcdhEsAlgorithmProvider.deriveKey(encryptionPublicKey, ephemeralPrivateKey, 128,
-                "A128GCM", Base64Url.decode("QWxpY2U"), Base64Url.decode("Qm9i"));
-        Assert.assertEquals("VqqN6vgjbSBcIijNcacQGg", Base64Url.encode(derivedKey));
+                "A128GCM", Base64.getUrlDecoder().decode("QWxpY2U"), Base64.getUrlDecoder().decode("Qm9i"));
+        Assert.assertEquals("VqqN6vgjbSBcIijNcacQGg", Base64.getUrlEncoder().withoutPadding().encodeToString(derivedKey));
     }
 
     @Test
@@ -105,8 +105,8 @@ public class BCEcdhEsAlgorithmProviderTest {
 
     private PublicKey getPublicKey(String crv, String xStr, String yStr)
             throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException {
-        BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
-        BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
+        BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(xStr));
+        BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(yStr));
         ECPoint point = new ECPoint(x, y);
         String name = nistToSecCurveName(crv);
         ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(name);
@@ -118,7 +118,7 @@ public class BCEcdhEsAlgorithmProviderTest {
 
     private PrivateKey getPrivateKey(String crv, String dStr)
             throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException {
-        BigInteger d = new BigInteger(1, Base64Url.decode(dStr));
+        BigInteger d = new BigInteger(1, Base64.getUrlDecoder().decode(dStr));
         String name = nistToSecCurveName(crv);
         ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(name);
         ECParameterSpec params = new ECNamedCurveSpec(name, spec.getCurve(), spec.getG(), spec.getN());

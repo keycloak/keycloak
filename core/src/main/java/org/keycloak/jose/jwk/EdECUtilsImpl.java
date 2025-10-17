@@ -26,8 +26,8 @@ import java.security.spec.EdECPoint;
 import java.security.spec.EdECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.NamedParameterSpec;
+import java.util.Base64;
 import java.util.Optional;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
@@ -82,7 +82,7 @@ class EdECUtilsImpl implements EdECUtils {
             throw new RuntimeException("Invalid JWK representation of OKP type algorithm");
         }
 
-        byte[] decodedX = Base64Url.decode(x);
+        byte[] decodedX = Base64.getUrlDecoder().decode(x);
         if (decodedX.length != bytesLength) {
             throw new RuntimeException("Invalid JWK representation of OKP type public key");
         }
@@ -137,7 +137,7 @@ class EdECUtilsImpl implements EdECUtils {
             yCoordinateLittleEndianBytes[yCoordinateLittleEndianBytes.length - 1] |= -128; // 0b10000000
         }
 
-        return Optional.ofNullable(Base64Url.encode(yCoordinateLittleEndianBytes));
+        return Optional.ofNullable(Base64.getUrlEncoder().withoutPadding().encodeToString(yCoordinateLittleEndianBytes));
     }
 
     private static byte[] reverseBytes(byte[] array) {

@@ -24,7 +24,6 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.Oid;
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KerberosSerializationUtils;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosPrincipal;
@@ -33,6 +32,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -164,9 +164,9 @@ public class SPNEGOAuthenticator {
         GSSCredential gssCredential = manager.createCredential(null, GSSCredential.INDEFINITE_LIFETIME, supportedMechs, GSSCredential.ACCEPT_ONLY);
         GSSContext gssContext = manager.createContext(gssCredential);
 
-        byte[] inputToken = Base64.decode(spnegoToken);
+        byte[] inputToken = Base64.getDecoder().decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);
-        responseToken = Base64.encodeBytes(respToken);
+        responseToken = Base64.getEncoder().withoutPadding().encodeToString(respToken);
 
         return gssContext;
     }

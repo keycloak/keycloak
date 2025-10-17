@@ -1,8 +1,8 @@
 package org.keycloak.crypto.hash;
 
+import java.util.Base64;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.Salt;
@@ -130,7 +130,7 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
 
                 byte[] result = new byte[hashLength];
                 generator.generateBytes(rawPassword.toCharArray(), result);
-                return Base64.encodeBytes(result);
+                return Base64.getEncoder().encodeToString(result);
             });
         } finally {
             cpuCoreSemaphore.release();

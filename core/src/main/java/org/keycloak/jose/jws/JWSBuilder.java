@@ -18,8 +18,6 @@
 package org.keycloak.jose.jws;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.crypto.HMACProvider;
@@ -32,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,7 +71,7 @@ public class JWSBuilder {
         this.x5c = x5c.stream()
                 .map(x509Certificate -> {
                     try {
-                        return Base64.encodeBytes(x509Certificate.getEncoded());
+                        return Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
                     } catch (CertificateEncodingException e) {
                         throw new RuntimeException(e);
                     }
@@ -143,13 +142,13 @@ public class JWSBuilder {
         }
         if (contentType != null) builder.append(",\"cty\":\"").append(contentType).append("\"");
         builder.append("}");
-        return Base64Url.encode(builder.toString().getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(builder.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     protected String encodeAll(StringBuilder encoding, byte[] signature) {
         encoding.append('.');
         if (signature != null) {
-            encoding.append(Base64Url.encode(signature));
+            encoding.append(Base64.getUrlEncoder().withoutPadding().encodeToString(signature));
         }
         return encoding.toString();
     }
@@ -161,7 +160,7 @@ public class JWSBuilder {
     protected void encode(String sigAlgName, byte[] data, StringBuilder encoding) {
         encoding.append(encodeHeader(sigAlgName));
         encoding.append('.');
-        encoding.append(Base64Url.encode(data));
+        encoding.append(Base64.getUrlEncoder().withoutPadding().encodeToString(data));
     }
 
     protected byte[] marshalContent() {

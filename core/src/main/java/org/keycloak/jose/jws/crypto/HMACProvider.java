@@ -18,7 +18,6 @@
 package org.keycloak.jose.jws.crypto;
 
 
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 
@@ -29,6 +28,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -84,7 +84,7 @@ public class HMACProvider implements SignatureProvider {
     public static boolean verify(JWSInput input, SecretKey key) {
         try {
             byte[] signature = sign(input.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), input.getHeader().getAlgorithm(), key);
-            return MessageDigest.isEqual(signature, Base64Url.decode(input.getEncodedSignature()));
+            return MessageDigest.isEqual(signature, Base64.getUrlDecoder().decode(input.getEncodedSignature()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -94,7 +94,7 @@ public class HMACProvider implements SignatureProvider {
     public static boolean verify(JWSInput input, byte[] sharedSecret) {
         try {
             byte[] signature = sign(input.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), input.getHeader().getAlgorithm(), sharedSecret);
-            return MessageDigest.isEqual(signature, Base64Url.decode(input.getEncodedSignature()));
+            return MessageDigest.isEqual(signature, Base64.getUrlDecoder().decode(input.getEncodedSignature()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

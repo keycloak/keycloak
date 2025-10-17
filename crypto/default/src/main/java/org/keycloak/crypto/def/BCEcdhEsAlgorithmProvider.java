@@ -37,6 +37,7 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 import javax.crypto.KeyAgreement;
 
@@ -49,7 +50,6 @@ import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwe.JWEHeader;
@@ -124,7 +124,7 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
     }
 
     private byte[] base64UrlDecode(String encoded) {
-        return Base64Url.decode(encoded == null ? "" : encoded);
+        return Base64.getUrlDecoder().decode(encoded == null ? "" : encoded);
     }
 
     private static KeyPair generateEcKeyPair(ECParameterSpec params) {
@@ -167,8 +167,8 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
         int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
         k.setCrv("P-" + fieldSize);
         k.setKeyType(KeyType.EC);
-        k.setX(Base64Url.encode(JWKUtil.toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
-        k.setY(Base64Url.encode(JWKUtil.toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
+        k.setX(Base64.getUrlEncoder().withoutPadding().encodeToString(JWKUtil.toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
+        k.setY(Base64.getUrlEncoder().withoutPadding().encodeToString(JWKUtil.toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
         return k;
     }
 
@@ -187,8 +187,8 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
             throw new IllegalArgumentException("JWK y must be set");
         }
 
-        BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
-        BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
+        BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(xStr));
+        BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(yStr));
 
         String name = nistToSecCurveName(crv);
         try {

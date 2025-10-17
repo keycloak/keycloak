@@ -22,7 +22,6 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -41,6 +40,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
+import java.util.Base64;
 
 /**
  * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)
@@ -225,7 +225,7 @@ public abstract class JWETest {
         // See example "A.3" from JWE specification - https://tools.ietf.org/html/rfc7516#page-41
         String externalJwe = "eyJhbGciOiJBMTI4S1ciLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0.6KB707dM9YTIgHtLvtgWQ8mKwboJW3of9locizkDTHzBC2IlrT1oOQ.AxY8DCtDaGlsbGljb3RoZQ.KDlTtXchhZTGufMYmOYGS4HffxPSUrfmqCHXaI9wOGY.U0m_YmjN04DJvceFICbCVQ";
 
-        byte[] aesKey = Base64Url.decode("GawgguFyGrWKav7AX4VKUg");
+        byte[] aesKey = Base64.getUrlDecoder().decode("GawgguFyGrWKav7AX4VKUg");
         SecretKeySpec aesKeySpec = new SecretKeySpec(aesKey, "AES");
 
         JWE jwe = new JWE();

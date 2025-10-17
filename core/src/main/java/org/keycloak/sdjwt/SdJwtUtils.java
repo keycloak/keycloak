@@ -22,7 +22,6 @@ import java.security.SecureRandom;
 import java.util.Optional;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jws.crypto.HashUtils;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -32,6 +31,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.util.Base64;
 
 /**
  *
@@ -43,7 +43,7 @@ public class SdJwtUtils {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public static String encodeNoPad(byte[] bytes) {
-        return Base64Url.encode(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     public static String encodeNoPad(String input) {
@@ -51,7 +51,7 @@ public class SdJwtUtils {
     }
 
     public static byte[] decodeNoPad(String encoded) {
-        return Base64Url.decode(encoded);
+        return Base64.getUrlDecoder().decode(encoded);
     }
 
     public static String hashAndBase64EncodeNoPad(byte[] disclosureBytes, String hashAlg) {

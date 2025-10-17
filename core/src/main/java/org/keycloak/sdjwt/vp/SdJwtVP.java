@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -43,6 +42,7 @@ import org.keycloak.sdjwt.SdJwtVerificationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Base64;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
@@ -150,7 +150,7 @@ public class SdJwtVP {
             disclosures.put(disclosureDigest, disclosure);
             ArrayNode disclosureData;
             try {
-                disclosureData = (ArrayNode) SdJwtUtils.mapper.readTree(Base64Url.decode(disclosure));
+                disclosureData = (ArrayNode) SdJwtUtils.mapper.readTree(Base64.getUrlDecoder().decode(disclosure));
                 claims.put(disclosureDigest, disclosureData);
             } catch (IOException e) {
                 throw new IllegalArgumentException("Invalid disclosure data");

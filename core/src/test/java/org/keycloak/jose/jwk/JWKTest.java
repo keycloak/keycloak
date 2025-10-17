@@ -20,7 +20,6 @@ package org.keycloak.jose.jwk;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -39,6 +38,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -162,8 +162,8 @@ public abstract class JWKTest {
         assertNotNull(ecJwk.getX());
         assertNotNull(ecJwk.getY());
 
-        byte[] xBytes = Base64Url.decode(ecJwk.getX());
-        byte[] yBytes = Base64Url.decode(ecJwk.getY());
+        byte[] xBytes = Base64.getUrlDecoder().decode(ecJwk.getX());
+        byte[] yBytes = Base64.getUrlDecoder().decode(ecJwk.getY());
 
         final int expectedSize = (publicKey.getParams().getCurve().getField().getFieldSize() + 7) / 8;
         assertEquals(expectedSize, xBytes.length);

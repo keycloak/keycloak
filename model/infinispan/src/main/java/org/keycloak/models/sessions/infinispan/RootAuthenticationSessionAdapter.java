@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -34,6 +33,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Base64;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -123,7 +123,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
         AuthenticationSessionEntity authSessionEntity = new AuthenticationSessionEntity();
         authSessionEntity.setClientUUID(client.getId());
-        String tabId = Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
+        String tabId = Base64.getUrlEncoder().withoutPadding().encodeToString(SecretGenerator.getInstance().randomBytes(8));
         int timestamp = Time.currentTime();
 
         RootAuthenticationSessionUpdateTask task = new RootAuthenticationSessionUpdateTask() {

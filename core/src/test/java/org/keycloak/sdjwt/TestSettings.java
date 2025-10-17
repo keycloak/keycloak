@@ -30,7 +30,6 @@ import java.security.spec.ECPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.ECDSASignatureVerifierContext;
@@ -40,6 +39,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Base64;
 
 /**
  * Import test-settings from:
@@ -133,8 +133,8 @@ public class TestSettings {
 
         ECParameterSpec ecSpec = getECParameterSpec(ECDSA_CURVE_2_SPECS_NAMES.get(curveName));
 
-        byte[] xBytes = Base64Url.decode(base64UrlEncodedX);
-        byte[] yBytes = Base64Url.decode(base64UrlEncodedY);
+        byte[] xBytes = Base64.getUrlDecoder().decode(base64UrlEncodedX);
+        byte[] yBytes = Base64.getUrlDecoder().decode(base64UrlEncodedY);
 
         try {
             KeyFactory keyFactory = KeyFactory.getInstance("EC");
@@ -158,9 +158,9 @@ public class TestSettings {
 
         ECParameterSpec ecSpec = getECParameterSpec(ECDSA_CURVE_2_SPECS_NAMES.get(curveName));
 
-        byte[] dBytes = Base64Url.decode(base64UrlEncodedD);
-        byte[] xBytes = Base64Url.decode(base64UrlEncodedX);
-        byte[] yBytes = Base64Url.decode(base64UrlEncodedY);
+        byte[] dBytes = Base64.getUrlDecoder().decode(base64UrlEncodedD);
+        byte[] xBytes = Base64.getUrlDecoder().decode(base64UrlEncodedX);
+        byte[] yBytes = Base64.getUrlDecoder().decode(base64UrlEncodedY);
 
         try {
             KeyFactory keyFactory = KeyFactory.getInstance("EC");

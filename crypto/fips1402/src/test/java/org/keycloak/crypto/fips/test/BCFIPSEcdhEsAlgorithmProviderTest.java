@@ -29,6 +29,7 @@ import java.security.spec.ECPoint;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -37,7 +38,6 @@ import org.bouncycastle.jcajce.spec.ECDomainParameterSpec;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.fips.BCFIPSEcdhEsAlgorithmProvider;
 import org.keycloak.jose.jwe.JWE;
@@ -66,8 +66,8 @@ public class BCFIPSEcdhEsAlgorithmProviderTest {
         PublicKey encryptionPublicKey = getPublicKey("P-256", "weNJy2HscCSM6AEDTDg04biOvhFhyyWvOHQfeF_PxMQ",
                 "e8lnCO-AlStT-NJVX-crhB7QRYhiix03illJOVAOyck");
         byte[] derivedKey = BCFIPSEcdhEsAlgorithmProvider.deriveKey(encryptionPublicKey, ephemeralPrivateKey, 128,
-                "A128GCM", Base64Url.decode("QWxpY2U"), Base64Url.decode("Qm9i"));
-        Assert.assertEquals("VqqN6vgjbSBcIijNcacQGg", Base64Url.encode(derivedKey));
+                "A128GCM", Base64.getUrlDecoder().decode("QWxpY2U"), Base64.getUrlDecoder().decode("Qm9i"));
+        Assert.assertEquals("VqqN6vgjbSBcIijNcacQGg", Base64.getUrlEncoder().withoutPadding().encodeToString(derivedKey));
     }
 
     @Test
@@ -93,8 +93,8 @@ public class BCFIPSEcdhEsAlgorithmProviderTest {
 
     private PublicKey getPublicKey(String crv, String xStr, String yStr)
             throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException {
-        BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
-        BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
+        BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(xStr));
+        BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(yStr));
         ECPoint point = new ECPoint(x, y);
         X9ECParameters ecParams = NISTNamedCurves.getByName(crv);
         ECParameterSpec params = new ECDomainParameterSpec(
@@ -106,7 +106,7 @@ public class BCFIPSEcdhEsAlgorithmProviderTest {
 
     private PrivateKey getPrivateKey(String crv, String dStr)
             throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException {
-        BigInteger d = new BigInteger(1, Base64Url.decode(dStr));
+        BigInteger d = new BigInteger(1, Base64.getUrlDecoder().decode(dStr));
         X9ECParameters ecParams = NISTNamedCurves.getByName(crv);
         ECParameterSpec params = new ECDomainParameterSpec(
                 new ECDomainParameters(ecParams.getCurve(), ecParams.getG(), ecParams.getN(), ecParams.getH()));
