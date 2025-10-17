@@ -203,6 +203,8 @@ public class Messages {
 
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
 
+    public static final String EMAIL_VERIFICATION_CANCELLED = "emailVerificationCancelled";
+
     public static final String STALE_INVITE_ORG_LINK = "staleInviteOrgLink";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
