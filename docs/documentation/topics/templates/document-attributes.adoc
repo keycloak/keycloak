@@ -63,6 +63,8 @@
 :bootstrapadminrecovery_name: Admin Bootstrap and Recovery
 :bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
 :client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
+:databaseguide_name: Configuring the database
+:databaseguide_link: https://www.keycloak.org/server/db
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/

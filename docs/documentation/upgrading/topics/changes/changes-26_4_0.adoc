@@ -68,6 +68,24 @@ quarkus.datasource.user-store.username=my-username
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 
+=== Supported Databases Versions
+
+The supported version of each database is now shown in link:{databaseguide_link}[{databaseguide_name}].
+
+It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown.
+
+From 26.3 to 26.4 the support changed as follows:
+
+[cols="1,1,1"]
+|===
+|Database |Minimum support |Dialect minimum
+
+|MariaDB | 10.4 (LTS) -> 10.6 (LTS) | 10.4 (LTS) -> 10.6 (LTS)
+|PostgreSQL | Remained 13.x | 12.x -> 13.x
+|Amazon Aurora PostgreSQL | Remained 15.x | 12.x -> 13.x
+|Microsoft SQLServer | Remained 2019 | 2012 -> 2014
+|===
+  
 === Usage of the `exact` request parameter when searching users by attributes
 
 If you are querying users by attributes through the User API where you want to fetch users that match a specific attribute key (regardless the value),
