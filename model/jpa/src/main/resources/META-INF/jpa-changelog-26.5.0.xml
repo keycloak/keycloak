@@ -17,7 +17,7 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="26.5.0-in">
+    <changeSet author="keycloak" id="26.5.0-index-offline-client-session-client-id">
         <createIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CLIENT_SESSION_CLIENT_ID">
             <column name="CLIENT_ID" type="VARCHAR(255)" />
         </createIndex>
