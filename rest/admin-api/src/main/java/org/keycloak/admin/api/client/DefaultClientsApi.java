@@ -30,7 +30,7 @@ public class DefaultClientsApi implements ClientsApi {
     public DefaultClientsApi(KeycloakSession session) {
         this.session = session;
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.clientService = session.services().clients();
+        this.clientService = session.getProvider(ClientService.class);
         this.response = session.getContext().getHttpResponse();
         this.validator = session.getProvider(JakartaValidatorProvider.class);
     }

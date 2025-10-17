@@ -37,7 +37,7 @@ public class DefaultClientApi implements ClientApi {
         this.session = session;
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
         this.client = Objects.requireNonNull(session.getContext().getClient());
-        this.clientService = session.services().clients();
+        this.clientService = session.getProvider(ClientService.class);
         this.response = session.getContext().getHttpResponse();
     }
 
