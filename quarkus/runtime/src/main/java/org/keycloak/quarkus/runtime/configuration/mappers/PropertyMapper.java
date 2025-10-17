@@ -33,8 +33,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.keycloak.common.Profile;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
+import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
@@ -545,6 +547,22 @@ public class PropertyMapper<T> {
 
     public static <T> PropertyMapper.Builder<T> fromOption(Option<T> opt) {
         return new PropertyMapper.Builder<>(opt);
+    }
+
+    /**
+     * Create a property mapper from a feature.
+     * The mapper maps to external properties the state of the feature.
+     * <p>
+     * If the feature is enabled, it returns {@code true}. Otherwise {@code null}.
+     */
+    public static PropertyMapper.Builder<Boolean> fromFeature(Profile.Feature feature) {
+        final var option = new OptionBuilder<>(feature.getKey() + "-hidden-mapper", Boolean.class)
+                .buildTime(true)
+                .hidden()
+                .build();
+        return new Builder<>(option)
+                .isEnabled(() -> Profile.isFeatureEnabled(feature))
+                .transformer((v, ctx) -> Boolean.TRUE.toString()); // we know the feature is enabled due to .isEnabled()
     }
 
     public void validate(ConfigValue value) {
