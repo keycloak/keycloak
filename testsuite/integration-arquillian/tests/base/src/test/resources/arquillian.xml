@@ -128,7 +128,7 @@
                 -Dkeycloak.password.blacklists.path=${keycloak.password.blacklists.path}
                 ${adapter.test.props}
                 ${auth.server.profile}
-                ${auth.server.feature}
+                ${auth.server.feature.jvm}
                 ${kie.maven.settings}
                 -Dauth.server.truststore=${auth.server.truststore}
                 -Dauth.server.truststore.password=${auth.server.truststore.password}
