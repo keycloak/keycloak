@@ -1,6 +1,14 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
+=== Method `UserProfile#toRepresentation(boolean)` added
+
+The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
+only the basic attributes in representations or all of them.
+
+The `UserProfile` interface is a private API and should not be implemented by custom code. However, if you have extensions that
+implement this interface, you will need to update your code to accommodate this new method.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
