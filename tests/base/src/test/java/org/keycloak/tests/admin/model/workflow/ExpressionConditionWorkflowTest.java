@@ -224,6 +224,7 @@ public class ExpressionConditionWorkflowTest {
     private String createWorkflow(String expression) {
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_LOGIN.name())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(ExpressionWorkflowConditionFactory.ID)

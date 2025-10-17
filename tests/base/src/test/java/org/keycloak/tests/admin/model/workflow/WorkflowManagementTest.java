@@ -99,6 +99,7 @@ public class WorkflowManagementTest {
     public void testCreate() {
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -128,6 +129,7 @@ public class WorkflowManagementTest {
     public void testCreateWithNoConditions() {
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -148,6 +150,7 @@ public class WorkflowManagementTest {
     public void testCreateWithNoWorkflowSetDefaultWorkflow() {
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(null)
+                .name("default-workflow")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -173,6 +176,7 @@ public class WorkflowManagementTest {
 
         workflows.create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -180,7 +184,9 @@ public class WorkflowManagementTest {
                                 .build(),
                         WorkflowStepRepresentation.create().of(RestartWorkflowStepProviderFactory.ID)
                                 .build()
-                ).of(EventBasedWorkflowProviderFactory.ID)
+                )
+                .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -277,6 +283,7 @@ public class WorkflowManagementTest {
     public void testWorkflowDoesNotFallThroughStepsInSingleRun() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -353,6 +360,7 @@ public class WorkflowManagementTest {
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADD.name())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(IdentityProviderWorkflowConditionFactory.ID)
@@ -569,6 +577,7 @@ public class WorkflowManagementTest {
     public void testRecurringWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -616,6 +625,7 @@ public class WorkflowManagementTest {
         // create a test workflow with no time conditions - should run immediately when scheduled
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .withConfig("message", "message")
@@ -643,6 +653,7 @@ public class WorkflowManagementTest {
     public void testFailCreateWorkflowWithNegativeTime() {
         WorkflowSetRepresentation workflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .after(Duration.ofDays(-5))
@@ -660,6 +671,7 @@ public class WorkflowManagementTest {
         // Create workflow: disable at 10 days, notify 3 days before (at day 7)
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(7))
@@ -698,6 +710,7 @@ public class WorkflowManagementTest {
         // Create workflow: delete at 30 days, notify 15 days before (at day 15)
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(15))
@@ -736,6 +749,7 @@ public class WorkflowManagementTest {
         // Create workflow: disable at 7 days, notify 2 days before (at day 5) with custom message
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -774,6 +788,7 @@ public class WorkflowManagementTest {
     public void testNotifyUserStepSkipsUsersWithoutEmailButLogsWarning() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -813,6 +828,7 @@ public class WorkflowManagementTest {
         // Create workflow: just disable at 30 days with one notification before
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(15))
