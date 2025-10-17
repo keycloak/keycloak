@@ -22,6 +22,7 @@ package org.keycloak.common.util;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated
 public class Base64Url {
     public static String encode(byte[] bytes) {
         String s = Base64.encodeBytes(bytes);

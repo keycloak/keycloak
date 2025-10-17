@@ -24,10 +24,10 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
@@ -105,8 +105,8 @@ public class JWKBuilder {
         k.setKeyType(KeyType.RSA);
         k.setAlgorithm(algorithm);
         k.setPublicKeyUse(keyUse == null ? KeyUse.SIG.getSpecName() : keyUse.getSpecName());
-        k.setModulus(Base64Url.encode(toIntegerBytes(rsaKey.getModulus())));
-        k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
+        k.setModulus(Base64.getUrlEncoder().withoutPadding().encodeToString(toIntegerBytes(rsaKey.getModulus())));
+        k.setPublicExponent(Base64.getUrlEncoder().withoutPadding().encodeToString(toIntegerBytes(rsaKey.getPublicExponent())));
 
         if (certificates != null && !certificates.isEmpty()) {
             String[] certificateChain = new String[certificates.size()];
@@ -148,8 +148,8 @@ public class JWKBuilder {
         k.setAlgorithm(algorithm);
         k.setPublicKeyUse(keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName());
         k.setCrv("P-" + fieldSize);
-        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
-        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
+        k.setX(Base64.getUrlEncoder().withoutPadding().encodeToString(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
+        k.setY(Base64.getUrlEncoder().withoutPadding().encodeToString(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
 
         if (certificates != null && !certificates.isEmpty()) {
             String[] certificateChain = new String[certificates.size()];
