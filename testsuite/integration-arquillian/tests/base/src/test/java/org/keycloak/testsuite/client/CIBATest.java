@@ -2933,7 +2933,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
         RefreshToken rt = oauth.parseRefreshToken(refreshToken);
-        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(rt.getSubject()).session(AssertEvents.isUUID()).clearDetails().assertEvent();
+        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(rt.getSubject()).session(AssertEvents.isSessionId()).clearDetails().assertEvent();
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {
