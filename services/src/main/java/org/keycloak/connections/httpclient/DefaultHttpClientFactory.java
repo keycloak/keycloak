@@ -182,9 +182,13 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
                     boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
+
                     boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
                     boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
 
+                    // optionally configure proxy mappings
+                    // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
+                    // lower case env vars take precedence over upper case env vars
                     ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
                     if (proxyMappings == null || proxyMappings.isEmpty()) {
                         logger.debug("Trying to use proxy mapping from env vars");
@@ -193,6 +197,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             httpProxy = getEnvVarValue(HTTP_PROXY);
                         }
                         String noProxy = getEnvVarValue(NO_PROXY);
+
                         logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
                         proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
                     }
@@ -212,8 +217,9 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
+
                     if (disableTruststoreProvider) {
-                        logger.warn("TruststoreProvider is disabled");
+                    logger.warn("TruststoreProvider is disabled");
                     } else {
                         builder.hostnameVerification(truststoreProvider.getPolicy());
                         try {
@@ -224,8 +230,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     }
 
                     if (disableTrustManager) {
-                        logger.warn("TrustManager is disabled");
-                        builder.disableTrustManager();
+                    logger.warn("TrustManager is disabled");
+                    builder.disableTrustManager();
                     }
 
                     if (clientKeystore != null) {

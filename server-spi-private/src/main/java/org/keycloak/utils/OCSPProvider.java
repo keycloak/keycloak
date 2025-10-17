@@ -51,7 +51,6 @@ public abstract class OCSPProvider {
 
     private final static Logger logger = Logger.getLogger(OCSPProvider.class);
 
-    protected static final int OCSP_CONNECT_TIMEOUT = 10000; // 10 sec
     protected static final int TIME_SKEW = 900000;
 
     public enum RevocationStatus {
