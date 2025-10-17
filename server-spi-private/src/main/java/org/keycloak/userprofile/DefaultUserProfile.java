@@ -220,12 +220,12 @@ public final class DefaultUserProfile implements UserProfile {
     }
 
     @Override
-    public <R extends AbstractUserRepresentation> R toRepresentation() {
+    public <R extends AbstractUserRepresentation> R toRepresentation(boolean full) {
         if (user == null) {
             throw new IllegalStateException("Can not create the representation because the user is not yet created");
         }
 
-        R rep = createUserRepresentation();
+        R rep = createUserRepresentation(full);
         Map<String, List<String>> readable = attributes.getReadable();
         Map<String, List<String>> attributesRep = new HashMap<>(readable);
 
@@ -290,13 +290,18 @@ public final class DefaultUserProfile implements UserProfile {
     }
 
     @SuppressWarnings("unchecked")
-    private <R extends AbstractUserRepresentation> R createUserRepresentation() {
+    private <R extends AbstractUserRepresentation> R createUserRepresentation(boolean full) {
         UserProfileContext context = metadata.getContext();
         R rep;
 
         if (context.isAdminContext()) {
             RealmModel realm = session.getContext().getRealm();
-            rep = (R) ModelToRepresentation.toRepresentation(session, realm, user);
+
+            if (full) {
+                rep = (R) ModelToRepresentation.toRepresentation(session, realm, user);
+            } else {
+                rep = (R) new org.keycloak.representations.idm.UserRepresentation();
+            }
         } else {
             // by default, we build the simplest representation without exposing much information about users
             rep = (R) new org.keycloak.representations.account.UserRepresentation();
