@@ -84,7 +84,6 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     private TokenManager tokenManager;
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
-    private KeycloakServices services;
     private boolean closed = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
@@ -339,14 +338,6 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
             clientPolicyManager = getProvider(ClientPolicyManager.class);
         }
         return clientPolicyManager;
-    }
-
-    @Override
-    public KeycloakServices services() {
-        if (services == null) {
-            services = getProvider(KeycloakServices.class);
-        }
-        return services;
     }
 
     private static final Logger LOG = Logger.getLogger(DefaultKeycloakSession.class);
