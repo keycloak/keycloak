@@ -32,6 +32,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 
@@ -304,7 +305,11 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
      */
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) return checkAdminRoles(role);
+
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return RoleUtils.expandCompositeRoles(Collections.singleton(role)).stream().allMatch(this::checkAdminRoles);
+        }
+
         if (!root.isAdminSameRealm()) {
             return false;
         }
@@ -394,7 +399,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canMapComposite(RoleModel role) {
-        if (canManageDefault(role)) return checkAdminRoles(role);
+        if (canManageDefault(role)) {
+            return RoleUtils.expandCompositeRoles(Collections.singleton(role)).stream().allMatch(this::checkAdminRoles);
+        }
 
         if (!root.isAdminSameRealm()) {
             return false;

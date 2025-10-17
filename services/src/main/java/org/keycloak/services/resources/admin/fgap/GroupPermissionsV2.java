@@ -91,9 +91,19 @@ class GroupPermissionsV2 extends GroupPermissions {
         return eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.MANAGE_MEMBERS);
     }
 
+    private boolean canMapRolesFromGroup(GroupModel group) {
+        while (group != null) {
+            if (!group.getRoleMappingsStream().allMatch(s -> root.roles().canMapRole(s))) {
+                return false;
+            }
+            group = group.getParent();
+        }
+        return true;
+    }
+
     @Override
     public boolean canManageMembership(GroupModel group) {
-        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS) && canMapRolesFromGroup(group)) {
             return true;
         }
 

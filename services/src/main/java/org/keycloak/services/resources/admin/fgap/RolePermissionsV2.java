@@ -32,6 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.RoleModelRecord;
 
 class RolePermissionsV2 extends RolePermissions {
@@ -54,7 +55,7 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapRole(RoleModel role) {
-        if (AdminRoles.ALL_ROLES.contains(role.getName()) && !hasMasterAdminRole()) {
+        if (!hasMasterAdminRole() && RoleUtils.expandCompositeRoles(Set.of(role)).stream().anyMatch(r -> AdminRoles.ALL_ROLES.contains(r.getName()))) {
             return false;
         }
 
@@ -73,7 +74,7 @@ class RolePermissionsV2 extends RolePermissions {
 
     @Override
     public boolean canMapComposite(RoleModel role) {
-        if (AdminRoles.ALL_ROLES.contains(role.getName()) && !hasMasterAdminRole()) {
+        if (!hasMasterAdminRole() && RoleUtils.expandCompositeRoles(Set.of(role)).stream().anyMatch(r -> AdminRoles.ALL_ROLES.contains(r.getName()))) {
             return false;
         }
 

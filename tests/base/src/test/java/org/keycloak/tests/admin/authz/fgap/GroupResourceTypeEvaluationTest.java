@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
@@ -38,6 +39,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBER
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -46,6 +48,8 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -434,6 +438,57 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         realmAdminClient.realm(realm.getName()).users().get(userJdoe.getId()).impersonate();
         realmAdminClient.tokenManager().logout();
+    }
+
+    @Test
+    public void testMappingGroupWithAdminRoles() {
+        UserRepresentation user = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation realmManagement = realm.admin().clients().findByClientId("realm-management").get(0);
+        RoleRepresentation createClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
+
+        // create group with create_client permission
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("create-client-group");
+        group.setClientRoles(Collections.singletonMap("realm-management", Collections.singletonList(AdminRoles.CREATE_CLIENT)));
+        group.setId(ApiUtil.getCreatedId(realm.admin().groups().add(group)));
+        realm.admin().groups().group(group.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(createClientRole));
+        realm.cleanup().add(r -> r.groups().group(group.getId()).remove());
+
+        // assign manage users to myadmin
+        RoleRepresentation manageUsersClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().users().get(user.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(manageUsersClientRole));
+        realm.cleanup().add(r -> r.users().get(user.getId()).roles().clientLevel(realmManagement.getId()).remove(List.of(manageUsersClientRole)));
+
+        // check the role with admin roles is not assigned
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).users().get(user.getId()).joinGroup(group.getId()));
+    }
+
+    @Test
+    public void testMappingGroupWithParentWithAdminRoles() {
+        UserRepresentation user = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation realmManagement = realm.admin().clients().findByClientId("realm-management").get(0);
+        RoleRepresentation createClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
+
+        // create parent group with create_client permission
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("create-client-group");
+        parent.setClientRoles(Collections.singletonMap("realm-management", Collections.singletonList(AdminRoles.CREATE_CLIENT)));
+        parent.setId(ApiUtil.getCreatedId(realm.admin().groups().add(parent)));
+        realm.admin().groups().group(parent.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(createClientRole));
+        realm.cleanup().add(r -> r.groups().group(parent.getId()).remove());
+
+        // create a child of the previous group
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("child-group");
+        child.setId(ApiUtil.getCreatedId(realm.admin().groups().group(parent.getId()).subGroup(child)));
+
+        // assign manage users to myadmin
+        RoleRepresentation manageUsersClientRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        realm.admin().users().get(user.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(manageUsersClientRole));
+        realm.cleanup().add(r -> r.users().get(user.getId()).roles().clientLevel(realmManagement.getId()).remove(List.of(manageUsersClientRole)));
+
+        // check the child that inherits admin roles from parent is not assigned
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).users().get(user.getId()).joinGroup(child.getId()));
     }
 
     private ScopePermissionRepresentation createAllGroupsPermission(UserPolicyRepresentation policy, Set<String> scopes) {
