@@ -46,6 +46,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
+
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
@@ -105,12 +106,6 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
         static CertificateValidator.CertificateValidatorBuilder fromConfig(KeycloakSession session, X509AuthenticatorConfigModel config) throws Exception {
 
             CertificateValidator.CertificateValidatorBuilder builder = new CertificateValidator.CertificateValidatorBuilder();
-
-            // Store the config in the session so it can be accessed by the
-            // CertificateValidator
-            // This allows passing the OCSP retry settings to the validator
-            session.setAttribute("x509-auth-config", config);
-
             return builder
                     .session(session)
                     .keyUsage()
@@ -276,6 +271,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
         return null;
     }
 
+
     // Saving some notes for audit to authSession as the event may not be necessarily triggered in this HTTP request where the certificate was parsed
     // For example if there is confirmation page enabled, it will be in the additional request
     protected void saveX509CertificateAuditDataToAuthSession(AuthenticationFlowContext context,
@@ -296,16 +292,15 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
         context.getEvent().detail(detailName, detailValue);
     }
 
+
     // Purely for unit testing
     public UserIdentityExtractor getUserIdentityExtractor(X509AuthenticatorConfigModel config) {
         return UserIdentityExtractorBuilder.fromConfig(config);
     }
-
     // Purely for unit testing
     public UserIdentityToModelMapper getUserIdentityToModelMapper(X509AuthenticatorConfigModel config) {
         return UserIdentityToModelMapperBuilder.fromConfig(config);
     }
-
     @Override
     public boolean requiresUser() {
         return false;

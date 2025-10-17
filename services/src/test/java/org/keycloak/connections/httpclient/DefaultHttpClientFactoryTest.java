@@ -43,7 +43,7 @@ public class DefaultHttpClientFactoryTest {
 	private static final String DISABLE_TRUST_MANAGER_PROPERTY = "disable-trust-manager";
 	private static final String TEST_DOMAIN = "keycloak.org";
 	private static final String MAX_RETRIES_PROPERTY = "max-retries";
-	private static final String RETRY_IO_EXCEPTION_PROPERTY = "retry-io-exception";
+	private static final String RETRY_ON_ERROR_PROPERTY = "retry-on-error";
 
 	// Common objects for tests
 	private DefaultHttpClientFactory factory;
@@ -97,15 +97,17 @@ public class DefaultHttpClientFactoryTest {
 	}
 
 	@Test
-	public void testGetRetriableHttpClient() throws IOException {
-		// Create provider with default retry config
-		HttpClientProvider provider = createDefaultProvider();
+	public void testGetHttpClientWithRetries() throws IOException {
+		// Create provider with retry config
+		Map<String, String> values = new HashMap<>();
+		values.put(MAX_RETRIES_PROPERTY, "3");
+		HttpClientProvider provider = createProviderWithProperties(values);
 
-		// Get retriable HTTP client with default config
-		CloseableHttpClient client = provider.getRetriableHttpClient();
+		// Get HTTP client (now has retry built-in)
+		CloseableHttpClient client = provider.getHttpClient();
 
 		// Verify client is not null
-		org.junit.Assert.assertNotNull("Retriable HTTP client should not be null", client);
+		org.junit.Assert.assertNotNull("HTTP client should not be null", client);
 	}
 
 	@Test
@@ -113,16 +115,16 @@ public class DefaultHttpClientFactoryTest {
 		// Create factory with custom retry properties
 		Map<String, String> values = new HashMap<>();
 		values.put(MAX_RETRIES_PROPERTY, "5");
-		values.put(RETRY_IO_EXCEPTION_PROPERTY, "false");
+		values.put(RETRY_ON_ERROR_PROPERTY, "false");
 
 		// Create provider with custom properties
 		HttpClientProvider provider = createProviderWithProperties(values);
 
-		// Get retriable HTTP client
-		CloseableHttpClient client = provider.getRetriableHttpClient();
+		// Get HTTP client
+		CloseableHttpClient client = provider.getHttpClient();
 
 		// Verify client is not null
-		org.junit.Assert.assertNotNull("Retriable HTTP client should not be null", client);
+		org.junit.Assert.assertNotNull("HTTP client should not be null", client);
 	}
 
 	private Optional<String> getTestURL() {

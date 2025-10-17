@@ -30,7 +30,7 @@ package org.keycloak.connections.httpclient;
  * at 1000ms and multiplying by 2.0 for each retry. Jitter is enabled by
  * default with a factor of 0.5 to prevent synchronized retry storms.
  * <p>
- * This configuration is used internally by {@link HttpClientProvider#getRetriableHttpClient()}
+ * This configuration is used internally by {@link HttpClientProvider#getHttpClient()}
  * to create HTTP clients with server-wide retry capabilities. The configuration
  * is set globally through the HTTP client provider SPI configuration.
  * <p>
@@ -38,8 +38,8 @@ package org.keycloak.connections.httpclient;
  * <ul>
  * <li>{@code spi-connections-http-client-default-max-retries} - Maximum number
  * of retry attempts (default: 0)</li>
- * <li>{@code spi-connections-http-client-default-retry-on-io-exception} - Whether
- * to retry on IO exceptions (default: true)</li>
+ * <li>{@code spi-connections-http-client-default-retry-on-error} - Whether
+ * to retry on errors (default: true)</li>
  * <li>{@code spi-connections-http-client-default-initial-backoff-millis} - Initial
  * backoff time in milliseconds (default: 1000)</li>
  * <li>{@code spi-connections-http-client-default-backoff-multiplier} - Multiplier
@@ -48,10 +48,6 @@ package org.keycloak.connections.httpclient;
  * factor to apply to backoff times (default: 0.5)</li>
  * <li>{@code spi-connections-http-client-default-use-jitter} - Whether to apply
  * jitter to backoff times (default: true)</li>
- * <li>{@code spi-connections-http-client-default-retry-connection-timeout-millis} -
- * Connection timeout in milliseconds for retriable HTTP clients (default: 10000)</li>
- * <li>{@code spi-connections-http-client-default-retry-socket-timeout-millis} - Socket
- * timeout in milliseconds for retriable HTTP clients (default: 10000)</li>
  * </ul>
  * <p>
  * Example configuration:

@@ -41,20 +41,6 @@ public interface HttpClientProvider extends Provider {
     CloseableHttpClient getHttpClient();
 
     /**
-     * Returns a {@code CloseableHttpClient} with server-wide retry behavior.
-     * The retry behavior is configured globally in the HTTP client factory.
-     * <p>
-     * <b>The returned {@code HttpClient} instance must never be {@code close()}d by
-     * the caller.</b>
-     * <p>
-     * 
-     * @return A CloseableHttpClient with retry capabilities based on global configuration
-     */
-    default CloseableHttpClient getRetriableHttpClient() {
-        return getHttpClient(); // Default implementation for backward compatibility
-    }
-
-    /**
      * Helper method
      *
      * @param uri

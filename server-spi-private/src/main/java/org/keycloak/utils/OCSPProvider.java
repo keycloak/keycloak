@@ -40,6 +40,7 @@ import org.jboss.logging.Logger.Level;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
 
+
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
@@ -85,7 +86,6 @@ public abstract class OCSPProvider {
 
         return check(session, cert, issuerCertificate, Collections.singletonList(responderURI), responderCert, date);
     }
-
     /**
      * Requests certificate revocation status using OCSP. The OCSP responder URI
      * is obtained from the certificate's AIA extension.
@@ -122,8 +122,7 @@ public abstract class OCSPProvider {
 
     protected byte[] getEncodedOCSPResponse(KeycloakSession session, byte[] encodedOCSPReq, URI responderUri) throws IOException {
 
-        // Use the retriable HTTP client which will apply retry and timeout settings from RetryConfig
-        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getRetriableHttpClient();
+        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         HttpPost post = new HttpPost(responderUri);
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
         post.setEntity(new ByteArrayEntity(encodedOCSPReq));
@@ -173,6 +172,7 @@ public abstract class OCSPProvider {
             X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date)
             throws CertPathValidatorException;
 
+
     protected static OCSPRevocationStatus unknownStatus() {
         return new OCSPRevocationStatus() {
             @Override
@@ -200,5 +200,6 @@ public abstract class OCSPProvider {
      * @throws CertificateEncodingException
      */
     protected abstract List<String> getResponderURIs(X509Certificate cert) throws CertificateEncodingException;
+
 
 }

@@ -115,6 +115,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         serialnumberHex.setDefaultValue(Boolean.toString(false));
         serialnumberHex.setHelpText("Use the hex representation of the serial number. This option is relevant for authenticators using serial number.");
 
+
         ProviderConfigProperty regExp = new ProviderConfigProperty();
         regExp.setType(STRING_TYPE);
         regExp.setName(REGULAR_EXPRESSION);

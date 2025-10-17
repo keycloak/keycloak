@@ -213,7 +213,6 @@ public class CertificateValidator {
                 }
                 logger.tracef("Responder URI \"%s\" will be used to verify revocation status of the certificate using OCSP with responderCert=%s",
                         uri.toString(), responderCert);
-
                 // Obtains the revocation status of a certificate using OCSP.
                 // OCSP responder's certificate is assumed to be the issuer's certificate
                 // certificate.
@@ -1096,12 +1095,12 @@ public class CertificateValidator {
             if (_crlLoader == null) {
                  _crlLoader = new CRLFileLoader(session, "", _crlAbortIfNonUpdated);
             }
-
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
                     _certificatePolicy, _certificatePolicyMode,
                     _crlCheckingEnabled, _crlAbortIfNonUpdated, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
                     new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
         }
     }
+
 
 }
