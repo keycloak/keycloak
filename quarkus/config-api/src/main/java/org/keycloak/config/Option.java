@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 public class Option<T> {
     private final Class<T> type;
+    private final Class<?> componentType;
     private final String key;
     private final OptionCategory category;
     private final boolean hidden;
@@ -24,7 +25,7 @@ public class Option<T> {
 
     public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description,
                   Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues,
-                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String wildcardKey) {
+                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String wildcardKey, Class<?> componentType) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -38,6 +39,7 @@ public class Option<T> {
         this.deprecatedMetadata = deprecatedMetadata;
         this.connectedOptions = connectedOptions;
         this.wildcardKey = wildcardKey;
+        this.componentType = componentType;
     }
 
     public Class<T> getType() {
@@ -167,5 +169,9 @@ public class Option<T> {
      */
     public static String transformEnumValue(String value) {
         return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, value);
+    }
+
+    public Class<?> getComponentType() {
+        return componentType;
     }
 }

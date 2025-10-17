@@ -194,7 +194,7 @@ public class OptionBuilder<T> {
             }
         }
 
-        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey);
+        return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues, strictExpectedValues, caseInsensitiveExpectedValues, deprecatedMetadata, connectedOptions, wildcardKey, expected);
     }
 
 }

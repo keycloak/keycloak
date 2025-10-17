@@ -99,7 +99,7 @@ public class CacheEmbeddedMtlsDistTest {
 
         // test blank
         result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=".formatted(key));
-        result.assertError("Invalid value for option '--%s': '' is not an int".formatted(key));
+        result.assertError("Invalid empty value for option '--%s'".formatted(key));
     }
 
     @Test

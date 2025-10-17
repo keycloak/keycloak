@@ -40,6 +40,7 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
@@ -577,6 +578,17 @@ public class PropertyMapper<T> {
                 continue;
             }
             try {
+                if (option.getComponentType() != String.class && option.getExpectedValues().isEmpty()) {
+                    if (v.isEmpty()) {
+                        throw new PropertyException("Invalid empty value for option %s".formatted(getOptionAndSourceMessage(configValue)));
+                    }
+                    try {
+                        Configuration.getConfig().convert(v, option.getComponentType());
+                    } catch (Exception e) {
+                        throw new PropertyException("Invalid value for option %s: %s".formatted(getOptionAndSourceMessage(configValue), e.getMessage()));
+                    }
+                }
+
                 singleValidator.accept(configValue, v);
             } catch (PropertyException e) {
                 if (!result.isEmpty()) {
