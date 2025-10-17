@@ -180,8 +180,17 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
             return this;
         }
 
-        public Builder concurrency(boolean cancelIfRunning) {
-            representation.setConcurrency(new WorkflowConcurrencyRepresentation(cancelIfRunning));
+        public Builder concurrency() {
+            representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            return this;
+        }
+
+        // move this to its own builder if we expand the capabilities of the concurrency settings.
+        public Builder cancelIfRunning() {
+            if (representation.getConcurrency() == null) {
+                representation.setConcurrency(new WorkflowConcurrencyRepresentation());
+            }
+            representation.getConcurrency().setCancelIfRunning(true);
             return this;
         }
 
