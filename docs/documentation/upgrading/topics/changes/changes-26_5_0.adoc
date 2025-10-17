@@ -18,6 +18,11 @@ When the "Remember Me" option is disabled in the realm settings, all user sessio
 Users will be required to log in again, and any associated refresh tokens will no longer be usable.
 User sessions created without selecting "Remember Me" are not affected.
 
+=== Added Index on `client_id` in `offline_client_session` table
+
+An index has been added on the `client_id` column in the `offline_client_session` table to improve query performance when retrieving offline client sessions by client ID.
+This change especially improves performance of deleting a client which was getting slower the more offline sessions existed for that client.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
