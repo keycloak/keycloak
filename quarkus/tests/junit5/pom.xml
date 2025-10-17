@@ -59,6 +59,11 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-server-testdriver-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
