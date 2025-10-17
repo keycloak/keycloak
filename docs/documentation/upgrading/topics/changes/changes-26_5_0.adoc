@@ -96,6 +96,11 @@ make sure the users granted with the `realm-admin` role are expected to have thi
 The documentation is also updated with additional information about the different types of realm administrators.
 For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
 
+=== Added Database Indexes on `offline_client_session` table
+
+Indexes have been added on `offline_client_session` table to improve query performance when retrieving or deleting offline client sessions.
+This change especially improves performance of deleting a client which was getting slower the more offline sessions existed for that client.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
