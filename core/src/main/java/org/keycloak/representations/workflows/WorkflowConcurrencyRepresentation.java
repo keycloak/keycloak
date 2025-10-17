@@ -22,6 +22,10 @@ public class WorkflowConcurrencyRepresentation {
         return cancelIfRunning;
     }
 
+    public void setCancelIfRunning(Boolean cancelIfRunning) {
+        this.cancelIfRunning = cancelIfRunning;
+    }
+
     @Override
     public int hashCode() {
         return cancelIfRunning != null ? cancelIfRunning.hashCode() : 0;
