@@ -201,9 +201,9 @@ that you need to use property `migration.mode` with the value `manual` .
     -Dmigration.mode=manual
 
 ## Disabling features
-Some features in Keycloak can be disabled. To run the testsuite with a specific feature disabled use the `auth.server.feature` system property. For example to run the tests with authorization disabled run:
+Some features in Keycloak can be disabled. To run the testsuite with a specific feature disabled use the `auth.server.feature.disable` system property. For example to run the tests with authorization disabled run:
 ```
-mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean test -Pauth-server-wildfly -Dauth.server.feature=-Dkeycloak.profile.feature.authorization=disabled
+mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean test -Pauth-server-wildfly -Dauth.server.feature.disable=authorization
 ```
 ## WebAuthN tests
 These tests cover feature W3C WebAuthn, which provides us a lot of possibilities how to include 2FA or MFA to our authentication flows. 

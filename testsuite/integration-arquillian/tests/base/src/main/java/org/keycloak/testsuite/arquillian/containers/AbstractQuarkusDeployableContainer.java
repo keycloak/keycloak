@@ -33,10 +33,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -60,14 +58,10 @@ import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature.Type;
 import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.model.StoreProvider;
-import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractQuarkusDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
@@ -226,7 +220,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         spis.values().forEach(commands::addAll);
 
-        var features = getDefaultFeatures();
+        var features = getEnabledFeatures();
         if (features.contains("clusterless") || features.contains("multi-site")) {
             commands.add("--cache-remote-host=127.0.0.1");
             commands.add("--cache-remote-username=keycloak");
@@ -243,56 +237,17 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         return commands;
     }
 
-    protected void addFeaturesOption(List<String> commands) {
-        String enabledFeatures = Optional.ofNullable(configuration.getEnabledFeatures()).orElse("");
-        String disabledFeatures = Optional.ofNullable(configuration.getDisabledFeatures()).orElse("");
-
-        var disabled = ProfileAssume.getDisabledFeatures();
-        // TODO: this is not ideal, we're trying to infer what should be enabled / disabled from what was captured
-        // as the disabled features. This at least does not understand the profile and may not age well.
-        // We should consider a direct mechanism - that is part of the persisted configuration - for toggling each
-        // feature
-        if (disabled != null) {
-            enabledFeatures = "";
-            disabledFeatures = "";
-            for (Profile.Feature f : Profile.Feature.values()) {
-                if (disabled.contains(f)) {
-                    if (f.getType() == Type.DEFAULT) {
-                        disabledFeatures = f.getUnversionedKey() + (disabledFeatures.isEmpty() ? "" : ("," + disabledFeatures));
-                    }
-                } else {
-                    if (f.getType() != Type.DEFAULT) {
-                        enabledFeatures = f.getVersionedKey() + (enabledFeatures.isEmpty() ? "" : ("," + enabledFeatures));
-                    }
-                }
-            }
-        } else if (configuration.getFipsMode() != FipsMode.DISABLED) {
-            enabledFeatures = "fips" + (enabledFeatures.isEmpty() ? "" : ("," + enabledFeatures));
-        }
-
-        if (!StringUtil.isBlank(enabledFeatures)) {
-            appendOrAddCommand(commands, "--features=", enabledFeatures);
-        }
-
-        if (!StringUtil.isBlank(disabledFeatures)) {
-            appendOrAddCommand(commands, "--features-disabled=", disabledFeatures);
-        }
+    private static String getSingleFeatureCommand(String feature, boolean isEnabled) {
+        return "--feature-%s=%s".formatted(feature, isEnabled ? "enabled" : "disabled");
     }
 
-    private void appendOrAddCommand(List<String> commands, String command, String addition) {
-        Iterator<String> iterator = commands.iterator();
+    protected void addFeaturesOption(List<String> commands) {
+        getEnabledFeatures().forEach(feature -> commands.add(getSingleFeatureCommand(feature, true)));
+        getDisabledFeatures().forEach(feature -> commands.add(getSingleFeatureCommand(feature, false)));
 
-        while (iterator.hasNext()) {
-            String existingCommand = iterator.next();
-
-            if (existingCommand.startsWith(command)) {
-                iterator.remove();
-                commands.add(existingCommand + "," + addition);
-                return;
-            }
+        if (configuration.getFipsMode() != FipsMode.DISABLED) {
+            commands.add(getSingleFeatureCommand("fips", true));
         }
-
-        commands.add(command + addition);
     }
 
     protected List<String> configureArgs(List<String> commands) {
@@ -453,12 +408,19 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         configuration.appendJavaOpts("-Djava.security.properties=" + System.getProperty("auth.server.java.security.file"));
     }
 
-    private Collection<String> getDefaultFeatures() {
-        var features = configuration.getEnabledFeatures();
+    private static Collection<String> getFeatures(String features) {
         if (features == null || features.isBlank()) {
             return List.of();
         }
         return Arrays.stream(features.split(",")).collect(Collectors.toSet());
+    }
+
+    private Collection<String> getEnabledFeatures() {
+        return getFeatures(configuration.getEnabledFeatures());
+    }
+
+    private Collection<String> getDisabledFeatures() {
+        return getFeatures(configuration.getDisabledFeatures());
     }
 
     public void setSpiConfig(String spi, List<String> args) {

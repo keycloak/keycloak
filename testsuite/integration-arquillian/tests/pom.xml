@@ -1264,7 +1264,7 @@
         <profile>
             <id>auth-server-enable-disable-feature</id>
             <properties>
-                <auth.server.feature>-Dkeycloak.profile.feature.${feature.name}=${feature.value}</auth.server.feature>
+                <auth.server.feature.jvm>-Dkeycloak.profile.feature.${feature.name}=${feature.value}</auth.server.feature.jvm>
             </properties>
             <build>
                 <plugins>
