@@ -9,7 +9,8 @@ public final class WorkflowConstants {
 
     // Entry configuration keys for Workflow
     public static final String CONFIG_ON_EVENT = "on";
-    public static final String CONFIG_RESET_ON = "reset-on";
+    public static final String CONFIG_CONCURRENCY = "concurrency";
+    public static final String CONFIG_CANCEL_IF_RUNNING = "cancel-if-running";
     public static final String CONFIG_NAME = "name";
     public static final String CONFIG_ENABLED = "enabled";
     public static final String CONFIG_CONDITIONS = "conditions";
