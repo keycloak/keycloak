@@ -88,7 +88,7 @@ export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6A
 
 See <@links.server id="caching" anchor="network-bind-address"/> for more details.
 
-== Better HTTP performance
+== Preview of enhanced HTTP performance
 <@features.techpreview feature="http-optimized-serializers" additionalCommunityText="We gather more feedback on this feature to promote it to supported. Please, share your feedback about any issue in https://github.com/keycloak/keycloak/discussions/43484[this discussion]."/>
 
 In production environments, the performance of the HTTP layer is critical.
