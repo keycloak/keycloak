@@ -224,7 +224,7 @@ Mapper for provider: XXX, Mapper name: YYY, Provider: ZZZ ...
 Note those messages are displayed just with the enabled DEBUG logging.
 
 - For tracking the performance or connection pooling issues, consider setting the value of property `com.sun.jndi.ldap.connect.pool.debug` to `all`. This change adds many additional messages to the server log with the included logging for the LDAP connection
-pooling. As a result, you can track the issues related to connection pooling or performance. For more details, see link:#_ldap_connection_pool[Configuring the connection pool].
+pooling. As a result, you can track the issues related to connection pooling or performance. For more details, see <<_ldap_connection_pool,Configuring the connection pool>>.
 
 NOTE: After changing the configuration of connection pooling, you may need to restart the {project_name} server to enforce re-initialization
 of the LDAP provider connection.
