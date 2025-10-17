@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.admin;
+package org.keycloak.tests.admin.client.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -42,8 +42,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest(config = AdminV2Test.AdminV2Config.class)
-public class AdminV2Test {
+@KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
+public class ClientApiV2Test {
 
     private static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/v2";
     private static ObjectMapper mapper;
