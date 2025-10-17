@@ -504,7 +504,7 @@ If you want to see list of all available SPIs at runtime, you can check `Provide
 
 === Supported SPIs
 
-Support for {project_name} SPIs is limited to what is documented in this guide. Moreover, SPI can be considered supported just if the method `isInternal` of the `Spi` described above returns `false` for the
+Support for {project_name} SPIs is limited to what is documented in this guide. Moreover, SPI can be considered supported only if the method `isInternal` of the `Spi` described above returns `false` for the
 particular SPI.
 
 It is possible to implement any internal SPI in your extensions, but it is not officially supported and backwards compatibility regarding behaviour or method signatures is not guaranteed.
