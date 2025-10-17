@@ -60,7 +60,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -333,8 +332,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     @Test
     public void testRestInterface() throws Exception {
         ClientsResource clients = adminClient.realm("test").clients();
-        List<ClientRepresentation> query = clients.findByClientId(TEST_APP_DIRECT_OVERRIDE);
-        ClientRepresentation clientRep = query.get(0);
+        ClientRepresentation clientRep = clients.findClientByClientId(TEST_APP_DIRECT_OVERRIDE);
         String directGrantFlowId = clientRep.getAuthenticationFlowBindingOverrides().get(AuthenticationFlowBindings.DIRECT_GRANT_BINDING);
         Assert.assertNotNull(directGrantFlowId);
         clientRep.getAuthenticationFlowBindingOverrides().put(AuthenticationFlowBindings.DIRECT_GRANT_BINDING, "");
@@ -344,8 +342,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         clients.get(clientRep.getId()).update(clientRep);
         testGrantAccessTokenWithClientOverride();
 
-        query = clients.findByClientId(TEST_APP_FLOW);
-        clientRep = query.get(0);
+        clientRep = clients.findClientByClientId(TEST_APP_FLOW);
         String browserFlowId = clientRep.getAuthenticationFlowBindingOverrides().get(AuthenticationFlowBindings.BROWSER_BINDING);
         Assert.assertNotNull(browserFlowId);
         clientRep.getAuthenticationFlowBindingOverrides().put(AuthenticationFlowBindings.BROWSER_BINDING, "");
@@ -360,8 +357,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     @UncaughtServerErrorExpected
     public void testRestInterfaceWithBadId() throws Exception {
         ClientsResource clients = adminClient.realm("test").clients();
-        List<ClientRepresentation> query = clients.findByClientId(TEST_APP_FLOW);
-        ClientRepresentation clientRep = query.get(0);
+        ClientRepresentation clientRep = clients.findClientByClientId(TEST_APP_FLOW);
         String browserFlowId = clientRep.getAuthenticationFlowBindingOverrides().get(AuthenticationFlowBindings.BROWSER_BINDING);
 
         clientRep.getAuthenticationFlowBindingOverrides().put(AuthenticationFlowBindings.BROWSER_BINDING, "bad-id");
@@ -371,8 +367,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         } catch (Exception e) {
 
         }
-        query = clients.findByClientId(TEST_APP_FLOW);
-        clientRep = query.get(0);
+        clientRep = clients.findClientByClientId(TEST_APP_FLOW);
         Assert.assertEquals(browserFlowId, clientRep.getAuthenticationFlowBindingOverrides().get(AuthenticationFlowBindings.BROWSER_BINDING));
 
     }

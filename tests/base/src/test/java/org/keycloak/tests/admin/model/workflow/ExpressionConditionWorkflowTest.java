@@ -44,6 +44,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -250,20 +251,20 @@ public class ExpressionConditionWorkflowTest {
             String[] parts = roleName.split("/");
             String clientId = parts[0];
             String clientRoleName = parts[1];
-            List<ClientRepresentation> clients = managedRealm.admin().clients().findByClientId(clientId);
+            ClientRepresentation clients = managedRealm.admin().clients().findClientByClientId(clientId);
 
-            if (clients.isEmpty()) {
+            if (clients == null) {
                 ClientRepresentation client = new ClientRepresentation();
                 client.setClientId(clientId);
                 client.setName(clientId);
                 client.setProtocol("openid-connect");
                 managedRealm.admin().clients().create(client).close();
-                clients = managedRealm.admin().clients().findByClientId(clientId);
+                clients = managedRealm.admin().clients().findClientByClientId(clientId);
             }
 
-            assertThat(clients.isEmpty(), is(false));
+            assertThat(clients, notNullValue());
 
-            RolesResource roles = managedRealm.admin().clients().get(clients.get(0).getId()).roles();
+            RolesResource roles = managedRealm.admin().clients().get(clients.getId()).roles();
 
             if (roles.list(clientRoleName, -1, -1).isEmpty()) {
                 roles.create(RoleConfigBuilder.create()

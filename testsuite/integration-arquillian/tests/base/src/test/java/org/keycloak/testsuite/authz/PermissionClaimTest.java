@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.hamcrest.Matchers;
@@ -453,7 +454,10 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
     private ClientResource getClient(RealmResource realm) {
         ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return Optional.ofNullable(clients.findClientByClientId("resource-server-test"))
+                        .map(rep -> clients.get(rep.getId()))
+                        .orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+
     }
 
     private AuthzClient getAuthzClient() {

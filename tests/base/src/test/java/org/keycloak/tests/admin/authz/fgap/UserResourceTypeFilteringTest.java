@@ -340,7 +340,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         assertThat(search, Matchers.hasSize(1));
 
         String userId = search.get(0).getId();
-        String clientUuid = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        String clientUuid = realm.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).getId();
         RoleRepresentation viewUsers = realm.admin().clients().get(clientUuid).roles().get(AdminRoles.VIEW_USERS).toRepresentation();
         realm.admin().users().get(userId).roles().clientLevel(clientUuid).add(List.of(viewUsers));
         realm.cleanup().add(r -> r.users().get(userId).roles().clientLevel(clientUuid).remove(List.of(viewUsers)));
@@ -426,7 +426,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     @Test
     public void testSessionEndpointRespectsUserViewPermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        String clientUuid = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        String clientUuid = realm.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).getId();
         RoleRepresentation viewRealmRole = realm.admin().clients().get(clientUuid).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
 
         // create users

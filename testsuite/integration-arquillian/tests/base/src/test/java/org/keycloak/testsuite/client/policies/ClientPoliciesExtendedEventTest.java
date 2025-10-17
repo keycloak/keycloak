@@ -193,7 +193,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
             assertEquals(ClientPolicyEvent.REGISTERED.toString(), cpe.getError());
         }
 
-        assertThat(adminClient.realm(REALM_NAME).clients().findByClientId(clientName), empty());
+        assertNull(adminClient.realm(REALM_NAME).clients().findClientByClientId(clientName));
     }
 
     @Test

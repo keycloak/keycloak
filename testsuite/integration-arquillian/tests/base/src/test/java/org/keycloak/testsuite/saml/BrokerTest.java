@@ -455,7 +455,7 @@ public class BrokerTest extends AbstractSamlTest {
 
         try (SamlBackchannelArtifactResolveReceiver samlBackchannelArtifactResolveReceiver = new SamlBackchannelArtifactResolveReceiver(
                 8082,
-                realm.clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+                realm.clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST)
         )) {
 
             IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/saml");

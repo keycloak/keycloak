@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,9 +27,8 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         super.beforeBrokerTest();
         // Require broker to show consent screen
         RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
-        List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId("brokerapp");
-        org.junit.Assert.assertEquals(1, clients.size());
-        ClientRepresentation brokerApp = clients.get(0);
+        ClientRepresentation brokerApp = brokeredRealm.clients().findClientByClientId("brokerapp");
+        org.junit.Assert.assertNotNull(brokerApp);
         brokerApp.setConsentRequired(true);
         brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
 

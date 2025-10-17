@@ -269,7 +269,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     @Test
     public void testTokenResponseUsingLowerCaseType() throws Exception {
         ClientsResource clients = realmsResouce().realm("test").clients();
-        ClientRepresentation client = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation client = clients.findClientByClientId(oauth.getClientId());
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseLowerCaseInTokenResponse(true);
 
@@ -291,7 +291,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     @Test
     public void testTokenResponseUsingRfc9068HeaderType() throws Exception {
         ClientsResource clients = realmsResouce().realm("test").clients();
-        ClientRepresentation client = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation client = clients.findClientByClientId(oauth.getClientId());
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseRfc9068AccessTokenHeaderType(true);
         clients.get(client.getId()).update(client);

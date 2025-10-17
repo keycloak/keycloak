@@ -304,6 +304,6 @@ public class ExternalInternalTokenExchangeV2Test extends AbstractInitializedBase
     private ClientRepresentation getBrokerAppClient() {
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
         ClientsResource clients = providerRealm.clients();
-        return clients.findByClientId("brokerapp").get(0);
+        return clients.findClientByClientId("brokerapp");
     }
 }

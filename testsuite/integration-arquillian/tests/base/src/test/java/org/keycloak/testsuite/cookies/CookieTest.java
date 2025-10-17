@@ -97,7 +97,7 @@ public class CookieTest extends AbstractKeycloakTest {
     }
 
     private void testCookieValue(String cookieName) throws Exception {
-        final String accountClientId = realmsResouce().realm("test").clients().findByClientId("test-app").get(0).getId();
+        final String accountClientId = realmsResouce().realm("test").clients().findClientByClientId("test-app").getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
         AuthorizationEndpointResponse codeResponse = oauth.client("test-app", clientSecret).redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");
@@ -134,7 +134,7 @@ public class CookieTest extends AbstractKeycloakTest {
 
     @Test
     public void testCookieValueLoggedOut() throws Exception {
-        final String accountClientId = realmsResouce().realm("test").clients().findByClientId("test-app").get(0).getId();
+        final String accountClientId = realmsResouce().realm("test").clients().findClientByClientId("test-app").getId();
         final String clientSecret = realmsResouce().realm("test").clients().get(accountClientId).getSecret().getValue();
 
         AuthorizationEndpointResponse codeResponse = oauth.client("test-app", clientSecret).redirectUri(oauth.APP_AUTH_ROOT).doLogin("test-user@localhost", "password");

@@ -52,11 +52,10 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         super.beforeBrokerTest();
         // Require broker to show consent screen
         RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
-        List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm());
-        org.junit.Assert.assertEquals(1, clients.size());
-        ClientRepresentation brokerApp = clients.get(0);
-        brokerApp.setConsentRequired(true);
-        brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
+        ClientRepresentation client = brokeredRealm.clients().findClientByClientId(bc.getIDPClientIdInProviderRealm());
+        org.junit.Assert.assertNotNull(client);
+        client.setConsentRequired(true);
+        brokeredRealm.clients().get(client.getId()).update(client);
     }
 
     @Test

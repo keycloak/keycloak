@@ -21,6 +21,7 @@ import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -173,7 +174,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient();
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
-        ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
+        ClientRepresentation client = clients.findClientByClientId(authzClient.getConfiguration().getResource());
         ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
@@ -197,7 +198,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient();
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
-        ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
+        ClientRepresentation client = clients.findClientByClientId(authzClient.getConfiguration().getResource());
         ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
@@ -254,7 +255,10 @@ public class RolePolicyTest extends AbstractAuthzTest {
 
     private ClientResource getClient(RealmResource realm) {
         ClientsResource clients = realm.clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return Optional.ofNullable(clients.findClientByClientId("resource-server-test"))
+                        .map(rep -> clients.get(rep.getId()))
+                        .orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+
     }
 
     private AuthzClient getAuthzClient() {

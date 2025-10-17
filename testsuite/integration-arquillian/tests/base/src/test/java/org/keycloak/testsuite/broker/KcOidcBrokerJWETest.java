@@ -184,7 +184,7 @@ public class KcOidcBrokerJWETest extends AbstractBrokerTest {
 
     private void configureUserInfoEndpointMappers() {
         RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
-        ClientRepresentation client = providerRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm()).get(0);
+        ClientRepresentation client = providerRealm.clients().findClientByClientId(bc.getIDPClientIdInProviderRealm());
 
         ProtocolMapperRepresentation claimMapper = new ProtocolMapperRepresentation();
         claimMapper.setName("custom-claim-hardcoded-mapper");

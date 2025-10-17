@@ -63,7 +63,7 @@ public class AdminEventAuthDetailsTest {
 
     @BeforeEach
     public void initConfig() {
-        clientUuid = adminClient.realm(managedRealm.getName()).clients().findByClientId("client").get(0).getId();
+        clientUuid = adminClient.realm(managedRealm.getName()).clients().findClientByClientId("client").getId();
         adminId = adminClient.realm(managedRealm.getName()).users().search("admin", true).get(0).getId();
         appUserId = adminClient.realm(managedRealm.getName()).users().search("app-user", true).get(0).getId();
         adminCliUuid = ApiUtil.findClientByClientId(managedRealm.admin(), Constants.ADMIN_CLI_CLIENT_ID).toRepresentation().getId();

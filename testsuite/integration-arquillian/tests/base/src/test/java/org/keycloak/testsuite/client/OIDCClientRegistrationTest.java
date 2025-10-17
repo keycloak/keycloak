@@ -694,7 +694,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         reg.auth(Auth.token(response));
         assertNotNull(reg.oidc().get(response.getClientId()));
         ClientsResource clientsResource = adminClient.realm(TEST).clients();
-        ClientRepresentation client = clientsResource.findByClientId(response.getClientId()).get(0);
+        ClientRepresentation client = clientsResource.findClientByClientId(response.getClientId());
 
         // change client to saml
         client.setProtocol("saml");

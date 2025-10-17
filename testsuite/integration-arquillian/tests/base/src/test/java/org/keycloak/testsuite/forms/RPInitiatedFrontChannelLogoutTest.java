@@ -40,7 +40,7 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
     @Test
     public void testFrontChannelLogoutWithPostLogoutRedirectUri() throws Exception {
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation rep = clients.findClientByClientId(oauth.getClientId());
         rep.setFrontchannelLogout(true);
         rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout");
         clients.get(rep.getId()).update(rep);
@@ -68,7 +68,7 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
     @Test
     public void testFrontChannelLogoutWithoutSessionRequired() throws Exception {
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation rep = clients.findClientByClientId(oauth.getClientId());
         rep.setFrontchannelLogout(true);
         rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout");
         rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, "false");
@@ -96,7 +96,7 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
     @Test
     public void testFrontChannelLogout() throws Exception {
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
-        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation rep = clients.findClientByClientId(oauth.getClientId());
         rep.setName("My Testing App");
         rep.setFrontchannelLogout(true);
         rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout");

@@ -10,8 +10,6 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import java.util.List;
-
 @KeycloakIntegrationTest
 public class ManagedResources2Test {
 
@@ -32,8 +30,8 @@ public class ManagedResources2Test {
     public void testCreatedClient() {
         Assertions.assertEquals("default", client.getClientId());
 
-        List<ClientRepresentation> clients = realm.admin().clients().findByClientId("default");
-        Assertions.assertEquals(1, clients.size());
+        ClientRepresentation client = realm.admin().clients().findClientByClientId("default");
+        Assertions.assertNotNull(client);
     }
 
 }

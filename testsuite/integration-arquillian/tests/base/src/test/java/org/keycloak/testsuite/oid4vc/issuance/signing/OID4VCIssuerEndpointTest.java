@@ -197,7 +197,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     public void setup() {
         CryptoIntegration.init(this.getClass().getClassLoader());
         httpClient = HttpClientBuilder.create().build();
-        client = testRealm().clients().findByClientId(clientId).get(0);
+        client = testRealm().clients().findClientByClientId(clientId);
 
         // Register the optional client scopes
         sdJwtTypeCredentialClientScope = registerOptionalClientScope(sdJwtTypeCredentialScopeName,
@@ -427,7 +427,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     void setClientOid4vciEnabled(String clientId, boolean enabled) {
-        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId(clientId).get(0);
+        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findClientByClientId(clientId);
         ClientResource clientResource = adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId());
 
         Map<String, String> attributes = new HashMap<>(clientRepresentation.getAttributes() != null ? clientRepresentation.getAttributes() : Map.of());

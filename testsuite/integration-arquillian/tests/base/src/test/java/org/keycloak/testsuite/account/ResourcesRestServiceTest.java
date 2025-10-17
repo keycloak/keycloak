@@ -153,7 +153,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
     private ClientResource getResourceServer() {
         ClientsResource clients = testRealm().clients();
-        return clients.get(clients.findByClientId("my-resource-server").get(0).getId());
+        return clients.get(clients.findClientByClientId("my-resource-server").getId());
     }
 
     @Override

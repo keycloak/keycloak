@@ -16,11 +16,7 @@
  */
 package org.keycloak.tests.admin.authz.fgap;
 
-import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import org.junit.jupiter.api.Test;
@@ -53,16 +49,16 @@ public class FeatureV2EnabledTest {
     @Test
     public void schemaAvailableAfterFGAPEnabledForRealm() {
         // admin permissions client should not exist when the switch in not enabled for the realm
-        assertThat(realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID), is(empty()));
+        assertThat(realm.admin().clients().findClientByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID), nullValue());
 
         // enable admin permissions for the realm
         RealmRepresentation realmRep = realm.admin().toRepresentation();
         realmRep.setAdminPermissionsEnabled(Boolean.TRUE);
         realm.admin().update(realmRep);
 
-        List<ClientRepresentation> clients = realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID);
-        assertThat(clients, hasSize(1));
-        ResourceServerRepresentation authorizationSettings = realm.admin().clients().get(clients.get(0).getId()).authorization().getSettings();
+        ClientRepresentation clients = realm.admin().clients().findClientByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        assertThat(clients, notNullValue());
+        ResourceServerRepresentation authorizationSettings = realm.admin().clients().get(clients.getId()).authorization().getSettings();
         assertThat(authorizationSettings, notNullValue());
         assertThat(authorizationSettings.getAuthorizationSchema(), notNullValue());
     }

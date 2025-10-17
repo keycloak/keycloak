@@ -1832,7 +1832,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // assign the supervisor role to user bburke - it should be mapped to coordinator next time he logs in.
         UserRepresentation bburke = adminClient.realm(DEMO).users().search("bburke", 0, 1).get(0);
         ClientRepresentation clientRepresentation = adminClient.realm(DEMO)
-                .clients().findByClientId("http://localhost:8280/employee-role-mapping/").get(0);
+                .clients().findClientByClientId("http://localhost:8280/employee-role-mapping/");
         RoleRepresentation role = adminClient.realm(DEMO).clients().get(clientRepresentation.getId())
                 .roles().get("supervisor").toRepresentation();
 

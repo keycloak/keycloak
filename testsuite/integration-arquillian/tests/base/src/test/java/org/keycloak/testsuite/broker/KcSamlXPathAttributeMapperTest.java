@@ -53,8 +53,7 @@ public class KcSamlXPathAttributeMapperTest extends AbstractInitializedBaseBroke
         protocolMapper.getConfig().put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "xml-name");
         protocolMapper.getConfig().put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
 
-        ClientRepresentation clientRepresentation = realm.clients().findByClientId(bc.getIDPClientIdInProviderRealm())
-                .get(0);
+        ClientRepresentation clientRepresentation = realm.clients().findClientByClientId(bc.getIDPClientIdInProviderRealm());
         realm.clients().get(clientRepresentation.getId()).getProtocolMappers().createMapper(protocolMapper).close();
 
         addXpathMapper("firstName");

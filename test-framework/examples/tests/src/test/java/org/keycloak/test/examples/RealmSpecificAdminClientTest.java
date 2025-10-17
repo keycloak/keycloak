@@ -20,7 +20,6 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 import java.util.List;
-
 @KeycloakIntegrationTest
 public class RealmSpecificAdminClientTest {
 
@@ -46,10 +45,8 @@ public class RealmSpecificAdminClientTest {
     public void testRealmWithClientAndUser() {
         RealmResource realmResource = realmAdminClient.realms().realm(realm.getName());
 
-        List<ClientRepresentation> clients = realmResource.clients().findByClientId("myclient");
-        Assertions.assertEquals(1, clients.size());
-
-        ClientRepresentation client = clients.get(0);
+        ClientRepresentation client = realmResource.clients().findClientByClientId("myclient");
+        Assertions.assertNotNull(client);
         Assertions.assertTrue(client.isEnabled());
         Assertions.assertTrue(client.isDirectAccessGrantsEnabled());
         Assertions.assertEquals("mysecret", client.getSecret());

@@ -122,12 +122,11 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         RealmResource realmResourceConsumerRealm = adminClient.realm(nbc.consumerRealmName());
         realmIdConsumerRealm = realmResourceConsumerRealm.toRepresentation().getId();
         accountClientIdConsumerRealm =
-                adminClient.realm(nbc.consumerRealmName()).clients().findByClientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID).get(0).getId();
+                adminClient.realm(nbc.consumerRealmName()).clients().findClientByClientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID).getId();
 
         RealmResource realmResourceSubConsumerRealm = adminClient.realm(nbc.subConsumerRealmName());
         accountClientIdSubConsumerRealm =
-                adminClient.realm(nbc.subConsumerRealmName()).clients().findByClientId(ACCOUNT_CLIENT_NAME).get(0)
-                        .getId();
+                adminClient.realm(nbc.subConsumerRealmName()).clients().findClientByClientId(ACCOUNT_CLIENT_NAME).getId();
     }
 
     @Before
@@ -803,11 +802,9 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
     private ClientResource getByClientId(String realmName, String clientId) {
         final ClientsResource c = adminClient.realm(realmName).clients();
-        ClientResource ipdClientResource = c.findByClientId(clientId).stream()
-          .findAny()
-          .map(rep -> c.get(rep.getId()))
-          .orElseThrow(IllegalArgumentException::new);
-        return ipdClientResource;
+        return Optional.ofNullable(c.findClientByClientId(clientId))
+                .map(r -> c.get(r.getId()))
+                .orElseThrow(IllegalArgumentException::new);
     }
 
     private void disableClient(String realmName, String clientUuid) {
@@ -839,9 +836,6 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     }
 
     private String getClientId(String realm, String clientId) {
-        return adminClient.realm(realm).clients().findByClientId(clientId).stream()
-         .findAny()
-         .map(ClientRepresentation::getId)
-         .orElse(null);
+        return adminClient.realm(realm).clients().findClientByClientId(clientId).getId();
    }
 }
