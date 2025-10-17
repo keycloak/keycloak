@@ -34,6 +34,7 @@ import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -84,9 +85,10 @@ public class WorkflowsManager {
     }
 
     // This method takes an ordered list of steps. First step in the list has the highest priority, last step has the lowest priority
-    private void addSteps(Workflow workflow, List<WorkflowStep> steps) {
+    private void addSteps(Workflow workflow, List<WorkflowStepRepresentation> steps) {
+        steps = ofNullable(steps).orElse(List.of());
         for (int i = 0; i < steps.size(); i++) {
-            WorkflowStep step = steps.get(i);
+            WorkflowStep step = toModel(steps.get(i));
 
             // assign priority based on index.
             step.setPriority(i + 1);
@@ -441,6 +443,7 @@ public class WorkflowsManager {
         List<WorkflowConditionRepresentation> conditions = ofNullable(rep.getConditions()).orElse(List.of());
 
         for (WorkflowConditionRepresentation condition : conditions) {
+            validateField(condition, "uses", condition.getUses());
             String conditionProviderId = condition.getUses();
             getConditionProviderFactory(conditionProviderId);
             config.computeIfAbsent(CONFIG_CONDITIONS, key -> new ArrayList<>()).add(conditionProviderId);
@@ -456,9 +459,7 @@ public class WorkflowsManager {
 
         Workflow workflow = addWorkflow(new Workflow(rep.getUses(), config));
 
-        List<WorkflowStep> steps = rep.getSteps().stream().map(this::toModel).toList();
-
-        addSteps(workflow, steps);
+        addSteps(workflow, rep.getSteps());
 
         return workflow;
     }
@@ -470,10 +471,13 @@ public class WorkflowsManager {
     }
 
     private void validateWorkflow(WorkflowRepresentation rep) {
+        validateField(rep, "name", rep.getName());
+
         validateEvents(rep.getOnValues());
 
         // if a workflow has a restart step, at least one of the previous steps must be scheduled to prevent an infinite loop of immediate executions
         List<WorkflowStepRepresentation> steps = ofNullable(rep.getSteps()).orElse(List.of());
+        steps.forEach(step -> validateField(step, "uses", step.getUses()));
         List<WorkflowStepRepresentation> restartSteps = steps.stream()
                 .filter(step -> Objects.equals("restart", step.getUses()))
                 .toList();
@@ -491,6 +495,12 @@ public class WorkflowsManager {
             if (!hasScheduledStep) {
                 throw new WorkflowInvalidStateException("A workflow with a restart step must have at least one step with a time delay.");
             }
+        }
+    }
+
+    private void validateField(Object obj, String fieldName, String value) {
+        if (StringUtil.isBlank(value)) {
+            throw new ModelValidationException("%s field '%s' cannot be null or empty.".formatted(obj.getClass().getCanonicalName(), fieldName));
         }
     }
 
