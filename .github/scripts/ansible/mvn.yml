@@ -1,2 +1,2 @@
 - hosts: keycloak
-  roles: [mvn_ec2_runner]
+  roles: [mvn_remote_runner]
