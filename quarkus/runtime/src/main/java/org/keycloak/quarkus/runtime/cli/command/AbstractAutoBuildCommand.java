@@ -58,8 +58,11 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         if (isRebuildCheck()) {
             if (requiresReAugmentation()) {
                 runReAugmentation();
+                return Optional.of(REBUILT_EXIT_CODE);
             }
-            return Optional.of(REBUILT_EXIT_CODE);
+            // clear the check, and change to the command runtime profile
+            Environment.setRebuildCheck(false);
+            Environment.setProfile(getInitProfile());
         }
         return Optional.empty();
     }
