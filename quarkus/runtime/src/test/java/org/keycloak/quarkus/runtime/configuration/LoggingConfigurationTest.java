@@ -361,7 +361,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testNestedBuildTimeLogging() {
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
+        Environment.setRebuildCheck(true); // will be reset by the system properties logic
         ConfigArgsConfigSource.setCliArgs("");
         assertEquals("true", createConfig().getConfigValue("quarkus.log.console.enable").getValue());
     }
