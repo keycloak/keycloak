@@ -26,8 +26,8 @@ import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Base64;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.util.JsonSerialization;
 
@@ -99,8 +99,8 @@ public class JWKParser {
             throw new RuntimeException("Fail to retrieve ECPublicJWK.CRV, ECPublicJWK.X or ECPublicJWK.Y field.");
         }
 
-        BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
-        BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
+        BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(xStr));
+        BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(yStr));
 
         String name;
         switch (crv) {
@@ -131,8 +131,8 @@ public class JWKParser {
     }
 
     private static PublicKey createRSAPublicKey(JsonNode jwk) {
-        BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.path(RSAPublicJWK.MODULUS).asText(null)));
-        BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.path(RSAPublicJWK.PUBLIC_EXPONENT).asText(null)));
+        BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.path(RSAPublicJWK.MODULUS).asText(null)));
+        BigInteger publicExponent = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.path(RSAPublicJWK.PUBLIC_EXPONENT).asText(null)));
 
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");

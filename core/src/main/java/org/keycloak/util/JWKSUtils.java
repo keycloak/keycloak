@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -34,6 +33,7 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import java.io.IOException;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -171,7 +171,7 @@ public class JWKSUtils {
 
             byte[] bytes = JsonSerialization.writeValueAsBytes(members);
             byte[] hash = HashUtils.hash(hashAlg, bytes);
-            return Base64Url.encode(hash);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
         } catch (IOException ex) {
             logger.debugf(ex, "Failed to compute JWK thumbprint for key '%s'.", key.getKeyId());
             return null;

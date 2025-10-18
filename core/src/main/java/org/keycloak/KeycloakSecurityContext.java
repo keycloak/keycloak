@@ -17,7 +17,6 @@
 
 package org.keycloak;
 
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.DelegatingSerializationFilter;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Base64;
 
 /**
  * Available in secured requests under HttpServletRequest.getAttribute()
@@ -103,7 +103,7 @@ public class KeycloakSecurityContext implements Serializable {
         String[] parts = encoded.split("\\.");
         if (parts.length < 2 || parts.length > 3) throw new IllegalArgumentException("Parsing error");
 
-        byte[] bytes = Base64Url.decode(parts[1]);
+        byte[] bytes = Base64.getUrlDecoder().decode(parts[1]);
         return JsonSerialization.readValue(bytes, clazz);
     }
 

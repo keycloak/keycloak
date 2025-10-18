@@ -17,7 +17,6 @@
 
 package org.keycloak.jose.jwe;
 
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
@@ -26,6 +25,7 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.util.Base64;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -61,7 +61,7 @@ public class JWE implements JOSE {
     public JOSEHeader getHeader() {
         if (header == null && base64Header != null) {
             try {
-                byte[] decodedHeader = Base64Url.decode(base64Header);
+                byte[] decodedHeader = Base64.getUrlDecoder().decode(base64Header);
                 header = JsonSerialization.readValue(decodedHeader, JWEHeader.class);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
@@ -73,7 +73,7 @@ public class JWE implements JOSE {
     public String getBase64Header() throws IOException {
         if (base64Header == null && header != null) {
             byte[] contentBytes = JsonSerialization.writeValueAsBytes(header);
-            base64Header = Base64Url.encode(contentBytes);
+            base64Header = Base64.getUrlEncoder().withoutPadding().encodeToString(contentBytes);
         }
         return base64Header;
     }
@@ -146,7 +146,7 @@ public class JWE implements JOSE {
 
             JWEHeaderBuilder headerBuilder = header.toBuilder();
             byte[] encodedCEK = algorithmProvider.encodeCek(encryptionProvider, keyStorage, keyStorage.getEncryptionKey(), headerBuilder);
-            base64Cek = Base64Url.encode(encodedCEK);
+            base64Cek = Base64.getUrlEncoder().withoutPadding().encodeToString(encodedCEK);
             header = headerBuilder.build();
 
             encryptionProvider.encodeJwe(this);
@@ -161,9 +161,9 @@ public class JWE implements JOSE {
         StringBuilder builder = new StringBuilder();
         builder.append(base64Header).append(".")
                 .append(base64Cek).append(".")
-                .append(Base64Url.encode(initializationVector)).append(".")
-                .append(Base64Url.encode(encryptedContent)).append(".")
-                .append(Base64Url.encode(authenticationTag));
+                .append(Base64.getUrlEncoder().withoutPadding().encodeToString(initializationVector)).append(".")
+                .append(Base64.getUrlEncoder().withoutPadding().encodeToString(encryptedContent)).append(".")
+                .append(Base64.getUrlEncoder().withoutPadding().encodeToString(authenticationTag));
 
         return builder.toString();
     }
@@ -176,9 +176,9 @@ public class JWE implements JOSE {
 
         this.base64Header = parts[0];
         this.base64Cek = parts[1];
-        this.initializationVector = Base64Url.decode(parts[2]);
-        this.encryptedContent = Base64Url.decode(parts[3]);
-        this.authenticationTag = Base64Url.decode(parts[4]);
+        this.initializationVector = Base64.getUrlDecoder().decode(parts[2]);
+        this.encryptedContent = Base64.getUrlDecoder().decode(parts[3]);
+        this.authenticationTag = Base64.getUrlDecoder().decode(parts[4]);
 
         this.header = (JWEHeader) getHeader();
     }
@@ -194,7 +194,7 @@ public class JWE implements JOSE {
 
         keyStorage.setEncryptionProvider(encryptionProvider);
 
-        byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey(), this.header, encryptionProvider);
+        byte[] decodedCek = algorithmProvider.decodeCek(Base64.getUrlDecoder().decode(base64Cek), keyStorage.getDecryptionKey(), this.header, encryptionProvider);
         keyStorage.setCEKBytes(decodedCek);
 
         encryptionProvider.verifyAndDecodeJwe(this);

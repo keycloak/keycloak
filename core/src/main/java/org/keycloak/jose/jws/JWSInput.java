@@ -17,12 +17,12 @@
 
 package org.keycloak.jose.jws;
 
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -47,13 +47,13 @@ public class JWSInput implements JOSE {
             encodedHeader = parts[0];
             encodedContent = parts[1];
             encodedSignatureInput = encodedHeader + '.' + encodedContent;
-            content = Base64Url.decode(encodedContent);
+            content = Base64.getUrlDecoder().decode(encodedContent);
             if (parts.length > 2) {
                 encodedSignature = parts[2];
-                signature = Base64Url.decode(encodedSignature);
+                signature = Base64.getUrlDecoder().decode(encodedSignature);
 
             }
-            byte[] headerBytes = Base64Url.decode(encodedHeader);
+            byte[] headerBytes = Base64.getUrlDecoder().decode(encodedHeader);
             header = JsonSerialization.readValue(headerBytes, JWSHeader.class);
         } catch (Throwable t) {
             throw new JWSInputException(t);

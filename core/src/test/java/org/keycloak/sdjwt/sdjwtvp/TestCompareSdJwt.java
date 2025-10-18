@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
@@ -33,6 +32,7 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Base64;
 
 /**
  * This class will try to test conformity to the spec by comparing json objects.
@@ -105,7 +105,7 @@ public class TestCompareSdJwt {
 
     private static JsonNode toJsonNode(String base64EncodedString) {
         try {
-            return SdJwtUtils.mapper.readTree(Base64Url.decode(base64EncodedString));
+            return SdJwtUtils.mapper.readTree(Base64.getUrlDecoder().decode(base64EncodedString));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
