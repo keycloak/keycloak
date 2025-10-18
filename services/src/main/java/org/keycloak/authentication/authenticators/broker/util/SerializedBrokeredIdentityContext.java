@@ -20,8 +20,8 @@ package org.keycloak.authentication.authenticators.broker.util;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.models.Constants;
@@ -282,7 +282,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setBrokerUserId(getBrokerUserId());
         ctx.setToken(getToken());
 
-        IdentityProvider idp = IdentityBrokerService.getIdentityProvider(session, idpConfig.getAlias());
+        UserAuthenticationIdentityProvider<?> idp = IdentityBrokerService.getIdentityProvider(session, idpConfig.getAlias());
         ctx.setIdp(idp);
 
         IdentityProviderDataMarshaller serializer = idp.getMarshaller();

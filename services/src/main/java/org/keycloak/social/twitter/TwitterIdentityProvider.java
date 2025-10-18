@@ -24,7 +24,7 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
@@ -147,7 +147,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        String accessToken = tokenUserSession.getNote(IdentityProvider.FEDERATED_ACCESS_TOKEN);
+        String accessToken = tokenUserSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
         if (accessToken == null) {
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
@@ -242,7 +242,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 if (providerConfig.isStoreToken()) {
                     identity.setToken(token);
                 }
-                identity.getContextData().put(IdentityProvider.FEDERATED_ACCESS_TOKEN, token);
+                identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, token);
 
                 identity.setAuthenticationSession(authSession);
 
@@ -271,7 +271,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
-        authSession.setUserSessionNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, (String)context.getContextData().get(IdentityProvider.FEDERATED_ACCESS_TOKEN));
+        authSession.setUserSessionNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN));
 
     }
 
