@@ -92,6 +92,23 @@ public class StartCommandDistTest {
         cliResult.assertNoError("The following build time options");
     }
 
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void terminateStartOptimized(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build", "--db=dev-file");
+        cliResult.assertBuild();
+
+        dist.setManualStop(true);
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertStarted();
+
+        // if the child java process does not clean up, then subsequent start will fail
+        dist.stop();
+
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertStarted();
+    }
+
     @DryRun
     @Test
     @Launch({ "--profile=dev", "start",  "--db=dev-file" })
