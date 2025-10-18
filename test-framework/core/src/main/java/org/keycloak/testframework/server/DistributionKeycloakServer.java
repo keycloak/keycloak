@@ -41,6 +41,10 @@ public class DistributionKeycloakServer implements KeycloakServer {
             keycloak.copyProvider(dependency.getGroupId(), dependency.getArtifactId());
         }
 
+        for (Dependency dependency : keycloakServerConfigBuilder.toClientDependencies()) {
+            keycloak.copyProvider("bin/client/lib", dependency.getGroupId(), dependency.getArtifactId());
+        }
+
         for (Path configFile : keycloakServerConfigBuilder.toConfigFiles()) {
             keycloak.copyConfigFile(configFile);
         }

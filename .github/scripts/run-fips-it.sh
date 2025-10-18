@@ -37,3 +37,7 @@ fi
 
 # Profile app-server-wildfly needs to be explicitly set for FIPS tests
 ./mvnw test -Dsurefire.rerunFailingTestsCount=$SUREFIRE_RERUN_FAILING_COUNT -nsu -B -Pauth-server-quarkus,auth-server-fips140-2,app-server-wildfly -Dcom.redhat.fips=false $STRICT_OPTIONS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+# New Base Tests
+CLASS_NAME=Fips$(if [[ $1 =~ "non" ]] ; then echo $1 | sed 's/\([[:alpha:]]\)/\U\1\4/' ; else echo $1 | sed 's/\([[:alpha:]]\)/\U\1/' | sed 's/-//' ; fi)TestSuite
+./mvnw package -nsu -B -Dcom.redhat.fips=false $STRICT_OPTIONS -Dtest=$CLASS_NAME -pl tests/base
