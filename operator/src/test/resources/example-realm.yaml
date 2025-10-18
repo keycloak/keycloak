@@ -4,6 +4,8 @@ metadata:
   name: example-count0-kc
 spec:
   keycloakCRName: example-kc
+  labels:
+    example: "test"
   realm:
     id: count0
     realm: count0
