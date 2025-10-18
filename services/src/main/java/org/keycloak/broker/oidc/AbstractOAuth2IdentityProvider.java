@@ -16,6 +16,7 @@
  */
 package org.keycloak.broker.oidc;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -178,6 +179,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         protected String refreshToken;
 
         @JsonProperty("refresh_expires_in")
+        @JsonAlias("refresh_token_expires_in")
         protected Long refreshExpiresIn;
 
         @JsonProperty(OAuth2Constants.ID_TOKEN)
