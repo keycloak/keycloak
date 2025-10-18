@@ -145,6 +145,11 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    public ClientConfigBuilder optionalClientScopes(String... optionalClientScopes) {
+        rep.setOptionalClientScopes(Collections.combine(rep.getOptionalClientScopes(), optionalClientScopes));
+        return this;
+    }
+
     /**
      * Best practice is to use other convenience methods when configuring a client, but while the framework is under
      * active development there may not be a way to perform all updates required. In these cases this method allows

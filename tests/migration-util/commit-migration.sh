@@ -54,7 +54,7 @@ get_default_commit_message() {
 read_commit_message() {
   local default_commit_message
   default_commit_message=$(get_default_commit_message)
-  default_commit_message+=$'\n\n'"Part of: #34494"
+  default_commit_message+=$'\n\n'"Part of: #35040"
 
   echo ""
   echo "Provide a different commit message (optional)"

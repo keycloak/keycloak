@@ -120,14 +120,6 @@ public class AdminClientUtil {
                 .scope(scope).build();
   }
 
-    public static Keycloak createAdminClient() throws Exception {
-        return createAdminClient(false, getAuthServerContextRoot());
-    }
-
-    public static Keycloak createAdminClient(boolean ignoreUnknownProperties) throws Exception {
-        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot());
-    }
-
     public static ResteasyClient createResteasyClient() {
         try {
             return createResteasyClient(false, null);
