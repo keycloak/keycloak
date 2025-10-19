@@ -18,6 +18,7 @@ import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,18 +27,22 @@ public class WorkflowsResource {
 
     private final KeycloakSession session;
     private final WorkflowsManager manager;
+    private final AdminPermissionEvaluator auth;
 
-    public WorkflowsResource(KeycloakSession session) {
+    public WorkflowsResource(KeycloakSession session, AdminPermissionEvaluator auth) {
         if (!Profile.isFeatureEnabled(Feature.WORKFLOWS)) {
             throw new NotFoundException();
         }
         this.session = session;
         this.manager = new WorkflowsManager(session);
+        this.auth = auth;
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(WorkflowRepresentation rep) {
+        auth.realm().requireManageRealm();
+
         try {
             Workflow workflow = manager.toModel(rep);
             return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
@@ -50,6 +55,8 @@ public class WorkflowsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createAll(WorkflowSetRepresentation workflows) {
+        auth.realm().requireManageRealm();
+
         for (WorkflowRepresentation workflow : Optional.ofNullable(workflows.getWorkflows()).orElse(List.of())) {
             create(workflow).close();
         }
@@ -58,6 +65,8 @@ public class WorkflowsResource {
 
     @Path("{id}")
     public WorkflowResource get(@PathParam("id") String id) {
+        auth.realm().requireManageRealm();
+
         Workflow workflow = manager.getWorkflow(id);
 
         if (workflow == null) {
@@ -70,6 +79,8 @@ public class WorkflowsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<WorkflowRepresentation> list() {
+        auth.realm().requireManageRealm();
+
         return manager.getWorkflows().stream().map(manager::toRepresentation).toList();
     }
 }
