@@ -34,6 +34,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import jakarta.mail.MessagingException;
@@ -42,6 +45,8 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.WorkflowsResource;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
@@ -69,6 +74,8 @@ import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
@@ -79,7 +86,9 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.utils.MailUtils;
+import org.keycloak.util.JsonSerialization;
 
 @KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
 public class WorkflowManagementTest {
@@ -94,6 +103,12 @@ public class WorkflowManagementTest {
 
     @InjectMailServer
     private MailServer mailServer;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
+    @InjectAdminClient(ref = "managed", realmRef = "managedRealm")
+    Keycloak adminClient;
 
     @Test
     public void testCreate() {
@@ -859,6 +874,32 @@ public class WorkflowManagementTest {
         verifyEmailContent(testUserMessage, "testuser5@example.com", "Disable", "TestUser5", "15", "inactivity");
 
         mailServer.runCleanup();
+    }
+
+    @Test
+    public void testCreateUsingYaml() throws IOException {
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
+                .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build();
+
+        Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);;
+        WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                .path("admin")
+                .path("realms")
+                .path(managedRealm.getName())
+                .path("workflows")
+                .path("set")
+                .register(new BearerAuthFilter(adminClient.tokenManager()));
+
+        Response response = target.request().post(Entity.entity(JsonSerialization.writeValueAsString(expectedWorkflows), "application/yaml"));
+        response.close();
     }
 
     public static List<MimeMessage> findEmailsByRecipient(MailServer mailServer, String expectedRecipient) {

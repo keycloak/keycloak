@@ -787,6 +787,7 @@ class KeycloakProcessor {
     void index(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.liquibase", "liquibase-core"));
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-services"));
+        indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("com.fasterxml.jackson.jakarta.rs", "jackson-jakarta-rs-yaml-provider"));
     }
 
     @BuildStep
