@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
@@ -353,9 +354,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     }
 
     private void assertNoCorsHeaders(CloseableHttpResponse response) {
-        assertTrue("Access-Control-Allow-Origin header should not be present",
-                response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN) == null);
-        assertTrue("Access-Control-Allow-Credentials header should not be present",
-                response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS) == null);
+        assertNull("Access-Control-Allow-Origin header should not be present", response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNull("Access-Control-Allow-Credentials header should not be present", response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS));
     }
 }
