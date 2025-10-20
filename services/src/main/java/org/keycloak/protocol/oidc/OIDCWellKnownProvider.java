@@ -27,6 +27,7 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
@@ -214,6 +215,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setMtlsEndpointAliases(mtlsEndpointAliases);
 
         config.setAuthorizationResponseIssParameterSupported(true);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) && realm.isVerifiableCredentialsEnabled()) {
+            config.setAuthorizationDetailsTypesSupported(List.of(OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE));
+        }
 
         config = checkConfigOverride(config);
         return config;
