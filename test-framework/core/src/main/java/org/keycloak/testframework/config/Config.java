@@ -53,11 +53,6 @@ public class Config {
             return null;
         }
     }
-    public static <T> T getValueTypeConfig(Class<?> valueType, String name, T defaultValue, Class<T> type) {
-        name = getValueTypeFQN(valueType, name);
-        Optional<T> optionalValue = config.getOptionalValue(name, type);
-        return optionalValue.orElse(defaultValue);
-    }
 
     public static String getValueTypeFQN(Class<?> valueType, String name) {
         return "kc.test." + valueTypeAlias.getAlias(valueType) + "." + name;

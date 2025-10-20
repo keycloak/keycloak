@@ -122,12 +122,43 @@ Valid values:
 | oracle   | Oracle test container                   |
 | postgres | PostgreSQL test container               |
 | tidb     | TiDb test container                     |
+| remote   | Connect to a remotely running database  |
 
 Configuration:
 
 | Value                                               | Description                                                                                                                                                                 |
 |-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `kc.test.database.reuse` / `KC_TEST_DATABASE_REUSE` | Set to true to enable reuse of database. Requires [enabling reuse for Testcontainers](https://java.testcontainers.org/features/reuse/) (`TESTCONTAINERS_REUSE_ENABLE=true`) |
+
+#### Remote Database
+
+If connecting to a remotely running database is desired, the following options need to be specified:
+
+Option prefix: `kc.test.database.` / `KC_TEST_DATABASE_`
+
+| Option                              | Description                                                         | Required? |
+|-------------------------------------|---------------------------------------------------------------------|-----------|
+| `vendor`/`VENDOR`                   | Database vendor (valid values mentioned above)                      | yes       |
+| `user`/`USER`                       | Username of the database user                                       | yes       |
+| `password`/`PASSWORD`               | Password of the database user                                       | yes       |
+| `url`/`URL`                         | Full database JDBC URL                                              | yes       |
+| `driver`/`DRIVER`                   | Fully qualified class name of the JDBC driver                       | no        |
+| `driver.artifact`/`DRIVER_ARTIFACT` | Maven artifact containing the driver in format `groupId:artifactId` | no        |
+
+Because some databases may require a special driver, you can specify it to the Keycloak server. To use it, Keycloak needs
+to add it as a dependency, which is why you need to specify the Maven artifact coordinates.
+
+For example, you want to run tests with an Oracle database which needs a specific jdbc driver. You would run:
+```shell
+KC_TEST_DATABASE=remote \
+  KC_TEST_DATABASE_VENDOR=oracle \
+  KC_TEST_DATABASE_USER=testUser \
+  KC_TEST_DATABASE_PASSWORD=password \
+  KC_TEST_DATABASE_URL=jdbc:oracle:thin:@localhost:1521/keycloak \
+  KC_TEST_DATABASE_DRIVER=oracle.jdbc.OracleDriver \
+  KC_TEST_DATABASE_DRIVER_ARTIFACT=com.oracle.database.jdbc:ojdbc17 \
+  mvn test
+```
 
 ### Browser
 
