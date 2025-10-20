@@ -30,6 +30,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
         enableTls = keycloakServerConfigBuilder.tlsEnabled();
+
         keycloak = new RawKeycloakDistribution(false, MANUAL_STOP, false, RE_CREATE, REMOVE_BUILD_OPTIONS_AFTER_BUILD, REQUEST_PORT, new LoggingOutputConsumer());
 
         // RawKeycloakDistribution sets "DEBUG_SUSPEND", not "DEBUG" when debug is passed to constructor
@@ -71,7 +72,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
         }
     }
 
-    @Override
     public boolean isTlsEnabled() {
         return enableTls;
     }

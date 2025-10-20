@@ -91,34 +91,31 @@ public class KeycloakServerConfigBuilder {
     }
 
     public KeycloakServerConfigBuilder option(String key, String value) {
-        options.put(key, value);
+        this.options.put(key, value);
         return this;
     }
 
     public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
-        dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
+        this.dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
         return this;
     }
 
     public KeycloakServerConfigBuilder tlsEnabled(boolean enabled) {
-        tlsEnabled = enabled;
+        this.tlsEnabled = enabled;
         return this;
     }
 
-    public boolean tlsEnabled() {
-        return tlsEnabled ;
+    boolean tlsEnabled() {
+        return this.tlsEnabled ;
     }
 
-
-    public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
+    public KeycloakServerConfigBuilder cacheConfigFile(String filePath) {
         try {
-            Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
-            configFiles.add(p);
-            option("cache-config-file", p.getFileName().toString());
+            Path cacheFilePath = Paths.get(Objects.requireNonNull(KeycloakServerConfigBuilder.class.getResource(filePath)).toURI());
+            option("cache-config-file", cacheFilePath.getFileName().toString());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-
         return this;
     }
 

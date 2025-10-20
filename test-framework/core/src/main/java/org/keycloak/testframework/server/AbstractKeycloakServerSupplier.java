@@ -51,8 +51,14 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
 
         if (command.tlsEnabled()) {
             ManagedCertificates managedCert = instanceContext.getDependency(ManagedCertificates.class);
+            command.option("https-key-store-type", managedCert.getKeystoreType());
             command.option("https-key-store-file", managedCert.getKeycloakServerKeyStorePath());
             command.option("https-key-store-password", managedCert.getKeycloakServerKeyStorePassword());
+            command.option("https-trust-store-type", managedCert.getKeystoreType());
+            command.option("https-trust-store-file", managedCert.getClientsTrustStorePath());
+            command.option("https-trust-store-password", managedCert.getClientsTrustStorePassword());
+            command.option("spi-truststore-file-file", managedCert.getClientsTrustStorePath());
+            command.option("spi-truststore-file-password", managedCert.getClientsTrustStorePassword());
         }
 
         command.log().fromConfig(Config.getConfig());

@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.tests.admin;
 
-import org.junit.Test;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Version;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.Attributes;
@@ -25,24 +27,32 @@ import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.KeystoreUtils;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.https.InjectCertificates;
+import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.tests.utils.Assert;
 
-import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ServerInfoTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class ServerInfoTest {
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectCertificates
+    ManagedCertificates certificates;
+
+    private static final Logger LOGGER = Logger.getLogger(ServerInfoTest.class);
 
     @Test
     public void testServerInfo() {
@@ -56,10 +66,10 @@ public class ServerInfoTest extends AbstractKeycloakTest {
 
         assertNotNull(info.getThemes());
         assertNotNull(info.getThemes().get("account"));
-        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v3", "custom-account-provider");
+        Assert.assertNames(info.getThemes().get("account"), "base", "keycloak.v3");
         Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
-        Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak", "keycloak.v2", "organization", "themeconfig");
+        Assert.assertNames(info.getThemes().get("login"), "base", "keycloak", "keycloak.v2");
         Assert.assertNames(info.getThemes().get("welcome"), "keycloak");
 
         assertNotNull(info.getEnums());
@@ -67,7 +77,7 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getMemoryInfo());
         assertNotNull(info.getSystemInfo());
         assertNotNull(info.getCryptoInfo());
-        Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), KeystoreUtils.getSupportedKeystoreTypes());
+        Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), certificates.getSupportedKeystoreTypes());
         Assert.assertNames(info.getCryptoInfo().getClientSignatureSymmetricAlgorithms(), Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
         Assert.assertNames(info.getCryptoInfo().getClientSignatureAsymmetricAlgorithms(),
                 Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
@@ -83,7 +93,8 @@ public class ServerInfoTest extends AbstractKeycloakTest {
                 .stream()
                 .filter(configProp -> Attributes.KEY_SIZE_KEY.equals(configProp.getName()))
                 .findFirst().orElseThrow(() -> new RuntimeException("Not found provider with ID 'rsa-generated'"));
-        Assert.assertNames(keySizeRep.getOptions(), KeyUtils.getExpectedSupportedRsaKeySizes());
+
+        Assert.assertNames(keySizeRep.getOptions(), certificates.getSupportedKeySizes());
 
         assertEquals(Version.VERSION, info.getSystemInfo().getVersion());
         assertNotNull(info.getSystemInfo().getServerTime());
@@ -91,10 +102,6 @@ public class ServerInfoTest extends AbstractKeycloakTest {
 
         Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
         ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
-        log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        LOGGER.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo());
     }
 }

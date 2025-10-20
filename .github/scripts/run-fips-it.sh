@@ -8,8 +8,10 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 STRICT_OPTIONS=""
+TESTSUITE_NAME="FipsNonStrictTestSuite"
 if [ "$1" = "strict" ]; then
   STRICT_OPTIONS="-Dauth.server.fips.mode=strict -Dauth.server.supported.keystore.types=BCFKS -Dauth.server.keystore.type=bcfks -Dauth.server.supported.rsa.key.sizes=2048,3072,4096"
+  TESTSUITE_NAME="FipsStrictTestSuite"
 fi
 echo "STRICT_OPTIONS: $STRICT_OPTIONS"
 TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
@@ -37,3 +39,6 @@ fi
 
 # Profile app-server-wildfly needs to be explicitly set for FIPS tests
 ./mvnw test -Dsurefire.rerunFailingTestsCount=$SUREFIRE_RERUN_FAILING_COUNT -nsu -B -Pauth-server-quarkus,auth-server-fips140-2,app-server-wildfly -Dcom.redhat.fips=false $STRICT_OPTIONS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+# New Base Tests
+./mvnw package -nsu -B -Dcom.redhat.fips=false -Dtest=$TESTSUITE_NAME -pl tests/base

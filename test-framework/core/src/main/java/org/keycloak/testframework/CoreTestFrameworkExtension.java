@@ -3,6 +3,7 @@ package org.keycloak.testframework;
 import org.keycloak.testframework.admin.AdminClientFactorySupplier;
 import org.keycloak.testframework.admin.AdminClientSupplier;
 import org.keycloak.testframework.http.SimpleHttpSupplier;
+import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.infinispan.InfinispanExternalServerSupplier;
 import org.keycloak.testframework.database.DevFileDatabaseSupplier;
 import org.keycloak.testframework.database.DevMemDatabaseSupplier;
@@ -57,7 +58,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
     public Map<Class<?>, String> valueTypeAliases() {
         return Map.of(
                 KeycloakServer.class, "server",
-                TestDatabase.class, "database"
+                TestDatabase.class, "database",
+                ManagedCertificates.class, "certificates"
         );
     }
 
