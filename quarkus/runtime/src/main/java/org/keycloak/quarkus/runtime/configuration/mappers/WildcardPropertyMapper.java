@@ -20,8 +20,8 @@ import io.smallrye.config.ConfigValue;
 import static org.keycloak.config.WildcardOptionsUtil.WILDCARD_END;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardNamedKey;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
-import static org.keycloak.config.WildcardOptionsUtil.isExternalWildcardOption;
 import static org.keycloak.config.WildcardOptionsUtil.isWildcardOption;
+import static org.keycloak.config.WildcardOptionsUtil.isKcWildcardOption;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
 
@@ -43,7 +43,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null, null);
         this.wildcardMapFrom = wildcardMapFrom;
 
-        if (!isWildcardOption(getFrom())) {
+        if (!isKcWildcardOption(getFrom())) {
             throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
         }
         this.fromPrefix = getWildcardPrefix(getFrom());
@@ -56,7 +56,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
             if (!getTo().startsWith(NS_QUARKUS_PREFIX) && !getTo().startsWith(NS_KEYCLOAK_PREFIX)) {
                 throw new IllegalArgumentException("Wildcards should map to Quarkus or Keycloak options (option '%s' mapped to '%s'). If not, PropertyMappers logic will need adjusted".formatted(option.getKey(), getTo()));
             }
-            if (!isExternalWildcardOption(getTo())) {
+            if (!isWildcardOption(getTo())) {
                 throw new IllegalArgumentException("Invalid wildcard map to.");
             }
             this.toPrefix = getWildcardPrefix(getTo());
@@ -93,7 +93,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         String from = getFrom(wildcardValue);
         String mapFrom = getMapFrom();
         // resolve even the mapFrom() value
-        if (isWildcardOption(mapFrom)) {
+        if (isKcWildcardOption(mapFrom)) {
             mapFrom = getWildcardNamedKey(mapFrom, wildcardValue);
         }
 
@@ -106,7 +106,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      */
     public Set<String> getConnectedOptions(String key) {
         return option.getConnectedOptions().stream()
-                .map(option -> isWildcardOption(option) ? getWildcardNamedKey(option, key) : option)
+                .map(option -> isKcWildcardOption(option) ? getWildcardNamedKey(option, key) : option)
                 .collect(Collectors.toSet());
     }
 

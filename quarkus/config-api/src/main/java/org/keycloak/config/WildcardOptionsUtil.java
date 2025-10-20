@@ -24,44 +24,44 @@ public class WildcardOptionsUtil {
      * <p>
      * Examples:
      * <pre>{@code
-     * isWildcardOption("tracing-header-<header>")      → "true"
-     * isWildcardOption("tracing-header-<headxxx")      → "false"
-     * isWildcardOption("tracing-header-headxxx>")      → "false"
-     * isWildcardOption("db-kind-<datasource>")         → "true"
-     * isWildcardOption("http-port")                    → "false"
-     * isWildcardOption("quarkus.<sth>.end")            → "false"
+     * isKcWildcardOption("tracing-header-<header>")      → "true"
+     * isKcWildcardOption("tracing-header-<headxxx")      → "false"
+     * isKcWildcardOption("tracing-header-headxxx>")      → "false"
+     * isKcWildcardOption("db-kind-<datasource>")         → "true"
+     * isKcWildcardOption("http-port")                    → "false"
+     * isKcWildcardOption("quarkus.<sth>.end")            → "false"
      * }</pre>
      *
      * @param key the configuration key to check
      * @return {@code true} if the key represents a Keycloak wildcard option
      */
-    public static boolean isWildcardOption(String key) {
+        public static boolean isKcWildcardOption(String key) {
         return key != null && key.contains(WILDCARD_START) && key.endsWith(WILDCARD_END);
     }
 
     /**
-     * Determines whether the given configuration key represents an external wildcard option (variable segment does not have to be at the end)
+     * Determines whether the given configuration key represents a wildcard option (contains variable segment)
      * <p>
      * Examples:
      * <pre>{@code
-     * isExternalWildcardOption("tracing-header-<header>")      → "true"
-     * isExternalWildcardOption("tracing-header-<headxxx")      → "false"
-     * isExternalWildcardOption("tracing-header-headxxx>")      → "false"
-     * isExternalWildcardOption("db-kind-<datasource>")         → "true"
-     * isExternalWildcardOption("http-port")                    → "false"
-     * isExternalWildcardOption("quarkus.<sth>.end")            → "true"
+     * isWildcardOption("tracing-header-<header>")      → "true"
+     * isWildcardOption("tracing-header-<headxxx")      → "false"
+     * isWildcardOption("tracing-header-headxxx>")      → "false"
+     * isWildcardOption("db-kind-<datasource>")         → "true"
+     * isWildcardOption("http-port")                    → "false"
+     * isWildcardOption("quarkus.<sth>.end")            → "true"
      * }</pre>
      *
      * @param key the configuration key to check
-     * @return {@code true} if the key represents an external wildcard option
+     * @return {@code true} if the key represents a wildcard option
      */
-    public static boolean isExternalWildcardOption(String key) {
+    public static boolean isWildcardOption(String key) {
         return key != null && key.contains(WILDCARD_START) && key.contains(WILDCARD_END);
     }
 
     /**
      * Extracts the prefix part of a wildcard key.
-     * You should always check the presence of the wildcard via the {@link #isWildcardOption(String)}.
+     * You should always check the presence of the wildcard via the {@link #isKcWildcardOption(String)}.
      * <p>
      * Examples:
      * <pre>{@code
@@ -73,12 +73,12 @@ public class WildcardOptionsUtil {
      * @return the prefix before the wildcard marker, otherwise {@code null}
      */
     public static String getWildcardPrefix(String wildcardKey) {
-        return wildcardKey != null ? wildcardKey.substring(0, wildcardKey.indexOf(WILDCARD_START)) : null;
+        return wildcardKey != null && wildcardKey.contains(WILDCARD_START) ? wildcardKey.substring(0, wildcardKey.indexOf(WILDCARD_START)) : null;
     }
 
     /**
      * Generates a concrete configuration key by replacing the wildcard placeholder with a specific value.
-     * You should always check the presence of the wildcard via the {@link #isWildcardOption(String)}.
+     * You should always check the presence of the wildcard via the {@link #isKcWildcardOption(String)}.
      * <p>
      * Examples:
      * <pre>{@code
@@ -100,22 +100,22 @@ public class WildcardOptionsUtil {
      * <p>
      * Examples:
      * <pre>{@code
-     * getWildcardName(TracingOptions.TRACING_HEADER, "tracing-header-Authorization") → "Authorization"
-     * getWildcardName(DatabaseOptions.DB_ENABLE, "db-enable-my-store") → "my-store"
-     * getWildcardName(DatabaseOptions.DB_ENABLE, "kc.db-enable-my-store") → "my-store"
+     * getWildcardValue(TracingOptions.TRACING_HEADER, "tracing-header-Authorization") → "Authorization"
+     * getWildcardValue(DatabaseOptions.DB_ENABLED_DATASOURCE, "db-enabled-my-store") → "my-store"
+     * getWildcardValue(DatabaseOptions.DB_ENABLED_DATASOURCE, "kc.db-enabled-my-store") → "my-store"
      * }</pre>
      *
      * @param option   the option containing a wildcard key
      * @param namedKey the fully qualified (resolved) configuration key
      * @return the part of {@code namedKey} that replaces the wildcard in {@code option.getKey()}, otherwise {@code null}
      */
-    public static String getWildcardName(Option<?> option, String namedKey) {
+    public static String getWildcardValue(Option<?> option, String namedKey) {
         if (option == null || namedKey == null) {
             return null;
         }
 
         String key = namedKey.startsWith("kc.") ? namedKey.substring("kc.".length()) : namedKey;
         String prefix = getWildcardPrefix(option.getKey());
-        return key.substring(prefix.length());
+        return prefix != null && key.startsWith(prefix) ? key.substring(prefix.length()) : null;
     }
 }
