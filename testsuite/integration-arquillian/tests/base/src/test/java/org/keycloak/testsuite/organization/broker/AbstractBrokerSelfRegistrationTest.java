@@ -227,7 +227,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         driver.navigate().refresh();
 
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
