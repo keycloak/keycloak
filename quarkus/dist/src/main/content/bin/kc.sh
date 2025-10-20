@@ -172,7 +172,7 @@ if [ "$PRINT_ENV" = "true" ]; then
 fi
 
 # trap the signals that should be forwarded to the java process
-trap 'status=143; while [ -z "$PID" ]; do sleep 1; done; kill -TERM $PID; wait $pid' TERM INT
+trap 'status=143; while [ -z "$PID" ]; do sleep 0.1; done; kill -TERM $PID; wait $PID' TERM INT
 # run the java process in the background using the current stdin
 eval "{ '$JAVA' $JAVA_RUN_OPTS <&3 3<&- & } 3<&0"
 # obtain the pid, and await the exit status
