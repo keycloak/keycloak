@@ -9,6 +9,9 @@ public class SuiteSupport {
     private static SuiteConfig suiteConfig = new SuiteConfig();
 
     public static SuiteConfig startSuite() {
+        if (suiteConfig == null) {
+            suiteConfig = new SuiteConfig();
+        }
         return suiteConfig;
     }
 
@@ -22,7 +25,12 @@ public class SuiteSupport {
     public static class SuiteConfig {
 
         public SuiteConfig registerServerConfig(Class<? extends KeycloakServerConfig> serverConfig) {
-            SuiteConfigSource.set("kc.test.server.config", serverConfig.getName());
+            registerSupplierConfig("server", serverConfig);
+            return this;
+        }
+
+        public SuiteConfig registerSupplierConfig(String supplierValueType, Class<?> supplierConfig) {
+            SuiteConfigSource.set("kc.test." + supplierValueType + ".config", supplierConfig.getName());
             return this;
         }
 

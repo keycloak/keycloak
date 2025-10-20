@@ -23,7 +23,9 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         enableTls = keycloakServerConfigBuilder.tlsEnabled();
 
         for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
-            builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
+            if (!dependency.getGroupId().equals("org.bouncycastle")) {
+                builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
+            }
         }
 
         Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
