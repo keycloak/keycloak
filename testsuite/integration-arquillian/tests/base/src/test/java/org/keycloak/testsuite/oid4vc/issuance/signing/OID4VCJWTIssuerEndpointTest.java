@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
