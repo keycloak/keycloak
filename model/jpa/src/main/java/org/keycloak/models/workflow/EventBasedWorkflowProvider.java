@@ -1,8 +1,8 @@
 package org.keycloak.models.workflow;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_RESET_ON;
 
 import java.util.List;
 
@@ -65,7 +65,7 @@ public class EventBasedWorkflowProvider implements WorkflowProvider {
 
     @Override
     public boolean resetOnEvent(WorkflowEvent event) {
-        return isResetEvent(event) && evaluate(event);
+        return isCancelIfRunning() && evaluate(event);
     }
 
     @Override
@@ -111,9 +111,7 @@ public class EventBasedWorkflowProvider implements WorkflowProvider {
         return manager;
     }
 
-    protected boolean isResetEvent(WorkflowEvent event) {
-        return model.getConfig()
-                .getOrDefault(CONFIG_RESET_ON, List.of())
-                .contains(event.getOperation().name());
+    protected boolean isCancelIfRunning() {
+       return Boolean.parseBoolean(model.getConfig().getFirstOrDefault(CONFIG_CANCEL_IF_RUNNING, "false"));
     }
 }

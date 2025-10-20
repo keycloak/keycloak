@@ -12,6 +12,7 @@ public class Guide {
     private boolean tileVisible = true;
     private Path root;
     private Path path;
+    private int levelOffset = 1;
 
     public static String toId(String path) {
         return path.replace("/", "-").replace("\\", "-").replace(".adoc", "");
@@ -79,5 +80,13 @@ public class Guide {
 
     public void setPath(Path path) {
         this.path = path;
+    }
+
+    public int getLevelOffset() {
+        return levelOffset;
+    }
+
+    public void setLevelOffset(int levelOffset) {
+        this.levelOffset = levelOffset;
     }
 }

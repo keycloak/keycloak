@@ -148,6 +148,8 @@ public class Profile {
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */
