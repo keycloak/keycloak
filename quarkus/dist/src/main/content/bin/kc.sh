@@ -171,8 +171,14 @@ if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-eval "'$JAVA'" "$JAVA_RUN_OPTS"
-status=$?
+# trap the signals that should be forwarded to the java process
+trap 'status=143; while [ -z "$PID" ]; do sleep 0.1; done; kill -TERM $PID; wait $PID' TERM INT
+# run the java process in the background using the current stdin
+eval "{ '$JAVA' $JAVA_RUN_OPTS <&3 3<&- & } 3<&0"
+# obtain the pid, and await the exit status
+PID=$!; wait $PID; status=$?
+# remove the trap as signals can be directly handled
+trap - TERM INT
 # only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed 
 if [ $status = 10 ]; then
   JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
