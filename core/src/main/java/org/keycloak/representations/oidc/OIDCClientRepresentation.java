@@ -18,6 +18,7 @@
 package org.keycloak.representations.oidc;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class OIDCClientRepresentation {
 
     // OIDC Dynamic client registration properties
