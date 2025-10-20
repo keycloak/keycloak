@@ -1,14 +1,14 @@
 const SESSION_POLLING_INTERVAL = 2000;
 const AUTH_SESSION_TIMEOUT_MILLISECS = 1000;
 const initialSession = getSession();
-const forms = Array.from(document.forms);
 let timeout;
 
 // Stop polling for a session when a form is submitted to prevent unexpected redirects.
 // This is required as Safari does not support the 'beforeunload' event properly.
 // See: https://bugs.webkit.org/show_bug.cgi?id=219102
-forms.forEach((form) =>
-  form.addEventListener("submit", () => stopSessionPolling()),
+document.addEventListener("DOMContentLoaded", () =>
+  Array.from(document.forms).forEach((form) =>
+    form.addEventListener("submit", () => stopSessionPolling()))
 );
 
 // Stop polling for a session when the page is unloaded to prevent unexpected redirects.
