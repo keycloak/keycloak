@@ -219,7 +219,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
 
                     if (disableTruststoreProvider) {
-                        logger.warn("TruststoreProvider is disabled");
+                    	logger.warn("TruststoreProvider is disabled");
                     } else {
                         builder.hostnameVerification(truststoreProvider.getPolicy());
                         try {
@@ -230,8 +230,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     }
 
                     if (disableTrustManager) {
-                        logger.warn("TrustManager is disabled");
-                    builder.disableTrustManager();
+                    	logger.warn("TrustManager is disabled");
+                    	builder.disableTrustManager();
                     }
 
                     if (clientKeystore != null) {
