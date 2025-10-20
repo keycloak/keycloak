@@ -76,8 +76,8 @@ For more details, follow the [`quarkus` module documentation](../quarkus/README.
 ---
 **NOTE**
 
-Direct use of the quarkus-run jar assumes manual control over the augmentation process. 
-If you want to run Keycloak with changes to build time options it is easier to either use the full distribution and the relevant bin/kc script or run an embedded server via the org.keycloak.Keycloak class in the quarkus/tests/junit5 module.
+Direct use of the `quarkus-run.jar` assumes manual control over the augmentation process. 
+If you want to run Keycloak with changes to build time options it is easier to either use the full distribution and the relevant `bin/kc.[sh|bat]` script or run an embedded server via the `org.keycloak.Keycloak` class in the `quarkus/tests/junit5` module.
 
 ---
 
