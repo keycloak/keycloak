@@ -17,6 +17,10 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
+    <!-- These indexes IDX_OFFLINE_CSS_BY_CLIENT and IDX_OFFLINE_CSS_BY_CLIENT_STORAGE_PROVIDER are used to retrieve
+    sessions by client and to count sessions by client. They are also used to remove client sessions for no-longer
+    existing clients from the table. -->
+
     <changeSet author="keycloak" id="26.5.0-index-offline-css-by-client">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_CLIENT" />
