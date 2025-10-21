@@ -1,30 +1,18 @@
 package org.keycloak.broker.spiffe;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.AbstractJWTClientValidator;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
-import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
-import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.nio.charset.StandardCharsets;
 
@@ -40,7 +28,7 @@ import java.nio.charset.StandardCharsets;
  * <li>Keys are fetched from a SPIFFE bundle endpoint, where the JWKS has additional SPIFFE specific fields (<code>spiffe_sequence</code> and <code>spiffe_refresh_hint</code>, the JWK does not set the <code>alg></code></li>
  * </ul>
  */
-public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityProviderConfig>, ClientAssertionIdentityProvider {
+public class SpiffeIdentityProvider implements ClientAssertionIdentityProvider<SpiffeIdentityProviderConfig> {
 
     private static final Logger LOGGER = Logger.getLogger(SpiffeIdentityProvider.class);
 
@@ -103,58 +91,4 @@ public class SpiffeIdentityProvider implements IdentityProvider<SpiffeIdentityPr
     public void close() {
     }
 
-    @Override
-    public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Response performLogin(AuthenticationRequest request) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Response export(UriInfo uriInfo, RealmModel realm, String format) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IdentityProviderDataMarshaller getMarshaller() {
-        throw new UnsupportedOperationException();
-    }
 }
