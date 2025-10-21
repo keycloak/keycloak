@@ -137,7 +137,7 @@ if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
     if [ -z "$DEBUG_OPT" ]; then
         # Handle no port
-        if ! echo "$DEBUG_ADDRESS" | grep -Eq '(^[0-9]+)|(:[0-9]+)$'; then
+        if ! echo "$DEBUG_ADDRESS" | grep -Eq '((^[0-9]+)|(:[0-9]+))$'; then
            DEBUG_ADDRESS="$DEBUG_ADDRESS:8787"
         fi
         JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_ADDRESS,server=y,suspend=$DEBUG_SUSPEND"
