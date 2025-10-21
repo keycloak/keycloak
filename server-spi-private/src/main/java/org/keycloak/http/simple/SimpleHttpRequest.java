@@ -30,6 +30,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -201,6 +202,7 @@ public class SimpleHttpRequest {
             case PUT -> new HttpPut(appendParameterToUrl(url));
             case PATCH -> new HttpPatch(appendParameterToUrl(url));
             case POST -> new HttpPost(url);
+            case OPTIONS -> new HttpOptions(url);
         };
     }
 

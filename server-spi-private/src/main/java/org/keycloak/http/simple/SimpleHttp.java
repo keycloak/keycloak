@@ -66,4 +66,6 @@ public class SimpleHttp {
         return doRequest(url, SimpleHttpMethod.PATCH);
     }
 
+    public SimpleHttpRequest doOptions(String url) { return doRequest(url, SimpleHttpMethod.OPTIONS); }
+
 }

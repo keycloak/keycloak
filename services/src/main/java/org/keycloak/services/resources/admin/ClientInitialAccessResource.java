@@ -102,7 +102,7 @@ public class ClientInitialAccessResource {
 
         ClientInitialAccessPresentation rep = wrap(clientInitialAccessModel);
 
-        String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, clientInitialAccessModel);
+        String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, clientInitialAccessModel, config.getWebOrigins());
         rep.setToken(token);
 
         HttpResponse response = session.getContext().getHttpResponse();
