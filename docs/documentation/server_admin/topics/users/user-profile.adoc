@@ -154,7 +154,7 @@ Name::
 The name of the attribute, used to uniquely identify an attribute.
 
 Display name::
-A user-friendly name for the attribute, mainly used when rendering user-facing forms. It also supports link:#_using-internationalized-messages[Using Internationalized Messages]
+A user-friendly name for the attribute, mainly used when rendering user-facing forms. It also supports <<_using-internationalized-messages,Using Internationalized Messages>>.
 
 Multivalued::
 If enabled, the attribute supports multiple values and UIs are rendered accordingly to allow setting many values. When enabling this
@@ -192,11 +192,11 @@ The `Who can view` setting mark an attribute as read-only by `User` and/or `Admi
 Validation::
 In this section, you can define the validations that will be performed when managing the attribute value.
 {project_name} provides a set of built-in validators you can choose from with the possibility to add your own. For more details, look at
-the link:#_validating-attributes[Validating Attributes] section.
+the <<_validating-attributes,Validating Attributes>> section.
 
 Annotation::
 In this section, you can associate annotations to the attribute. Annotations are mainly useful to pass over additional metadata to frontends for rendering purposes.
-For more details, look at the link:#_defining-ui-annotations[Defining UI Annotations] section.
+For more details, look at the <<_defining-ui-annotations,Defining UI Annotations>> section.
 
 When you create an attribute, the attribute is only available from administrative contexts to avoid unexpectedly exposing attributes to end-users.
 Effectively, the attribute won't be accessible to end-users when they are managing their profile through the end-user contexts. You can change the `Permissions` settings anytime accordingly
@@ -324,7 +324,7 @@ In order to pass additional information to frontends, attributes can be decorate
 annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes
 to render pages dynamically based on the annotations associated with attributes.
 
-Annotations are used, for example, for link:#_changing-the-html-type-for-an-attribute[Changing the HTML `type` for an Attribute] and link:#_changing-the-dom-representation-of-an-attribute[Changing the DOM representation of an Attribute], as you will
+Annotations are used, for example, for <<_changing-the-html-type-for-an-attribute,Changing the HTML `type` for an Attribute>> and <<_changing-the-dom-representation-of-an-attribute,Changing the DOM representation of an Attribute>>, as you will
 see in the following sections.
 
 .Attribute Annotation
@@ -360,13 +360,13 @@ Text is NOT html escaped when rendered into the page, so you can use html tags h
 Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.
 
 |inputOptionsFromValidation
-|Annotation for select and multiselect types. Optional name of custom attribute validation to get input options from. See link:#_managing_options_for_select_fields[detailed description] below.
+|Annotation for select and multiselect types. Optional name of custom attribute validation to get input options from. See the <<_managing_options_for_select_fields,detailed description>> below.
 
 |inputOptionLabelsI18nPrefix
-|Annotation for select and multiselect types. Internationalization key prefix to render options in UI. See link:#_managing_options_for_select_fields[detailed description] below.
+|Annotation for select and multiselect types. Internationalization key prefix to render options in UI. See the <<_managing_options_for_select_fields,detailed description>> below.
 
 |inputOptionLabels
-|Annotation for select and multiselect types. Optional map to define UI labels for options (directly or using internationalization). See link:#_managing_options_for_select_fields[detailed description] below.
+|Annotation for select and multiselect types. Optional map to define UI labels for options (directly or using internationalization). See the <<_managing_options_for_select_fields,detailed description>> below.
 
 |inputTypePlaceholder
 |HTML input `placeholder` attribute applied to the field - specifies a short hint that describes the expected value of an input field (e.g. a sample value
@@ -445,19 +445,19 @@ You can change the `type` of a HTML5 input element by setting the `inputType` an
 |textarea
 
 |select
-|Common single select input. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|Common single select input. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
 |select
 
 |select-radiobuttons
-|Single select input through group of radio buttons. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|Single select input through group of radio buttons. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
 |group of input
 
 |multiselect
-|Common multiselect input. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|Common multiselect input. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
 |select
 
 |multiselect-checkboxes
-|Multiselect input through group of checkboxes. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|Multiselect input through group of checkboxes. See the <<_managing_options_for_select_fields,description of how to configure options>> below.
 |group of input
 
 |html5-email
@@ -672,10 +672,10 @@ Name::
 The name of the attribute, used to uniquely identify an attribute.
 
 Display name::
-A user-friendly name for the attribute, mainly used when rendering user-facing forms. It also supports link:#_using-internationalized-messages[Using Internationalized Messages]
+A user-friendly name for the attribute, mainly used when rendering user-facing forms. It also supports <<_using-internationalized-messages,Using Internationalized Messages>>.
 
 Display description::
-A user-friendly text that will be displayed as a tooltip when rendering user-facing forms. It also supports link:#_using-internationalized-messages[Using Internationalized Messages]
+A user-friendly text that will be displayed as a tooltip when rendering user-facing forms. It also supports <<_using-internationalized-messages,Using Internationalized Messages>>.
 
 Annotation::
 In this section, you can associate annotations to the attribute. Annotations are mainly useful to pass over additional metadata to frontends for rendering purposes.
@@ -737,7 +737,7 @@ The JSON schema is defined as follows:
 The schema supports as many attributes and groups as you need.
 
 The `unmanagedAttributePolicy` property defines the unmanaged attribute policy by setting one of following values. For more details,
-look at the link:#_understanding-managed-and-unmanaged-attributes[Understanding Managed and Unmanaged Attributes].
+look at the <<_understanding-managed-and-unmanaged-attributes,Understanding Managed and Unmanaged Attributes>>.
 
 * `DISABLED`
 * `ENABLED`

@@ -167,7 +167,7 @@ From this section, you can manage the permissions for realm resources.
 The *Permissions* tab provides an overview of all active permissions within a realm. From here, administrators can create,
 update, delete, or search for permissions. You can also pre-evaluate the permissions you have created to check
 if they are enforcing access to realm resources as expected.
-For more details, see link:#_managing-permissions[Evaluating Permissions].
+For more details, see <<_evaluating-permissions,Evaluating Permissions>>.
 
 To create a permission, click on the `Create permission` button and select the resource type you want to protect.
 
@@ -328,7 +328,7 @@ multiple resource types (such as both users and groups), they must have all the 
 
 These roles enable basic access to query resources but do not grant permission to view or modify them. To grant or deny access
 to realm resources you need to set up the permissions for any of the operations available from each resource type.
-For more details, see link:#_managing-permissions[Managing Permissions].
+For more details, see <<_managing-permissions,Managing Permissions>>.
 
 ===== Roles and Permission relationship
 
