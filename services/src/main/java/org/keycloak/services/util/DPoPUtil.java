@@ -210,7 +210,7 @@ public class DPoPUtil {
                 DPoPClaimsCheck.INSTANCE,
                 new DPoPHTTPCheck(uri, method),
                 new DPoPIsActiveCheck(session, lifetime, clockSkew),
-                new DPoPReplayCheck(session, lifetime));
+                new DPoPReplayCheck(session, lifetime + clockSkew));
 
         if (accessToken != null) {
             verifier.withChecks(new DPoPAccessTokenHashCheck(accessToken));
