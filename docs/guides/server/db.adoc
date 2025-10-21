@@ -29,6 +29,8 @@ The server has built-in support for different databases. You can query the avail
 |Azure SQL Managed Instance | `mssql` | latest | latest
 |===
 
+NOTE: It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown.
+
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
