@@ -177,7 +177,7 @@ To support basic TLS termination (edge) deployments by the operator, you may now
 Some {project_name} use cases like User Federation might require connecting to additional databases.
 This was possible only through specifying unsupported raw Quarkus properties in previous {project_name} versions. In this release, there are now dedicated server options for additional datasources. This allows users to leverage additional databases in their extensions in a supported and user-friendly way.
 
-Read more about it in the link:https://www.keycloak.org/server/db#configure-multiple-datasources[Configure multiple datasources] guide.
+Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
 
 = Observability
 
@@ -194,7 +194,7 @@ this by setting `spec.serviceMonitor.enabled: false`. For more details, see the 
 {project_name} supports HTTP access logging to record details of incoming HTTP requests.
 While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring.
 
-For more information, see https://www.keycloak.org/server/logging[Configuring logging].
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring logging].
 
 == Showing context information in log messages (preview)
 
@@ -204,5 +204,5 @@ ifeval::[{project_community}==true]
 Thank you to https://github.com/eicki[Björn Eickvonder] for contributing this.
 endif::[]
 
-For more details on this opt-in feature, see https://www.keycloak.org/server/logging[Configuring logging].
+For more details on this opt-in feature, see https://www.keycloak.org/server/logging#mdc[Configuring logging].
 
