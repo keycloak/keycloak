@@ -15,7 +15,6 @@ Prerequisites:
 Files:
 - `azure_common.sh` - shared defaults and environment checks
 - `azure_create.sh` - create resource group, server, database and DB user using Azure CLI + sqlcmd
-- `azure_delete.sh` - delete the resource group (removes server and DB)
 - `azure_vm_cli.sh` - CLI wrapper to create/delete Azure VM and produce inventory via Ansible
 
 Common files shared with EC2 automation:
