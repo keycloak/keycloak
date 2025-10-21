@@ -250,9 +250,9 @@ public class ClientResource {
 
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
-        ClientScopeRepresentation clientRepresentation = new ClientScopeRepresentation();
+        ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setId(client.getId());
-        clientRepresentation.setName(client.getName());
+        clientRepresentation.setClientId(client.getClientId());
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, auth.adminAuth()));

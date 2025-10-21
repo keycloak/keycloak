@@ -166,7 +166,7 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
         GroupRepresentation groupRepresentation = new GroupRepresentation();
         groupRepresentation.setId(group.getId());
-        groupRepresentation.setId(group.getName());
+        groupRepresentation.setName(group.getName());
 
         realm.removeGroup(group);
         adminEvent.operation(OperationType.DELETE).representation(groupRepresentation).resourcePath(session.getContext().getUri()).success();
