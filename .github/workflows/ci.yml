@@ -611,13 +611,12 @@ jobs:
           AZURE_CLUSTER_NAME="gh-action-$(git rev-parse --short HEAD)-${{ github.run_id }}-${{ github.run_attempt }}"
           echo "azure-cluster-name=${AZURE_CLUSTER_NAME}" >> $GITHUB_OUTPUT
           echo "region=${AZURE_REGION}" >> $GITHUB_OUTPUT
-          echo "azure-subscription=${AZURE_SUBSCRIPTION}" >> $GITHUB_OUTPUT
 
           PROPS=''
           echo "maven_properties=${PROPS}" >> $GITHUB_OUTPUT
 
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -627,9 +626,11 @@ jobs:
         with:
           name: ${{ steps.azure-init.outputs.azure-cluster-name }}
           region: ${{ steps.azure-init.outputs.region }}
-          subscription: ${{ steps.azure-init.outputs.azure-subscription }}
+          subscription: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           admin-password: ${{ secrets.AZURE_ADMIN_PASSWORD }}
+          admin-user: ${{ secrets.AZURE_ADMIN_USER }}
           db-password: ${{ secrets.AZURE_DB_PASSWORD }}
+          db-user: ${{ secrets.AZURE_DB_USER }}
         env:
           AZURE_RG: ${{ steps.azure-init.outputs.azure-cluster-name }}
 
@@ -659,7 +660,7 @@ jobs:
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
           
           cd .github/scripts/ansible
-          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ steps.azure-create.outputs.password }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
+          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ secrets.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
 
       - name: Run Azure migration tests on VM
         id: azure-migration-tests
@@ -670,7 +671,7 @@ jobs:
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
 
           cd .github/scripts/ansible
-          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-mssql-azure -Pauth-server-migration -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ steps.azure-create.outputs.password }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers -Dtest=MigrationTest -Dmigration.mode=auto -Dmigrated.auth.server.version=${{ env.old-version }} -Dmigration.import.file.name=migration-realm-${{ env.old-version }}.json -Dauth.server.ssl.required=false -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh'
+          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-mssql-azure -Pauth-server-migration -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ secrets.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers -Dtest=MigrationTest -Dmigration.mode=auto -Dmigrated.auth.server.version=${{ env.old-version }} -Dmigration.import.file.name=migration-realm-${{ env.old-version }}.json -Dauth.server.ssl.required=false -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh'
 
           # Copy returned surefire-report directories to workspace root to ensure they're discovered
           results=(files/keycloak/results/*)
@@ -685,7 +686,7 @@ jobs:
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
           
           cd .github/scripts/ansible
-          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ steps.azure-create.outputs.password }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
+          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ secrets.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
 
       - name: Run Azure integration tests on VM
         id: azure-integration-tests
@@ -699,7 +700,7 @@ jobs:
           echo "Tests: $TESTS"
 
           cd .github/scripts/ansible
-          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-mssql-azure -DskipQuarkus=true -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.password=\"${{ steps.azure-create.outputs.password }}\" -Dkeycloak.connectionsJpa.url=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false\" -Dkeycloak.connectionsJpa.jdbcParameters=\"?encrypt=true&trustServerCertificate=false\" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers -Dtest=$TESTS -Dmaven.build.cache.enabled=true -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh"
+          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "test -B ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-mssql-azure -DskipQuarkus=true -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.password=\"${{ secrets.AZURE_DB_PASSWORD }}\" -Dkeycloak.connectionsJpa.url=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false\" -Dkeycloak.connectionsJpa.jdbcParameters=\"?encrypt=true&trustServerCertificate=false\" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers -Dtest=$TESTS -Dmaven.build.cache.enabled=true -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh"
 
           # Copy returned surefire-report directories to workspace root to ensure they're discovered
           results=(files/keycloak/results/*)

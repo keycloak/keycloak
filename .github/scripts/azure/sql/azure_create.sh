@@ -8,7 +8,7 @@ fi
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${SCRIPT_DIR}/azure_common.sh
 
-requiredEnv AZURE_SUBSCRIPTION
+requiredEnv AZURE_SUBSCRIPTION AZURE_ADMIN_USER AZURE_DB_USER
 
 # Login is expected to be done by the workflow via az login with service principal
 
@@ -62,4 +62,3 @@ sqlcmd -S ${ENDPOINT} -U "${ADMIN_USER_FULL}" -P "${AZURE_ADMIN_PASSWORD}" -d ${
 echo "endpoint=${ENDPOINT}" >> $GITHUB_OUTPUT
 echo "db=${AZURE_DB}" >> $GITHUB_OUTPUT
 echo "username=${AZURE_DB_USER}@${AZURE_NAME}-sqlsrv" >> $GITHUB_OUTPUT
-echo "password=${AZURE_DB_PASSWORD}" >> $GITHUB_OUTPUT

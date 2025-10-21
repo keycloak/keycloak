@@ -13,10 +13,16 @@ inputs:
     required: true
   admin-password:
     description: 'The admin password for the SQL server'
-    required: false
+    required: true
+  admin-user:
+    description: 'The admin username for the SQL server'
+    required: true
   db-password:
     description: 'The password for the keycloak DB user'
-    required: false
+    required: true
+  db-user:
+    description: 'The db username for the Keycloak DB'
+    required: true
 
 outputs:
   endpoint:
@@ -28,9 +34,6 @@ outputs:
   username:
     description: 'DB user principal'
     value: ${{ steps.create.outputs.username }}
-  password:
-    description: 'DB password'
-    value: ${{ steps.create.outputs.password }}
 
 runs:
   using: "composite"
@@ -56,4 +59,6 @@ runs:
         AZURE_REGION: ${{ inputs.region }}
         AZURE_SUBSCRIPTION: ${{ inputs.subscription }}
         AZURE_ADMIN_PASSWORD: ${{ inputs.admin-password }}
+        AZURE_ADMIN_USER: ${{ inputs.admin-user }}
         AZURE_DB_PASSWORD: ${{ inputs.db-password }}
+        AZURE_DB_USER: ${{ inputs.db-user }}
