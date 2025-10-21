@@ -122,7 +122,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     /**
      * This is just for legacy setups which expect an unencoded, non-RFC6749 compliant client secret send from Keycloak to an IdP.
      */
-    @Deprecated(since = "26.5")
+    @Deprecated(since = "26.5", forRemoval = true)
     public static final String CLIENT_SECRET_BASIC_UNENCODED = "client_secret_basic_unencoded";
 
     // https://tools.ietf.org/html/rfc7636#section-4.3
