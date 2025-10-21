@@ -37,6 +37,7 @@ jobs:
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
       ci-webauthn: ${{ steps.conditional.outputs.ci-webauthn }}
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
+      ci-azure: ${{ steps.azure-tests.outputs.run-azure-tests }}
       ci-compatibility-matrix: ${{ steps.version-compatibility.outputs.matrix }}
       ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
       ci-admin-v2: ${{ steps.conditional.outputs.admin-v2 }}
@@ -59,6 +60,15 @@ jobs:
             RUN_AURORADB_TESTS=true
           fi
           echo "run-aurora-tests=$RUN_AURORADB_TESTS" >> $GITHUB_OUTPUT
+
+      - name: Azure conditional check
+        id: azure-tests
+        run: |
+          RUN_AZURE_TESTS=false
+          if [[ $GITHUB_EVENT_NAME != "pull_request" && -n "${{ secrets.AZURE_CREDENTIALS }}" && -n "${{ secrets.AZURE_SUBSCRIPTION_ID }}" ]]; then
+            RUN_AZURE_TESTS=true
+          fi
+          echo "run-azure-tests=$RUN_AZURE_TESTS" >> $GITHUB_OUTPUT
 
       - name: Additional DBs conditional check
         id: additional-dbs-tests
@@ -587,7 +597,7 @@ jobs:
   azure-integration-tests:
     name: AzureDB IT
     needs: conditional
-    if: needs.conditional.outputs.ci == 'true'
+    if: needs.conditional.outputs.ci-azure == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     permissions:
