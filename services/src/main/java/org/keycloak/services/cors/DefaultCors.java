@@ -20,8 +20,10 @@ package org.keycloak.services.cors;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 
 import org.jboss.logging.Logger;
@@ -51,6 +53,7 @@ public class DefaultCors implements Cors {
 
     private boolean preflight;
     private boolean auth;
+    private boolean failOnInvalidOrigin;
 
     DefaultCors(KeycloakSession session) {
         this.session = session;
@@ -73,6 +76,12 @@ public class DefaultCors implements Cors {
     @Override
     public Cors auth() {
         auth = true;
+        return this;
+    }
+
+    @Override
+    public Cors failOnInvalidOrigin() {
+        failOnInvalidOrigin = true;
         return this;
     }
 
@@ -102,6 +111,24 @@ public class DefaultCors implements Cors {
     public Cors allowedOrigins(String... allowedOrigins) {
         if (allowedOrigins != null && allowedOrigins.length > 0) {
             this.allowedOrigins = new HashSet<>(Arrays.asList(allowedOrigins));
+        }
+        return this;
+    }
+
+    @Override
+    public Cors allowedOrigins(List<String> allowedOrigins) {
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            this.allowedOrigins = new HashSet<>(allowedOrigins);
+        }
+        return this;
+    }
+
+    @Override
+    public Cors addAllowedOrigins(List<String> allowedOrigins) {
+        if (this.allowedOrigins == null) {
+            this.allowedOrigins = new HashSet<>(allowedOrigins);
+        } else {
+            this.allowedOrigins.addAll(allowedOrigins);
         }
         return this;
     }
@@ -144,6 +171,11 @@ public class DefaultCors implements Cors {
             if (!origin.equals(requestOrigin) && logger.isDebugEnabled()) {
                 logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
             }
+
+            if (failOnInvalidOrigin) {
+                throw new ForbiddenException("Invalid origin");
+            }
+
             return;
         }
 

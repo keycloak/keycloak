@@ -74,6 +74,18 @@ If a client was created outside of the Client Registration Service it won't have
 You can create one through the admin console. This can also be useful if you lose the token for a particular client.
 To create a new token find the client in the admin console and click on `Credentials`. Then click on `Generate registration access token`.
 
+=== Cross-Origin Resource Sharing (CORS)
+
+In case when clients are registered through the user-agent it is required to configure what web origins are permitted
+for client registration.
+
+For bearer tokens the permitted web origin can be configured in the client the token was issued to. When creating an
+initial access token, the permitted web origins can be supplied directly.
+
+For anonymous access, or as a realm wide configuration, permitted web origins can be configured by going to
+clients, then client registration and updating the `Allowed Registration Web Origins` policy to list web origins
+that should be allowed.
+
 == {project_name} Representations
 
 The `default` client registration provider can be used to create, retrieve, update and delete a client.

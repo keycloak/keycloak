@@ -17,6 +17,7 @@
 
 package org.keycloak.services.cors;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Response;
@@ -60,6 +61,8 @@ public interface Cors extends Provider {
 
     Cors auth();
 
+    Cors failOnInvalidOrigin();
+
     Cors allowAllOrigins();
 
     Cors allowedOrigins(KeycloakSession session, ClientModel client);
@@ -67,6 +70,10 @@ public interface Cors extends Provider {
     Cors allowedOrigins(AccessToken token);
 
     Cors allowedOrigins(String... allowedOrigins);
+
+    Cors allowedOrigins(List<String> allowedOrigins);
+
+    Cors addAllowedOrigins(List<String> allowedOrigins);
 
     Cors allowedMethods(String... allowedMethods);
 
