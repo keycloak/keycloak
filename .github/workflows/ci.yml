@@ -645,7 +645,7 @@ jobs:
           tar -C ~/ -czvf m2.tar.gz .m2 || true
 
           cd .github/scripts/ansible
-          ./azure_vm_cli.sh create ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME}
+          ./azure_vm_manager.sh create ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME}
 
           ./keycloak_remote_installer.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} /tmp/keycloak.zip m2.tar.gz
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution -DskipProtoLock=true -Dmaven.build.cache.enabled=true"
@@ -717,7 +717,7 @@ jobs:
         if: always()
         working-directory: .github/scripts/ansible
         run: |
-          ./azure_vm_cli.sh delete ${{ steps.azure-init.outputs.region }} ${{ steps.azure-init.outputs.azure-cluster-name }}
+          ./azure_vm_manager.sh delete ${{ steps.azure-init.outputs.region }} ${{ steps.azure-init.outputs.azure-cluster-name }}
 
   store-integration-tests:
     name: Store IT

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./azure_vm_cli.sh <create|delete> <region> <cluster_name>
+# Usage: ./azure_vm_manager.sh <create|delete> <region> <cluster_name>
 ACTION=${1:-}
 REGION=${2:-}
 CLUSTER=${3:-}
@@ -17,7 +17,7 @@ VM_SIZE="Standard_D2s_v5"
 IMAGE="Ubuntu2404"
 
 if [[ "$ACTION" == "create" ]]; then
-  # 1. Resource group
+  # 1. Resource group (created via idempotent command)
   az group create --name "$CLUSTER" --location "$REGION"
 
   # 2. SSH key

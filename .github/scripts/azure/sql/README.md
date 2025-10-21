@@ -14,8 +14,8 @@ Prerequisites:
 
 Files:
 - `azure_common.sh` - shared defaults and environment checks
-- `azure_create.sh` - create resource group, server, database and DB user using Azure CLI + sqlcmd
-- `azure_vm_cli.sh` - CLI wrapper to create/delete Azure VM and produce inventory via Ansible
+- `azure_create_sql.sh` - create resource group, server, database and DB user using Azure CLI + sqlcmd
+- `azure_vm_manager.sh` - CLI wrapper to create/delete Azure VM and produce inventory via Ansible
 
 Common files shared with EC2 automation:
 - `mvn_remote_runner.sh` - runs the existing `mvn.yml` Ansible playbook against the created Azure or EC2 VM

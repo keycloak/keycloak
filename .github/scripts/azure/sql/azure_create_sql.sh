@@ -12,6 +12,7 @@ requiredEnv AZURE_SUBSCRIPTION AZURE_ADMIN_USER AZURE_DB_USER
 
 # Login is expected to be done by the workflow via az login with service principal
 
+# Resource group (created via idempotent command)
 echo "Creating resource group ${AZURE_RG} in ${AZURE_REGION}"
 az group create --name ${AZURE_RG} --location ${AZURE_REGION} --subscription ${AZURE_SUBSCRIPTION}
 

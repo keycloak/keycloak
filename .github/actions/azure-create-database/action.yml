@@ -52,7 +52,7 @@ runs:
     - id: create
       shell: bash
       run: |
-        ./azure_create.sh
+        ./azure_create_sql.sh
       working-directory: .github/scripts/azure/sql
       env:
         AZURE_NAME: ${{ inputs.name }}
