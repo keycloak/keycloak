@@ -41,7 +41,7 @@ SERVER_OPTS="$SERVER_OPTS -Dpicocli.disable.closures=true"
 SERVER_OPTS="$SERVER_OPTS -Dquarkus-log-max-startup-records=10000"
 CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 
-DEBUG_MODE="${KC_DEBUG_MODE:-${DEBUG:-false}}"
+DEBUG_MODE="${KC_DEBUG:-${DEBUG:-false}}"
 DEBUG_ADDRESS="${KC_DEBUG_PORT:-${DEBUG_PORT:-8787}}"
 DEBUG_SUSPEND="${KC_DEBUG_SUSPEND:-${DEBUG_SUSPEND:-n}}"
 
@@ -136,10 +136,6 @@ fi
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
     if [ -z "$DEBUG_OPT" ]; then
-        # Handle no port
-        if ! echo "$DEBUG_ADDRESS" | grep -Eq '((^[0-9]+)|(:[0-9]+))$'; then
-           DEBUG_ADDRESS="$DEBUG_ADDRESS:8787"
-        fi
         JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_ADDRESS,server=y,suspend=$DEBUG_SUSPEND"
     else
         echo "Debug already enabled in JAVA_OPTS, ignoring --debug argument"

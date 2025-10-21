@@ -156,11 +156,6 @@ rem Set debug settings if not already set
 if "%DEBUG_MODE%" == "true" (
     echo "%JAVA_OPTS%" | findstr /I "\-agentlib:jdwp" > nul
     if errorlevel == 1 (
-        rem Handle no port
-        (echo %2 | findstr /R "^[0-9][0-9]*" >nul || echo %2 | findstr /R ":[0-9][0-9]*$" >nul) && (
-        ) || (
-            set DEBUG_ADDRESS=%DEBUG_ADDRESS%:8787
-        )
         set JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_ADDRESS%,server=y,suspend=%DEBUG_SUSPEND_VAR%
     ) else (
         echo Debug already enabled in JAVA_OPTS, ignoring --debug argument
