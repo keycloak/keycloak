@@ -209,7 +209,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", clientUUID).executeUpdate();
         } else {
             em.createNamedQuery("deleteClientSessionsByExternalClient")
-                    .setParameter("clientId", PersistentClientSessionEntity.EXTERNAL)
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
                     .setParameter("externalClientId", clientStorageId.getExternalId())
                     .executeUpdate();
@@ -406,7 +405,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             query.setParameter("clientId", client.getId());
         } else {
             query = em.createNamedQuery("findClientSessionsByUserSessionAndExternalClient", PersistentClientSessionEntity.class);
-            query.setParameter("clientId", PersistentClientSessionEntity.EXTERNAL);
             query.setParameter("clientStorageProvider", clientStorageId.getProviderId());
             query.setParameter("externalClientId", clientStorageId.getExternalId());
         }
@@ -673,7 +671,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             query.setParameter("clientId", clientModel.getId());
         } else {
             query = em.createNamedQuery("findClientSessionsCountByExternalClient");
-            query.setParameter("clientId", PersistentClientSessionEntity.EXTERNAL);
             query.setParameter("clientStorageProvider", clientStorageId.getProviderId());
             query.setParameter("externalClientId", clientStorageId.getExternalId());
         }
