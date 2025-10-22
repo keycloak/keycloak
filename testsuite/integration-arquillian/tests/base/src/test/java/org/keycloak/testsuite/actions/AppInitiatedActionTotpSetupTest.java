@@ -587,7 +587,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
-        events.expectLogout(null).session(AssertEvents.isUUID()).assertEvent();
+        events.expectLogout(null).session(AssertEvents.isSessionId()).assertEvent();
 
         // test lookAheadWindow
         realmRep = adminClient.realm("test").toRepresentation();

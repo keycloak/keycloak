@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.managers;
+package org.keycloak.spi.infinispan.impl.embedded;
 
-/**
- * @param decodedId Decoded ID of authenticationSession WITHOUT route attached (EG.
- *                  "5e161e00-d426-4ea6-98e9-52eb9844e2d7")
- * @param encodedId Encoded ID of authenticationSession WITH route attached (EG.
- *                  "5e161e00-d426-4ea6-98e9-52eb9844e2d7.node1")
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-record AuthSessionId(String decodedId, String encodedId) {
+import org.infinispan.distribution.group.Grouper;
+import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
+
+public enum ClientSessionKeyGrouper implements Grouper<EmbeddedClientSessionKey> {
+
+    INSTANCE;
+
+    @Override
+    public Object computeGroup(EmbeddedClientSessionKey key, Object group) {
+        return key.userSessionId();
+    }
+
+    @Override
+    public Class<EmbeddedClientSessionKey> getKeyType() {
+        return EmbeddedClientSessionKey.class;
+    }
 }
