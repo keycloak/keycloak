@@ -24,8 +24,7 @@ package org.keycloak.common.util;
  */
 public class Base64Url {
     public static String encode(byte[] bytes) {
-        String s = Base64.encodeBytes(bytes);
-        return encodeBase64ToBase64Url(s);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     public static byte[] decode(String s) {
