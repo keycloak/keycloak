@@ -18,6 +18,8 @@
 package org.keycloak.common.util;
 
 
+import java.util.Base64;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -28,12 +30,7 @@ public class Base64Url {
     }
 
     public static byte[] decode(String s) {
-        s = encodeBase64UrlToBase64(s);
-        try {
-            return Base64.decode(s);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Base64.getUrlDecoder().decode(s);
     }
 
 

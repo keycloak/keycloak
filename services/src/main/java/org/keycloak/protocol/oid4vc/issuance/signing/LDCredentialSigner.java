@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -31,6 +30,7 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
 
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -95,7 +95,7 @@ public class LDCredentialSigner extends AbstractCredentialSigner<VerifiableCrede
         ldProof.setCreated(Date.from(Instant.ofEpochSecond(timeProvider.currentTimeSeconds())));
         ldProof.setVerificationMethod(keyId);
 
-        var proofValue = Base64Url.encode(signature);
+        var proofValue = Base64.getUrlEncoder().encodeToString(signature);
         ldProof.setProofValue(proofValue);
         verifiableCredential.setAdditionalProperties(PROOF_KEY, ldProof);
         return verifiableCredential;
