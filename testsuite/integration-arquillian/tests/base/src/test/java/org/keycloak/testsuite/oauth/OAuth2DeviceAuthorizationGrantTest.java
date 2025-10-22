@@ -491,7 +491,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     public void testPublicClientConsentWithoutScopes() throws Exception {
 
         ClientsResource clients = realmsResouce().realm(REALM_NAME).clients();
-        ClientRepresentation clientRep = clients.findByClientId(DEVICE_APP_WITHOUT_SCOPES).get(0);
+        ClientRepresentation clientRep = clients.findClientByClientId(DEVICE_APP_WITHOUT_SCOPES);
         ClientResource client =  clients.get(clientRep.getId());
 
         List<ClientScopeRepresentation> defaultClientScopes =  client.getDefaultClientScopes();

@@ -35,6 +35,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
@@ -90,7 +92,7 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         ClientResource clientResource = getClientResource();
         AuthorizationResource authorizationResource = clientResource.authorization();
         
-        ClientRepresentation account = testRealmResource().clients().findByClientId("account").get(0);
+        ClientRepresentation account = testRealmResource().clients().findClientByClientId("account");
         RoleRepresentation role = testRealmResource().clients().get(account.getId()).roles().get("view-profile").toRepresentation();
         
         PolicyRepresentation policy = new PolicyRepresentation();
@@ -159,8 +161,8 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
     }
     
     private ClientRepresentation getClientByClientId(String clientId) {
-        List<ClientRepresentation> findByClientId = testRealmResource().clients().findByClientId(clientId);
-        Assert.assertTrue(findByClientId.size() == 1);
-        return findByClientId.get(0);
+        ClientRepresentation findByClientId = testRealmResource().clients().findClientByClientId(clientId);
+        assertThat(findByClientId, notNullValue());
+        return findByClientId;
     }
 }

@@ -284,8 +284,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     public void loginWithExistingUserWithErrorFromProviderIdP() {
         ClientRepresentation client = adminClient.realm(bc.providerRealmName())
                 .clients()
-                .findByClientId(bc.getIDPClientIdInProviderRealm())
-                .get(0);
+                .findClientByClientId(bc.getIDPClientIdInProviderRealm());
 
         adminClient.realm(bc.providerRealmName())
                 .clients()

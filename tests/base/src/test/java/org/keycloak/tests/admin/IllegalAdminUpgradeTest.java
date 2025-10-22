@@ -131,7 +131,7 @@ public class IllegalAdminUpgradeTest {
         UserRepresentation realmUser = managedRealm.admin().users().search("user").get(0);
         UserRepresentation masterUser = masterRealm.admin().users().search("user").get(0);
 
-        ClientRepresentation realmAdminClient = managedRealm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation realmAdminClient = managedRealm.admin().clients().findClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
         RoleRepresentation realmManageAuthorization = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
         RoleRepresentation realmViewAuthorization = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
         RoleRepresentation realmManageClients = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.MANAGE_CLIENTS).toRepresentation();
@@ -150,7 +150,7 @@ public class IllegalAdminUpgradeTest {
         RoleRepresentation realmQueryGroups = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.QUERY_GROUPS).toRepresentation();
         RoleRepresentation realmAdmin = managedRealm.admin().clients().get(realmAdminClient.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
 
-        ClientRepresentation masterClient = masterRealm.admin().clients().findByClientId(REALM_NAME + "-realm").get(0);
+        ClientRepresentation masterClient = masterRealm.admin().clients().findClientByClientId(REALM_NAME + "-realm");
         RoleRepresentation masterManageAuthorization = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
         RoleRepresentation masterViewAuthorization = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
         RoleRepresentation masterManageClients = masterRealm.admin().clients().get(masterClient.getId()).roles().get(AdminRoles.MANAGE_CLIENTS).toRepresentation();

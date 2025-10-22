@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.Response;
@@ -210,7 +211,7 @@ public class AuthorizationTest extends AbstractAuthzTest {
 
     private ClientResource getClient() {
         ClientsResource clients = getRealm().clients();
-        return clients.findByClientId("resource-server-test").stream().map(representation -> clients.get(representation.getId())).findFirst().orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
+        return Optional.ofNullable(clients.findClientByClientId("resource-server-test")).map(representation -> clients.get(representation.getId())).orElseThrow(() -> new RuntimeException("Expected client [resource-server-test]"));
     }
 
     private AuthzClient getAuthzClient() {

@@ -59,9 +59,16 @@ public interface ClientsResource {
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults);
 
+    /** @deprecated use {@link #findClientByClientId(String)} */
+    @Deprecated
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
+
+    @GET
+    @Path("by-client-id")
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientRepresentation findClientByClientId(@QueryParam("clientId") String clientId);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

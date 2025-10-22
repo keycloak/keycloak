@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -517,7 +519,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         Map<String, String> clientSessions = userSessions.get(0).getClients();
 
         Set<String> clientIds = clientSessions.values().stream()
-          .flatMap(c -> clients.findByClientId(c).stream())
+          .flatMap(c -> Stream.ofNullable(clients.findClientByClientId(c)))
           .map(ClientRepresentation::getClientId)
           .collect(Collectors.toSet());
 

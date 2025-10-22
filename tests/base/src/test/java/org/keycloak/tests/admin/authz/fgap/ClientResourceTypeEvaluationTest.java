@@ -18,10 +18,12 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.fail;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
@@ -122,7 +124,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testManageOnlyOneClient() {
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient");
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
         ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myclient.getId());
@@ -198,30 +200,30 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
             Assertions.assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
         }
 
-        List<ClientRepresentation> found = realmAdminClient.realm(realm.getName()).clients().findAll();
-        assertThat(found, empty());
+        ClientRepresentation found = realmAdminClient.realm(realm.getName()).clients().findClientByClientId("newClient");
+        assertThat(found, notNullValue());
 
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
         createAllPermission(client, clientsType, onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
 
         // can create a new client
         realmAdminClient.realm(realm.getName()).clients().create(newClient).close();
-        found = realmAdminClient.realm(realm.getName()).clients().findByClientId("newClient");
-        assertThat(found, hasSize(1));
+        found = realmAdminClient.realm(realm.getName()).clients().findClientByClientId("newClient");
+        assertThat(found, notNullValue());
 
         // can delete
-        realmAdminClient.realm(realm.getName()).clients().get(found.get(0).getId()).remove();
-        found = realmAdminClient.realm(realm.getName()).clients().findByClientId("newClient");
-        assertThat(found, empty());
+        realmAdminClient.realm(realm.getName()).clients().get(found.getId()).remove();
+        found = realmAdminClient.realm(realm.getName()).clients().findClientByClientId("newClient");
+        assertThat(found, nullValue());
 
         // can list & view all clients
-        found = realmAdminClient.realm(realm.getName()).clients().findAll();
-        assertThat(found, not(empty()));
+        List <ClientRepresentation> findAllClients = realmAdminClient.realm(realm.getName()).clients().findAll();
+        assertThat(findAllClients, not(empty()));
     }
 
     @Test
     public void testViewAllClients() {
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient");
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
 
         // the following operations should fail as the permission wasn't granted yet
@@ -296,14 +298,14 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
             Assertions.assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
         }
 
-        found = realmAdminClient.realm(realm.getName()).clients().findByClientId(newClient.getClientId());
-        assertThat(found, not(empty()));
+        ClientRepresentation findClient = realmAdminClient.realm(realm.getName()).clients().findClientByClientId(newClient.getClientId());
+        assertThat(findClient, notNullValue());
     }
 
     @Test
     public void testMapRolesOnlyOneClient() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient");
 
         // create a role
         RoleRepresentation role = new RoleRepresentation();
@@ -333,7 +335,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
         // to add a client role ('myclient') 'roleA' as a composite role of 'roleB' (client role of 'realmClient' client)
         // it is required to have permission to manage the `realmClient` and to map-roles-composite of the `myclient`
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient");
 
         // create two roles, each for seprate client
         RoleRepresentation roleA = new RoleRepresentation();
@@ -375,7 +377,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testEvaluateAllResourcePermissionsForSpecificResourcePermission() {
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findClientByClientId("myclient");
         UserRepresentation adminUser = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowPolicy = createUserPolicy(realm, client, "Only My Admin", adminUser.getId());
         ScopePermissionRepresentation allResourcesPermission = createAllPermission(client, clientsType, allowPolicy, Set.of(MANAGE, MAP_ROLES));
@@ -428,7 +430,7 @@ public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testManageClientWithAuthorizationSettings() {
-        ClientRepresentation myResourceServer = realm.admin().clients().findByClientId("myresourceserver").get(0);
+        ClientRepresentation myResourceServer = realm.admin().clients().findClientByClientId("myresourceserver");
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         ClientResource clientResource = realmAdminClient.realm(realm.getName()).clients().get(myResourceServer.getId());
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());

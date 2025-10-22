@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -70,7 +71,7 @@ public class WelcomePageTest {
         var users = adminClient.realms().realm("master").users();
         users.searchByUsername(Config.getAdminUsername(), true).stream().findFirst().ifPresent(admin -> users.delete(admin.getId()));
         var clients = adminClient.realms().realm("master").clients();
-        clients.findByClientId(Config.getAdminClientId()).stream().findFirst().ifPresent(client -> clients.delete(client.getId()));
+        Optional.ofNullable(clients.findClientByClientId(Config.getAdminClientId())).ifPresent(c -> clients.delete(c.getId()));
 
         welcomePage.navigateTo();
 

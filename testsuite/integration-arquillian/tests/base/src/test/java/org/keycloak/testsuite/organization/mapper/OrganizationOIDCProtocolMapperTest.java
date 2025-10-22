@@ -144,7 +144,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     public void testOrganizationNotAddedByGroupMapper() throws Exception {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         addMember(organization);
-        ClientRepresentation client = testRealm().clients().findByClientId("direct-grant").get(0);
+        ClientRepresentation client = testRealm().clients().findClientByClientId("direct-grant");
         ClientResource clientResource = testRealm().clients().get(client.getId());
         clientResource.getProtocolMappers().createMapper(createGroupMapper()).close();
 
@@ -667,7 +667,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
-        ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientRepresentation client = testRealm().clients().findClientByClientId("broker-app");
         client.setId(null);
         client.setClientId("broker-app2");
         testRealm().clients().create(client).close();
@@ -707,7 +707,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     public void testReAuthenticationUserMemberOfSingleOrganizationUsingDifferentClient() {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
-        ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientRepresentation client = testRealm().clients().findClientByClientId("broker-app");
         client.setId(null);
         client.setClientId("broker-app2");
         testRealm().clients().create(client).close();
@@ -736,7 +736,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         testRealm().organizations().get(orgA.getId()).members().member(member.getId()).delete().close();
-        ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientRepresentation client = testRealm().clients().findClientByClientId("broker-app");
         client.setId(null);
         client.setClientId("broker-app2");
         testRealm().clients().create(client).close();
@@ -841,7 +841,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         orgScope.setName("org");
         String createdId = ApiUtil.getCreatedId(testRealm().clientScopes().create(orgScope));
         testRealm().addDefaultDefaultClientScope(createdId);
-        ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientRepresentation client = testRealm().clients().findClientByClientId("broker-app");
         testRealm().clients().get(client.getId()).addDefaultClientScope(createdId);
         getCleanup().addCleanup(() -> testRealm().clientScopes().get(createdId).remove());
 
@@ -885,7 +885,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         orgScope.setName("org");
         String createdId = ApiUtil.getCreatedId(testRealm().clientScopes().create(orgScope));
         testRealm().addDefaultDefaultClientScope(createdId);
-        ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientRepresentation client = testRealm().clients().findClientByClientId("broker-app");
         testRealm().clients().get(client.getId()).addDefaultClientScope(createdId);
         getCleanup().addCleanup(() -> testRealm().clientScopes().get(createdId).remove());
 
@@ -915,7 +915,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         MemberRepresentation member = addMember(orgA, "member@" + orgARep.getDomains().iterator().next().getName());
         orgA.members().member(member.getId()).delete().close();
 
-        ClientRepresentation clientRep = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientRepresentation clientRep = testRealm().clients().findClientByClientId("broker-app");
         ClientResource client = testRealm().clients().get(clientRep.getId());
         ClientScopeRepresentation orgScopeRep = client.getOptionalClientScopes().stream().filter(scope -> "organization".equals(scope.getName())).findAny().orElse(null);
         client.removeOptionalClientScope(orgScopeRep.getId());
@@ -962,7 +962,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         OrganizationRepresentation orgB = createOrganization("orgb", true);
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
 
-        ClientRepresentation clientRep = testRealm().clients().findByClientId("broker-app").get(0);
+        ClientRepresentation clientRep = testRealm().clients().findClientByClientId("broker-app");
         ClientResource client = testRealm().clients().get(clientRep.getId());
         ClientScopeRepresentation orgScopeRep = client.getOptionalClientScopes().stream().filter(scope -> "organization".equals(scope.getName())).findAny().orElse(null);
         orgScopeRep.setAttributes(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "false"));

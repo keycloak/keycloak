@@ -16,6 +16,7 @@ import org.keycloak.testsuite.utils.io.IOUtil;
 import org.w3c.dom.Document;
 
 import java.io.InputStream;
+import java.util.Optional;
 
 public class SamlUtils {
     public static SamlDeployment getSamlDeploymentForClient(String client) throws ParsingException {
@@ -41,7 +42,7 @@ public class SamlUtils {
     }
 
     public static SPSSODescriptorType getSPInstallationDescriptor(ClientsResource res, String clientId) throws ParsingException {
-        String spDescriptorString = res.findByClientId(clientId).stream().findFirst()
+        String spDescriptorString = Optional.ofNullable(res.findClientByClientId(clientId))
                 .map(ClientRepresentation::getId)
                 .map(res::get)
                 .map(clientResource -> clientResource.getInstallationProvider(SamlSPDescriptorClientInstallation.SAML_CLIENT_INSTALATION_SP_DESCRIPTOR))

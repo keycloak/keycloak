@@ -106,7 +106,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         testContext.getTestRealmReps().forEach(realmRepresentation -> {
             Keycloak adminClient = getAdminClient();
             ClientsResource clients = adminClient.realm(realmRepresentation.getRealm()).clients();
-            ClientRepresentation client = clients.findByClientId("resource-server-test").get(0);
+            ClientRepresentation client = clients.findClientByClientId("resource-server-test");
 
             client.setAuthorizationServicesEnabled(false);
 
@@ -219,7 +219,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
     private void testReusingAccessAndRefreshTokens(int expectedUserSessionsCount) throws Exception {
         ClientsResource clients = getAdminClient().realm("authz-test-session").clients();
-        ClientRepresentation clientRepresentation = clients.findByClientId("resource-server-test").get(0);
+        ClientRepresentation clientRepresentation = clients.findClientByClientId("resource-server-test");
         List<UserSessionRepresentation> userSessions = clients.get(clientRepresentation.getId()).getUserSessions(-1, -1);
 
         assertEquals(0, userSessions.size());
@@ -243,7 +243,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     @Test
     public void testPermissionWhenResourceServerIsCurrentUser() throws Exception {
         ClientsResource clients = getAdminClient().realm("authz-test-session").clients();
-        ClientRepresentation clientRepresentation = clients.findByClientId("resource-server-test").get(0);
+        ClientRepresentation clientRepresentation = clients.findClientByClientId("resource-server-test");
         List<UserSessionRepresentation> userSessions = clients.get(clientRepresentation.getId()).getUserSessions(-1, -1);
 
         assertEquals(0, userSessions.size());
@@ -260,7 +260,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     @Test
     public void testSingleSessionPerUser() throws Exception {
         ClientsResource clients = getAdminClient().realm("authz-test-session").clients();
-        ClientRepresentation clientRepresentation = clients.findByClientId("resource-server-test").get(0);
+        ClientRepresentation clientRepresentation = clients.findClientByClientId("resource-server-test");
         List<UserSessionRepresentation> userSessions = clients.get(clientRepresentation.getId()).getUserSessions(-1, -1);
 
         assertEquals(0, userSessions.size());

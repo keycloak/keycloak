@@ -144,7 +144,7 @@ public class PartialImportClientTest extends AbstractPartialImportTest {
     public void testOverwriteExistingClientWithRoles() {
         setOverwrite();
 
-        ClientRepresentation client = masterRealm.admin().clients().findByClientId("broker").get(0);
+        ClientRepresentation client = masterRealm.admin().clients().findClientByClientId("broker");
         List<RoleRepresentation> clientRoles = masterRealm.admin().clients().get(client.getId()).roles().list();
 
         Map<String, List<RoleRepresentation>> clients = new HashMap<>();
@@ -163,8 +163,8 @@ public class PartialImportClientTest extends AbstractPartialImportTest {
     @Test
     public void testOverwriteExistingInternalClient() {
         setOverwrite();
-        ClientRepresentation client = masterRealm.admin().clients().findByClientId("security-admin-console").get(0);
-        ClientRepresentation client2 = masterRealm.admin().clients().findByClientId("master-realm").get(0);
+        ClientRepresentation client = masterRealm.admin().clients().findClientByClientId("security-admin-console");
+        ClientRepresentation client2 = masterRealm.admin().clients().findClientByClientId("master-realm");
         piRep.setClients(Arrays.asList(client, client2));
 
         PartialImportResults result = doImport();
@@ -178,7 +178,7 @@ public class PartialImportClientTest extends AbstractPartialImportTest {
 
         Assertions.assertEquals(1, doImport().getOverwritten());
 
-        ClientRepresentation client = managedRealm.admin().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0);
+        ClientRepresentation client = managedRealm.admin().clients().findClientByClientId(CLIENT_SERVICE_ACCOUNT);
         Assertions.assertDoesNotThrow(() -> managedRealm.admin().clients().get(client.getId()).getServiceAccountUser());
     }
 }

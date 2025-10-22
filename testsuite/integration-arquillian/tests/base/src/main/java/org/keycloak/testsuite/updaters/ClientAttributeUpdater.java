@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Updater for client attributes. See {@link ServerResourceUpdater} for further details.
@@ -34,9 +34,9 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
     public static ClientAttributeUpdater forClient(Keycloak adminClient, String realm, String clientId) {
         RealmResource realmRes = adminClient.realm(realm);
         ClientsResource clients = realmRes.clients();
-        List<ClientRepresentation> foundClients = clients.findByClientId(clientId);
-        assertThat(foundClients, hasSize(1));
-        ClientResource clientRes = clients.get(foundClients.get(0).getId());
+        ClientRepresentation foundClient = clients.findClientByClientId(clientId);
+        assertThat(foundClient, notNullValue());
+        ClientResource clientRes = clients.get(foundClient.getId());
         
         return new ClientAttributeUpdater(clientRes, realmRes);
     }

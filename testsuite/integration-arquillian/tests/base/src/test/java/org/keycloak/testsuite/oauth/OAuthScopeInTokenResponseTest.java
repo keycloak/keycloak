@@ -80,7 +80,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         String clientSecret = "password";
 
         ClientsResource clients = realmsResouce().realm("test").clients();
-        ClientRepresentation clientRep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation clientRep = clients.findClientByClientId(oauth.getClientId());
         ClientResource client = clients.get(clientRep.getId());
         List<ClientScopeRepresentation> scopes = client.getDefaultClientScopes();
 
@@ -124,7 +124,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         String loginPassword = "password";
 
         ClientsResource clients = realmsResouce().realm("test").clients();
-        ClientRepresentation clientRep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientRepresentation clientRep = clients.findClientByClientId(oauth.getClientId());
         clientRep.setDirectAccessGrantsEnabled(true);
         ClientResource client = clients.get(clientRep.getId());
         client.update(clientRep);

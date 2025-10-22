@@ -67,6 +67,7 @@ import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
@@ -314,11 +315,11 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
      * @return Login URL
      */
     protected String getLoginUrl(String contextRoot, String realmName, String clientId) {
-        List<ClientRepresentation> clients = adminClient.realm(realmName).clients().findByClientId(clientId);
+        ClientRepresentation client = adminClient.realm(realmName).clients().findClientByClientId(clientId);
 
-        assertThat(clients, Matchers.is(Matchers.not(Matchers.empty())));
+        assertNotNull(client);
 
-        String redirectURI = clients.get(0).getBaseUrl();
+        String redirectURI = client.getBaseUrl();
         if (redirectURI.startsWith("/")) {
             redirectURI = contextRoot + "/auth" + redirectURI;
         }

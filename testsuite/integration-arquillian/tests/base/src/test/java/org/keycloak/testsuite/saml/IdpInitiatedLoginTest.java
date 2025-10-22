@@ -34,6 +34,7 @@ import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -79,7 +80,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
     public void testIdpInitiatedLoginPostAdminUrl() throws IOException {
-        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+        String url = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST)
                 .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
         try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
                 .setAdminUrl(url)
@@ -103,7 +104,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
     public void testIdpInitiatedLoginRedirect() throws IOException {
-        String url = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+        String url = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST)
                 .getAttributes().get(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
         try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
                 .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, null)
@@ -164,8 +165,9 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
         Map<String, String> clientSessions = userSessions.get(0).getClients();
 
         Set<String> clientIds = clientSessions.values().stream()
-          .flatMap(c -> clients.findByClientId(c).stream())
-          .map(ClientRepresentation::getClientId)
+          .map(c -> Optional.ofNullable(clients.findClientByClientId(c)))
+                .flatMap(Optional::stream)
+                .map(ClientRepresentation::getClientId)
           .collect(Collectors.toSet());
 
         assertThat(clientIds, containsInAnyOrder(SAML_CLIENT_ID_SALES_POST, SAML_CLIENT_ID_SALES_POST2));
@@ -174,7 +176,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
 
     @Test
     public void testIdpInitiatedLoginWithOIDCClient() {
-        ClientRepresentation clientRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
+        ClientRepresentation clientRep = adminClient.realm(REALM_NAME).clients().findClientByClientId(SAML_CLIENT_ID_SALES_POST);
         adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.edit(clientRep)
                 .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
 

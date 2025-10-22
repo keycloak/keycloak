@@ -127,7 +127,7 @@ public class JsonUserAttributeMapperTest extends AbstractIdentityProviderMapperT
 
     private void updateClaimSentToIDP(String claim, String updatedValue) {
         ProtocolMapperRepresentation claimMapper = null;
-        final ClientRepresentation brokerClient = adminClient.realm(bc.providerRealmName()).clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
+        final ClientRepresentation brokerClient = adminClient.realm(bc.providerRealmName()).clients().findClientByClientId(BrokerTestConstants.CLIENT_ID);
         ProtocolMappersResource protocolMappers = adminClient.realm(bc.providerRealmName()).clients().get(brokerClient.getId()).getProtocolMappers();
         for (ProtocolMapperRepresentation representation : protocolMappers.getMappers()) {
             if (representation.getProtocolMapper().equals(HardcodedClaim.PROVIDER_ID)) {

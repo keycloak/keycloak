@@ -207,7 +207,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailSuccessWithAccountClientDisabled() throws IOException {
-        ClientRepresentation clientRepresentation = managedRealm.admin().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation clientRepresentation = managedRealm.admin().clients().findClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         clientRepresentation.setEnabled(false);
         managedRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(clientRepresentation.getId()), clientRepresentation, ResourceType.CLIENT);

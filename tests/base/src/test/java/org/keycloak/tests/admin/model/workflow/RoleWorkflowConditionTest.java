@@ -13,6 +13,7 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RolesResource;
@@ -168,20 +169,20 @@ public class RoleWorkflowConditionTest {
             String[] parts = roleName.split("/");
             String clientId = parts[0];
             String clientRoleName = parts[1];
-            List<ClientRepresentation> clients = managedRealm.admin().clients().findByClientId(clientId);
+            ClientRepresentation client = managedRealm.admin().clients().findClientByClientId(clientId);
 
-            if (clients.isEmpty()) {
-                ClientRepresentation client = new ClientRepresentation();
-                client.setClientId(clientId);
-                client.setName(clientId);
-                client.setProtocol("openid-connect");
-                managedRealm.admin().clients().create(client).close();
-                clients = managedRealm.admin().clients().findByClientId(clientId);
+            if (client == null){
+                ClientRepresentation newClient = new ClientRepresentation();
+                newClient.setClientId(clientId);
+                newClient.setName(clientId);
+                newClient.setProtocol("openid-connect");
+                managedRealm.admin().clients().create(newClient).close();
+                client = managedRealm.admin().clients().findClientByClientId(clientId);
             }
 
-            assertThat(clients.isEmpty(), is(false));
+           Assert.assertNotNull(client);
 
-            RolesResource roles = managedRealm.admin().clients().get(clients.get(0).getId()).roles();
+            RolesResource roles = managedRealm.admin().clients().get(client.getId()).roles();
 
             if (roles.list(clientRoleName, -1, -1).isEmpty()) {
                 roles.create(RoleConfigBuilder.create()
