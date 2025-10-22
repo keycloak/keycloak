@@ -35,10 +35,10 @@ if NOT "x%KC_DEBUG%" == "x" (
 )
 
 if NOT "x%KC_DEBUG_PORT%" == "x" (
-    set DEBUG_ADDRESS=!KC_DEBUG_PORT!
+    set DEBUG_ADDRESS=%KC_DEBUG_PORT%
 ) else (
     if NOT "x%DEBUG_PORT%" == "x" (
-        set DEBUG_ADDRESS=!DEBUG_PORT!
+        set DEBUG_ADDRESS=%DEBUG_PORT%
     )
 )
 
@@ -58,15 +58,12 @@ if "%KEY%" == "" (
 )
 if "%KEY%" == "--debug" (
     set DEBUG_MODE=true
-    (echo %2 | findstr /R "^[0-9][0-9]*$" >nul || echo %2 | findstr /R "^[0-9].*\." >nul || echo %2 | findstr /R "^\[.*:.*\]" >nul) && (
-        set DEBUG_ADDRESS=%2
-        shift
+    if NOT "x%~2" == "x" (
+        echo %~2 | findstr /R "^[0-9[]" >nul && (
+            set DEBUG_ADDRESS=%~2
+            shift
+        )
     )
-    shift
-    goto READ-ARGS
-)
-if "%KEY%" == "start-dev" (
-    set CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY%
     shift
     goto READ-ARGS
 )
