@@ -1,0 +1,56 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="File logging"
+summary="Store logs into a file"
+tileVisible="false"
+levelOffset=2 >
+
+As an alternative to logging to the console, you can use structured/unstructured logging to a file stored in the filesystem.
+The more specific file handler configuration mentioned below will only take effect when the file logging is enabled.
+
+== Enable file logging
+Logging to a file is disabled by default. To enable it, enter the following command:
+
+<@kc.start parameters="--log=\"console,file\""/>
+
+A log file named `keycloak.log` is created inside the `data/log` directory of your {project_name} installation.
+
+== Configuring the location and name of the log file
+
+To change where the log file is created and the file name, perform these steps:
+
+. Create a writable directory to store the log file.
++
+If the directory is not writable, {project_name} starts correctly, but it issues an error and no log file is created.
+
+. Enter this command:
++
+<@kc.start parameters="--log=\"console,file\" --log-file=<path-to>/<your-file.log>"/>
+
+== Configuring the file handler format
+To configure a different logging format for the file log handler, enter the following command:
+
+<@kc.start parameters="--log-file-format=\"<pattern>\""/>
+
+See <<Configuring the console log format>> for more information and a table of the available pattern configuration.
+
+== Configuring the file log level
+Log level for file log handler can be specified by `--log-file-level` property as follows:
+
+<@kc.start parameters="--log-file-level=warn"/>
+
+For more information, see <<Specify log level for each handler>>.
+
+<@opts.printRelevantOptions includedOptions="log-file-*" excludedOptions="log-file-async*">
+
+== Asynchronous
+<@opts.includeOptions includedOptions="log-file-async*"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

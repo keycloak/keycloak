@@ -57,23 +57,22 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     @Override
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
-        if (myUpdates == null) {
-            // Lookup entity from cache
-            SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-            if (wrappedEntity == null) {
-                logger.tracef("Not present cache item for key %s", key);
-                return;
-            }
-
-            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
-
-            myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-            updates.put(key, myUpdates);
+        if (myUpdates != null) {
+            myUpdates.addAndExecute(task);
+            return;
         }
+        lookupAndAndExecuteTask(key, task);
+    }
 
-        // Run the update now, so reader in same transaction can see it (TODO: Rollback may not work correctly. See if it's an issue..)
-        task.runUpdate(myUpdates.getEntityWrapper().getEntity());
-        myUpdates.add(task);
+    @Override
+    public void restartEntity(K key, SessionUpdateTask<V> restartTask) {
+        SessionUpdatesList<V> myUpdates = updates.get(key);
+        if (myUpdates != null) {
+            myUpdates.getUpdateTasks().clear();
+            myUpdates.addAndExecute(restartTask);
+            return;
+        }
+        lookupAndAndExecuteTask(key, restartTask);
     }
 
 
@@ -90,8 +89,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
         if (task != null) {
             // Run the update now, so reader in same transaction can see it
-            task.runUpdate(entity);
-            myUpdates.add(task);
+            myUpdates.addAndExecute(task);
         }
     }
 
@@ -268,4 +266,20 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         allSessions.forEach((key, wrapper) -> updates.put(key, new SessionUpdatesList<>(realmModel, wrapper)));
     }
 
+    private void lookupAndAndExecuteTask(K key, SessionUpdateTask<V> task) {
+        // Lookup entity from cache
+        SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
+        if (wrappedEntity == null) {
+            logger.tracef("Not present cache item for key %s", key);
+            return;
+        }
+
+        RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
+
+        SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
+        updates.put(key, myUpdates);
+
+        // Run the update now, so reader in same transaction can see it (TODO: Rollback may not work correctly. See if it's an issue..)
+        myUpdates.addAndExecute(task);
+    }
 }

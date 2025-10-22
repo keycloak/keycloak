@@ -48,13 +48,13 @@
     "@patternfly/react-icons": "^5.4.2",
     "@patternfly/react-styles": "^5.4.1",
     "@patternfly/react-table": "^5.4.16",
-    "i18next": "^25.5.3",
+    "i18next": "^25.6.0",
     "keycloak-js": "^26.2.0",
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "7.63.0",
-    "react-i18next": "^16.0.0"
+    "react-i18next": "^16.0.1"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",
@@ -62,10 +62,21 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^4.1.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^7.1.7",
-    "vite-plugin-checker": "^0.10.3",
+    "vite": "^7.1.10",
+    "vite-plugin-checker": "^0.11.0",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-lib-inject-css": "^2.2.2",
     "vitest": "^3.2.4"
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/libs/ui-shared"
+  },
+  "homepage": "https://www.keycloak.org/"
 }

@@ -17,10 +17,15 @@
 
 package org.keycloak.tests.admin.client;
 
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.utils.matchers.Matchers;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -36,9 +41,12 @@ public class ClientSearchTest extends AbstractClientSearchTest {
         search(String.format("%s:%s %s:%s", ATTR_ORG_NAME, "wrong val", ATTR_URL_NAME, ATTR_URL_VAL));
         search(String.format("%s:%s", ATTR_QUOTES_NAME_ESCAPED, ATTR_QUOTES_VAL_ESCAPED), CLIENT_ID_3);
 
-        // "filtered" attribute won't take effect when JPA is used
-        String[] expectedRes = new String[]{CLIENT_ID_1, CLIENT_ID_2};
-        search(String.format("%s:%s %s:%s", ATTR_URL_NAME, ATTR_URL_VAL, ATTR_FILTERED_NAME, ATTR_FILTERED_VAL), expectedRes);
+        // reject request because "filtered" attribute is not allowed
+        try {
+            search(String.format("%s:%s %s:%s", ATTR_URL_NAME, ATTR_URL_VAL, ATTR_FILTERED_NAME, ATTR_FILTERED_VAL));
+        } catch (ClientErrorException ex) {
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Response.Status.BAD_REQUEST));
+        }
     }
 
     public static class SearchableServer implements KeycloakServerConfig {

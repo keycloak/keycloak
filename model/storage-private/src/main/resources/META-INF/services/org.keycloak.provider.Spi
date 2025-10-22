@@ -26,4 +26,3 @@ org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
 org.keycloak.models.session.UserSessionPersisterSpi
 org.keycloak.models.session.RevokedTokenPersisterSpi
 org.keycloak.cluster.ClusterSpi
-org.keycloak.models.workflow.WorkflowStateSpi

@@ -12,10 +12,10 @@ const EXTERNAL_EMAIL = "external-user@keycloak.org";
 
 test.describe("Linked accounts", () => {
   test("shows linked accounts", async ({ page }) => {
-    const realm = await createTestBed(userProfileRealm);
+    await using testBed = await createTestBed(userProfileRealm);
 
     // Log in and navigate to the linked accounts section.
-    await login(page, realm);
+    await login(page, testBed.realm);
     await page.getByTestId("accountSecurity").click();
     await page.getByTestId("account-security/linked-accounts").click();
     await expect(page.getByTestId("page-heading")).toHaveText(
@@ -25,7 +25,7 @@ test.describe("Linked accounts", () => {
 
   test("cannot remove the last federated identity", async ({ page }) => {
     // Create an 'external' realm with a user that will be used for linking.
-    const externalRealm = await createTestBed({
+    await using externalTestBed = await createTestBed({
       users: [
         {
           ...DEFAULT_USER,
@@ -42,15 +42,15 @@ test.describe("Linked accounts", () => {
     });
 
     await adminClient.clients.create({
-      realm: externalRealm,
+      realm: externalTestBed.realm,
       ...groupsIdPClient,
     });
 
     // Create a realm that links to the external realm as an identity provider.
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
 
     await adminClient.identityProviders.create({
-      realm,
+      realm: testBed.realm,
       alias: "master-idp",
       providerId: "oidc",
       enabled: true,
@@ -58,16 +58,16 @@ test.describe("Linked accounts", () => {
         clientId: "groups-idp",
         clientSecret: "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
         validateSignature: "false",
-        tokenUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/token`,
-        jwksUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/certs`,
-        issuer: `${SERVER_URL}realms/${externalRealm}`,
-        authorizationUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/auth`,
-        logoutUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/logout`,
-        userInfoUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/userinfo`,
+        tokenUrl: `${SERVER_URL}realms/${externalTestBed.realm}/protocol/openid-connect/token`,
+        jwksUrl: `${SERVER_URL}realms/${externalTestBed.realm}/protocol/openid-connect/certs`,
+        issuer: `${SERVER_URL}realms/${externalTestBed.realm}`,
+        authorizationUrl: `${SERVER_URL}realms/${externalTestBed.realm}/protocol/openid-connect/auth`,
+        logoutUrl: `${SERVER_URL}realms/${externalTestBed.realm}/protocol/openid-connect/logout`,
+        userInfoUrl: `${SERVER_URL}realms/${externalTestBed.realm}/protocol/openid-connect/userinfo`,
       },
     });
 
-    await page.goto(getAccountUrl(realm).toString());
+    await page.goto(getAccountUrl(testBed.realm).toString());
 
     // Click the login via master-idp provider button
     await loginWithIdp(page, "master-idp");

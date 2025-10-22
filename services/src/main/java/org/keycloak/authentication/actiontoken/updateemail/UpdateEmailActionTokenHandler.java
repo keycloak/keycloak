@@ -32,9 +32,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -67,6 +65,13 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
                 .setUser(user);
 
         String newEmail = token.getNewEmail();
+
+        // Check if EMAIL_PENDING attribute exists and matches the token's new email
+        // This prevents the token from being used if an admin has removed the pending verification
+        String pendingEmail = user.getFirstAttribute(UserModel.EMAIL_PENDING);
+        if (pendingEmail == null || !Objects.equals(pendingEmail, newEmail)) {
+            return forms.setError(Messages.EMAIL_VERIFICATION_CANCELLED).createErrorPage(Response.Status.BAD_REQUEST);
+        }
 
         UserProfile emailUpdateValidationResult;
         try {

@@ -1854,7 +1854,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         action.setPriority(model.getPriority());
         realm.getRequiredActionProviders().add(action);
         em.persist(action);
-        em.flush();
         model.setId(action.getId());
         return model;
     }

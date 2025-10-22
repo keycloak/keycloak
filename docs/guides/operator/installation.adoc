@@ -125,6 +125,8 @@ execute the following commands:
 kubectl create namespace custom-namespace
 kubectl -n custom-namespace apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
 kubectl patch clusterrolebinding keycloak-operator-clusterrole-binding --type='json' -p='[{"op": "replace", "path": "/subjects/0/namespace", "value":"custom-namespace"}]'
+# if you have existing keycloaks, restart the operator after patching the clusterrolebinding
+kubectl rollout restart -n custom-namespace Deployment/keycloak-operator
 ----
 </@profile.ifCommunity>
 

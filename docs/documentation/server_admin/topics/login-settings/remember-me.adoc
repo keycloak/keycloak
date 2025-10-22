@@ -16,3 +16,5 @@ When you save this setting, a `remember me` checkbox displays on the realm's log
 .Remember Me
 image:images/remember-me.png[Remember Me]
 
+WARNING: Note that disabling the "Remember me" option will invalidate all sessions created with the "Remember me" checkbox selected during login, requiring users to log in again. Any refresh tokens related to these sessions will also become invalid.
+Note also that the sessions will not be invalidated immediately when the switch is disabled, but only when a cookie or token associated with an invalid session is used. This means that disabling and then re-enabling the "Remember me" switch cannot be used to invalidate old sessions.

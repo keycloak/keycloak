@@ -30,7 +30,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.testsuite.util.HttpClientUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.HttpClientManager;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 /**
