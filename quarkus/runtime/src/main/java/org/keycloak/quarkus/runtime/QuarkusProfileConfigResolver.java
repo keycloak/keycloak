@@ -56,6 +56,10 @@ public class QuarkusProfileConfigResolver implements ProfileConfigResolver {
 
     @Override
     public Profile.ProfileName getProfileName() {
+        var singleConfig = singleResolver.getProfileName();
+        if (singleConfig != null) {
+            return singleConfig;
+        }
         return commaSeparatedResolver.getProfileName();
     }
 

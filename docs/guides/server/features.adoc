@@ -25,6 +25,10 @@ For example, to enable `rolling-updates:v2` and `token-exchange`, enter this com
 
 <@kc.build parameters="--feature-rolling-updates=v2 --feature-token-exchange=enabled"/>
 
+To enable all preview features, enter this command:
+
+<@kc.build parameters="--feature-preview=enabled"/>
+
 The single-option mechanism is useful when updating long feature lists is cumbersome or when you want to modify a specific feature without overriding the entire list in a pre-built image.
 
 === List of enabled features
