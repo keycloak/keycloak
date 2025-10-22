@@ -28,13 +28,13 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
+public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
 
-    private static final String INTERNAL_CLIENT_ID = "myclient";
-    private static final String EXTERNAL_CLIENT_ID = "spiffe://mytrust-domain/myclient";
-    private static final String IDP_ALIAS = "spiffe-idp";
-    private static final String TRUST_DOMAIN = "spiffe://mytrust-domain";
-    private static final String BUNDLE_ENDPOINT = "http://127.0.0.1:8500/idp/jwks";
+    static final String INTERNAL_CLIENT_ID = "myclient";
+    static final String EXTERNAL_CLIENT_ID = "spiffe://mytrust-domain/myclient";
+    static final String IDP_ALIAS = "spiffe-idp";
+    static final String TRUST_DOMAIN = "spiffe://mytrust-domain";
+    static final String BUNDLE_ENDPOINT = "http://127.0.0.1:8500/idp/jwks";
 
     @InjectRealm(config = ExernalClientAuthRealmConfig.class)
     protected ManagedRealm realm;

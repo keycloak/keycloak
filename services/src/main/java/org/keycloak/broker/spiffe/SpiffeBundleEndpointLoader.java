@@ -20,7 +20,10 @@ public class SpiffeBundleEndpointLoader implements PublicKeyLoader {
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
         SpiffeJSONWebKeySet jwks = SimpleHttp.create(session).doGet(bundleEndpoint).asJson(SpiffeJSONWebKeySet.class);
-        PublicKeysWrapper keysWrapper = JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.JWT_SVID);
+        PublicKeysWrapper keysWrapper = JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.JWT_SVID, true);
+        if (keysWrapper.getKeys().isEmpty()) {
+            keysWrapper = JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
+        }
         return jwks.getSpiffeRefreshHint() == null ? keysWrapper : new PublicKeysWrapper(keysWrapper.getKeys(), jwks.getSpiffeRefreshHint());
     }
 
