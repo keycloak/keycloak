@@ -25,8 +25,12 @@ import java.util.Base64;
  * @version $Revision: 1 $
  */
 public class Base64Url {
+  
+    // Initialize only once, avoiding repeated creation by the factory method.
+    public static final Base64.Encoder BASE64_URL_ENCODER_WITHOUT_PADDING = java.util.Base64.getUrlEncoder().withoutPadding();
+    
     public static String encode(byte[] bytes) {
-        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        return BASE64_URL_ENCODER_WITHOUT_PADDING.encodeToString(bytes);
     }
 
     public static byte[] decode(String s) {
