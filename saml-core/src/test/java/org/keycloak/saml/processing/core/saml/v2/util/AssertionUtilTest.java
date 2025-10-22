@@ -59,7 +59,8 @@ public class AssertionUtilTest {
 
             // test manipulation of signature
             Element signatureElement = AssertionUtil.getSignature(assertion);
-            byte[] validSignature = Base64.decode(signatureElement.getTextContent());
+            // the signature is not a valid base64 string.
+            byte[] validSignature = Base64.decode(signatureElement.getTextContent().split("=")[0]);
 
             // change the signature value slightly
             byte[] invalidSignature =  Arrays.copyOf(validSignature, validSignature.length);

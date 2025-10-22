@@ -30,7 +30,8 @@ public class Base64Url {
     }
 
     public static byte[] decode(String s) {
-        return Base64.getUrlDecoder().decode(s);
+        // some places invoke this without a Base64 url encoding! ugh!
+        return Base64.getUrlDecoder().decode(encodeBase64ToBase64Url(s));
     }
 
 
