@@ -31,6 +31,7 @@ import {
   toWorkflowDetail,
 } from "./routes/WorkflowDetail";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import WorkflowRepresentation from "libs/keycloak-admin-client/lib/defs/workflowRepresentation";
 
 type AttributeForm = {
   workflowJSON?: string;
@@ -48,7 +49,6 @@ export default function WorkflowDetailForm() {
   const { addAlert, addError } = useAlerts();
   const { mode, id } = useParams<WorkflowDetailParams>();
   const [workflowJSON, setWorkflowJSON] = useState("");
-  const [enabled, setEnabled] = useState(true);
 
   useFetch(
     async () => {
@@ -70,53 +70,33 @@ export default function WorkflowDetailForm() {
       }
 
       setWorkflowJSON(JSON.stringify(workflow, null, 2));
-      setEnabled(workflow?.enabled ?? true);
     },
     [mode, id],
   );
 
-  const onSubmit: SubmitHandler<AttributeForm> = async () => {
-    if (mode === "view") {
-      navigate(toWorkflowDetail({ realm, mode: "copy", id: id! }));
-      return;
+  const validateWorkflowJSON = (): WorkflowRepresentation => {
+    const json = JSON.parse(workflowJSON);
+    if (!json.name) {
+      throw new Error(t("workflowNameRequired"));
     }
+    return json;
+  };
 
+  const onUpdate: SubmitHandler<AttributeForm> = async () => {
     try {
-      const json = JSON.parse(workflowJSON);
-      if (!json.name) {
-        throw new Error(t("workflowNameRequired"));
-      }
-
-      const payload = {
-        realm,
-        ...json,
-      };
-      await adminClient.workflows.create(payload);
-
-      addAlert(t("workflowCreated"), AlertVariant.success);
-      navigate(toWorkflows({ realm }));
+      const json = validateWorkflowJSON();
+      await adminClient.workflows.update({ id: json.id! }, json);
+      addAlert(t("workflowUpdated"), AlertVariant.success);
     } catch (error) {
-      addError("workflowCreateError", error);
+      addError("workflowUpdateError", error);
     }
   };
 
-  const toggleEnabled = async () => {
-    const json = JSON.parse(workflowJSON);
-    json.enabled = !enabled;
-
+  const onCreate: SubmitHandler<AttributeForm> = async () => {
     try {
-      const payload = {
-        realm,
-        ...json,
-      };
-      await adminClient.workflows.update({ id: json.id }, payload);
-
-      setWorkflowJSON(JSON.stringify(json, null, 2));
-      setEnabled(!enabled);
-      addAlert(
-        enabled ? t("workflowDisabled") : t("workflowEnabled"),
-        AlertVariant.success,
-      );
+      await adminClient.workflows.create(validateWorkflowJSON());
+      addAlert(t("workflowCreated"), AlertVariant.success);
+      navigate(toWorkflows({ realm }));
     } catch (error) {
       addError("workflowCreateError", error);
     }
@@ -125,32 +105,31 @@ export default function WorkflowDetailForm() {
   const titlekeyMap: Record<WorkflowDetailParams["mode"], string> = {
     copy: "copyWorkflow",
     create: "createWorkflow",
-    view: "viewWorkflow",
+    update: "updateWorkflow",
   };
 
   const subkeyMap: Record<WorkflowDetailParams["mode"], string> = {
     copy: "copyWorkflowDetails",
     create: "createWorkflowDetails",
-    view: "viewWorkflowDetails",
+    update: "updateWorkflowDetails",
   };
 
   return (
     <>
-      <ViewHeader
-        titleKey={titlekeyMap[mode]}
-        subKey={subkeyMap[mode]}
-        isEnabled={enabled}
-        onToggle={mode === "view" ? toggleEnabled : undefined}
-      />
+      <ViewHeader titleKey={titlekeyMap[mode]} subKey={subkeyMap[mode]} />
 
       <FormProvider {...form}>
         <PageSection variant="light">
           <FormAccess
             isHorizontal
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={
+              mode === "update"
+                ? handleSubmit(onUpdate)
+                : handleSubmit(onCreate)
+            }
             role={"manage-realm"}
             className="pf-v5-u-mt-lg"
-            fineGrainedAccess={true} // TODO: Set this properly
+            fineGrainedAccess={true}
           >
             <FormGroup
               label={t("workflowJSON")}
@@ -171,7 +150,6 @@ export default function WorkflowDetailForm() {
                   <CodeEditor
                     id="workflowJSON"
                     data-testid="workflowJSON"
-                    readOnly={mode === "view"}
                     value={workflowJSON}
                     onChange={(value) => setWorkflowJSON(value ?? "")}
                     language="json"
@@ -181,25 +159,27 @@ export default function WorkflowDetailForm() {
               />
             </FormGroup>
             <ActionGroup>
-              {mode !== "view" && (
-                <FormSubmitButton
-                  formState={form.formState}
-                  data-testid="save"
-                  allowInvalid
-                  allowNonDirty
-                >
-                  {t("save")}
-                </FormSubmitButton>
-              )}
-              {mode === "view" && (
-                <FormSubmitButton
-                  formState={form.formState}
+              <FormSubmitButton
+                formState={form.formState}
+                data-testid="save"
+                allowInvalid
+                allowNonDirty
+              >
+                {mode === "update" ? t("save") : t("create")}
+              </FormSubmitButton>
+              {mode === "update" && (
+                <Button
                   data-testid="copy"
-                  allowInvalid
-                  allowNonDirty
+                  variant="link"
+                  component={(props) => (
+                    <Link
+                      {...props}
+                      to={toWorkflowDetail({ realm, mode: "copy", id: id! })}
+                    />
+                  )}
                 >
                   {t("copy")}
-                </FormSubmitButton>
+                </Button>
               )}
               <Button
                 data-testid="cancel"
