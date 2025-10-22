@@ -77,6 +77,8 @@ public class Profile {
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
+        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.EXPERIMENTAL),
+
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
