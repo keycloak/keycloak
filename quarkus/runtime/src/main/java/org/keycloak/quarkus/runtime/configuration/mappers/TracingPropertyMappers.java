@@ -163,7 +163,7 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
             if (key.startsWith(NS_KEYCLOAK_PREFIX) && key.startsWith(NS_KEYCLOAK_PREFIX + prefix)) {
                 String header = getWildcardValue(TRACING_HEADER, key);
                 String headerValue = Configuration.getOptionalValue(key)
-                        .orElseThrow(() -> new IllegalArgumentException("Wrong value for the property '%s'".formatted(key)));
+                        .orElseThrow(() -> new PropertyException("Wrong value for the property '%s'".formatted(key)));
                 headers.put(header, headerValue);
             }
         });

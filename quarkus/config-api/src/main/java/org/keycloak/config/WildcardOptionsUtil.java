@@ -19,26 +19,6 @@ public class WildcardOptionsUtil {
      */
     public static final String WILDCARD_END = ">";
 
-        /**
-     * Determines whether the given configuration key represents a wildcard option.
-     * <p>
-     * Examples:
-     * <pre>{@code
-     * isKcWildcardOption("tracing-header-<header>")      → "true"
-     * isKcWildcardOption("tracing-header-<headxxx")      → "false"
-     * isKcWildcardOption("tracing-header-headxxx>")      → "false"
-     * isKcWildcardOption("db-kind-<datasource>")         → "true"
-     * isKcWildcardOption("http-port")                    → "false"
-     * isKcWildcardOption("quarkus.<sth>.end")            → "false"
-     * }</pre>
-     *
-     * @param key the configuration key to check
-     * @return {@code true} if the key represents a Keycloak wildcard option
-     */
-        public static boolean isKcWildcardOption(String key) {
-        return key != null && key.contains(WILDCARD_START) && key.endsWith(WILDCARD_END);
-    }
-
     /**
      * Determines whether the given configuration key represents a wildcard option (contains variable segment)
      * <p>
@@ -61,7 +41,7 @@ public class WildcardOptionsUtil {
 
     /**
      * Extracts the prefix part of a wildcard key.
-     * You should always check the presence of the wildcard via the {@link #isKcWildcardOption(String)}.
+     * You should always check the presence of the wildcard via the {@link #isWildcardOption(String)}.
      * <p>
      * Examples:
      * <pre>{@code
@@ -78,7 +58,7 @@ public class WildcardOptionsUtil {
 
     /**
      * Generates a concrete configuration key by replacing the wildcard placeholder with a specific value.
-     * You should always check the presence of the wildcard via the {@link #isKcWildcardOption(String)}.
+     * You should always check the presence of the wildcard via the {@link #isWildcardOption(String)}.
      * <p>
      * Examples:
      * <pre>{@code

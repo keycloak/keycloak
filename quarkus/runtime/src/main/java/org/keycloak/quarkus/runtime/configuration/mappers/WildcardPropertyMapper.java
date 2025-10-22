@@ -21,7 +21,6 @@ import static org.keycloak.config.WildcardOptionsUtil.WILDCARD_END;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardNamedKey;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
 import static org.keycloak.config.WildcardOptionsUtil.isWildcardOption;
-import static org.keycloak.config.WildcardOptionsUtil.isKcWildcardOption;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
 
@@ -43,7 +42,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         super(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, mask, validator, description, required, requiredWhen, null, null);
         this.wildcardMapFrom = wildcardMapFrom;
 
-        if (!isKcWildcardOption(getFrom())) {
+        if (!isWildcardOption(getFrom()) || !getFrom().endsWith(WILDCARD_END)) {
             throw new IllegalArgumentException("Invalid wildcard from format. Wildcard must be at the end of the option.");
         }
         this.fromPrefix = getWildcardPrefix(getFrom());
@@ -93,7 +92,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
         String from = getFrom(wildcardValue);
         String mapFrom = getMapFrom();
         // resolve even the mapFrom() value
-        if (isKcWildcardOption(mapFrom)) {
+        if (isWildcardOption(mapFrom)) {
             mapFrom = getWildcardNamedKey(mapFrom, wildcardValue);
         }
 
@@ -106,7 +105,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
      */
     public Set<String> getConnectedOptions(String key) {
         return option.getConnectedOptions().stream()
-                .map(option -> isKcWildcardOption(option) ? getWildcardNamedKey(option, key) : option)
+                .map(option -> isWildcardOption(option) ? getWildcardNamedKey(option, key) : option)
                 .collect(Collectors.toSet());
     }
 

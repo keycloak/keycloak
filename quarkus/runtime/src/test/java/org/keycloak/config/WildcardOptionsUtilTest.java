@@ -7,23 +7,10 @@ import static org.junit.Assert.assertNull;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardNamedKey;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardValue;
-import static org.keycloak.config.WildcardOptionsUtil.isKcWildcardOption;
 import static org.hamcrest.CoreMatchers.is;
 import static org.keycloak.config.WildcardOptionsUtil.isWildcardOption;
 
 public class WildcardOptionsUtilTest {
-
-    @Test
-    public void isKcWildcardOptionTest() {
-        assertThat(isKcWildcardOption("tracing-header-<header>"), is(true));
-        assertThat(isKcWildcardOption("tracing-header-<headxxx"), is(false));
-        assertThat(isKcWildcardOption("tracing-header-headxxx>"), is(false));
-        assertThat(isKcWildcardOption("db-kind-<datasource>"), is(true));
-        assertThat(isKcWildcardOption("http-port"), is(false));
-        assertThat(isKcWildcardOption("quarkus.<sth>.end"), is(false));
-        assertThat(isKcWildcardOption(""), is(false));
-        assertThat(isKcWildcardOption(null), is(false));
-    }
 
     @Test
     public void isWildcardOptionTest() {
