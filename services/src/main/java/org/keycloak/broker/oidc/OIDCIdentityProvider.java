@@ -1069,21 +1069,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public boolean isIssuer(String issuer) {
-        return issuer != null && issuer.equals(getConfig().getIssuer());
-    }
-
-    @Override
     public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.JWT_AUTHORIZATION_GRANT)) {
-            throw new RuntimeException("FEATURE is not enabled");
-        }
 
         //TODO: proper assertion validation
-
-        BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getId(), getConfig());
-        String username = context.getJWT().getSubject();
-        user.setUsername(username);
+        BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
+        user.setUsername(context.getJWT().getSubject());
         user.setIdp(this);
         return user;
 

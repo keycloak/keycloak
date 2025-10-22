@@ -18,8 +18,5 @@ package org.keycloak.broker.provider;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 
 public interface JWTAuthorizationGrantProvider {
-
-    boolean isIssuer(String issuer);
-
     BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext assertion);
 }

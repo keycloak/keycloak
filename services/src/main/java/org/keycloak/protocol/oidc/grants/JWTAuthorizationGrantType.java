@@ -20,20 +20,17 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
+import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
@@ -46,9 +43,6 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
@@ -80,11 +74,16 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             //select the idp using the issuer claim
             String jwtIssuer = authorizationGrantContext.getIssuer();
-            IdentityProviderModel identityProviderModel = getAuthorizationGrantIdentityProviderModel(context.getSession(), jwtIssuer);
+            AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
+            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(session, jwtIssuer);
             if (identityProviderModel == null) {
                 throw new RuntimeException("No Identity Provider for provided issuer");
             }
-            JWTAuthorizationGrantProvider jwtAuthorizationGrantProvider = (JWTAuthorizationGrantProvider) IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
+
+            UserAuthenticationIdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
+            if (!(identityProvider instanceof JWTAuthorizationGrantProvider jwtAuthorizationGrantProvider)) {
+                throw new RuntimeException("Identity Provider is not configured for JWT Authorization Grant");
+            }
 
             //validate the JWT assertion and get the brokered identity from the idp
             BrokeredIdentityContext brokeredIdentityContext = jwtAuthorizationGrantProvider.validateAuthorizationGrantAssertion(authorizationGrantContext);
@@ -92,17 +91,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Error validating JWT with identity provider");
             }
 
-            //apply identity provider mappers
-            Set<IdentityProviderMapperModel> mappers = session.identityProviders().getMappersByAliasStream(identityProviderModel.getAlias())
-                    .collect(Collectors.toSet());
-            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            for (IdentityProviderMapperModel mapper : mappers) {
-                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                target.preprocessFederatedIdentity(session, realm, mapper, brokeredIdentityContext);
-            }
-
             //user must exist in keycloak
-            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(identityProviderModel.getAlias(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getToken());
+            FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(identityProviderModel.getAlias(), brokeredIdentityContext.getId(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getToken());
             UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
             if (user == null) {
                 throw new RuntimeException("User not found");
@@ -131,16 +121,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         return authSession;
-    }
-
-    private IdentityProviderModel getAuthorizationGrantIdentityProviderModel(KeycloakSession session, String issuer) {
-        return session.identityProviders().getAllStream()
-                .filter(idpModel -> {
-                    IdentityProvider idp = IdentityBrokerService.getIdentityProvider(session, idpModel.getAlias());
-                    return idp instanceof JWTAuthorizationGrantProvider authorizationGrantProvider && authorizationGrantProvider.isIssuer(issuer);
-                })
-                .findFirst()
-                .orElse(null);
     }
 
     @Override
