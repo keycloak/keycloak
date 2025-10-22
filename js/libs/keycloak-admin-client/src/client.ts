@@ -55,7 +55,9 @@ export class KeycloakAdminClient {
   public realmName: string;
   public scope?: string;
   public accessToken?: string;
+  public expiresIn?: number;
   public refreshToken?: string;
+  public refreshExpiresIn?: number;
 
   #requestOptions?: RequestInit;
   #globalRequestArgOptions?: Pick<RequestArgs, "catchNotFound">;
@@ -88,15 +90,18 @@ export class KeycloakAdminClient {
   }
 
   public async auth(credentials: Credentials) {
-    const { accessToken, refreshToken } = await getToken({
-      baseUrl: this.baseUrl,
-      realmName: this.realmName,
-      scope: this.scope,
-      credentials,
-      requestOptions: this.#requestOptions,
-    });
+    const { accessToken, expiresIn, refreshToken, refreshExpiresIn } =
+      await getToken({
+        baseUrl: this.baseUrl,
+        realmName: this.realmName,
+        scope: this.scope,
+        credentials,
+        requestOptions: this.#requestOptions,
+      });
     this.accessToken = accessToken;
+    this.expiresIn = expiresIn;
     this.refreshToken = refreshToken;
+    this.refreshExpiresIn = refreshExpiresIn;
   }
 
   public registerTokenProvider(provider: TokenProvider) {

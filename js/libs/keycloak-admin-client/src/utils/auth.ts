@@ -27,7 +27,7 @@ export interface Settings {
 
 export interface TokenResponseRaw {
   access_token: string;
-  expires_in: string;
+  expires_in: number;
   refresh_expires_in: number;
   refresh_token: string;
   token_type: string;
@@ -39,7 +39,7 @@ export interface TokenResponseRaw {
 
 export interface TokenResponse {
   accessToken: string;
-  expiresIn: string;
+  expiresIn: number;
   refreshExpiresIn: number;
   refreshToken: string;
   tokenType: string;
