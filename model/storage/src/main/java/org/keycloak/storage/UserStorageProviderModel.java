@@ -51,12 +51,7 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
 
     public boolean isImportEnabled() {
         if (importEnabled == null) {
-            String val = getConfig().getFirst(IMPORT_ENABLED);
-            if (val == null) {
-                importEnabled = true;
-            } else {
-                importEnabled = Boolean.valueOf(val);
-            }
+            importEnabled = Boolean.parseBoolean(getConfig().getFirstOrDefault(IMPORT_ENABLED, Boolean.TRUE.toString()));
         }
         return importEnabled;
     }
