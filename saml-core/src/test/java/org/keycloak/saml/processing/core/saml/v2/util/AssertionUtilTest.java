@@ -1,12 +1,5 @@
 package org.keycloak.saml.processing.core.saml.v2.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +23,13 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParserTest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class AssertionUtilTest {
 
@@ -59,13 +59,13 @@ public class AssertionUtilTest {
 
             // test manipulation of signature
             Element signatureElement = AssertionUtil.getSignature(assertion);
-            // the signature is not a valid base64 string.
-            byte[] validSignature = Base64.decode(signatureElement.getTextContent().split("=")[0]);
+            Element signatureValue = (Element) signatureElement.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "SignatureValue").item(0);
+            byte[] validSignature = Base64.decode(signatureValue.getTextContent());
 
             // change the signature value slightly
             byte[] invalidSignature =  Arrays.copyOf(validSignature, validSignature.length);
             invalidSignature[0] ^= invalidSignature[0];
-            signatureElement.setTextContent(Base64.encodeBytes(invalidSignature));
+            signatureValue.setTextContent(Base64.encodeBytes(invalidSignature));
 
             // check that signature now is invalid
             assertFalse(AssertionUtil.isSignatureValid(document.getDocumentElement(), decodeCertificate.getPublicKey()));
