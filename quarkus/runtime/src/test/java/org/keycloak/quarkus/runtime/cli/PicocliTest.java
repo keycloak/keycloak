@@ -1115,6 +1115,33 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'spiffe'"));
         onAfter();
 
+        // preview profile
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-preview=enabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE), is(true));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.CLIENT_SECRET_ROTATION), is(true));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-preview=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.CLIENT_SECRET_ROTATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-preview=v1");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for features profile 'preview': v1. You can specify either 'enabled' or 'disabled'."));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.CLIENT_SECRET_ROTATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-preview=something-bad");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for features profile 'preview': something-bad. You can specify either 'enabled' or 'disabled'."));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.CLIENT_SECRET_ROTATION), is(false));
+        onAfter();
+
         // Non-existing
         nonRunningPicocli = pseudoLaunch("start-dev", "--feature-not-here=enabled");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
