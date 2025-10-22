@@ -16,7 +16,6 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-//import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -29,10 +28,6 @@ export default function WorkflowsSection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
-
-  // TODO: handle role-based access
-  //const { hasAccess } = useAccess();
-  //const isManager = hasAccess("manage-realm");
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -49,6 +44,25 @@ export default function WorkflowsSection() {
         return nameA.localeCompare(nameB);
       },
     );
+  };
+
+  const toggleEnabled = async (workflowJSON: WorkflowRepresentation) => {
+    workflowJSON.enabled = !(workflowJSON.enabled ?? true);
+
+    try {
+      await adminClient.workflows.update(
+        { id: workflowJSON.id! },
+        workflowJSON,
+      );
+
+      addAlert(
+        workflowJSON.enabled ? t("workflowEnabled") : t("workflowDisabled"),
+        AlertVariant.success,
+      );
+      refresh();
+    } catch (error) {
+      addError("workflowUpdateError", error);
+    }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -100,7 +114,7 @@ export default function WorkflowsSection() {
               displayKey: "name",
               cellRenderer: (row: WorkflowRepresentation) => (
                 <Link
-                  to={toWorkflowDetail({ realm, mode: "view", id: row.id! })}
+                  to={toWorkflowDetail({ realm, mode: "update", id: row.id! })}
                 >
                   {row.name}
                 </Link>
@@ -111,8 +125,8 @@ export default function WorkflowsSection() {
               displayKey: "id",
             },
             {
-              name: "enabled",
-              displayKey: "enabled",
+              name: "status",
+              displayKey: "status",
               cellRenderer: (row: WorkflowRepresentation) => {
                 return (row.enabled ?? true) ? t("enabled") : t("disabled");
               },
@@ -133,6 +147,16 @@ export default function WorkflowsSection() {
                 navigate(
                   toWorkflowDetail({ realm, mode: "copy", id: workflow.id! }),
                 );
+              },
+            } as Action<WorkflowRepresentation>,
+            {
+              title: t("changeStatus"),
+              tooltipProps: {
+                content: t("changeStatusTooltip"),
+              },
+              onRowClick: (workflow) => {
+                setSelectedWorkflow(workflow);
+                void toggleEnabled(workflow);
               },
             } as Action<WorkflowRepresentation>,
           ]}

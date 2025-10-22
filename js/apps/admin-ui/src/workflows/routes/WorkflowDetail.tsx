@@ -6,7 +6,7 @@ import type { AppRouteObject } from "../../routes";
 export type WorkflowDetailParams = {
   realm: string;
   id: string;
-  mode: "view" | "copy" | "create";
+  mode: "update" | "copy" | "create";
 };
 
 const WorkflowDetailForm = lazy(() => import("../WorkflowDetailForm"));
@@ -16,7 +16,7 @@ export const WorkflowDetailRoute: AppRouteObject = {
   element: <WorkflowDetailForm />,
   breadcrumb: (t) => t("workflowDetails"),
   handle: {
-    access: "anyone", // TODO: update access when view permission is added
+    access: "manage-realm",
   },
 };
 
