@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi AS ubi-full-build
+FROM registry.access.redhat.com/ubi10/ubi AS ubi-full-build
 
 ARG KEYCLOAK_VERSION=999.0.0-SNAPSHOT
 ARG KEYCLOAK_DIST=https://github.com/vunetsystems/washington/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
@@ -29,7 +29,7 @@ COPY vunet .
 RUN bash ./build.sh
 
 # ================== Final image ===================
-FROM registry.access.redhat.com/ubi9/ubi
+FROM registry.access.redhat.com/ubi10/ubi
 
 ENV LANG en_US.UTF-8
 
