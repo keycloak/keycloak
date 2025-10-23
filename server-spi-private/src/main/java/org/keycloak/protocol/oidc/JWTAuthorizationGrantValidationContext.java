@@ -51,6 +51,12 @@ public class JWTAuthorizationGrantValidationContext {
         if (client.isPublicClient()) {
             failure("Public client not allowed to use authorization grant");
         }
+
+        String val = client.getAttribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED);
+        if (!Boolean.parseBoolean(val)) {
+            throw new RuntimeException("JWT Authorization Grant is not supported for the requested client");
+        }
+
     }
 
     public void validateTokenActive() {

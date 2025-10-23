@@ -24,6 +24,7 @@ export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isNew?: boolean;
   stringify?: boolean;
   convertToName: (name: string) => string;
+  onSearch?: (search: string) => void;
 };
 
 export type NumberComponentProps = ComponentProps & {
