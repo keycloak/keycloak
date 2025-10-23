@@ -422,18 +422,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         if (username != null) {
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
-            LoginFormsProvider form = context.form();
-
-            form.setAttributeMapper(attributes -> {
-                AuthenticationContextBean auth = (AuthenticationContextBean) attributes.get("auth");
-
-                if (auth != null) {
-                    attributes.put("auth", new OrganizationAwareAuthenticationContextBean(auth, true, username));
-                    attributes.put(LoginFormsProvider.USERNAME_HIDDEN, true);
-                }
-
-                return attributes;
-            });
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN, Boolean.TRUE.toString());
         }
 
         context.attempted();
