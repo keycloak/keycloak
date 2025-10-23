@@ -696,7 +696,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         Path providerPackagePath = Paths.get(fileUri.getPath());
         JavaArchive providerJar = ShrinkWrap.create(JavaArchive.class, provider.getName() + ".jar")
                 .addClasses(provider.getClasses())
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                .addAsManifestResource(EmptyAsset.INSTANCE, "META-INF/beans.xml");
         Map<String, String> manifestResources = provider.getManifestResources();
 
         for (Map.Entry<String, String> resource : manifestResources.entrySet()) {

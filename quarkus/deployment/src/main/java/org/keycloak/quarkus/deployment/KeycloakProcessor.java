@@ -200,7 +200,6 @@ class KeycloakProcessor {
             JBossJtaTransactionManagerLookup.class,
             DefaultJpaConnectionProviderFactory.class,
             DefaultLiquibaseConnectionProvider.class,
-            //HibernateValidatorProviderFactory.class,
             FolderThemeProviderFactory.class,
             LiquibaseJpaUpdaterProviderFactory.class,
             FilesKeystoreVaultProviderFactory.class,

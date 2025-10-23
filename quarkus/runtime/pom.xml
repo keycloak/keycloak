@@ -415,8 +415,29 @@
 
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-api</artifactId>
-            <version>${project.version}</version>
+            <artifactId>keycloak-admin-v2-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-v2-providers</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-v2-rest</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
