@@ -31,6 +31,8 @@ import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.config.DeprecatedMetadata;
@@ -585,7 +587,14 @@ public class PropertyMapper<T> {
                     try {
                         Configuration.getConfig().convert(v, option.getComponentType());
                     } catch (Exception e) {
-                        throw new PropertyException("Invalid value for option %s: %s".formatted(getOptionAndSourceMessage(configValue), e.getMessage()));
+                        // strip the smallrye code if possible
+                        String message = e.getMessage();
+                        Pattern p = Pattern.compile("SRCFG\\d+: (.*)$");
+                        Matcher m = p.matcher(message);
+                        if (m.find()) {
+                            message = m.group(1);
+                        }
+                        throw new PropertyException("Invalid value for option %s: %s".formatted(getOptionAndSourceMessage(configValue), message));
                     }
                 }
 
