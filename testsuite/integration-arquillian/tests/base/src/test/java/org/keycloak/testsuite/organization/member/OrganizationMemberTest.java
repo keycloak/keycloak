@@ -51,7 +51,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;

@@ -85,6 +85,12 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 | Define the query parameters to be forwarded to an external AS from the initial authorization request sent to the authorization endpoint. Multiple parameters can be entered, separated by comma (,). The parameters available
 to forward are any non OpenID Connect/OAuth standard parameter or standard parameters that are available as a client note from the authentication session.
 
+|Supports client assertions
+|This setting enables support for using client assertions issued by the provider to authenticate clients. Validate Signatures must be enabled as well.
+
+|Allows client assertions to be re-used
+|By default, a client assertion can not be used multiple times. If the client is not able to retrieve a new client assertion for each request this option can be enabled to allow re-use of the same client assertion.
+
 |===
 
 You can import all this configuration data by providing a URL or file that points to OpenID Provider Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>{kc_realms_path}/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.

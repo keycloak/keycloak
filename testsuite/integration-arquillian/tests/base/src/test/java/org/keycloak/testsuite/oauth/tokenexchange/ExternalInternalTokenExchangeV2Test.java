@@ -38,8 +38,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;

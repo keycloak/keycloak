@@ -62,6 +62,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -313,6 +314,7 @@ public class TokenManager {
 
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
+        session.getContext().setUserSession(validation.userSession);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
@@ -638,9 +640,13 @@ public class TokenManager {
             return clientScopes;
         }
 
-        // skip scopes that were explicitly requested using the dynamic scope format
+        // skip organization-related scopes that were explicitly requested using the dynamic scope format
         // we don't want dynamic and default client scopes duplicated
-        clientScopes = clientScopes.filter(scope -> !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR));
+        clientScopes = clientScopes.filter(scope -> {
+            return scope.equals(client)
+                    || !scopeParam.contains(scope.getName() + ClientScopeModel.VALUE_SEPARATOR)
+                    || scope.getProtocolMapperByType(OrganizationMembershipMapper.PROVIDER_ID).isEmpty();
+        });
 
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
 
@@ -1167,7 +1173,7 @@ public class TokenManager {
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            final AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
+            AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
             refreshToken = new RefreshToken(accessToken, confirmation);
             refreshToken.id(SecretGenerator.getInstance().generateSecureID());
             refreshToken.issuedNow();
@@ -1188,6 +1194,15 @@ public class TokenManager {
                 refreshToken.getOtherClaims().put(Constants.REQUESTED_AUDIENCE, Arrays.stream(resquestedAudienceClients)
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toSet()));
+            }
+            Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
+            if (bindOnlyRefreshToken) {
+                DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+                if (dPoP != null) {
+                    confirmation = new AccessToken.Confirmation();
+                    confirmation.setKeyThumbprint(dPoP.getThumbprint());
+                    refreshToken.setConfirmation(confirmation);
+                }
             }
         }
 

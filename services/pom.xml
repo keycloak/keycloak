@@ -183,6 +183,11 @@
             <version>${woodstox.version}</version>    <!-- this version has to match that of used in Wildfly -->
             <scope>test</scope>
         </dependency>
+        <!-- YAML -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
+            <artifactId>jackson-jakarta-rs-yaml-provider</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
@@ -439,6 +444,7 @@
                                          -->
                                         <toc/>
                                         <toc-position>left</toc-position>
+                                        <sectanchors />
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
                                         <!-- Boolean attributes are passed as defined/undefined to AsciiDoc, not at their literal value -->
                                         <project_community>true</project_community>

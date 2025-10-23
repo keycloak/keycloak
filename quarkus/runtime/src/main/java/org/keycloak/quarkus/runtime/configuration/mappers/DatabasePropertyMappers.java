@@ -94,6 +94,11 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.datasource.jdbc.max-size")
                         .paramLabel("size")
                         .build(),
+                fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
+                        .to("quarkus.datasource.jdbc.max-lifetime")
+                        .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
+                        .paramLabel("duration")
+                        .build(),
                 fromOption(DatabaseOptions.DB_SQL_JPA_DEBUG)
                         .build(),
                 fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
@@ -177,6 +182,15 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 .map(ConfigValue::getValue)
                 .orElse(null);
         return isDevModeDatabase(database) ? "1" : getParentPoolMinSize.get();
+    }
+
+    private static String transformPoolMaxLifetime(String db, ConfigSourceInterceptorContext context) {
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        return switch (vendor) {
+            // Default to max lifetime slightly less than the default `wait_timeout` of 8 hours
+            case MYSQL, MARIADB -> "PT7H50M";
+            default -> "";
+        };
     }
 
     public static final class Datasources {

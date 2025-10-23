@@ -172,7 +172,7 @@ include::../examples/generated/ispn-site-a.yaml[tag=infinispan-crossdc]
 <8> The secret key (filename) of the Keystore as defined in the previous step.
 <9> The secret name where the Truststore exists as defined in the previous step.
 <10> The Truststore key (filename) of the Keystore as defined in the previous step.
-<11> The remote site's name, in this case  `{site-b}`.
+<11> The remote site's name, in this case  `{site-b}`. You may use this value in {project_name} option `cache-remote-backup-sites` for the automatic cache creation.
 <12> The namespace of the {jdgserver_name} cluster from the remote site.
 <13> The {ocp} API URL for the remote site.
 <14> The secret with the access token to authenticate into the remote site.
@@ -189,11 +189,16 @@ include::../examples/generated/ispn-site-b.yaml[tag=infinispan-crossdc]
 
 . Creating the caches for {project_name}.
 +
-{project_name} requires the following caches to be present: `actionTokens`, `authenticationSessions`, `loginFailures`, and `work`.
+{project_name} automatically creates the necessary caches on the first startup if they do not exist.
 +
-The {jdgserver_name} {infinispan-operator-docs}#creating-caches[Cache CR] allows deploying the caches in the {jdgserver_name} cluster.
-Cross-site needs to be enabled per cache as documented by {infinispan-xsite-docs}[Cross Site Documentation].
-The documentation contains more details about the options used by this {section}.
+[IMPORTANT]
+====
+It requires {project_name} to be deployed in both clusters because the {project_name} does not start until all caches are present in both clusters.
+====
++
+To {infinispan-operator-docs}#creating-caches_creating-caches[`Cache` CR] is the recommend way to proceed in {kubernetes}.
+To take effect, the `Cache` CR must be deployed before any {project_name} Pod starts.
++
 The following example shows the `Cache` CR for `{site-a}`.
 +
 --
@@ -258,7 +263,6 @@ For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outli
 ----
 include::../examples/generated/ispn-site-b.yaml[tag=infinispan-cache-actionTokens]
 ----
-
 == Verifying the deployment
 
 Confirm that the {jdgserver_name} cluster is formed, and the cross-site connection is established between the {ocp} clusters.
@@ -301,9 +305,16 @@ include::../examples/generated/keycloak-ispn.yaml[tag=keycloak-ispn]
 ----
 <1> The hostname of the remote {jdgserver_name} cluster.
 <2> The port of the remote {jdgserver_name} cluster.
-This is optional and it defaults to `11222`.
+This is optional, and it defaults to `11222`.
 <3> The Secret `name` and `key` with the {jdgserver_name} username credential.
 <4> The Secret `name` and `key` with the {jdgserver_name} password credential.
+<5> Optionally, the name of the remote site. The caches are only created if they do not already exist.
++
+[IMPORTANT]
+====
+Using the option `cache-remote-backup-sites` only creates the caches in the local site.
+You must deploy the `KeycloakCR` in the other cluster too, to create the caches there, otherwise {project_name} fails to start until they exist.
+====
 
 === Architecture
 

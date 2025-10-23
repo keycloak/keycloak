@@ -234,6 +234,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         ResourceServer resourceServer = getResourceServer();
         for (String resourceId : cached.getResourcesIds(session, modelSupplier)) {
             Resource resource = resourceStore.findById(resourceServer, resourceId);
+            if (resource == null) {
+                continue;
+            }
             cacheSession.cacheResource(resource);
             resources.add(resource);
         }
@@ -305,6 +308,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         ScopeStore scopeStore = cacheSession.getScopeStore();
         for (String scopeId : cached.getScopesIds(session, modelSupplier)) {
             Scope scope = scopeStore.findById(resourceServer, scopeId);
+            if (scope == null) {
+                continue;
+            }
             cacheSession.cacheScope(scope);
             scopes.add(scope);
         }

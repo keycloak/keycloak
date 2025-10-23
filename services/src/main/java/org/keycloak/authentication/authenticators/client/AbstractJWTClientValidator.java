@@ -93,8 +93,23 @@ public abstract class AbstractJWTClientValidator {
     }
 
     private boolean validateClientAssertionParameters() {
-        return expectedClientAssertionType.equals(clientAssertionState.getClientAssertionType()) &&
-            clientAssertionState.getClientAssertion() != null;
+        String clientAssertionType = clientAssertionState.getClientAssertionType();
+        String clientAssertion = clientAssertionState.getClientAssertion();
+
+        if (clientAssertionType == null) {
+            return failure("Parameter client_assertion_type is missing");
+        }
+
+        if (!expectedClientAssertionType.equals(clientAssertionType)) {
+            return failure("Parameter client_assertion_type has value '"
+                    + clientAssertionType + "' but expected is '" + expectedClientAssertionType + "'");
+        }
+
+        if (clientAssertion == null) {
+            return failure("client_assertion parameter missing");
+        }
+
+        return true;
     }
 
     private boolean validateClient() {
@@ -112,11 +127,17 @@ public abstract class AbstractJWTClientValidator {
             return failure("client_id parameter does not match sub claim");
         }
 
-        context.getEvent().client(clientId);
-        client = realm.getClientByClientId(clientId);
+        String expectedTokenIssuer = getExpectedTokenIssuer();
+        if (expectedTokenIssuer != null && !expectedTokenIssuer.equals(token.getIssuer())) {
+            return false;
+        }
+
+        client = clientAssertionState.getClient();
+
         if (client == null) {
             return failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
         } else {
+            context.getEvent().client(client.getClientId());
             context.setClient(client);
         }
 
@@ -127,11 +148,6 @@ public abstract class AbstractJWTClientValidator {
         if (clientAuthenticatorProviderId != null && !clientAuthenticatorProviderId.equals(client.getClientAuthenticatorType())) {
             logger.debug("Not configured authenticator for client, ignoring");
             return false;
-        }
-
-        String expectedTokenIssuer = getExpectedTokenIssuer();
-        if (expectedTokenIssuer != null && !expectedTokenIssuer.equals(token.getIssuer())) {
-            return failure("Invalid token issuer", Response.Status.UNAUTHORIZED.getStatusCode());
         }
 
         return true;

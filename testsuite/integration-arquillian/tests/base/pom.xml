@@ -395,6 +395,12 @@
                                             <ORACLE_PASSWORD>${keycloak.connectionsJpa.password}</ORACLE_PASSWORD>
                                             <APP_USER>${keycloak.connectionsJpa.user}</APP_USER>
                                             <APP_USER_PASSWORD>${keycloak.connectionsJpa.password}</APP_USER_PASSWORD>
+
+                                            <!-- EnterpriseDB -->
+                                            <PGPORT>${docker.database.port}</PGPORT>
+                                            <PGDATABASE>${keycloak.connectionsJpa.database}</PGDATABASE>
+                                            <PGUSER>${keycloak.connectionsJpa.user}</PGUSER>
+                                            <PGPASSWORD>${keycloak.connectionsJpa.password}</PGPASSWORD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
@@ -780,7 +786,7 @@
                                     <images>
                                         <image>
                                             <alias>infinispan</alias>
-                                            <name>quay.io/infinispan/server:${infinispan.version}</name>
+                                            <name>${infinispan.container}</name>
                                             <run>
                                                 <ports>
                                                     <port>11222:11222</port>

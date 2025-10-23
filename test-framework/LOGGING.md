@@ -42,7 +42,8 @@ Some useful categories include:
 * `org.keycloak.testframework` - Logging from the test framework itself. Setting this to `DEBUG` can be helpful to debug any issues with the test framework itself, or custom suppliers.
 * `org.keycloak` - Logging from the Keycloak server. If you set this to `DEBUG` for example, but don't want debug from the test framework, also explicitly set `org.keycloak.testframework` to for example `INFO`
 * `managed.keycloak` - Log output from the managed Keycloak server if you are running the server in `distribution` mode (which is the default)
-* `managed.db` - Output from database containers are included in this category. Standard out is logged with `DEBUG` level, while standard error is logged with `WARN` level  
+* `managed.db` - Output from database containers are included in this category. Standard out is logged with `DEBUG` level, while standard error is logged with `WARN` level
+* `managed.infinispan` - Output from the external Infinispan container is included in this category. Standard out is logged with `DEBUG` level, while standard error is logged with `WARN` level
 
 ### Enable log filtering
 
@@ -70,6 +71,7 @@ kc.test.log.category."org.keycloak.testframework".level=INFO
 kc.test.log.category."org.keycloak".level=WARN
 kc.test.log.category."managed.keycloak".level=WARN
 kc.test.log.category."managed.db".level=WARN
+kc.test.log.category."managed.infinispan".level=WARN
 ```
 
 This should serve as a good starting point balancing the need of log information with not producing too much noise.
@@ -89,6 +91,7 @@ KC_TEST_LOG_CATEGORY__ORG_KEYCLOAK___LEVEL=DEBUG
 KC_TEST_LOG_CATEGORY__ORG_KEYCLOAK_TEST__LEVEL=DEBUG
 KC_TEST_LOG_CATEGORY__MANAGED_KEYCLOAK__LEVEL=DEBUG
 KC_TEST_LOG_CATEGORY__MANAGED_DB__LEVEL=DEBUG
+KC_TEST_LOG_CATEGORY__MANAGED_INFINISPAN__LEVEL=DEBUG
 ```
 
 ### Examples using environment variables

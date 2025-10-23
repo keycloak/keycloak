@@ -63,7 +63,11 @@ import java.util.concurrent.TimeUnit;
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
         @Dependent(type = KeycloakServiceDependentResource.class),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class),
-        @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class)
+        @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class),
+        @Dependent(
+              type = KeycloakServiceMonitorDependentResource.class,
+              activationCondition = KeycloakServiceMonitorDependentResource.ActivationCondition.class
+        ),
     })
 public class KeycloakController implements Reconciler<Keycloak> {
 
@@ -224,6 +228,10 @@ public class KeycloakController implements Reconciler<Keycloak> {
         }
 
         distConfigurator.validateOptions(keycloakCR, status);
+
+        context.managedWorkflowAndDependentResourceContext()
+                .get(KeycloakServiceMonitorDependentResource.SERVICE_MONITOR_WARNING, String.class)
+                .ifPresent(status::addWarningMessage);
     }
 
     public static boolean isRolling(StatefulSet existingDeployment) {

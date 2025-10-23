@@ -514,7 +514,7 @@ spec:
     type: Route
   configMapName: "cluster-config"
   image: 
-  version: 15.0.15
+  version: 15.0.19
   configListener:
     enabled: false
   container:

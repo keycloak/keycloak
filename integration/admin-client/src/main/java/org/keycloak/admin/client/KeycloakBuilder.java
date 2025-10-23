@@ -126,7 +126,8 @@ public class KeycloakBuilder {
 
     /**
      * @param useDPoP If true, then admin-client will add DPoP proofs to the token-requests and to the admin REST API requests. DPoP feature must be
-     *                enabled on Keycloak server side to work properly. It is false by default.
+     *                enabled on Keycloak server side to work properly. It is false by default. Parameter is supposed to be used with Keycloak server 26.4.0 or later as
+     *                earlier versions did not support DPoP requests for admin REST API
      * @return admin client builder
      */
     public KeycloakBuilder useDPoP(boolean useDPoP) {

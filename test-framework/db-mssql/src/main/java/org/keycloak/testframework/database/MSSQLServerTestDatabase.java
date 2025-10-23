@@ -1,8 +1,10 @@
 package org.keycloak.testframework.database;
 
 import org.jboss.logging.Logger;
+import org.keycloak.testframework.util.ContainerImages;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MSSQLServerContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.List;
 
@@ -15,7 +17,7 @@ class MSSQLServerTestDatabase extends AbstractContainerTestDatabase {
     @SuppressWarnings("resource")
     @Override
     public JdbcDatabaseContainer<?> createContainer() {
-        return new MSSQLServerContainer<>(DatabaseProperties.getContainerImageName(NAME)).withPassword(getPassword()).withEnv("MSSQL_PID", "Express").acceptLicense();
+        return new MSSQLServerContainer<>(DockerImageName.parse(ContainerImages.getContainerImageName(NAME))).withPassword(getPassword()).withEnv("MSSQL_PID", "Express").acceptLicense();
     }
 
     @Override

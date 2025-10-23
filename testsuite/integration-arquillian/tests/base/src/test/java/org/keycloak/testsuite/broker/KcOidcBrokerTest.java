@@ -3,14 +3,15 @@ package org.keycloak.testsuite.broker;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import jakarta.ws.rs.core.Response;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -18,8 +19,8 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -48,10 +49,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
-
-import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,10 +69,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -377,7 +376,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(errorPage.getError(), is("Page not found"));
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
+            SimpleHttpResponse simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
             assertThat(simple, notNullValue());
             assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 

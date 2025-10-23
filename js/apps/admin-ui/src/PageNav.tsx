@@ -145,6 +145,9 @@ export const PageNav = () => {
                 )}
               <LeftNav title="identityProviders" path="/identity-providers" />
               <LeftNav title="userFederation" path="/user-federation" />
+              {isFeatureEnabled(Feature.Workflows) && (
+                <LeftNav title="workflows" path="/workflows" />
+              )}
               {isFeatureEnabled(Feature.DeclarativeUI) &&
                 pages?.map((p) => (
                   <LeftNav

@@ -76,4 +76,5 @@ public class KeycloakRealmImportSpec {
     public void setPlaceholders(Map<String, Placeholder> placeholders) {
         this.placeholders = placeholders;
     }
+
 }

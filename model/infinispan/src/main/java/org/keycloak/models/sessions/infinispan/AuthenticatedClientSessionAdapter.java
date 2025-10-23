@@ -17,9 +17,9 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -29,12 +29,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.changes.SessionsChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
-
-import java.util.UUID;
+import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,29 +39,30 @@ import java.util.UUID;
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
     private final KeycloakSession kcSession;
-    private AuthenticatedClientSessionEntity entity;
+    private final AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
-    private final SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
+    private final ClientSessionManager clientSessionManager;
     private UserSessionModel userSession;
-    private boolean offline;
+    private final boolean offline;
+    private final EmbeddedClientSessionKey cacheKey;
 
     public AuthenticatedClientSessionAdapter(KeycloakSession kcSession,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
-                                             SessionsChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
-        if (userSession == null) {
-            throw new NullPointerException("userSession must not be null");
-        }
+                                             ClientSessionManager clientSessionManager,
+                                             EmbeddedClientSessionKey cacheKey,
+                                             boolean offline) {
 
+        this.userSession = Objects.requireNonNull(userSession, "userSession must not be null");
         this.kcSession = kcSession;
         this.entity = entity;
-        this.userSession = userSession;
         this.client = client;
-        this.clientSessionUpdateTx = clientSessionUpdateTx;
+        this.clientSessionManager = clientSessionManager;
         this.offline = offline;
+        this.cacheKey = cacheKey;
     }
 
     private void update(ClientSessionUpdateTask task) {
-        clientSessionUpdateTx.addTask(entity.getId(), task);
+        clientSessionManager.addChange(cacheKey, task);
     }
 
     /**
@@ -82,9 +80,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         // as nonexistent in org.keycloak.models.sessions.infinispan.UserSessionAdapter.getAuthenticatedClientSessions()
         this.userSession = null;
 
-        SessionUpdateTask<AuthenticatedClientSessionEntity> removeTask = Tasks.removeSync(offline);
-
-        clientSessionUpdateTx.addTask(entity.getId(), removeTask);
+        clientSessionManager.addChange(cacheKey, Tasks.removeSync(offline));
     }
 
     @Override
@@ -117,7 +113,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public String getId() {
-        return entity.getId().toString();
+        return cacheKey.toId();
     }
 
     @Override
@@ -258,10 +254,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public Map<String, String> getNotes() {
-        if (entity.getNotes().isEmpty()) return Collections.emptyMap();
-        Map<String, String> copy = new HashMap<>();
-        copy.putAll(entity.getNotes());
-        return copy;
+        return new ConcurrentHashMap<>(entity.getNotes());
     }
 
     @Override
@@ -289,7 +282,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             }
         };
 
-        update(task);
+        clientSessionManager.restartEntity(cacheKey, task);
     }
 
 }

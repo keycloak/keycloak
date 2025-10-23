@@ -38,19 +38,22 @@ public class Options {
 
     public Options() {
         this.options = new EnumMap<>(OptionCategory.class);
-        PropertyMappers.getMappers().stream()
+        var mappers = PropertyMappers.getMappers();
+        mappers.addAll(PropertyMappers.getWildcardMappers());
+        mappers.stream()
                 .filter(m -> !m.isHidden())
                 .filter(propertyMapper -> Objects.nonNull(propertyMapper.getDescription()))
                 .map(m -> new Option(m.getFrom(),
                         m.getCategory(),
                         m.isBuildTime(),
-                        null,
+                        m.getType().getSimpleName(),
                         m.getDescription(),
-                        m.getDefaultValue().map(Object::toString).orElse(null),
+                        m.getDefaultValue().orElse(null),
                         m.getExpectedValues(),
                         m.isStrictExpectedValues(),
                         m.getEnabledWhen().orElse(""),
-                        m.getDeprecatedMetadata().orElse(null)))
+                        m.getDeprecatedMetadata().orElse(null),
+                        m.getOption().getWildcardKey().orElse(null)))
                 .forEach(o -> options.computeIfAbsent(o.category, k -> new TreeSet<>(Comparator.comparing(Option::getKey))).add(o));
 
         ProviderManager providerManager = Providers.getProviderManager(Thread.currentThread().getContextClassLoader());
@@ -79,10 +82,11 @@ public class Options {
                         .map(m -> new Option(optionPrefix + toDashCase(m.getName()), OptionCategory.GENERAL, false,
                                 m.getType(),
                                 m.getHelpText(),
-                                m.getDefaultValue() == null ? null : m.getDefaultValue().toString(),
+                                m.getDefaultValue(),
                                 m.getOptions() == null ? Collections.emptyList() : m.getOptions(),
                                 true,
                                 "",
+                                null,
                                 null))
                         .sorted(Comparator.comparing(Option::getKey)).collect(Collectors.toList());
 
@@ -187,26 +191,30 @@ public class Options {
         private final String enabledWhen;
         private final DeprecatedMetadata deprecated;
 
+        private final String wildcardKey;
+
         public Option(String key,
                       OptionCategory category,
                       boolean build,
                       String type,
                       String description,
-                      String defaultValue,
+                      Object defaultValue,
                       Iterable<String> expectedValues,
                       boolean strictExpectedValues,
                       String enabledWhen,
-                      DeprecatedMetadata deprecatedMetadata) {
+                      DeprecatedMetadata deprecatedMetadata,
+                      String wildcardKey) {
             this.key = key;
             this.category = category;
             this.build = build;
             this.type = type;
             this.description = description;
-            this.defaultValue = defaultValue;
+            this.defaultValue = org.keycloak.config.Option.getDefaultValueString(defaultValue);
             this.expectedValues = StreamSupport.stream(expectedValues.spliterator(), false).collect(Collectors.toList());
             this.strictExpectedValues = strictExpectedValues;
             this.enabledWhen = enabledWhen;
             this.deprecated = deprecatedMetadata;
+            this.wildcardKey = wildcardKey;
         }
 
         public boolean isBuild() {
@@ -269,6 +277,10 @@ public class Options {
 
         public DeprecatedMetadata getDeprecated() {
             return deprecated;
+        }
+
+        public String getWildcardKey() {
+            return wildcardKey;
         }
     }
 

@@ -453,6 +453,11 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return clientScope.getProtocolMapperByType(type);
+    }
+
+    @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
         return clientScope.getProtocolMapperByName(protocol, name);
     }

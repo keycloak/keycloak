@@ -1,15 +1,18 @@
 <@profile.ifProduct>
-== Maximum load
-</@profile.ifProduct>
-<@profile.ifCommunity>
-== Tested load
 
-We regularly test {project_name} with the following load:
-</@profile.ifCommunity>
+== Maximum load
 
 * 100,000 users
 * 300 requests per second
 
+</@profile.ifProduct>
 <@profile.ifCommunity>
-While we did not see a hard limit in our tests with these values, we ask you to test for higher volumes with horizontally and vertically scaled {project_name} name instances and databases.
+
+== Tested load
+
+We regularly test {project_name} with the following load:
+
+* 100,000 users
+* 300 requests per second
+
 </@profile.ifCommunity>

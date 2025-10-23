@@ -43,7 +43,7 @@ import java.util.UUID;
 /**
  * @author Pedro Igor
  */
-public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
+public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements UserAuthenticationIdentityProvider<C> {
 
     protected static final Logger logger = Logger.getLogger(AbstractIdentityProvider.class);
 
@@ -65,11 +65,6 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     public C getConfig() {
         return this.config;
-    }
-
-    @Override
-    public Response export(UriInfo uriInfo, RealmModel realm, String format) {
-        return Response.noContent().build();
     }
 
     @Override
@@ -176,8 +171,18 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     protected void updateEmail(UserModel user, BrokeredIdentityContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
         // Could be the case during external-internal token exchange
-        if (authSession == null) return;
+        if (authSession == null) {
+            return;
+        }
+
+        String email = context.getEmail();
+
+        if (email == null) {
+            // do not set email if not provided by the IdP
+            return;
+        }
 
         boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
 
@@ -189,7 +194,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
             }
 
             setEmailVerified(user, context);
-            user.setEmail(context.getEmail());
+            user.setEmail(email);
         }
     }
 

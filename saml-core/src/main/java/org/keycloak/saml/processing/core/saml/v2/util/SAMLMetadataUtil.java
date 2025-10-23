@@ -158,7 +158,7 @@ public class SAMLMetadataUtil {
             for (EntityDescriptorType.EDTChoiceType edtChoiceType : entityType.getChoiceType()) {
                 List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = edtChoiceType.getDescriptors();
 
-                if (!descriptors.isEmpty() && descriptors.get(0).getIdpDescriptor() != null) {
+                if (!descriptors.isEmpty() && getter.apply(descriptors.get(0)) != null) {
                     descriptor = getter.apply(descriptors.get(0));
                 }
             }

@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.account.AccountCredentialResource;
@@ -74,7 +74,7 @@ public class AccountRestClient implements AutoCloseable {
                 .orElse(null);
     }
 
-    public SimpleHttp.Response removeCredential(String credentialId) {
+    public SimpleHttpResponse removeCredential(String credentialId) {
         try {
             return SimpleHttpDefault
                     .doDelete(getAccountUrl("credentials/" + credentialId), httpClient)

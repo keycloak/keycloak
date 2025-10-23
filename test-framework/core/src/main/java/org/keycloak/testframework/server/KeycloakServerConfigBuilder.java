@@ -5,7 +5,7 @@ import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
+import org.keycloak.testframework.infinispan.CacheType;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -29,6 +29,9 @@ public class KeycloakServerConfigBuilder {
     private final LogBuilder log = new LogBuilder();
     private final Set<Dependency> dependencies = new HashSet<>();
     private final Set<Path> configFiles = new HashSet<>();
+    private CacheType cacheType = CacheType.LOCAL;
+    private boolean externalInfinispan = false;
+    private boolean tlsEnabled = false;
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -48,8 +51,24 @@ public class KeycloakServerConfigBuilder {
                 .option("bootstrap-admin-password", password);
     }
 
-    public KeycloakServerConfigBuilder cache(String cache) {
-        return option("cache", cache);
+    public KeycloakServerConfigBuilder cache(CacheType cacheType) {
+        this.cacheType = cacheType;
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder externalInfinispanEnabled(boolean enabled) {
+        if (enabled) {
+            this.externalInfinispan = true;
+            cache(CacheType.ISPN);
+        } else {
+            this.externalInfinispan = false;
+            cache(CacheType.LOCAL);
+        }
+        return this;
+    }
+
+    public boolean isExternalInfinispanEnabled() {
+        return this.externalInfinispan;
     }
 
     public LogBuilder log() {
@@ -80,6 +99,16 @@ public class KeycloakServerConfigBuilder {
         dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
         return this;
     }
+
+    public KeycloakServerConfigBuilder tlsEnabled(boolean enabled) {
+        tlsEnabled = enabled;
+        return this;
+    }
+
+    public boolean tlsEnabled() {
+        return tlsEnabled ;
+    }
+
 
     public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
         try {
@@ -185,6 +214,9 @@ public class KeycloakServerConfigBuilder {
     }
 
     List<String> toArgs() {
+        // Cache setup -> supported values: local or ispn
+        option("cache", cacheType.name().toLowerCase());
+
         log.build();
 
         List<String> args = new LinkedList<>();

@@ -35,7 +35,7 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.SelectOrganizationPage;

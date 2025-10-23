@@ -18,6 +18,7 @@ export enum Feature {
   StandardTokenExchangeV2 = "TOKEN_EXCHANGE_STANDARD_V2",
   Passkeys = "PASSKEYS",
   ClientAuthFederated = "CLIENT_AUTH_FEDERATED",
+  Workflows = "WORKFLOWS",
 }
 
 export default function useIsFeatureEnabled() {

@@ -569,6 +569,8 @@ public class RoleContainerResource extends RoleResource {
                                                     @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults) {
 
         auth.roles().requireView(roleContainer);
+        auth.users().requireQuery();
+
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 

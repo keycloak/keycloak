@@ -20,6 +20,7 @@ package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.generator.annotation.Default;
 import io.fabric8.generator.annotation.ValidationRule;
@@ -40,6 +41,10 @@ public class UpdateSpec {
     // those are the default, keep them in sync.
     private static final UpdateStrategy DEFAULT = UpdateStrategy.RECREATE_ON_IMAGE_CHANGE;
     private static final String DEFAULT_JSON = "RecreateOnImageChange";
+
+    @JsonProperty("scheduling")
+    @JsonPropertyDescription("In this section you can configure the update job's scheduling")
+    private SchedulingSpec schedulingSpec;
 
     @JsonPropertyDescription("Sets the update strategy to use.")
     @Default(DEFAULT_JSON)
@@ -62,6 +67,14 @@ public class UpdateSpec {
 
     public void setRevision(String revision) {
         this.revision = revision;
+    }
+
+    public SchedulingSpec getSchedulingSpec() {
+        return schedulingSpec;
+    }
+
+    public void setSchedulingSpec(SchedulingSpec schedulingSpec) {
+        this.schedulingSpec = schedulingSpec;
     }
 
     public static UpdateStrategy getUpdateStrategy(Keycloak keycloak) {

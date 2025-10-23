@@ -18,7 +18,6 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
@@ -32,23 +31,21 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedClientScope extends AbstractRevisioned implements InRealm {
+public class CachedClientScope extends AbstractCachedClientScope<ClientScopeModel> {
 
     private String name;
     private String description;
     private String realm;
     private String protocol;
     private Set<String> scope = new HashSet<>();
-    private Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
     private Map<String, String> attributes = new HashMap<>();
 
     public CachedClientScope(Long revision, RealmModel realm, ClientScopeModel model) {
-        super(revision, model.getId());
+        super(revision, model);
         name = model.getName();
         description = model.getDescription();
         this.realm = realm.getId();
         protocol = model.getProtocol();
-        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
         scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
         attributes.putAll(model.getAttributes());
     }
@@ -63,9 +60,6 @@ public class CachedClientScope extends AbstractRevisioned implements InRealm {
 
     public String getRealm() {
         return realm;
-    }
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return protocolMappers;
     }
 
     public String getProtocol() {

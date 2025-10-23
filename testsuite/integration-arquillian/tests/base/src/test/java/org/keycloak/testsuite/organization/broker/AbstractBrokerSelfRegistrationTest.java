@@ -78,15 +78,27 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
-    public void testDefaultAuthenticationIfUserDoesNotExistAndNoOrgMatch() {
-        testRealm().organizations().get(createOrganization().getId());
+    public void testLoginHintSentToBrokerIfUserAlreadyAMember() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.LOGIN_HINT, "true");
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+        String userId = ApiUtil.getCreatedId(testRealm().users().create(UserBuilder.create()
+                .username("test")
+                .email("test@neworg.org")
+                .enabled(true)
+                .firstName("f")
+                .lastName("l")
+                .build()));
+        organization.members().addMember(userId).close();
 
-        // login with email only
-        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
+        // login hint will automatically redirect user to broker
+        oauth.realm(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.loginForm().loginHint("test@neworg.org").open();
 
-        // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
     }
 
     @Test
@@ -204,7 +216,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         openIdentityFirstLoginPage("user", false, null, false, false);
 
         // check if the login page is shown
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
@@ -215,7 +227,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         driver.navigate().refresh();
 
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        loginPage.assertAttemptedUsernameAvailability(true);
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));

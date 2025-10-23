@@ -26,7 +26,7 @@ include::../partials/blueprint-disclaimer.adoc[]
 
 include::../partials/network-latency.adoc[]
 
-*Suggested setup:* A {kubernetes} cluster consisting of two or more AWS Availability Zones within the same AWS Region.
+*Suggested setup:* {kubernetes} cluster consisting of two or more AWS Availability Zones within the same AWS Region.
 
 *Not considered:* {kubernetes} clusters spread across multiple regions on the same or different continents, as it would increase the latency and the likelihood of network failures.
 Synchronous replication of databases as services with Aurora Regional Deployments on AWS is only available within the same region.

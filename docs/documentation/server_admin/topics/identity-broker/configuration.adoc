@@ -16,7 +16,7 @@ image:images/identity-providers.png[Identity Providers]
 .Add Facebook identity Provider
 image:images/add-identity-provider.png[Add Facebook Identity Provider]
 +
-When you configure an identity provider, the identity provider appears on the {project_name} login page as an option. You can place custom icons on the login screen for each identity provider. See  link:{developerguide_link}#custom-identity-providers-icons[custom icons] for more information.
+When you configure an identity provider, the identity provider appears on the {project_name} login page as an option. You can place custom icons on the login screen for each identity provider. See  https://www.keycloak.org/ui-customization/themes#custom-identity-providers-icons[custom icons] for more information.
 +
 .IDP login page
 image:images/identity-provider-login-page.png[]

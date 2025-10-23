@@ -103,7 +103,9 @@ public class UserInfoEndpoint {
         this.realm = session.getContext().getRealm();
         this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
-        this.error = new OAuth2Error().json(false).realm(realm);
+        this.error = new OAuth2Error().json(false)
+                .session(session)
+                .realm(realm);
         this.request = session.getContext().getHttpRequest();
     }
 
@@ -119,7 +121,7 @@ public class UserInfoEndpoint {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoGet() {
         setupCors();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
+        AppAuthManager.AuthHeader accessToken = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
         return issueUserInfo();
     }
@@ -133,8 +135,8 @@ public class UserInfoEndpoint {
 
         // Try header first
         HttpHeaders headers = request.getHttpHeaders();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
-        authorization(accessToken);
+        AppAuthManager.AuthHeader authHeader = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+        authorization(authHeader);
 
         try {
 
@@ -144,8 +146,9 @@ public class UserInfoEndpoint {
             if (jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE.isCompatible(mediaType)) {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
-                accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-                authorization(accessToken);
+                String accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
+                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(AppAuthManager.BEARER, accessToken);
+                authorization(authHeader);
             }
         } catch (IllegalArgumentException e) {
             // not application/x-www-form-urlencoded, ignore
@@ -364,10 +367,11 @@ public class UserInfoEndpoint {
         error.cors(cors);
     }
 
-    private void authorization(String accessToken) {
-        if (accessToken != null) {
+    private void authorization(AppAuthManager.AuthHeader authHeader) {
+        if (authHeader != null) {
             if (tokenForUserInfo.getToken() == null) {
-                tokenForUserInfo.setToken(accessToken);
+                error.authScheme(authHeader.getScheme());
+                tokenForUserInfo.setToken(authHeader.getToken());
             } else {
                 throw error.cors(cors.allowAllOrigins()).invalidRequest("More than one method used for including an access token");
             }

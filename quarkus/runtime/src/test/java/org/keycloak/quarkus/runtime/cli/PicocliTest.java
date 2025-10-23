@@ -187,7 +187,24 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=a");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
-                containsString("Invalid value for option '--http-port': 'a' is not an int"));
+                containsString("Invalid value for option '--http-port': Expected an integer value, got \"a\""));
+    }
+
+    @Test
+    public void testInvalidArgumentTypeEnv() {
+        putEnvVar("KC_HTTP_PORT", "a");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("Invalid value for option 'KC_HTTP_PORT': Expected an integer value, got \"a\""));
+    }
+
+    @Test
+    public void testEmptyValue() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("Invalid empty value for option '--http-port'"));
     }
 
     @Test
@@ -260,18 +277,22 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void failUnknownOptionWhitespaceSeparatorNotShowingValue() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db-pasword", "mytestpw");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
-                .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
+        assertUnknownOption(nonRunningPicocli);
+    }
+
+    private void assertUnknownOption(NonRunningPicocli nonRunningPicocli) {
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString(Help.defaultColorScheme(nonRunningPicocli.getColorMode())
+                        .errorText("Unknown option: '--db-pasword'").toString()));
+        assertThat(nonRunningPicocli.getErrString(), containsString(
+                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-pool-max-lifetime, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
     }
 
     @Test
     public void failUnknownOptionEqualsSeparatorNotShowingValue() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db-pasword=mytestpw");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
-                .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
+        assertUnknownOption(nonRunningPicocli);
     }
 
     @Test
@@ -279,9 +300,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db-username=foobar", "--db-pasword=mytestpw",
                 "--foobar=barfoo");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString(Help.defaultColorScheme(Help.Ansi.AUTO)
-                .errorText("Unknown option: '--db-pasword'")
-                + "\nPossible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
+        assertUnknownOption(nonRunningPicocli);
     }
 
     @Test
@@ -481,7 +500,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void wrongLevelForCategory() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak=wrong");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log-level-org.keycloak", "wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.getErrString().contains("Invalid log level: wrong. Possible values are: warn, trace, debug, error, fatal, info."));
     }
@@ -800,9 +819,9 @@ public class PicocliTest extends AbstractConfigurationTest {
         var logHandlerName = logHandler.toString();
         var logHandlerOptionsName = logHandlerOptions.toString();
 
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerOptionsName), "--log-%s-async=true".formatted(logHandlerOptionsName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(logHandlerOptionsName)));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': Expected an integer value, got \"invalid\"".formatted(logHandlerOptionsName)));
 
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=768".formatted(logHandlerOptionsName));
@@ -856,7 +875,14 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         var nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(handlerName), "--log-%s-async=true".formatted(handlerName), "--log-%s-async-queue-length=invalid".formatted(handlerName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(handlerName)));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': Expected an integer value, got \"invalid\"".formatted(handlerName)));
+    }
+
+    @Test
+    public void testImportHelpAllSucceeds() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("import", "--help-all");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getOutString().contains("--db"));
     }
 
     @Test
@@ -878,6 +904,20 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility","check");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Missing required argument: --file"));
+    }
+
+    @Test
+    public void testNoKcDirWarning() {
+        putEnvVar("KC_DIR", "dir");
+        putEnvVar("KC_LOG_LEVEL", "debug");
+        var picocli = build("build", "--db=dev-file");
+        assertFalse(picocli.getOutString(), picocli.getOutString().contains("kc.dir"));
+    }
+
+    @Test
+    public void testUpdatesFileValidation() {
+        NonRunningPicocli picocli = pseudoLaunch("update-compatibility","check", "--file=not-found");
+        assertTrue(picocli.getErrString().contains("Incorrect argument --file."));
     }
 
     @Test
@@ -942,5 +982,17 @@ public class PicocliTest extends AbstractConfigurationTest {
         var nonRunningPicocli = pseudoLaunch("start-dev", "--http-management-health-enabled=false");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Available only when health is enabled"));
+    }
+
+    @Test
+    public void httpOptimizedSerializers() {
+        var nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfigNull("quarkus.rest.jackson.optimization.enable-reflection-free-serializers");
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features=http-optimized-serializers");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
     }
 }

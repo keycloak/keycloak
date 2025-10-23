@@ -27,7 +27,7 @@ public class DefaultInfinispanTransactionProviderFactory implements InfinispanTr
 
     @Override
     public InfinispanTransactionProvider create(KeycloakSession session) {
-        var provider = new DefaultInfinispanTransactionProvider();
+        var provider = new DefaultInfinispanTransactionProvider(session);
         session.getTransactionManager().enlistAfterCompletion(provider);
         return provider;
     }

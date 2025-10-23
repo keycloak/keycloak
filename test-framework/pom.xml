@@ -36,6 +36,7 @@
         <module>bom</module>
         <module>core</module>
         <module>junit5-config</module>
+        <module>db-edb</module>
         <module>db-mariadb</module>
         <module>db-mssql</module>
         <module>db-mysql</module>

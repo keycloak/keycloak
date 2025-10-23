@@ -825,9 +825,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 Set<String> resources = query.getResources();
 
                 if (consumer != null) {
-                    resources.stream().map(resourceId -> (R) findById(resourceServer, resourceId)).forEach(consumer);
+                    resources.stream().map(resourceId -> (R) findById(resourceServer, resourceId)).filter(Objects::nonNull).forEach(consumer);
                 } else {
-                    model = resources.stream().map(resourceId -> (R) findById(resourceServer, resourceId)).collect(Collectors.toList());
+                    model = resources.stream().map(resourceId -> (R) findById(resourceServer, resourceId)).filter(Objects::nonNull).collect(Collectors.toList());
                 }
             }
             

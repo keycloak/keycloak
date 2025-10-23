@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 

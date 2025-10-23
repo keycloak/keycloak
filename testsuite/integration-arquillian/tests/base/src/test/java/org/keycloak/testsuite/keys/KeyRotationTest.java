@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.keys;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,7 +60,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

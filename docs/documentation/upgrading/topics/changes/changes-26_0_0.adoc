@@ -90,7 +90,7 @@ For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring t
 This release introduced the capability to easily add a custom footer to the login pages for the `base/login` and `keycloak.v2/login` theme.
 In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
 
-For more details, see link:{developerguide_link}#_theme_custom_footer[Adding a custom footer to a login theme].
+For more details, see link:https://www.keycloak.org/ui-customization/themes#_theme_custom_footer[Adding a custom footer to a login theme].
 
 = Persisting revoked access tokens across restarts
 

@@ -20,12 +20,12 @@ import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.HardcodedRoleMapper;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -65,7 +65,6 @@ import org.keycloak.testsuite.util.WaitUtils;
 
 import org.keycloak.util.TokenUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
@@ -370,7 +369,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         assertThat(errorPage.getError(), is("Page not found"));
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            SimpleHttp.Response simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
+            SimpleHttpResponse simple = SimpleHttpDefault.doGet(LINK, client).asResponse();
             assertThat(simple, notNullValue());
             assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 

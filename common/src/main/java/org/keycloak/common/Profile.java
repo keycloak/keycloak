@@ -77,6 +77,8 @@ public class Profile {
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
+        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.EXPERIMENTAL),
+
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
@@ -91,9 +93,11 @@ public class Profile {
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
 
-        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.EXPERIMENTAL),
+        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.PREVIEW),
 
-        SPIFFE("SPIFFE trust relationship provider", Type.EXPERIMENTAL),
+        SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
+
+        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.EXPERIMENTAL),
 
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
@@ -104,7 +108,7 @@ public class Profile {
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
-        DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
+        DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.DEFAULT),
 
         DEVICE_FLOW("OAuth 2.0 Device Authorization Grant", Type.DEFAULT),
 
@@ -140,11 +144,13 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
 
-        RESOURCE_LIFECYCLE("Resource lifecycle management", Type.EXPERIMENTAL),
+        WORKFLOWS("Workflows", Type.EXPERIMENTAL),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
+
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.

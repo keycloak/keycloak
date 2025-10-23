@@ -29,6 +29,10 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -61,15 +65,31 @@ public class IDPMetadataDescriptor {
             URI artifactResolutionService, String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts)
             throws ProcessingException {
         return getIDPDescriptor(null, null, loginPostEndpoint, loginRedirectEndpoint, logoutEndpoint,
-                artifactResolutionService, entityId, wantAuthnRequestsSigned, signingCerts);
+                artifactResolutionService, entityId, wantAuthnRequestsSigned, signingCerts, null);
     }
 
     public static String getIDPDescriptor(KeyWrapper keyWrapper, SignatureAlgorithm sigAlg,
             URI loginPostEndpoint, URI loginRedirectEndpoint, URI logoutEndpoint,
             URI artifactResolutionService, String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts)
             throws ProcessingException {
+        return getIDPDescriptor(null, null, loginPostEndpoint, loginRedirectEndpoint, logoutEndpoint,
+                artifactResolutionService, entityId, wantAuthnRequestsSigned, signingCerts, null);
+    }
+
+    public static String getIDPDescriptor(KeyWrapper keyWrapper, SignatureAlgorithm sigAlg,
+            URI loginPostEndpoint, URI loginRedirectEndpoint, URI logoutEndpoint,
+            URI artifactResolutionService, String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts, Long expiration)
+            throws ProcessingException {
 
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
+        if (expiration != null) {
+            try {
+                Duration cacheDuration = DatatypeFactory.newInstance().newDuration(TimeUnit.SECONDS.toMillis(expiration));
+                entityDescriptor.setCacheDuration(cacheDuration);
+            } catch (DatatypeConfigurationException e) {
+                throw new ProcessingException("Cannot create datatype factory to create duration", e);
+            }
+        }
 
         IDPSSODescriptorType spIDPDescriptor = new IDPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
         spIDPDescriptor.setWantAuthnRequestsSigned(wantAuthnRequestsSigned);

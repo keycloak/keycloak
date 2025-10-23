@@ -36,11 +36,15 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.util.DPoPUtil;
 
 import static jakarta.ws.rs.core.HttpHeaders.WWW_AUTHENTICATE;
+import static org.keycloak.OAuth2Constants.ALGS_ATTRIBUTE;
+import static org.keycloak.services.util.DPoPUtil.DPOP_SCHEME;
 
 /**
  * @author <a href="mailto:dmitryt@backbase.com">Dmitry Telegin</a>
@@ -49,7 +53,9 @@ public class OAuth2Error {
 
     private static final Map<Response.Status, Class<? extends WebApplicationException>> STATUS_MAP = new HashMap<>();
 
+    private KeycloakSession session;
     private RealmModel realm;
+    private String authScheme;
     private String error;
     private String errorDescription;
     private Optional<Cors> cors = Optional.empty();
@@ -65,8 +71,18 @@ public class OAuth2Error {
         STATUS_MAP.put(Response.Status.INTERNAL_SERVER_ERROR, InternalServerErrorException.class);
     }
 
+    public OAuth2Error session(KeycloakSession session) {
+        this.session = session;
+        return this;
+    }
+
     public OAuth2Error realm(RealmModel realm) {
         this.realm = realm;
+        return this;
+    }
+
+    public OAuth2Error authScheme(String authScheme) {
+        this.authScheme = authScheme;
         return this;
     }
 
@@ -130,7 +146,7 @@ public class OAuth2Error {
                 OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
                 builder.entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE);
             } else {
-                WWWAuthenticate.BearerChallenge bearer = new WWWAuthenticate.BearerChallenge();
+                WWWAuthenticate.BearerChallenge bearer = DPOP_SCHEME.equals(this.authScheme) ? new WWWAuthenticate.DPoPChallenge(session) : new WWWAuthenticate.BearerChallenge();
                 bearer.setRealm(realm.getName());
                 bearer.setError(error);
                 bearer.setErrorDescription(errorDescription);
@@ -297,6 +313,22 @@ public class OAuth2Error {
             @Override
             public String getScheme() {
                 return BEARER_SCHEME;
+            }
+
+        }
+
+        public static class DPoPChallenge extends BearerChallenge {
+
+            public DPoPChallenge(KeycloakSession session) {
+                List<String> dpopAlgs = DPoPUtil.getDPoPSupportedAlgorithms(session);
+                dpopAlgs.stream()
+                        .reduce((str1, current) -> str1 + " " + current)
+                        .ifPresent(algs -> setAttribute(ALGS_ATTRIBUTE, algs));
+            }
+
+            @Override
+            public String getScheme() {
+                return DPOP_SCHEME;
             }
 
         }

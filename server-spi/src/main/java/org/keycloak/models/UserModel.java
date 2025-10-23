@@ -35,6 +35,7 @@ public interface UserModel extends RoleMapperModel {
     String FIRST_NAME = "firstName";
     String LAST_NAME = "lastName";
     String EMAIL = "email";
+    String EMAIL_PENDING = "kc.email.pending";
     String EMAIL_VERIFIED = "emailVerified";
     String LOCALE = "locale";
     String ENABLED = "enabled";

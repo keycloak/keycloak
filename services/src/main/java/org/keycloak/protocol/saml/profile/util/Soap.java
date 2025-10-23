@@ -22,7 +22,9 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
@@ -262,7 +264,7 @@ public final class Soap {
                 message.saveChanges();
             }
             // use SimpleHttp from the session
-            SimpleHttp simpleHttp = SimpleHttp.doPost(url, session);
+            SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(url);
             // add all the headers as HTTP headers except the ones needed for the HttpEntity
             Iterator<MimeHeader> reqHeaders = message.getMimeHeaders().getAllHeaders();
             ContentType contentType = null;
@@ -291,7 +293,7 @@ public final class Soap {
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 message.writeTo(out);
                 simpleHttp.entity(new ByteArrayEntity(out.toByteArray(), 0, length, contentType));
-                try (SimpleHttp.Response res = simpleHttp.asResponse()) {
+                try (SimpleHttpResponse res = simpleHttp.asResponse()) {
                     // HTTP_INTERNAL_ERROR (500) and HTTP_BAD_REQUEST (400) should be processed as SOAP faults
                     if (res.getStatus() == HttpStatus.SC_INTERNAL_SERVER_ERROR
                             || res.getStatus() == HttpStatus.SC_BAD_REQUEST

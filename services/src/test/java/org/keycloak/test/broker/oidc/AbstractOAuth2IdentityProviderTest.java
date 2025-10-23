@@ -24,6 +24,7 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -122,6 +123,40 @@ public class AbstractOAuth2IdentityProviderTest {
 
 	private TestProvider getTested() {		
 		return new TestProvider(getConfig(null, null, null, Boolean.FALSE, Boolean.FALSE));
+	}
+
+	@Test
+	public void oAuthResponse_nullRefreshExpiresIn_shouldNotThrowException() throws IOException {
+		// Test that OAuthResponse can handle null refreshExpiresIn during JSON serialization/deserialization
+		AbstractOAuth2IdentityProvider.OAuthResponse response = new AbstractOAuth2IdentityProvider.OAuthResponse();
+		response.setToken("test_token");
+		response.setRefreshToken("test_refresh");
+		response.setRefreshExpiresIn(null); // This should not cause NPE
+
+		// Should not throw JsonMapperException during serialization
+		String json = JsonSerialization.writeValueAsString(response);
+		Assert.assertNotNull(json);
+
+		// Should not throw exception during deserialization
+		AbstractOAuth2IdentityProvider.OAuthResponse deserialized =
+			JsonSerialization.readValue(json, AbstractOAuth2IdentityProvider.OAuthResponse.class);
+		Assert.assertNotNull(deserialized);
+		Assert.assertNull(deserialized.getRefreshExpiresIn()); // Should return null, not throw NPE
+	}
+
+	@Test  
+	public void oAuthResponse_missingRefreshExpiresInField_shouldNotThrowException() throws IOException {
+		// Test JSON without refresh_expires_in field
+		String jsonWithoutRefreshExpires = "{\"access_token\":\"test\",\"refresh_token\":\"refresh\"}";
+		
+		// Should not throw JsonMapperException during deserialization
+		AbstractOAuth2IdentityProvider.OAuthResponse response = 
+			JsonSerialization.readValue(jsonWithoutRefreshExpires, AbstractOAuth2IdentityProvider.OAuthResponse.class);
+		
+		Assert.assertNotNull(response);
+		Assert.assertEquals("test", response.getToken());
+		Assert.assertEquals("refresh", response.getRefreshToken());
+		Assert.assertNull(response.getRefreshExpiresIn()); // Should return null, not throw NPE
 	}
 
 	private OAuth2IdentityProviderConfig getConfig(final String autorizationUrl, final String defaultScope, final String clientId, final Boolean isLoginHint, final Boolean passMaxAge) {

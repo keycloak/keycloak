@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import jakarta.ws.rs.core.Response;

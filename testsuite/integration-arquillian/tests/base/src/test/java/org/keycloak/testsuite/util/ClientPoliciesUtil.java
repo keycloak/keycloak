@@ -267,9 +267,11 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
-    public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure) {
+    public static DPoPBindEnforcerExecutor.Configuration createDPoPBindEnforcerExecutorConfig(Boolean autoConfigure, Boolean enforceAuthorizationCodeBindingToDpop, Boolean bindRefreshToken) {
         DPoPBindEnforcerExecutor.Configuration config = new DPoPBindEnforcerExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
+        config.setEnforceAuthorizationCodeBindingToDpop(enforceAuthorizationCodeBindingToDpop);
+        config.setAllowOnlyRefreshTokenBinding(bindRefreshToken);
         return config;
     }
 
@@ -466,7 +468,7 @@ public final class ClientPoliciesUtil {
 
     public static KeyPair generateEcdsaKey(String ecDomainParamName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-        SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+        SecureRandom randomGen = new SecureRandom();
         ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
         keyGen.initialize(ecSpec, randomGen);
         KeyPair keyPair = keyGen.generateKeyPair();

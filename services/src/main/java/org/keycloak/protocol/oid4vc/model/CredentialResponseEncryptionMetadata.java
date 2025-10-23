@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Represents the credential_response_encryption metadata for an OID4VCI Credential Issuer.
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p}
+ * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p
  *
  * @author <a href="mailto:Bertrand.Ogen@adorsys.com">Bertrand Ogen</a>
  */
@@ -47,31 +47,35 @@ public class CredentialResponseEncryptionMetadata {
         return algValuesSupported;
     }
 
-    public void setAlgValuesSupported(List<String> algValuesSupported) {
+    public CredentialResponseEncryptionMetadata setAlgValuesSupported(List<String> algValuesSupported) {
         this.algValuesSupported = algValuesSupported;
+        return this;
     }
 
     public List<String> getEncValuesSupported() {
         return encValuesSupported;
     }
 
-    public void setEncValuesSupported(List<String> encValuesSupported) {
+    public CredentialResponseEncryptionMetadata setEncValuesSupported(List<String> encValuesSupported) {
         this.encValuesSupported = encValuesSupported;
+        return this;
     }
 
     public List<String> getZipValuesSupported() {
         return zipValuesSupported;
     }
 
-    public void setZipValuesSupported(List<String> zipValuesSupported) {
+    public CredentialResponseEncryptionMetadata setZipValuesSupported(List<String> zipValuesSupported) {
         this.zipValuesSupported = zipValuesSupported;
+        return this;
     }
 
     public Boolean getEncryptionRequired() {
         return encryptionRequired;
     }
 
-    public void setEncryptionRequired(Boolean encryptionRequired) {
+    public CredentialResponseEncryptionMetadata setEncryptionRequired(Boolean encryptionRequired) {
         this.encryptionRequired = encryptionRequired;
+        return this;
     }
 }

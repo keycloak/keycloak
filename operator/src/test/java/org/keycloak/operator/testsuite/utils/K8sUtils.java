@@ -17,23 +17,6 @@
 
 package org.keycloak.operator.testsuite.utils;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import io.quarkus.logging.Log;
-
-import org.awaitility.Awaitility;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpecBuilder;
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -47,6 +30,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.awaitility.Awaitility;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpecBuilder;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.quarkus.logging.Log;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

@@ -986,7 +986,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         errorPage.assertCurrent();
         Assert.assertEquals("Logout failed", errorPage.getError());
 
-        events.expectLogoutError(Errors.LOGOUT_FAILED).assertEvent();
+        events.expectLogoutError(Errors.SESSION_EXPIRED).assertEvent();
     }
 
     @Test

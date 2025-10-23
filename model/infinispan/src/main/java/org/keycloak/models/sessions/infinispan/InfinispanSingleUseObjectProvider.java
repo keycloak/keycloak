@@ -46,12 +46,11 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     private final boolean persistRevokedTokens;
     private final InfinispanKeycloakTransaction tx;
 
-    public InfinispanSingleUseObjectProvider(KeycloakSession session, BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache, boolean persistRevokedTokens) {
+    public InfinispanSingleUseObjectProvider(KeycloakSession session, BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache, boolean persistRevokedTokens, InfinispanKeycloakTransaction tx) {
         this.session = session;
         this.singleUseObjectCache = singleUseObjectCache;
         this.persistRevokedTokens = persistRevokedTokens;
-        this.tx = new InfinispanKeycloakTransaction();
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        this.tx = tx;
     }
 
     @Override

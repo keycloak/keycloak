@@ -45,7 +45,9 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
 
     private static final List<String> REQUIRED_SEARCHABLE_ATTRIBUTES = Arrays.asList(
         "saml_idp_initiated_sso_url_name",
-        SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER
+        SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER,
+        "jwt.credential.issuer",
+        "jwt.credential.sub"
     );
 
     @Override

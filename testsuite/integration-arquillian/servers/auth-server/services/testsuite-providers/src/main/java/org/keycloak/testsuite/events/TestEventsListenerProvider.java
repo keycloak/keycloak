@@ -41,12 +41,12 @@ public class TestEventsListenerProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
-        tx.addEvent(event);
+        tx.addEvent(event.clone());
     }
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        tx.addAdminEvent(event, includeRepresentation);
+        tx.addAdminEvent(new AdminEvent(event), includeRepresentation);
     }
 
     @Override

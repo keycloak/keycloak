@@ -33,11 +33,11 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
@@ -49,6 +49,9 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.jwe.JWE;
@@ -66,6 +69,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -92,7 +96,7 @@ import java.util.Optional;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider<OIDCIdentityProviderConfig>, JWTAuthorizationGrantProvider {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String SCOPE_OPENID = "openid";
@@ -157,7 +161,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         String url = logoutUri.build().toString();
         try {
-            int status = SimpleHttp.doGet(url, session).asStatus();
+            int status = SimpleHttp.create(session).doGet(url).asStatus();
             boolean success = status >= 200 && status < 400;
             if (!success) {
                 logger.warn("Failed backchannel broker logout to: " + url);
@@ -359,8 +363,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         @Override
-        public SimpleHttp generateTokenRequest(String authorizationCode) {
-            SimpleHttp simpleHttp = super.generateTokenRequest(authorizationCode);
+        public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
+            SimpleHttpRequest simpleHttp = super.generateTokenRequest(authorizationCode);
             return simpleHttp;
         }
 
@@ -512,7 +516,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty()) {
 
                 if (accessToken != null) {
-                    SimpleHttp.Response response = executeRequest(userInfoUrl, SimpleHttp.doGet(userInfoUrl, session).header("Authorization", "Bearer " + accessToken));
+                    SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken));
                     String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
                     MediaType contentMediaType;
                     try {
@@ -589,8 +593,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return getConfig().getUserInfoUrl();
     }
 
-    private SimpleHttp.Response executeRequest(String url, SimpleHttp request) throws IOException {
-        SimpleHttp.Response response = request.asResponse();
+    private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
+        SimpleHttpResponse response = request.asResponse();
         if (response.getStatus() != 200) {
             String msg = "failed to invoke url [" + url + "]";
             try {
@@ -1062,6 +1066,17 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         return validator.validate();
+    }
+
+    @Override
+    public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) {
+
+        //TODO: proper assertion validation
+        BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
+        user.setUsername(context.getJWT().getSubject());
+        user.setIdp(this);
+        return user;
+
     }
 
 }

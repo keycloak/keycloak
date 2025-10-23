@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
@@ -73,9 +73,6 @@ import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;

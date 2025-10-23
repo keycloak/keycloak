@@ -1178,6 +1178,7 @@ public class AuthenticationProcessor {
                 }
             }
             userSession.setState(UserSessionModel.State.LOGGED_IN);
+            session.getContext().setUserSession(userSession);
         }
 
         if (remember) {

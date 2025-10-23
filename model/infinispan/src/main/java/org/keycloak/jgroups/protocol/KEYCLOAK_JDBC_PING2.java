@@ -129,6 +129,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             try {
                 List<PingData> pingData = readFromDB(cluster_name);
                 PhysicalAddress physical_addr = (PhysicalAddress) down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
+                // Sending the discovery here, as parent class will not execute it once there is data in the table
+                sendDiscoveryResponse(local_addr, physical_addr, NameCache.get(local_addr), null, is_coord);
                 PingData coord_data = new PingData(local_addr, true, NameCache.get(local_addr), physical_addr).coord(is_coord);
                 write(Collections.singletonList(coord_data), cluster_name);
                 while (pingData.stream().noneMatch(PingData::isCoord)) {
@@ -161,6 +163,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                         // Always use a transaction for the delete+insert to make it atomic
                         // to avoid the short moment where there is no entry in the table.
                         connection.setAutoCommit(false);
+                    } else {
+                        log.warn("Autocommit is disabled. This indicates a transaction context that might batch statements and can lead to deadlocks.");
                     }
                     delete(connection, clustername, data.getAddress());
                     insert(connection, data, clustername);

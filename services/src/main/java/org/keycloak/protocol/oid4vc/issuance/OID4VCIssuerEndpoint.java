@@ -35,12 +35,16 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.OAuth2Constants;
+import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
@@ -49,6 +53,7 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -64,8 +69,10 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
@@ -82,11 +89,15 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
@@ -123,11 +134,31 @@ public class OID4VCIssuerEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
 
+    /**
+     * Session note key for storing credential configuration IDs from credential offer.
+     * This allows the authorization details processor to easily retrieve the configuration IDs
+     * without having to search through all session notes or parse the full credential offer.
+     */
+    public static final String CREDENTIAL_CONFIGURATION_IDS_NOTE = "CREDENTIAL_CONFIGURATION_IDS";
+
+    /**
+     * Prefix for session note keys that store the mapping between credential identifiers and configuration IDs.
+     * This is used to store mappings generated during authorization details processing.
+     */
+    public static final String CREDENTIAL_IDENTIFIER_PREFIX = "credential_identifier_";
+
+    /**
+     * Prefix for session note keys that store authorization details claims.
+     * This is used to store claims from authorization details for later use during credential issuance.
+     */
+    public static final String AUTHORIZATION_DETAILS_CLAIMS_PREFIX = "AUTHORIZATION_DETAILS_CLAIMS_";
+
     private Cors cors;
 
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     private static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
+    public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
     public static final String CREDENTIAL_PATH = "credential";
     public static final String CREDENTIAL_OFFER_PATH = "credential-offer/";
@@ -310,6 +341,13 @@ public class OID4VCIssuerEndpoint {
         String sessionCode = generateCodeForSession(expiration, clientSession);
         try {
             clientSession.setNote(sessionCode, JsonSerialization.mapper.writeValueAsString(theOffer));
+
+            // Store the credential configuration IDs in a predictable location for token processing
+            // This allows the authorization details processor to easily retrieve the configuration IDs
+            // without having to search through all session notes or parse the full credential offer
+            String credentialConfigIdsJson = JsonSerialization.mapper.writeValueAsString(theOffer.getCredentialConfigurationIds());
+            clientSession.setNote(CREDENTIAL_CONFIGURATION_IDS_NOTE, credentialConfigIdsJson);
+            LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert the offer POJO to JSON: %s", e.getMessage());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
@@ -348,7 +386,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Provides an OID4VCI compliant credentials offer
+     * Provides an OID4VCI compliant credential offer
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -395,14 +433,24 @@ public class OID4VCIssuerEndpoint {
      * Returns a verifiable credential
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
-    public Response requestCredential(CredentialRequest credentialRequestVO) {
-        LOGGER.debugf("Received credentials request %s.", credentialRequestVO);
+    public Response requestCredential(String requestPayload) {
+        LOGGER.debugf("Received credentials request with payload: %s", requestPayload);
+
+        if (requestPayload == null || requestPayload.trim().isEmpty()) {
+            String errorMessage = "Request payload is null or empty.";
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+        }
 
         cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
+        CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
+
+        // Validate request encryption
+        CredentialRequest credentialRequestVO = validateRequestEncryption(requestPayload, issuerMetadata);
 
         // Authenticate first to fail fast on auth errors
         AuthenticationManager.AuthResult authResult = getAuthResult();
@@ -416,26 +464,39 @@ public class OID4VCIssuerEndpoint {
 
         // Check if encryption is required but not provided
         if (isEncryptionRequired && encryptionParams == null) {
-            String errorMessage = "Encryption is required by the Credential Issuer, but no encryption parameters were provided.";
+            String errorMessage = "Response encryption is required by the Credential Issuer, but no encryption parameters were provided.";
             LOGGER.debug(errorMessage);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
         }
 
         // Validate encryption parameters if provided
         if (encryptionParams != null) {
-            try {
-                validateEncryptionParameters(encryptionParams);
+            validateEncryptionParameters(encryptionParams);
 
-                // Check if the encryption algorithms are supported
-                if (!isSupportedEncryption(encryptionMetadata, encryptionParams.getAlg(), encryptionParams.getEnc())) {
-                    String errorMessage = String.format("Unsupported encryption parameters: alg=%s, enc=%s",
-                            encryptionParams.getAlg(), encryptionParams.getEnc());
-                    LOGGER.debug(errorMessage);
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
-                }
-            } catch (BadRequestException e) {
-                // Re-throw with proper error type
-                throw e;
+            // Select and validate alg
+            String selectedAlg = selectKeyManagementAlg(encryptionMetadata, encryptionParams.getJwk());
+            if (selectedAlg == null) {
+                String errorMessage = String.format("No supported key management algorithm (alg) for provided JWK (kty=%s)",
+                        encryptionParams.getJwk().getKeyType());
+                LOGGER.debug(errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            }
+
+            // Check if enc is supported
+            if (!encryptionMetadata.getEncValuesSupported().contains(encryptionParams.getEnc())) {
+                String errorMessage = String.format("Unsupported content encryption algorithm: enc=%s",
+                        encryptionParams.getEnc());
+                LOGGER.debug(errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            }
+
+            // Check compression (unchanged)
+            if (encryptionParams.getZip() != null &&
+                    !isSupportedCompression(encryptionMetadata, encryptionParams.getZip())) {
+                String errorMessage = String.format("Unsupported compression parameter: zip=%s",
+                        encryptionParams.getZip());
+                LOGGER.debug(errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
         }
 
@@ -451,25 +512,74 @@ public class OID4VCIssuerEndpoint {
 
         // Check if at least one of both is available.
         if (requestedCredentialConfigurationId == null && requestedCredentialIdentifier == null) {
-            LOGGER.debugf("Missing both credential_configuration_id and credential_identifier. " +
-                    "At least one must be specified.");
+            LOGGER.debugf("Missing both credential_configuration_id and credential_identifier. At least one must be specified.");
             throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID));
         }
 
-        // Find the requested credential scope
-        CredentialScopeModel requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
-            LOGGER.debugf("Credential for request '%s' not found.", credentialRequestVO.toString());
-            
-            // Determine the appropriate error type based on what was requested
-            ErrorType errorType;
-            if (credentialRequestVO.getCredentialConfigurationId() != null) {
-                errorType = ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
-            } else {
-                errorType = ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER;
+        CredentialScopeModel requestedCredential;
+
+        // If credential_identifier is provided, retrieve the mapping from client session
+        if (credentialRequestVO.getCredentialIdentifier() != null) {
+            String mappingKey = CREDENTIAL_IDENTIFIER_PREFIX + credentialRequestVO.getCredentialIdentifier();
+
+            // First try to get the client session and look for the mapping there
+            UserSessionModel userSession = authResult.getSession();
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(authResult.getClient().getId());
+            String mappedCredentialConfigurationId = null;
+
+            if (clientSession != null) {
+                mappedCredentialConfigurationId = clientSession.getNote(mappingKey);
+                if (mappedCredentialConfigurationId != null) {
+                    LOGGER.debugf("Found credential configuration ID mapping in client session for identifier %s: %s",
+                            credentialRequestVO.getCredentialIdentifier(), mappedCredentialConfigurationId);
+                }
             }
-            
-            return new BadRequestException(getErrorResponse(errorType));
-        });
+
+            if (mappedCredentialConfigurationId != null) {
+                // Use the mapped credential configuration ID to find the credential scope
+                Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
+                if (supportedCredentials.containsKey(mappedCredentialConfigurationId)) {
+                    SupportedCredentialConfiguration config = supportedCredentials.get(mappedCredentialConfigurationId);
+                    ClientModel client = session.getContext().getClient();
+                    Map<String, ClientScopeModel> clientScopes = client.getClientScopes(false);
+                    ClientScopeModel clientScope = clientScopes.get(config.getScope());
+
+                    if (clientScope != null) {
+                        requestedCredential = new CredentialScopeModel(clientScope);
+                        LOGGER.debugf("Successfully mapped credential identifier %s to configuration %s",
+                                credentialRequestVO.getCredentialIdentifier(), mappedCredentialConfigurationId);
+                    } else {
+                        LOGGER.errorf("Client scope not found for mapped credential configuration: %s", config.getScope());
+                        throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+                    }
+                } else {
+                    LOGGER.errorf("Mapped credential configuration not found: %s", mappedCredentialConfigurationId);
+                    throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+                }
+            } else {
+                // No mapping found, try to use credential_identifier as a direct scope name
+                LOGGER.debugf("No mapping found for credential identifier %s, trying direct scope lookup",
+                        credentialRequestVO.getCredentialIdentifier());
+                try {
+                    requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
+                        LOGGER.errorf("Credential scope not found for identifier: %s", credentialRequestVO.getCredentialIdentifier());
+                        return new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER));
+                    });
+                } catch (Exception e) {
+                    LOGGER.errorf(e, "Failed to find credential scope for identifier: %s", credentialRequestVO.getCredentialIdentifier());
+                    throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER));
+                }
+            }
+        } else if (credentialRequestVO.getCredentialConfigurationId() != null) {
+            // Use credential_configuration_id for direct lookup
+            requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
+                LOGGER.errorf("Credential scope not found for configuration ID: %s", credentialRequestVO.getCredentialConfigurationId());
+                return new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+            });
+        } else {
+            // Neither provided - this should not happen due to earlier validation
+            throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID));
+        }
 
         checkScope(requestedCredential);
 
@@ -479,6 +589,7 @@ public class OID4VCIssuerEndpoint {
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequestVO);
 
+        // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
         responseVO.setNotificationId(generateNotificationId());
 
@@ -487,7 +598,7 @@ public class OID4VCIssuerEndpoint {
             Object theCredential = getCredential(authResult, supportedCredential, credentialRequestVO);
             responseVO.addCredential(theCredential);
         } else {
-            // Issue credentials for each proof (or one if no proofs)
+            // Issue credentials for each proof
             Proofs originalProofs = credentialRequestVO.getProofs();
             for (String currentProof : allProofs) {
                 credentialRequestVO.setProofs(new Proofs().setJwt(List.of(currentProof)));
@@ -497,15 +608,186 @@ public class OID4VCIssuerEndpoint {
             credentialRequestVO.setProofs(originalProofs);
         }
 
-        if (encryptionParams != null) {
-            String jwe = encryptCredentialResponse(responseVO, encryptionParams);
+        // Encrypt all responses if encryption parameters are provided, except for error credential responses
+        if (encryptionParams != null && !responseVO.getCredentials().isEmpty()) {
+            String jwe = encryptCredentialResponse(responseVO, encryptionParams, encryptionMetadata);
             return Response.ok()
                     .type(MediaType.APPLICATION_JWT)
                     .entity(jwe)
                     .build();
         }
-
         return Response.ok().entity(responseVO).build();
+    }
+
+    private CredentialRequest validateRequestEncryption(String requestPayload, CredentialIssuer issuerMetadata) throws BadRequestException {
+        CredentialRequestEncryptionMetadata requestEncryptionMetadata = issuerMetadata.getCredentialRequestEncryption();
+        boolean isRequestEncryptionRequired = Optional.ofNullable(requestEncryptionMetadata)
+                .map(CredentialRequestEncryptionMetadata::isEncryptionRequired)
+                .orElse(false);
+
+        // Determine if the request is a JWE based on content-type
+        String contentType = session.getContext().getHttpRequest().getHttpHeaders()
+                .getHeaderString(HttpHeaders.CONTENT_TYPE);
+        if (contentType != null) {
+            contentType = contentType.split(";")[0].trim(); // Handle parameters like charset
+        }
+        boolean contentTypeIsJwt = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType);
+
+        if (isRequestEncryptionRequired || contentTypeIsJwt) {
+            if (requestEncryptionMetadata == null && contentTypeIsJwt) {
+                String errorMessage = "Received JWT content-type request, but credential_request_encryption is not supported.";
+                LOGGER.debug(errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            }
+
+            try {
+                return decryptCredentialRequest(requestPayload, requestEncryptionMetadata);
+            } catch (Exception e) {
+                if (isRequestEncryptionRequired) {
+                    String errorMessage = "Encryption is required but request is not a valid JWE: " + e.getMessage();
+                    LOGGER.debug(errorMessage);
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                }
+                if (contentTypeIsJwt) {
+                    String errorMessage = "Request has JWT content-type but is not a valid JWE: " + e.getMessage();
+                    LOGGER.debug(errorMessage);
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                }
+            }
+        }
+
+        try {
+            return JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+        } catch (JsonProcessingException e) {
+            String errorMessage = "Failed to parse JSON request: " + e.getMessage();
+            LOGGER.debug(errorMessage);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+        }
+    }
+
+    /**
+     * Decrypts a JWE-encoded Credential Request and validates it against metadata.
+     *
+     * @param jweString The JWE compact serialization
+     * @param metadata The CredentialRequestEncryptionMetadata
+     * @return The parsed CredentialRequest
+     * @throws JWEException If decryption or validation fails
+     */
+    private CredentialRequest decryptCredentialRequest(String jweString, CredentialRequestEncryptionMetadata metadata) throws Exception {
+        JWE jwe = new JWE(jweString);
+        JOSEHeader rawHeader = jwe.getHeader();
+        if (!(rawHeader instanceof JWEHeader)) {
+            throw new JWEException("Invalid header type: expected JWEHeader but got " + rawHeader.getClass().getName());
+        }
+        JWEHeader header = (JWEHeader) rawHeader;
+
+        // Validate alg and enc against supported values
+        String enc = header.getEncryptionAlgorithm();
+        if (!metadata.getEncValuesSupported().contains(enc)) {
+            String errorMessage = String.format("Unsupported content encryption algorithm: enc=%s", enc);
+            LOGGER.debugf(errorMessage);
+            throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
+        }
+
+        // Handle compression if present
+        String zip = header.getCompressionAlgorithm();
+        if (zip != null) {
+            if (!DEFLATE_COMPRESSION.equals(zip) || metadata.getZipValuesSupported() == null || !metadata.getZipValuesSupported().contains(zip)) {
+                String errorMessage = String.format("Unsupported compression algorithm: zip=%s", zip);
+                LOGGER.debugf(errorMessage);
+                throw new JWEException(String.valueOf(ErrorType.INVALID_ENCRYPTION_PARAMETERS));
+            }
+        }
+
+        // Get a private key from KeyManager based on kid
+        String kid = header.getKeyId();
+        if (kid == null) {
+            throw new JWEException("Missing kid in JWE header");
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+        KeyManager keyManager = session.keys();
+        List<KeyWrapper> matchingKeys = keyManager.getKeysStream(realm)
+                .filter(key -> KeyUse.ENC.equals(key.getUse()) && kid.equals(key.getKid()))
+                .collect(Collectors.toList());
+
+        if (matchingKeys.isEmpty()) {
+            throw new JWEException("No encryption key found for kid: " + kid);
+        }
+        if (matchingKeys.size() > 1) {
+            throw new JWEException("Multiple encryption keys found for kid: " + kid);
+        }
+        KeyWrapper keyWrapper = matchingKeys.get(0);
+
+        // Set the decryption key
+        jwe.getKeyStorage().setDecryptionKey(keyWrapper.getPrivateKey());
+
+        // Decrypt the JWE
+        try {
+            jwe.verifyAndDecodeJwe();
+        } catch (JWEException e) {
+            throw new JWEException("Failed to decrypt JWE: " + e.getMessage());
+        }
+
+        // Handle decompression if needed
+        byte[] content = jwe.getContent();
+        if (zip != null) {
+            content = decompress(content, zip);
+        }
+
+        // Parse decrypted content to CredentialRequest
+        try {
+            return JsonSerialization.mapper.readValue(content, CredentialRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new JWEException("Failed to parse decrypted JWE payload: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Decompresses content using the specified algorithm.
+     *
+     * @param content The compressed content
+     * @param zipAlgorithm The compression algorithm (e.g., "DEF")
+     * @return The decompressed content
+     * @throws JWEException If decompression fails
+     */
+    // TODO handle compression/decompression transparently at the JWE software layer.
+    private byte[] decompress(byte[] content, String zipAlgorithm) throws JWEException {
+        if (DEFLATE_COMPRESSION.equals(zipAlgorithm)) {
+            try {
+                return IOUtils.toByteArray(DeflateUtil.decode(content));
+            } catch (IOException e) {
+                throw new JWEException("Failed to decompress: " + e.getMessage());
+            }
+        }
+        throw new JWEException("Unsupported compression algorithm");
+    }
+
+    private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {
+        List<String> supportedAlgs = metadata.getAlgValuesSupported();
+        if (supportedAlgs == null || supportedAlgs.isEmpty()) {
+            return null;
+        }
+
+        // The alg parameter MUST be present in the JWK
+        String jwkAlg = jwk.getAlgorithm();
+        if (jwkAlg == null) {
+            // If alg is missing from JWK, this is invalid
+            LOGGER.debugf("JWK is missing required 'alg' parameter for key type: %s", jwk.getKeyType());
+            return null;
+        }
+
+        // Verify the alg is supported by the server
+        if (supportedAlgs.contains(jwkAlg)) {
+            return jwkAlg;
+        }
+
+        // If the JWK's alg is not supported, we cannot proceed
+        LOGGER.debugf("JWK algorithm '%s' is not supported by the server. Supported algorithms: %s",
+                jwkAlg, supportedAlgs);
+        throw new IllegalArgumentException(String.format("JWK algorithm '%s' is not supported. Supported algorithms: %s", jwkAlg, supportedAlgs));
+
     }
 
     private List<String> getAllProofs(CredentialRequest credentialRequestVO) {
@@ -534,12 +816,13 @@ public class OID4VCIssuerEndpoint {
      * @throws BadRequestException If encryption parameters are invalid
      * @throws WebApplicationException If encryption fails due to server issues
      */
-    private String encryptCredentialResponse(CredentialResponse response, CredentialResponseEncryption encryptionParams) {
-        // Validate input parameters
+    private String encryptCredentialResponse(CredentialResponse response,
+                                             CredentialResponseEncryption encryptionParams,
+                                             CredentialResponseEncryptionMetadata metadata) {
         validateEncryptionParameters(encryptionParams);
 
-        String alg = encryptionParams.getAlg();
         String enc = encryptionParams.getEnc();
+        String zip = encryptionParams.getZip();
         JWK jwk = encryptionParams.getJwk();
 
         // Parse public key
@@ -557,36 +840,60 @@ public class OID4VCIssuerEndpoint {
                     "Invalid JWK: Failed to parse public key."));
         }
 
+        // Select alg
+        String selectedAlg = selectKeyManagementAlg(metadata, jwk);
+
         // Perform encryption
         try {
             byte[] content = JsonSerialization.writeValueAsBytes(response);
+
+            // Apply compression if specified
+            if (zip != null) {
+                content = compressContent(content, zip);
+            }
+
             JWEHeader header = new JWEHeader.JWEHeaderBuilder()
-                    .algorithm(alg)
+                    .algorithm(selectedAlg)
                     .encryptionAlgorithm(enc)
+                    .compressionAlgorithm(zip)
+                    .keyId(jwk.getKeyId())
                     .build();
+
             JWE jwe = new JWE()
                     .header(header)
                     .content(content);
             jwe.getKeyStorage().setEncryptionKey(publicKey);
+
+
             return jwe.encodeJwe();
         } catch (IOException e) {
             LOGGER.errorf("Serialization failed: %s", e.getMessage());
             throw new WebApplicationException(
                     Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity(new ErrorResponse()
-                                    .setErrorDescription("Failed to serialize response"))
+                            .entity(new ErrorResponse().setErrorDescription("Failed to serialize response"))
                             .type(MediaType.APPLICATION_JSON)
                             .build());
         } catch (JWEException e) {
             LOGGER.errorf("Encryption operation failed: %s", e.getMessage());
             throw new WebApplicationException(
                     Response.status(Response.Status.BAD_REQUEST)
-                            .entity(new ErrorResponse()
-                                    .setErrorDescription("Encryption operation failed"))
+                            .entity(new ErrorResponse().setErrorDescription("Encryption operation failed: " + e.getMessage()))
                             .type(MediaType.APPLICATION_JSON)
                             .build());
         }
     }
+
+    /**
+     * Compress content using the specified algorithm
+     */
+    // TODO handle compression/decompression transparently at the JWE software layer.
+    private byte[] compressContent(byte[] content, String zipAlgorithm) throws IOException {
+        if (DEFLATE_COMPRESSION.equals(zipAlgorithm)) {
+            return DeflateUtil.encode(content);
+        }
+        throw new IllegalArgumentException("Unsupported compression algorithm: " + zipAlgorithm);
+    }
+
 
     /**
      * Validate the encryption parameters for a credential response.
@@ -597,25 +904,24 @@ public class OID4VCIssuerEndpoint {
     private void validateEncryptionParameters(CredentialResponseEncryption encryptionParams) {
         if (encryptionParams == null) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
-                    "Missing required encryption parameters (alg, enc, and jwk)."));
+                    "Missing required encryption parameters (enc and jwk)."));
         }
 
         List<String> missingParams = new ArrayList<>();
-        if (encryptionParams.getAlg() == null) missingParams.add("alg");
         if (encryptionParams.getEnc() == null) missingParams.add("enc");
         if (encryptionParams.getJwk() == null) missingParams.add("jwk");
 
         if (!missingParams.isEmpty()) {
-            String errorMessage = String.format("Missing required encryption parameters: %s", String.join(", ", missingParams));
-            LOGGER.debug(errorMessage);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            throw new BadRequestException(getErrorResponse(
+                    ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                    String.format("Missing required parameters: %s", String.join(", ", missingParams))
+            ));
         }
 
-        if (!isValidJwkForEncryption(encryptionParams.getJwk(), encryptionParams.getAlg())) {
-            String errorMessage = String.format("Invalid JWK: Not suitable for encryption with algorithm %s", encryptionParams.getAlg());
+        if (!isValidJwkForEncryption(encryptionParams.getJwk())) {
+            String errorMessage = "Invalid JWK: Not suitable for encryption";
             LOGGER.debug(errorMessage);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
-
         }
     }
 
@@ -623,34 +929,20 @@ public class OID4VCIssuerEndpoint {
      * Validates if the provided JWK is suitable for encryption.
      *
      * @param jwk The JWK to validate
-     * @param expectedAlg The expected algorithm (e.g., "RSA-OAEP")
      * @return true if the JWK is valid for encryption, false otherwise
      */
-    private boolean isValidJwkForEncryption(JWK jwk, String expectedAlg) {
+    private boolean isValidJwkForEncryption(JWK jwk) {
         if (jwk == null) {
-            return false;
-        }
-        if (expectedAlg != null && !expectedAlg.equals(jwk.getAlgorithm())) {
             return false;
         }
         String publicKeyUse = jwk.getPublicKeyUse();
         return publicKeyUse == null || "enc".equals(publicKeyUse);
     }
 
-    private boolean isSupportedEncryption(CredentialResponseEncryptionMetadata metadata, String alg, String enc) {
-        if (metadata == null) {
-            return false;
-        }
-
-        if (metadata.getAlgValuesSupported() == null ||
-                metadata.getEncValuesSupported() == null ||
-                metadata.getAlgValuesSupported().isEmpty() ||
-                metadata.getEncValuesSupported().isEmpty()) {
-            return false;
-        }
-
-        return metadata.getAlgValuesSupported().contains(alg) &&
-                metadata.getEncValuesSupported().contains(enc);
+    private boolean isSupportedCompression(CredentialResponseEncryptionMetadata metadata, String zip) {
+        return metadata != null &&
+                metadata.getZipValuesSupported() != null &&
+                metadata.getZipValuesSupported().contains(zip);
     }
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
@@ -836,6 +1128,10 @@ public class OID4VCIssuerEndpoint {
         protocolMappers
                 .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.getSession()));
 
+        // Validate that requested claims from authorization_details are present
+        validateRequestedClaimsArePresent(subjectClaims, authResult.getSession(), credentialConfig.getScope());
+
+        // Include all available claims
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
@@ -905,5 +1201,73 @@ public class OID4VCIssuerEndpoint {
         }
 
         return credentialBuilder;
+    }
+
+    /**
+     * Validates that all requested claims from authorization_details are present in the available claims.
+     *
+     * @param allClaims   all available claims
+     * @param userSession the user session
+     * @param scope       the credential scope
+     * @throws BadRequestException if mandatory requested claims are missing
+     */
+    private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, UserSessionModel userSession, String scope) {
+        try {
+            // Look for stored claims in user session notes
+            String claimsKey = AUTHORIZATION_DETAILS_CLAIMS_PREFIX + scope;
+            String storedClaimsJson = userSession.getNote(claimsKey);
+
+            if (storedClaimsJson != null && !storedClaimsJson.isEmpty()) {
+                try {
+                    // Parse the stored claims from JSON
+                    List<ClaimsDescription> storedClaims =
+                            JsonSerialization.readValue(storedClaimsJson,
+                                    new TypeReference<List<ClaimsDescription>>() {
+                                    });
+
+                    if (storedClaims != null && !storedClaims.isEmpty()) {
+                        // Validate that all requested claims are present in the available claims
+                        // We use filterClaimsByAuthorizationDetails to check if claims can be found
+                        // but we don't actually filter - we just validate presence
+                        try {
+                            ClaimsPathPointer.filterClaimsByAuthorizationDetails(allClaims, storedClaims);
+                            LOGGER.debugf("All requested claims are present for scope %s", scope);
+                        } catch (IllegalArgumentException e) {
+                            // If filtering fails, it means some requested claims are missing
+                            LOGGER.errorf("Requested claims validation failed for scope %s: %s", scope, e.getMessage());
+                            throw new BadRequestException("Credential issuance failed: " + e.getMessage() +
+                                    ". The requested claims are not available in the user profile.");
+                        }
+                    } else {
+                        LOGGER.infof("Stored claims list is null or empty");
+                    }
+                } catch (Exception e) {
+                    LOGGER.errorf(e, "Failed to parse stored claims for scope %s", scope);
+                }
+            } else {
+                LOGGER.infof("No stored claims found for scope %s", scope);
+            }
+            // No claims filtering requested, all claims are valid
+
+        } catch (IllegalArgumentException e) {
+            // Mandatory claim missing - this should fail credential issuance
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("Mandatory claim not found:")) {
+                LOGGER.errorf("Mandatory claim missing during claims filtering for scope %s: %s", scope, errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST,
+                        "Credential issuance failed: " + errorMessage +
+                                ". The requested mandatory claim is not available in the user profile."));
+            } else {
+                LOGGER.errorf("Claims filtering error for scope %s: %s", scope, errorMessage);
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST,
+                        "Credential issuance failed: " + errorMessage));
+            }
+        } catch (BadRequestException e) {
+            // Re-throw BadRequestException to ensure client receives proper error response
+            throw e;
+        } catch (Exception e) {
+            // Log error but continue with all claims to avoid breaking existing functionality
+            LOGGER.errorf(e, "Unexpected error during claims validation for scope %s, continuing with all claims", scope);
+        }
     }
 }

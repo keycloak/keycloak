@@ -31,7 +31,7 @@ public class FederatedClientAuthFromKeycloakTest {
     @InjectRealm(ref = "external")
     ManagedRealm externalRealm;
 
-    @InjectOAuthClient(config = InternalClientConfig.class)
+    @InjectOAuthClient
     OAuthClient internalOAuthClient;
 
     @InjectOAuthClient(ref = "external", realmRef = "external", config = ExternalClientConfig.class)
@@ -49,7 +49,7 @@ public class FederatedClientAuthFromKeycloakTest {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            return realm.identityProvider(
+            realm.identityProvider(
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
@@ -59,17 +59,14 @@ public class FederatedClientAuthFromKeycloakTest {
                             .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/external/protocol/openid-connect/certs")
                             .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
                             .build());
-        }
-    }
 
-    public static class InternalClientConfig implements ClientConfig {
-
-        @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            return client.clientId("myclient")
+            realm.addClient("myclient")
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, "myclient");
+
+            return realm;
         }
     }
 

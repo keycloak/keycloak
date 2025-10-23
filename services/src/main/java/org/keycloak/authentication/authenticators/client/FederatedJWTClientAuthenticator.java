@@ -7,14 +7,15 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
-import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.spiffe.SpiffeConstants;
+import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resources.IdentityBrokerService;
 
 import java.util.Collections;
@@ -29,9 +30,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     public static final String PROVIDER_ID = "federated-jwt";
 
     public static final String JWT_CREDENTIAL_ISSUER_KEY = "jwt.credential.issuer";
+    public static final String JWT_CREDENTIAL_SUBJECT_KEY = "jwt.credential.sub";
 
-    private static final List<ProviderConfigProperty> CONFIG = List.of(
-            new ProviderConfigProperty(JWT_CREDENTIAL_ISSUER_KEY, "Identity provider", "Issuer of the client assertion", ProviderConfigProperty.STRING_TYPE, null)
+    private static final List<ProviderConfigProperty> CLIENT_CONFIG = List.of(
+            new ProviderConfigProperty(JWT_CREDENTIAL_ISSUER_KEY, "Identity provider", "Issuer of the client assertion", ProviderConfigProperty.STRING_TYPE, null),
+            new ProviderConfigProperty(JWT_CREDENTIAL_SUBJECT_KEY, "Federated subject", "External clientId (subject)", ProviderConfigProperty.STRING_TYPE, null)
     );
 
     private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT, SpiffeConstants.CLIENT_ASSERTION_TYPE);
@@ -42,24 +45,37 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     }
 
     @Override
-    // TODO Should share code with JWTClientAuthenticator/JWTClientValidator rather than duplicating, but that requires quite a bit of refactoring
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
-            JsonWebToken token = clientAssertionState.getToken();
+
+            if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
+                return;
+            }
 
             if (!SUPPORTED_ASSERTION_TYPES.contains(clientAssertionState.getClientAssertionType())) {
                 return;
             }
 
-            ClientModel client = lookupClient(context, token.getSubject());
+            AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
+
+            String federatedClientId = clientAssertionState.getToken().getSubject();
+
+            ClientModel client = lookupProvider.lookupClientFromClientAttributes(
+                    context.getSession(),
+                    Map.of(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, federatedClientId));
             if (client == null) return;
 
-            if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) {
-                return;
-            }
+            String idpAlias = client.getAttribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY);
 
-            ClientAssertionIdentityProvider identityProvider = lookupIdentityProvider(context, client);
+            IdentityProviderModel identityProviderModel = context.getSession().identityProviders().getByAlias(idpAlias);
+            ClientAssertionIdentityProvider identityProvider = getClientAssertionIdentityProvider(context.getSession(), identityProviderModel);
+            if (identityProvider == null) return;
+
+            clientAssertionState.setClient(client);
+
+            if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) return;
+
             if (identityProvider.verifyClientAssertion(context)) {
                 context.success();
             } else {
@@ -71,27 +87,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         }
     }
 
-    private ClientModel lookupClient(ClientAuthenticationFlowContext context, String subject) {
-        ClientModel client = context.getRealm().getClientByClientId(subject);
-        if (client == null) {
-            context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
+    private ClientAssertionIdentityProvider getClientAssertionIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel) {
+        if (identityProviderModel == null) {
             return null;
         }
-        if (!client.isEnabled()) {
-            context.failure(AuthenticationFlowError.CLIENT_DISABLED);
-            return null;
-        }
-        return client;
-    }
-
-    private ClientAssertionIdentityProvider lookupIdentityProvider(ClientAuthenticationFlowContext context, ClientModel client) {
-        String idpAlias = client.getAttribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY);
-        IdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(context.getSession(), idpAlias);
-        if (identityProvider instanceof ClientAssertionIdentityProvider clientAssertionProvider) {
-            return clientAssertionProvider;
-        } else {
-            throw new RuntimeException("Provider does not support client assertions");
-        }
+        return IdentityBrokerService.getIdentityProvider(session, identityProviderModel, ClientAssertionIdentityProvider.class);
     }
 
     @Override
@@ -121,7 +121,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
 
     @Override
     public List<ProviderConfigProperty> getConfigPropertiesPerClient() {
-        return CONFIG;
+        return CLIENT_CONFIG;
     }
 
     @Override

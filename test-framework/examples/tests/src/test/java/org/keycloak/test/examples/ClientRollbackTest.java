@@ -11,7 +11,6 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 
-import java.util.List;
 
 @KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)

@@ -10,7 +10,6 @@ import org.keycloak.utils.StringUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Collections;
@@ -101,7 +100,7 @@ public class DefaultSamlArtifactResolver implements ArtifactResolver {
      */
     public String createArtifact(String entityId) throws ArtifactResolverProcessingException {
         try {
-            SecureRandom handleGenerator = SecureRandom.getInstance("SHA1PRNG");
+            SecureRandom handleGenerator = new SecureRandom();
             byte[] trimmedIndex = new byte[2];
 
             byte[] source = ArtifactBindingUtils.computeArtifactBindingIdentifier(entityId);
@@ -118,8 +117,6 @@ public class DefaultSamlArtifactResolver implements ArtifactResolver {
             byte[] artifact = bos.toByteArray();
 
             return Base64.getEncoder().encodeToString(artifact);
-        } catch (NoSuchAlgorithmException e) {
-            throw new ArtifactResolverProcessingException("JVM does not support required cryptography algorithms: SHA-1/SHA1PRNG.", e);
         } catch (IOException e) {
             throw new ArtifactResolverProcessingException(e);
         }

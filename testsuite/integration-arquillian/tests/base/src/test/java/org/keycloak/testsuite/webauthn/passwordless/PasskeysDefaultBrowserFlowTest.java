@@ -32,7 +32,7 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;

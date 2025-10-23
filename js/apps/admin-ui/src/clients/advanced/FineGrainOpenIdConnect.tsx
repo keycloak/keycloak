@@ -127,6 +127,35 @@ export const FineGrainOpenIdConnect = ({
         }}
         options={prependEmpty(contentEncryptionProviders!)}
       />
+      <FormGroup
+        label={t("idTokenAsDetachedSignature")}
+        fieldId="idTokenAsDetachedSignature"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("idTokenAsDetachedSignatureHelp")}
+            fieldLabelId="idTokenAsDetachedSignature"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.id.token.as.detached.signature",
+          )}
+          defaultValue="false"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="idTokenAsDetachedSignature"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={field.value === "true"}
+              onChange={(_event, value) => field.onChange(value.toString())}
+              aria-label={t("idTokenAsDetachedSignature")}
+            />
+          )}
+        />
+      </FormGroup>
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
           "attributes.user.info.response.signature.alg",

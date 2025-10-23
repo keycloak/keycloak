@@ -544,7 +544,7 @@ public class UsersResource {
         return userModels
                 .map(user -> {
                     UserProfile profile = provider.create(UserProfileContext.USER_API, user);
-                    UserRepresentation rep = profile.toRepresentation();
+                    UserRepresentation rep = profile.toRepresentation(!briefRepresentationB);
                     UserRepresentation userRep = briefRepresentationB ?
                             ModelToRepresentation.toBriefRepresentation(user, rep, false) :
                             ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
