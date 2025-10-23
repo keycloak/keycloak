@@ -187,7 +187,24 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=a");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
-                containsString("Invalid value for option '--http-port': 'a' is not an int"));
+                containsString("Invalid value for option '--http-port': Expected an integer value, got \"a\""));
+    }
+
+    @Test
+    public void testInvalidArgumentTypeEnv() {
+        putEnvVar("KC_HTTP_PORT", "a");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("Invalid value for option 'KC_HTTP_PORT': Expected an integer value, got \"a\""));
+    }
+
+    @Test
+    public void testEmptyValue() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(),
+                containsString("Invalid empty value for option '--http-port'"));
     }
 
     @Test
@@ -804,7 +821,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerOptionsName), "--log-%s-async=true".formatted(logHandlerOptionsName), "--log-%s-async-queue-length=invalid".formatted(logHandlerOptionsName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(logHandlerOptionsName)));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': Expected an integer value, got \"invalid\"".formatted(logHandlerOptionsName)));
 
         onAfter();
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=768".formatted(logHandlerOptionsName));
@@ -858,7 +875,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         var nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(handlerName), "--log-%s-async=true".formatted(handlerName), "--log-%s-async-queue-length=invalid".formatted(handlerName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': 'invalid' is not an int".formatted(handlerName)));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Invalid value for option '--log-%s-async-queue-length': Expected an integer value, got \"invalid\"".formatted(handlerName)));
     }
 
     @Test
