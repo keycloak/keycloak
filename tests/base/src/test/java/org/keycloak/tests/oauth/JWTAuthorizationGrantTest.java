@@ -3,15 +3,19 @@ package org.keycloak.tests.oauth;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -125,6 +129,51 @@ public class JWTAuthorizationGrantTest  {
     }
 
     @Test
+    public void testReplayToken() {
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", "basic-user", response);
+
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Token reuse detected", response, events.poll());
+    }
+
+    @Test
+    public void testClientSignatureAlg() {
+        IdentityProviderResource idpRes = realm.admin().identityProviders().get(IDP_ALIAS);
+        IdentityProviderRepresentation idpRep = idpRes.toRepresentation();
+        try {
+            idpRep.getConfig().put("clientAssertionSigningAlg", Algorithm.ES256);
+            idpRes.update(idpRep);
+
+            String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+            AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+            assertSuccess("test-app", "basic-user", response);
+
+            idpRep.getConfig().put("clientAssertionSigningAlg", Algorithm.ES512);
+            idpRes.update(idpRep);
+
+            jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+            response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+            assertFailure("Invalid signature algorithm", response, events.poll());
+        } finally {
+            idpRep.getConfig().remove("clientAssertionSigningAlg");
+            idpRes.update(idpRep);
+        }
+    }
+
+    @Test
+    public void testInvalidSignature() throws Exception {
+        JsonWebToken token = createDefaultAuthorizationGrantToken();
+        OAuthIdentityProvider.OAuthIdentityProviderKeys newKeys = getIdentityProvider().createKeys();
+        OAuthIdentityProvider.OAuthIdentityProviderKeys keys = getIdentityProvider().getKeys();
+        newKeys.getKeyWrapper().setKid(keys.getKeyWrapper().getKid());
+        String jwt = getIdentityProvider().encodeToken(token, newKeys);
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid signature", response, events.poll());
+    }
+
+    @Test
     public void testSuccessGrant() {
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
@@ -181,6 +230,9 @@ public class JWTAuthorizationGrantTest  {
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
                             .setAttribute(IdentityProviderModel.ISSUER, IDP_ISSUER)
+                            .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
+                            .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                            .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
                             .build());
             return realm;
         }
@@ -199,6 +251,11 @@ public class JWTAuthorizationGrantTest  {
         AccessToken accessToken = oAuthClient.parseToken(response.getAccessToken(), AccessToken.class);
         Assertions.assertEquals(expectedClientId, accessToken.getIssuedFor());
         Assertions.assertEquals(username, accessToken.getPreferredUsername());
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .clientId(expectedClientId)
+                .details("grant_type", OAuth2Constants.JWT_AUTHORIZATION_GRANT)
+                .details("username", username);
     }
 
     protected void assertFailure(String expectedErrorDescription, AccessTokenResponse response, EventRepresentation event) {
