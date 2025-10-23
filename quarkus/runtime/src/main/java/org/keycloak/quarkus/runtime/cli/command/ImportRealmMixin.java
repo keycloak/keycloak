@@ -30,9 +30,6 @@ public final class ImportRealmMixin {
 
     public static final String IMPORT_REALM = "--import-realm";
 
-    @CommandLine.Spec
-    private CommandLine.Model.CommandSpec spec;
-
     @CommandLine.Option(names = IMPORT_REALM,
             description = "Import realms during startup by reading any realm configuration file from the 'data/import' directory.",
             paramLabel = NO_PARAM_LABEL,
