@@ -99,7 +99,11 @@ public class OAuthIdentityProvider {
                 if (!config.spiffe()) {
                     jwk.setAlgorithm("ES256");
                 }
-                jwk.setPublicKeyUse(keyUse.getSpecName());
+                if (config.jwkUse()) {
+                    jwk.setPublicKeyUse(keyUse.getSpecName());
+                } else {
+                    jwk.setPublicKeyUse(null);
+                }
 
                 Map<String, Object> jwks = new HashMap<>();
                 jwks.put("keys", new JWK[] { jwk });

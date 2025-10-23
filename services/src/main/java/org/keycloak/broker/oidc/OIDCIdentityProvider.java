@@ -33,6 +33,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
@@ -68,6 +69,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
+import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -94,7 +96,7 @@ import java.util.Optional;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider<OIDCIdentityProviderConfig>, JWTAuthorizationGrantProvider {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String SCOPE_OPENID = "openid";
@@ -1064,6 +1066,17 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         return validator.validate();
+    }
+
+    @Override
+    public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) {
+
+        //TODO: proper assertion validation
+        BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
+        user.setUsername(context.getJWT().getSubject());
+        user.setIdp(this);
+        return user;
+
     }
 
 }

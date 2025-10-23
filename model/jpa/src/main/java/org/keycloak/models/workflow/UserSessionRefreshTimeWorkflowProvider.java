@@ -35,9 +35,4 @@ public class UserSessionRefreshTimeWorkflowProvider extends AbstractUserWorkflow
     protected boolean isActivationEvent(WorkflowEvent event) {
         return super.isActivationEvent(event) || List.of(USER_ADD, USER_LOGIN).contains(event.getOperation());
     }
-
-    @Override
-    protected boolean isResetEvent(WorkflowEvent event) {
-        return USER_LOGIN.equals(event.getOperation());
-    }
 }

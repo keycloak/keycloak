@@ -22,6 +22,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkAuthenticator;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdpLinkAction;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -131,7 +132,7 @@ import static org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGIS
  *
  * @author Pedro Igor
  */
-public class IdentityBrokerService implements IdentityProvider.AuthenticationCallback {
+public class IdentityBrokerService implements UserAuthenticationIdentityProvider.AuthenticationCallback {
 
     // Authentication session note, which references identity provider that is currently linked
     public static final String LINKING_IDENTITY_PROVIDER = "LINKING_IDENTITY_PROVIDER";
@@ -340,7 +341,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     public Response performClientInitiatedAccountLogin(String providerAlias, ClientSessionCode<AuthenticationSessionModel> clientSessionCode) {
         try {
-            IdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
+            UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
             Response response = identityProvider.performLogin(createAuthenticationRequest(identityProvider, providerAlias, clientSessionCode));
 
             if (response != null) {
@@ -402,7 +403,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 clientSessionCode.getClientSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
             }
 
-            IdentityProvider<?> identityProvider = getIdentityProvider(session, identityProviderModel.getAlias());
+            UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, identityProviderModel.getAlias());
             Response response = identityProvider.performLogin(createAuthenticationRequest(identityProvider, providerAlias, clientSessionCode));
 
             if (response != null) {
@@ -423,7 +424,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     @Override
-    public Response retryLogin(IdentityProvider<?> identityProvider, AuthenticationSessionModel authSession) {
+    public Response retryLogin(UserAuthenticationIdentityProvider<?> identityProvider, AuthenticationSessionModel authSession) {
         ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realmModel, authSession);
         clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         Response response = identityProvider.performLogin(createAuthenticationRequest(identityProvider, identityProvider.getConfig().getAlias(), clientSessionCode));
@@ -443,7 +444,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Path("{provider_alias}/endpoint")
     public Object getEndpoint(@PathParam("provider_alias") String providerAlias) {
-        IdentityProvider identityProvider;
+        UserAuthenticationIdentityProvider<?> identityProvider;
 
         try {
             identityProvider = getIdentityProvider(session, providerAlias);
@@ -501,7 +502,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                 }
 
-                IdentityProvider identityProvider = getIdentityProvider(session, providerAlias);
+                UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
                 IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
 
                 if (identityProviderConfig.isStoreToken()) {
@@ -755,7 +756,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                 logger.debugf("Registered new user '%s' after first login with identity provider '%s'. Identity provider username is '%s' . ", federatedUser.getUsername(), providerAlias, context.getUsername());
 
-                IdentityProvider idp = context.getIdp();
+                UserAuthenticationIdentityProvider<?> idp = context.getIdp();
                 idp.importNewUser(session, realmModel, federatedUser, context);
                 KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
                 session.identityProviders().getMappersByAliasStream(providerAlias).forEach(mapper -> {
@@ -1255,7 +1256,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return null;
     }
 
-    private AuthenticationRequest createAuthenticationRequest(IdentityProvider<?> identityProvider, String providerAlias, ClientSessionCode<AuthenticationSessionModel> clientSessionCode) {
+    private AuthenticationRequest createAuthenticationRequest(UserAuthenticationIdentityProvider<?> identityProvider, String providerAlias, ClientSessionCode<AuthenticationSessionModel> clientSessionCode) {
         AuthenticationSessionModel authSession = null;
         IdentityBrokerState encodedState = null;
 
@@ -1342,19 +1343,20 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         throw ErrorResponse.error(message, Response.Status.NOT_FOUND);
     }
 
-    public static IdentityProvider<?> getIdentityProvider(KeycloakSession session, String alias) {
+    public static UserAuthenticationIdentityProvider<?> getIdentityProvider(KeycloakSession session, String alias) {
         IdentityProviderModel identityProviderModel = session.identityProviders().getByAlias(alias);
-        IdentityProvider<?> identityProvider = getIdentityProvider(session, identityProviderModel);
+        UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, identityProviderModel, UserAuthenticationIdentityProvider.class);
         if (identityProvider == null) {
             throw new IdentityBrokerException("Identity Provider [" + alias + "] not found.");
         }
         return identityProvider;
     }
 
-    public static IdentityProvider<?> getIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel) {
+    public static <T extends IdentityProvider<?>> T getIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel, Class<T> type) {
         if (identityProviderModel != null) {
             IdentityProviderFactory<?> providerFactory = getIdentityProviderFactory(session, identityProviderModel);
-            return providerFactory != null ? providerFactory.create(session, identityProviderModel) : null;
+            IdentityProvider<?> idp = providerFactory.create(session, identityProviderModel);
+            return type.isInstance(idp) ? type.cast(idp) : null;
         }
         return null;
     }

@@ -48,6 +48,7 @@ public class AdhocWorkflowTest {
     public void testCreate() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -67,6 +68,7 @@ public class AdhocWorkflowTest {
     public void testBindAdHocScheduledWithImmediateWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -91,6 +93,7 @@ public class AdhocWorkflowTest {
     public void testRunAdHocScheduledWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .after(Duration.ofDays(5))
@@ -112,6 +115,7 @@ public class AdhocWorkflowTest {
     public void testRunAdHocImmediateWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -141,6 +145,7 @@ public class AdhocWorkflowTest {
     public void testRunAdHocTimedWorkflow() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")

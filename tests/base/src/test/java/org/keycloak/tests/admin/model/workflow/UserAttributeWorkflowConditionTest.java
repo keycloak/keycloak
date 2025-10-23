@@ -135,6 +135,7 @@ public class UserAttributeWorkflowConditionTest {
     private void createWorkflow(Map<String, List<String>> attributes) {
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
+                .name(EventBasedWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_ADD.name())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(UserAttributeWorkflowConditionFactory.ID)

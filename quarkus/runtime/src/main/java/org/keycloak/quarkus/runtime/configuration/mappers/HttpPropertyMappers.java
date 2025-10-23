@@ -4,6 +4,7 @@ import io.quarkus.runtime.util.ClassPathUtils;
 import io.quarkus.vertx.http.runtime.options.TlsUtils;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.SecurityOptions;
@@ -23,6 +24,7 @@ import java.util.Optional;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromFeature;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class HttpPropertyMappers implements PropertyMapperGrouping {
@@ -154,6 +156,9 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                 fromOption(HttpOptions.HTTP_METRICS_SLOS)
                         .isEnabled(MetricsPropertyMappers::metricsEnabled, MetricsPropertyMappers.METRICS_ENABLED_MSG)
                         .paramLabel("list of buckets")
+                        .build(),
+                fromFeature(Profile.Feature.HTTP_OPTIMIZED_SERIALIZERS)
+                        .to("quarkus.rest.jackson.optimization.enable-reflection-free-serializers")
                         .build()
         );
     }

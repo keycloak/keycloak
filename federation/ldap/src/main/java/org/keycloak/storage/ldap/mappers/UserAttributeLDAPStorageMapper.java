@@ -295,7 +295,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 public String getUsername() {
                     if (UserModel.USERNAME.equals(userModelAttrName)) {
                         return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
-                                .map(String::toLowerCase)
+                                .map(this::toLowerCaseIfImportEnabled)
                                 .orElse(null);
                     }
                     return super.getUsername();
@@ -305,7 +305,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 public String getEmail() {
                     if (UserModel.EMAIL.equals(userModelAttrName)) {
                         return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
-                                .map(String::toLowerCase)
+                                .map(this::toLowerCaseIfImportEnabled)
                                 .orElse(null);
                     }
                     return super.getEmail();
@@ -347,6 +347,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     return true;
                 }
 
+                private String toLowerCaseIfImportEnabled(String value) {
+                    if (getLdapProvider().getModel().isImportEnabled()) {
+                        return value.toLowerCase();
+                    }
+                    return value;
+                }
             };
 
         } else if (isBinaryAttribute) {

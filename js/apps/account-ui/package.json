@@ -37,7 +37,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.63.0",
-    "react-i18next": "^16.0.0",
+    "react-i18next": "^16.0.1",
     "react-router-dom": "^6.30.1"
   },
   "devDependencies": {
@@ -48,8 +48,8 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^4.1.0",
     "cross-env": "^10.1.0",
-    "lightningcss": "^1.30.1",
-    "vite": "^7.1.7",
+    "lightningcss": "^1.30.2",
+    "vite": "^7.1.10",
     "vite-plugin-checker": "^0.11.0",
     "vite-plugin-dts": "^4.5.4"
   },

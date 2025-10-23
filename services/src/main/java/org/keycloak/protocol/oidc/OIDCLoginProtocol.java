@@ -119,6 +119,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
     public static final String TLS_CLIENT_AUTH = "tls_client_auth";
 
+    /**
+     * This is just for legacy setups which expect an unencoded, non-RFC6749 compliant client secret send from Keycloak to an IdP.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
+    public static final String CLIENT_SECRET_BASIC_UNENCODED = "client_secret_basic_unencoded";
+
     // https://tools.ietf.org/html/rfc7636#section-4.3
     public static final String CODE_CHALLENGE_PARAM = "code_challenge";
     public static final String CODE_CHALLENGE_METHOD_PARAM = "code_challenge_method";

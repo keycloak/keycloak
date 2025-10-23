@@ -3,25 +3,46 @@
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
 <#import "/templates/options.adoc" as opts>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring logging"
 summary="Configure logging for {project_name}.">
 
-{project_name} uses the JBoss Logging framework.
-The following is a high-level overview for the available log handlers with the common parent log handler `root`:
+Logging is a key mechanism for understanding and operating {project_name}.
+It should help you to monitor {project_name}'s health, debug issues, and maintain an audit trail of important events.
 
-<@opts.expectedValues option="log"/>
-
-== Logging configuration
-
-Logging is done on a per-category basis in {project_name}.
 You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`.
 It is also possible to tailor log levels for each particular log handler.
 
-This {section} describes how to configure logging.
+In {project_name}, logging goes beyond setting log levels — you can direct output to different handlers, use asynchronous logging for performance, capture HTTP access logs, and more.
+These features make it possible to adapt logging to your operational needs and integrate with observability platforms.
 
-=== Log levels
+{project_name} uses the JBoss Logging framework under the hood.
+
+== Available log handlers
+
+[cols="^1,^1,^1", frame=none, grid=all]
+|===
+| *Console* +
+Logs to standard output
+| *File* +
+Persists logs to disk
+| *Syslog* +
+Sends logs to Syslog server
+|===
+
+To enable log handlers, enter the following command:
+
+<@kc.start parameters="--log=\"<handler1>,<handler2>\""/>
+
+For more details on how to configure specific log handlers, see:
+
+* <@links.server id="logging-console"/>
+* <@links.server id="logging-file"/>
+* <@links.server id="logging-syslog"/>
+
+== Log levels
 
 The following table defines the available log levels.
 
@@ -68,32 +89,6 @@ This example sets the following log levels:
 * The hibernate log level in general is set to debug.
 * To keep SQL abstract syntax trees from creating verbose log output, the specific subcategory `org.hibernate.hql.internal.ast` is set to info. As a result, the SQL abstract syntax trees are omitted instead of appearing at the `debug` level.
 
-=== Adding context for log messages
-
-:tech_feature_name: Log messages with Mapped Diagnostic Context (MDC)
-:tech_feature_id: log-mdc
-
-[NOTE]
-====
-{tech_feature_name} is
-*Preview*
-and is not fully supported. This feature is disabled by default.
-====
-
-You can enable additional context information for each log line like the current realm and client that is executing the request.
-
-Use the option `log-mdc-enabled` to enable it.
-
-.Example configuration
-<@kc.start parameters="--features=log-mdc --log-mdc-enabled=true"/>
-
-.Example output
-----
-2025-06-20 14:13:01,772 {kc.clientId=security-admin-console, kc.realmName=master} INFO ...
-----
-
-Specify which keys to be added by setting the configuration option `log-mdc-keys`.
-
 === Configuring levels as individual options
 When configuring category-specific log levels, you can also set the log levels as individual `log-level-<category>` options instead of using the `log-level` option for that.
 This is useful when you want to set the log levels for selected categories without overwriting the previously set `log-level` option.
@@ -112,17 +107,6 @@ Bear in mind that when using the environmental variables, the category name must
 When using other config sources, the category name must be specified "as is", for example:
 
 <@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\" --log-level-org.keycloak=trace"/>
-
-== Enabling log handlers
-To enable log handlers, enter the following command:
-
-<@kc.start parameters="--log=\"<handler1>,<handler2>\""/>
-
-The available handlers are:
-
-<@opts.expectedValues option="log"/>
-
-The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
 
 === Specify log level for each handler
 
@@ -171,7 +155,26 @@ The root level must be set to the most verbose required level (`debug` in this c
 
 In order to see the `org.keycloak.events:trace`, the `trace` level must be set for the Syslog handler.
 
-=== Use different JSON format for log handlers
+[[mdc]]
+== Adding context for log messages
+
+<@features.techpreview feature="log-mdc"/>
+
+You can enable additional context information for each log line like the current realm and client that is executing the request.
+
+Use the option `log-mdc-enabled` to enable it.
+
+.Example configuration
+<@kc.start parameters="--features=log-mdc --log-mdc-enabled=true"/>
+
+.Example output
+----
+2025-06-20 14:13:01,772 {kc.clientId=security-admin-console, kc.realmName=master} INFO ...
+----
+
+Specify which keys to be added by setting the configuration option `log-mdc-keys`.
+
+== Use different JSON format for log handlers
 Every log handler provides the ability to have structured log output in JSON format.
 It can be enabled by properties in the format `log-<handler>-output=json` (where `<handler>` is a log handler).
 
@@ -191,7 +194,7 @@ In order to change the JSON output format, properties in the format `log-<handle
 * `log-file-json-format` - File log handler
 * `log-syslog-json-format` - Syslog log handler
 
-==== Example
+=== Example
 If you want to have JSON logs in *ECS* (Elastic Common Schema) format for the console log handler, you can enter the following command:
 
 <@kc.start parameters="--log-console-output=json --log-console-json-format=ecs"/>
@@ -202,7 +205,7 @@ If you want to have JSON logs in *ECS* (Elastic Common Schema) format for the co
 {"@timestamp":"2025-02-03T14:53:22.539484211+01:00","event.sequence":9608,"log.logger":"io.quarkus","log.level":"INFO","message":"Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.615s. Listening on: http://0.0.0.0:8080","process.thread.name":"main","process.thread.id":1,"mdc":{},"ndc":"","host.hostname":"host-name","process.name":"/usr/lib/jvm/jdk-21.0.3+9/bin/java","process.pid":77561,"data_stream.type":"logs","ecs.version":"1.12.2","service.environment":"prod","service.name":"Keycloak","service.version":"999.0.0-SNAPSHOT"}
 ----
 
-=== Asynchronous logging
+== Asynchronous logging
 {project_name} supports asynchronous logging, which might be useful for deployments requiring **high throughput** and **low latency**.
 Asynchronous logging uses a separate thread to take care of processing all log records.
 The logging handlers are invoked in exactly the same way as with synchronous logging, only done in separate threads.
@@ -215,7 +218,7 @@ Every log handler has a different queue.
 
 If the queue is already full, it blocks the main thread and waits for free space in the queue.
 
-==== When to use asynchronous logging
+=== When to use asynchronous logging
 
 * You need **lower latencies** for incoming requests
 * You need **higher throughput**
@@ -227,7 +230,7 @@ WARNING: Be aware that enabling asynchronous logging might bring some **addition
 In that case, it is not recommended to use it for resource-constrained environments.
 Additionally, unexpected server shutdowns create a risk of **losing log records**.
 
-==== Enable asynchronous logging
+=== Enable asynchronous logging
 You can enable asynchronous logging globally for all log handlers by using `log-async` property as follows:
 
 <@kc.start parameters="--log-async=true"/>
@@ -243,7 +246,7 @@ You can use these properties as follows:
 * `log-file-async` - File log handler
 * `log-syslog-async` - Syslog log handler
 
-==== Change queue length
+=== Change queue length
 You can change the size of the queue used for the asynchronous logging.
 The default size is **512** log records in the queue.
 
@@ -253,7 +256,8 @@ You can change the queue length as follows:
 
 These properties are available only when asynchronous logging is enabled for these specific log handlers.
 
-=== HTTP Access Logging
+[[http-access-logging]]
+== HTTP Access Logging
 
 {project_name} supports HTTP access logging to record details of incoming HTTP requests.
 While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring, helping administrators track access patterns, identify suspicious activity, and maintain audit trails.
@@ -261,13 +265,13 @@ While access logs are often used for debugging and traffic analysis, they are al
 These logs are written at the `INFO` level, so make sure your logging configuration includes this level — either globally (e.g. `log-level=info`) or specifically for the access log category (e.g. `log-level=org.keycloak.http.access-log:info`).
 When HTTP access logs are enabled, they are shown by default, as `INFO` level is the default log level for {project_name}.
 
-==== How to enable
+=== How to enable
 
 You can enable HTTP access logging by using `http-access-log-enabled` property as follows:
 
 <@kc.start parameters="--http-access-log-enabled=true"/>
 
-==== Change log format/pattern
+=== Change log format/pattern
 
 You can change format/pattern of the access log records by using `http-access-log-pattern` property as follows:
 
@@ -285,7 +289,7 @@ You can even specify your own pattern with your required data to be logged, such
 
 Consult the https://quarkus.io/guides/http-reference#configuring-http-access-logs[Quarkus documentation] for the full list of variables that can be used.
 
-==== Exclude specific URL paths
+=== Exclude specific URL paths
 
 It is possible to exclude specific URL paths from the HTTP access logging, so they will not be recorded.
 
@@ -295,254 +299,7 @@ You can use regular expressions to exclude them, such as:
 
 In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths will be excluded from the HTTP Access log.
 
-== Console log handler
-The console log handler is enabled by default, providing unstructured log messages for the console.
-
-=== Configuring the console log format
-{project_name} uses a pattern-based logging formatter that generates human-readable text logs by default.
-
-The logging format template for these lines can be applied at the root level. The default format template is:
-
-* `%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n`
-
-The format string supports the symbols in the following table:
-
-[%autowidth]
-|===
-|Symbol|Summary|Description
-
-|%%|%|Renders a simple % character.
-|%c|Category|Renders the log category name.
-|++%d{xxx}++|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
-|%e|Exception|Renders a thrown exception.
-|%h|Hostname|Renders the simple host name.
-|%H|Qualified host name|Renders the fully qualified hostname, which may be the same as the simple host name, depending on the OS configuration.
-|%i|Process ID|Renders the current process PID.
-|%m|Full Message|Renders the log message and an exception, if thrown.
-|%n |Newline|Renders the platform-specific line separator string.
-|%N|Process name|Renders the name of the current process.
-|%p|Level|Renders the log level of the message.
-|%r|Relative time|Render the time in milliseconds since the start of the application log.
-|%s|Simple message|Renders only the log message without exception trace.
-|%t|Thread name|Renders the thread name.
-|%t++{id}++|Thread ID|Render the thread ID.
-|%z{<zone name>}|Timezone|Set the time zone of log output to <zone name>.
-|%L|Line number|Render the line number of the log message.
-|===
-
-=== Setting the logging format
-To set the logging format for a logged line, perform these steps:
-
-. Build your desired format template using the preceding table.
-. Enter the following command:
-+
-<@kc.start parameters="--log-console-format=\"\'<format>\'\""/>
-
-Note that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI. Therefore, consider setting it in the configuration file instead.
-
-.Example: Abbreviate the fully qualified category name
-<@kc.start parameters="--log-console-format=\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
-
-This example abbreviates the category name to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
-
-=== Configuring JSON or plain console logging
-By default, the console log handler logs plain unstructured data to the console. To use structured JSON log output instead, enter the following command:
-
-<@kc.start parameters="--log-console-output=json"/>
-
-.Example Log Message
-[source, json]
-----
-{"timestamp":"2025-02-03T14:52:20.290353085+01:00","sequence":9605,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.440s. Listening on: http://0.0.0.0:8080","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host-name","processName":"/usr/lib/jvm/jdk-21.0.3+9/bin/java","processId":76944}
-----
-
-When using JSON output, colors are disabled and the format settings set by `--log-console-format` will not apply.
-
-To use unstructured logging, enter the following command:
-
-<@kc.start parameters="--log-console-output=default"/>
-
-.Example Log Message
-[source]
-----
-2025-02-03 14:53:56,653 INFO  [io.quarkus] (main) Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.795s. Listening on: http://0.0.0.0:8080
-----
-
-=== Colors
-Colored console log output for unstructured logs is disabled by default. Colors may improve readability, but they can cause problems when shipping logs to external log aggregation systems. To enable or disable color-coded console log output, enter following command:
-
-<@kc.start parameters="--log-console-color=<false|true>"/>
-
-=== Configuring the console log level
-Log level for console log handler can be specified by `--log-console-level` property as follows:
-
-<@kc.start parameters="--log-console-level=warn"/>
-
-For more information, see the section <<Specify log level for each handler>> above.
-
-== File logging
-As an alternative to logging to the console, you can use unstructured logging to a file.
-
-=== Enable file logging
-Logging to a file is disabled by default. To enable it, enter the following command:
-
-<@kc.start parameters="--log=\"console,file\""/>
-
-A log file named `keycloak.log` is created inside the `data/log` directory of your {project_name} installation.
-
-=== Configuring the location and name of the log file
-
-To change where the log file is created and the file name, perform these steps:
-
-. Create a writable directory to store the log file.
-+
-If the directory is not writable, {project_name} will start correctly, but it will issue an error and no log file will be created.
-
-. Enter this command:
-+
-<@kc.start parameters="--log=\"console,file\" --log-file=<path-to>/<your-file.log>"/>
-
-=== Configuring the file handler format
-To configure a different logging format for the file log handler, enter the following command:
-
-<@kc.start parameters="--log-file-format=\"<pattern>\""/>
-
-See <<Configuring the console log format>> for more information and a table of the available pattern configuration.
-
-=== Configuring the file log level
-Log level for file log handler can be specified by `--log-file-level` property as follows:
-
-<@kc.start parameters="--log-file-level=warn"/>
-
-For more information, see the section <<Specify log level for each handler>> above.
-
-== Centralized logging using Syslog
-
-{project_name} provides the ability to send logs to a remote Syslog server.
-It utilizes the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].
-
-=== Enable the Syslog handler
-To enable logging using Syslog, add it to the list of activated log handlers as follows:
-
-<@kc.start parameters="--log=\"console,syslog\""/>
-
-=== Configuring the Syslog Application Name
-To set a different application name, add the `--log-syslog-app-name` option as follows:
-
-<@kc.start parameters="--log=\"console,syslog\" --log-syslog-app-name=kc-p-itadmins"/>
-
-If not set, the application name defaults to `keycloak`.
-
-=== Configuring the Syslog endpoint
-
-To configure the endpoint(_host:port_) of your centralized logging system, enter the following command and substitute the values with your specific values:
-
-<@kc.start parameters="--log=\"console,syslog\" --log-syslog-endpoint=myhost:12345"/>
-
-When the Syslog handler is enabled, the host is using `localhost` as host value.
-The Default port is `514`.
-
-=== Configuring the Syslog log level
-Log level for Syslog log handler can be specified by `--log-syslog-level` property as follows:
-
-<@kc.start parameters="--log-syslog-level=warn"/>
-
-For more information, see the section <<Specify log level for each handler>> above.
-
-=== Configuring the Syslog protocol
-Syslog uses TCP as the default protocol for communication.
-To use UDP instead of TCP, add the `--log-syslog-protocol` option as follows:
-
-<@kc.start parameters="--log=\"console,syslog\" --log-syslog-protocol=udp"/>
-
-The available protocols are: `tpc`, `udp`, and `ssl-tcp`.
-
-=== Configuring the Syslog counting framing
-
-By default, Syslog messages sent over TCP or SSL-TCP are prefixed with the message size, as required by certain Syslog receivers.
-This behavior is controlled by the `--log-syslog-counting-framing` option.
-
-To explicitly enable or disable this feature, use the following command:
-
-<@kc.start parameters="--log-syslog-counting-framing=true"/>
-
-You can set the value to one of the following:
-
-* `protocol-dependent` (default) – Enable counting framing only when the `log-syslog-protocol` is `tcp` or `ssl-tcp`.
-* `true` – Always enable counting framing by prefixing messages with their size.
-* `false` – Never use counting framing.
-
-Note that using `protocol-dependent` ensures compatibility with most Syslog servers by enabling the prefix only when required by the protocol.
-
-=== Configuring the Syslog log format
-To set the logging format for a logged line, perform these steps:
-
-. Build your desired format template using the preceding table.
-. Enter the following command:
-+
-<@kc.start parameters="--log-syslog-format=\"\'<format>\'\""/>
-
-Note that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI. Therefore, consider setting it in the configuration file instead.
-
-.Example: Abbreviate the fully qualified category name
-<@kc.start parameters="--log-syslog-format=\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
-
-This example abbreviates the category name to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
-
-=== Configuring the Syslog type
-
-Syslog uses different message formats based on particular RFC specifications.
-To change the Syslog type with a different message format, use the `--log-syslog-type` option as follows:
-
-<@kc.start parameters="--log-syslog-type=rfc3164"/>
-
-Possible values for the `--log-syslog-type` option are:
-
-<@opts.expectedValues option="log-syslog-type"/>
-
-The preferred Syslog type is https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424], which obsoletes https://datatracker.ietf.org/doc/html/rfc3164[RFC 3164], known as BSD Syslog protocol.
-
-=== Configuring the Syslog maximum message length
-
-To set the maximum length of the message allowed to be sent (in bytes), use the `--log-syslog-max-length` option as follows:
-
-<@kc.start parameters="--log-syslog-max-length=1536"/>
-
-The length can be specified in memory size format with the appropriate suffix, like `1k` or `1K`.
-The length includes the header and the message.
-
-If the length is not explicitly set, the default values are set based on the `--log-syslog-type` option as follows:
-
-* `2048B` - for RFC 5424
-* `1024B` - for RFC 3164
-
-=== Configuring the Syslog structured output
-By default, the Syslog log handler sends plain unstructured data to the Syslog server.
-To use structured JSON log output instead, enter the following command:
-
-<@kc.start parameters="--log-syslog-output=json"/>
-
-.Example Log Message
-[source, bash]
-----
-2024-04-05T12:32:20.616+02:00 host keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
-----
-
-When using JSON output, colors are disabled and the format settings set by `--log-syslog-format` will not apply.
-
-To use unstructured logging, enter the following command:
-
-<@kc.start parameters="--log-syslog-output=default"/>
-
-.Example Log Message
-[source, bash]
-----
-2024-04-05T12:31:38.473+02:00 host keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
-----
-
-As you can see, the timestamp is present twice, so you can amend it correspondingly via the `--log-syslog-format` property.
-
-<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-*">
+<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc*">
 
 === Console
 <@opts.includeOptions includedOptions="log-console-*"/>
@@ -555,6 +312,9 @@ As you can see, the timestamp is present twice, so you can amend it correspondin
 
 === HTTP Access log
 <@opts.includeOptions includedOptions="http-access-log-*"/>
+
+=== Mapped Diagnostic Context (MDC)
+<@opts.includeOptions includedOptions="log-mdc*"/>
 
 </@opts.printRelevantOptions>
 
