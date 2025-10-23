@@ -170,6 +170,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setEnabled(boolean enabled) {
+        if (updated == null && cached.isEnabled() == enabled) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setEnabled(enabled);
     }
@@ -214,10 +217,11 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeAttribute(String name) {
-        if (getFirstAttribute(name) != null) {
-            getDelegateForUpdate();
-            updated.removeAttribute(name);
+        if (updated == null && getFirstAttribute(name) == null) {
+            return;
         }
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
     }
 
     @Override
@@ -247,30 +251,38 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void addRequiredAction(RequiredAction action) {
+        if (updated == null && getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
+            return;
+        }
         getDelegateForUpdate();
         updated.addRequiredAction(action);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
-            getDelegateForUpdate();
-            updated.removeRequiredAction(action);
+        if (updated == null && getRequiredActionsStream().noneMatch(s -> Objects.equals(s, action.name()))) {
+            return;
         }
+        getDelegateForUpdate();
+        updated.removeRequiredAction(action);
     }
 
     @Override
     public void addRequiredAction(String action) {
+        if (updated == null && getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
+            return;
+        }
         getDelegateForUpdate();
         updated.addRequiredAction(action);
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
-            getDelegateForUpdate();
-            updated.removeRequiredAction(action);
+        if (updated == null && getRequiredActionsStream().noneMatch(s -> Objects.equals(s, action))) {
+            return;
         }
+        getDelegateForUpdate();
+        updated.removeRequiredAction(action);
     }
 
     @Override
@@ -281,6 +293,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setEmailVerified(boolean verified) {
+        if (updated == null && cached.isEmailVerified() == verified) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setEmailVerified(verified);
     }
@@ -293,6 +308,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setFederationLink(String link) {
+        if (updated == null && Objects.equals(cached.getFederationLink(), link)) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setFederationLink(link);
     }
@@ -305,6 +323,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
+        if (updated == null && Objects.equals(cached.getServiceAccountClientLink(), clientInternalId)) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setServiceAccountClientLink(clientInternalId);
     }
@@ -388,6 +409,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void grantRole(RoleModel role) {
+        if (updated == null && cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.grantRole(role);
     }
@@ -411,6 +435,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
+        if (updated == null && !cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.deleteRoleMapping(role);
     }
@@ -454,6 +481,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void joinGroup(GroupModel group) {
+        if (group.getType() == Type.REALM && cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.joinGroup(group);
 
@@ -461,6 +491,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void leaveGroup(GroupModel group) {
+        if (group.getType() == Type.REALM && updated == null && !cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.leaveGroup(group);
     }
