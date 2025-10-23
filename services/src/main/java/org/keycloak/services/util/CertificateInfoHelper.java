@@ -75,6 +75,9 @@ public class CertificateInfoHelper {
 
         try {
             JSONWebKeySet keySet = JsonSerialization.readValue(jwks, JSONWebKeySet.class);
+            if (keySet == null || keySet.getKeys() == null) {
+                throw new IllegalStateException("Certificate not found");
+            }
             JWK publicKeyJwk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
             if (publicKeyJwk == null) {
                 throw new IllegalStateException("Certificate not found for use sig");
