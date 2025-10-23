@@ -1069,9 +1069,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) {
+    public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) throws IdentityBrokerException {
 
-        //TODO: proper assertion validation
+        // verify signature
+        if (!verify(context.getJws())) {
+            throw new IdentityBrokerException("Invalid signature");
+        }
+
         BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
         user.setUsername(context.getJWT().getSubject());
         user.setIdp(this);
@@ -1079,4 +1083,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     }
 
+    @Override
+    public int getAllowedClockSkew() {
+        return getConfig().getAllowedClockSkew();
+    }
 }

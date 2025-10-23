@@ -16,8 +16,7 @@
  */
 
 package org.keycloak.protocol.oidc.grants;
-import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -33,7 +32,6 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -45,9 +43,10 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
+import jakarta.ws.rs.core.Response;
+import java.util.List;
 
-    private static final Logger logger = Logger.getLogger(JWTAuthorizationGrantType.class);
+public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
     @Override
     public Response process(Context context) {
@@ -55,22 +54,17 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
         String assertion = formParams.getFirst(OAuth2Constants.ASSERTION);
         String expectedAudience = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
-        JWTAuthorizationGrantValidationContext authorizationGrantContext = new JWTAuthorizationGrantValidationContext(assertion, client, expectedAudience);
 
         try {
+
+            JWTAuthorizationGrantValidator authorizationGrantContext = JWTAuthorizationGrantValidator.createValidator(
+                    context.getSession(), client, assertion);
 
             //client must be confidential
             authorizationGrantContext.validateClient();
 
-            //validate assertion claim (grant_type already validated to select the grant type)
-            authorizationGrantContext.validateAssertionParameters();
-
-            //validate token is JWT and is valid (the signature is validated by the idp)
-            authorizationGrantContext.validateJWTFormat();
-            authorizationGrantContext.validateTokenActive();
-
             //mandatory claims
-            authorizationGrantContext.validateAudience();
+            authorizationGrantContext.validateTokenAudience(List.of(expectedAudience), false);
             authorizationGrantContext.validateIssuer();
             authorizationGrantContext.validateSubject();
 
@@ -91,6 +85,9 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Identity Provider is not configured for JWT Authorization Grant");
             }
 
+            // assign the provider and perform validations associated to the jwt grant provider
+            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), 300, false);
+
             //validate the JWT assertion and get the brokered identity from the idp
             BrokeredIdentityContext brokeredIdentityContext = jwtAuthorizationGrantProvider.validateAuthorizationGrantAssertion(authorizationGrantContext);
             if (brokeredIdentityContext == null) {
@@ -103,11 +100,14 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
+            event.user(user);
+            event.detail(Details.USERNAME, user.getUsername());
 
             String scopeParam = formParams.getFirst(OAuth2Constants.SCOPE);
             //TODO: scopes processing
 
             UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "authorization-grant", false, null, null);
+            event.session(userSession);
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession, authSession);
