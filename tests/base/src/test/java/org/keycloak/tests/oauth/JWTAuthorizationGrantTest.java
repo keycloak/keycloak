@@ -8,6 +8,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -65,6 +66,24 @@ public class JWTAuthorizationGrantTest  {
         oAuthClient.client("test-public");
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Public client not allowed to use authorization grant", response, events.poll());
+        oAuthClient.client("test-app", "test-secret");
+    }
+
+    @Test
+    public void testIdpNotAllowedForClient() {
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        oAuthClient.client("authorization-grant-not-allowed-idp-client", "test-secret");
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Identity Provider is not allowed for the client", response, events.poll());
+        oAuthClient.client("test-app", "test-secret");
+    }
+
+    @Test
+    public void testNotAllowedClient() {
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        oAuthClient.client("authorization-grant-disabled-client", "test-secret");
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("JWT Authorization Grant is not supported for the requested client", response, events.poll());
         oAuthClient.client("test-app", "test-secret");
     }
 
@@ -175,6 +194,10 @@ public class JWTAuthorizationGrantTest  {
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
 
             realm.addClient("test-public").publicClient(true);
+
+            realm.addClient("authorization-grant-disabled-client").publicClient(false).secret("test-secret");
+
+            realm.addClient("authorization-grant-not-allowed-idp-client").publicClient(false).attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, "true").secret("test-secret");
 
             realm.identityProvider(
                     IdentityProviderBuilder.create()
