@@ -19,7 +19,7 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import java.util.UUID;
 
 @KeycloakIntegrationTest(config = ClientAuthIdpServerConfig.class)
-public class FederatedClientAuthTest extends AbstractFederatedClientAuthTest {
+public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
     private static final String IDP_ALIAS = "external-idp";
 
@@ -33,7 +33,7 @@ public class FederatedClientAuthTest extends AbstractFederatedClientAuthTest {
     @InjectOAuthIdentityProvider
     OAuthIdentityProvider identityProvider;
 
-    public FederatedClientAuthTest() {
+    public BaseClientAuthTest() {
         super(TOKEN_ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
     }
 
