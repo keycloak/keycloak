@@ -458,9 +458,30 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     @Test
-    public void testUsernameAndEmailInLowerCaseFromLDAP() {
+    public void testUsernameAndEmailCaseSensitiveIfImportDisabled() {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageProviderModel ldapModel = ctx.getLdapProvider().getModel();
+            ldapModel.setImportEnabled(false);
+            ctx.getRealm().updateComponent(ldapModel);
+            LDAPObject ldapObject = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "JBrown8", "John", "Brown8", "JBrown8@Email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), ldapObject, "Password1");
+            UserModel model = session.users().searchForUserStream(ctx.getRealm(), Map.of(UserModel.USERNAME, "JBrown8")).findAny().orElse(null);
+            Assert.assertNotNull(model);
+            assertEquals("JBrown8", model.getUsername());
+            assertEquals("JBrown8@Email.org", model.getEmail());
+            ldapModel.setImportEnabled(true);
+            ctx.getRealm().updateComponent(ldapModel);
+        });
+    }
+
+    @Test
+    public void testUsernameAndEmailCaseInSensitiveIfImportEnabled() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageProviderModel ldapModel = ctx.getLdapProvider().getModel();
+            ldapModel.setImportEnabled(true);
+            ctx.getRealm().updateComponent(ldapModel);
             LDAPObject ldapObject = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "JBrown9", "John", "Brown9", "JBrown9@Email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), ldapObject, "Password1");
             UserModel model = session.users().searchForUserStream(ctx.getRealm(), Map.of(UserModel.USERNAME, "JBrown9")).findAny().orElse(null);
