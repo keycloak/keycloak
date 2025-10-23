@@ -8,7 +8,7 @@ Different from the Role-Based Access Control (RBAC) Mechanism provided through t
 <<_master_realm_access_control, Global and Realm specific roles>>, this feature provides a more fine-grained control over
 how realm resources can be accessed and managed based on a well-defined set of operations that can be performed on them.
 
-By relying on a Policy-Based Access Control, server administrators can define permissions to realm resources such as users,
+By relying on a Policy-Based Access Control, realm administrators can define permissions to realm resources such as users,
 groups, and clients, using different policy types, or access control methods, so that a realm administrator is limited to
 access a subset of realm resources and their operations.
 
@@ -17,6 +17,23 @@ not replace it. You are still able to grant administrative roles like `view-user
 to realm administrators but doing so will skip the mechanisms provided by this feature.
 
 Enforcing access to realm resources only applies when managing resources through the administration console or the Admin API.
+
+==== Understanding the different types of realm administrators
+
+There are two different types of realm administrators when managing a realm:
+
+* **Server administrators**: These are users (or service accounts) that have been granted with the `admin` role in the master realm.
+
+* **Realm administrators**: These are users (or service accounts) that have been granted with the `realm-admin` role in a specific realm.
+
+Both types of administrators can manage a realm with full access to all their resources and
+administrative operations.
+
+The main difference between them is that server administrators can manage any realm in the server, while realm administrators can only manage
+the realm they have been granted access to.
+
+Be aware that both server and realm administrators are not affected by the permissions you define when managing access to realm resources through this feature.
+Always make sure to review the users granted with the `admin` or `realm-admin` roles to avoid any potential privilege escalation.
 
 ==== Understanding the Realm Resource Types
 
@@ -210,8 +227,8 @@ properly allow paginating resources as well as avoid an additional overhead on t
 realm resource returned by queries.
 
 Partial evaluation and filtering occurs only if the feature is enabled to a realm, and if the user is not granted
-with view-related administrative roles like `view-users` or `view-clients`. For instance, it will not happen for regular server administrators granted
-with the `admin` role.
+with view-related administrative roles like `view-users` or `view-clients`. For instance, it will not happen for administrators granted
+with the `admin` role at the master realm (server administrators), or realm administrators granted with the `realm-admin` role in a realm other than the master realm.
 
 When querying resources, the partial evaluation mechanism works as follows:
 
@@ -235,7 +252,7 @@ type permissions with the *manage* scope for user `myadmin`).
 .Fine grained permissions search
 image:images/fine-grain-search.png[Fine grained permissions search]
 
-These capabilities allow server administrators to perform queries on their universe of permissions and identify which ones
+These capabilities allow realm administrators to perform queries on their universe of permissions and identify which ones
 are enforcing access to a set of one or more realm resources and their scopes. Combined with the evaluation tool on the
 *Evaluation* tab, they provide a key management tool for managing permissions in a realm. See <<_evaluating-permissions, Evaluating Permissions>>
 for more details.
@@ -310,7 +327,7 @@ themselves.
 ==== Accessing a Realm administration console as a Realm Administrator
 
 Realm administrators can access a dedicated realm-specific administration console that allows them to manage resources within their assigned realm.
-This console is separate from the main {project_name} Admin Console, which is typically used by server administrators.
+This console is separate from the main {project_name} Admin Console, which is typically used by realm administrators.
 
 For more details on dedicated realm administration consoles and available roles, refer to: <<_per_realm_admin_permissions, Dedicated admin consoles>>.
 

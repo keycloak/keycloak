@@ -1,0 +1,40 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== <TODO>
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== Allowing realm administrators granted with the `realm-admin` role to assign admin roles
+
+In previous versions, realm administrators granted with the `realm-admin` role were not able to grant admin roles for delegated realm administrators.
+This was only possible by granting the `admin` role to a master realm user, making this user a server admin.
+
+In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
+
+If you are using FGAP to delegate administration to users in a realm other than the master realm,
+make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege scalation.
+
+The documentation is also updated with additional information about the different types of realm administrators.
+For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+
