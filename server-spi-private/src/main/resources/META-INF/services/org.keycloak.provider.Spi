@@ -111,6 +111,3 @@ org.keycloak.models.workflow.WorkflowConditionSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
 org.keycloak.cache.AlternativeLookupSPI
 org.keycloak.models.workflow.WorkflowStateSpi
-org.keycloak.services.client.ClientServiceSpi
-org.keycloak.models.mapper.ModelMapperSpi
-org.keycloak.validation.jakarta.JakartaValidatorSpi

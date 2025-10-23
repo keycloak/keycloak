@@ -23,7 +23,4 @@ public class ValidationExceptionHandler implements ExceptionMapper<ConstraintVio
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .build();
     }
-
-    public record ViolationExceptionResponse(String error, Set<String> violations) {
-    }
 }

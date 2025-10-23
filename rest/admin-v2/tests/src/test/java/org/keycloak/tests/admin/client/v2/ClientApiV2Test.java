@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
-import org.keycloak.services.error.ValidationExceptionHandler;
+import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -123,7 +123,7 @@ public class ClientApiV2Test {
             assertThat(response, notNullValue());
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ValidationExceptionHandler.ViolationExceptionResponse.class);
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
             assertThat(violations.size(), is(1));
@@ -144,7 +144,7 @@ public class ClientApiV2Test {
         try (var response = client.execute(request)) {
             assertThat(response, notNullValue());
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ValidationExceptionHandler.ViolationExceptionResponse.class);
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
             assertThat(violations.size(), is(1));
