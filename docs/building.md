@@ -67,11 +67,19 @@ To avoid this, you can skip this check by adding the following property:
 
 To start Keycloak during development first build as specified above, then run:
 
-    java -jar quarkus/server/target/lib/quarkus-run.jar start-dev
+    java -Dkc.config.built=true -jar quarkus/server/target/lib/quarkus-run.jar start-dev
 
 To stop the server press `Ctrl + C`.
 
 For more details, follow the [`quarkus` module documentation](../quarkus/README.md).
+
+---
+**NOTE**
+
+Direct use of the `quarkus-run.jar` assumes manual control over the augmentation process. 
+If you want to run Keycloak with changes to build time options it is easier to either use the full distribution and the relevant `bin/kc.[sh|bat]` script or run an embedded server via the `org.keycloak.Keycloak` class in the `quarkus/tests/junit5` module.
+
+---
 
 ## Working with the codebase
 
