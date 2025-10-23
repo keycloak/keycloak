@@ -657,6 +657,29 @@ public class AuthenticationManager {
     }
 
     /**
+     * Logout all clientSessions belonging to the the given user session
+     * @param session
+     * @param realm
+     * @param userSession
+     * @param client
+     * @param uriInfo
+     * @param headers
+     */
+    public static void backchannelLogoutUserSessionFromClient(KeycloakSession session, RealmModel realm, UserSessionModel userSession, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if(clientSession!=null) {
+            backchannelLogoutClientSession(session,
+                    realm,
+                    clientSession,
+                    null,
+                    uriInfo,
+                    headers);
+            clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+            TokenManager.dettachClientSession(clientSession);
+        }
+    }
+
+    /**
      * Logout all clientSessions of this user and client
      * @param session
      * @param realm
@@ -667,14 +690,10 @@ public class AuthenticationManager {
      */
     public static void backchannelLogoutUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
         session.sessions().getUserSessionsStream(realm, user)
-                .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
-                .filter(Objects::nonNull)
                 .toList() // collect to avoid concurrent modification.
-                .forEach(clientSession -> {
-                    backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
-                    clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-                    TokenManager.dettachClientSession(clientSession);
-                });
+                .forEach(userSession ->
+                                backchannelLogoutUserSessionFromClient(session, realm, userSession, client, uriInfo, headers)
+                        );
     }
 
     public static Response browserLogout(KeycloakSession session,
