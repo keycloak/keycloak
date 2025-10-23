@@ -5,7 +5,6 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { AlertVariant } from "@patternfly/react-core";
-import { useState } from "react";
 import {
   Controller,
   FormProvider,
@@ -34,21 +33,24 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import WorkflowRepresentation from "libs/keycloak-admin-client/lib/defs/workflowRepresentation";
 
 type AttributeForm = {
-  workflowJSON?: string;
-  [key: string]: unknown;
+  workflowJSON: string;
 };
 
 export default function WorkflowDetailForm() {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const form = useForm<AttributeForm>({ mode: "onChange" });
-  const { control, handleSubmit } = form;
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { mode, id } = useParams<WorkflowDetailParams>();
-  const [workflowJSON, setWorkflowJSON] = useState("");
+  const form = useForm<AttributeForm>({
+    mode: "onChange",
+    defaultValues: {
+      workflowJSON: "",
+    },
+  });
+  const { control, handleSubmit, setValue } = form;
 
   useFetch(
     async () => {
@@ -64,27 +66,28 @@ export default function WorkflowDetailForm() {
         return;
       }
 
+      const workflowToSet = { ...workflow };
       if (mode === "copy") {
-        delete workflow.id;
-        workflow.name = `${workflow.name} -- ${t("copy")}`;
+        delete workflowToSet.id;
+        workflowToSet.name = `${workflow.name} -- ${t("copy")}`;
       }
 
-      setWorkflowJSON(JSON.stringify(workflow, null, 2));
+      setValue("workflowJSON", JSON.stringify(workflowToSet, null, 2));
     },
-    [mode, id],
+    [mode, id, setValue, t],
   );
 
-  const validateWorkflowJSON = (): WorkflowRepresentation => {
-    const json = JSON.parse(workflowJSON);
+  const validateWorkflowJSON = (jsonStr: string): WorkflowRepresentation => {
+    const json = JSON.parse(jsonStr);
     if (!json.name) {
       throw new Error(t("workflowNameRequired"));
     }
     return json;
   };
 
-  const onUpdate: SubmitHandler<AttributeForm> = async () => {
+  const onUpdate: SubmitHandler<AttributeForm> = async (data) => {
     try {
-      const json = validateWorkflowJSON();
+      const json = validateWorkflowJSON(data.workflowJSON);
       await adminClient.workflows.update({ id: json.id! }, json);
       addAlert(t("workflowUpdated"), AlertVariant.success);
     } catch (error) {
@@ -92,9 +95,10 @@ export default function WorkflowDetailForm() {
     }
   };
 
-  const onCreate: SubmitHandler<AttributeForm> = async () => {
+  const onCreate: SubmitHandler<AttributeForm> = async (data) => {
     try {
-      await adminClient.workflows.create(validateWorkflowJSON());
+      const json = validateWorkflowJSON(data.workflowJSON);
+      await adminClient.workflows.create(json);
       addAlert(t("workflowCreated"), AlertVariant.success);
       navigate(toWorkflows({ realm }));
     } catch (error) {
@@ -144,14 +148,13 @@ export default function WorkflowDetailForm() {
             >
               <Controller
                 name="workflowJSON"
-                defaultValue=""
                 control={control}
-                render={() => (
+                render={({ field }) => (
                   <CodeEditor
                     id="workflowJSON"
                     data-testid="workflowJSON"
-                    value={workflowJSON}
-                    onChange={(value) => setWorkflowJSON(value ?? "")}
+                    value={field.value}
+                    onChange={field.onChange}
                     language="json"
                     height={600}
                   />
