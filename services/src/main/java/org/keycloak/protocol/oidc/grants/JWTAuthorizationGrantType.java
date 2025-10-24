@@ -34,6 +34,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.CorsErrorResponseException;
@@ -57,6 +58,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         JWTAuthorizationGrantValidationContext authorizationGrantContext = new JWTAuthorizationGrantValidationContext(assertion, client, expectedAudience);
 
         try {
+
             //client must be confidential
             authorizationGrantContext.validateClient();
 
@@ -78,6 +80,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(session, jwtIssuer);
             if (identityProviderModel == null) {
                 throw new RuntimeException("No Identity Provider for provided issuer");
+            }
+
+            if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
+                throw new RuntimeException("Identity Provider is not allowed for the client");
             }
 
             UserAuthenticationIdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());

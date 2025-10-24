@@ -544,6 +544,9 @@ public class DescriptionConverter {
         if (!client.isPublicClient() && oidcClient.isStandardTokenExchangeEnabled()) {
             grantTypes.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
         }
+        if (!client.isPublicClient() && oidcClient.getJWTAuthorizationGrantEnabled()) {
+            grantTypes.add(OAuth2Constants.JWT_AUTHORIZATION_GRANT);
+        }
         return grantTypes;
     }
 

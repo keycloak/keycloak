@@ -16,6 +16,7 @@ export enum Feature {
   OpenId4VCI = "OID4VC_VCI",
   QuickTheme = "QUICK_THEME",
   StandardTokenExchangeV2 = "TOKEN_EXCHANGE_STANDARD_V2",
+  JWTAuthorizationGrant = "JWT_AUTHORIZATION_GRANT",
   Passkeys = "PASSKEYS",
   ClientAuthFederated = "CLIENT_AUTH_FEDERATED",
   Workflows = "WORKFLOWS",
