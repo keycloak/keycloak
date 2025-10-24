@@ -251,8 +251,9 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
 
         try {
-            List<UserRepresentation> search = testRealm().users().search("*", -1, -1, true);
-            Assert.fail("Should fail because LDAP is in failing state");
+            user1.setFirstName(user1.getFirstName() + " updated");
+            userResource.update(user1);
+            Assert.fail("Not expected to successfully update user");
         } catch (WebApplicationException expected) {
             Response response = expected.getResponse();
             OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
