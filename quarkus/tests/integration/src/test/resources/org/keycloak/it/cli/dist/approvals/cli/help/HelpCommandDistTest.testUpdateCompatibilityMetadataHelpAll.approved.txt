@@ -250,6 +250,10 @@ Transaction:
 
 Feature:
 
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
 --features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
