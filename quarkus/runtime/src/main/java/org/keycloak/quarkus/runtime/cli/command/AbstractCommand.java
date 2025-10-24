@@ -52,10 +52,6 @@ public abstract class AbstractCommand implements Callable<Integer> {
      * Get the effective profile used when the config is initialized
      */
     public String getInitProfile() {
-        String configuredProfile = org.keycloak.common.util.Environment.getProfile();
-        if (configuredProfile != null) {
-            return configuredProfile; // the profile was already set by the cli or even ENV
-        }
         if (Environment.isRebuildCheck()) {
             // builds default to prod, if the profile is not overriden via the cli
             return Environment.PROD_PROFILE_VALUE;
