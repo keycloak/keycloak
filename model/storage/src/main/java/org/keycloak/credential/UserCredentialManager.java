@@ -48,6 +48,9 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     private final KeycloakSession session;
     private final RealmModel realm;
 
+    /**
+     * It is not recommended to use this method directly from your user-storage providers! Please use {@link KeycloakSession#getUserCredentialManager(UserModel)} instead.
+     */
     public UserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user) {
         super(session, UserStorageProviderFactory.class, UserStorageProvider.class, UserStorageProviderModel::new, "user");
         this.user = user;
