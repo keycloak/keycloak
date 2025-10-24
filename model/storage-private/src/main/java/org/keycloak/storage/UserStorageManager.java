@@ -18,6 +18,7 @@
 package org.keycloak.storage;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+import static org.keycloak.storage.managers.UserStorageSyncManager.notifyToRefreshPeriodicSync;
 import static org.keycloak.utils.StreamsUtil.distinctByKey;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -70,7 +71,6 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserBulkUpdateProvider;
 import org.keycloak.storage.user.UserCountMethodsProvider;
@@ -994,8 +994,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
-
+        notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
     }
 
     @Override
@@ -1023,7 +1022,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
             @Override
             protected void commitImpl() {
-                UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
+                notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
             }
 
             @Override
@@ -1035,15 +1034,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
-        ComponentFactory factory = ComponentUtil.getComponentFactory(session, newModel);
-        if (!(factory instanceof UserStorageProviderFactory)) return;
-        UserStorageProviderModel old = new UserStorageProviderModel(oldModel);
-        UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
-        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
-                || old.isImportEnabled() != newP.isImportEnabled()) {
-            UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
+        ComponentFactory<?, ?> factory = ComponentUtil.getComponentFactory(session, newModel);
+
+        if (!(factory instanceof UserStorageProviderFactory)) {
+            return;
         }
 
+        UserStorageProviderModel previous = new UserStorageProviderModel(oldModel);
+        UserStorageProviderModel actual= new UserStorageProviderModel(newModel);
+
+        if (isSyncSettingsUpdated(previous, actual)) {
+            notifyToRefreshPeriodicSync(session, realm, actual, false);
+        }
     }
 
     @Override
@@ -1141,5 +1143,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, loader)
                 .findFirst()
                 .orElse(null);
+    }
+
+    private boolean isSyncSettingsUpdated(UserStorageProviderModel previous, UserStorageProviderModel actual) {
+        return previous.getChangedSyncPeriod() != actual.getChangedSyncPeriod()
+                || previous.getFullSyncPeriod() != actual.getFullSyncPeriod()
+                || previous.isImportEnabled() != actual.isImportEnabled()
+                || previous.isEnabled() != actual.isEnabled();
     }
 }

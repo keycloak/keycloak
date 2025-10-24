@@ -17,8 +17,6 @@
 
 package org.keycloak.userprofile;
 
-import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
@@ -103,5 +101,20 @@ public interface UserProfile {
      */
     Attributes getAttributes();
 
-    <R extends AbstractUserRepresentation> R toRepresentation();
+    /**
+     * Returns the full user representation
+     *
+     * @return the user representation
+     */
+    default <R extends AbstractUserRepresentation> R toRepresentation() {
+        return toRepresentation(true);
+    }
+
+    /**
+     * Returns the user representation
+     *
+     * @param full if the full representation should be returned
+     * @return the user representation
+     */
+    <R extends AbstractUserRepresentation> R toRepresentation(boolean full);
 }

@@ -32,7 +32,6 @@ import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 

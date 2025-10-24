@@ -20,7 +20,6 @@
 package org.keycloak.protocol.oidc;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.representations.LogoutToken;

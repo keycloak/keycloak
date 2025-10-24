@@ -1,5 +1,6 @@
 package org.keycloak.tests.client.authentication.external;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -20,18 +21,20 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
+public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
 
-    private static final String INTERNAL_CLIENT_ID = "myclient";
-    private static final String EXTERNAL_CLIENT_ID = "spiffe://mytrust-domain/myclient";
-    private static final String IDP_ALIAS = "spiffe-idp";
-    private static final String TRUST_DOMAIN = "spiffe://mytrust-domain";
-    private static final String BUNDLE_ENDPOINT = "http://127.0.0.1:8500/idp/jwks";
+    static final String INTERNAL_CLIENT_ID = "myclient";
+    static final String EXTERNAL_CLIENT_ID = "spiffe://mytrust-domain/myclient";
+    static final String IDP_ALIAS = "spiffe-idp";
+    static final String TRUST_DOMAIN = "spiffe://mytrust-domain";
+    static final String BUNDLE_ENDPOINT = "http://127.0.0.1:8500/idp/jwks";
 
     @InjectRealm(config = ExernalClientAuthRealmConfig.class)
     protected ManagedRealm realm;
@@ -39,8 +42,25 @@ public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
     @InjectOAuthIdentityProvider(config = SpiffeIdpConfig.class)
     OAuthIdentityProvider identityProvider;
 
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
     public SpiffeClientAuthTest() {
         super(null, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
+    }
+
+    @Test
+    public void testKeysCached() {
+        int initialKeyRequests = identityProvider.getKeysRequestCount();
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertEquals(initialKeyRequests + 1, identityProvider.getKeysRequestCount());
+
+        timeOffSet.set(350);
+
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertEquals(initialKeyRequests + 2, identityProvider.getKeysRequestCount());
     }
 
     @Test
@@ -52,6 +72,14 @@ public class SpiffeClientAuthTest extends AbstractFederatedClientAuthTest {
         JsonWebToken jwt = createDefaultToken();
         assertFailure(doClientGrant(jwt));
         assertFailure(null, null, jwt.getSubject(), jwt.getId(), "client_not_found", events.poll());
+    }
+
+    @Test
+    public void testWithIssClaim() {
+        JsonWebToken jwt = createDefaultToken();
+        jwt.issuer("https://nosuch");
+        assertSuccess(INTERNAL_CLIENT_ID, doClientGrant(jwt));
+        assertSuccess(INTERNAL_CLIENT_ID, jwt.getId(), "https://nosuch", EXTERNAL_CLIENT_ID, events.poll());
     }
 
     @Test

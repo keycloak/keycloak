@@ -63,6 +63,8 @@
 :bootstrapadminrecovery_name: Admin Bootstrap and Recovery
 :bootstrapadminrecovery_link: https://www.keycloak.org/server/bootstrap-admin-recovery
 :client_certificate_lookup_link: https://www.keycloak.org/server/reverseproxy#_enabling_client_certificate_lookup
+:databaseguide_name: Configuring the database
+:databaseguide_link: https://www.keycloak.org/server/db
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
@@ -71,6 +73,8 @@
 :developerguide_actiontoken_name: Action Token Handler SPI
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_handler_spi
 :developerguide_jsproviders_name: JavaScript Providers
+:developerguide_userstoragespi_link: {developerguide_link}#_user-storage-spi
+:developerguide_userstoragespi_name: User Storage SPI
 :developerguide_jsproviders_link: {developerguide_link}#_script_providers
 :importexportguide_link: https://www.keycloak.org/nightly/server/importExport
 :gettingstarted_name: Getting Started Guide

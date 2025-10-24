@@ -65,7 +65,6 @@ import org.keycloak.testsuite.util.WaitUtils;
 
 import org.keycloak.util.TokenUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;

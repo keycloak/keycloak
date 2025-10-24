@@ -75,6 +75,7 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.oauth.TokenExchangeRequest;
+import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -1165,10 +1166,64 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         }
     }
 
+    @Test
+    public void testExchangeChainRequesters() throws Exception {
+        final UserRepresentation alice = ApiUtil.findUserByUsername(adminClient.realm(TEST), "alice");
+        oauth.realm(TEST);
+        String accessToken = resourceOwnerLogin("alice", "password", "subject-client", "secret", "optional-requester-scope").getAccessToken();
+
+        // exchange with requester-client
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("requester-client-2"), null);
+        assertAudiencesAndScopes(response, alice, List.of("requester-client-2"), List.of("optional-requester-scope"));
+        assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+        String exchangedTokenString = response.getAccessToken();
+        TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+        AccessToken exchangedToken = verifier.parse().getToken();
+        assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+        assertEquals("requester-client", exchangedToken.getIssuedFor());
+
+        // exchange now with requester-client-2
+        response = tokenExchange(exchangedTokenString, "requester-client-2", "secret", List.of("requester-client"), null);
+        assertAudiencesAndScopes(response, alice, List.of("requester-client"), List.of("optional-requester-scope"),
+                OAuth2Constants.ACCESS_TOKEN_TYPE, "requester-client");
+        assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+        exchangedTokenString = response.getAccessToken();
+        verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+        exchangedToken = verifier.parse().getToken();
+        assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+        assertEquals("requester-client-2", exchangedToken.getIssuedFor());
+
+        // exchange again with requester-client
+        response = tokenExchange(exchangedTokenString, "requester-client", "secret", List.of("requester-client-2"), null);
+        assertAudiencesAndScopes(response, alice, List.of("requester-client-2"), List.of("optional-requester-scope"),
+                OAuth2Constants.ACCESS_TOKEN_TYPE, "requester-client-2");
+        assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+        exchangedTokenString = response.getAccessToken();
+        verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+        exchangedToken = verifier.parse().getToken();
+        assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
+        assertEquals("requester-client", exchangedToken.getIssuedFor());
+
+        // test revocation endpoint
+        isAccessTokenEnabled(response.getAccessToken(), "requester-client", "secret");
+        TokenRevocationResponse revocationResponse = oauth.client("requester-client", "secret").doTokenRevoke(response.getAccessToken());
+        assertNull(revocationResponse.getError());
+        events.expect(EventType.REVOKE_GRANT)
+                .client("requester-client")
+                .user(alice)
+                .assertEvent();
+        isAccessTokenDisabled(response.getAccessToken(), "requester-client", "secret");
+    }
+
     private void isAccessTokenEnabled(String accessToken, String clientId, String secret) throws IOException {
         oauth.client(clientId, secret);
         TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessToken).asTokenMetadata();
         assertTrue(rep.isActive());
+        events.expect(EventType.INTROSPECT_TOKEN)
+                .user(AssertEvents.isUUID())
+                .session(AssertEvents.isUUID())
+                .client(clientId)
+                .assertEvent();
     }
 
     private void isAccessTokenDisabled(String accessTokenString, String clientId, String secret) throws IOException {

@@ -17,6 +17,7 @@
 
 package org.keycloak.events.jpa;
 
+import org.hibernate.jpa.AvailableHints;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventType;
@@ -161,6 +162,7 @@ public class JpaEventQuery implements EventQuery {
         }
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
+        query.setHint(AvailableHints.HINT_READ_ONLY, true);
 
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertEvent));
     }

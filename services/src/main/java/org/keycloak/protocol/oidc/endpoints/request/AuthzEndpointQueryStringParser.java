@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 /**
  * Parse the parameters from request queryString

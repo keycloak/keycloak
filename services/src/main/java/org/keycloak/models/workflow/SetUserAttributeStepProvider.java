@@ -45,20 +45,17 @@ public class SetUserAttributeStepProvider implements WorkflowStepProvider {
     }
 
     @Override
-    public void run(List<String> userIds) {
+    public void run(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
-        for (String id : userIds) {
-            UserModel user = session.users().getUserById(realm, id);
+        if (user != null) {
+            for (Entry<String, List<String>> entry : stepModel.getConfig().entrySet()) {
+                String key = entry.getKey();
 
-            if (user != null) {
-                for (Entry<String, List<String>> entry : stepModel.getConfig().entrySet()) {
-                    String key = entry.getKey();
-
-                    if (!key.startsWith(CONFIG_AFTER) && !key.startsWith(CONFIG_PRIORITY)) {
-                        log.debugv("Setting attribute {0} to user {1})", key, user.getId());
-                        user.setAttribute(key, entry.getValue());
-                    }
+                if (!key.startsWith(CONFIG_AFTER) && !key.startsWith(CONFIG_PRIORITY)) {
+                    log.debugv("Setting attribute {0} to user {1})", key, user.getId());
+                    user.setAttribute(key, entry.getValue());
                 }
             }
         }

@@ -88,7 +88,7 @@ public class AuthUtil {
                     body.append("&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
                             .append("&client_assertion=").append(realmConfig.getSigningToken());
                 } else if (realmConfig.getSecret() != null) {
-                    authorization = BasicAuthHelper.createHeader(realmConfig.getClientId(), realmConfig.getSecret());
+                    authorization = BasicAuthHelper.RFC6749.createHeader(realmConfig.getClientId(), realmConfig.getSecret());
                 }
 
                 try (InputStream result = doPost(realmConfig.serverUrl() + "/realms/" + realmConfig.realm() + "/protocol/openid-connect/token",
@@ -181,7 +181,7 @@ public class AuthUtil {
             }
 
             try (InputStream result = doPost(server + "/realms/" + realm + "/protocol/openid-connect/token",
-                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), BasicAuthHelper.createHeader(clientId, secret))) {
+                    APPLICATION_FORM_URL_ENCODED, APPLICATION_JSON, body.toString(), BasicAuthHelper.RFC6749.createHeader(clientId, secret))) {
                 return JsonSerialization.readValue(result, AccessTokenResponse.class);
             }
         } catch (UnsupportedEncodingException e) {

@@ -7,7 +7,6 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
-import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.spiffe.SpiffeConstants;
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.common.Profile;
@@ -19,8 +18,6 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.resources.IdentityBrokerService;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -52,27 +49,28 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
 
+            if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
+                return;
+            }
+
             if (!SUPPORTED_ASSERTION_TYPES.contains(clientAssertionState.getClientAssertionType())) {
                 return;
             }
 
-            final String issuer = clientAssertionState.getToken().getIssuer() != null ?
-                    clientAssertionState.getToken().getIssuer() :
-                    toIssuer(clientAssertionState.getToken().getSubject());
-            if (issuer == null) return;
-
             AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
-
-            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(context.getSession(), issuer);
-            ClientAssertionIdentityProvider identityProvider = getClientAssertionIdentityProvider(context.getSession(), identityProviderModel);
-            if (identityProvider == null) return;
 
             String federatedClientId = clientAssertionState.getToken().getSubject();
 
             ClientModel client = lookupProvider.lookupClientFromClientAttributes(
                     context.getSession(),
-                    Map.of(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, identityProviderModel.getAlias(), FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, federatedClientId));
+                    Map.of(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, federatedClientId));
             if (client == null) return;
+
+            String idpAlias = client.getAttribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY);
+
+            IdentityProviderModel identityProviderModel = context.getSession().identityProviders().getByAlias(idpAlias);
+            ClientAssertionIdentityProvider identityProvider = getClientAssertionIdentityProvider(context.getSession(), identityProviderModel);
+            if (identityProvider == null) return;
 
             clientAssertionState.setClient(client);
 
@@ -93,12 +91,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         if (identityProviderModel == null) {
             return null;
         }
-        IdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel);
-        if (identityProvider instanceof ClientAssertionIdentityProvider clientAssertionProvider) {
-            return clientAssertionProvider;
-        } else {
-            throw new RuntimeException("Provider does not support client assertions");
-        }
+        return IdentityBrokerService.getIdentityProvider(session, identityProviderModel, ClientAssertionIdentityProvider.class);
     }
 
     @Override
@@ -144,17 +137,6 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED);
-    }
-
-    protected static String toIssuer(String subject) {
-        try {
-            URI uri = new URI(subject);
-            String scheme = uri.getScheme();
-            String authority = uri.getRawAuthority();
-            return scheme != null && authority != null ? scheme + "://" + authority : null;
-        } catch (URISyntaxException e) {
-            return null;
-        }
     }
 
 }

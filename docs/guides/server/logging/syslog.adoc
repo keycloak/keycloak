@@ -1,0 +1,146 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Syslog logging"
+summary="Send logs to a remote Syslog server"
+tileVisible="false"
+levelOffset=2 >
+
+{project_name} provides the ability to send logs to a remote Syslog server.
+It uses the protocol defined in https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424].
+The more specific Syslog handler configuration mentioned below will only take effect when the Syslog logging is enabled.
+
+== Enable the Syslog handler
+To enable logging using Syslog, add it to the list of activated log handlers as follows:
+
+<@kc.start parameters="--log=\"console,syslog\""/>
+
+== Configuring the Application Name
+To set a different application name, add the `--log-syslog-app-name` option as follows:
+
+<@kc.start parameters="--log=\"console,syslog\" --log-syslog-app-name=kc-p-itadmins"/>
+
+If not set, the application name defaults to `keycloak`.
+
+== Configuring the endpoint
+
+To configure the endpoint(_host:port_) of your centralized logging system, enter the following command and substitute the values with your specific values:
+
+<@kc.start parameters="--log=\"console,syslog\" --log-syslog-endpoint=myhost:12345"/>
+
+When the Syslog handler is enabled, the host is using `localhost` as host value.
+The Default port is `514`.
+
+== Configuring the log level
+Log level for Syslog log handler can be specified by `--log-syslog-level` property as follows:
+
+<@kc.start parameters="--log-syslog-level=warn"/>
+
+For more information, see <<Specify log level for each handler>>.
+
+== Configuring the protocol
+Syslog uses TCP as the default protocol for communication.
+To use UDP instead of TCP, add the `--log-syslog-protocol` option as follows:
+
+<@kc.start parameters="--log=\"console,syslog\" --log-syslog-protocol=udp"/>
+
+The available protocols are: `tpc`, `udp`, and `ssl-tcp`.
+
+== Configuring the counting framing
+
+By default, Syslog messages sent over TCP or SSL-TCP are prefixed with the message size, as required by certain Syslog receivers.
+This behavior is controlled by the `--log-syslog-counting-framing` option.
+
+To explicitly enable or disable this feature, use the following command:
+
+<@kc.start parameters="--log-syslog-counting-framing=true"/>
+
+You can set the value to one of the following:
+
+* `protocol-dependent` (default) – Enable counting framing only when the `log-syslog-protocol` is `tcp` or `ssl-tcp`.
+* `true` – Always enable counting framing by prefixing messages with their size.
+* `false` – Never use counting framing.
+
+Note that using `protocol-dependent` ensures compatibility with most Syslog servers by enabling the prefix only when required by the protocol.
+
+== Configuring the log format
+To set the logging format for a logged line, perform these steps:
+
+. Build your desired format template using the preceding table.
+. Enter the following command:
++
+<@kc.start parameters="--log-syslog-format=\"\'<format>\'\""/>
+
+Note that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI. Therefore, consider setting it in the configuration file instead.
+
+.Example: Abbreviate the fully qualified category name
+<@kc.start parameters="--log-syslog-format=\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
+
+This example abbreviates the category name to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
+
+== Configuring the Syslog type
+
+Syslog uses different message formats based on particular RFC specifications.
+To change the Syslog type with a different message format, use the `--log-syslog-type` option as follows:
+
+<@kc.start parameters="--log-syslog-type=rfc3164"/>
+
+Possible values for the `--log-syslog-type` option are:
+
+<@opts.expectedValues option="log-syslog-type"/>
+
+The preferred Syslog type is https://datatracker.ietf.org/doc/html/rfc5424[RFC 5424], which obsoletes https://datatracker.ietf.org/doc/html/rfc3164[RFC 3164], known as BSD Syslog protocol.
+
+== Configuring the maximum message length
+
+To set the maximum length of the message allowed to be sent (in bytes), use the `--log-syslog-max-length` option as follows:
+
+<@kc.start parameters="--log-syslog-max-length=1536"/>
+
+The length can be specified in memory size format with the appropriate suffix, like `1k` or `1K`.
+The length includes the header and the message.
+
+If the length is not explicitly set, the default values are set based on the `--log-syslog-type` option as follows:
+
+* `2048B` - for RFC 5424
+* `1024B` - for RFC 3164
+
+== Configuring the structured output
+By default, the Syslog log handler sends plain unstructured data to the Syslog server.
+To use structured JSON log output instead, enter the following command:
+
+<@kc.start parameters="--log-syslog-output=json"/>
+
+.Example Log Message
+[source, bash]
+----
+2024-04-05T12:32:20.616+02:00 host keycloak 2788276 io.quarkus - {"timestamp":"2024-04-05T12:32:20.616208533+02:00","sequence":9948,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Profile prod activated. ","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host","processName":"QuarkusEntryPoint","processId":2788276}
+----
+
+When using JSON output, colors are disabled and the format settings set by `--log-syslog-format` does not apply.
+
+To use unstructured logging, enter the following command:
+
+<@kc.start parameters="--log-syslog-output=default"/>
+
+.Example Log Message
+[source, bash]
+----
+2024-04-05T12:31:38.473+02:00 host keycloak 2787568 io.quarkus - 2024-04-05 12:31:38,473 INFO  [io.quarkus] (main) Profile prod activated.
+----
+
+As you can see, the timestamp is present twice, so you can amend it correspondingly by the `--log-syslog-format` property.
+
+
+<@opts.printRelevantOptions includedOptions="log-syslog-*" excludedOptions="log-syslog-async*">
+
+== Asynchronous
+<@opts.includeOptions includedOptions="log-syslog-async*"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

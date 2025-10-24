@@ -8,3 +8,26 @@
 </#list>
 |===
 </#macro>
+
+<#macro techpreview feature additionalCommunityText="">
+<#assign profileFeature = ctx.features.getFeature(feature)>
+
+[NOTE]
+====
+${profileFeature.description} is
+ifeval::[{project_product}==true]
+*Technology Preview*
+endif::[]
+ifeval::[{project_community}==true]
+*Preview*
+endif::[]
+and is not fully supported. This feature is disabled by default.
+
+ifeval::[{project_community}==true]
+${additionalCommunityText!""}
+endif::[]
+
+To enable start the server with <#if profileFeature.type != "PREVIEW_DISABLED_BY_DEFAULT">`--features=preview` or </#if>`--features=${profileFeature.name}`
+
+====
+</#macro>

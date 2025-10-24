@@ -46,9 +46,9 @@ public class Options {
                 .map(m -> new Option(m.getFrom(),
                         m.getCategory(),
                         m.isBuildTime(),
-                        null,
+                        m.getType().getSimpleName(),
                         m.getDescription(),
-                        m.getDefaultValue().map(Object::toString).orElse(null),
+                        m.getDefaultValue().orElse(null),
                         m.getExpectedValues(),
                         m.isStrictExpectedValues(),
                         m.getEnabledWhen().orElse(""),
@@ -82,7 +82,7 @@ public class Options {
                         .map(m -> new Option(optionPrefix + toDashCase(m.getName()), OptionCategory.GENERAL, false,
                                 m.getType(),
                                 m.getHelpText(),
-                                m.getDefaultValue() == null ? null : m.getDefaultValue().toString(),
+                                m.getDefaultValue(),
                                 m.getOptions() == null ? Collections.emptyList() : m.getOptions(),
                                 true,
                                 "",
@@ -198,7 +198,7 @@ public class Options {
                       boolean build,
                       String type,
                       String description,
-                      String defaultValue,
+                      Object defaultValue,
                       Iterable<String> expectedValues,
                       boolean strictExpectedValues,
                       String enabledWhen,
@@ -209,7 +209,7 @@ public class Options {
             this.build = build;
             this.type = type;
             this.description = description;
-            this.defaultValue = defaultValue;
+            this.defaultValue = org.keycloak.config.Option.getDefaultValueString(defaultValue);
             this.expectedValues = StreamSupport.stream(expectedValues.spliterator(), false).collect(Collectors.toList());
             this.strictExpectedValues = strictExpectedValues;
             this.enabledWhen = enabledWhen;

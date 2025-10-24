@@ -102,6 +102,19 @@ public class TrustedHostClientRegistrationPolicyTest {
                 policy.getTrustedHosts(), policy.getTrustedDomains()));
     }
 
+    @Test
+    public void testLocalhostDomainFallback() {
+        TrustedHostClientRegistrationPolicyFactory factory = new TrustedHostClientRegistrationPolicyFactory();
+        ComponentModel model = createComponentModel("*.localhost");
+        TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
+
+        // Simulate a hostname that would fail DNS resolution on some platforms
+        // but matches the trusted domain fallback logic
+        assertTrue(policy.verifyHost("other.localhost"));
+        assertTrue(policy.verifyHost("localhost"));
+        assertFalse(policy.verifyHost("otherlocalhost"));
+    }
+
     private ComponentModel createComponentModel(String... hosts) {
         ComponentModel model = new ComponentModel();
         model.put(TrustedHostClientRegistrationPolicyFactory.HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH, "true");

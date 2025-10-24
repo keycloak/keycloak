@@ -10,8 +10,8 @@ on:
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-  MINIKUBE_VERSION: v1.32.0
-  KUBERNETES_VERSION: v1.27.10 # OCP 4.14
+  MINIKUBE_VERSION: v1.37.0
+  KUBERNETES_VERSION: v1.32.9 # OCP 4.19
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
 
 defaults:
@@ -96,7 +96,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni cilium --cpus=max
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni calico --cpus=max
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
@@ -206,6 +206,7 @@ jobs:
         run: |
           kubectl apply -f src/test/resources/service-monitor-crds.yml
           ./scripts/check-crd-installed.sh servicemonitors
+          kubectl delete pod -l name=keycloak-operator
 
       - name: Deploy an example Keycloak with ServiceMonitor
         working-directory: operator/scripts

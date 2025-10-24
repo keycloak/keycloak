@@ -94,6 +94,7 @@ public class Messages {
     public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
+    public static final String EMAIL_VERIFICATION_PENDING = "emailVerificationPending";
 
     public static final String FEDERATED_IDENTITY_EXISTS = "federatedIdentityExistsMessage";
 
@@ -201,6 +202,8 @@ public class Messages {
     public static final String INVALID_CODE = "invalidCodeMessage";
 
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
+
+    public static final String EMAIL_VERIFICATION_CANCELLED = "emailVerificationCancelled";
 
     public static final String STALE_INVITE_ORG_LINK = "staleInviteOrgLink";
 

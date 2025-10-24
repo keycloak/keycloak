@@ -31,6 +31,9 @@
 
     <changeSet id="40343-workflow-state-table" author="keycloak">
         <createTable tableName="WORKFLOW_STATE">
+            <column name="EXECUTION_ID" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
             <column name="RESOURCE_ID" type="VARCHAR(255)">
                 <constraints nullable="false" />
             </column>
@@ -44,9 +47,13 @@
         </createTable>
 
         <addPrimaryKey
-                constraintName="PK_WORKFLOW_STEP_STATE"
+                constraintName="PK_WORKFLOW_STATE"
                 tableName="WORKFLOW_STATE"
-                columnNames="RESOURCE_ID, WORKFLOW_ID" />
+                columnNames="EXECUTION_ID" />
+
+        <addUniqueConstraint constraintName="UQ_WORKFLOW_RESOURCE"
+                tableName="WORKFLOW_STATE"
+                columnNames="WORKFLOW_ID, RESOURCE_ID"/>
 
         <createIndex indexName="IDX_WORKFLOW_STATE_STEP"
                      tableName="WORKFLOW_STATE">

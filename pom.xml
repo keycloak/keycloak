@@ -126,7 +126,7 @@
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
         <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
-        <xmlsec.version>2.2.6</xmlsec.version>
+        <xmlsec.version>3.0.4</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.6.1</ua-parser.version>
         <org.yaml.snakeyaml.version>2.0</org.yaml.snakeyaml.version>
@@ -207,6 +207,7 @@
         <smallrye.openapi.generator.plugin.version>3.6.2</smallrye.openapi.generator.plugin.version>
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <spotless-plugin.version>3.0.0</spotless-plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -1518,8 +1519,19 @@
                         <skip>${skipProtoLock}</skip>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless-plugin.version}</version>
+                    <configuration>
+                        <java>
+                            <removeUnusedImports />
+                        </java>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
+
     </build>
 
     <profiles>
