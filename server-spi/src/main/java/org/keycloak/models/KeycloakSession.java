@@ -222,6 +222,13 @@ public interface KeycloakSession extends AutoCloseable {
     UserProvider users();
 
     /**
+     * Default implementation of {@link SubjectCredentialManager} suitable for most of user providers
+     *
+     * @return user credential manager
+     */
+    SubjectCredentialManager getUserCredentialManager(UserModel user);
+
+    /**
      * Key manager
      *
       * @return
