@@ -1,14 +1,13 @@
 package org.keycloak.admin.api;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.AdminCorsPreflightService;
 
 @Provider
@@ -41,7 +40,7 @@ public class AdminRootV2 {
 
     private void checkApiEnabled() {
         if (!isAdminApiV2Enabled()) {
-            throw ErrorResponse.error("Admin API v2 not enabled", Response.Status.NOT_FOUND);
+            throw new NotFoundException();
         }
     }
 
