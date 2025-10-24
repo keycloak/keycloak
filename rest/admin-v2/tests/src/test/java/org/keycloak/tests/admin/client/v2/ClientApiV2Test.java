@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
 public class ClientApiV2Test {
 
-    private static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/v2";
+    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/v2";
     private static ObjectMapper mapper;
 
     @InjectHttpClient
