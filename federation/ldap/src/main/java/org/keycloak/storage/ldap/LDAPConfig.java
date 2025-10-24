@@ -17,6 +17,8 @@
 
 package org.keycloak.storage.ldap;
 
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.UserStorageProvider;
@@ -282,6 +284,10 @@ public class LDAPConfig {
 
     public boolean isEdirectory() {
         return LDAPConstants.VENDOR_NOVELL_EDIRECTORY.equalsIgnoreCase(getVendor());
+    }
+
+    public boolean isImportEnabled() {
+        return Boolean.parseBoolean(config.getFirstOrDefault(IMPORT_ENABLED, Boolean.TRUE.toString())) ;
     }
 
     @Override
