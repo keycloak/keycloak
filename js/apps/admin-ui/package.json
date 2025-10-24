@@ -105,7 +105,7 @@
     "p-debounce": "^5.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hook-form": "^7.63.0",
+    "react-hook-form": "^7.65.0",
     "react-i18next": "^16.0.1",
     "react-router-dom": "^6.30.1",
     "reactflow": "^11.11.4",
