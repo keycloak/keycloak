@@ -35,10 +35,6 @@ import java.util.Map;
 public class KeycloakUriInfo implements UriInfo {
 
     private final UriInfo delegate;
-    private final String hostname;
-    private final String scheme;
-    private final int port;
-    private final String contextPath;
 
     private URI absolutePath;
     private URI requestURI;
@@ -48,22 +44,11 @@ public class KeycloakUriInfo implements UriInfo {
         this.delegate = delegate;
 
         HostnameProvider hostnameProvider = session.getProvider(HostnameProvider.class);
-        this.scheme = hostnameProvider.getScheme(delegate, type);
-        this.hostname = hostnameProvider.getHostname(delegate, type);
-        this.port = hostnameProvider.getPort(delegate, type);
-        this.contextPath = hostnameProvider.getContextPath(delegate, type);
+        baseURI = hostnameProvider.getBaseUri(delegate, type);
     }
 
     public UriInfo getDelegate() {
         return delegate;
-    }
-
-    private UriBuilder initUriBuilder(UriBuilder b) {
-        b.scheme(scheme);
-        b.host(hostname);
-        b.port(port);
-        b.replacePath(contextPath);
-        return b;
     }
 
     @Override
@@ -94,9 +79,6 @@ public class KeycloakUriInfo implements UriInfo {
 
     @Override
     public URI getBaseUri() {
-        if (baseURI == null) {
-            baseURI = initUriBuilder(delegate.getBaseUriBuilder()).build();
-        }
         return baseURI;
     }
 
