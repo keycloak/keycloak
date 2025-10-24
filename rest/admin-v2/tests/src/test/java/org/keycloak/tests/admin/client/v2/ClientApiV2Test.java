@@ -20,6 +20,7 @@ package org.keycloak.tests.admin.client.v2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
@@ -29,11 +30,17 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.api.client.ClientApi;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.error.ViolationExceptionResponse;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -51,6 +58,15 @@ public class ClientApiV2Test {
     @InjectHttpClient
     CloseableHttpClient client;
 
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectRealm(config = NoAccessRealmConfig.class)
+    ManagedRealm testRealm;
+
+    @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
+    Keycloak noAccessAdminClient;
+
     @BeforeAll
     public static void setupMapper() {
         mapper = new ObjectMapper();
@@ -59,6 +75,7 @@ public class ClientApiV2Test {
     @Test
     public void getClient() throws Exception {
         HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
+        setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
@@ -69,6 +86,7 @@ public class ClientApiV2Test {
     @Test
     public void jsonPatchClient() throws Exception {
         HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
+        setAuthHeader(request);
         request.setEntity(new StringEntity("not json"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
         try (var response = client.execute(request)) {
@@ -92,6 +110,7 @@ public class ClientApiV2Test {
     @Test
     public void jsonMergePatchClient() throws Exception {
         HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
+        setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, ClientApi.CONTENT_TYPE_MERGE_PATCH);
 
         ClientRepresentation patch = new ClientRepresentation();
@@ -110,6 +129,7 @@ public class ClientApiV2Test {
     @Test
     public void clientRepresentationValidation() throws Exception {
         HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients");
+        setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
         request.setEntity(new StringEntity("""
@@ -152,10 +172,40 @@ public class ClientApiV2Test {
         }
     }
 
+    @Test
+    public void authenticationRequired() throws Exception {
+        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
+        setAuthHeader(request, noAccessAdminClient);
+        try (var response = client.execute(request)) {
+            assertEquals(401, response.getStatusLine().getStatusCode());
+        }
+    }
+
+    // TODO Rewrite the tests to not need explicit auth. They should use the admin client directly.
+    private void setAuthHeader(HttpMessage request, Keycloak adminClient) {
+        String token = adminClient.tokenManager().getAccessTokenString();
+        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+    }
+
+    private void setAuthHeader(HttpMessage request) {
+        setAuthHeader(request, this.adminClient);
+    }
+
     public static class AdminV2Config implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.CLIENT_ADMIN_API_V2);
+        }
+    }
+
+    public static class NoAccessRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.addClient("myclient")
+                    .secret("mysecret")
+                    .serviceAccountsEnabled(true);
+            return realm;
         }
     }
 }
