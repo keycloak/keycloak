@@ -26,17 +26,11 @@ public class OrganizationAwareAuthenticationContextBean extends AuthenticationCo
 
     private final AuthenticationContextBean delegate;
     private final boolean showTryAnotherWayLink;
-    private final String username;
 
     public OrganizationAwareAuthenticationContextBean(AuthenticationContextBean delegate, boolean showTryAnotherWayLink) {
-        this(delegate, showTryAnotherWayLink, null);
-    }
-
-    public OrganizationAwareAuthenticationContextBean(AuthenticationContextBean delegate, boolean showTryAnotherWayLink, String username) {
         super(null, null);
         this.delegate = delegate;
         this.showTryAnotherWayLink = showTryAnotherWayLink;
-        this.username = username;
     }
 
     @Override
@@ -52,7 +46,7 @@ public class OrganizationAwareAuthenticationContextBean extends AuthenticationCo
     }
 
     public boolean showUsername() {
-        return username != null || delegate.showUsername();
+        return delegate.showUsername();
     }
 
     public boolean showResetCredentials() {
@@ -60,9 +54,6 @@ public class OrganizationAwareAuthenticationContextBean extends AuthenticationCo
     }
 
     public String getAttemptedUsername() {
-        if (username == null) {
-            return delegate.getAttemptedUsername();
-        }
-        return username;
+        return delegate.getAttemptedUsername();
     }
 }
