@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { clickTableRowItem } from "./table";
+import { clickTableRowItem } from "./table.ts";
 
 export async function goToRealm(page: Page, realmName: string) {
   const currentRealm = await page.getByTestId("currentRealm").textContent();
