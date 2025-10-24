@@ -42,9 +42,8 @@ SERVER_OPTS="$SERVER_OPTS -Dquarkus-log-max-startup-records=10000"
 CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 
 DEBUG_MODE="${KC_DEBUG:-${DEBUG:-false}}"
-DEBUG_PORT="${KC_DEBUG_PORT:-${DEBUG_PORT:-8787}}"
+DEBUG_ADDRESS="${KC_DEBUG_PORT:-${DEBUG_PORT:-8787}}"
 DEBUG_SUSPEND="${KC_DEBUG_SUSPEND:-${DEBUG_SUSPEND:-n}}"
-DEBUG_ADDRESS="0.0.0.0:$DEBUG_PORT"
 
 esceval() {
     printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
@@ -55,20 +54,9 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ]; then
-              # Plain port
-              if echo "$2" | grep -Eq '^[0-9]+$'; then
-                  DEBUG_ADDRESS="0.0.0.0:$2"
-                  shift
-              # IPv4 or bracketed IPv6 with optional port
-              elif echo "$2" | grep -Eq '^(([0-9.]+)|(\[[0-9A-Fa-f:]+\]))'; then
-                  if echo "$2" | grep -Eq ':[0-9]+$'; then
-                      DEBUG_ADDRESS="$2"
-                  else
-                      DEBUG_ADDRESS="$2:$DEBUG_PORT"
-                  fi
-                  shift
-              fi
+          if echo "$2" | grep -Eq '^([0-9]|\[)'; then
+              DEBUG_ADDRESS=$2
+              shift
           fi
           ;;
       --)
