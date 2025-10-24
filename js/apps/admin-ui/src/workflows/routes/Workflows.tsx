@@ -12,7 +12,7 @@ export const WorkflowsRoute: AppRouteObject = {
   element: <WorkflowsSection />,
   breadcrumb: (t) => t("workflows"),
   handle: {
-    access: "view-realm",
+    access: "manage-realm",
   },
 };
 

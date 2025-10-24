@@ -18,6 +18,26 @@ export class Workflows extends Resource<{ realm?: string }> {
     path: "/",
   });
 
+  public findOne = this.makeRequest<
+    { id: string },
+    WorkflowRepresentation | undefined
+  >({
+    method: "GET",
+    path: "/{id}",
+    urlParamKeys: ["id"],
+    catchNotFound: true,
+  });
+
+  public update = this.makeUpdateRequest<
+    { id: string },
+    WorkflowRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/{id}",
+    urlParamKeys: ["id"],
+  });
+
   public create = this.makeRequest<WorkflowRepresentation, { id: string }>({
     method: "POST",
     returnResourceIdInLocationHeader: { field: "id" },
