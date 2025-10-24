@@ -175,22 +175,19 @@ public class TrustedHostClientRegistrationPolicy implements ClientRegistrationPo
 
             logger.debugf("Trying verify request from address '%s' of host '%s' by domains", hostAddress, hostname);
 
-            // On Windows, reverse lookup for loopback may return the IP (e.g., 127.0.0.1) instead of 'localhost'. Normalize to 'localhost' for consistent domain checks.
-            if (hostname.equals(address.getHostAddress()) && address.isLoopbackAddress()) {
+            // On Windows, reverse lookup for loopback may return the IP (e.g., 127.0.0.1) instead of 'localhost'.
+            // Normalize to 'localhost' for consistent domain checks.
+            if (address.isLoopbackAddress()) {
                 hostname = "localhost";
-            }
-
-            if (hostname.equals(address.getHostAddress())) {
+            } else if (hostname.equals(address.getHostAddress())) {
                 logger.debugf("The hostAddress '%s' was not resolved to a hostname", hostAddress);
                 return null;
             }
 
-            // For loopback, skip strict forward-confirm check after normalizing to 'localhost' to avoid platform differences.
-            if (!address.isLoopbackAddress()) {
-                if (Arrays.stream(InetAddress.getAllByName(hostname)).filter(a -> address.equals(a)).findAny().isEmpty()) {
-                    logger.debugf("The hostAddress '%s' is not among the direct lookups returned resolving '%s'", hostAddress, hostname);
-                    return null;
-                }
+            // For non-loopback addresses, perform a forward-confirmation check: the hostname must resolve back to the same address.
+            if (!address.isLoopbackAddress() && Arrays.stream(InetAddress.getAllByName(hostname)).noneMatch(a -> address.equals(a))) {
+                logger.debugf("The hostAddress '%s' is not among the direct lookups returned resolving '%s'", hostAddress, hostname);
+                return null;
             }
 
             for (String confDomain : trustedDomains) {

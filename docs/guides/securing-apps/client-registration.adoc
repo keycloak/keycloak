@@ -200,6 +200,9 @@ Currently we have these policy implementations:
 Request sent from some untrusted IP will be rejected. URLs of newly registered client must also use just those trusted hosts or domains. For example it won't be allowed
 to set `Redirect URI` of client pointing to some untrusted host. By default, there is not any whitelisted host, so anonymous client registration is de-facto disabled.
 
+NOTE: {project_name} normalizes loopback addresses to `localhost` to avoid platform-specific
+reverse-DNS differences (for example on Windows a reverse lookup of loopback may return the numeric IP rather than `localhost`). All other trusted domains must be based upon the primary reverse-DNS lookup returned by the platform.
+
 * Consent Required Policy - Newly registered clients will have `Consent Allowed` switch enabled. So after successful authentication, user will always
 see consent screen when he needs to approve permissions (client scopes). It means that client won't have access to any personal
 info or permission of user unless user approves it.
