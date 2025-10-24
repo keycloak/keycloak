@@ -58,6 +58,7 @@ Specify proxy configurations for outgoing HTTP requests. For more details, see <
 If an outgoing request requires HTTPS and this configuration option is set to true, you do not have to specify a truststore. This setting should be used only during development and *never in production* because it will disable verification of SSL certificates. Default: false.
 
 == Configuring retry behavior for outgoing HTTP requests
+IMPORTANT: Do not let outgoing retry duration exceed the caller’s timeout. Otherwise, the caller may time out and see an error while {project_name} continues retrying in the background.
 
 {project_name} can automatically retry failed outgoing HTTP requests. This is useful for handling transient network errors or temporary service unavailability. Retry behavior is disabled by default and must be explicitly enabled.
 
