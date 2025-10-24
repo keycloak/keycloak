@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,7 +72,7 @@ public class JWSBuilder {
         this.x5c = x5c.stream()
                 .map(x509Certificate -> {
                     try {
-                        return java.util.Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
+                        return Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
                     } catch (CertificateEncodingException e) {
                         throw new RuntimeException(e);
                     }

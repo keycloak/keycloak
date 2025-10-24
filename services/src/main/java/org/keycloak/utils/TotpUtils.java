@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Base64;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -58,7 +59,7 @@ public class TotpUtils {
             MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
             bos.close();
 
-            return java.util.Base64.getEncoder().encodeToString(bos.toByteArray());
+            return Base64.getEncoder().encodeToString(bos.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

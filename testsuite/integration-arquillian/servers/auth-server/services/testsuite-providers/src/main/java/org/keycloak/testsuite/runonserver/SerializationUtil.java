@@ -2,6 +2,7 @@ package org.keycloak.testsuite.runonserver;
 
 
 import java.io.*;
+import java.util.Base64;
 
 /**
  * Created by st on 26.01.17.
@@ -15,7 +16,7 @@ public class SerializationUtil {
             oos.writeObject(function);
             oos.close();
 
-            return java.util.Base64.getEncoder().encodeToString(os.toByteArray());
+            return Base64.getEncoder().encodeToString(os.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -23,7 +24,7 @@ public class SerializationUtil {
 
     public static Object decode(String encoded, ClassLoader classLoader) {
         try {
-            byte[] bytes = java.util.Base64.getDecoder().decode(encoded);
+            byte[] bytes = Base64.getDecoder().decode(encoded);
             ByteArrayInputStream is = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(is) {
                 @Override
@@ -49,7 +50,7 @@ public class SerializationUtil {
             oos.writeObject(t);
             oos.close();
 
-            return "EXCEPTION:" + java.util.Base64.getEncoder().encodeToString(os.toByteArray());
+            return "EXCEPTION:" + Base64.getEncoder().encodeToString(os.toByteArray());
         } catch (NotSerializableException e) {
             // when the exception can't be serialized, at least log the original exception, so it can be analyzed
             throw new RuntimeException("Unable to serialize exception due to not serializable class " + e.getMessage(), t);
@@ -61,7 +62,7 @@ public class SerializationUtil {
     public static Throwable decodeException(String result) {
         try {
             result = result.substring("EXCEPTION:".length());
-            byte[] bytes = java.util.Base64.getDecoder().decode(result);
+            byte[] bytes = Base64.getDecoder().decode(result);
             ByteArrayInputStream is = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(is);
             return (Throwable) ois.readObject();

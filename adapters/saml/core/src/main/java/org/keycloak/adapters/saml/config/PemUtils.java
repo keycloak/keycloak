@@ -33,6 +33,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
@@ -122,7 +123,7 @@ public class PemUtils {
 
     private static byte[] pemToDer(String pem) {
         pem = removeBeginEnd(pem);
-        return java.util.Base64.getDecoder().decode(pem);
+        return Base64.getDecoder().decode(pem);
     }
 
     private static String removeBeginEnd(String pem) {

@@ -45,6 +45,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -239,7 +240,7 @@ public class UserCreateTest extends AbstractUserTest {
         String deprecatedCredential = "{\n" +
                 "      \"type\" : \"password\",\n" +
                 "      \"hashedSaltedValue\" : \"" + pcm.getPasswordSecretData().getValue() + "\",\n" +
-                "      \"salt\" : \"" + java.util.Base64.getEncoder().encodeToString(pcm.getPasswordSecretData().getSalt()) + "\",\n" +
+                "      \"salt\" : \"" + Base64.getEncoder().encodeToString(pcm.getPasswordSecretData().getSalt()) + "\",\n" +
                 "      \"hashIterations\" : " + pcm.getPasswordCredentialData().getHashIterations() + ",\n" +
                 "      \"algorithm\" : \"" + pcm.getPasswordCredentialData().getAlgorithm() + "\"\n" +
                 "    }";

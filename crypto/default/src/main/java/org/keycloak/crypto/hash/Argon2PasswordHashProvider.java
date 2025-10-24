@@ -11,6 +11,7 @@ import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.credential.dto.PasswordSecretData;
 import org.keycloak.tracing.TracingProviderUtil;
 
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -129,7 +130,7 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
 
                 byte[] result = new byte[hashLength];
                 generator.generateBytes(rawPassword.toCharArray(), result);
-                return java.util.Base64.getEncoder().encodeToString(result);
+                return Base64.getEncoder().encodeToString(result);
             });
         } finally {
             cpuCoreSemaphore.release();

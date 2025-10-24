@@ -14,6 +14,7 @@ import org.keycloak.models.UserModel;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import java.util.Base64;
 import java.util.List;
 
 public class HttpBasicAuthenticator implements Authenticator {
@@ -109,7 +110,7 @@ public class HttpBasicAuthenticator implements Authenticator {
         }
 
         try {
-            String val = new String(java.util.Base64.getDecoder().decode(credentials));
+            String val = new String(Base64.getDecoder().decode(credentials));
             int seperatorIndex = val.indexOf(":");
             if(seperatorIndex == -1) return new String[]{val};
             String user = val.substring(0, seperatorIndex);

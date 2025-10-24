@@ -19,6 +19,7 @@ package org.keycloak.credential;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -174,7 +175,7 @@ public class CredentialModel implements Serializable {
     @JsonIgnore
     public byte[] getSalt() {
         String saltStr = readString("salt", true);
-        return saltStr == null ? null : java.util.Base64.getDecoder().decode(saltStr);
+        return saltStr == null ? null : Base64.getDecoder().decode(saltStr);
     }
 
     /**
@@ -182,7 +183,7 @@ public class CredentialModel implements Serializable {
      */
     @Deprecated
     public void setSalt(byte[] salt) {
-        String saltStr = salt == null ? null : java.util.Base64.getEncoder().encodeToString(salt);
+        String saltStr = salt == null ? null : Base64.getEncoder().encodeToString(salt);
         writeProperty("salt", saltStr, true);
     }
 

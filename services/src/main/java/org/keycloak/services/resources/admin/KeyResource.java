@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -96,10 +97,10 @@ public class KeyResource {
             try {
                 final String base64Certificate;
                 if (key.getCertificate() != null) {
-                    base64Certificate = java.util.Base64.getEncoder().encodeToString(key.getCertificate().getEncoded());
+                    base64Certificate = Base64.getEncoder().encodeToString(key.getCertificate().getEncoded());
                 }
                 else {
-                    base64Certificate = java.util.Base64.getEncoder().encodeToString(key.getCertificateChain().get(0).getEncoded());
+                    base64Certificate = Base64.getEncoder().encodeToString(key.getCertificateChain().get(0).getEncoded());
                 }
                 r.setCertificate(base64Certificate);
             } catch (CertificateEncodingException e) {

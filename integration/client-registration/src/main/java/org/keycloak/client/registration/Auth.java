@@ -17,6 +17,7 @@
 
 package org.keycloak.client.registration;
 
+import java.util.Base64;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -76,7 +77,7 @@ public abstract class Auth {
 
         @Override
         public void addAuth(HttpRequest request) {
-            String val = java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+            String val = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + val);
         }
     }

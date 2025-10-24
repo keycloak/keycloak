@@ -18,6 +18,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -84,12 +85,12 @@ public class RealmManager {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
-        rep.setPrivateKey(java.util.Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
-        rep.setPublicKey(java.util.Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
+        rep.setPrivateKey(Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+        rep.setPublicKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         X509Certificate certificate;
         try {
             certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, rep.getId());
-            rep.setCertificate(java.util.Base64.getEncoder().encodeToString(certificate.getEncoded()));
+            rep.setCertificate(Base64.getEncoder().encodeToString(certificate.getEncoded()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -84,6 +84,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -216,7 +217,7 @@ public class SAMLParserTest {
         assertNull(rtChoiceType.getAssertion());
         assertNotNull(rtChoiceType.getEncryptedAssertion());
 
-        PrivateKey privateKey = DerUtils.decodePrivateKey(java.util.Base64.getDecoder().decode(PRIVATE_KEY));
+        PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.getDecoder().decode(PRIVATE_KEY));
         AssertionUtil.decryptAssertion(resp, privateKey);
 
         rtChoiceType = resp.getAssertions().get(0);

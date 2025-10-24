@@ -25,6 +25,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.DerUtils;
@@ -126,7 +127,7 @@ public abstract class PemUtilsProvider {
 
     public byte[] pemToDer(String pem) {
         pem = removeBeginEnd(pem);
-        return java.util.Base64.getDecoder().decode(pem);
+        return Base64.getDecoder().decode(pem);
     }
 
     public String removeBeginEnd(String pem) {

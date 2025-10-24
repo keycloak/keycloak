@@ -23,6 +23,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import jakarta.ws.rs.core.Response;
 
@@ -169,7 +170,7 @@ public class TokenSignatureUtil {
             if (rep.getKid().equals(activeKid)) {
                 X509EncodedKeySpec publicKeySpec = null;
                 try {
-                    publicKeySpec = new X509EncodedKeySpec(java.util.Base64.getDecoder().decode(rep.getPublicKey()));
+                    publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(rep.getPublicKey()));
                 } catch (IllegalArgumentException e1) {
                     e1.printStackTrace();
                 }

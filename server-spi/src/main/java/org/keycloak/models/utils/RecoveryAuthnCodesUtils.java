@@ -1,8 +1,14 @@
 package org.keycloak.models.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Optional;
+import java.util.Base64;
 import java.util.function.Supplier;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
@@ -12,11 +18,6 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RecoveryAuthnCodesUtils {
 
@@ -40,7 +41,7 @@ public class RecoveryAuthnCodesUtils {
     public static boolean verifyRecoveryCodeInput(String rawInputRecoveryCode, String hashedSavedRecoveryCode) {
         byte[] hashedInputBackupCode = hashRawCode(rawInputRecoveryCode);
         try {
-            byte[] savedCode = java.util.Base64.getDecoder().decode(hashedSavedRecoveryCode);
+            byte[] savedCode = Base64.getDecoder().decode(hashedSavedRecoveryCode);
             return MessageDigest.isEqual(hashedInputBackupCode, savedCode);
         } catch (IllegalArgumentException iae) {
             logger.warnf("Error when decoding saved recovery code", iae);

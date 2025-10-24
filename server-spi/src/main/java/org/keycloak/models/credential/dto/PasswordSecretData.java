@@ -6,6 +6,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ public class PasswordSecretData {
         }
         else {
             this.value = value;
-            this.salt = java.util.Base64.getDecoder().decode(salt);
+            this.salt = Base64.getDecoder().decode(salt);
         }
     }
 

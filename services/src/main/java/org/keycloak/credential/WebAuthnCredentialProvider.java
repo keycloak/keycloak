@@ -49,6 +49,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -123,7 +124,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialModelInput webAuthnModel = (WebAuthnCredentialModelInput) input;
 
         String aaguid = webAuthnModel.getAttestedCredentialData().getAaguid().toString();
-        String credentialId = java.util.Base64.getEncoder().encodeToString(webAuthnModel.getAttestedCredentialData().getCredentialId());
+        String credentialId = Base64.getEncoder().encodeToString(webAuthnModel.getAttestedCredentialData().getCredentialId());
         String credentialPublicKey = credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey());
         long counter = webAuthnModel.getCount();
         String attestationStatementFormat = webAuthnModel.getAttestationStatementFormat();
@@ -161,7 +162,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         WebAuthnCredentialModelInput auth = new WebAuthnCredentialModelInput(getType());
 
-        byte[] credentialId = java.util.Base64.getDecoder().decode(credData.getCredentialId());
+        byte[] credentialId = Base64.getDecoder().decode(credData.getCredentialId());
 
         AAGUID aaguid = new AAGUID(credData.getAaguid());
 

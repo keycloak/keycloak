@@ -21,6 +21,7 @@ import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
 import java.io.IOException;
+import java.util.Base64;
 
 
 /**
@@ -39,7 +40,7 @@ public class BasicAuthFilter implements ClientRequestFilter {
     @Override
     public void filter(ClientRequestContext requestContext) throws IOException {
         String pair = username + ":" + password;
-        String authHeader = "Basic " + java.util.Base64.getEncoder().encodeToString(pair.getBytes());
+        String authHeader = "Basic " + Base64.getEncoder().encodeToString(pair.getBytes());
         requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
     }
     

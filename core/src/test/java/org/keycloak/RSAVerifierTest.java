@@ -38,6 +38,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -106,8 +107,8 @@ public abstract class RSAVerifierTest {
 
         List<String> x5c = tokenVerifier.getHeader().getX5c();
         Assert.assertEquals(2, x5c.size());
-        Assert.assertEquals(java.util.Base64.getEncoder().encodeToString(idpCertificate.getEncoded()), x5c.get(0));
-        Assert.assertEquals(java.util.Base64.getEncoder().encodeToString(caCertificate.getEncoded()), x5c.get(1));
+        Assert.assertEquals(Base64.getEncoder().encodeToString(idpCertificate.getEncoded()), x5c.get(0));
+        Assert.assertEquals(Base64.getEncoder().encodeToString(caCertificate.getEncoded()), x5c.get(1));
         Assert.assertEquals(JsonSerialization.mapper.convertValue(jwk, Map.class),
                             JsonSerialization.mapper.convertValue(tokenVerifier.getHeader().getKey(), Map.class));
     }

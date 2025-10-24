@@ -23,6 +23,7 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Base64;
 
 /**
  * Utility for the HTTP/Post binding
@@ -42,7 +43,7 @@ public class PostBindingUtil {
      * @return
      */
     public static String base64Encode(String stringToEncode) throws IOException {
-        return java.util.Base64.getEncoder().encodeToString(stringToEncode.getBytes(GeneralConstants.SAML_CHARSET));
+        return Base64.getEncoder().encodeToString(stringToEncode.getBytes(GeneralConstants.SAML_CHARSET));
     }
 
     /**
@@ -57,7 +58,7 @@ public class PostBindingUtil {
             throw logger.nullArgumentError("encodedString");
 
         try {
-            return java.util.Base64.getDecoder().decode(encodedString);
+            return Base64.getDecoder().decode(encodedString);
         } catch (Exception e) {
             logger.error(e);
             throw logger.invalidArgumentError("base64 decode failed: " + e.getMessage());

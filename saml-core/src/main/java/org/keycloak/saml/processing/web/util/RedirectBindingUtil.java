@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Base64;
 
 /**
  * Utility class for SAML HTTP/Redirect binding
@@ -69,7 +70,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String base64Encode(byte[] stringToEncode) throws IOException {
-        return java.util.Base64.getEncoder().encodeToString(stringToEncode);
+        return Base64.getEncoder().encodeToString(stringToEncode);
     }
 
     /**
@@ -82,7 +83,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String base64URLEncode(byte[] stringToEncode) throws IOException {
-        String base64Request = java.util.Base64.getEncoder().encodeToString(stringToEncode);
+        String base64Request = Base64.getEncoder().encodeToString(stringToEncode);
         return urlEncode(base64Request);
     }
 
@@ -97,7 +98,7 @@ public class RedirectBindingUtil {
      */
     public static byte[] urlBase64Decode(String encodedString) throws IOException {
         String decodedString = urlDecode(encodedString);
-        return java.util.Base64.getDecoder().decode(decodedString);
+        return Base64.getDecoder().decode(decodedString);
     }
 
     /**
@@ -138,7 +139,7 @@ public class RedirectBindingUtil {
      */
     public static String deflateBase64Encode(byte[] stringToEncode) throws IOException {
         byte[] deflatedMsg = DeflateUtil.encode(stringToEncode);
-        return java.util.Base64.getEncoder().encodeToString(deflatedMsg);
+        return Base64.getEncoder().encodeToString(deflatedMsg);
     }
 
     /**
@@ -165,7 +166,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static InputStream base64DeflateDecode(String encodedString) throws IOException {
-        byte[] base64decodedMsg = java.util.Base64.getDecoder().decode(encodedString);
+        byte[] base64decodedMsg = Base64.getDecoder().decode(encodedString);
         return DeflateUtil.decode(base64decodedMsg);
     }
 

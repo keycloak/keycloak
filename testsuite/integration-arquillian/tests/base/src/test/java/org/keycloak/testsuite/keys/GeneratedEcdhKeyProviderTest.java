@@ -24,6 +24,7 @@ import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import java.security.KeyFactory;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.List;
 
 import jakarta.ws.rs.WebApplicationException;
@@ -329,7 +330,7 @@ public class GeneratedEcdhKeyProviderTest extends AbstractKeycloakTest {
 
     private String getCurveFromPublicKey(String publicEcKeyBase64Encoded) throws Exception {
         KeyFactory kf = KeyFactory.getInstance("EC");
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(java.util.Base64.getDecoder().decode(publicEcKeyBase64Encoded));
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicEcKeyBase64Encoded));
         ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
         return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
     }

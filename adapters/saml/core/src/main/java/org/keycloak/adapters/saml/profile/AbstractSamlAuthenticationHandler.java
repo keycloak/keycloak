@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -688,7 +689,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
-            byte[] decodedSignature = java.util.Base64.getDecoder().decode(signature);
+            byte[] decodedSignature = Base64.getDecoder().decode(signature);
             byte[] rawQueryBytes = rawQuery.getBytes(StandardCharsets.UTF_8);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);

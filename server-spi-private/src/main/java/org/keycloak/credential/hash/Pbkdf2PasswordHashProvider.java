@@ -29,6 +29,7 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Base64;
 
 /**
  * Implementation PBKDF2 password hash algorithm.
@@ -98,7 +99,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
     private int keySize(PasswordCredentialModel credential) {
         try {
-            byte[] bytes = java.util.Base64.getDecoder().decode(credential.getPasswordSecretData().getValue());
+            byte[] bytes = Base64.getDecoder().decode(credential.getPasswordSecretData().getValue());
             return bytes.length * 8;
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Credential could not be decoded", e);
@@ -114,7 +115,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
         try {
             byte[] key = getSecretKeyFactory().generateSecret(spec).getEncoded();
-            return java.util.Base64.getEncoder().encodeToString(key);
+            return Base64.getEncoder().encodeToString(key);
         } catch (InvalidKeySpecException e) {
             throw new RuntimeException("Credential could not be encoded", e);
         } catch (Exception e) {
