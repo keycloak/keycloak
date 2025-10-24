@@ -131,7 +131,7 @@ public class GeneratedEddsaKeyProviderFactory extends AbstractEddsaKeyProviderFa
     private String getCurveFromPublicKey(String publicEddsaKeyBase64Encoded) {
         try {
             KeyFactory kf = KeyFactory.getInstance("EdDSA");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEddsaKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(java.util.Base64.getDecoder().decode(publicEddsaKeyBase64Encoded));
             EdECPublicKey edEcKey = (EdECPublicKey) kf.generatePublic(publicKeySpec);
             return edEcKey.getParams().getName();
         } catch (Throwable t) {

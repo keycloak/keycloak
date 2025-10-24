@@ -1213,7 +1213,7 @@ public class Base64
      * @since 1.4
      */
     public static byte[] decode( String s ) throws java.io.IOException {
-        return java.util.Base64.getDecoder().decode(s);
+        return decode( s, NO_OPTIONS );
     }
 
 

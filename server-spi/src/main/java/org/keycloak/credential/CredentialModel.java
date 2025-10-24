@@ -174,12 +174,8 @@ public class CredentialModel implements Serializable {
     @Deprecated
     @JsonIgnore
     public byte[] getSalt() {
-        try {
-            String saltStr = readString("salt", true);
-            return saltStr == null ? null : Base64.decode(saltStr);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
+        String saltStr = readString("salt", true);
+        return saltStr == null ? null : java.util.Base64.getDecoder().decode(saltStr);
     }
 
     /**

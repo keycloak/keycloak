@@ -20,7 +20,6 @@
 package org.keycloak.adapters.saml.config;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -38,7 +37,6 @@ import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoConstants;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.PemException;
 
 /**
@@ -123,12 +121,8 @@ public class PemUtils {
     }
 
     private static byte[] pemToDer(String pem) {
-        try {
-            pem = removeBeginEnd(pem);
-            return Base64.decode(pem);
-        } catch (IOException ioe) {
-            throw new PemException(ioe);
-        }
+        pem = removeBeginEnd(pem);
+        return java.util.Base64.getDecoder().decode(pem);
     }
 
     private static String removeBeginEnd(String pem) {

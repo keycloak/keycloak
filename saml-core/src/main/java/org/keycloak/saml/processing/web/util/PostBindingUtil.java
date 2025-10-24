@@ -58,7 +58,7 @@ public class PostBindingUtil {
             throw logger.nullArgumentError("encodedString");
 
         try {
-            return Base64.decode(encodedString);
+            return java.util.Base64.getDecoder().decode(encodedString);
         } catch (Exception e) {
             logger.error(e);
             throw logger.invalidArgumentError("base64 decode failed: " + e.getMessage());

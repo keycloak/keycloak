@@ -33,7 +33,6 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyType;
@@ -263,7 +262,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
 
     private String getCurveFromPublicKey(String publicEcdsaKeyBase64Encoded) throws Exception {
         KeyFactory kf = KeyFactory.getInstance("EC");
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEcdsaKeyBase64Encoded));
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(java.util.Base64.getDecoder().decode(publicEcdsaKeyBase64Encoded));
         ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
         return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
     }

@@ -210,7 +210,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(providerConfig.getClientSecret())) {
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 RequestToken requestToken;
-                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(twitterToken)))) {
+                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(java.util.Base64.getDecoder().decode(twitterToken)))) {
                     requestToken = (RequestToken) in.readObject();
                 }
 

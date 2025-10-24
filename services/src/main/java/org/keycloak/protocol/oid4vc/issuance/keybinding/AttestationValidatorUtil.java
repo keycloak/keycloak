@@ -58,6 +58,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -278,7 +279,7 @@ public class AttestationValidatorUtil {
 
             for (String certBase64 : x5cList) {
                 // Use Keycloak's Base64 implementation for decoding x5c certificates
-                byte[] certBytes = org.keycloak.common.util.Base64.decode(certBase64);
+                byte[] certBytes = Base64.getDecoder().decode(certBase64);
                 try (InputStream in = new ByteArrayInputStream(certBytes)) {
                     certChain.add((X509Certificate) cf.generateCertificate(in));
                 }

@@ -46,7 +46,6 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -689,7 +688,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
-            byte[] decodedSignature = Base64.decode(signature);
+            byte[] decodedSignature = java.util.Base64.getDecoder().decode(signature);
             byte[] rawQueryBytes = rawQuery.getBytes(StandardCharsets.UTF_8);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);

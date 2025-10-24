@@ -98,7 +98,7 @@ public class RedirectBindingUtil {
      */
     public static byte[] urlBase64Decode(String encodedString) throws IOException {
         String decodedString = urlDecode(encodedString);
-        return Base64.decode(decodedString);
+        return java.util.Base64.getDecoder().decode(decodedString);
     }
 
     /**
@@ -166,7 +166,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static InputStream base64DeflateDecode(String encodedString) throws IOException {
-        byte[] base64decodedMsg = Base64.decode(encodedString);
+        byte[] base64decodedMsg = java.util.Base64.getDecoder().decode(encodedString);
         return DeflateUtil.decode(base64decodedMsg);
     }
 

@@ -17,7 +17,6 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
@@ -46,11 +45,11 @@ public class GeneratedEddsaKeyProvider extends AbstractEddsaKeyProvider {
         String curveName = model.getConfig().getFirst(GeneratedEddsaKeyProviderFactory.EDDSA_ELLIPTIC_CURVE_KEY);
 
         try {
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.decode(privateEddsaKeyBase64Encoded));
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(java.util.Base64.getDecoder().decode(privateEddsaKeyBase64Encoded));
             KeyFactory kf = KeyFactory.getInstance("EdDSA");
             PrivateKey decodedPrivateKey = kf.generatePrivate(privateKeySpec);
 
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEddsaKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(java.util.Base64.getDecoder().decode(publicEddsaKeyBase64Encoded));
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);

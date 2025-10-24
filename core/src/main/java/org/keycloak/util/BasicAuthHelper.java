@@ -19,7 +19,6 @@ package org.keycloak.util;
 
 import org.keycloak.common.util.Base64;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -45,8 +44,8 @@ public class BasicAuthHelper {
 
         String val;
         try {
-            val = new String(Base64.decode(header.substring(6)));
-        } catch (IOException e) {
+            val = new String(java.util.Base64.getDecoder().decode(header.substring(6))); // TODO
+        } catch (IllegalArgumentException e) {
             return null;
         }
 

@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -217,7 +216,7 @@ public class SAMLParserTest {
         assertNull(rtChoiceType.getAssertion());
         assertNotNull(rtChoiceType.getEncryptedAssertion());
 
-        PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.decode(PRIVATE_KEY));
+        PrivateKey privateKey = DerUtils.decodePrivateKey(java.util.Base64.getDecoder().decode(PRIVATE_KEY));
         AssertionUtil.decryptAssertion(resp, privateKey);
 
         rtChoiceType = resp.getAssertions().get(0);

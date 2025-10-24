@@ -3,7 +3,6 @@ package org.keycloak.models.credential.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.IOException;
@@ -36,7 +35,7 @@ public class PasswordSecretData {
         }
         else {
             this.value = value;
-            this.salt = Base64.decode(salt);
+            this.salt = java.util.Base64.getDecoder().decode(salt);
         }
     }
 

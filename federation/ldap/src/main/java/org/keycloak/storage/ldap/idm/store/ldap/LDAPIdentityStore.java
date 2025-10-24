@@ -47,7 +47,6 @@ import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -599,9 +598,9 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             try {
-                byte[] bytes = Base64.decode(value);
+                byte[] bytes = java.util.Base64.getDecoder().decode(value);
                 attr.add(bytes);
-            } catch (IOException ioe) {
+            } catch (IllegalArgumentException iae) {
                 logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. Attribute: %s, Attribute value: %s", attrName, attrValue);
             }
         }

@@ -25,7 +25,6 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
@@ -100,9 +99,9 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
     private int keySize(PasswordCredentialModel credential) {
         try {
-            byte[] bytes = Base64.decode(credential.getPasswordSecretData().getValue());
+            byte[] bytes = java.util.Base64.getDecoder().decode(credential.getPasswordSecretData().getValue());
             return bytes.length * 8;
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             throw new RuntimeException("Credential could not be decoded", e);
         }
     }

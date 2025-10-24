@@ -48,7 +48,7 @@ public class AssertionUtilTest {
     @Test
     public void testSaml20Signed() throws Exception {
 
-        X509Certificate decodeCertificate = DerUtils.decodeCertificate(new ByteArrayInputStream(Base64.decode(PUBLIC_CERT)));
+        X509Certificate decodeCertificate = DerUtils.decodeCertificate(new ByteArrayInputStream(java.util.Base64.getDecoder().decode(PUBLIC_CERT)));
 
         try (InputStream st = AssertionUtilTest.class.getResourceAsStream("saml20-signed-response.xml")) {
             Document document = DocumentUtil.getDocument(st);
@@ -60,7 +60,7 @@ public class AssertionUtilTest {
             // test manipulation of signature
             Element signatureElement = AssertionUtil.getSignature(assertion);
             Element signatureValue = (Element) signatureElement.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "SignatureValue").item(0);
-            byte[] validSignature = Base64.decode(signatureValue.getTextContent());
+            byte[] validSignature = java.util.Base64.getDecoder().decode(signatureValue.getTextContent());
 
             // change the signature value slightly
             byte[] invalidSignature =  Arrays.copyOf(validSignature, validSignature.length);

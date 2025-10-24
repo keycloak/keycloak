@@ -1,12 +1,10 @@
 package org.keycloak.models.utils;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -42,10 +40,10 @@ public class RecoveryAuthnCodesUtils {
     public static boolean verifyRecoveryCodeInput(String rawInputRecoveryCode, String hashedSavedRecoveryCode) {
         byte[] hashedInputBackupCode = hashRawCode(rawInputRecoveryCode);
         try {
-            byte[] savedCode = Base64.decode(hashedSavedRecoveryCode);
+            byte[] savedCode = java.util.Base64.getDecoder().decode(hashedSavedRecoveryCode);
             return MessageDigest.isEqual(hashedInputBackupCode, savedCode);
-        } catch (IOException ioe) {
-            logger.warnf("Error when decoding saved recovery code", ioe);
+        } catch (IllegalArgumentException iae) {
+            logger.warnf("Error when decoding saved recovery code", iae);
             return false;
         }
     }
