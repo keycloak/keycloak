@@ -196,6 +196,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         onClientRemoved(client.getId());
     }
 
+    /**
+     * Remove client sessions for a specific client.
+     * <p>
+     * We need to remove the client sessions for clients that are no longer present, as we would otherwise
+     * look up those non-existent clients again and again, and this would be slow as they would never be in the cache.
+     */
     private void onClientRemoved(String clientUUID) {
         logger.debugf("Client sessions removed for client %s",  clientUUID);
         StorageId clientStorageId = new StorageId(clientUUID);
