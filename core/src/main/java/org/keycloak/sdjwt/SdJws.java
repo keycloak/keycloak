@@ -18,7 +18,6 @@ package org.keycloak.sdjwt;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -95,7 +94,7 @@ public abstract class SdJws {
         }
     }
 
-    private static final JWSInput parse(String jwsString) {
+    private static JWSInput parse(String jwsString) {
         try {
             return new JWSInput(Objects.requireNonNull(jwsString, "jwsString must not be null"));
         } catch (JWSInputException e) {
@@ -103,7 +102,7 @@ public abstract class SdJws {
         }
     }
 
-    private static final JsonNode readPayload(JWSInput jwsInput) {
+    private static JsonNode readPayload(JWSInput jwsInput) {
         try {
             return SdJwtUtils.mapper.readTree(jwsInput.getContent());
         } catch (IOException e) {
@@ -113,48 +112,6 @@ public abstract class SdJws {
 
     public JWSHeader getHeader() {
         return this.jwsInput.getHeader();
-    }
-
-    public void verifyIssuedAtClaim() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
-        long iat = SdJwtUtils.readTimeClaim(payload, "iat");
-
-        if (now < iat) {
-            throw new VerificationException("jwt issued in the future");
-        }
-    }
-
-    public void verifyExpClaim() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
-        long exp = SdJwtUtils.readTimeClaim(payload, "exp");
-
-        if (now >= exp) {
-            throw new VerificationException("jwt has expired");
-        }
-    }
-
-    public void verifyNotBeforeClaim() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
-        long nbf = SdJwtUtils.readTimeClaim(payload, "nbf");
-
-        if (now < nbf) {
-            throw new VerificationException("jwt not valid yet");
-        }
-    }
-
-    /**
-     * Verifies that the JWS is not too old.
-     *
-     * @param maxAge Maximum age in seconds
-     * @throws VerificationException if too old
-     */
-    public void verifyAge(int maxAge) throws VerificationException {
-        long now = Instant.now().getEpochSecond();
-        long iat = SdJwtUtils.readTimeClaim(getPayload(), "iat");
-
-        if (now - iat > maxAge) {
-            throw new VerificationException("jwt is too old");
-        }
     }
 
     /**
