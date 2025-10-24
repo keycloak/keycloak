@@ -21,7 +21,6 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
-import org.keycloak.common.util.Base64;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
@@ -59,7 +58,7 @@ public class TotpUtils {
             MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
             bos.close();
 
-            return Base64.encodeBytes(bos.toByteArray());
+            return java.util.Base64.getEncoder().encodeToString(bos.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

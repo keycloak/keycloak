@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
 
@@ -183,7 +182,7 @@ public class CredentialModel implements Serializable {
      */
     @Deprecated
     public void setSalt(byte[] salt) {
-        String saltStr = salt == null ? null : Base64.encodeBytes(salt);
+        String saltStr = salt == null ? null : java.util.Base64.getEncoder().encodeToString(salt);
         writeProperty("salt", saltStr, true);
     }
 

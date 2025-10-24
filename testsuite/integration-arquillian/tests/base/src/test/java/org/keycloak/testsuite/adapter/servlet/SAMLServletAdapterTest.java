@@ -118,7 +118,6 @@ import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -1704,7 +1703,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         String username = "pedroigor";
         String password = "password";
         String pair = username + ":" + password;
-        String authHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+        String authHeader = "Basic " + java.util.Base64.getEncoder().encodeToString(pair.getBytes());
 
         Response authenticationResponse = AdminClientUtil.createResteasyClient().target(singleSignOnService).request()
                 .header(HttpHeaders.AUTHORIZATION, authHeader)
@@ -1795,7 +1794,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         String username = "pedroigor";
         String password = "baspassword";
         String pair = username + ":" + password;
-        String authHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+        String authHeader = "Basic " + java.util.Base64.getEncoder().encodeToString(pair.getBytes());
 
         Response authenticationResponse = AdminClientUtil.createResteasyClient().target(singleSignOnService).request()
                 .header(HttpHeaders.AUTHORIZATION, authHeader)

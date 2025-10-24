@@ -16,7 +16,6 @@
  */
 package org.keycloak.saml.processing.web.util;
 
-import org.keycloak.common.util.Base64;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
@@ -70,7 +69,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String base64Encode(byte[] stringToEncode) throws IOException {
-        return Base64.encodeBytes(stringToEncode);
+        return java.util.Base64.getEncoder().encodeToString(stringToEncode);
     }
 
     /**
@@ -83,7 +82,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String base64URLEncode(byte[] stringToEncode) throws IOException {
-        String base64Request = Base64.encodeBytes(stringToEncode);
+        String base64Request = java.util.Base64.getEncoder().encodeToString(stringToEncode);
         return urlEncode(base64Request);
     }
 
@@ -139,7 +138,7 @@ public class RedirectBindingUtil {
      */
     public static String deflateBase64Encode(byte[] stringToEncode) throws IOException {
         byte[] deflatedMsg = DeflateUtil.encode(stringToEncode);
-        return Base64.encodeBytes(deflatedMsg);
+        return java.util.Base64.getEncoder().encodeToString(deflatedMsg);
     }
 
     /**

@@ -20,7 +20,6 @@ package org.keycloak.device;
 import jakarta.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 
-import org.keycloak.common.util.Base64;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.account.DeviceRepresentation;
@@ -65,7 +64,7 @@ public class DeviceActivityManager {
 
         if (current != null) {
             try {
-                userSession.setNote(DEVICE_NOTE, Base64.encodeBytes(JsonSerialization.writeValueAsBytes(current)));
+                userSession.setNote(DEVICE_NOTE, java.util.Base64.getEncoder().encodeToString(JsonSerialization.writeValueAsBytes(current)));
             } catch (IOException cause) {
                 throw new RuntimeException(cause);
             }

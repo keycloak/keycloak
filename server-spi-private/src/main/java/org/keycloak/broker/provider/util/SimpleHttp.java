@@ -41,7 +41,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.common.util.Base64;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.connections.httpclient.SafeInputStream;
 import org.keycloak.models.KeycloakSession;
@@ -247,7 +246,7 @@ public class SimpleHttp {
 
     public SimpleHttp authBasic(final String username, final String password) {
         final String basicCredentials = String.format("%s:%s", username, password);
-        header("Authorization", "Basic " + Base64.encodeBytes(basicCredentials.getBytes()));
+        header("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString(basicCredentials.getBytes()));
         return this;
     }
 

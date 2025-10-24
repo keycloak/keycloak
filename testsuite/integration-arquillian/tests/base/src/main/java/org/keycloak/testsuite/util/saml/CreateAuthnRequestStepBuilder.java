@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.common.util.Base64;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -111,7 +110,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         String username = user.getUsername();
         String password = Users.getPasswordOf(user);
         String pair = username + ":" + password;
-        this.authorizationHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+        this.authorizationHeader = "Basic " + java.util.Base64.getEncoder().encodeToString(pair.getBytes());
         return this;
     }
 

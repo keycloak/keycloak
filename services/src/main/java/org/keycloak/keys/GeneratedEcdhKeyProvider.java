@@ -17,7 +17,6 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
@@ -69,7 +68,7 @@ public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
             {
                 selfSignedCertificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
                 model.getConfig().put(Attributes.CERTIFICATE_KEY,
-                                      List.of(Base64.encodeBytes(selfSignedCertificate.getEncoded())));
+                                      List.of(java.util.Base64.getEncoder().encodeToString(selfSignedCertificate.getEncoded())));
             }
 
             return createKeyWrapper(keyPair, ecdhAlgorithm, KeyUse.ENC, selfSignedCertificate);

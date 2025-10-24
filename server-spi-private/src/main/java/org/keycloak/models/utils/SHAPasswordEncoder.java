@@ -17,7 +17,6 @@
 
 package org.keycloak.models.utils;
 
-import org.keycloak.common.util.Base64;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -46,7 +45,7 @@ public class SHAPasswordEncoder {
         MessageDigest messageDigest = getMessageDigest();
 
         byte[] digest = messageDigest.digest(rawPassword.getBytes(StandardCharsets.UTF_8));
-        return Base64.encodeBytes(digest);
+        return java.util.Base64.getEncoder().encodeToString(digest);
     }
 
     public boolean verify(String rawPassword, String encodedPassword) {

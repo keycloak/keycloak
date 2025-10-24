@@ -19,7 +19,6 @@ package org.keycloak.storage.ldap.idm.store.ldap;
 
 import javax.naming.NameAlreadyBoundException;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -484,7 +483,7 @@ public class LDAPIdentityStore implements IdentityStore {
                         Object val = enumm.next();
 
                         if (val instanceof byte[]) { // byte[]
-                            String attrVal = Base64.encodeBytes((byte[]) val);
+                            String attrVal = java.util.Base64.getEncoder().encodeToString((byte[]) val);
                             attrValues.add(attrVal);
                         } else { // String
                             String attrVal = val.toString().trim();

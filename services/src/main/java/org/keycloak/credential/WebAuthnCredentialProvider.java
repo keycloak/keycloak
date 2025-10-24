@@ -37,7 +37,6 @@ import jakarta.annotation.Nonnull;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -124,7 +123,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialModelInput webAuthnModel = (WebAuthnCredentialModelInput) input;
 
         String aaguid = webAuthnModel.getAttestedCredentialData().getAaguid().toString();
-        String credentialId = Base64.encodeBytes(webAuthnModel.getAttestedCredentialData().getCredentialId());
+        String credentialId = java.util.Base64.getEncoder().encodeToString(webAuthnModel.getAttestedCredentialData().getCredentialId());
         String credentialPublicKey = credentialPublicKeyConverter.convertToDatabaseColumn(webAuthnModel.getAttestedCredentialData().getCOSEKey());
         long counter = webAuthnModel.getCount();
         String attestationStatementFormat = webAuthnModel.getAttestationStatementFormat();

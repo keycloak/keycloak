@@ -17,7 +17,6 @@
 package org.keycloak.credential;
 
 import com.webauthn4j.server.ServerProperty;
-import org.keycloak.common.util.Base64;
 
 import com.webauthn4j.data.AuthenticationRequest;
 import com.webauthn4j.data.AuthenticatorTransport;
@@ -150,13 +149,13 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
               .append(attestedCredentialData.getAaguid().toString())
               .append(",");
             sb.append("CREDENTIAL_ID = ")
-              .append(Base64.encodeBytes(attestedCredentialData.getCredentialId()))
+              .append(java.util.Base64.getEncoder().encodeToString(attestedCredentialData.getCredentialId()))
               .append(",");
             COSEKey credPubKey = attestedCredentialData.getCOSEKey();
             byte[] keyId = credPubKey.getKeyId();
             if (keyId != null)
                 sb.append("CREDENTIAL_PUBLIC_KEY.key_id = ")
-                  .append(Base64.encodeBytes(keyId))
+                  .append(java.util.Base64.getEncoder().encodeToString(keyId))
                   .append(",");
             sb.append("CREDENTIAL_PUBLIC_KEY.algorithm = ")
               .append(String.valueOf(credPubKey.getAlgorithm().getValue()))
@@ -168,7 +167,7 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         if (authenticationRequest != null) {
             // only set on Authentication
             sb.append("Credential Id = ")
-              .append(Base64.encodeBytes(authenticationRequest.getCredentialId()))
+              .append(java.util.Base64.getEncoder().encodeToString(authenticationRequest.getCredentialId()))
               .append(",");
         }
         if (CollectionUtil.isNotEmpty(getTransports())) {

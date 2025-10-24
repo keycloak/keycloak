@@ -17,7 +17,6 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -102,8 +101,8 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
         KeyPair keyPair;
         try {
             keyPair = generateEcKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));
-            model.put(getEcPrivateKeyKey(), Base64.encodeBytes(keyPair.getPrivate().getEncoded()));
-            model.put(getEcPublicKeyKey(), Base64.encodeBytes(keyPair.getPublic().getEncoded()));
+            model.put(getEcPrivateKeyKey(), java.util.Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+            model.put(getEcPublicKeyKey(), java.util.Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(getEcEllipticCurveKey(), ecInNistRep);
         } catch (Throwable t) {
             throw new ComponentValidationException("Failed to generate EC keys", t);

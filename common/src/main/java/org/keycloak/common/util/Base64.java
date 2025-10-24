@@ -721,7 +721,14 @@ public class Base64
         // Since we're not going to have the GZIP encoding turned on,
         // we're not going to have an java.io.IOException thrown, so
         // we should not force the user to have to catch it.
-        return java.util.Base64.getEncoder().encodeToString(source);
+        String encoded = null;
+        try {
+            encoded = encodeBytes(source, 0, source.length, NO_OPTIONS);
+        } catch (java.io.IOException ex) {
+            assert false : ex.getMessage();
+        }   // end catch
+        assert encoded != null;
+        return encoded;
     }   // end encodeBytes
 
 

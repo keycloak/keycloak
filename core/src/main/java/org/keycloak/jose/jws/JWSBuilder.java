@@ -18,7 +18,6 @@
 package org.keycloak.jose.jws;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
@@ -72,7 +71,7 @@ public class JWSBuilder {
         this.x5c = x5c.stream()
                 .map(x509Certificate -> {
                     try {
-                        return Base64.encodeBytes(x509Certificate.getEncoded());
+                        return java.util.Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
                     } catch (CertificateEncodingException e) {
                         throw new RuntimeException(e);
                     }

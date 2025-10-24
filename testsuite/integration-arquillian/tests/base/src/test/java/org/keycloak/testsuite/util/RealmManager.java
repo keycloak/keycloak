@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
@@ -85,12 +84,12 @@ public class RealmManager {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
-        rep.setPrivateKey(Base64.encodeBytes(keyPair.getPrivate().getEncoded()));
-        rep.setPublicKey(Base64.encodeBytes(keyPair.getPublic().getEncoded()));
+        rep.setPrivateKey(java.util.Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+        rep.setPublicKey(java.util.Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         X509Certificate certificate;
         try {
             certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, rep.getId());
-            rep.setCertificate(Base64.encodeBytes(certificate.getEncoded()));
+            rep.setCertificate(java.util.Base64.getEncoder().encodeToString(certificate.getEncoded()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

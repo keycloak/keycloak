@@ -17,7 +17,6 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -120,8 +119,8 @@ public class GeneratedEddsaKeyProviderFactory extends AbstractEddsaKeyProviderFa
         KeyPair keyPair;
         try {
             keyPair = generateEddsaKeyPair(curveName);
-            model.put(EDDSA_PRIVATE_KEY_KEY, Base64.encodeBytes(keyPair.getPrivate().getEncoded()));
-            model.put(EDDSA_PUBLIC_KEY_KEY, Base64.encodeBytes(keyPair.getPublic().getEncoded()));
+            model.put(EDDSA_PRIVATE_KEY_KEY, java.util.Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+            model.put(EDDSA_PUBLIC_KEY_KEY, java.util.Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(EDDSA_ELLIPTIC_CURVE_KEY, curveName);
         } catch (Throwable t) {
             throw new ComponentValidationException("Failed to generate EdDSA keys", t);

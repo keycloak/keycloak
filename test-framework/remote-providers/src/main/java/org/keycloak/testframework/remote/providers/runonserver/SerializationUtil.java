@@ -1,6 +1,5 @@
 package org.keycloak.testframework.remote.providers.runonserver;
 
-import org.keycloak.common.util.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,7 +20,7 @@ public class SerializationUtil {
             oos.writeObject(function);
             oos.close();
 
-            return Base64.encodeBytes(os.toByteArray());
+            return java.util.Base64.getEncoder().encodeToString(os.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -51,7 +50,7 @@ public class SerializationUtil {
             oos.writeObject(t);
             oos.close();
 
-            return "EXCEPTION:" + Base64.encodeBytes(os.toByteArray());
+            return "EXCEPTION:" + java.util.Base64.getEncoder().encodeToString(os.toByteArray());
         } catch (NotSerializableException e) {
             // when the exception can't be serialized, at least log the original exception, so it can be analyzed
             throw new RuntimeException("Unable to serialize exception due to not serializable class " + e.getMessage(), t);

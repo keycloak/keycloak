@@ -18,7 +18,6 @@
 package org.keycloak.credential.hash;
 
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.PaddingUtils;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -115,7 +114,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
         try {
             byte[] key = getSecretKeyFactory().generateSecret(spec).getEncoded();
-            return Base64.encodeBytes(key);
+            return java.util.Base64.getEncoder().encodeToString(key);
         } catch (InvalidKeySpecException e) {
             throw new RuntimeException("Credential could not be encoded", e);
         } catch (Exception e) {

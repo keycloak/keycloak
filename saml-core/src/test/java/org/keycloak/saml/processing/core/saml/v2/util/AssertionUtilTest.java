@@ -13,7 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -65,13 +64,13 @@ public class AssertionUtilTest {
             // change the signature value slightly
             byte[] invalidSignature =  Arrays.copyOf(validSignature, validSignature.length);
             invalidSignature[0] ^= invalidSignature[0];
-            signatureValue.setTextContent(Base64.encodeBytes(invalidSignature));
+            signatureValue.setTextContent(java.util.Base64.getEncoder().encodeToString(invalidSignature));
 
             // check that signature now is invalid
             assertFalse(AssertionUtil.isSignatureValid(document.getDocumentElement(), decodeCertificate.getPublicKey()));
 
             // restore valid signature, but remove Signature element, check that still invalid
-            signatureElement.setTextContent(Base64.encodeBytes(validSignature));
+            signatureElement.setTextContent(java.util.Base64.getEncoder().encodeToString(validSignature));
 
             assertion.removeChild(signatureElement);
             assertFalse(AssertionUtil.isSignatureValid(document.getDocumentElement(), decodeCertificate.getPublicKey()));
