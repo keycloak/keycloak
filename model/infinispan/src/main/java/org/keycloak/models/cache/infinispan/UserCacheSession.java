@@ -333,7 +333,14 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 return getDelegate().getUserById(realm, cached.getId());
             }
         }
-        return new UserAdapter(cached, this, session, realm);
+
+        UserAdapter userAdapter = new UserAdapter(cached, this, session, realm);
+
+        if (isReadOnlyOrganizationMember(session, userAdapter)) {
+            return new ReadOnlyUserModelDelegate(userAdapter, false);
+        }
+
+        return userAdapter;
     }
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
