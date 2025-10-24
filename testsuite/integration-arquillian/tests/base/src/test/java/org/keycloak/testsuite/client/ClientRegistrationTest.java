@@ -50,7 +50,6 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.NotFoundException;
@@ -77,6 +76,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -783,15 +783,42 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    @UncaughtServerErrorExpected
-    public void registerClientWithWrongCharacters() throws IOException {
+    public void registerClientDoesNotReturnUnknownAttribute() {
+        final var unknownAttribute = "unknown_attribute";
+
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/clients-registrations/openid-connect").build());
-            post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
+            String bearerToken = getToken("create-clients", "password");
+
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/" + REALM_NAME + "/clients-registrations/openid-connect").build());
+            post.setEntity(new StringEntity(String.format("{\"%s\":1}", unknownAttribute)));
             post.setHeader("Content-Type", APPLICATION_JSON);
+            post.setHeader("Authorization", "Bearer " + bearerToken);
 
             try (CloseableHttpResponse response = client.execute(post)) {
-                assertThat(response.getStatusLine().getStatusCode(),is(400));
+                assertThat(response.getStatusLine().getStatusCode(),is(201));
+
+                // The response does not include the unknown property
+                assertThat(EntityUtils.toString(response.getEntity()), not(CoreMatchers.containsString(unknownAttribute)));
+            }
+        } catch (IOException e) {
+            fail("IOException during client registration: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void registerClientDoesNotReturnHtmlTag() {
+        final var unknownAttributeWithHtmlTag = "<img src=alert(1)>";
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            String bearerToken = getToken("create-clients", "password");
+
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/" + REALM_NAME + "/clients-registrations/openid-connect").build());
+            post.setEntity(new StringEntity(String.format("{\"%s\":1}", unknownAttributeWithHtmlTag)));
+            post.setHeader("Content-Type", APPLICATION_JSON);
+            post.setHeader("Authorization", "Bearer " + bearerToken);
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertThat(response.getStatusLine().getStatusCode(),is(201));
 
                 Header header = response.getFirstHeader("Content-Type");
                 assertThat(header, notNullValue());
@@ -802,9 +829,29 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
                         .filter(Objects::nonNull)
                         .anyMatch(f -> f.equals(APPLICATION_JSON)), is(true));
 
-                // The alert is not executed
-                assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
+                // The response does not include the unknown property
+                assertThat(EntityUtils.toString(response.getEntity()), not(CoreMatchers.containsString(unknownAttributeWithHtmlTag)));
             }
+        } catch (IOException e) {
+            fail("IOException during client registration: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void registerClientFailsOnSingleQuotes() {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            String bearerToken = getToken("create-clients", "password");
+
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/" + REALM_NAME + "/clients-registrations/openid-connect").build());
+            post.setEntity(new StringEntity(String.format("{'client-id': '%s'}", CLIENT_ID)));
+            post.setHeader("Content-Type", APPLICATION_JSON);
+            post.setHeader("Authorization", "Bearer " + bearerToken);
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertThat(response.getStatusLine().getStatusCode(),is(400));
+            }
+        } catch (IOException e) {
+            fail("IOException during client registration: " + e.getMessage());
         }
     }
 
