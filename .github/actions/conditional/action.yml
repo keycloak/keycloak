@@ -50,7 +50,7 @@ outputs:
     description: Should "sssd.yml" execute
     value: ${{ steps.changes.outputs.sssd }}
   admin-v2:
-    description: Should "sssd.yml" execute
+    description: Should Admin v2 tests execute
     value: ${{ steps.changes.outputs.admin-v2 }}
 
 runs:
