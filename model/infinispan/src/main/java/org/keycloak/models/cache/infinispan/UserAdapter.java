@@ -251,7 +251,7 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        if (updated == null && getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
+        if (action == null || updated == null && getCachedRequiredActions().contains(action.name())) {
             return;
         }
         getDelegateForUpdate();
@@ -260,7 +260,7 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        if (updated == null && getRequiredActionsStream().noneMatch(s -> Objects.equals(s, action.name()))) {
+        if (action == null || updated == null && !getCachedRequiredActions().contains(action.name())) {
             return;
         }
         getDelegateForUpdate();
@@ -269,7 +269,7 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void addRequiredAction(String action) {
-        if (updated == null && getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
+        if (updated == null && getCachedRequiredActions().contains(action)) {
             return;
         }
         getDelegateForUpdate();
@@ -278,11 +278,15 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeRequiredAction(String action) {
-        if (updated == null && getRequiredActionsStream().noneMatch(s -> Objects.equals(s, action))) {
+        if (updated == null && !getCachedRequiredActions().contains(action)) {
             return;
         }
         getDelegateForUpdate();
         updated.removeRequiredAction(action);
+    }
+
+    private Set<String> getCachedRequiredActions() {
+        return cached.getRequiredActions(keycloakSession, modelSupplier);
     }
 
     @Override
