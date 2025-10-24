@@ -73,10 +73,15 @@
 
             <@registerCommons.termsAcceptance/>
 
+            <#assign captchaProviderId = captchaProviderId!recaptchaProviderId!"" />
             <#if recaptchaRequired?? && (recaptchaVisible!false)>
                 <div class="form-group">
                     <div class="${properties.kcInputWrapperClass!}">
-                        <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}" data-action="${recaptchaAction}"></div>
+                        <#if captchaProviderId == "registration-hcaptcha-action">
+                            <div class="h-captcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                        <#else>
+                            <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"<#if recaptchaAction?has_content> data-action="${recaptchaAction}"</#if>></div>
+                        </#if>
                     </div>
                 </div>
             </#if>
@@ -95,10 +100,14 @@
                         }
                     </script>
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                        <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} g-recaptcha" 
-                            data-sitekey="${recaptchaSiteKey}" data-callback='onSubmitRecaptcha' data-action='${recaptchaAction}' type="submit">
-                            ${msg("doRegister")}
-                        </button>
+                        <#if captchaProviderId == "registration-hcaptcha-action">
+                            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
+                        <#else>
+                            <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} g-recaptcha"
+                                data-sitekey="${recaptchaSiteKey}" data-callback='onSubmitRecaptcha'<#if recaptchaAction?has_content> data-action='${recaptchaAction}'</#if> type="submit">
+                                ${msg("doRegister")}
+                            </button>
+                        </#if>
                     </div>
                 <#else>
                     <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">

@@ -21,6 +21,7 @@ import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.authentication.forms.RegistrationHCaptcha;
 import org.keycloak.authentication.forms.RegistrationRecaptcha;
 import org.keycloak.authentication.forms.RegistrationRecaptchaEnterprise;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
@@ -65,6 +66,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
 
         List<Map<String, Object>> expected = new LinkedList<>();
         addProviderInfo(expected, RegistrationRecaptcha.PROVIDER_ID, "reCAPTCHA", "Adds Google reCAPTCHA to the form.");
+        addProviderInfo(expected, RegistrationHCaptcha.PROVIDER_ID, "hCaptcha", "Adds hCaptcha to the form.");
         addProviderInfo(expected, RegistrationRecaptchaEnterprise.PROVIDER_ID, "reCAPTCHA Enterprise", "Adds Google reCAPTCHA Enterprise to the form.");
         addProviderInfo(expected, "registration-password-action", "Password Validation",
                 "Validates that password matches password confirmation field.  It also will store password in user's credential store.");
