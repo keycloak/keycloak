@@ -30,18 +30,18 @@ import java.io.IOException;
 import static io.restassured.RestAssured.when;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DistributionTest(keepAlive = true,
-    requestPort = 9000,
-    containerExposedPorts = {8080, 9000},
-    defaultOptions = "--features=client-admin-api:v2")
+@DistributionTest(keepAlive = true, requestPort = 9000, containerExposedPorts = {8080, 9000})
 @Tag(DistributionTest.SLOW)
 public class OpenApiDistTest {
 
   private static final String OPENAPI_ENDPOINT = "/openapi";
   private static final String OPENAPI_UI_ENDPOINT = "/openapi/ui";
 
+  // Cannot use defaultOptions as we want to test it being absent too
+  private static final String FEATURES_OPTION = "--features=openapi,client-admin-api:v2";
+
   @Test
-  @Launch({"start-dev"})
+  @Launch({"start-dev", FEATURES_OPTION})
   void testOpenApiEndpointNotEnabled(KeycloakDistribution distribution) {
     assertThrows(IOException.class, () -> when().get(OPENAPI_ENDPOINT), "Connection refused must be thrown");
     assertThrows(IOException.class, () -> when().get(OPENAPI_UI_ENDPOINT), "Connection refused must be thrown");
@@ -55,7 +55,7 @@ public class OpenApiDistTest {
   }
 
   @Test
-  @Launch({"start-dev", "--openapi-enabled=true"})
+  @Launch({"start-dev", "--openapi-enabled=true", FEATURES_OPTION})
   void testOpenApiEndpointEnabled(KeycloakDistribution distribution) {
     when().get(OPENAPI_ENDPOINT)
         .then()
@@ -63,7 +63,7 @@ public class OpenApiDistTest {
   }
 
   @Test
-  @Launch({"start-dev", "--openapi-ui-enabled=true", "--openapi-enabled=true"})
+  @Launch({"start-dev", "--openapi-ui-enabled=true", "--openapi-enabled=true", FEATURES_OPTION})
   void testOpenApiUiEndpointEnabled(KeycloakDistribution distribution) {
     when().get(OPENAPI_UI_ENDPOINT)
         .then()
@@ -72,8 +72,18 @@ public class OpenApiDistTest {
 
   @DryRun
   @Test
-  @Launch({ "start-dev", "--openapi-ui-enabled=true"})
+  @Launch({ "start-dev", "--openapi-ui-enabled=true", FEATURES_OPTION})
   void testOpenApiUiFailsWhenOpenApiIsNotEnabled(CLIResult cliResult) {
     cliResult.assertError("Disabled option: '--openapi-ui-enabled'. Available only when OpenAPI Endpoint is enabled");
+  }
+
+  @DryRun
+  @Test
+  void testOpenApiRequiresFeatures(KeycloakDistribution dist) {
+    CLIResult cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=openapi");
+    cliResult.assertError("ERROR: Feature openapi depends on disabled feature client-admin-api-v2");
+
+    cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=client-admin-api:v2");
+    cliResult.assertError("Disabled option: '--openapi-enabled'. Available only when OpenAPI feature is enabled");
   }
 }

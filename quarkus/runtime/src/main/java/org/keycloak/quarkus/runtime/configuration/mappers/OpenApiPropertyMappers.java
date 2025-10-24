@@ -14,7 +14,7 @@ public final class OpenApiPropertyMappers implements PropertyMapperGrouping {
   public List<? extends PropertyMapper<?>> getPropertyMappers() {
     return List.of(
         fromOption(OpenApiOptions.OPENAPI_ENABLED)
-            .isEnabled(OpenApiPropertyMappers::isClientApiEnabled, "Client Admin API v2 Feature is enabled")
+            .isEnabled(OpenApiPropertyMappers::isClientApiEnabled, "OpenAPI feature is enabled")
             .to("quarkus.smallrye-openapi.enable")
             .build(),
         fromOption(OpenApiOptions.OPENAPI_UI_ENABLED)
@@ -29,6 +29,6 @@ public final class OpenApiPropertyMappers implements PropertyMapperGrouping {
   }
 
   private static boolean isClientApiEnabled() {
-    return Profile.isFeatureEnabled(Profile.Feature.CLIENT_ADMIN_API_V2);
+    return Profile.isFeatureEnabled(Profile.Feature.OPENAPI);
   }
 }
