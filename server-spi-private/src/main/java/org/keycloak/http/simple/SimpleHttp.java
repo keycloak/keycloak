@@ -8,15 +8,17 @@ import org.keycloak.models.KeycloakSession;
 
 public class SimpleHttp {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper DEFAULT_OBJECT_MAPPER = new ObjectMapper();
 
     private final HttpClient client;
     private long maxConsumedResponseSize;
     private RequestConfig requestConfig;
+    private ObjectMapper objectMapper;
 
     private SimpleHttp(HttpClient client, long maxConsumedResponseSize) {
         this.client = client;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
+        this.objectMapper = DEFAULT_OBJECT_MAPPER;
     }
 
     public static SimpleHttp create(KeycloakSession session) {
@@ -30,6 +32,11 @@ public class SimpleHttp {
 
     public SimpleHttp withRequestConfig(RequestConfig requestConfig) {
         this.requestConfig = requestConfig;
+        return this;
+    }
+
+    public SimpleHttp withObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
         return this;
     }
 
