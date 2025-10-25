@@ -20,46 +20,35 @@
 package org.keycloak.authentication.authenticators.client;
 
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.representations.JsonWebToken;
-
-import java.util.List;
 
 /**
  * Common validation for JWT client authentication with private_key_jwt or with client_secret
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractJWTClientValidator {
+public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidator {
 
     private static final Logger logger = Logger.getLogger(AbstractJWTClientValidator.class);
 
     protected final ClientAuthenticationFlowContext context;
     protected final RealmModel realm;
-    protected final int currentTime;
     protected final SignatureValidator signatureValidator;
     protected final String clientAuthenticatorProviderId;
     protected String expectedClientAssertionType = OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT;
 
-    protected final ClientAssertionState clientAssertionState;
-
-    protected ClientModel client;
-
     public AbstractJWTClientValidator(ClientAuthenticationFlowContext context, SignatureValidator signatureValidator, String clientAuthenticatorProviderId) throws Exception {
+        super(context.getSession(), context.getState(ClientAssertionState.class, ClientAssertionState.supplier()));
         this.context = context;
-        this.clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
         this.realm = context.getRealm();
         this.signatureValidator = signatureValidator;
-        this.currentTime = Time.currentTime();
         this.clientAuthenticatorProviderId = clientAuthenticatorProviderId;
     }
 
@@ -67,29 +56,17 @@ public abstract class AbstractJWTClientValidator {
         return context;
     }
 
-    public ClientAssertionState getState() {
-        return clientAssertionState;
-    }
-
-    public String getClientAssertion() {
-        return clientAssertionState.getClientAssertion();
-    }
-
-    public JWSInput getJws() {
-        return clientAssertionState.getJws();
-    }
-
     public ClientModel getClient() {
-        return client;
+        return clientAssertionState.getClient();
     }
 
     public boolean validate() {
         return validateClientAssertionParameters() &&
                 validateClient() &&
-                validateSignatureAlgorithm() &&
+                validateSignatureAlgorithm(getExpectedSignatureAlgorithm()) &&
                 validateSignature() &&
-                validateTokenAudience() &&
-                validateTokenActive();
+                validateTokenAudience(getExpectedAudiences(), isMultipleAudienceAllowed()) &&
+                validateTokenActive(getAllowedClockSkew(), getMaximumExpirationTime(), isReusePermitted());
     }
 
     private boolean validateClientAssertionParameters() {
@@ -132,7 +109,7 @@ public abstract class AbstractJWTClientValidator {
             return false;
         }
 
-        client = clientAssertionState.getClient();
+        ClientModel client = clientAssertionState.getClient();
 
         if (client == null) {
             return failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
@@ -153,96 +130,8 @@ public abstract class AbstractJWTClientValidator {
         return true;
     }
 
-    private boolean validateSignatureAlgorithm() {
-        JWSInput jws = clientAssertionState.getJws();
-
-        if (jws.getHeader().getAlgorithm() == null) {
-            return failure("Invalid signature algorithm");
-        }
-
-        String expectedSignatureAlg = getExpectedSignatureAlgorithm();
-        if (expectedSignatureAlg != null) {
-            if (!expectedSignatureAlg.equals(jws.getHeader().getAlgorithm().name())) {
-                return failure("Invalid signature algorithm");
-            }
-        }
-
-        return true;
-    }
-
     private boolean validateSignature() {
         return signatureValidator.verifySignature(this);
-    }
-
-    public boolean validateTokenActive() {
-        JsonWebToken token = clientAssertionState.getToken();
-        int allowedClockSkew = getAllowedClockSkew();
-        int maxExp = getMaximumExpirationTime();
-        long lifespan;
-
-        if (token.getExp() == null) {
-            return failure("Token exp claim is required");
-        }
-
-        if (!token.isActive(allowedClockSkew)) {
-            return failure("Token is not active");
-        }
-
-        lifespan = token.getExp() - currentTime;
-
-        if (token.getIat() == null) {
-            if (lifespan > maxExp) {
-                return failure("Token expiration is too far in the future and iat claim not present in token");
-            }
-        } else {
-            if (token.getIat() - allowedClockSkew > currentTime) {
-                return failure("Token was issued in the future");
-            }
-            lifespan = Math.min(lifespan, maxExp);
-            if (lifespan <= 0) {
-                return failure("Token is not active");
-            }
-            if (currentTime > token.getIat() + maxExp) {
-                return failure("Token was issued too far in the past to be used now");
-            }
-        }
-
-        if (!isReusePermitted()) {
-            if (token.getId() == null) {
-                return failure("Token jti claim is required");
-            }
-
-            if (!validateTokenReuse(token.getId(), lifespan)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean validateTokenReuse(String tokenId, long lifespanInSecs) {
-        SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
-        if (singleUseCache.putIfAbsent(tokenId, lifespanInSecs)) {
-            logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", tokenId, lifespanInSecs, client.getClientId());
-        } else {
-            logger.warnf("Token '%s' already used when authenticating client '%s'.", tokenId, client.getClientId());
-            return failure(OAuthErrorException.INVALID_CLIENT, "Token reuse detected", Response.Status.BAD_REQUEST.getStatusCode());
-        }
-        return true;
-    }
-
-    private boolean validateTokenAudience() {
-        JsonWebToken token = clientAssertionState.getToken();
-        List<String> expectedAudiences = getExpectedAudiences();
-        if (!token.hasAnyAudience(expectedAudiences)) {
-            return failure("Invalid token audience");
-        }
-
-        if (!isMultipleAudienceAllowed() && token.getAudience().length > 1) {
-            return failure("Multiple audiences not allowed");
-        }
-
-        return true;
     }
 
     public boolean failure(String errorDescription) {
@@ -265,6 +154,11 @@ public abstract class AbstractJWTClientValidator {
     private boolean failure(AuthenticationFlowError error, Response response) {
         context.failure(error, response);
         return false;
+    }
+
+    @Override
+    protected void failureCallback(String errorDescription) {
+        failure(errorDescription);
     }
 
     protected abstract String getExpectedTokenIssuer();

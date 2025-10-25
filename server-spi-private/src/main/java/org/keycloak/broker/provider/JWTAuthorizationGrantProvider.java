@@ -18,5 +18,10 @@ package org.keycloak.broker.provider;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 
 public interface JWTAuthorizationGrantProvider {
-    BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext assertion);
+
+    BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext assertion) throws IdentityBrokerException;
+
+    int getAllowedClockSkew();
+
+    String getClientAssertionSigningAlg();
 }

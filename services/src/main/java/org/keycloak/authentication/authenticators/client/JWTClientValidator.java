@@ -51,7 +51,7 @@ public class JWTClientValidator extends AbstractJWTClientValidator {
     }
 
     protected int getMaximumExpirationTime() {
-        return OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningMaxExp();
+        return OIDCAdvancedConfigWrapper.fromClientModel(clientAssertionState.getClient()).getTokenEndpointAuthSigningMaxExp();
     }
 
     @Override
@@ -61,7 +61,7 @@ public class JWTClientValidator extends AbstractJWTClientValidator {
 
     @Override
     protected String getExpectedSignatureAlgorithm() {
-        return OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningAlg();
+        return OIDCAdvancedConfigWrapper.fromClientModel(clientAssertionState.getClient()).getTokenEndpointAuthSigningAlg();
     }
 
 }

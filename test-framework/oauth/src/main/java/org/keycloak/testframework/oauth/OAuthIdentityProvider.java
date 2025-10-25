@@ -57,6 +57,10 @@ public class OAuthIdentityProvider {
         return new OAuthIdentityProviderKeys(config);
     }
 
+    public OAuthIdentityProviderKeys getKeys() {
+        return keys;
+    }
+
     public int getKeysRequestCount() {
         return keysRequestCount;
     }
