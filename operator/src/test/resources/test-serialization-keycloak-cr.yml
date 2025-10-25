@@ -10,6 +10,12 @@ spec:
       value: value1
     - name: features
       value: docker
+    - name: tracing-header-Authorization
+      secret:
+        name: tracing-secret
+        key: token
+    - name: tracing-header-X-Org-Id
+      value: my-org-id
   db:
     vendor: vendor
     usernameSecret:

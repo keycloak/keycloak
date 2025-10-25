@@ -20,3 +20,12 @@ For more details, see the https://www.keycloak.org/server/configuration-producti
 This release introduces a breaking change for Windows users: setups that previously relied on custom machine names or non-standard hostnames for loopback (e.g., `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
 
 Keycloak now consistently normalizes loopback addresses to `localhost` for domain verification across all platforms. This change ensures predictable behavior for trusted domain checks, regardless of the underlying OS.
+
+= Export traces with custom request headers
+
+It is now possible to set request headers for exporting traces via Open Telemetry Protocol (OTLP).
+It is mainly useful for providing tokens in the request.
+
+You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
+
+For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.

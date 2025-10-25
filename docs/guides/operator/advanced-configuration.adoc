@@ -100,9 +100,9 @@ spec:
 ----
 NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
        For details on various configuration formats, see <@links.server id="configuration"/>.
-       
-NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface. 
-If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to also set the additionalOption `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests. 
+
+NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface.
+If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to also set the additionalOption `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests.
 
 ==== Custom environment variables
 
@@ -297,11 +297,11 @@ If you do not specify a custom topology spread constraint, your Pods will have a
 
 ==== Job Scheduling
 
-Realm import and update Jobs inherit the scheduling of the server Pods if it is specified in the Keycloak CR `spec.scheduling` field. If your server Pod scheduling is highly restrictive this may result in the 
+Realm import and update Jobs inherit the scheduling of the server Pods if it is specified in the Keycloak CR `spec.scheduling` field. If your server Pod scheduling is highly restrictive this may result in the
 Job Pods being unschedulable. In this situation you may override the Job scheduling using the Keycloak CR `spec.update.scheduling` and `spec.import.scheduling` fields.
- 
-For example the following will remove the use of any server Pod scheduling for the update Job: 
- 
+
+For example the following will remove the use of any server Pod scheduling for the update Job:
+
 [source,yaml]
 ----
 apiVersion: k8s.keycloak.org/v2alpha1
@@ -409,6 +409,13 @@ spec:
   additionalOptions:
     - name: tracing-jdbc-enabled
       value: false                            # default 'true'
+    - name: tracing-header-My-Custom-header
+      value: keycloak-custom-header
+    - name: tracing-header-Authorization
+      secret:
+        name: tracing-secret
+        key: token
+
 ----
 
 These fields should reflect 1:1 association with `tracing-*` options that contain more information.
