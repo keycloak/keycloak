@@ -10,7 +10,7 @@ public interface WorkflowConditionProvider extends Provider {
 
     boolean evaluate(WorkflowEvent event);
 
-    default Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> userRoot) {
+    default Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> resourceRoot) {
         return null;
     }
 

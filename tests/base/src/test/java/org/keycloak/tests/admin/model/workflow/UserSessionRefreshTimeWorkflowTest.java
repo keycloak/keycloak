@@ -92,7 +92,7 @@ public class UserSessionRefreshTimeWorkflowTest {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
                 .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
                 .concurrency().cancelIfRunning() // this setting enables restarting the workflow
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -176,7 +176,7 @@ public class UserSessionRefreshTimeWorkflowTest {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
                 .name(UserSessionRefreshTimeWorkflowProviderFactory.ID + "_1")
-                .onEvent(ResourceOperationType.USER_LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -186,7 +186,7 @@ public class UserSessionRefreshTimeWorkflowTest {
                 )
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
                 .name(UserSessionRefreshTimeWorkflowProviderFactory.ID + "_2")
-                .onEvent(ResourceOperationType.USER_LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(10))
@@ -233,11 +233,10 @@ public class UserSessionRefreshTimeWorkflowTest {
             RealmModel realm = configureSessionContext(session);
             WorkflowsManager manager = new WorkflowsManager(session);
 
-            UserModel user = session.users().getUserByUsername(realm, username);
             try {
                 Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
                 manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, username);
+                UserModel user = session.users().getUserByUsername(realm, username);
                 assertTrue(user.isEnabled());
             } finally {
                 Time.setOffset(0);

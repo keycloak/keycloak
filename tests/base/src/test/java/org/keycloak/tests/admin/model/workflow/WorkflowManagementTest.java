@@ -30,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -72,7 +71,6 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -192,7 +190,7 @@ public class WorkflowManagementTest {
         workflows.create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .name(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_ADD.toString())
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -202,7 +200,7 @@ public class WorkflowManagementTest {
                 )
                 .of(EventBasedWorkflowProviderFactory.ID)
                 .name(EventBasedWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGIN.toString())
+                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -269,18 +267,14 @@ public class WorkflowManagementTest {
 
         // now let's try to update another property that we can't update
         String previousOn = workflow.getOn();
-        workflow.setOn(ResourceOperationType.USER_LOGIN.toString());
+        workflow.setOn(ResourceOperationType.USER_LOGGED_IN.toString());
         try (Response response = workflows.workflow(workflow.getId()).update(workflow)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
         }
 
         // restore previous value, but change the conditions
         workflow.setOn(previousOn);
-        workflow.setConditions(Collections.singletonList(
-                WorkflowConditionRepresentation.create().of(IdentityProviderWorkflowConditionFactory.ID)
-                        .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, "someidp")
-                        .build()
-        ));
+        workflow.setConditions(IdentityProviderWorkflowConditionFactory.ID + "(someidp)");
         try (Response response = workflows.workflow(workflow.getId()).update(workflow)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
         }
@@ -299,7 +293,7 @@ public class WorkflowManagementTest {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .name(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_ADD.toString())
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -376,11 +370,8 @@ public class WorkflowManagementTest {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .name(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADD.name())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(IdentityProviderWorkflowConditionFactory.ID)
-                        .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, "someidp")
-                        .build())
+                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADDED.name())
+                .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(someidp)")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -476,7 +467,7 @@ public class WorkflowManagementTest {
         // create a test workflow
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_ADD.toString())
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
                 .name("test-workflow")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
@@ -593,7 +584,7 @@ public class WorkflowManagementTest {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
                 .name(UserCreationTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_ADD.toString())
+                .onEvent(ResourceOperationType.USER_ADDED.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -905,7 +896,7 @@ public class WorkflowManagementTest {
                                 .build()
                 ).build();
 
-        Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);;
+        Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);
         WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
                 .path("admin")
                 .path("realms")
