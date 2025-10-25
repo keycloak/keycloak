@@ -39,6 +39,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.filter.KeycloakGracefulShutdownFilter;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -153,5 +154,9 @@ public class KeycloakRecorder {
 
     public void configureProtoStreamSchemas(List<SerializationContextInitializer> schemas) {
         Marshalling.setSchemas(schemas);
+    }
+
+    public KeycloakGracefulShutdownFilter shutdownFilter() {
+        return new KeycloakGracefulShutdownFilter();
     }
 }

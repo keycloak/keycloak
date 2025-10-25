@@ -39,6 +39,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.ShutdownListenerBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
@@ -49,9 +50,11 @@ import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeM
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.PreExceptionMapperHandlerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PersistenceUnitTransactionType;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -117,6 +120,7 @@ import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
+import org.keycloak.quarkus.runtime.filter.KeycloakGracefulShutdownFilter;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
@@ -253,6 +257,16 @@ class KeycloakProcessor {
 
         // record the features so that they are not calculated again at runtime
         recorder.configureProfile(profile.getName(), profile.getFeatures());
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    void filterAllRequests(BuildProducer<FilterBuildItem> filters,
+                           BuildProducer<ShutdownListenerBuildItem> shutdownListenerBuildItemBuildProducer,
+                           KeycloakRecorder recorder) {
+        KeycloakGracefulShutdownFilter handler = recorder.shutdownFilter();
+        filters.produce(new FilterBuildItem(handler, SecurityHandlerPriorities.CORS + 1));
+        shutdownListenerBuildItemBuildProducer.produce(new ShutdownListenerBuildItem(handler));
     }
 
     @Record(ExecutionTime.STATIC_INIT)
