@@ -28,7 +28,6 @@ import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Base64;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -60,7 +59,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.Base64;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -90,6 +95,19 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         return new Endpoint(session, callback, event, this);
     }
 
+    private String base64EncodeObject(Serializable serializableObject) throws IOException {
+      try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
+              ObjectOutputStream oos = new ObjectOutputStream(Base64.getEncoder().wrap(baos))) {
+          oos.writeObject(serializableObject);
+          oos.flush();
+          try {
+              return new String(baos.toByteArray(), "US-ASCII");
+          } catch (UnsupportedEncodingException uue) {
+              return new String(baos.toByteArray());
+          }
+      }
+    }
+    
     @Override
     public Response performLogin(AuthenticationRequest request) {
         try {
@@ -97,7 +115,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             RequestToken requestToken = oAuthAuthorization.getOAuthRequestToken(uri.toString());
             AuthenticationSessionModel authSession = request.getAuthenticationSession();
 
-            authSession.setAuthNote(TWITTER_TOKEN, Base64.encodeObject(requestToken));
+            authSession.setAuthNote(TWITTER_TOKEN, base64EncodeObject(requestToken));
 
             URI authenticationUrl = URI.create(requestToken.getAuthenticationURL());
 
