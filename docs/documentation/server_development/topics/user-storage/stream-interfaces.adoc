@@ -21,7 +21,7 @@ See this list of the interfaces that offer a `Streams` sub-interface to develope
 | Package | Classes
 ifeval::[{project_community}==true]
 | `org.keycloak.credential` | `CredentialInputUpdater`(*), `UserCredentialStore`
-| `org.keycloak.models` | `GroupModel`, `RoleMapperModel`, `UserCredentialManager`, `UserModel`, `UserProvider`
+| `org.keycloak.models` | `GroupModel`, `RoleMapperModel`, `SubjectCredentialManager`, `UserModel`, `UserProvider`
 | `org.keycloak.models.cache` | `CachedUserModel`, `UserCache`
 | `org.keycloak.storage.federated` | All interfaces
 | `org.keycloak.storage.user` | `UserQueryProvider`(*)

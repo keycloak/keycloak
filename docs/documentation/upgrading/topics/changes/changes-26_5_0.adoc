@@ -56,6 +56,25 @@ This prevents problems with client IDs or passwords that contain, for example, a
 
 To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
 
+=== Not recommended to use UserCredentialManager directly in your extensions
+
+If you have user storage extension and you reference the class `UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be
+moved to the private modules in the future releases. The class may be typically used in the method `credentialManager()` of the implementations of `UserModel` interface. In that case,
+it is recommended to replace the code like this:
+```
+@Override
+public SubjectCredentialManager credentialManager() {
+    return new UserCredentialManager(keycloakSession, realmModel, this);
+}
+```
+with the code similar to this:
+```
+@Override
+public SubjectCredentialManager credentialManager() {
+    return keycloakSession.getUserCredentialManager(this);
+}
+```
+
 === Allowing realm administrators granted with the `realm-admin` role to assign admin roles
 
 In previous versions, realm administrators granted with the `realm-admin` role were not able to grant admin roles for delegated realm administrators.
