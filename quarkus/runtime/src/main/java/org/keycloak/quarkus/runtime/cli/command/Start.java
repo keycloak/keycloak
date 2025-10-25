@@ -19,12 +19,8 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-import java.util.List;
-
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.common.profile.ProfileException;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import picocli.CommandLine;
@@ -63,19 +59,6 @@ public final class Start extends AbstractAutoBuildCommand {
     @Override
     public String getName() {
         return NAME;
-    }
-
-    public static void fastStart(Picocli picocli, boolean dryRun) {
-        try {
-            Start start = new Start();
-            start.optimizedMixin.optimized = true;
-            start.dryRunMixin.dryRun = dryRun;
-            start.setPicocli(picocli);
-            picocli.initConfig(List.of(OPTIMIZED_BUILD_OPTION_LONG), start);
-            picocli.exit(start.call());
-        } catch (PropertyException | ProfileException e) {
-            picocli.usageException(e.getMessage(), e.getCause());
-        }
     }
 
     @Override

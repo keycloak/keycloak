@@ -53,6 +53,7 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.HelpAllMixin;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.Main;
+import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
@@ -170,6 +171,11 @@ public class Picocli {
                 addCommandOptions(cliArgs, cl);
             }
 
+            result = null;
+            if (Optional.ofNullable(currentCommand).map(AbstractCommand::getName).filter(Start.NAME::equals).isPresent()) {
+                reduceMemoryForStart(cmd);
+            }
+
             int exitCode = cmd.execute(argArray);
 
             exit(exitCode);
@@ -178,6 +184,18 @@ public class Picocli {
         } catch (ProfileException | PropertyException proEx) {
             usageException(proEx.getMessage(), proEx.getCause());
         }
+    }
+
+    private void reduceMemoryForStart(CommandLine cmd) {
+        var strategy = cmd.getExecutionStrategy();
+        cmd.setExecutionStrategy(parseResult -> {
+            for (String name : new HashSet<>(parseResult.commandSpec().subcommands().keySet())) {
+                if (!name.equals(Start.NAME)) {
+                    parseResult.commandSpec().removeSubcommand(name);
+                }
+            }
+            return strategy.execute(parseResult);
+        });
     }
 
     public Optional<AbstractCommand> getParsedCommand() {
