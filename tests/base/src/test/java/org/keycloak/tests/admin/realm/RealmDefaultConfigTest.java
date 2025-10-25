@@ -19,7 +19,6 @@ package org.keycloak.tests.admin.realm;
 
 import jakarta.ws.rs.NotFoundException;
 import org.apache.commons.io.IOUtils;
-import org.bouncycastle.util.Strings;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.admin.OperationType;
@@ -126,9 +125,9 @@ public class RealmDefaultConfigTest extends AbstractRealmTest {
         role = managedRealm.admin().roles().get("test").toRepresentation();
         assertNotNull(role);
 
-        managedRealm.admin().roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + Strings.toLowerCase(managedRealm.getName())).addComposites(Collections.singletonList(role));
+        managedRealm.admin().roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + managedRealm.getName().toLowerCase()).addComposites(Collections.singletonList(role));
 
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + Strings.toLowerCase(managedRealm.getName())), Collections.singletonList(role), ResourceType.REALM_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + managedRealm.getName().toLowerCase()), Collections.singletonList(role), ResourceType.REALM_ROLE);
 
         managedRealm.admin().roles().deleteRole("test");
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.roleResourcePath("test"), ResourceType.REALM_ROLE);

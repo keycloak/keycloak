@@ -47,6 +47,12 @@
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.testcontainers</groupId>
+                    <artifactId>testcontainers</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
@@ -63,6 +69,12 @@
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-db-mariadb</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.testcontainers</groupId>
+                    <artifactId>testcontainers</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
@@ -126,6 +138,33 @@
         <dependency>
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Required for Keycloak server when running FIPS mode. -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bc-fips</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-fips</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-fips</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcutil-fips</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- FIPS CryptoProvider requires it for ManagedCertificates instance. -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

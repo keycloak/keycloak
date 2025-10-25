@@ -117,6 +117,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             containers[i] = container;
 
             copyProvidersAndConfigs(container, configBuilder);
+
             configureLogConsumers(container, i, clusterLatch);
             container.run(configBuilder.toArgs());
         }

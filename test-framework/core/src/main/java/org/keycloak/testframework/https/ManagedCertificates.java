@@ -4,8 +4,9 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
+import org.keycloak.crypto.fips.FIPS1402Provider;
+import org.keycloak.crypto.fips.Fips1402StrictCryptoProvider;
 
 import javax.net.ssl.SSLContext;
 import java.io.FileInputStream;
@@ -21,31 +22,41 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ManagedCertificates {
 
     private static final Logger LOGGER = Logger.getLogger(ManagedCertificates.class);
 
+    private final CertificatesConfigBuilder config;
     private final CryptoProvider cryptoProvider;
 
     private KeyStore serverKeyStore;
     private KeyStore clientsTrustStore;
 
     private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
-    private final static Path SERVER_KEYSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-server-keystore.jks");
-    private final static Path CLIENTS_TRUSTSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-clients-truststore.jks");
-
-    private final static char[] PASSWORD = "password".toCharArray();
-
+    private final Path SERVER_KEYSTORE_FILE_PATH;
+    private final Path CLIENTS_TRUSTSTORE_FILE_PATH;
     private final static String PRV_KEY_ENTRY = "prvKey";
     public final static String CERT_ENTRY = "cert";
 
 
-    public ManagedCertificates() throws ManagedCertificatesException {
+    public ManagedCertificates(CertificatesConfigBuilder config) throws ManagedCertificatesException {
+        this.config = config;
+
         if (!CryptoIntegration.isInitialised()) {
-            CryptoIntegration.setProvider(new DefaultCryptoProvider());
+            switch (config.getCryptoProviderOption()) {
+                case DEFAULT -> CryptoIntegration.setProvider(new DefaultCryptoProvider());
+                case FIPS_NON_STRICT -> CryptoIntegration.setProvider(new FIPS1402Provider());
+                case FIPS_STRICT -> CryptoIntegration.setProvider(new Fips1402StrictCryptoProvider());
+            }
         }
         cryptoProvider = CryptoIntegration.getProvider();
+
+        SERVER_KEYSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-server-keystore" + config.getFileFormatSuffix());
+        CLIENTS_TRUSTSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-clients-truststore" + config.getFileFormatSuffix());
+
         initServerCerts();
     }
 
@@ -53,8 +64,29 @@ public class ManagedCertificates {
         return SERVER_KEYSTORE_FILE_PATH.toString();
     }
 
+    public String getClientsTrustStorePath() {
+        return CLIENTS_TRUSTSTORE_FILE_PATH.toString();
+    }
+
     public String getKeycloakServerKeyStorePassword() {
-        return String.valueOf(PASSWORD);
+        return String.valueOf(config.getKeystorePassword());
+    }
+
+    public String getClientsTrustStorePassword() {
+        return String.valueOf(config.getTruststorePassword());
+    }
+
+    public String getKeystoreType() {
+        return config.getKeystoreFormat().toString().toLowerCase();
+    }
+
+    public String[] getSupportedKeystoreTypes() {
+        return CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
+                .map(obj -> Objects.toString(obj, null)).collect(Collectors.joining(",")).split(",");
+    }
+
+    public String[] getSupportedKeySizes() {
+        return String.join(",", CryptoIntegration.getProvider().getSupportedRsaKeySizes()).split(",");
     }
 
     public KeyStore getClientTrustStore() {
@@ -81,24 +113,24 @@ public class ManagedCertificates {
 
     private void initServerCerts() throws ManagedCertificatesException {
         try {
-            serverKeyStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
-            clientsTrustStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
+            serverKeyStore = cryptoProvider.getKeyStore(config.getKeystoreFormat());
+            clientsTrustStore = cryptoProvider.getKeyStore(config.getKeystoreFormat());
 
             if (Files.exists(SERVER_KEYSTORE_FILE_PATH) && Files.exists(CLIENTS_TRUSTSTORE_FILE_PATH)) {
                 LOGGER.debugv("Existing Server KeyStore files found in {0}", KEYSTORES_DIR);
 
-                loadKeyStore(serverKeyStore, SERVER_KEYSTORE_FILE_PATH, PASSWORD);
-                loadKeyStore(clientsTrustStore, CLIENTS_TRUSTSTORE_FILE_PATH, PASSWORD);
+                loadKeyStore(serverKeyStore, SERVER_KEYSTORE_FILE_PATH, config.getKeystorePassword());
+                loadKeyStore(clientsTrustStore, CLIENTS_TRUSTSTORE_FILE_PATH, config.getTruststorePassword());
             } else {
                 LOGGER.debugv("Generating Server KeyStore files in {0}", KEYSTORES_DIR);
 
-                generateKeystore(serverKeyStore, clientsTrustStore, "localhost");
+                generateKeystoreAndTruststore(serverKeyStore, clientsTrustStore, "localhost");
                 // store the generated keystore and truststore in a temp folder
                 try (FileOutputStream fos = new FileOutputStream(SERVER_KEYSTORE_FILE_PATH.toFile())) {
-                    serverKeyStore.store(fos, PASSWORD);
+                    serverKeyStore.store(fos, config.getKeystorePassword());
                 }
                 try (FileOutputStream fos = new FileOutputStream(CLIENTS_TRUSTSTORE_FILE_PATH.toFile())) {
-                    clientsTrustStore.store(fos, PASSWORD);
+                    clientsTrustStore.store(fos, config.getTruststorePassword());
                 }
             }
         } catch (Exception e) {
@@ -112,7 +144,7 @@ public class ManagedCertificates {
         }
     }
 
-    private void generateKeystore(KeyStore keyStore, KeyStore trustStore, String subject) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, IOException, KeyStoreException, Exception {
+    private void generateKeystoreAndTruststore(KeyStore keyStore, KeyStore trustStore, String subject) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, IOException, KeyStoreException, Exception {
         keyStore.load(null);
         trustStore.load(null);
 
@@ -121,7 +153,7 @@ public class ManagedCertificates {
 
         keyStore.setCertificateEntry(CERT_ENTRY, cert);
         trustStore.setCertificateEntry(CERT_ENTRY, cert);
-        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), PASSWORD, new X509Certificate[]{cert});
+        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), config.getKeystorePassword(), new X509Certificate[]{cert});
     }
 
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -129,10 +161,10 @@ public class ManagedCertificates {
     }
 
     private X509Certificate generateX509CertificateCertificate(KeyPair keyPair, String subject) throws Exception {
-        // generate a v1 certificate
+        // generate a v1 root certificate authority certificate
         X509Certificate caCert = cryptoProvider.getCertificateUtils().generateV1SelfSignedCertificate(keyPair, subject);
 
-        // generate a v3 certificate
+        // generate a v3 certificate chain
         return cryptoProvider.getCertificateUtils().generateV3Certificate(keyPair, keyPair.getPrivate(), caCert, subject);
     }
 }
