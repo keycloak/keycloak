@@ -178,7 +178,9 @@ public class AdminRoot {
     }
 
 
-    protected AdminAuth authenticateRealmAdminRequest(HttpHeaders headers) {
+    public static AdminAuth authenticateRealmAdminRequest(KeycloakSession session) {
+        HttpHeaders headers = session.getContext().getRequestHeaders();
+
         String tokenString = AppAuthManager.extractAuthorizationHeaderToken(headers);
         if (tokenString == null) throw new NotAuthorizedException("Bearer");
         AccessToken token;
@@ -238,7 +240,7 @@ public class AdminRoot {
             return new RealmsAdminResourcePreflight(session, null, tokenManager, request);
         }
 
-        AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
+        AdminAuth auth = authenticateRealmAdminRequest(session);
         if (auth != null) {
             if (logger.isDebugEnabled()) {
                 logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
@@ -280,7 +282,7 @@ public class AdminRoot {
             return new AdminCorsPreflightService();
         }
 
-        AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
+        AdminAuth auth = authenticateRealmAdminRequest(session);
         if (!AdminPermissions.realms(session, auth).isAdmin()) {
             throw new ForbiddenException();
         }

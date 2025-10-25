@@ -192,12 +192,17 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
 
         @Override
         public FeatureConfig getFeatureConfig(String featureName) {
+            // No support for transitive dependencies but that should be fine for now
             if (enabled) {
                 if (DEPENDENT_FEATURES.containsKey(feature)) {
                     for (Profile.Feature dep : DEPENDENT_FEATURES.get(feature)) {
                         if (dep.getVersionedKey().equals(featureName))
                             return FeatureConfig.ENABLED;
                     }
+                }
+                for (Profile.Feature dep : feature.getDependencies()) { // Explicitly enable dependencies that might be disabled by default
+                    if (dep.getVersionedKey().equals(featureName))
+                        return FeatureConfig.ENABLED;
                 }
                 return feature.getVersionedKey().equals(featureName) ? FeatureConfig.ENABLED : FeatureConfig.UNCONFIGURED;
             } else {
