@@ -25,6 +25,7 @@ import io.sundr.builder.annotations.Buildable;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -44,6 +45,10 @@ public class KeycloakRealmImportSpec {
 
     @JsonPropertyDescription("Optionally set to replace ENV variable placeholders in the realm import.")
     private Map<String, Placeholder> placeholders;
+
+    @JsonProperty("labels")
+    @JsonPropertyDescription("Optionally set to add additional labels to the Job created for the import.")
+    Map<String, String> labels = new LinkedHashMap<String, String>();
 
     public String getKeycloakCRName() {
         return keycloakCRName;
@@ -77,4 +82,11 @@ public class KeycloakRealmImportSpec {
         this.placeholders = placeholders;
     }
 
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
+    }
 }
