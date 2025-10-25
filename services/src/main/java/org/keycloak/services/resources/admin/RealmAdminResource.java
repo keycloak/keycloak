@@ -639,7 +639,7 @@ public class RealmAdminResource {
 
     @Path("workflows")
     public WorkflowsResource workflows() {
-        return new WorkflowsResource(session);
+        return new WorkflowsResource(session, auth);
     }
 
     @Path("{extension}")
