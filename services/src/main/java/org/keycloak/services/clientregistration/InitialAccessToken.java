@@ -17,11 +17,24 @@
 
 package org.keycloak.services.clientregistration;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.JsonWebToken;
+
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InitialAccessToken extends JsonWebToken {
 
+    @JsonProperty("allowed-origins")
+    protected Set<String> allowedOrigins;
+
+    public Set<String> getAllowedOrigins() {
+        return allowedOrigins;
+    }
+
+    public void setAllowedOrigins(Set<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
+    }
 }

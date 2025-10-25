@@ -36,6 +36,10 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.util.TokenUtil;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -65,23 +69,23 @@ public class ClientRegistrationTokenUtils {
         }
     }
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth) {
-        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth);
+    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
+        return updateRegistrationAccessToken(session, session.getContext().getRealm(), client, registrationAuth, webOrigins);
     }
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth) {
+    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, RegistrationAuth registrationAuth, List<String> webOrigins) {
         String id = SecretGenerator.getInstance().generateSecureID();
         client.setRegistrationToken(id);
 
         RegistrationAccessToken regToken = new RegistrationAccessToken();
         regToken.setRegistrationAuth(registrationAuth.toString().toLowerCase());
 
-        return setupToken(regToken, session, realm, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0);
+        return setupToken(regToken, session, realm, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0, webOrigins);
     }
 
-    public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, ClientInitialAccessModel model) {
+    public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, ClientInitialAccessModel model, List<String> webOrigins) {
         InitialAccessToken initialToken = new InitialAccessToken();
-        return setupToken(initialToken, session, realm, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
+        return setupToken(initialToken, session, realm, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0, webOrigins);
     }
 
     public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, String token) {
@@ -116,7 +120,7 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(kid, jwt);
     }
 
-    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration) {
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration, List<String> webOrigins) {
         String issuer = getIssuer(session, realm);
 
         jwt.type(type);
@@ -125,6 +129,13 @@ public class ClientRegistrationTokenUtils {
         jwt.exp(expiration);
         jwt.issuer(issuer);
         jwt.audience(issuer);
+
+        Set<String> webOriginsSet = webOrigins != null ? new HashSet<>(webOrigins) : null;
+        if (jwt instanceof InitialAccessToken) {
+            ((InitialAccessToken) jwt).setAllowedOrigins(webOriginsSet);
+        } else if (jwt instanceof RegistrationAccessToken) {
+            ((RegistrationAccessToken) jwt).setAllowedOrigins(webOriginsSet);
+        }
 
         return session.tokens().encode(jwt);
     }
