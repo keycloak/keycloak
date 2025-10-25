@@ -281,6 +281,10 @@ public class RoleContainerResource extends RoleResource {
             throw ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.",
                     Response.Status.BAD_REQUEST);
         }
+        RoleRepresentation roleRepresentation = new RoleRepresentation();
+        roleRepresentation.setId(role.getId());
+        roleRepresentation.setName(role.getName());
+
         deleteRole(role);
 
         if (role.isClientRole()) {
@@ -289,7 +293,7 @@ public class RoleContainerResource extends RoleResource {
             adminEvent.resource(ResourceType.REALM_ROLE);
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).representation(roleRepresentation).resourcePath(uriInfo).success();
 
     }
 
