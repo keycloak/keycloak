@@ -4,29 +4,27 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
-import org.keycloak.models.workflow.WorkflowConditionProviderFactory;
 import org.keycloak.models.workflow.WorkflowsManager;
 
-import java.util.List;
-import java.util.stream.Collectors;
+public class PredicateEvaluator extends BooleanConditionParserBaseVisitor<Predicate> {
 
-public class PredicateConditionEvaluator extends BooleanConditionBaseVisitor<Predicate> {
-
-    private final KeycloakSession session;
     private final CriteriaBuilder cb;
     private final CriteriaQuery<String> query;
     private final Root<?> root;
-    private WorkflowsManager manager;
+    private final WorkflowsManager manager;
 
-    public PredicateConditionEvaluator(KeycloakSession session, CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> root) {
-        this.session = session;
+    public PredicateEvaluator(KeycloakSession session, CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> root) {
         this.cb = cb;
         this.query = query;
         this.root = root;
         this.manager = new WorkflowsManager(session);
+    }
+
+    @Override
+    public Predicate visitEvaluator(BooleanConditionParser.EvaluatorContext ctx) {
+        return visit(ctx.expression());
     }
 
     @Override
@@ -55,7 +53,7 @@ public class PredicateConditionEvaluator extends BooleanConditionBaseVisitor<Pre
 
     @Override
     public Predicate visitNotExpression(BooleanConditionParser.NotExpressionContext ctx) {
-        // Handle '!' notExpression'
+        // Handle '!' notExpression
         if (ctx.NOT() != null) {
             return cb.not(visit(ctx.notExpression()));
         }
@@ -74,22 +72,32 @@ public class PredicateConditionEvaluator extends BooleanConditionBaseVisitor<Pre
     @Override
     public Predicate visitConditionCall(BooleanConditionParser.ConditionCallContext ctx) {
         String conditionName = ctx.Identifier().getText();
-        WorkflowConditionProviderFactory<WorkflowConditionProvider> providerFactory = manager.getConditionProviderFactory(conditionName);
-        WorkflowConditionProvider conditionProvider = providerFactory.create(session, extractParameterList(ctx.parameterList()));
+        WorkflowConditionProvider conditionProvider = manager.getConditionProvider(conditionName, extractParameter(ctx.parameter()));
         return conditionProvider.toPredicate(cb, query, root);
     }
 
-    private List<String> extractParameterList(BooleanConditionParser.ParameterListContext ctx) {
-        if (ctx == null) {
-            return List.of();
+    protected String extractParameter(BooleanConditionParser.ParameterContext paramCtx) {
+        // Case 1: No parentheses were used (e.g., "user-logged-in")
+        // Case 2: Empty parentheses were used (e.g., "user-logged-in()")
+        if (paramCtx == null || paramCtx.ParameterText() == null) {
+            return null;
         }
-        return ctx.StringLiteral().stream()
-                .map(this::visitStringLiteral)
-                .collect(Collectors.toList());
+
+        // Case 3: A parameter was provided (e.g., "has-role(param)")
+        String rawText = paramCtx.ParameterText().getText();
+        return unEscapeParameter(rawText);
     }
 
-    private String visitStringLiteral(ParseTree ctx) {
-        String text = ctx.getText();
-        return text.substring(1, text.length() - 1).replace("\"\"", "\"");
+    /**
+     * The grammar defines escapes as '\)' and '\\'.
+     *
+     * @param rawText The raw text from the ParameterText token.
+     * @return A clean, un-escaped string.
+     */
+    private String unEscapeParameter(String rawText) {
+        // This handles both \) -> ) and \\ -> \
+        // Note: replaceAll uses regex, so we must double-escape the backslashes
+        return rawText.replace("\\)", ")")
+                .replace("\\\\", "\\");
     }
 }
