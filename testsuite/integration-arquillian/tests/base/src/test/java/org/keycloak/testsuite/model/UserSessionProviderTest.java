@@ -146,7 +146,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         Time.setOffset(100);
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
-                kcSession.getContext().setRealm(realm);
+                kcSession.getContext().setRealm(session.realms().getRealm(realm.getId()));
                 UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[1].getId());
                 assertSession(userSession, kcSession.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(realm.getClientByClientId("test-app").getId());
@@ -166,6 +166,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             });
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> {
+                kcSession.getContext().setRealm(session.realms().getRealm(realm.getId()));
                 UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessions[1].getId());
 
                 assertThat(userSession.getNotes(), Matchers.anEmptyMap());
