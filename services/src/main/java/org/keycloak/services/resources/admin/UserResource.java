@@ -892,7 +892,7 @@ public class UserResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public void setCredentialUserLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
-        auth.users().requireManage(user);
+        auth.users().requireResetPassword(user);
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
