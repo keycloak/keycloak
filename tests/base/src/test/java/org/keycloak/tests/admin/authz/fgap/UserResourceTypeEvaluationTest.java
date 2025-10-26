@@ -466,6 +466,11 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createPermission(client, userAlice.admin().toRepresentation().getId(), usersType, Set.of(VIEW), allowMyAdminPermission);
 
         users.get(search.get(0).getId()).resetPassword(credential);
+
+        // set credential label - admin UI sets the label upon resetting the password
+        List<CredentialRepresentation> credentials = users.get(search.get(0).getId()).credentials();
+        assertThat(credentials, hasSize(1));
+        users.get(search.get(0).getId()).setCredentialUserLabel(credentials.get(0).getId(), "User Label");
     }
 
     @Test
