@@ -51,7 +51,7 @@ Operations that fetch a single user (for example during login) are usually cache
 
 Users and admins can modify user metadata, users through the <<_account-service, Account Console>>, and administrators through the Admin Console. The `Edit Mode` configuration on the LDAP configuration page defines the user's LDAP update privileges.
 
-READONLY::
+READ_ONLY::
 You cannot change the username, email, first name, last name, and other mapped attributes. {project_name} shows an error anytime a user attempts to update these fields. Password updates are not supported.
 
 WRITABLE::
