@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -37,6 +36,7 @@ import org.keycloak.services.messages.Messages;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.services.validation.Validation.FIELD_PASSWORD;
@@ -48,10 +48,16 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
  */
 public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
-
-    public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
+
+    /**
+     * An authentication session not to indicate that the username field should be hidden.
+     * This note is usually set together with {@link #ATTEMPTED_USERNAME} to indicated that the
+     * user can restart the flow by choosing a different username.
+     * It should be set by authenticators that happen before this authenticator in the flow so that the original intent
+     * is kept when this authenticator is executed on subsequent requests.
+     */
+    public static final String USERNAME_HIDDEN = "USERNAME_HIDDEN";
     public static final String SESSION_INVALID = "SESSION_INVALID";
 
     // Flag is true if user was already set in the authContext before this authenticator was triggered. In this case we skip clearing of the user after unsuccessful password authentication
@@ -69,6 +75,14 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     protected Response challenge(AuthenticationFlowContext context, String error, String field) {
         LoginFormsProvider form = context.form()
                 .setExecution(context.getExecution().getId());
+
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+
+        if (Boolean.parseBoolean(authenticationSession.getAuthNote(USERNAME_HIDDEN))) {
+            // if username is hidden, shown errors in the password field instead
+            field = FIELD_PASSWORD;
+        }
+
         if (error != null) {
             if (field != null) {
                 form.addError(new FormMessage(field, error));

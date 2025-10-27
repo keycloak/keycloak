@@ -125,6 +125,10 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         return getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
     }
 
+    public boolean isBasicAuthenticationUnencoded(){
+        return getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_BASIC_UNENCODED);
+    }
+
     public boolean isUiLocales() {
         return Boolean.valueOf(getConfig().get("uiLocales"));
     }

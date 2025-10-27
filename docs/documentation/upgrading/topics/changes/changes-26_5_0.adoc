@@ -1,0 +1,89 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+=== Method `UserProfile#toRepresentation(boolean)` added
+
+The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
+only the basic attributes in representations or all of them.
+
+The `UserProfile` interface is a private API and should not be implemented by custom code. However, if you have extensions that
+implement this interface, you will need to update your code to accommodate this new method.
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Corrected encoding when sending OpenID Connect client secrets when acting as a broker
+
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+You are not affected if you configured {project_name} to send the credentials in the request body.
+
+This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
+
+To revert to the old behavior, change the client authentication to the deprecated option *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`).
+
+=== Identity Provider refactoring
+
+The private SPI for identity providers have been refactored. This is to allow identity providers to support more use
+-cases than federated user authentication.
+
+For anyone implementing a custom federated user authentication identity provider and are not extending one provided
+by Keycloak or `AbstractIdentityProvider` you need to update your implementation to implement
+the new `UserAuthenticationIdentityProvider` interface (all methods remain the same, they have just been moved).
+
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== `log-console-color` will automatically enable if supported by the terminal
+
+The `log-console-color` previously defaulted to `false`, but it will now instead check if the terminal supports color.
+
+You may still explicitly disable color support by setting the option to `false`.
+
+=== User sessions created with "Remember Me" are no longer valid if "Remember Me" is disabled for the realm
+
+When the "Remember Me" option is disabled in the realm settings, all user sessions previously created with the "Remember Me" flag are now considered invalid.
+Users will be required to log in again, and any associated refresh tokens will no longer be usable.
+User sessions created without selecting "Remember Me" are not affected.
+
+=== Correct encoding for OpenID Connect client credentials when acting as a broker
+
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+
+This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
+
+To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
+
+=== Allowing realm administrators granted with the `realm-admin` role to assign admin roles
+
+In previous versions, realm administrators granted with the `realm-admin` role were not able to grant admin roles for delegated realm administrators.
+This was only possible by granting the `admin` role to a master realm user, making this user a server admin.
+
+In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
+
+If you are using FGAP to delegate administration to users in a realm other than the master realm,
+make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege scalation.
+
+The documentation is also updated with additional information about the different types of realm administrators.
+For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Sending OpenID Connect client secret via basic authentication without URL encoding
+
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC6749, it can be used to keep the default behavior of earlier versions of {project_name}.
+
+This behavior is deprecated and will be removed in a future version of Keycloak.
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+

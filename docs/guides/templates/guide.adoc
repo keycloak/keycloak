@@ -1,12 +1,13 @@
 <#import "/templates/options.adoc" as opts>
 
-<#macro guide title summary priority=999 deniedCategories="" includedOptions="" excludedOptions="" preview="" tileVisible="true" previewDiscussionLink="">
+<#macro guide title summary priority=999 deniedCategories="" includedOptions="" excludedOptions="" preview="" tileVisible="true" levelOffset=1 previewDiscussionLink="">
 :guide-id: ${id}
 :guide-parent: ${parent}
 :guide-title: ${title}
 :guide-summary: ${summary}
 :guide-priority: ${priority}
 :guide-tile-visible: ${tileVisible}
+:guide-level-offset: ${levelOffset}
 :version: ${version}
 
 include::${attributes}

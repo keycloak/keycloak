@@ -103,7 +103,7 @@ if [ -z "$JAVA_OPTS" ]; then
    # If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
    # To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
    # As of KC25 and JDK17, G1GC, ZGC and Shenandoah GC seem to be eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning in reclaiming dead objects.
-   JAVA_OPTS="-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:FlightRecorderOptions=stackdepth=512"
+   JAVA_OPTS="-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:FlightRecorderOptions=stackdepth=512 -Djdk.tls.rejectClientInitiatedRenegotiation=true"
 
    if [ -z "$JAVA_OPTS_KC_HEAP" ]; then
       if [ "$KC_RUN_IN_CONTAINER" = "true" ]; then
@@ -171,8 +171,14 @@ if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-eval "'$JAVA'" "$JAVA_RUN_OPTS"
-status=$?
+# trap the signals that should be forwarded to the java process
+trap 'status=143; while [ -z "$PID" ]; do sleep 0.1; done; kill -TERM $PID; wait $PID' TERM INT
+# run the java process in the background using the current stdin
+eval "{ '$JAVA' $JAVA_RUN_OPTS <&3 3<&- & } 3<&0"
+# obtain the pid, and await the exit status
+PID=$!; wait $PID; status=$?
+# remove the trap as signals can be directly handled
+trap - TERM INT
 # only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed 
 if [ $status = 10 ]; then
   JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"

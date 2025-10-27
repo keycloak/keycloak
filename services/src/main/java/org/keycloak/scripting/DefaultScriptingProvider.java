@@ -25,7 +25,6 @@ import javax.script.ScriptException;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.ScriptModel;
-import org.keycloak.platform.Platform;
 import org.keycloak.services.ServicesLogger;
 
 /**

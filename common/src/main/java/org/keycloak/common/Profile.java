@@ -77,6 +77,8 @@ public class Profile {
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
+        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.EXPERIMENTAL),
+
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
@@ -147,6 +149,8 @@ public class Profile {
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.PREVIEW),
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
+
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.

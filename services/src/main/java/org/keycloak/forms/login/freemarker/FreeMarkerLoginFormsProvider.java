@@ -505,6 +505,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
             attributes.put("auth", new AuthenticationContextBean(context, page));
+            if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN))) {
+                attributes.put(LoginFormsProvider.USERNAME_HIDDEN, Boolean.TRUE.toString());
+            }
             setAttribute(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
@@ -523,6 +526,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         case LOGOUT_CONFIRM:
                             b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
                             break;
+                        case LOGIN_PAGE_EXPIRED:
+                            b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                            break;
                         case INFO:
                         case ERROR:
                             if (isDetachedAuthenticationSession()) {
@@ -540,12 +546,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                                 break;
                             }
                         default:
-                            b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                            b = getDefaultPageUriForLocale(baseUri);
                             break;
                     }
                 } else {
-                    b = UriBuilder.fromUri(baseUri)
-                            .path(uriInfo.getPath());
+                    b = getDefaultPageUriForLocale(baseUri);
                 }
 
                 if (execution != null) {
@@ -589,6 +594,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         attributes.put("lang", lang);
+    }
+
+    private UriBuilder getDefaultPageUriForLocale(URI baseUri) {
+        // Using "actionUri" by default in the language combobox when available
+        return actionUri != null ? UriBuilder.fromUri(actionUri.getPath()).replaceQuery(baseUri.getQuery()) :
+                UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
     }
 
     /**

@@ -22,7 +22,7 @@ import org.jboss.resteasy.reactive.NoCache;
 
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -148,7 +148,7 @@ public class SAMLEndpoint {
     protected final RealmModel realm;
     protected EventBuilder event;
     protected final SAMLIdentityProviderConfig config;
-    protected final IdentityProvider.AuthenticationCallback callback;
+    protected final UserAuthenticationIdentityProvider.AuthenticationCallback callback;
     protected final SAMLIdentityProvider provider;
     private final DestinationValidator destinationValidator;
 
@@ -159,7 +159,7 @@ public class SAMLEndpoint {
     private final HttpHeaders headers;
 
 
-    public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
+    public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, UserAuthenticationIdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
         this.realm = session.getContext().getRealm();
         this.config = config;
         this.callback = callback;

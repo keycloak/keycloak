@@ -129,6 +129,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void testInvalidateWorkflowOnIdentityProviderRemoval() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
+                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(IdentityProviderWorkflowConditionFactory.ID)
@@ -165,6 +166,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void tesRunStepOnFederatedUser() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
+                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
                 .onEvent(ResourceOperationType.USER_LOGIN.toString())
                 .onConditions(WorkflowConditionRepresentation.create()
                         .of(IdentityProviderWorkflowConditionFactory.ID)
@@ -253,7 +255,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         runOnServer.run(session -> {
             RealmModel realm = configureSessionContext(session);
             WorkflowsManager manager = new WorkflowsManager(session);
-            Workflow workflow = manager.getWorkflows().get(0);
+            Workflow workflow = manager.getWorkflows().toList().get(0);
             UserModel alice = session.users().getUserByUsername(realm, "alice");
             assertNotNull(alice);
 

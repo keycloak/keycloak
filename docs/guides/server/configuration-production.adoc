@@ -1,6 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring {project_name} for production"
@@ -86,5 +87,26 @@ export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6A
 ----
 
 See <@links.server id="caching" anchor="network-bind-address"/> for more details.
+
+== Preview of enhanced HTTP performance
+<@features.techpreview feature="http-optimized-serializers" additionalCommunityText="We gather more feedback on this feature to promote it to supported. Please, share your feedback about any issue in https://github.com/keycloak/keycloak/discussions/43484[this discussion]."/>
+
+In production environments, the performance of the HTTP layer is critical.
+Every request passes through it, making it a key factor in overall system responsiveness, scalability, and user experience.
+
+This feature improves how {project_name} handles JSON data in HTTP requests and responses.
+The result is a more efficient runtime with measurable benefits:
+
+- ~5% increase in throughput
+- More stable response times
+- Reduced system resource usage
+
+These improvements help ensure smoother, more predictable performance at scale while also lowering the operational cost of running production systems.
+
+The only known tradeoff is that build time increases by ~6% as certain actions were moved to the build time instead of runtime.
+
+You can enable this feature as follows:
+
+<@kc.start parameters="--features=http-optimized-serializers"/>
 
 </@tmpl.guide>

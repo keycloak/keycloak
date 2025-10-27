@@ -19,7 +19,6 @@ package org.keycloak.testsuite.client;
 
 import org.junit.Test;
 import org.junit.Rule;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;

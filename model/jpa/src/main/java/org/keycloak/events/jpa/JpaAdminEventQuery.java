@@ -17,6 +17,7 @@
 
 package org.keycloak.events.jpa;
 
+import org.hibernate.jpa.AvailableHints;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
@@ -181,6 +182,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
         }
 
         TypedQuery<AdminEventEntity> query = em.createQuery(cq);
+        query.setHint(AvailableHints.HINT_READ_ONLY, true);
 
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
     }

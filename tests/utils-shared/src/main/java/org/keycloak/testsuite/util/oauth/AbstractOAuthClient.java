@@ -109,6 +109,14 @@ public abstract class AbstractOAuthClient<T> {
         return passwordGrantRequest(username, password).send();
     }
 
+    public JWTAuthorizationGrantRequest jwtAuthorizationGrantRequest(String assertion) {
+        return new JWTAuthorizationGrantRequest(assertion, this);
+    }
+
+    public AccessTokenResponse doJWTAuthorizationGrantRequest(String assertion) {
+        return jwtAuthorizationGrantRequest(assertion).send();
+    }
+
     public AccessTokenRequest accessTokenRequest(String code) {
         return new AccessTokenRequest(code, this);
     }

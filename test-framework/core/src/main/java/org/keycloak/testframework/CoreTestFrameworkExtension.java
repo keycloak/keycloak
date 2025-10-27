@@ -12,6 +12,7 @@ import org.keycloak.testframework.events.EventsSupplier;
 import org.keycloak.testframework.events.SysLogServerSupplier;
 import org.keycloak.testframework.http.HttpClientSupplier;
 import org.keycloak.testframework.http.HttpServerSupplier;
+import org.keycloak.testframework.https.CertificatesSupplier;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.realm.ClientSupplier;
 import org.keycloak.testframework.realm.RealmSupplier;
@@ -47,7 +48,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new HttpClientSupplier(),
                 new HttpServerSupplier(),
                 new InfinispanExternalServerSupplier(),
-                new SimpleHttpSupplier()
+                new SimpleHttpSupplier(),
+                new CertificatesSupplier()
         );
     }
 

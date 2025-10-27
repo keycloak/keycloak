@@ -561,7 +561,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.READY, false);
             CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true, null).has(new Condition<>(
                     c -> c.getMessage().contains(String.format("Waiting for %s/%s-0 due to CrashLoopBackOff", k8sclient.getNamespace(), kc.getMetadata().getName()))
-                     && c.getMessage().contains("feature doesn't exist"), "message"
+                     && c.getMessage().contains("The following build time options have values"), "message"
                     ));
         });
     }

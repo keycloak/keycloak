@@ -38,16 +38,13 @@ public class FIPS1402SecureRandomTest {
 
         SecureRandom sc1 = new SecureRandom();
         logger.infof(dumpSecureRandom("new SecureRandom()", sc1));
+        Assert.assertEquals("DEFAULT", sc1.getAlgorithm());
+        Assert.assertEquals("BCFIPS", sc1.getProvider().getName());
 
         SecureRandom sc2 = SecureRandom.getInstance("DEFAULT", "BCFIPS");
         logger.infof(dumpSecureRandom("SecureRandom.getInstance(\"DEFAULT\", \"BCFIPS\")", sc2));
         Assert.assertEquals("DEFAULT", sc2.getAlgorithm());
         Assert.assertEquals("BCFIPS", sc2.getProvider().getName());
-
-        SecureRandom sc3 = SecureRandom.getInstance("SHA1PRNG");
-        logger.infof(dumpSecureRandom("SecureRandom.getInstance(\"SHA1PRNG\")", sc3));
-        Assert.assertEquals("SHA1PRNG", sc3.getAlgorithm());
-        Assert.assertEquals("BCFIPS", sc3.getProvider().getName());
     }
 
 

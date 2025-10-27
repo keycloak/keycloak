@@ -18,7 +18,6 @@
 package org.keycloak.authorization.config;
 
 import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.authorization.AuthorizationService;

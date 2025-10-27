@@ -295,6 +295,23 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         Assert.assertFalse(loginPage.isPasswordInputPresent());
     }
 
+    @Test
+    public void testAttemptedUsernameKeptAfterPasswordFailures() {
+        testRealm().organizations().get(createOrganization().getId());
+
+        openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
+
+        // check if the login page is shown
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        for (int i = 0; i < 3; i++) {
+            loginPage.login("wrong-password");
+            loginPage.assertAttemptedUsernameAvailability(true);
+            Assert.assertTrue(loginPage.isPasswordInputPresent());
+        }
+    }
+
     private void runOnServer(RunOnServer function) {
         testingClient.server(bc.consumerRealmName()).run(function);
     }

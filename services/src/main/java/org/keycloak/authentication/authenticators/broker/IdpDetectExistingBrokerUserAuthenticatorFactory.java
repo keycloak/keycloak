@@ -25,7 +25,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 

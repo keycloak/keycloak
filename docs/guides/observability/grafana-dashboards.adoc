@@ -27,10 +27,13 @@ Follow these steps to download JSON file definitions.
 +
 
 |===
-|{project_name} version |`keycloak-grafana-dashboards` branch
+|{project_name} version |`keycloak-grafana-dashboards` branch/tag
 
-|>= 26.1
-|`main`
+|26.1 - 26.2
+m|26.2.0
+
+|>= 26.3
+m|main
 |===
 
 . Clone the GitHub repository
@@ -82,13 +85,13 @@ It is possible to use the dashboards with bare-metal deployments by adding the m
 [source,yaml]
 ----
 scrape_configs:
-  - job_name: "Keycloak"
+  # The job name is added as a label `job=<job_name>` to any time series scraped from this config.
+  - job_name: "keycloak-service"
     static_configs:
       - targets: ["localhost:9000", "localhost:9001", "localhost:9002"]
         labels:
           namespace: 'keycloak'
           container: 'keycloak'
-          job: 'keycloak/keycloak-metrics'
     relabel_configs:
       - source_labels: [__address__]
         target_label: pod

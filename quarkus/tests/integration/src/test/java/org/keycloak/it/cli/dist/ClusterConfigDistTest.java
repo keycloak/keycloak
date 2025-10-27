@@ -209,6 +209,18 @@ public class ClusterConfigDistTest {
         result.assertNoMessage("Modifying the default cache configuration in the config file without setting cache-config-mutate=true is deprecated.");
     }
 
+    @Test
+    @Launch({ "start-dev", "--cache-embedded-users-max-count=-1" })
+    void testNegativeMaxCountIgnoredForBoundedCache(CLIResult result) {
+        result.assertMessage("Ignoring unbounded max-count for cache 'users'");
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cache-embedded-sessions-max-count=-1", "--features-disabled=persistent-user-sessions" })
+    void testNegativeMaxCountAllowedForVolatileCache(CLIResult result) {
+        result.assertNoMessage("Ignoring unbounded max-count for cache 'sessions'");
+    }
+
     public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
 
         @Override

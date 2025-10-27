@@ -45,6 +45,7 @@ import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -498,9 +499,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
-        query.setParameter("roleId", role.getId());
-        return closing(query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
+        return getRoleMembersStream(realm, role, -1, -1);
     }
 
     @Override
@@ -776,8 +775,21 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
-        query.setParameter("roleId", role.getId());
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> cq = cb.createQuery(UserEntity.class);
+        Root<UserRoleMappingEntity> userRoleMapping = cq.from(UserRoleMappingEntity.class);
+        Root<UserEntity> user = cq.from(UserEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(userRoleMapping.get("roleId"), role.getId()));
+        predicates.add(cb.equal(userRoleMapping.get("user"), user));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, cq, user));
+
+        cq.select(user)
+            .where(predicates.toArray(Predicate[]::new))
+            .orderBy(cb.asc(user.get("username")));
+
+        TypedQuery<UserEntity> query = em.createQuery(cq);
 
         final UserProvider users = session.users();
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())

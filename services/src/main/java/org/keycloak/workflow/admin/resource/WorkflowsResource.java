@@ -1,5 +1,10 @@
 package org.keycloak.workflow.admin.resource;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -19,9 +24,6 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.services.ErrorResponse;
 
-import java.util.List;
-import java.util.Optional;
-
 public class WorkflowsResource {
 
     private final KeycloakSession session;
@@ -36,7 +38,7 @@ public class WorkflowsResource {
     }
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
     public Response create(WorkflowRepresentation rep) {
         try {
             Workflow workflow = manager.toModel(rep);
@@ -48,7 +50,7 @@ public class WorkflowsResource {
 
     @Path("set")
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
     public Response createAll(WorkflowSetRepresentation workflows) {
         for (WorkflowRepresentation workflow : Optional.ofNullable(workflows.getWorkflows()).orElse(List.of())) {
             create(workflow).close();
@@ -69,7 +71,7 @@ public class WorkflowsResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<WorkflowRepresentation> list() {
-        return manager.getWorkflows().stream().map(manager::toRepresentation).toList();
+    public Stream<WorkflowRepresentation> list() {
+        return manager.getWorkflows().map(manager::toRepresentation);
     }
 }

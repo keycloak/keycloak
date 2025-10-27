@@ -43,7 +43,7 @@ import java.util.UUID;
 /**
  * @author Pedro Igor
  */
-public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
+public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements UserAuthenticationIdentityProvider<C> {
 
     protected static final Logger logger = Logger.getLogger(AbstractIdentityProvider.class);
 
@@ -65,11 +65,6 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     public C getConfig() {
         return this.config;
-    }
-
-    @Override
-    public Response export(UriInfo uriInfo, RealmModel realm, String format) {
-        return Response.noContent().build();
     }
 
     @Override

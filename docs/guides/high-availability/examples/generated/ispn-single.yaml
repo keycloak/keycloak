@@ -311,8 +311,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:15.0.15.Final
-  version: 15.0.15
+  image: quay.io/infinispan/server:15.0.19.Final
+  version: 15.0.19
   configListener:
     enabled: false
   container:

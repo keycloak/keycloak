@@ -77,6 +77,7 @@ public class StepRunnerScheduledTaskTest {
 
         realm.workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))

@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.keycloak.client.cli.common.AttributeKey;
 import org.keycloak.client.cli.common.AttributeOperation;
 import org.keycloak.client.cli.common.AttributeKey.Component;
-import org.keycloak.client.registration.cli.ReflectionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;

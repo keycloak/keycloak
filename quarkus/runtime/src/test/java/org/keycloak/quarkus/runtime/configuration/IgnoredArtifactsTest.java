@@ -24,9 +24,6 @@ import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.Option;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
 import java.util.Collection;
 import java.util.Collections;

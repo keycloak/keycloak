@@ -1,6 +1,5 @@
 package org.keycloak.policy;
 
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;

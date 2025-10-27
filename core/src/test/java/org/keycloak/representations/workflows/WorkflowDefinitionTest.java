@@ -1,6 +1,5 @@
 package org.keycloak.representations.workflows;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -25,11 +24,11 @@ public class WorkflowDefinitionTest {
         expected.setUses("my-provider");
         expected.setName("my-name");
         expected.setOn("event");
-        expected.setOnEventReset("event-reset-1", "event-reset-2");
         expected.setSteps(null);
         expected.setConditions(null);
-        expected.setRecurring(true);
         expected.setEnabled(true);
+
+        expected.setConcurrency(new WorkflowConcurrencyRepresentation(true));
 
         expected.setConditions(Arrays.asList(
                 WorkflowConditionRepresentation.create()
@@ -74,9 +73,8 @@ public class WorkflowDefinitionTest {
         assertEquals(expected.getUses(), actual.getUses());
         assertTrue(actual.getOn() instanceof String);
         assertEquals(expected.getOn(), (String) actual.getOn());
-        assertArrayEquals(((List<?>) expected.getOnEventReset()).toArray(), ((List<?>) actual.getOnEventReset()).toArray());
+        assertEquals(expected.getConcurrency(), actual.getConcurrency());
         assertEquals(expected.getName(), actual.getName());
-        assertEquals(expected.getRecurring(), actual.getRecurring());
         assertEquals(expected.getEnabled(), actual.getEnabled());
 
         List<WorkflowConditionRepresentation> actualConditions = actual.getConditions();

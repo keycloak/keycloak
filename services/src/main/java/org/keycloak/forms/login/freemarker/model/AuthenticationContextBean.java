@@ -25,6 +25,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationSelectionOption;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.forms.login.LoginFormsPages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -49,7 +50,17 @@ public class AuthenticationContextBean {
 
 
     public boolean showUsername() {
-        return context != null && context.getUser() != null && context.getAuthenticationSession() != null && page!=LoginFormsPages.ERROR;
+        if (context == null) {
+            return false;
+        }
+
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+
+        if (Boolean.parseBoolean(authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN))) {
+            return getAttemptedUsername() != null;
+        }
+
+        return context.getUser() != null && authenticationSession != null && page!=LoginFormsPages.ERROR;
     }
 
     public boolean showResetCredentials() {

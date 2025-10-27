@@ -6,7 +6,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.util.List;
 
 public class AddRequiredActionStepProvider implements WorkflowStepProvider {
 
@@ -22,20 +21,17 @@ public class AddRequiredActionStepProvider implements WorkflowStepProvider {
     }
 
     @Override
-    public void run(List<String> userIds) {
+    public void run(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
-        for (String id : userIds) {
-            UserModel user = session.users().getUserById(realm, id);
-
-            if (user != null) {
-                try {
-                    UserModel.RequiredAction action = UserModel.RequiredAction.valueOf(stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
-                    log.debugv("Adding required action {0} to user {1})", action, user.getId());
-                    user.addRequiredAction(action);
-                } catch (IllegalArgumentException e) {
-                    log.warnv("Invalid required action {0} configured in AddRequiredActionProvider", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
-                }
+        if (user != null) {
+            try {
+                UserModel.RequiredAction action = UserModel.RequiredAction.valueOf(stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
+                log.debugv("Adding required action {0} to user {1})", action, user.getId());
+                user.addRequiredAction(action);
+            } catch (IllegalArgumentException e) {
+                log.warnv("Invalid required action {0} configured in AddRequiredActionProvider", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
             }
         }
     }

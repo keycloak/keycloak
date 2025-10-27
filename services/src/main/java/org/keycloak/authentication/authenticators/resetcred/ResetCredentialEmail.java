@@ -47,7 +47,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
 
 import java.util.*;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.util.concurrent.TimeUnit;
 import org.jboss.logging.Logger;

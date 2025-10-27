@@ -34,11 +34,13 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
 import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.forms.ClickThroughAuthenticator;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
@@ -47,7 +49,9 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.Cookie;
@@ -87,6 +91,9 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Page
     protected LoginExpiredPage loginExpiredPage;
+
+    @Page
+    protected TermsAndConditionsPage termsPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -372,6 +379,23 @@ public class LoginPageTest extends AbstractI18NTest {
         }
     }
 
+    // GH issue 41292
+    @Test
+    public void languageUserUpdatesOnCustomAuthenticatorPage() {
+        configureBrowserFlowWithClickThroughAuthenticator();
+
+        loginPage.open();
+        Assert.assertTrue(termsPage.isCurrent());
+
+        // Change language on the custom page
+        switchLanguageToGermanAndBack("Terms and Conditions", "Bedingungen und Konditionen", termsPage);
+
+        // Revert dummy flow
+        RealmRepresentation rep = testRealm().toRepresentation();
+        rep.setBrowserFlow("browser");
+        testRealm().update(rep);
+    }
+
     @Test
     public void realmLocalizationMessagesAreApplied() {
         String realmLocalizationMessageKey = "loginAccountTitle";
@@ -444,5 +468,19 @@ public class LoginPageTest extends AbstractI18NTest {
         RealmRepresentation realm = realmResource.toRepresentation();
         realm.setInternationalizationEnabled(enabled);
         realmResource.update(realm);
+    }
+
+    private void configureBrowserFlowWithClickThroughAuthenticator() {
+        final String newFlowAlias = "browser - rule";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        // Update the browser forms with a UsernamePasswordForm
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ClickThroughAuthenticator.PROVIDER_ID)
+                )
+                .defineAsBrowserFlow()
+        );
     }
 }

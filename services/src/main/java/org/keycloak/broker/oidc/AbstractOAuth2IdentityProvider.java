@@ -39,7 +39,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.SecretGenerator;
@@ -360,7 +360,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (!getConfig().isStoreToken()) {
             // if token isn't stored, we need to see if this session has been linked
             String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
-            brokerId = brokerId == null ? tokenUserSession.getNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
+            brokerId = brokerId == null ? tokenUserSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
             if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
                 event.detail(Details.REASON, "requested_issuer has not linked");
                 event.error(Errors.INVALID_REQUEST);
@@ -622,6 +622,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         } else {
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
                 if (getConfig().isBasicAuthentication()) {
+                    String clientSecret = vaultStringSecret.get().orElse(getConfig().getClientSecret());
+                    String header = org.keycloak.util.BasicAuthHelper.RFC6749.createHeader(getConfig().getClientId(), clientSecret);
+                    return tokenRequest.header(HttpHeaders.AUTHORIZATION, header);
+                }
+                if (getConfig().isBasicAuthenticationUnencoded()) {
                     return tokenRequest.authBasic(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
                 }
                 return tokenRequest

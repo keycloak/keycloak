@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**

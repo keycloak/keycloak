@@ -112,6 +112,9 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                             deniedScopes.addAll(policyScopes);
                         } else {
                             for (Scope scope : requestedScopes) {
+                                // check if the scope should be denied if the permission is not directly associated with a resource
+                                // this is necessary because the scope may be granted by a permission associated with a resource group
+                                // for instance, in FGAP that means the scope granted by a permission associated with a resource type
                                 if (evaluation.isDenied(policy, scope)) {
                                     deniedScopes.add(scope);
                                 }

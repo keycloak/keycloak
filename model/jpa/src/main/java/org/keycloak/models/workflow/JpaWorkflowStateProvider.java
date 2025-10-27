@@ -45,22 +45,23 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
 
     @Override
     public ScheduledStep getScheduledStep(String workflowId, String resourceId) {
-        WorkflowStateEntity.PrimaryKey pk = new WorkflowStateEntity.PrimaryKey(resourceId, workflowId);
-        WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, pk);
-        if (entity != null) {
-            return new ScheduledStep(entity.getWorkflowId(), entity.getScheduledStepId(), entity.getResourceId());
-        }
-        return null;
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<WorkflowStateEntity> query = cb.createQuery(WorkflowStateEntity.class);
+        Root<WorkflowStateEntity> stateRoot = query.from(WorkflowStateEntity.class);
+
+        query.where(cb.and(cb.equal(stateRoot.get("workflowId"), workflowId), cb.equal(stateRoot.get("resourceId"), resourceId)));
+        WorkflowStateEntity entity = em.createQuery(query).getSingleResultOrNull();
+        return entity != null ? toScheduledStep(entity) : null;
     }
 
     @Override
-    public void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId) {
-        WorkflowStateEntity.PrimaryKey pk = new WorkflowStateEntity.PrimaryKey(resourceId, workflow.getId());
-        WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, pk);
+    public void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
+        WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, executionId);
         if (entity == null) {
             entity = new WorkflowStateEntity();
             entity.setResourceId(resourceId);
             entity.setWorkflowId(workflow.getId());
+            entity.setExecutionId(executionId);
             entity.setWorkflowProviderId(workflow.getProviderId());
             entity.setScheduledStepId(step.getId());
             entity.setScheduledStepTimestamp(Time.currentTimeMillis() + step.getAfter());
@@ -83,7 +84,7 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
         query.where(cb.and(byWorkflow, isExpired));
 
         return em.createQuery(query).getResultStream()
-                .map(s -> new ScheduledStep(s.getWorkflowId(), s.getScheduledStepId(), s.getResourceId()))
+                .map(this::toScheduledStep)
                 .toList();
     }
 
@@ -101,7 +102,7 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
         query.where(byWorkflow);
 
         return em.createQuery(query).getResultStream()
-                .map(s -> new ScheduledStep(s.getWorkflowId(), s.getScheduledStepId(), s.getResourceId()))
+                .map(this::toScheduledStep)
                 .toList();
     }
 
@@ -115,7 +116,7 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
         query.where(byResource);
 
         return em.createQuery(query).getResultStream()
-                .map(s -> new ScheduledStep(s.getWorkflowId(), s.getScheduledStepId(), s.getResourceId()))
+                .map(this::toScheduledStep)
                 .toList();
     }
 
@@ -135,16 +136,7 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
-    public void remove(String workflowId, String resourceId) {
-        WorkflowStateEntity.PrimaryKey pk = new WorkflowStateEntity.PrimaryKey(resourceId, workflowId);
-        WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, pk);
-        if (entity != null) {
-            em.remove(entity);
-        }
-    }
-
-    @Override
-    public void remove(String workflowId) {
+    public void removeByWorkflow(String workflowId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaDelete<WorkflowStateEntity> delete = cb.createCriteriaDelete(WorkflowStateEntity.class);
         Root<WorkflowStateEntity> root = delete.from(WorkflowStateEntity.class);
@@ -156,6 +148,14 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
                 RealmModel realm = session.getContext().getRealm();
                 LOGGER.tracev("Deleted {0} state records for realm {1}", deletedCount, realm.getId());
             }
+        }
+    }
+
+    @Override
+    public void remove(String executionId) {
+        WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, executionId);
+        if (entity != null) {
+            em.remove(entity);
         }
     }
 
@@ -177,4 +177,7 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     public void close() {
     }
 
+    private ScheduledStep toScheduledStep(WorkflowStateEntity entity) {
+        return new ScheduledStep(entity.getWorkflowId(), entity.getScheduledStepId(), entity.getResourceId(), entity.getExecutionId());
+    }
 }

@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE;
@@ -59,8 +59,6 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testMapRoleClientScopeAllRoles() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
-
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
         // we need to be able to list client scopes
         createAllPermission(client, AdminPermissionsSchema.CLIENTS.getType(), onlyMyAdminUserPolicy, Set.of(VIEW));
@@ -193,5 +191,11 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
+
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmManagement.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(realmAdminRole));
+        // should pass, user is a realm admin
+        realmAdminClient.realm(realm.getName()).users().get(myadmin.getId()).roles().clientLevel(realmManagement.getId())
+                .add(List.of(createClientRole));
     }
 }

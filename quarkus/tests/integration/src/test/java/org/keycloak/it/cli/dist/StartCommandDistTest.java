@@ -92,6 +92,23 @@ public class StartCommandDistTest {
         cliResult.assertNoError("The following build time options");
     }
 
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void terminateStartOptimized(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build", "--db=dev-file");
+        cliResult.assertBuild();
+
+        dist.setManualStop(true);
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertStarted();
+
+        // if the child java process does not clean up, then subsequent start will fail
+        dist.stop();
+
+        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult.assertStarted();
+    }
+
     @DryRun
     @Test
     @Launch({ "--profile=dev", "start",  "--db=dev-file" })
@@ -104,13 +121,6 @@ public class StartCommandDistTest {
     @Launch({ "-v", "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false" })
     void testHttpEnabled(CLIResult cliResult) {
         cliResult.assertStarted();
-    }
-
-    @DryRun
-    @Test
-    @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
-    void failBuildPropertyNotAvailable(CLIResult cliResult) {
-        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @DryRun
@@ -158,13 +168,6 @@ public class StartCommandDistTest {
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false " + OPTIMIZED_BUILD_OPTION_LONG);
         assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
         assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
-    }
-
-    @DryRun
-    @Test
-    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--db=postgres" })
-    void testStartUsingOptimizedDoesNotAllowBuildOptions(CLIResult cliResult) {
-        cliResult.assertError("Build time option: '--db' not usable with pre-built image and --optimized");
     }
 
     @DryRun
