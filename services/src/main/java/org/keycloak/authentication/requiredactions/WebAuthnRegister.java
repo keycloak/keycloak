@@ -52,6 +52,7 @@ import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
@@ -60,6 +61,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.data.AttestationConveyancePreference;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
@@ -71,6 +73,7 @@ import com.webauthn4j.data.RegistrationData;
 import com.webauthn4j.data.RegistrationParameters;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.exception.WebAuthnException;
+import com.webauthn4j.validator.attestation.statement.AttestationStatementValidator;
 import com.webauthn4j.validator.attestation.statement.androidkey.AndroidKeyAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.statement.androidsafetynet.AndroidSafetyNetAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.statement.none.NoneAttestationStatementValidator;
@@ -256,7 +259,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             AuthenticatorUtil.logoutOtherSessions(context);
         }
 
-        WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager();
+        WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager(policy.getAttestationConveyancePreference());
         try {
             // parse
             RegistrationData registrationData = webAuthnRegistrationManager.parse(registrationRequest);
@@ -306,22 +309,29 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
      * Create WebAuthnRegistrationManager instance
      * Can be overridden in subclasses to customize the used attestation validators
      *
+     * @param attestationPreference The attestation selected in the policy
      * @return webauthn4j WebAuthnRegistrationManager instance
      */
-    protected WebAuthnRegistrationManager createWebAuthnRegistrationManager() {
+    protected WebAuthnRegistrationManager createWebAuthnRegistrationManager(String attestationPreference) {
+        List<AttestationStatementValidator> verifiers = new ArrayList<>(6);
+        if (attestationPreference == null
+                || Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED.equals(attestationPreference)
+                || AttestationConveyancePreference.NONE.getValue().equals(attestationPreference)) {
+            verifiers.add(new NoneAttestationStatementValidator());
+        }
+        verifiers.add(new PackedAttestationStatementValidator());
+        verifiers.add(new TPMAttestationStatementValidator());
+        verifiers.add(new AndroidKeyAttestationStatementValidator());
+        verifiers.add(new AndroidSafetyNetAttestationStatementValidator());
+        verifiers.add(new FIDOU2FAttestationStatementValidator());
+
         return new WebAuthnRegistrationManager(
-                Arrays.asList(
-                        new NoneAttestationStatementValidator(),
-                        new PackedAttestationStatementValidator(),
-                        new TPMAttestationStatementValidator(),
-                        new AndroidKeyAttestationStatementValidator(),
-                        new AndroidSafetyNetAttestationStatementValidator(),
-                        new FIDOU2FAttestationStatementValidator()
-                ), this.certPathtrustValidator,
+                verifiers,
+                this.certPathtrustValidator,
                 new DefaultSelfAttestationTrustworthinessValidator(),
                 Collections.emptyList(), // Custom Registration Validator is not supported
                 new ObjectConverter()
-                );
+        );
     }
 
     /**
