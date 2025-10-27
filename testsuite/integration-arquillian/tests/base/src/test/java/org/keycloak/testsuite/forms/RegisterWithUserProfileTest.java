@@ -688,6 +688,10 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.registerWithEmailAsUsername("firstName", "lastName", "myusername1@keycloak.org", generatePassword());
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        UserRepresentation user = testRealm().users().search("myusername1@keycloak.org").get(0);
+        assertEquals("myusername1@keycloak.org", user.getEmail());
+        UserRepresentation rep = testRealm().users().get(user.getId()).toRepresentation();
+        assertEquals("myusername1@keycloak.org", rep.getEmail());
     }
 
     private void assertUserRegistered(String userId, String username, String email, String firstName, String lastName) {
