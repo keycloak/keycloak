@@ -61,6 +61,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.data.AttestationConveyancePreference;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
@@ -72,6 +73,7 @@ import com.webauthn4j.data.RegistrationData;
 import com.webauthn4j.data.RegistrationParameters;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.exception.WebAuthnException;
+import com.webauthn4j.verifier.attestation.statement.AttestationStatementVerifier;
 import com.webauthn4j.verifier.attestation.statement.androidkey.AndroidKeyAttestationStatementVerifier;
 import com.webauthn4j.verifier.attestation.statement.androidsafetynet.AndroidSafetyNetAttestationStatementVerifier;
 import com.webauthn4j.verifier.attestation.statement.none.NoneAttestationStatementVerifier;
@@ -264,7 +266,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             AuthenticatorUtil.logoutOtherSessions(context);
         }
 
-        WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager();
+        WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager(policy.getAttestationConveyancePreference());
         try {
             // parse
             RegistrationData registrationData = webAuthnRegistrationManager.parse(registrationRequest);
@@ -314,22 +316,29 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
      * Create WebAuthnRegistrationManager instance
      * Can be overridden in subclasses to customize the used attestation validators
      *
+     * @param attestationPreference The attestation selected in the policy
      * @return webauthn4j WebAuthnRegistrationManager instance
      */
-    protected WebAuthnRegistrationManager createWebAuthnRegistrationManager() {
+    protected WebAuthnRegistrationManager createWebAuthnRegistrationManager(String attestationPreference) {
+        List<AttestationStatementVerifier> verifiers = new ArrayList<>(6);
+        if (attestationPreference == null
+                || Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED.equals(attestationPreference)
+                || AttestationConveyancePreference.NONE.getValue().equals(attestationPreference)) {
+            verifiers.add(new NoneAttestationStatementVerifier());
+        }
+        verifiers.add(new PackedAttestationStatementVerifier());
+        verifiers.add(new TPMAttestationStatementVerifier());
+        verifiers.add(new AndroidKeyAttestationStatementVerifier());
+        verifiers.add(new AndroidSafetyNetAttestationStatementVerifier());
+        verifiers.add(new FIDOU2FAttestationStatementVerifier());
+
         return new WebAuthnRegistrationManager(
-                Arrays.asList(
-                        new NoneAttestationStatementVerifier(),
-                        new PackedAttestationStatementVerifier(),
-                        new TPMAttestationStatementVerifier(),
-                        new AndroidKeyAttestationStatementVerifier(),
-                        new AndroidSafetyNetAttestationStatementVerifier(),
-                        new FIDOU2FAttestationStatementVerifier()
-                ), this.certPathtrustVerifier,
+                verifiers,
+                this.certPathtrustVerifier,
                 new DefaultSelfAttestationTrustworthinessVerifier(),
                 Collections.emptyList(), // Custom Registration Verifier is not supported
                 new ObjectConverter()
-                );
+        );
     }
 
     /**
