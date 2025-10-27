@@ -228,7 +228,10 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(FORCE_AUTHN, "false");
         config.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
         config.put(POST_BINDING_RESPONSE, "true");
-        config.put(POST_BINDING_AUTHN_REQUEST, "true");
+        // Use REDIRECT binding for AuthnRequest when login hint feature is enabled in tests so that
+        // the destination URL (including query params) is visible in the browser URL for assertions
+        // Required for testing AbstractSamlLoginHintTest#testLoginHintForwardedAsQueryParam
+        config.put(POST_BINDING_AUTHN_REQUEST, String.valueOf(!loginHint));
         config.put(VALIDATE_SIGNATURE, "false");
         config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
         config.put(BACKCHANNEL_SUPPORTED, "false");
