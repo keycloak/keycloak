@@ -106,7 +106,7 @@ public final class Database {
                     public String apply(String namedProperty, String alias) {
                         if ("dev-file".equalsIgnoreCase(alias)) {
                             var separator = escapeReplacements(File.separator);
-                            return amendH2(new StringBuilder()
+                            return new StringBuilder()
                                     .append("jdbc:h2:file:")
                                     .append("${kc.db-url-path:${kc.home.dir:%s}}".formatted(escapeReplacements(System.getProperty("user.home"))))
                                     .append(separator)
@@ -115,10 +115,9 @@ public final class Database {
                                     .append(getFolder(namedProperty))
                                     .append(separator)
                                     .append(getDbName(namedProperty))
-                                    .append(getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty))
-                                    .toString());
+                                    .toString();
                         }
-                        return amendH2("jdbc:h2:mem:%s%s".formatted(getDbName(namedProperty), getProperty(DatabaseOptions.DB_URL_PROPERTIES, namedProperty)));
+                        return "jdbc:h2:mem:%s".formatted(getDbName(namedProperty));
                     }
 
                     private String getFolder(String namedProperty) {
@@ -139,43 +138,6 @@ public final class Database {
                         return snippet;
                     }
 
-                    /**
-                     * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
-                     * <p />
-                     * Alternatives considered and rejected:
-                     * <ul>
-                     * <li>customizing H2 Database dialect -&gt; wouldn't work for existing Liquibase scripts.</li>
-                     * <li>adding quotes to <code>@Column(name="VALUE")</code> annotations -&gt; would require testing for all DBs, wouldn't work for existing Liquibase scripts.</li>
-                     * </ul>
-                     * Downsides of this solution: Release notes needed to point out that any H2 JDBC URL parameter with <code>NON_KEYWORDS</code> needs to add the keyword <code>VALUE</code> manually.
-                     * @return JDBC URL with <code>NON_KEYWORDS=VALUE</code> appended if the URL doesn't contain <code>NON_KEYWORDS=</code> yet
-                     */
-                    private String addH2NonKeywords(String jdbcUrl) {
-                        if (!jdbcUrl.contains("NON_KEYWORDS=")) {
-                            jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
-                        }
-                        return jdbcUrl;
-                    }
-
-                    /**
-                     * Required so that the H2 db instance is closed only when the Agroal connection pool is closed during
-                     * Keycloak shutdown. We cannot rely on the default H2 ShutdownHook as this can result in the DB being
-                     * closed before dependent resources, e.g. JDBC_PING2, are shutdown gracefully. This solution also
-                     * requires the Agroal min-pool connection size to be at least 1.
-                     */
-                    private String addH2CloseOnExit(String jdbcUrl) {
-                        if (!jdbcUrl.contains("DB_CLOSE_ON_EXIT=")) {
-                            jdbcUrl = jdbcUrl + ";DB_CLOSE_ON_EXIT=FALSE";
-                        }
-                        if (!jdbcUrl.contains("DB_CLOSE_DELAY=")) {
-                            jdbcUrl = jdbcUrl + ";DB_CLOSE_DELAY=0";
-                        }
-                        return jdbcUrl;
-                    }
-
-                    private String amendH2(String jdbcUrl) {
-                        return addH2CloseOnExit(addH2NonKeywords(jdbcUrl));
-                    }
                 },
                 "liquibase.database.core.H2Database",
                 "dev-mem", "dev-file"
