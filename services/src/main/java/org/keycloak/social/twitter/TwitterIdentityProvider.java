@@ -63,8 +63,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
@@ -100,11 +100,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
               ObjectOutputStream oos = new ObjectOutputStream(Base64.getEncoder().wrap(baos))) {
           oos.writeObject(serializableObject);
           oos.flush();
-          try {
-              return new String(baos.toByteArray(), "US-ASCII");
-          } catch (UnsupportedEncodingException uue) {
-              return new String(baos.toByteArray());
-          }
+          return baos.toString(StandardCharsets.US_ASCII);
       }
     }
     
@@ -228,7 +224,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(providerConfig.getClientSecret())) {
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 RequestToken requestToken;
-                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(java.util.Base64.getDecoder().decode(twitterToken)))) {
+                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(twitterToken)))) {
                     requestToken = (RequestToken) in.readObject();
                 }
 
