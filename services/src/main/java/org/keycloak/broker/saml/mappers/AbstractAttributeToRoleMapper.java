@@ -62,9 +62,15 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
         if (!context.hasMapperGrantedRole(roleName)) {
             if (this.applies(mapperModel, context)) {
                 context.addMapperGrantedRole(roleName);
-                user.grantRole(role);
+                if ((!role.isClientRole() && user.getRealmRoleMappingsStream().noneMatch(r -> r.equals(role)))
+                    || (role.isClientRole() && user.getClientRoleMappingsStream(session.clients().getClientById(realm, role.getContainerId())).noneMatch(r -> r.equals(role)))) {
+                    user.grantRole(role);
+                }
             } else {
-                user.deleteRoleMapping(role);
+                if ((!role.isClientRole() && user.getRealmRoleMappingsStream().anyMatch(r -> r.equals(role)))
+                    || (role.isClientRole() && user.getClientRoleMappingsStream(session.clients().getClientById(realm, role.getContainerId())).anyMatch(r -> r.equals(role)))) {
+                    user.deleteRoleMapping(role);
+                }
             }
         }
     }
