@@ -51,7 +51,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 return false;
             }
 
-            if (!isCRDInstalled(dependentResource, context, (KeycloakServiceMonitorDependentResource)dependentResource)) {
+            if (!isCRDInstalled(dependentResource, context, (KeycloakServiceMonitorDependentResource)dependentResource, primary.getMetadata().getNamespace())) {
                 context.managedWorkflowAndDependentResourceContext().put(SERVICE_MONITOR_WARNING, WARN_CRD_NOT_INSTALLED);
                 return false;
             }
@@ -60,7 +60,8 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
         }
 
         private boolean isCRDInstalled(DependentResource<ServiceMonitor, Keycloak> dependentResource,
-                Context<Keycloak> context, KeycloakServiceMonitorDependentResource serviceMonitorDependentResource) {
+                Context<Keycloak> context, KeycloakServiceMonitorDependentResource serviceMonitorDependentResource,
+                String namespace) {
             if (serviceMonitorDependentResource.crdInstalled != null) {
                 return serviceMonitorDependentResource.crdInstalled;
             }
@@ -74,7 +75,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 public void onClose(WatcherException cause) {
                 }
             };
-            try (var watch = context.getClient().resources(dependentResource.resourceType()).watch(dummyWatcher)) {
+            try (var watch = context.getClient().resources(dependentResource.resourceType()).inNamespace(namespace).watch(dummyWatcher)) {
                 serviceMonitorDependentResource.crdInstalled = true;
                 return true;
             } catch (KubernetesClientException e) {
