@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 
 public class KeycloakServerConfigBuilder {
 
+    private static final String SPI_OPTION = "spi-%s--%s--%s";
+
     private final String command;
     private final Map<String, String> options = new HashMap<>();
     private final Set<String> features = new HashSet<>();
@@ -92,6 +94,11 @@ public class KeycloakServerConfigBuilder {
 
     public KeycloakServerConfigBuilder option(String key, String value) {
         options.put(key, value);
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder spiOption(String spi, String provider, String key, String value) {
+        options.put(String.format(SPI_OPTION, spi, provider, key), value);
         return this;
     }
 
