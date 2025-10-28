@@ -49,15 +49,15 @@ export const CapabilityConfig = ({
   const showIdentityProviders = hasSomeAccess("view-identity-providers");
   useFetch(
     async () => {
+      if (!showIdentityProviders) {
+        return [];
+      }
       const params: IdentityProvidersQuery = {
         max: 20,
         realmOnly: true,
       };
       if (search) {
         params.search = search;
-      }
-      if (!showIdentityProviders) {
-        return [];
       }
       return await adminClient.identityProviders.find(params);
     },
