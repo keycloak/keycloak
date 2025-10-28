@@ -16,8 +16,6 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.utils.StringUtil;
-
 public class ParConfig extends AbstractConfig {
 
     // realm attribute names
@@ -26,19 +24,13 @@ public class ParConfig extends AbstractConfig {
     // default value
     public static final int DEFAULT_PAR_REQUEST_URI_LIFESPAN = 60; // sec
 
-    private int requestUriLifespan = DEFAULT_PAR_REQUEST_URI_LIFESPAN;
+    private int requestUriLifespan;
 
     // client attribute names
     public static final String REQUIRE_PUSHED_AUTHORIZATION_REQUESTS = "require.pushed.authorization.requests";
 
     public ParConfig(RealmModel realm) {
-        this.realm = () -> realm;
-
-        String requestUriLifespan = realm.getAttribute(PAR_REQUEST_URI_LIFESPAN);
-
-        if (StringUtil.isNotBlank(requestUriLifespan)) {
-            setRequestUriLifespan(Integer.parseInt(requestUriLifespan));
-        }
+        this.requestUriLifespan = realm.getAttribute(PAR_REQUEST_URI_LIFESPAN, DEFAULT_PAR_REQUEST_URI_LIFESPAN);
 
         this.realmForWrite = () -> realm;
     }
