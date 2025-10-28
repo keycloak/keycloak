@@ -29,6 +29,7 @@ import io.quarkus.logging.Log;
 )
 public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDependentResource<ServiceMonitor, Keycloak> {
 
+    public static final String OPEN_METRICS_PROTOCOL = "OpenMetricsText1.0.0";
     public static final String WARN_METRICS_NOT_ENABLED = "A ServiceMonitor will not be created because `metrics-enabled` is not true.";
     public static final String WARN_CRD_NOT_INSTALLED = "A ServiceMonitor will not be created because the ServiceMonitor CRD is not installed.";
 
@@ -106,7 +107,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 .withNewSelector()
                   .addToMatchLabels(Utils.allInstanceLabels(primary))
                 .endSelector()
-                .withScrapeProtocols("OpenMetricsText1.0.0")
+                .withScrapeProtocols(OPEN_METRICS_PROTOCOL)
                 .addNewEndpoint()
                   .withInterval(spec.getInterval())
                   .withPath(endpoint.relativePath() + "metrics")

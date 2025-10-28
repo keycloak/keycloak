@@ -51,6 +51,18 @@ public class ServiceMonitorTest extends BaseOperatorTest {
             assertThat(sm).isNotNull();
             assertThat(sm.getSpec().getEndpoints()).hasSize(1);
         });
+
+        // make sure the desired state is maintained
+        var sm = getServiceMonitor(kc);
+        sm.getMetadata().setResourceVersion(null);
+        sm.getSpec().setScrapeProtocols(List.of("PrometheusText0.0.4"));
+        assertThat(k8sclient.resource(sm).patch().getSpec().getScrapeProtocols())
+                .doesNotContain(KeycloakServiceMonitorDependentResource.OPEN_METRICS_PROTOCOL);
+
+        Awaitility.await().untilAsserted(() -> {
+            assertThat(getServiceMonitor(kc).getSpec().getScrapeProtocols())
+                    .contains(KeycloakServiceMonitorDependentResource.OPEN_METRICS_PROTOCOL);
+        });
     }
 
     @Test
