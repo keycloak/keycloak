@@ -30,6 +30,14 @@ For anyone implementing a custom federated user authentication identity provider
 by Keycloak or `AbstractIdentityProvider` you need to update your implementation to implement
 the new `UserAuthenticationIdentityProvider` interface (all methods remain the same, they have just been moved).
 
+=== Accepting only normalized paths in requests
+
+Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986.
+As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
+
+To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
+
+To revert to the previoius behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -103,6 +111,12 @@ This behavior is deprecated and will be removed in a future version of Keycloak.
 
 The inner class `AuthenticationManager.AuthResult` in the `keycloak-services` module is now a record.
 The getter methods like `getSession()` have been deprecated in favor of the `session()` accessors.
+
+=== Accepting HTTP requests with non-normalized paths
+
+The option `http-accept-non-normalized-paths` was introduced to restore the previous behavior where {project_name} accepted non-normalized URLs.
+
+As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
