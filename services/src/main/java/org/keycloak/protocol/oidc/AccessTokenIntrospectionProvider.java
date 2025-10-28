@@ -205,6 +205,14 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
             return false;
         }
 
+        if (userSession.isOffline() && !UserSessionUtil.isOfflineAccessGranted(
+                session, userSession.getAuthenticatedClientSessionByClient(client.getId()))) {
+            logger.debugf("Offline session invalid because offline access not granted anymore");
+            eventBuilder.detail(Details.REASON, "Offline session invalid because offline access not granted anymore");
+            eventBuilder.error(Errors.SESSION_EXPIRED);
+            return false;
+        }
+
         if (!verifyTokenReuse()) {
             return false;
         }
