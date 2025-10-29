@@ -311,8 +311,8 @@ public class PropertyMapper<T> {
             return configValue;
         }
 
-        // by unsetting the ordinal this will not be seen as directly modified by the user
-        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceOrdinal(0).build();
+        // by unsetting the name this will not be seen as directly modified by the user
+        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceName(null).build();
     }
 
     private ConfigValue convertValue(ConfigValue configValue) {
