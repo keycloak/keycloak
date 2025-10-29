@@ -154,7 +154,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
                 @Override
                 public SubjectCredentialManager credentialManager() {
-                    return session.getUserCredentialManager(this);
+                    return session.users().getUserCredentialManager(this);
                 }
             };
         }

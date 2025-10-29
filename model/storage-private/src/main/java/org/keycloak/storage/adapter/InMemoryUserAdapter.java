@@ -32,6 +32,6 @@ public class InMemoryUserAdapter extends AbstractInMemoryUserAdapter {
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return session.getUserCredentialManager(this);
+        return session.users().getUserCredentialManager(this);
     }
 }

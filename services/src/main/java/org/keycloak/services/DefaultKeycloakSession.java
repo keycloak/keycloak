@@ -20,7 +20,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
@@ -36,11 +35,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserLoginFailureProvider;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -166,11 +163,6 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public UserProvider users() {
         return getDatastoreProvider().users();
-    }
-
-    @Override
-    public SubjectCredentialManager getUserCredentialManager(UserModel user) {
-        return new UserCredentialManager(this, getContext().getRealm(), user);
     }
 
     @SuppressWarnings("unchecked")

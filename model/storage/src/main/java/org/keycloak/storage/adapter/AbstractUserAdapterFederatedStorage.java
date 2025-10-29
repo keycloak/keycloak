@@ -400,7 +400,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return session.getUserCredentialManager(this);
+        return session.users().getUserCredentialManager(this);
     }
 
     @Override

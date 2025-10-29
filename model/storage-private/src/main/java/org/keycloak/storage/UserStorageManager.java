@@ -59,6 +59,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -1076,6 +1077,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         return Collections.emptyList();
+    }
+
+    @Override
+    public UserCredentialManager getUserCredentialManager(UserModel user) {
+        return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
     }
 
     private boolean isReadOnlyOrganizationMember(UserModel delegate) {

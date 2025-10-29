@@ -576,7 +576,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return session.getUserCredentialManager(this);
+        return session.users().getUserCredentialManager(this);
     }
 
     @Override
