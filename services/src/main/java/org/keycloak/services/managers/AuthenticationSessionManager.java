@@ -82,7 +82,7 @@ public class AuthenticationSessionManager {
             return null;
         }
 
-        reEncodeAuthSessionCookie(authSession.authSessionId());
+        reEncodeAuthSessionCookie(authSession);
         return authSession.rootSession();
     }
 
@@ -97,7 +97,7 @@ public class AuthenticationSessionManager {
 
         AuthenticationSessionModel authSession = rootAuth.rootSession().getAuthenticationSession(client, tabId);
         if (authSession != null) {
-            reEncodeAuthSessionCookie(rootAuth.authSessionId());
+            reEncodeAuthSessionCookie(rootAuth);
         }
         return authSession;
     }
@@ -126,9 +126,9 @@ public class AuthenticationSessionManager {
         log.debugf("Set KC_AUTH_SESSION_HASH cookie with value %s", authSessionIdHash);
     }
 
-    private void reEncodeAuthSessionCookie(AuthSessionId authSessionId) {
-        if (authSessionId.routeChanged()) {
-            setAuthSessionCookie(authSessionId.sessionId());
+    private void reEncodeAuthSessionCookie(AuthSessionCookie authSessionCookie) {
+        if (authSessionCookie.routeChanged()) {
+            setAuthSessionCookie(authSessionCookie.sessionId());
         }
     }
 
@@ -217,7 +217,7 @@ public class AuthenticationSessionManager {
         if (routeChanged) {
             log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", oldEncodedId, reEncoded);
         }
-        return new AuthSessionCookie(rootAuthenticationSession, new AuthSessionId(decodedAuthSessionId, routeChanged));
+        return new AuthSessionCookie(rootAuthenticationSession, routeChanged);
     }
 
     public void removeAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession, boolean expireRestartCookie) {
@@ -309,10 +309,10 @@ public class AuthenticationSessionManager {
         }
 
         // This will remove userSession "locally" if it doesn't exist on remoteCache
-        UserSessionModel userSession = getUserSessionProvider().getUserSession(realm, rootAuth.authSessionId().sessionId());
+        UserSessionModel userSession = getUserSessionProvider().getUserSession(realm, rootAuth.sessionId());
 
         if (userSession != null) {
-            reEncodeAuthSessionCookie(rootAuth.authSessionId());
+            reEncodeAuthSessionCookie(rootAuth);
         }
         return userSession;
     }
@@ -334,6 +334,11 @@ public class AuthenticationSessionManager {
         return session.sessions();
     }
 
-    record AuthSessionCookie(RootAuthenticationSessionModel rootSession, AuthSessionId authSessionId) {
+    record AuthSessionCookie(RootAuthenticationSessionModel rootSession, boolean routeChanged) {
+
+        public String sessionId() {
+            return rootSession.getId();
+        }
+
     }
 }
