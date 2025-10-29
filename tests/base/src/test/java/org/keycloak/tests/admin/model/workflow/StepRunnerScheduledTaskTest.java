@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin.model.workflow;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
@@ -35,7 +36,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowStepRunnerSuccessEvent;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
-import org.keycloak.models.workflow.UserCreationTimeWorkflowProviderFactory;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -44,18 +44,11 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 @KeycloakIntegrationTest(config = WorkflowsScheduledTaskServerConfig.class)
-public class StepRunnerScheduledTaskTest {
+public class StepRunnerScheduledTaskTest extends AbstractWorkflowTest {
 
-    private static final String REALM_NAME = "default";
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
-
-    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
+    @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP, realmRef = DEFAULT_REALM_NAME)
     Keycloak adminClient;
 
     @Test
@@ -63,7 +56,7 @@ public class StepRunnerScheduledTaskTest {
         for (int i = 0; i < 2; i++) {
             RealmRepresentation realm = new RealmRepresentation();
 
-            realm.setRealm(REALM_NAME.concat("-").concat(String.valueOf(i)));
+            realm.setRealm(DEFAULT_REALM_NAME.concat("-").concat(String.valueOf(i)));
             realm.setEnabled(true);
 
             adminClient.realms().create(realm);
@@ -75,9 +68,8 @@ public class StepRunnerScheduledTaskTest {
     private void assertStepRuns(String realmName) {
         RealmResource realm = adminClient.realm(realmName);
 
-        realm.workflows().create(WorkflowRepresentation.create()
-                .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .name(UserCreationTimeWorkflowProviderFactory.ID)
+        realm.workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))

@@ -1,20 +1,19 @@
 package org.keycloak.models.workflow.conditions.expression;
 
+import static org.keycloak.models.workflow.Workflows.getConditionProvider;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowEvent;
-import org.keycloak.models.workflow.WorkflowsManager;
 
 public class ConditionEvaluator extends BooleanConditionParserBaseVisitor<Boolean> {
 
     protected final KeycloakSession session;
     protected final WorkflowEvent event;
-    protected final WorkflowsManager manager;
 
     public ConditionEvaluator(KeycloakSession session, WorkflowEvent event) {
         this.session = session;
         this.event = event;
-        this.manager = new WorkflowsManager(session);
     }
 
     @Override
@@ -57,7 +56,7 @@ public class ConditionEvaluator extends BooleanConditionParserBaseVisitor<Boolea
     @Override
     public Boolean visitConditionCall(BooleanConditionParser.ConditionCallContext ctx) {
         String conditionName = ctx.Identifier().getText();
-        WorkflowConditionProvider conditionProvider = manager.getConditionProvider(conditionName, extractParameter(ctx.parameter()));
+        WorkflowConditionProvider conditionProvider = getConditionProvider(session, conditionName, extractParameter(ctx.parameter()));
         return conditionProvider.evaluate(event);
     }
 
@@ -84,5 +83,4 @@ public class ConditionEvaluator extends BooleanConditionParserBaseVisitor<Boolea
         return rawText.replace("\\)", ")")
                 .replace("\\\\", "\\");
     }
-
 }

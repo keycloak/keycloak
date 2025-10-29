@@ -15,24 +15,24 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.Workflow;
-import org.keycloak.models.workflow.WorkflowsManager;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 public class WorkflowResource {
 
-    private final WorkflowsManager manager;
+    private final WorkflowProvider provider;
     private final Workflow workflow;
 
-    public WorkflowResource(WorkflowsManager manager, Workflow workflow) {
-        this.manager = manager;
+    public WorkflowResource(WorkflowProvider provider, Workflow workflow) {
+        this.provider = provider;
         this.workflow = workflow;
     }
 
     @DELETE
     public void delete() {
         try {
-            manager.removeWorkflow(workflow.getId());
+            provider.removeWorkflow(workflow);
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -44,7 +44,7 @@ public class WorkflowResource {
     @PUT
     public void update(WorkflowRepresentation rep) {
         try {
-            manager.updateWorkflow(workflow, rep);
+            provider.updateWorkflow(workflow, rep);
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -53,7 +53,7 @@ public class WorkflowResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
     public WorkflowRepresentation toRepresentation() {
-        return manager.toRepresentation(workflow);
+        return provider.toRepresentation(workflow);
     }
 
     /**
@@ -68,7 +68,7 @@ public class WorkflowResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("bind/{type}/{resourceId}")
     public void bind(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, Long notBefore) {
-        Object resource = manager.resolveResource(type, resourceId);
+        Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
             throw new BadRequestException("Resource with id " + resourceId + " not found");
@@ -78,7 +78,7 @@ public class WorkflowResource {
             workflow.setNotBefore(notBefore);
         }
 
-        manager.bind(workflow, type, resourceId);
+        provider.bind(workflow, type, resourceId);
     }
 
 }

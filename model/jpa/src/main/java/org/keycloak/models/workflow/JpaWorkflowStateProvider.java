@@ -62,7 +62,6 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
             entity.setResourceId(resourceId);
             entity.setWorkflowId(workflow.getId());
             entity.setExecutionId(executionId);
-            entity.setWorkflowProviderId(workflow.getProviderId());
             entity.setScheduledStepId(step.getId());
             entity.setScheduledStepTimestamp(Time.currentTimeMillis() + step.getAfter());
             em.persist(entity);

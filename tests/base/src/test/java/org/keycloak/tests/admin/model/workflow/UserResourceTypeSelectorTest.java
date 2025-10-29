@@ -3,30 +3,17 @@ package org.keycloak.tests.admin.model.workflow;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.WorkflowsManager;
-import org.keycloak.models.workflow.UserCreationTimeWorkflowProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.openqa.selenium.WebDriver;
 
 import java.time.Duration;
 import java.util.List;
@@ -35,36 +22,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
 
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class UserCreationTimeWorkflowTest {
-
-    private static final String REALM_NAME = "default";
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
-
-    @InjectRealm
-    ManagedRealm managedRealm;
-
-    @InjectWebDriver
-    WebDriver driver;
-
-    @InjectPage
-    LoginPage loginPage;
-
-    @InjectOAuthClient
-    OAuthClient oauth;
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class UserResourceTypeSelectorTest extends AbstractWorkflowTest {
 
     @InjectMailServer
     private MailServer mailServer;
 
     @Test
     public void testDisableUserBasedOnCreationDate() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(UserCreationTimeWorkflowProviderFactory.ID)
-                .name(UserCreationTimeWorkflowProviderFactory.ID)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -80,24 +50,29 @@ public class UserCreationTimeWorkflowTest {
 
         // test running the scheduled steps
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, "alice");
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
+        }));
 
-            // running the scheduled tasks now shouldn't pick up any step as none are due to run yet
-            manager.runScheduledSteps();
-            user = session.users().getUserByUsername(realm, "alice");
+        // running the scheduled tasks now shouldn't pick up any step as none are due to run yet
+        runScheduledSteps(Duration.ZERO);
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "alice");
             assertTrue(user.isEnabled());
             assertNull(user.getAttributes().get("message"));
+        }));
 
+        // set offset to 6 days - notify step should run now
+        runScheduledSteps(Duration.ofDays(6));
+
+        runOnServer.run((session -> {
             try {
-                // set offset to 7 days - notify step should run now
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, "alice");
+                RealmModel realm = session.getContext().getRealm();
+                UserModel user = session.users().getUserByUsername(realm, "alice");
                 assertTrue(user.isEnabled());
             } finally {
                 Time.setOffset(0);
@@ -116,27 +91,15 @@ public class UserCreationTimeWorkflowTest {
         loginPage.submit();
         assertTrue(driver.getPageSource().contains("Happy days"));
 
+        // set offset to 11 days - disable step should run now
+        runScheduledSteps(Duration.ofDays(12));
+
         // test running the scheduled steps
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-
-            try {
-                // set offset to 11 days - disable step should run now
-                Time.setOffset(Math.toIntExact(Duration.ofDays(12).toSeconds()));
-                manager.runScheduledSteps();
-                UserModel user = session.users().getUserByUsername(realm, "alice");
-                assertFalse(user.isEnabled());
-            } finally {
-                Time.setOffset(0);
-            }
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "alice");
+            assertFalse(user.isEnabled());
         }));
-    }
-
-    private static RealmModel configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
-        return realm;
     }
 
     private UserRepresentation getUserRepresentation(String username, String firstName, String lastName, String email) {

@@ -1,25 +1,26 @@
 package org.keycloak.models.workflow.conditions.expression;
 
+import static org.keycloak.models.workflow.Workflows.getConditionProvider;
+
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
-import org.keycloak.models.workflow.WorkflowsManager;
 
 public class PredicateEvaluator extends BooleanConditionParserBaseVisitor<Predicate> {
 
     private final CriteriaBuilder cb;
     private final CriteriaQuery<String> query;
     private final Root<?> root;
-    private final WorkflowsManager manager;
+    private final KeycloakSession session;
 
     public PredicateEvaluator(KeycloakSession session, CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> root) {
+        this.session = session;
         this.cb = cb;
         this.query = query;
         this.root = root;
-        this.manager = new WorkflowsManager(session);
     }
 
     @Override
@@ -72,7 +73,7 @@ public class PredicateEvaluator extends BooleanConditionParserBaseVisitor<Predic
     @Override
     public Predicate visitConditionCall(BooleanConditionParser.ConditionCallContext ctx) {
         String conditionName = ctx.Identifier().getText();
-        WorkflowConditionProvider conditionProvider = manager.getConditionProvider(conditionName, extractParameter(ctx.parameter()));
+        WorkflowConditionProvider conditionProvider = getConditionProvider(session, conditionName, extractParameter(ctx.parameter()));
         return conditionProvider.toPredicate(cb, query, root);
     }
 

@@ -18,14 +18,12 @@ import org.keycloak.common.util.reflections.Reflections;
 public abstract class AbstractWorkflowComponentRepresentation {
 
     private String id;
-    private String uses;
 
     @JsonProperty(CONFIG_WITH)
     private MultivaluedHashMap<String, String> config;
 
-    public AbstractWorkflowComponentRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
+    public AbstractWorkflowComponentRepresentation(String id, MultivaluedHashMap<String, String> config) {
         this.id = id;
-        this.uses = uses;
         this.config = config;
     }
 
@@ -35,14 +33,6 @@ public abstract class AbstractWorkflowComponentRepresentation {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getUses() {
-        return this.uses;
-    }
-
-    public void setUses(String uses) {
-        this.uses = uses;
     }
 
     public MultivaluedHashMap<String, String> getConfig() {

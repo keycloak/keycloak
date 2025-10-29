@@ -21,6 +21,7 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CO
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -29,25 +30,24 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionProvider;
 import org.keycloak.utils.StringUtil;
 
-public abstract class AbstractUserWorkflowProvider extends EventBasedWorkflowProvider {
+public class UserResourceTypeWorkflowProvider implements ResourceTypeSelector {
 
     private final EntityManager em;
+    private final KeycloakSession session;
 
-    public AbstractUserWorkflowProvider(KeycloakSession session, ComponentModel model) {
-        super(session, model);
+    public UserResourceTypeWorkflowProvider(KeycloakSession session) {
+        this.session = session;
         this.em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
     @Override
-    public List<String> getEligibleResourcesForInitialStep() {
+    public List<String> getResourceIds(Workflow workflow) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<String> query = cb.createQuery(String.class);
         Root<UserEntity> userRoot = query.from(UserEntity.class);
@@ -61,40 +61,33 @@ public abstract class AbstractUserWorkflowProvider extends EventBasedWorkflowPro
         subquery.where(
             cb.and(
                 cb.equal(stateRoot.get("resourceId"), userRoot.get("id")),
-                cb.equal(stateRoot.get("workflowId"), getModel().getId())
+                cb.equal(stateRoot.get("workflowId"), workflow.getId())
             )
         );
         Predicate notExistsPredicate = cb.not(cb.exists(subquery));
         predicates.add(notExistsPredicate);
 
-        predicates.add(getConditionsPredicate(cb, query, userRoot));
+        predicates.add(getConditionsPredicate(workflow, cb, query, userRoot));
 
         query.select(userRoot.get("id")).where(predicates);
 
         return em.createQuery(query).getResultList();
     }
 
-    private Predicate getConditionsPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> path) {
-        MultivaluedHashMap<String, String> config = getModel().getConfig();
+    @Override
+    public Object resolveResource(String resourceId) {
+        Objects.requireNonNull(resourceId, "resourceId");
+        return ResourceType.USERS.resolveResource(session, resourceId);
+    }
+
+    private Predicate getConditionsPredicate(Workflow workflow, CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> path) {
+        MultivaluedHashMap<String, String> config = workflow.getConfig();
         String conditions = config.getFirst(CONFIG_CONDITIONS);
 
         if (StringUtil.isBlank(conditions)) {
             return cb.conjunction();
         }
 
-        return new ExpressionWorkflowConditionProvider(getSession(), conditions).toPredicate(cb, query, path);
-    }
-
-    @Override
-    public void close() {
-        // no-op
-    }
-
-    protected EntityManager getEntityManager() {
-        return em;
-    }
-
-    protected RealmModel getRealm() {
-        return getSession().getContext().getRealm();
+        return new ExpressionWorkflowConditionProvider(session, conditions).toPredicate(cb, query, path);
     }
 }

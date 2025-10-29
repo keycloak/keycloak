@@ -51,8 +51,7 @@ public class WorkflowEventListener implements EventListenerProvider, ProviderEve
 
     private void trySchedule(WorkflowEvent event) {
         if (event != null) {
-            WorkflowsManager manager = new WorkflowsManager(session);
-            manager.processEvent(event);
+            session.getProvider(WorkflowProvider.class).submit(event);
         }
     }
 
