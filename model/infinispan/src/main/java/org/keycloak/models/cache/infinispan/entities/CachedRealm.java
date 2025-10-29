@@ -112,8 +112,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int accessCodeLifespanUserAction;
     protected int accessCodeLifespanLogin;
     protected LazyLoader<RealmModel, OAuth2DeviceConfig> deviceConfig;
-    protected LazyLoader<RealmModel, CibaConfig> cibaConfig;
-    protected LazyLoader<RealmModel, ParConfig> parConfig;
     protected int actionTokenGeneratedByAdminLifespan;
     protected int actionTokenGeneratedByUserLifespan;
     protected int notBefore;
@@ -229,8 +227,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
         deviceConfig = new DefaultLazyLoader<>(OAuth2DeviceConfig::new, null);
-        cibaConfig = new DefaultLazyLoader<>(CibaConfig::new, null);
-        parConfig = new DefaultLazyLoader<>(ParConfig::new, null);
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
         actionTokenGeneratedByAdminLifespan = model.getActionTokenGeneratedByAdminLifespan();
@@ -531,12 +527,12 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return deviceConfig.get(session, modelSupplier);
     }
 
-    public CibaConfig getCibaConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
-        return cibaConfig.get(session, modelSupplier);
+    public CibaConfig getCibaConfig(Supplier<RealmModel> modelSupplier) {
+        return new CibaConfig(modelSupplier.get());
     }
 
-    public ParConfig getParConfig(KeycloakSession session, Supplier<RealmModel> modelSupplier) {
-        return parConfig.get(session, modelSupplier);
+    public ParConfig getParConfig(Supplier<RealmModel> modelSupplier) {
+        return new ParConfig(modelSupplier.get());
     }
 
     public int getActionTokenGeneratedByAdminLifespan() {
