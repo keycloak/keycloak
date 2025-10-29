@@ -51,12 +51,7 @@ public class BasicTimerProvider implements TimerProvider {
 
     @Override
     public void schedule(final Runnable runnable, final long intervalMillis, String taskName) {
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                runnable.run();
-            }
-        };
+        TimerTask task = new BasicTimerTask(runnable);
 
         TimerTaskContextImpl taskContext = new TimerTaskContextImpl(runnable, task, Time.currentTimeMillis(), intervalMillis);
         TimerTaskContextImpl existingTask = factory.putTask(taskName, taskContext);
@@ -94,5 +89,22 @@ public class BasicTimerProvider implements TimerProvider {
     @Override
     public Map<String, TimerTaskContext> getTasks() {
         return Collections.unmodifiableMap(new HashMap<>(factory.getTasks()));
+    }
+
+    /**
+     * Using a private static class avoids keeping a reference to {@link BasicTimerProvider} which then fails to be garbage collected,
+     * including its reference to {@link KeycloakSession}.
+     */
+    private static class BasicTimerTask extends TimerTask {
+        private final Runnable runnable;
+
+        public BasicTimerTask(Runnable runnable) {
+            this.runnable = runnable;
+        }
+
+        @Override
+        public void run() {
+            runnable.run();
+        }
     }
 }
