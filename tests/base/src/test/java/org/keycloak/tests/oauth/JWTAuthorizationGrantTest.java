@@ -80,6 +80,17 @@ public class JWTAuthorizationGrantTest  {
     }
 
     @Test
+    public void testNotAllowedIdentityProvider() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, "false");
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("JWT Authorization Granted is not enabled for the identity provider", response, events.poll());
+    }
+
+    @Test
     public void testNotAllowedClient() {
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         oAuthClient.client("authorization-grant-disabled-client", "test-secret");
@@ -146,8 +157,23 @@ public class JWTAuthorizationGrantTest  {
 
     @Test
     public void testReplayToken() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION, "false");
+        });
+
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", "basic-user", response);
+
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", "basic-user", response);
+
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION, "true");
+        });
+
+        jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
 
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
@@ -229,6 +255,8 @@ public class JWTAuthorizationGrantTest  {
                             .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
                             .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
                             .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
+                            .setAttribute(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
+                            .setAttribute(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION, Boolean.TRUE.toString())
                             .build());
             return realm;
         }

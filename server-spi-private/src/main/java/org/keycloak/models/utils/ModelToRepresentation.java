@@ -35,6 +35,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.broker.provider.util.IdentityProviderTypeUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -562,7 +563,7 @@ public class ModelToRepresentation {
 
         if (export) {
             List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream(IdentityProviderQuery.any())
-                    .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
+                    .map(provider -> toRepresentation(session, realm, provider, export)).collect(Collectors.toList());
             rep.setIdentityProviders(identityProviders);
             List<IdentityProviderMapperRepresentation> identityProviderMappers = session.identityProviders().getMappersStream()
                     .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
@@ -873,11 +874,11 @@ public class ModelToRepresentation {
         return providerRep;
     }
 
-    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
-        return toRepresentation(realm, identityProviderModel, false);
+    public static IdentityProviderRepresentation toRepresentation(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel) {
+        return toRepresentation(session, realm, identityProviderModel, false);
     }
 
-    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel, boolean export) {
+    public static IdentityProviderRepresentation toRepresentation(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel, boolean export) {
         IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
 
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
@@ -916,6 +917,8 @@ public class ModelToRepresentation {
             providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
         }
 
+        List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());
+        providerRep.setTypes(identityProviderTypes.stream().map(Enum::toString).collect(Collectors.toList()));
         return providerRep;
     }
 

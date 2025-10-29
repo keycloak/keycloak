@@ -86,7 +86,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             }
 
             // assign the provider and perform validations associated to the jwt grant provider
-            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), 300, false);
+            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), 300, !jwtAuthorizationGrantProvider.isSingleUseAssertion());
 
             //validate the JWT assertion and get the brokered identity from the idp
             BrokeredIdentityContext brokeredIdentityContext = jwtAuthorizationGrantProvider.validateAuthorizationGrantAssertion(authorizationGrantContext);

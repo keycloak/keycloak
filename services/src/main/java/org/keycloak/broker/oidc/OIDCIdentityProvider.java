@@ -1070,6 +1070,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) throws IdentityBrokerException {
+        if (!getConfig().getJwtAuthorizationGrantEnabled()) {
+            throw new IdentityBrokerException("JWT Authorization Granted is not enabled for the identity provider");
+        }
 
         // verify signature
         if (!verify(context.getJws())) {
@@ -1086,5 +1089,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public int getAllowedClockSkew() {
         return getConfig().getAllowedClockSkew();
+    }
+
+    @Override
+    public boolean isSingleUseAssertion() {
+        return getConfig().getJwtAuthorizationGrantSingleUseAssertion();
     }
 }

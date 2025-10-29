@@ -16,7 +16,9 @@
  */
 package org.keycloak.representations.idm;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,6 +61,7 @@ public class IdentityProviderRepresentation {
     protected String postBrokerLoginFlowAlias;
     protected String organizationId;
     protected Map<String, String> config = new HashMap<>();
+    protected List<String> types = new ArrayList<>();
 
     public String getInternalId() {
         return this.internalId;
@@ -210,6 +213,13 @@ public class IdentityProviderRepresentation {
 
     public void setOrganizationId(String organizationId) {
         this.organizationId = organizationId;
+    }
+
+    public List<String> getTypes() {
+        return this.types;
+    }
+    public void setTypes(List<String> types) {
+        this.types = types;
     }
 
 }

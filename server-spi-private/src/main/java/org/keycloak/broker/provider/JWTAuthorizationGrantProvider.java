@@ -22,4 +22,7 @@ public interface JWTAuthorizationGrantProvider {
     BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext assertion) throws IdentityBrokerException;
 
     int getAllowedClockSkew();
+
+    boolean isSingleUseAssertion();
+
 }
