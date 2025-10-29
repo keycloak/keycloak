@@ -1,5 +1,9 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
+import {
+  HelpItem,
+  SelectControl,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Checkbox,
   FormGroup,
@@ -16,6 +20,12 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
+import { MultiValuedListComponent } from "../../components/dynamic/MultivaluedListComponent";
+import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useAdminClient } from "../../admin-client";
+import { useState } from "react";
+import { IdentityProvidersQuery } from "@keycloak/keycloak-admin-client/lib/resources/identityProviders";
+import { useAccess } from "../../context/access/Access";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -26,13 +36,34 @@ export const CapabilityConfig = ({
   unWrap,
   protocol: type,
 }: CapabilityConfigProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
   const { control, watch, setValue } = useFormContext<FormFields>();
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
   const authorization = watch("authorizationServicesEnabled");
   const isFeatureEnabled = useIsFeatureEnabled();
-
+  const [idps, setIdps] = useState<IdentityProviderRepresentation[]>([]);
+  const [search, setSearch] = useState("");
+  const { hasSomeAccess } = useAccess();
+  const showIdentityProviders = hasSomeAccess("view-identity-providers");
+  useFetch(
+    async () => {
+      if (!showIdentityProviders) {
+        return [];
+      }
+      const params: IdentityProvidersQuery = {
+        max: 20,
+        realmOnly: true,
+      };
+      if (search) {
+        params.search = search;
+      }
+      return await adminClient.identityProviders.find(params);
+    },
+    setIdps,
+    [search],
+  );
   return (
     <FormAccess
       isHorizontal
@@ -79,6 +110,12 @@ export const CapabilityConfig = ({
                       setValue(
                         convertAttributeNameToForm<FormFields>(
                           "attributes.standard.token.exchange.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.oauth2.jwt.authorization.grant.enabled",
                         ),
                         false,
                       );
@@ -275,6 +312,41 @@ export const CapabilityConfig = ({
                   />
                 </GridItem>
               )}
+              {isFeatureEnabled(Feature.JWTAuthorizationGrant) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.oauth2.jwt.authorization.grant.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="jwt-authorization-grant-enabled"
+                            label={t("jwtAuthorizationGrantEnabled")}
+                            id="kc-jwt-authorization-grant-enabled"
+                            name="jwt-authorization-grant-enabled"
+                            isChecked={
+                              field.value.toString() === "true" &&
+                              !clientAuthentication
+                            }
+                            onChange={field.onChange}
+                            isDisabled={clientAuthentication}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("jwtAuthorizationGrantEnabledHelp")}
+                            fieldLabelId="jwtAuthorizationGrantEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
               {isFeatureEnabled(Feature.DeviceFlow) && (
                 <GridItem lg={8} sm={6}>
                   <Controller
@@ -352,6 +424,21 @@ export const CapabilityConfig = ({
               { key: "plain", value: "plain" },
             ]}
           />
+          {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
+            showIdentityProviders && (
+              <MultiValuedListComponent
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.oauth2.jwt.authorization.grant.idp",
+                )}
+                label={t("jwtAuthorizationGrantIdp")}
+                helpText={t("jwtAuthorizationGrantIdpHelp")}
+                convertToName={convertAttributeNameToForm}
+                stringify
+                isDisabled={clientAuthentication}
+                options={idps.map(({ alias }) => alias ?? "")}
+                onSearch={setSearch}
+              />
+            )}
           {isFeatureEnabled(Feature.DPoP) && (
             <DefaultSwitchControl
               name={convertAttributeNameToForm<FormFields>(
