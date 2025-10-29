@@ -16,11 +16,13 @@
  */
 package org.keycloak.operator.controllers;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerState;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodStatus;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.readiness.Readiness;
@@ -226,6 +228,11 @@ public class KeycloakController implements Reconciler<Keycloak> {
         } else if (isRolling(existingDeployment)) {
             status.addRollingUpdateMessage("Rolling out deployment update");
         }
+
+        watchedResources.getMissing(existingDeployment, ConfigMap.class)
+                .ifPresent(m -> status.addWarningMessage("The following ConfigMaps are missing: " + m));
+        watchedResources.getMissing(existingDeployment, Secret.class)
+                .ifPresent(m -> status.addWarningMessage("The following Secrets are missing: " + m));
 
         distConfigurator.validateOptions(keycloakCR, status);
 
