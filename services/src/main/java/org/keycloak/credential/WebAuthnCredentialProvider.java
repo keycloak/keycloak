@@ -162,7 +162,12 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         WebAuthnCredentialModelInput auth = new WebAuthnCredentialModelInput(getType());
 
-        byte[] credentialId = Base64.getDecoder().decode(credData.getCredentialId());
+        byte[] credentialId = null;
+        try {
+            credentialId = Base64.getDecoder().decode(credData.getCredentialId());
+        } catch (IllegalArgumentException ex) {
+            // NOP
+        }
 
         AAGUID aaguid = new AAGUID(credData.getAaguid());
 

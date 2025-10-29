@@ -122,8 +122,12 @@ public class PemUtils {
     }
 
     private static byte[] pemToDer(String pem) {
-        pem = removeBeginEnd(pem);
-        return Base64.getDecoder().decode(pem);
+        try {
+            pem = removeBeginEnd(pem);
+            return Base64.getDecoder().decode(pem);
+        } catch (IllegalArgumentException e) {
+            throw new PemException(e);
+        }
     }
 
     private static String removeBeginEnd(String pem) {

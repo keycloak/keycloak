@@ -30,7 +30,6 @@ import org.keycloak.federation.kerberos.KerberosPrincipal;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
-import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
 import java.util.Iterator;
@@ -157,7 +156,7 @@ public class SPNEGOAuthenticator {
     }
 
 
-    protected GSSContext establishContext() throws GSSException, IOException {
+    protected GSSContext establishContext() throws GSSException {
         GSSManager manager = GSSManager.getInstance();
 
         Oid[] supportedMechs = new Oid[] { KerberosConstants.KRB5_OID, KerberosConstants.SPNEGO_OID };

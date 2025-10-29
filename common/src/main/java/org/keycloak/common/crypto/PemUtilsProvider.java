@@ -126,8 +126,12 @@ public abstract class PemUtilsProvider {
     }
 
     public byte[] pemToDer(String pem) {
-        pem = removeBeginEnd(pem);
-        return Base64.getDecoder().decode(pem);
+        try {
+            pem = removeBeginEnd(pem);
+            return Base64.getDecoder().decode(pem);
+        } catch (IllegalArgumentException e) {
+            throw new PemException(e);
+        }
     }
 
     public String removeBeginEnd(String pem) {

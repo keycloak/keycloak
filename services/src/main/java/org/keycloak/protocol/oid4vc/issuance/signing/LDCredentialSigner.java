@@ -95,9 +95,13 @@ public class LDCredentialSigner extends AbstractCredentialSigner<VerifiableCrede
         ldProof.setCreated(Date.from(Instant.ofEpochSecond(timeProvider.currentTimeSeconds())));
         ldProof.setVerificationMethod(keyId);
 
-        var proofValue = Base64.getUrlEncoder().encodeToString(signature);
-        ldProof.setProofValue(proofValue);
-        verifiableCredential.setAdditionalProperties(PROOF_KEY, ldProof);
-        return verifiableCredential;
+        try {
+            var proofValue = Base64.getUrlEncoder().encodeToString(signature);
+            ldProof.setProofValue(proofValue);
+            verifiableCredential.setAdditionalProperties(PROOF_KEY, ldProof);
+            return verifiableCredential;
+        } catch (IllegalArgumentException e) {
+            throw new CredentialSignerException("Was not able to encode the signature.", e);
+        }
     }
 }

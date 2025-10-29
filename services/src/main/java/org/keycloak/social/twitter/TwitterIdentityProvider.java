@@ -62,7 +62,6 @@ import jakarta.ws.rs.core.UriInfo;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -95,15 +94,21 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         return new Endpoint(session, callback, event, this);
     }
 
-    private String base64EncodeObject(Serializable serializableObject) throws IOException {
+    private static String base64EncodeRequestToken(RequestToken requestToken) throws IOException {
       try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
               ObjectOutputStream oos = new ObjectOutputStream(Base64.getEncoder().wrap(baos))) {
-          oos.writeObject(serializableObject);
-          oos.flush();
+          oos.writeObject(requestToken);
+          oos.close();
           return baos.toString(StandardCharsets.US_ASCII);
       }
     }
-    
+
+    protected static RequestToken base64DecodeRequestToken(String serialized) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(serialized)))) {
+            return (RequestToken) in.readObject();
+        }
+    }
+
     @Override
     public Response performLogin(AuthenticationRequest request) {
         try {
@@ -111,7 +116,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             RequestToken requestToken = oAuthAuthorization.getOAuthRequestToken(uri.toString());
             AuthenticationSessionModel authSession = request.getAuthenticationSession();
 
-            authSession.setAuthNote(TWITTER_TOKEN, base64EncodeObject(requestToken));
+            authSession.setAuthNote(TWITTER_TOKEN, base64EncodeRequestToken(requestToken));
 
             URI authenticationUrl = URI.create(requestToken.getAuthenticationURL());
 
@@ -223,10 +228,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(providerConfig.getClientSecret())) {
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
-                RequestToken requestToken;
-                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(twitterToken)))) {
-                    requestToken = (RequestToken) in.readObject();
-                }
+                RequestToken requestToken = base64DecodeRequestToken(twitterToken);
 
                 AccessToken oAuthAccessToken = provider.oAuthAuthorization.getOAuthAccessToken(requestToken, verifier);
 
