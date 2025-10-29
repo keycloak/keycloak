@@ -18,7 +18,6 @@ package org.keycloak.storage.adapter;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -401,7 +400,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return new UserCredentialManager(session, realm, this);
+        return session.users().getUserCredentialManager(this);
     }
 
     @Override

@@ -297,4 +297,11 @@ public interface UserProvider extends Provider,
      */
     void preRemove(RealmModel realm, ComponentModel component);
 
+    /**
+     * Default implementation of {@link SubjectCredentialManager} suitable for most of user providers
+     *
+     * @return user credential manager
+     */
+    UserCredentialManager getUserCredentialManager(UserModel user);
+
 }

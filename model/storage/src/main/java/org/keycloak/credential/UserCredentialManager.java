@@ -21,7 +21,6 @@ import io.opentelemetry.api.trace.StatusCode;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.AbstractStorageManager;
 import org.keycloak.storage.DatastoreProvider;
@@ -42,12 +41,15 @@ import java.util.stream.Stream;
  *
  * @author Alexander Schwartz
  */
-public class UserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements SubjectCredentialManager {
+public class UserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements org.keycloak.models.UserCredentialManager {
 
     private final UserModel user;
     private final KeycloakSession session;
     private final RealmModel realm;
 
+    /**
+     * It is not recommended to use this method directly from your user-storage providers! Please use {@link org.keycloak.models.UserProvider#getUserCredentialManager(UserModel) session.users().getUserCredentialManager(user)} instead.
+     */
     public UserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user) {
         super(session, UserStorageProviderFactory.class, UserStorageProvider.class, UserStorageProviderModel::new, "user");
         this.user = user;

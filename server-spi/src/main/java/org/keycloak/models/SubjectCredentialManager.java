@@ -26,6 +26,9 @@ import java.util.stream.Stream;
 
 /**
  * Validates and manages the credentials of a known entity (for example, a user).
+ *
+ * NOTE: This class might be renamed to {@link org.keycloak.models.UserCredentialManager} in Keycloak 27. Please use the {@link org.keycloak.models.UserCredentialManager}
+ * already if you can
  */
 public interface SubjectCredentialManager {
 

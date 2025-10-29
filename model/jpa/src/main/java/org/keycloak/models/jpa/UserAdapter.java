@@ -22,7 +22,6 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
@@ -577,7 +576,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public SubjectCredentialManager credentialManager() {
-        return new UserCredentialManager(session, realm, this);
+        return session.users().getUserCredentialManager(this);
     }
 
     @Override
