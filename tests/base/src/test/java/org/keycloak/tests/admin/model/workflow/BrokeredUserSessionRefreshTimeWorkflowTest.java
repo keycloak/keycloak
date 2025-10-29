@@ -28,25 +28,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.Workflow;
-import org.keycloak.models.workflow.WorkflowsManager;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
-import org.keycloak.models.workflow.UserSessionRefreshTimeWorkflowProviderFactory;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -80,12 +80,10 @@ import org.openqa.selenium.WebDriver;
 
 /**
  */
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class BrokeredUserSessionRefreshTimeWorkflowTest {
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
 
-    private static final String REALM_NAME = "consumer";
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
+    @InjectRunOnServer(permittedPackages = "org.keycloak.tests", realmRef = "consumer")
     RunOnServerClient runOnServer;
 
     @InjectRealm(ref = "consumer", config = ConsumerRealmConf.class, lifecycle = LifeCycle.METHOD)
@@ -127,10 +125,8 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
 
     @Test
     public void testInvalidateWorkflowOnIdentityProviderRemoval() {
-        consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+        consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
@@ -150,21 +146,23 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         // create new user - it will trigger an activation event and therefore should disable the workflow
         consumerRealm.admin().users().create(UserConfigBuilder.create().username("test").build()).close();
 
-        // check the workflow is disabled
-        workflowRep = consumerRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
-        assertThat(workflowRep.getEnabled(), allOf(notNullValue(), is(false)));
-        WorkflowStateRepresentation status = workflowRep.getState();
-        assertThat(status, notNullValue());
-        assertThat(status.getErrors(), hasSize(1));
-        assertThat(status.getErrors().get(0), containsString("Identity provider %s does not exist.".formatted(IDP_OIDC_ALIAS)));
+        Awaitility.await()
+                .timeout(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    var rep = consumerRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
+                    assertThat(rep.getEnabled(), allOf(notNullValue(), is(false)));
+                    WorkflowStateRepresentation status = rep.getState();
+                    assertThat(status, notNullValue());
+                    assertThat(status.getErrors(), hasSize(1));
+                    assertThat(status.getErrors().get(0), containsString("Identity provider %s does not exist.".formatted(IDP_OIDC_ALIAS)));
+                });
     }
 
     @Test
     public void tesRunStepOnFederatedUser() {
-        consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+        consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
@@ -180,23 +178,21 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         List<FederatedIdentityRepresentation> federatedIdentities = users.get(federatedUser.getId()).getFederatedIdentity();
         assertFalse(federatedIdentities.isEmpty());
 
-        runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
+        runScheduledSteps(Duration.ZERO);
 
-            manager.runScheduledSteps();
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user);
             assertTrue(user.isEnabled());
+        }));
 
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, username);
-                assertNull(user);
-            } finally {
-                Time.setOffset(0);
-            }
+        runScheduledSteps(Duration.ofDays(2));
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            assertNull(user);
         }));
 
         // now authenticate with bob directly in the consumer realm - he is not associated with the IDP and thus not influenced
@@ -206,33 +202,30 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         loginPage.submit();
         assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
+        // run the scheduled tasks - bob should not be affected.
+        runScheduledSteps(Duration.ZERO);
 
-            // run the scheduled tasks - bob should not be affected.
-            manager.runScheduledSteps();
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, "bob");
             assertNotNull(user);
             assertTrue(user.isEnabled());
+        });
 
-            try {
-                // run with a time offset - bob should still not be affected.
-                Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, "bob");
-                assertNotNull(user);
-            } finally {
-                Time.setOffset(0);
-            }
+        // run with a time offset - bob should still not be affected.
+        runScheduledSteps(Duration.ofDays(2));
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "bob");
+            assertNotNull(user);
         });
     }
 
     @Disabled("For now deactivation events is not enabled to any event")
     @Test
     public void testAddRemoveFedIdentityAffectsWorkflowAssociation() {
-        consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
+        consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADDED.toString())
                 .onCondition(IDP_CONDITION)
                 .withSteps(
@@ -244,9 +237,9 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         loginBrokeredUser();
 
         runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-            Workflow workflow = manager.getWorkflows().toList().get(0);
+            RealmModel realm = session.getContext().getRealm();
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().toList().get(0);
             UserModel alice = session.users().getUserByUsername(realm, "alice");
             assertNotNull(alice);
 
@@ -261,19 +254,13 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         assertNotNull(aliceInConsumerRealm);
         consumerRealm.admin().users().get(aliceInConsumerRealm.getId()).removeFederatedIdentity(IDP_OIDC_ALIAS);
 
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
+        // run with a time offset - alice should not be deleted as she is no longer associated with the IDP and thus the workflow
+        runScheduledSteps(Duration.ofDays(2));
 
-            try {
-                // run with a time offset - alice should not be deleted as she is no longer associated with the IDP and thus the workflow
-                Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledSteps();
-                UserModel user = session.users().getUserByUsername(realm, "alice");
-                assertNotNull(user, "User alice should not be deleted as she is no longer associated with the IDP and thus the workflow.");
-            } finally {
-                Time.setOffset(0);
-            }
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "alice");
+            assertNotNull(user, "User alice should not be deleted as she is no longer associated with the IDP and thus the workflow.");
         });
 
         // add a federated identity for user bob - bob should now be associated with the workflow and thus deleted when the scheduled tasks run
@@ -283,19 +270,13 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         federatedIdentityRepresentation.setUserName("bob-federated-usewrname");
         consumerRealm.admin().users().get(bobFromConsumerRealm.getId()).addFederatedIdentity(IDP_OIDC_ALIAS, federatedIdentityRepresentation).close();
 
-        runOnServer.run(session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
+        // run with a time offset - bob should be deleted as he is now associated with the IDP and thus with the workflow
+        runScheduledSteps(Duration.ofDays(2));
 
-            try {
-                // run with a time offset - bob should be deleted as he is now associated with the IDP and thus with the workflow
-                Time.setOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
-                manager.runScheduledSteps();
-                UserModel user = session.users().getUserByUsername(realm, "bob");
-                assertNull(user);
-            } finally {
-                Time.setOffset(0);
-            }
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "bob");
+            assertNull(user);
         });
 
     }
@@ -313,8 +294,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
         assertTrue(driver.getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
     }
 
-
-        private static IdentityProviderRepresentation setUpIdentityProvider() {
+    private static IdentityProviderRepresentation setUpIdentityProvider() {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
         Map<String, String> config = idp.getConfig();
@@ -391,11 +371,5 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
             builder.identityProvider(setUpIdentityProvider());
             return builder;
         }
-    }
-
-    private static RealmModel configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
-        return realm;
     }
 }

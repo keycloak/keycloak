@@ -14,36 +14,28 @@ import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
 import org.keycloak.models.workflow.conditions.expression.EventEvaluator;
 import org.keycloak.utils.StringUtil;
 
-public class EventBasedWorkflowProvider implements WorkflowProvider {
+final class EventBasedWorkflow {
 
     private final KeycloakSession session;
     private final ComponentModel model;
 
-    public EventBasedWorkflowProvider(KeycloakSession session, ComponentModel model) {
+    EventBasedWorkflow(KeycloakSession session, ComponentModel model) {
         this.session = session;
         this.model = model;
     }
 
-    @Override
-    public List<String> getEligibleResourcesForInitialStep() {
-        return List.of();
-    }
-
-    @Override
-    public boolean supports(ResourceType type) {
+    boolean supports(ResourceType type) {
         return ResourceType.USERS.equals(type);
     }
 
-    @Override
-    public boolean activateOnEvent(WorkflowEvent event) {
+    boolean activateOnEvent(WorkflowEvent event) {
         if (!supports(event.getResourceType())) {
             return false;
         }
         return isActivationEvent(event) && evaluateConditions(event);
     }
 
-    @Override
-    public boolean deactivateOnEvent(WorkflowEvent event) {
+    boolean deactivateOnEvent(WorkflowEvent event) {
         // TODO: rework this once we support concurrency/restart-if-running and concurrency/cancel-if-running to use expressions just like activation conditions
         if (!supports(event.getResourceType())) {
             return false;
@@ -52,7 +44,7 @@ public class EventBasedWorkflowProvider implements WorkflowProvider {
         List<String> events = model.getConfig().getOrDefault(CONFIG_ON_EVENT, List.of());
 
         for (String activationEvent : events) {
-            ResourceOperationType a = ResourceOperationType.valueOf(activationEvent);
+            ResourceOperationType a = ResourceOperationType.valueOf(activationEvent.toUpperCase());
 
             if (a.isDeactivationEvent(event.getEvent().getClass())) {
                 return !evaluateConditions(event);
@@ -62,16 +54,11 @@ public class EventBasedWorkflowProvider implements WorkflowProvider {
         return false;
     }
 
-    @Override
-    public boolean resetOnEvent(WorkflowEvent event) {
+    boolean resetOnEvent(WorkflowEvent event) {
         return isCancelIfRunning() && evaluateConditions(event);
     }
 
-    @Override
-    public void close() {
-    }
-
-    protected boolean evaluateConditions(WorkflowEvent event) {
+    private boolean evaluateConditions(WorkflowEvent event) {
         String conditions = getModel().getConfig().getFirst(CONFIG_CONDITIONS);
         if (StringUtil.isBlank(conditions)) {
             return true;
@@ -79,7 +66,7 @@ public class EventBasedWorkflowProvider implements WorkflowProvider {
         return new ExpressionWorkflowConditionProvider(getSession(), conditions).evaluate(event);
     }
 
-    protected boolean isActivationEvent(WorkflowEvent event) {
+    private boolean isActivationEvent(WorkflowEvent event) {
         // AD_HOC is a special case that always triggers the workflow regardless of the configured activation events
         if (ResourceOperationType.AD_HOC.equals(event.getOperation())) {
             return true;
@@ -95,15 +82,15 @@ public class EventBasedWorkflowProvider implements WorkflowProvider {
         }
     }
 
-    protected ComponentModel getModel() {
+    private ComponentModel getModel() {
         return model;
     }
 
-    protected KeycloakSession getSession() {
+    private KeycloakSession getSession() {
         return session;
     }
 
-    protected boolean isCancelIfRunning() {
+    private boolean isCancelIfRunning() {
        return Boolean.parseBoolean(model.getConfig().getFirstOrDefault(CONFIG_CANCEL_IF_RUNNING, "false"));
     }
 }

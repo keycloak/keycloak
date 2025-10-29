@@ -15,21 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.workflow;
+package org.keycloak.tests.admin.model.workflow;
 
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
-
-public class UserCreationTimeWorkflowProvider extends AbstractUserWorkflowProvider {
-
-    public UserCreationTimeWorkflowProvider(KeycloakSession session, ComponentModel model) {
-        super(session, model);
-    }
+public class WorkflowsBlockingServerConfig extends WorkflowsServerConfig {
 
     @Override
-    protected boolean isActivationEvent(WorkflowEvent event) {
-        return super.isActivationEvent(event) || USER_ADDED.equals(event.getOperation());
+    public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+        return super.configure(config)
+                .option("spi-workflow--default--executor-blocking", Boolean.TRUE.toString());
     }
 }

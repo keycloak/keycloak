@@ -13,42 +13,23 @@ import java.util.List;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.EventBasedWorkflowProviderFactory;
-import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
 
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class AdhocWorkflowTest {
-
-    private static final String REALM_NAME = "default";
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
-
-    @InjectRealm(lifecycle = LifeCycle.METHOD)
-    ManagedRealm managedRealm;
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
     @Test
     public void testCreate() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -66,9 +47,7 @@ public class AdhocWorkflowTest {
 
     @Test
     public void testBindAdHocScheduledWithImmediateWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -91,9 +70,7 @@ public class AdhocWorkflowTest {
 
     @Test
     public void testRunAdHocScheduledWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .after(Duration.ofDays(5))
@@ -113,9 +90,7 @@ public class AdhocWorkflowTest {
 
     @Test
     public void testRunAdHocImmediateWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -131,21 +106,18 @@ public class AdhocWorkflowTest {
             managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id);
         }
 
-        runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
-            UserModel user = session.users().getUserByUsername(realm, "alice");
+        runScheduledSteps(Duration.ZERO);
 
-            manager.runScheduledSteps();
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "alice");
             assertNotNull(user.getAttributes().get("message"));
         }));
     }
 
     @Test
     public void testRunAdHocTimedWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
@@ -162,59 +134,51 @@ public class AdhocWorkflowTest {
             managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, Duration.ofDays(5).toMillis());
         }
 
+        runScheduledSteps(Duration.ZERO);
+
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, "alice");
-
-            manager.runScheduledSteps();
             assertNull(user.getAttributes().get("message"));
+        }));
 
+        runScheduledSteps(Duration.ofDays(6));
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "alice");
             try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, "alice");
                 assertNotNull(user.getAttributes().get("message"));
             } finally {
                 user.removeAttribute("message");
-                Time.setOffset(0);
             }
         }));
 
         managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, Duration.ofDays(10).toMillis());
 
+        runScheduledSteps(Duration.ZERO);
+
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-            WorkflowsManager manager = new WorkflowsManager(session);
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, "alice");
-
-            manager.runScheduledSteps();
             assertNull(user.getAttributes().get("message"));
-
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, "alice");
-                assertNull(user.getAttributes().get("message"));
-            } finally {
-                Time.setOffset(0);
-            }
-
-            try {
-                Time.setOffset(Math.toIntExact(Duration.ofDays(11).toSeconds()));
-                manager.runScheduledSteps();
-                user = session.users().getUserByUsername(realm, "alice");
-                assertNotNull(user.getAttributes().get("message"));
-            } finally {
-                Time.setOffset(0);
-            }
         }));
-    }
 
-    private static RealmModel configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
-        return realm;
+        runScheduledSteps(Duration.ofDays(6));
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "alice");
+            assertNull(user.getAttributes().get("message"));
+        }));
+
+        runScheduledSteps(Duration.ofDays(11));
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "alice");
+            assertNotNull(user.getAttributes().get("message"));
+        }));
     }
 
     private UserRepresentation getUserRepresentation(String username, String firstName, String lastName, String email) {

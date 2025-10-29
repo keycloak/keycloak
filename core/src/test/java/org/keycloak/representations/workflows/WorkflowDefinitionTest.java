@@ -20,7 +20,6 @@ public class WorkflowDefinitionTest {
         WorkflowRepresentation expected = new WorkflowRepresentation();
 
         expected.setId("workflow-id");
-        expected.setUses("my-provider");
         expected.setName("my-name");
         expected.setOn("event");
         expected.setConditions("condition-1(v1) AND (condition-2(key1:v1) OR condition-3(key2:v2,v3))");
@@ -52,7 +51,6 @@ public class WorkflowDefinitionTest {
         WorkflowRepresentation actual = JsonSerialization.readValue(json, WorkflowRepresentation.class);
 
         assertEquals(expected.getId(), actual.getId());
-        assertEquals(expected.getUses(), actual.getUses());
         assertNotNull(actual.getOn());
         assertEquals(expected.getOn(), actual.getOn());
         assertEquals(expected.getConcurrency(), actual.getConcurrency());

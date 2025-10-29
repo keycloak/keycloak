@@ -5,35 +5,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.EventBasedWorkflowProviderFactory;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
-import org.keycloak.models.workflow.WorkflowsManager;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.util.ApiUtil;
-import org.openqa.selenium.WebDriver;
 
 import java.time.Duration;
 import java.util.List;
@@ -45,25 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class ExpressionConditionWorkflowTest {
-
-    private static final String REALM_NAME = "default";
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
-
-    @InjectRealm(lifecycle = LifeCycle.METHOD)
-    ManagedRealm managedRealm;
-
-    @InjectWebDriver
-    WebDriver driver;
-
-    @InjectPage
-    LoginPage loginPage;
-
-    @InjectOAuthClient
-    OAuthClient oauth;
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
 
     @BeforeEach
     public void onBefore() {
@@ -161,17 +129,11 @@ public class ExpressionConditionWorkflowTest {
         assertTrue(driver.getPageSource().contains("Happy days"));
 
         // step 2 - use time offset to trigger the scheduled step for those users who match the condition
+        // set offset to 6 days to trigger the scheduled step (which is set to run after 5 days)
+        runScheduledSteps(Duration.ofDays(6));
+
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-
-            try {
-                // set offset to 6 days to trigger the scheduled step (which is set to run after 5 days)
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                new WorkflowsManager(session).runScheduledSteps();
-            } finally {
-                Time.setOffset(0);
-            }
-
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user, username + " not found");
 
@@ -211,9 +173,7 @@ public class ExpressionConditionWorkflowTest {
     }
 
     private String createWorkflow(String expression) {
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.withName("myworkflow")
                 .onEvent("user-logged-in(test-app)")
                 .onCondition(expression)
                 .withSteps(
@@ -270,11 +230,5 @@ public class ExpressionConditionWorkflowTest {
 
             return roles.get(roleName).toRepresentation();
         }
-    }
-
-    private static RealmModel configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
-        return realm;
     }
 }

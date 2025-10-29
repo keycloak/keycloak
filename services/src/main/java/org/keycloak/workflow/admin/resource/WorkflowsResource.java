@@ -18,7 +18,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.Workflow;
-import org.keycloak.models.workflow.WorkflowsManager;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -27,7 +27,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 public class WorkflowsResource {
 
     private final KeycloakSession session;
-    private final WorkflowsManager manager;
+    private final WorkflowProvider provider;
     private final AdminPermissionEvaluator auth;
 
     public WorkflowsResource(KeycloakSession session, AdminPermissionEvaluator auth) {
@@ -35,7 +35,7 @@ public class WorkflowsResource {
             throw new NotFoundException();
         }
         this.session = session;
-        this.manager = new WorkflowsManager(session);
+        this.provider = session.getProvider(WorkflowProvider.class);
         this.auth = auth;
     }
 
@@ -45,7 +45,7 @@ public class WorkflowsResource {
         auth.realm().requireManageRealm();
 
         try {
-            Workflow workflow = manager.toModel(rep);
+            Workflow workflow = provider.toModel(rep);
             return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
@@ -68,13 +68,13 @@ public class WorkflowsResource {
     public WorkflowResource get(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
 
-        Workflow workflow = manager.getWorkflow(id);
+        Workflow workflow = provider.getWorkflow(id);
 
         if (workflow == null) {
             throw new NotFoundException("Workflow with id " + id + " not found");
         }
 
-        return new WorkflowResource(manager, workflow);
+        return new WorkflowResource(provider, workflow);
     }
 
     @GET
@@ -82,6 +82,6 @@ public class WorkflowsResource {
     public List<WorkflowRepresentation> list() {
         auth.realm().requireManageRealm();
 
-        return manager.getWorkflows().map(manager::toRepresentation).toList();
+        return provider.getWorkflows().map(provider::toRepresentation).toList();
     }
 }

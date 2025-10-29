@@ -1,18 +1,20 @@
 package org.keycloak.models.workflow;
 
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.List;
 
 public class RestartWorkflowStepProviderFactory implements WorkflowStepProviderFactory<RestartWorkflowStepProvider> {
 
     public static final String ID = "restart";
 
+    private final RestartWorkflowStepProvider provider = new RestartWorkflowStepProvider();
+
     @Override
     public RestartWorkflowStepProvider create(KeycloakSession session, ComponentModel model) {
-        return new RestartWorkflowStepProvider();
+        return provider;
     }
 
     @Override

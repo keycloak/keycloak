@@ -17,6 +17,8 @@ import org.keycloak.common.util.MultivaluedHashMap;
 @JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
 public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
+    private final String uses;
+
     public static Builder create() {
         return new Builder();
     }
@@ -30,7 +32,12 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
     }
 
     public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
-        super(id, uses, config);
+        super(id, config);
+        this.uses = uses;
+    }
+
+    public String getUses() {
+        return this.uses;
     }
 
     @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
