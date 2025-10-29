@@ -355,32 +355,11 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 }
 
                 if (UserModel.USERNAME.equals(attributeName)) {
-                    required = new Predicate<AttributeContext>() {
-                        @Override
-                        public boolean test(AttributeContext context) {
-                            RealmModel realm = context.getSession().getContext().getRealm();
-                            return !realm.isRegistrationEmailAsUsername();
-                        }
-                    };
+                    required = new UsernameRequiredPredicate();
                 }
 
                 if (UserModel.EMAIL.equals(attributeName)) {
-                    Predicate<AttributeContext> requiredFromConfig = required;
-                    required = new Predicate<AttributeContext>() {
-                        @Override
-                        public boolean test(AttributeContext context) {
-                            UserModel user = context.getUser();
-
-                            if (isServiceAccountUser(user)) {
-                                return false;
-                            }
-
-                            if (requiredFromConfig.test(context)) return true;
-
-                            RealmModel realm = context.getSession().getContext().getRealm();
-                            return realm.isRegistrationEmailAsUsername();
-                        }
-                    };
+                    required = new EmailRequiredPredicate(required);
                 }
 
                 List<AttributeMetadata> existingMetadata = decoratedMetadata.getAttribute(attributeName);
@@ -439,7 +418,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         return ac -> ac.getContext().isRoleForContext(viewRoles) || canEdit.test(ac);
     }
 
-    private boolean isServiceAccountUser(UserModel user) {
+    private static boolean isServiceAccountUser(UserModel user) {
         return user != null && user.getServiceAccountClientLink() != null;
     }
 
@@ -551,5 +530,35 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             return decorateUserProfileForCache(decoratedMetadata, parsedConfig);
         };
+    }
+
+    private static class EmailRequiredPredicate implements Predicate<AttributeContext> {
+        private final Predicate<AttributeContext> required;
+
+        public EmailRequiredPredicate(Predicate<AttributeContext> required) {
+            this.required = required;
+        }
+
+        @Override
+        public boolean test(AttributeContext context) {
+            UserModel user = context.getUser();
+
+            if (isServiceAccountUser(user)) {
+                return false;
+            }
+
+            if (required.test(context)) return true;
+
+            RealmModel realm = context.getSession().getContext().getRealm();
+            return realm.isRegistrationEmailAsUsername();
+        }
+    }
+
+    private static class UsernameRequiredPredicate implements Predicate<AttributeContext> {
+        @Override
+        public boolean test(AttributeContext context) {
+            RealmModel realm = context.getSession().getContext().getRealm();
+            return !realm.isRegistrationEmailAsUsername();
+        }
     }
 }
