@@ -323,11 +323,11 @@ public class AuthenticationSessionManager {
             return null;
         }
 
-        assert authResult.getSession() != null;
+        assert authResult.session() != null;
 
         // if we reach this point, the cookie is not found. Set it.
-        setAuthSessionCookie(authResult.getSession().getId());
-        return authResult.getSession();
+        setAuthSessionCookie(authResult.session().getId());
+        return authResult.session();
     }
 
     private UserSessionProvider getUserSessionProvider() {

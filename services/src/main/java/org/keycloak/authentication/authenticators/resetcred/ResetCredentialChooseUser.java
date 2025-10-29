@@ -79,8 +79,8 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(), context.getRealm(), true);
         //skip user choice if sso session exists
         if (authResult != null) {
-            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, authResult.getUser().getUsername());
-            context.setUser(authResult.getUser());
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, authResult.user().getUsername());
+            context.setUser(authResult.user());
             context.success();
             return;
         }

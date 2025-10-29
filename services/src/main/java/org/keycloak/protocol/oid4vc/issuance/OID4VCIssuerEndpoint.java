@@ -409,7 +409,7 @@ public class OID4VCIssuerEndpoint {
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
         if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
-            AccessToken accessToken = bearerTokenAuthenticator.authenticate().getToken();
+            AccessToken accessToken = bearerTokenAuthenticator.authenticate().token();
             if (Arrays.stream(accessToken.getScope().split(" "))
                     .noneMatch(tokenScope -> tokenScope.equals(requestedCredential.getScope()))) {
                 LOGGER.debugf("Scope check failure: required scope = %s, " +
@@ -523,8 +523,8 @@ public class OID4VCIssuerEndpoint {
             String mappingKey = CREDENTIAL_IDENTIFIER_PREFIX + credentialRequestVO.getCredentialIdentifier();
 
             // First try to get the client session and look for the mapping there
-            UserSessionModel userSession = authResult.getSession();
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(authResult.getClient().getId());
+            UserSessionModel userSession = authResult.session();
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(authResult.client().getId());
             String mappedCredentialConfigurationId = null;
 
             if (clientSession != null) {
@@ -947,11 +947,11 @@ public class OID4VCIssuerEndpoint {
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {
         AuthenticationManager.AuthResult authResult = getAuthResult();
-        UserSessionModel userSessionModel = authResult.getSession();
+        UserSessionModel userSessionModel = authResult.session();
 
         AuthenticatedClientSessionModel clientSession = userSessionModel.
                 getAuthenticatedClientSessionByClient(
-                        authResult.getClient().getId());
+                        authResult.client().getId());
         if (clientSession == null) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
         }
@@ -1126,16 +1126,16 @@ public class OID4VCIssuerEndpoint {
 
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers
-                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.getSession()));
+                .forEach(mapper -> mapper.setClaimsForSubject(subjectClaims, authResult.session()));
 
         // Validate that requested claims from authorization_details are present
-        validateRequestedClaimsArePresent(subjectClaims, authResult.getSession(), credentialConfig.getScope());
+        validateRequestedClaimsArePresent(subjectClaims, authResult.session(), credentialConfig.getScope());
 
         // Include all available claims
         subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers
-                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.getSession()));
+                .forEach(mapper -> mapper.setClaimsForCredential(vc, authResult.session()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 

@@ -207,9 +207,9 @@ public class AdminRoot {
             throw new NotAuthorizedException("Bearer");
         }
 
-        session.getContext().setBearerToken(authResult.getToken());
+        session.getContext().setBearerToken(authResult.token());
 
-        return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), authResult.getClient());
+        return new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {

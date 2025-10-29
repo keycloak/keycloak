@@ -119,24 +119,24 @@ public class AccountLoader {
             throw new NotAuthorizedException("Bearer token required");
         }
 
-        AccessToken accessToken = authResult.getToken();
+        AccessToken accessToken = authResult.token();
 
         if (accessToken.getAudience() == null || accessToken.getResourceAccess(client.getClientId()) == null) {
             // transform for introspection to get the required claims
             AccessTokenIntrospectionProvider provider = (AccessTokenIntrospectionProvider) session.getProvider(TokenIntrospectionProvider.class,
                     AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
-            accessToken = provider.transformAccessToken(accessToken, authResult.getSession());
+            accessToken = provider.transformAccessToken(accessToken, authResult.session());
         }
 
         if (!accessToken.hasAudience(client.getClientId())) {
             throw new NotAuthorizedException("Invalid audience for client " + client.getClientId());
         }
 
-        Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.getUser(), client, authResult.getSession(), false);
+        Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.user(), client, authResult.session(), false);
 
         Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
-        if (authResult.getUser().getServiceAccountClientLink() != null) {
+        if (authResult.user().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");
         }
 

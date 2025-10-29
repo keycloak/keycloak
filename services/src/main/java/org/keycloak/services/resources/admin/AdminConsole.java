@@ -229,7 +229,7 @@ public class AdminConsole {
             throw new NotAuthorizedException("Bearer");
         }
 
-        final String issuedFor = authResult.getToken().getIssuedFor();
+        final String issuedFor = authResult.token().getIssuedFor();
         if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
             if (issuedFor == null) {
                 throw new ForbiddenException("No azp claim in the token");
@@ -241,7 +241,7 @@ public class AdminConsole {
             }
         }
 
-        UserModel user= authResult.getUser();
+        UserModel user= authResult.user();
         String displayName;
         if ((user.getFirstName() != null && !user.getFirstName().trim().equals("")) || (user.getLastName() != null && !user.getLastName().trim().equals(""))) {
             displayName = user.getFirstName();
@@ -277,7 +277,7 @@ public class AdminConsole {
         Locale locale = session.getContext().resolveLocale(user);
 
         return Cors.builder()
-                .allowedOrigins(authResult.getToken())
+                .allowedOrigins(authResult.token())
                 .allowedMethods("GET")
                 .auth()
                 .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale, Boolean.parseBoolean(user.getFirstAttribute(IS_TEMP_ADMIN_ATTR_NAME)))));

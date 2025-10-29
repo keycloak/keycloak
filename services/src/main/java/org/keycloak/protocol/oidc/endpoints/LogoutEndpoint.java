@@ -259,8 +259,8 @@ public class LogoutEndpoint {
         // Check if we have session in the browser. If yes and it is different session than referenced by id_token_hint, the confirmation should be displayed
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
-            userSession = authResult.getSession();
-            if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.getSession().getId())) {
+            userSession = authResult.session();
+            if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.session().getId())) {
                 forcedConfirmation = true;
             }
         } else {
@@ -440,7 +440,7 @@ public class LogoutEndpoint {
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
-            userSession = userSession != null ? userSession : authResult.getSession();
+            userSession = userSession != null ? userSession : authResult.session();
             return initiateBrowserLogout(userSession);
         } else if (userSession != null) {
             // identity cookie is missing but there's valid id_token_hint which matches session cookie => continue with browser logout

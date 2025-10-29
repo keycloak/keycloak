@@ -83,7 +83,7 @@ public class AccountConsole implements AccountResourceProvider {
     public void init() {
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm);
         if (authResult != null) {
-            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
+            auth = new Auth(realm, authResult.token(), authResult.user(), client, authResult.session(), true);
         }
     }
 

@@ -145,9 +145,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected static String prepareSessionCode(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
         AuthenticationManager.AuthResult authResult = authenticator.authenticate();
-        UserSessionModel userSessionModel = authResult.getSession();
+        UserSessionModel userSessionModel = authResult.session();
         AuthenticatedClientSessionModel authenticatedClientSessionModel = userSessionModel.getAuthenticatedClientSessionByClient(
-                authResult.getClient().getId());
+                authResult.client().getId());
         String codeId = SecretGenerator.getInstance().randomString();
         String nonce = SecretGenerator.getInstance().randomString();
         OAuth2Code oAuth2Code = new OAuth2Code(codeId,
