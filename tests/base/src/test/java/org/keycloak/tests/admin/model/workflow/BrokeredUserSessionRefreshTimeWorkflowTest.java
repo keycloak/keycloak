@@ -53,7 +53,6 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowStateRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -121,6 +120,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
 
     private static final String IDP_OIDC_ALIAS = "kc-oidc-idp";
     private static final String IDP_OIDC_PROVIDER_ID = "keycloak-oidc";
+    private static final String IDP_CONDITION = IdentityProviderWorkflowConditionFactory.ID + "(" + IDP_OIDC_ALIAS + ")";
 
     private static final String CLIENT_ID = "brokerapp";
     private static final String CLIENT_SECRET = "secret";
@@ -129,11 +129,9 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void testInvalidateWorkflowOnIdentityProviderRemoval() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGIN.toString())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(IdentityProviderWorkflowConditionFactory.ID)
-                        .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
-                        .build())
+                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
+                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(1))
@@ -165,11 +163,9 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void tesRunStepOnFederatedUser() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGIN.toString())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(IdentityProviderWorkflowConditionFactory.ID)
-                        .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
-                        .build())
+                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
+                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(1))
@@ -237,11 +233,8 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest {
     public void testAddRemoveFedIdentityAffectsWorkflowAssociation() {
         consumerRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADD.toString())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(IdentityProviderWorkflowConditionFactory.ID)
-                        .withConfig(IdentityProviderWorkflowConditionFactory.EXPECTED_ALIASES, IDP_OIDC_ALIAS)
-                        .build())
+                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADDED.toString())
+                .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(1))

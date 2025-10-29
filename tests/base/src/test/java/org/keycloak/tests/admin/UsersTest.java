@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 
 @KeycloakIntegrationTest
 public class UsersTest {
@@ -60,6 +61,20 @@ public class UsersTest {
         assertThat(realm.admin().users().search("Use", null, null), hasSize(1));
         assertThat(realm.admin().users().search("Use*", null, null), hasSize(1));
         assertThat(realm.admin().users().search("Us*e", null, null), hasSize(1));
+    }
+
+    @Test
+    public void testFullRepresentationOnSearches() {
+        createUser("user", "firstName", "lastName", "user@example.com");
+
+        List<UserRepresentation> users = realm.admin().users().search("user", null, null, false);
+        UserRepresentation user = users.get(0);
+        assertThat(user.getRequiredActions(), empty());
+
+        users = realm.admin().users().search("user", null, null, true);
+        user = users.get(0);
+        assertThat(user.getRequiredActions(), nullValue());
+        assertThat(user.isTotp(), nullValue());
     }
 
     @Test

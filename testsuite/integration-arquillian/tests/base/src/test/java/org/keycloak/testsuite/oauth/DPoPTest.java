@@ -260,6 +260,36 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testDPoPByPublicClientClockSkew() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
+        try {
+            sendAuthorizationRequestWithDPoPJkt(null);
+
+            // get a DPoP proof 10 seconds in the future
+            String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(),
+                    (long) (Time.currentTime() + 10), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null);
+
+            AccessTokenResponse response = successTokenProceduresWithDPoP(dpopProofEcEncoded, jktEc, true, true, false);
+
+            setTimeOffset(25); // 25 <= 10+10+15, proof not expired because clockSkew, detected by replay check
+            response = oauth.refreshRequest(response.getRefreshToken()).dpopProof(dpopProofEcEncoded).send();
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("DPoP proof has already been used", response.getErrorDescription());
+
+            setTimeOffset(36); // 36 > 10+10+15, proof expired definitely
+            response = oauth.refreshRequest(response.getRefreshToken()).dpopProof(dpopProofEcEncoded).send();
+            assertEquals(400, response.getStatusCode());
+            assertEquals(response.getError(), OAuthErrorException.INVALID_REQUEST);
+            assertEquals("DPoP proof is not active", response.getErrorDescription());
+
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+        }
+    }
+
+    @Test
     public void testDPoPByPublicClientTokenRefreshWithoutDPoPProof() throws Exception {
         // use pre-computed EC key
 
@@ -1205,7 +1235,12 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         oauth.loginForm().dpopJkt(dpopJkt).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
     }
 
-    private void successTokenProceduresWithDPoP(String dpopProofEncoded, String jkt, boolean accessTokenBound, boolean refreshTokenBound) throws Exception {
+    private AccessTokenResponse successTokenProceduresWithDPoP(String dpopProofEncoded, String jkt, boolean accessTokenBound, boolean refreshTokenBound) throws Exception {
+        return successTokenProceduresWithDPoP(dpopProofEncoded, jkt, accessTokenBound, refreshTokenBound, true);
+    }
+
+    private AccessTokenResponse successTokenProceduresWithDPoP(String dpopProofEncoded, String jkt, boolean accessTokenBound,
+            boolean refreshTokenBound, boolean performLogout) throws Exception {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.accessTokenRequest(code).dpopProof(dpopProofEncoded).send();
         assertEquals(accessTokenBound ? TokenUtil.TOKEN_TYPE_DPOP : TokenUtil.TOKEN_TYPE_BEARER, response.getTokenType());
@@ -1256,7 +1291,10 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         }
 
         // logout
-        oauth.logoutForm().idTokenHint(response.getIdToken()).open();
+        if (performLogout) {
+            oauth.logoutForm().idTokenHint(response.getIdToken()).open();
+        }
+        return response;
     }
 
     private void failureRefreshTokenProceduresWithoutDPoP(String dpopProofEncoded, String jkt) throws Exception {

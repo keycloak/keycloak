@@ -31,7 +31,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStateRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
@@ -56,6 +55,9 @@ public class GroupMembershipJoinWorkflowTest {
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
 
+    private static final String GROUP_NAME = "generic-group";
+    private static final String GROUP_CONDITION = GroupMembershipWorkflowConditionFactory.ID + "(" + GROUP_NAME + ")";
+
     @Test
     public void testEventsOnGroupMembershipJoin() {
         UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
@@ -70,11 +72,9 @@ public class GroupMembershipJoinWorkflowTest {
 
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADD.name())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(GroupMembershipWorkflowConditionFactory.ID)
-                        .withConfig(GroupMembershipWorkflowConditionFactory.EXPECTED_GROUPS, groupId)
-                        .build())
+                .name(EventBasedWorkflowProviderFactory.ID)
+                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADDED.name())
+                .onCondition(GROUP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)
@@ -101,7 +101,7 @@ public class GroupMembershipJoinWorkflowTest {
         userResource.joinGroup(groupId);
 
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
+            configureSessionContext(session);
             WorkflowsManager manager = new WorkflowsManager(session);
 
             try {
@@ -128,11 +128,9 @@ public class GroupMembershipJoinWorkflowTest {
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserSessionRefreshTimeWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGIN.toString())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(GroupMembershipWorkflowConditionFactory.ID)
-                        .withConfig(GroupMembershipWorkflowConditionFactory.EXPECTED_GROUPS, groupId)
-                        .build())
+                .name(UserSessionRefreshTimeWorkflowProviderFactory.ID)
+                .onEvent(ResourceOperationType.USER_LOGGED_IN.toString())
+                .onCondition(GROUP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(1))
@@ -157,12 +155,11 @@ public class GroupMembershipJoinWorkflowTest {
         WorkflowStateRepresentation status = workflowRep.getState();
         assertThat(status, notNullValue());
         assertThat(status.getErrors(), hasSize(1));
-        assertThat(status.getErrors().get(0), containsString("Group with id %s does not exist.".formatted(groupId)));
+        assertThat(status.getErrors().get(0), containsString("Group with name %s does not exist.".formatted("generic-group")));
     }
 
-    private static RealmModel configureSessionContext(KeycloakSession session) {
+    private static void configureSessionContext(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(REALM_NAME);
         session.getContext().setRealm(realm);
-        return realm;
     }
 }

@@ -3,6 +3,7 @@
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
 <#import "/templates/options.adoc" as opts>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring logging"
@@ -154,17 +155,10 @@ The root level must be set to the most verbose required level (`debug` in this c
 
 In order to see the `org.keycloak.events:trace`, the `trace` level must be set for the Syslog handler.
 
+[[mdc]]
 == Adding context for log messages
 
-:tech_feature_name: Log messages with Mapped Diagnostic Context (MDC)
-:tech_feature_id: log-mdc
-
-[NOTE]
-====
-{tech_feature_name} is
-*Preview*
-and is not fully supported. This feature is disabled by default.
-====
+<@features.techpreview feature="log-mdc"/>
 
 You can enable additional context information for each log line like the current realm and client that is executing the request.
 
@@ -262,6 +256,7 @@ You can change the queue length as follows:
 
 These properties are available only when asynchronous logging is enabled for these specific log handlers.
 
+[[http-access-logging]]
 == HTTP Access Logging
 
 {project_name} supports HTTP access logging to record details of incoming HTTP requests.

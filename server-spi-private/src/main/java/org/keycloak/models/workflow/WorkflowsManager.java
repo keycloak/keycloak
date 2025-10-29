@@ -30,21 +30,18 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
-import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.utils.StringUtil;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 
@@ -84,9 +81,10 @@ public class WorkflowsManager {
     }
 
     // This method takes an ordered list of steps. First step in the list has the highest priority, last step has the lowest priority
-    private void addSteps(Workflow workflow, List<WorkflowStep> steps) {
+    private void addSteps(Workflow workflow, List<WorkflowStepRepresentation> steps) {
+        steps = ofNullable(steps).orElse(List.of());
         for (int i = 0; i < steps.size(); i++) {
-            WorkflowStep step = steps.get(i);
+            WorkflowStep step = toModel(steps.get(i));
 
             // assign priority based on index.
             step.setPriority(i + 1);
@@ -204,17 +202,9 @@ public class WorkflowsManager {
         return factory;
     }
 
-    public WorkflowConditionProvider getConditionProvider(String providerId, MultivaluedHashMap<String, String> modelConfig) {
+    public WorkflowConditionProvider getConditionProvider(String providerId, String providerConfig) {
         WorkflowConditionProviderFactory<WorkflowConditionProvider> providerFactory = getConditionProviderFactory(providerId);
-        Map<String, List<String>> config = new HashMap<>();
-
-        for (Entry<String, List<String>> configEntry : modelConfig.entrySet()) {
-            if (configEntry.getKey().startsWith(providerId)) {
-                config.put(configEntry.getKey().substring(providerId.length() + 1), configEntry.getValue());
-            }
-        }
-
-        return providerFactory.create(session, config);
+        return providerFactory.create(session, providerConfig);
     }
 
     public WorkflowConditionProviderFactory<WorkflowConditionProvider> getConditionProviderFactory(String providerId) {
@@ -399,35 +389,8 @@ public class WorkflowsManager {
     /* ======================= Workflows representation <-> model conversions and validations ======================== */
 
     public WorkflowRepresentation toRepresentation(Workflow workflow) {
-        List<WorkflowConditionRepresentation> conditions = toConditionRepresentation(workflow);
         List<WorkflowStepRepresentation> steps = getSteps(workflow.getId()).map(this::toRepresentation).toList();
-
-        return new WorkflowRepresentation(workflow.getId(), workflow.getProviderId(), workflow.getConfig(), conditions, steps);
-    }
-
-    private List<WorkflowConditionRepresentation> toConditionRepresentation(Workflow workflow) {
-        MultivaluedHashMap<String, String> workflowConfig = ofNullable(workflow.getConfig()).orElse(new MultivaluedHashMap<>());
-        List<String> ids = workflowConfig.getOrDefault(CONFIG_CONDITIONS, List.of());
-
-        if (ids.isEmpty()) {
-            return null;
-        }
-
-        List<WorkflowConditionRepresentation> conditions = new ArrayList<>();
-
-        for (String id : ids) {
-            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-
-            for (Entry<String, List<String>> configEntry : workflowConfig.entrySet()) {
-                String key = configEntry.getKey();
-                if (key.startsWith(id + ".")) {
-                    config.put(key.substring(id.length() + 1), configEntry.getValue());
-                }
-            }
-            conditions.add(new WorkflowConditionRepresentation(id, config));
-        }
-
-        return conditions;
+        return new WorkflowRepresentation(workflow.getId(), workflow.getProviderId(), workflow.getConfig(), steps);
     }
 
     private WorkflowStepRepresentation toRepresentation(WorkflowStep step) {
@@ -438,27 +401,12 @@ public class WorkflowsManager {
         validateWorkflow(rep);
 
         MultivaluedHashMap<String, String> config = ofNullable(rep.getConfig()).orElse(new MultivaluedHashMap<>());
-        List<WorkflowConditionRepresentation> conditions = ofNullable(rep.getConditions()).orElse(List.of());
-
-        for (WorkflowConditionRepresentation condition : conditions) {
-            String conditionProviderId = condition.getUses();
-            getConditionProviderFactory(conditionProviderId);
-            config.computeIfAbsent(CONFIG_CONDITIONS, key -> new ArrayList<>()).add(conditionProviderId);
-
-            for (Entry<String, List<String>> configEntry : condition.getConfig().entrySet()) {
-                config.put(conditionProviderId + "." + configEntry.getKey(), configEntry.getValue());
-            }
-        }
-
         if (rep.isCancelIfRunning()) {
             config.putSingle(WorkflowConstants.CONFIG_CANCEL_IF_RUNNING, "true");
         }
 
         Workflow workflow = addWorkflow(new Workflow(rep.getUses(), config));
-
-        List<WorkflowStep> steps = rep.getSteps().stream().map(this::toModel).toList();
-
-        addSteps(workflow, steps);
+        addSteps(workflow, rep.getSteps());
 
         return workflow;
     }
@@ -470,10 +418,13 @@ public class WorkflowsManager {
     }
 
     private void validateWorkflow(WorkflowRepresentation rep) {
-        validateEvents(rep.getOnValues());
+        validateField(rep, "name", rep.getName());
+        //TODO: validate event and resource conditions (`on` and `if` properties) using the providers with a custom evaluator that calls validate on
+        // each condition provider used in the expression.
 
         // if a workflow has a restart step, at least one of the previous steps must be scheduled to prevent an infinite loop of immediate executions
         List<WorkflowStepRepresentation> steps = ofNullable(rep.getSteps()).orElse(List.of());
+        steps.forEach(step -> validateField(step, "uses", step.getUses()));
         List<WorkflowStepRepresentation> restartSteps = steps.stream()
                 .filter(step -> Objects.equals("restart", step.getUses()))
                 .toList();
@@ -494,13 +445,9 @@ public class WorkflowsManager {
         }
     }
 
-    private static void validateEvents(List<String> events) {
-        for (String event : ofNullable(events).orElse(List.of())) {
-            try {
-                ResourceOperationType.valueOf(event.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new WorkflowInvalidStateException("Invalid event type: " + event);
-            }
+    private void validateField(Object obj, String fieldName, String value) {
+        if (StringUtil.isBlank(value)) {
+            throw new ModelValidationException("%s field '%s' cannot be null or empty.".formatted(obj.getClass().getCanonicalName(), fieldName));
         }
     }
 

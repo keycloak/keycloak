@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { v4 as uuidv4 } from "uuid";
-import adminClient from "../utils/AdminClient.ts";
+import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
+import { createTestBed } from "../support/testbed.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { assertModalTitle, confirmModal } from "../utils/modal.ts";
@@ -11,7 +11,6 @@ import {
   confirmModalAssign,
   pickRole,
 } from "../utils/roles.ts";
-import { goToClientScopes } from "../utils/sidebar.ts";
 import {
   assertEmptyTable,
   assertRowExists,
@@ -22,30 +21,37 @@ import {
 } from "../utils/table.ts";
 import { goToScopeTab } from "./scope.ts";
 
-test.describe.serial("Scope tab test", () => {
-  const scopeName = `client-scope-mapper-${uuidv4()}`;
+test.describe("Scope tab", () => {
   const tableName = "Role list";
 
-  test.beforeAll(async () =>
-    adminClient.createClientScope({
-      name: scopeName,
-      description: "",
-      protocol: "openid-connect",
-    }),
-  );
+  test("assigns and unassigns role", async ({ page }) => {
+    await using testBed = await createTestBed({
+      clientScopes: [
+        {
+          name: "test-scope",
+          protocol: "openid-connect",
+        },
+      ],
+      roles: {
+        realm: [
+          {
+            name: "composite-role",
+            composite: true,
+            composites: {
+              realm: ["offline_access"],
+            },
+          },
+        ],
+      },
+    });
 
-  test.afterAll(() => adminClient.deleteClientScope(scopeName));
+    const role = "composite-role";
 
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToClientScopes(page);
-    await searchItem(page, "Search for client scope", scopeName);
-    await clickTableRowItem(page, scopeName);
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
+
+    await searchItem(page, "Search for client scope", "test-scope");
+    await clickTableRowItem(page, "test-scope");
     await goToScopeTab(page);
-  });
-
-  test("Assign and unassign role", async ({ page }) => {
-    const role = "admin";
 
     await pickRoleType(page, "roles");
     await pickRole(page, role, true);
@@ -55,9 +61,16 @@ test.describe.serial("Scope tab test", () => {
 
     await assertRowExists(page, role);
 
+    // Initially, only directly assigned roles are shown (inherited roles are hidden by default)
+    const directRolesOnly = await getTableData(page, tableName);
+    expect(directRolesOnly.length).toBe(1); // Only composite-role is directly assigned
+
+    // Click to show inherited roles (the toggle reveals inherited roles from composite)
     await clickHideInheritedRoles(page);
-    const data = await getTableData(page, tableName);
-    expect(data.length).toBeGreaterThan(1);
+    const allRoles = await getTableData(page, tableName);
+    expect(allRoles.length).toBe(2); // composite-role + offline_access (inherited from composite)
+
+    // Click again to hide inherited roles
     await clickHideInheritedRoles(page);
 
     await clickSelectRow(page, tableName, role);

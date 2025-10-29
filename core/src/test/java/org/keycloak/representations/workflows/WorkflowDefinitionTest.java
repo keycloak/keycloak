@@ -2,7 +2,6 @@ package org.keycloak.representations.workflows;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -24,28 +23,11 @@ public class WorkflowDefinitionTest {
         expected.setUses("my-provider");
         expected.setName("my-name");
         expected.setOn("event");
+        expected.setConditions("condition-1(v1) AND (condition-2(key1:v1) OR condition-3(key2:v2,v3))");
         expected.setSteps(null);
-        expected.setConditions(null);
         expected.setEnabled(true);
 
         expected.setConcurrency(new WorkflowConcurrencyRepresentation(true));
-
-        expected.setConditions(Arrays.asList(
-                WorkflowConditionRepresentation.create()
-                        .of("condition-1")
-                        .withConfig("key1", "v1")
-                        .withConfig("key2", "v1", "v2")
-                        .build(),
-                WorkflowConditionRepresentation.create()
-                        .of("condition-2")
-                        .withConfig("key1", "v1")
-                        .withConfig("key2", "v1", "v2")
-                        .build(),
-                WorkflowConditionRepresentation.create()
-                        .of("condition-1")
-                        .withConfig("key1", "v1")
-                        .withConfig("key2", "v1", "v2", "v3")
-                        .build()));
 
         expected.setSteps(Arrays.asList(
                 WorkflowStepRepresentation.create()
@@ -71,26 +53,12 @@ public class WorkflowDefinitionTest {
 
         assertEquals(expected.getId(), actual.getId());
         assertEquals(expected.getUses(), actual.getUses());
-        assertTrue(actual.getOn() instanceof String);
-        assertEquals(expected.getOn(), (String) actual.getOn());
+        assertNotNull(actual.getOn());
+        assertEquals(expected.getOn(), actual.getOn());
         assertEquals(expected.getConcurrency(), actual.getConcurrency());
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getEnabled(), actual.getEnabled());
-
-        List<WorkflowConditionRepresentation> actualConditions = actual.getConditions();
-        assertNotNull(actualConditions);
-        actualConditions = actualConditions.stream().sorted(Comparator.comparing(WorkflowConditionRepresentation::getUses)).collect(Collectors.toList());
-        List<WorkflowConditionRepresentation> expectedConditions = expected.getConditions().stream().sorted(Comparator.comparing(WorkflowConditionRepresentation::getUses)).collect(Collectors.toList());
-
-        assertEquals(expectedConditions.size(), actualConditions.size());
-        assertEquals(expectedConditions.get(0).getUses(), actualConditions.get(0).getUses());
-        assertEquals(expectedConditions.get(0).getConfig().get("key1"), actualConditions.get(0).getConfig().get("key1"));
-        assertEquals(expectedConditions.get(0).getConfig().get("key2"), actualConditions.get(0).getConfig().get("key2"));
-        assertEquals(expectedConditions.get(1).getConfig().get("key1"), actualConditions.get(1).getConfig().get("key1"));
-        assertEquals(expectedConditions.get(1).getConfig().get("key2"), actualConditions.get(1).getConfig().get("key2"));
-        assertEquals(expectedConditions.get(2).getConfig().get("key1"), actualConditions.get(2).getConfig().get("key1"));
-        assertEquals(expectedConditions.get(2).getConfig().get("key2"), actualConditions.get(2).getConfig().get("key2"));
-
+        assertEquals(expected.getConditions(), actual.getConditions());
 
         List<WorkflowStepRepresentation> actualSteps = actual.getSteps();
         assertNotNull(actualSteps);
@@ -107,29 +75,15 @@ public class WorkflowDefinitionTest {
     }
 
     @Test
-    public void testOnEventAsArray() throws IOException {
-        WorkflowRepresentation expected = new WorkflowRepresentation();
-
-        expected.setOn("event", "event2");
-
-        String json = JsonSerialization.writeValueAsPrettyString(expected);
-        WorkflowRepresentation actual = JsonSerialization.readValue(json, WorkflowRepresentation.class);
-        assertTrue(actual.getOn() instanceof List);
-        assertEquals(Arrays.asList("event", "event2"), actual.getOn());
-
-        System.out.println(json);
-    }
-
-    @Test
     public void testOnEventAsString() throws IOException {
         WorkflowRepresentation expected = new WorkflowRepresentation();
 
-        expected.setOn("event");
+        expected.setOn("event OR other-event");
 
         String json = JsonSerialization.writeValueAsPrettyString(expected);
         WorkflowRepresentation actual = JsonSerialization.readValue(json, WorkflowRepresentation.class);
-        assertTrue(actual.getOn() instanceof String);
-        assertEquals("event", actual.getOn());
+        assertNotNull(actual.getOn());
+        assertEquals("event OR other-event", actual.getOn());
 
         System.out.println(json);
     }

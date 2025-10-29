@@ -186,7 +186,11 @@ public class LDAPUtils {
                     config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
         }
 
-        return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
+        if (config.isImportEnabled()) {
+            return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
+        }
+
+        return  ldapUsername;
     }
 
     public static void checkUuid(LDAPObject ldapUser, LDAPConfig config) {

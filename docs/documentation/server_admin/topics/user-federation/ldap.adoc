@@ -51,7 +51,7 @@ Operations that fetch a single user (for example during login) are usually cache
 
 Users and admins can modify user metadata, users through the <<_account-service, Account Console>>, and administrators through the Admin Console. The `Edit Mode` configuration on the LDAP configuration page defines the user's LDAP update privileges.
 
-READONLY::
+READ_ONLY::
 You cannot change the username, email, first name, last name, and other mapped attributes. {project_name} shows an error anytime a user attempts to update these fields. Password updates are not supported.
 
 WRITABLE::
@@ -99,6 +99,12 @@ The `Use Truststore SPI` configuration property is deprecated.  It should normal
 ==== Synchronizing LDAP users to {project_name}
 
 If you set the *Import Users* option, the LDAP Provider handles importing LDAP users into the {project_name} local database. The first time a user logs in or is returned as part of a user query (e.g. using the search field in the admin console), the LDAP provider imports the LDAP user into the {project_name} database. During authentication, the LDAP password is validated.
+
+By default, {project_name} does not support the username and email attributes with case-sensitive values when storing users to the local database. The value for these attributes will be stored in lower-case in the local database.
+However, if the *Import Users* option is disabled, {project_name} will not lower-case the username and email attributes when querying users from LDAP.
+This behavior allows you to use case-sensitive usernames and emails when *Import Users* is disabled. Note that this behavior applies only to username and email attributes. Other attributes remain case-sensitive.
+
+It is recommended to not use case-sensitive usernames and emails when using LDAP with {project_name}, as some features in {project_name} may not work correctly with case-sensitive usernames and emails.
 
 If you want to sync all LDAP users into the {project_name} database, configure and enable the *Sync Settings* on the LDAP provider configuration page.
 

@@ -34,6 +34,8 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionProvider;
+import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractUserWorkflowProvider extends EventBasedWorkflowProvider {
 
@@ -65,33 +67,22 @@ public abstract class AbstractUserWorkflowProvider extends EventBasedWorkflowPro
         Predicate notExistsPredicate = cb.not(cb.exists(subquery));
         predicates.add(notExistsPredicate);
 
-        predicates.addAll(getConditionsPredicate(cb, query, userRoot));
+        predicates.add(getConditionsPredicate(cb, query, userRoot));
 
         query.select(userRoot.get("id")).where(predicates);
 
         return em.createQuery(query).getResultList();
     }
 
-    private List<Predicate> getConditionsPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> path) {
+    private Predicate getConditionsPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<UserEntity> path) {
         MultivaluedHashMap<String, String> config = getModel().getConfig();
-        List<String> conditions = config.getOrDefault(CONFIG_CONDITIONS, List.of());
+        String conditions = config.getFirst(CONFIG_CONDITIONS);
 
-        if (conditions.isEmpty()) {
-            return List.of();
+        if (StringUtil.isBlank(conditions)) {
+            return cb.conjunction();
         }
 
-        List<Predicate> predicates = new ArrayList<>();
-
-        for (String providerId : conditions) {
-            WorkflowConditionProvider condition = getManager().getConditionProvider(providerId, config);
-            Predicate predicate = condition.toPredicate(cb, query, path);
-
-            if (predicate != null) {
-                predicates.add(predicate);
-            }
-        }
-
-        return predicates;
+        return new ExpressionWorkflowConditionProvider(getSession(), conditions).toPredicate(cb, query, path);
     }
 
     @Override

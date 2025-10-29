@@ -17,8 +17,8 @@
 
 package org.keycloak.models.workflow;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADD;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGIN;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
 
 import java.util.List;
 
@@ -33,6 +33,6 @@ public class UserSessionRefreshTimeWorkflowProvider extends AbstractUserWorkflow
 
     @Override
     protected boolean isActivationEvent(WorkflowEvent event) {
-        return super.isActivationEvent(event) || List.of(USER_ADD, USER_LOGIN).contains(event.getOperation());
+        return super.isActivationEvent(event) || List.of(USER_ADDED, USER_LOGGED_IN).contains(event.getOperation());
     }
 }

@@ -27,10 +27,17 @@ export const MultiValuedListComponent = ({
   stringify,
   required,
   convertToName,
+  onSearch,
 }: ComponentProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
+
+  function setSearch(value: string) {
+    if (onSearch) {
+      onSearch(value);
+    }
+  }
 
   return (
     <FormGroup
@@ -77,6 +84,7 @@ export const MultiValuedListComponent = ({
             onClear={() => {
               field.onChange(stringify ? "" : []);
             }}
+            onFilter={(value) => setSearch(value)}
             isOpen={open}
             aria-label={t(label!)}
           >

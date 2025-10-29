@@ -20,7 +20,7 @@ package org.keycloak.models.workflow;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADD;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 
 public class UserCreationTimeWorkflowProvider extends AbstractUserWorkflowProvider {
 
@@ -30,6 +30,6 @@ public class UserCreationTimeWorkflowProvider extends AbstractUserWorkflowProvid
 
     @Override
     protected boolean isActivationEvent(WorkflowEvent event) {
-        return super.isActivationEvent(event) || USER_ADD.equals(event.getOperation());
+        return super.isActivationEvent(event) || USER_ADDED.equals(event.getOperation());
     }
 }

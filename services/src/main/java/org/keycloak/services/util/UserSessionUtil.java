@@ -4,12 +4,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
@@ -185,6 +187,16 @@ public class UserSessionUtil {
             }
 
         };
+    }
+
+    public static boolean isOfflineAccessGranted(KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
+        if (clientSession == null) {
+            return false;
+        }
+
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(
+                clientSession, OAuth2Constants.OFFLINE_ACCESS, session);
+        return clientSessionCtx.getClientScopesStream().anyMatch((s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())));
     }
 
     private static void attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, ClientModel client) {

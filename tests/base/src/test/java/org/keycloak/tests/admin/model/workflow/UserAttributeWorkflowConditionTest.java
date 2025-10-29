@@ -28,7 +28,6 @@ import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.conditions.UserAttributeWorkflowConditionFactory;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
@@ -133,13 +132,16 @@ public class UserAttributeWorkflowConditionTest {
     }
 
     private void createWorkflow(Map<String, List<String>> attributes) {
+        String attributeCondition = attributes.keySet().stream()
+                .map(key -> UserAttributeWorkflowConditionFactory.ID + "(" +  key + ":" + String.join(",", attributes.get(key)) + ")")
+                .reduce((a, b) -> a + " AND " + b)
+                .orElse(null);
+
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(EventBasedWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_ADD.name())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(UserAttributeWorkflowConditionFactory.ID)
-                        .withConfig(attributes)
-                        .build())
+                .name(EventBasedWorkflowProviderFactory.ID)
+                .onEvent(ResourceOperationType.USER_ADDED.name())
+                .onCondition(attributeCondition)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)

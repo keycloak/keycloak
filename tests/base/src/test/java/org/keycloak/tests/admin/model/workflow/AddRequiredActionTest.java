@@ -30,6 +30,7 @@ public class AddRequiredActionTest {
     public void testStepRun() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(AddRequiredActionStepProviderFactory.ID)
