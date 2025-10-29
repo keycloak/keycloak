@@ -54,6 +54,9 @@ _subject token_ and exchange it for another token _requested token_.
 . The _requested token_ is returned to `requester-client`. This token can now be sent to the `target-client`.
 . The `target-client` can fulfill the request and return the response to the `requester-client`. The `requester-client` can then follow and return the response to the request from step 2.
 
+.Token Exchange Example Flow
+image::token-exchange-example-flow.dio.svg[Token Exchange Example Flow]
+
 Many other use-cases exist for token exchange, but the preceding example is the most typical.
 
 ==== Example token exchange request
