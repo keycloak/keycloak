@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -61,6 +62,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -71,6 +73,7 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
@@ -1559,6 +1562,92 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             assertTrue("Invalid ExpiresIn", 0 < response.getRefreshExpiresIn() && response.getRefreshExpiresIn() <= 3600);
         } finally {
             changeOfflineSessionSettings(false, prevOfflineSession[0], prevOfflineSession[1], prevOfflineSession[2], prevOfflineSession[3]);
+        }
+    }
+
+    @Test
+    public void offlineRefreshWhenNoOfflineScope() throws Exception {
+        // login to obtain a refresh token
+        oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        oauth.redirectUri(offlineClientAppUri);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+
+        EventRepresentation loginEvent = events.expectLogin()
+                .client("offline-client")
+                .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                .assertEvent();
+
+        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
+                .client("offline-client")
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .assertEvent();
+
+        // check refresh is successful
+        RefreshToken offlineToken = oauth.parseRefreshToken(response.getRefreshToken());
+        oauth.scope(null);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertEquals(200, response.getStatusCode());
+        Assert.assertEquals(0, response.getRefreshExpiresIn());
+        events.expectRefresh(offlineToken.getId(), loginEvent.getSessionId())
+                .client("offline-client")
+                .user(userId)
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .assertEvent();
+        offlineToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getAccessToken());
+        assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
+        events.expect(EventType.INTROSPECT_TOKEN)
+                .client("offline-client")
+                .session(loginEvent.getSessionId())
+                .assertEvent();
+
+        introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getRefreshToken());
+        assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
+        events.expect(EventType.INTROSPECT_TOKEN)
+                .client("offline-client")
+                .session(loginEvent.getSessionId())
+                .assertEvent();
+
+        // remove offline scope from the client and perform a second refresh
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, TEST, "offline-client")
+                .removeOptionalClientScope("offline_access").update()) {
+
+            introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getAccessToken());
+            assertFalse(introspectionResponse.asJsonNode().get("active").asBoolean());
+            events.expect(EventType.INTROSPECT_TOKEN_ERROR)
+                    .client("offline-client")
+                    .session(loginEvent.getSessionId())
+                    .error(Errors.SESSION_EXPIRED)
+                    .detail(Details.REASON, "Offline session invalid because offline access not granted anymore")
+                    .assertEvent();
+
+            introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getRefreshToken());
+            assertFalse(introspectionResponse.asJsonNode().get("active").asBoolean());
+            events.expect(EventType.INTROSPECT_TOKEN_ERROR)
+                    .client("offline-client")
+                    .session(loginEvent.getSessionId())
+                    .error(Errors.SESSION_EXPIRED)
+                    .detail(Details.REASON, "Offline session invalid because offline access not granted anymore")
+                    .assertEvent();
+
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+            assertEquals("Offline session invalid because offline access not granted anymore", response.getErrorDescription());
+            events.expect(EventType.REFRESH_TOKEN_ERROR)
+                    .client("offline-client")
+                    .session(loginEvent.getSessionId())
+                    .user((String) null)
+                    .error(Errors.INVALID_TOKEN)
+                    .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                    .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                    .detail(Details.REASON, "Offline session invalid because offline access not granted anymore")
+                    .assertEvent();
         }
     }
 }
