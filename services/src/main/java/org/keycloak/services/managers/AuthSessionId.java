@@ -18,27 +18,11 @@
 package org.keycloak.services.managers;
 
 /**
+ * @param sessionId    Decoded ID of authenticationSession WITHOUT route attached (EG.
+ *                     "5e161e00-d426-4ea6-98e9-52eb9844e2d7")
+ * @param routeChanged If the session in the cookie needs to be updated.
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class AuthSessionId {
+record AuthSessionId(String sessionId, boolean routeChanged) {
 
-    // Decoded ID of authenticationSession WITHOUT route attached (EG. "5e161e00-d426-4ea6-98e9-52eb9844e2d7")
-    private final String decodedId;
-
-    // Encoded ID of authenticationSession WITH route attached (EG. "5e161e00-d426-4ea6-98e9-52eb9844e2d7.node1")
-    private final String encodedId;
-
-    AuthSessionId(String decodedId, String encodedId) {
-        this.decodedId = decodedId;
-        this.encodedId = encodedId;
-    }
-
-
-    public String getDecodedId() {
-        return decodedId;
-    }
-
-    public String getEncodedId() {
-        return encodedId;
-    }
 }
