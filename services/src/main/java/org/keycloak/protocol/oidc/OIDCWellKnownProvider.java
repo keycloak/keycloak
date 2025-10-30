@@ -27,7 +27,6 @@ import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureProvider;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
@@ -39,6 +38,8 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
 import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -216,8 +217,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setAuthorizationResponseIssParameterSupported(true);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) && realm.isVerifiableCredentialsEnabled()) {
-            config.setAuthorizationDetailsTypesSupported(List.of(OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE));
+        List<String> authorizationDetailsTypesSupported = getAuthorizationDetailsTypesSupported();
+        if (!authorizationDetailsTypesSupported.isEmpty()) {
+            config.setAuthorizationDetailsTypesSupported(authorizationDetailsTypesSupported);
         }
 
         config = checkConfigOverride(config);
@@ -326,6 +328,16 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         mtls_endpoints.setBackchannelAuthenticationEndpoint(config.getBackchannelAuthenticationEndpoint());
         mtls_endpoints.setPushedAuthorizationRequestEndpoint(config.getPushedAuthorizationRequestEndpoint());
         return mtls_endpoints;
+    }
+
+    private List<String> getAuthorizationDetailsTypesSupported() {
+        return session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
+                .map(AuthorizationDetailsProcessorFactory.class::cast)
+                .map(factory -> Map.entry(factory.getId(), factory.create(session)))
+                .filter(entry -> entry.getValue().isSupported())
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     private OIDCConfigurationRepresentation checkConfigOverride(OIDCConfigurationRepresentation config) {

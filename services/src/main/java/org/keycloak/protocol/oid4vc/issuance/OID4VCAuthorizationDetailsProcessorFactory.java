@@ -31,7 +31,7 @@ import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
  */
 public class OID4VCAuthorizationDetailsProcessorFactory implements AuthorizationDetailsProcessorFactory, OID4VCEnvironmentProviderFactory {
 
-    public static final String PROVIDER_ID = "oid4vci-authorization-details-processor";
+    public static final String PROVIDER_ID = OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE;
 
     @Override
     public AuthorizationDetailsProcessor create(KeycloakSession session) {

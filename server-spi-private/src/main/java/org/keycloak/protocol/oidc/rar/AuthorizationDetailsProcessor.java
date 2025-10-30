@@ -34,6 +34,11 @@ import java.util.List;
 public interface AuthorizationDetailsProcessor extends Provider {
 
     /**
+     * Checks if this processor should be regarded as supported in the running context.
+     */
+    boolean isSupported();
+
+    /**
      * Processes the authorization_details parameter and returns a response if this processor
      * is able to handle the given authorization_details parameter.
      *
