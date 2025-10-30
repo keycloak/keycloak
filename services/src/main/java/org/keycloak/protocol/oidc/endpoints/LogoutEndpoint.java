@@ -232,28 +232,6 @@ public class LogoutEndpoint {
             }
         }
 
-        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true, true);
-        session.getContext().setAuthenticationSession(logoutSession);
-        if (uiLocales != null) {
-            logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
-        }
-        if (validatedRedirectUri != null) {
-            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, validatedRedirectUri);
-        }
-        if (state != null) {
-            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
-        }
-        if (initiatingIdp != null) {
-            logoutSession.setAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP, initiatingIdp);
-        }
-        if (idToken != null) {
-            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE, idToken.getSessionState());
-            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT, String.valueOf(idToken.getIat()));
-        }
-
-        LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
-                .setAuthenticationSession(logoutSession);
-
         UserSessionModel userSession = null;
 
         // Check if we have session in the browser. If yes and it is different session than referenced by id_token_hint, the confirmation should be displayed
@@ -274,6 +252,29 @@ public class LogoutEndpoint {
         if (userSession == null && idToken != null && idToken.getSessionState() != null) {
             userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
         }
+
+        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm,
+                new AuthenticationSessionManager(session), userSession, true, true);
+        session.getContext().setAuthenticationSession(logoutSession);
+        if (uiLocales != null) {
+            logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
+        }
+        if (validatedRedirectUri != null) {
+            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, validatedRedirectUri);
+        }
+        if (state != null) {
+            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
+        }
+        if (initiatingIdp != null) {
+            logoutSession.setAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP, initiatingIdp);
+        }
+        if (idToken != null) {
+            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE, idToken.getSessionState());
+            logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT, String.valueOf(idToken.getIat()));
+        }
+
+        LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
+                .setAuthenticationSession(logoutSession);
 
         // Try to figure user because of localization
         if (userSession != null) {
