@@ -202,8 +202,7 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
                 var exceptionData = (ExceptionEventData) eventData;
                 var exceptionAttributes = exceptionData.getAttributes();
                 assertThat(exceptionAttributes, notNullValue());
-
-                assertThat(exceptionAttributes.get(ExceptionAttributes.EXCEPTION_ESCAPED), is(true));
+                assertThat(exceptionAttributes.get(AttributeKey.booleanKey("exception.escaped")), is(true));
                 assertThat(exceptionAttributes.get(ExceptionAttributes.EXCEPTION_MESSAGE), is("something bad happened"));
                 assertThat(exceptionAttributes.get(ExceptionAttributes.EXCEPTION_STACKTRACE), not(emptyOrNullString()));
                 assertThat(exceptionAttributes.get(ExceptionAttributes.EXCEPTION_TYPE), is(RuntimeException.class.getCanonicalName()));

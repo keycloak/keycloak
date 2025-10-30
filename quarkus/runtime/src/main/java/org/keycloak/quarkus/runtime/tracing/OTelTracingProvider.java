@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.tracing;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -100,7 +101,7 @@ public class OTelTracingProvider implements TracingProvider {
     public void error(Throwable exception) {
         var span = getCurrentSpan();
         var exceptionAttributes = Attributes.builder() // based on OTel Semantic Conventions
-                .put(ExceptionAttributes.EXCEPTION_ESCAPED, true)
+                .put(AttributeKey.booleanKey("exception.escaped"), true) // remove once semconv >= 1.32 is used
                 .put(ExceptionAttributes.EXCEPTION_MESSAGE, exception.getMessage())
                 .put(ExceptionAttributes.EXCEPTION_TYPE, exception.getClass().getCanonicalName())
                 .put(ExceptionAttributes.EXCEPTION_STACKTRACE, ExceptionUtils.getStackTrace(exception))
