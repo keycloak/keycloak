@@ -1654,6 +1654,37 @@ public class AuthenticationManager {
     }
 
     public record AuthResult(UserModel user, UserSessionModel session, AccessToken token, ClientModel client) {
+        /**
+         * @deprecated use {@link #session()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
+        public UserSessionModel getSession() {
+            return session;
+        }
+
+        /**
+         * @deprecated use {@link #user()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
+        public UserModel getUser() {
+            return user;
+        }
+
+        /**
+         * @deprecated use {@link #token()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
+        public AccessToken getToken() {
+            return token;
+        }
+
+        /**
+         * @deprecated use {@link #client()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
+        public ClientModel getClient() {
+            return client;
+        }
     }
 
     public static void setKcActionStatus(String executedProviderId, RequiredActionContext.KcActionStatus status, AuthenticationSessionModel authSession) {
