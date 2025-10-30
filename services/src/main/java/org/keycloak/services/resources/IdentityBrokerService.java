@@ -248,7 +248,6 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return Response.status(302).location(builder.build()).build();
         }
 
-        cookieResult.session();
         event.session(cookieResult.session());
         event.user(cookieResult.user());
         event.detail(Details.USERNAME, cookieResult.user().getUsername());
