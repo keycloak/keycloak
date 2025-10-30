@@ -65,9 +65,9 @@
       <div class="${properties.kcInputGroupItemClass}">
         <button class="${properties.kcFormPasswordVisibilityButtonClass}" type="button" aria-label="${msg('showPassword')}"
                 aria-controls="${name}" data-password-toggle
-                data-icon-show="fa-eye fas" data-icon-hide="fa-eye-slash fas"
+                data-icon-show="${properties.kcFormPasswordVisibilityIconShow}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide}"
                 data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}" id="${name}-show-password">
-            <i class="fa-eye fas" aria-hidden="true"></i>
+            <i class="${properties.kcFormPasswordVisibilityIconShow}" aria-hidden="true"></i>
         </button>
       </div>
     </div>
