@@ -913,11 +913,11 @@ public class AuthenticationManager {
 
         AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, null, true, tokenString,
                 session.getContext().getRequestHeaders(), verifier -> verifier.withChecks(VALIDATE_IDENTITY_COOKIE));
-        if (authResult == null || authResult.getSession() == null) {
+        if (authResult == null || authResult.session() == null) {
             expireIdentityCookie(session);
             return null;
         }
-        authResult.getSession().setLastSessionRefresh(Time.currentTime());
+        authResult.session().setLastSessionRefresh(Time.currentTime());
         return authResult;
     }
 
@@ -942,7 +942,7 @@ public class AuthenticationManager {
         if (!compareSessionIdWithSessionCookie(session, userSession.getId())) {
             AuthResult result = authenticateIdentityCookie(session, realm, false);
             if (result != null) {
-                UserSessionModel oldSession = result.getSession();
+                UserSessionModel oldSession = result.session();
                 if (oldSession != null && !oldSession.getId().equals(userSession.getId())) {
                     logger.debugv("Removing old user session: session: {0}", oldSession.getId());
                     session.sessions().removeUserSession(realm, oldSession);
@@ -1653,31 +1653,35 @@ public class AuthenticationManager {
         SUCCESS, ACCOUNT_TEMPORARILY_DISABLED, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
     }
 
-    public static class AuthResult {
-        private final UserModel user;
-        private final UserSessionModel session;
-        private final AccessToken token;
-        private final ClientModel client;
-
-        public AuthResult(UserModel user, UserSessionModel session, AccessToken token, ClientModel client) {
-            this.user = user;
-            this.session = session;
-            this.token = token;
-            this.client = client;
-        }
-
+    public record AuthResult(UserModel user, UserSessionModel session, AccessToken token, ClientModel client) {
+        /**
+         * @deprecated use {@link #session()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public UserSessionModel getSession() {
             return session;
         }
 
+        /**
+         * @deprecated use {@link #user()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public UserModel getUser() {
             return user;
         }
 
+        /**
+         * @deprecated use {@link #token()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public AccessToken getToken() {
             return token;
         }
 
+        /**
+         * @deprecated use {@link #client()} instead.
+         */
+        @Deprecated(since = "26.5", forRemoval = true)
         public ClientModel getClient() {
             return client;
         }

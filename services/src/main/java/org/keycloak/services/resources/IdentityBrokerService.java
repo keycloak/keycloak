@@ -248,13 +248,12 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return Response.status(302).location(builder.build()).build();
         }
 
-        cookieResult.getSession();
-        event.session(cookieResult.getSession());
-        event.user(cookieResult.getUser());
-        event.detail(Details.USERNAME, cookieResult.getUser().getUsername());
+        event.session(cookieResult.session());
+        event.user(cookieResult.user());
+        event.detail(Details.USERNAME, cookieResult.user().getUsername());
 
         AuthenticatedClientSessionModel clientSession = null;
-        for (AuthenticatedClientSessionModel cs : cookieResult.getSession().getAuthenticatedClientSessions().values()) {
+        for (AuthenticatedClientSessionModel cs : cookieResult.session().getAuthenticatedClientSessions().values()) {
             if (cs.getClient().getClientId().equals(clientId)) {
                 byte[] decoded = Base64Url.decode(hash);
                 MessageDigest md = null;
@@ -263,7 +262,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 } catch (NoSuchAlgorithmException e) {
                     throw new ErrorPageException(session, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
                 }
-                String input = nonce + cookieResult.getSession().getId() + clientId + providerAlias;
+                String input = nonce + cookieResult.session().getId() + clientId + providerAlias;
                 byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
                 if (MessageDigest.isEqual(decoded, check)) {
                     clientSession = cs;
@@ -311,7 +310,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
 
         // Create AuthenticationSessionModel with same ID like userSession and refresh cookie
-        UserSessionModel userSession = cookieResult.getSession();
+        UserSessionModel userSession = cookieResult.session();
 
         // Auth session with ID corresponding to our userSession may already exists in some rare cases (EG. if some client tried to login in another browser tab with "prompt=login")
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realmModel, userSession.getId());
@@ -331,7 +330,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         authSession.setProtocol(client.getProtocol());
         authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
-        authSession.setAuthNote(LINKING_IDENTITY_PROVIDER, cookieResult.getSession().getId() + clientId + providerAlias);
+        authSession.setAuthNote(LINKING_IDENTITY_PROVIDER, cookieResult.session().getId() + clientId + providerAlias);
 
         event.detail(Details.CODE_ID, userSession.getId());
         event.success();
@@ -485,10 +484,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                     .authenticate();
 
             if (authResult != null) {
-                AccessToken token = authResult.getToken();
-                ClientModel clientModel = authResult.getClient();
+                AccessToken token = authResult.token();
+                ClientModel clientModel = authResult.client();
                 event.client(clientModel);
-                event.user(authResult.getUser());
+                event.user(authResult.user());
 
                 session.getContext().setClient(clientModel);
 
@@ -506,14 +505,14 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
 
                 if (identityProviderConfig.isStoreToken()) {
-                    FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, authResult.getUser(), providerAlias);
+                    FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, authResult.user(), providerAlias);
 
                     if (identity == null) {
-                        return corsResponse(badRequest("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerAlias + "]."), clientModel);
+                        return corsResponse(badRequest("User [" + authResult.user().getId() + "] is not associated with identity provider [" + providerAlias + "]."), clientModel);
                     }
 
                     if (identity.getToken() == null) {
-                        return corsResponse(notFound("No token stored for user [" + authResult.getUser().getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
+                        return corsResponse(notFound("No token stored for user [" + authResult.user().getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
                     }
 
                     String oldToken = identity.getToken();
@@ -529,7 +528,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                         if (!Objects.equals(oldToken, identity.getToken())) {
                             // The API of the IdentityProvider doesn't allow use to pass down the realm and the user, so we check if the token has changed,
                             // and then update the store.
-                            session.users().updateFederatedIdentity(session.getContext().getRealm(), authResult.getUser(), identity);
+                            session.users().updateFederatedIdentity(session.getContext().getRealm(), authResult.user(), identity);
                         }
                     }
                 }

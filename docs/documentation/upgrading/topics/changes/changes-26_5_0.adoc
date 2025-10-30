@@ -99,6 +99,11 @@ In a scenario where {project_name} acts as a broker and connects via OpenID Conn
 
 This behavior is deprecated and will be removed in a future version of Keycloak.
 
+=== `AuthenticationManager.AuthResult` is now a record
+
+The inner class `AuthenticationManager.AuthResult` in the `keycloak-services` module is now a record.
+The getter methods like `getSession()` have been deprecated in favor of the `session()` accessors.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 

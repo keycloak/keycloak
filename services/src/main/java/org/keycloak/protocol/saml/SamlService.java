@@ -230,7 +230,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             // assume this is a logout response
-            UserSessionModel userSession = authResult.getSession();
+            UserSessionModel userSession = authResult.session();
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.warn("Unknown saml response.");
                 logger.warn("UserSession is not tagged as logging out.");
@@ -567,7 +567,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
 
                 String bindingUri = SamlProtocol.getLogoutServiceUrl(session, client, logoutBinding, false);
-                UserSessionModel userSession = authResult.getSession();
+                UserSessionModel userSession = authResult.session();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
                 if (samlClient.requiresRealmSignature()) {
                     userSession.setNote(SamlProtocol.SAML_LOGOUT_SIGNATURE_ALGORITHM, samlClient.getSignatureAlgorithm().toString());

@@ -49,9 +49,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
         // check if new user and client session are needed
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(), context.getRealm(), true);
-        final boolean newUserSession = authResult == null || authResult.getSession() == null;
-        final boolean newClientSession = authResult == null || authResult.getSession() == null
-                || authResult.getSession().getAuthenticatedClientSessionByClient(currentClient.getId()) == null;
+        final boolean newUserSession = authResult == null || authResult.session() == null;
+        final boolean newClientSession = authResult == null || authResult.session() == null
+                || authResult.session().getAuthenticatedClientSessionByClient(currentClient.getId()) == null;
 
         // Get the configuration for this authenticator
         behavior = config.get(UserSessionLimitsAuthenticatorFactory.BEHAVIOR);

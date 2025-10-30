@@ -123,9 +123,9 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token", Response.Status.BAD_REQUEST);
             }
 
-            tokenUser = authResult.getUser();
-            tokenSession = authResult.getSession();
-            token = authResult.getToken();
+            tokenUser = authResult.user();
+            tokenSession = authResult.session();
+            token = authResult.token();
         }
 
         String requestedSubject = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_SUBJECT);

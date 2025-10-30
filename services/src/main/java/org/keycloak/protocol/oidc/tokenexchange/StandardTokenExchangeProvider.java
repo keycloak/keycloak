@@ -130,9 +130,9 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid token", Response.Status.BAD_REQUEST);
         }
 
-        UserModel tokenUser = authResult.getUser();
-        UserSessionModel tokenSession = authResult.getSession();
-        AccessToken token = authResult.getToken();
+        UserModel tokenUser = authResult.user();
+        UserSessionModel tokenSession = authResult.session();
+        AccessToken token = authResult.token();
 
         event.user(tokenUser);
         event.detail(Details.USERNAME, tokenUser.getUsername());

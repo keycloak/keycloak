@@ -205,7 +205,7 @@ public class SessionCodeChecks {
         if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
             AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, false);
 
-            if (authResult != null && authResult.getSession() != null) {
+            if (authResult != null && authResult.session() != null) {
                 response = null;
 
                 if (client != null && clientData != null) {
