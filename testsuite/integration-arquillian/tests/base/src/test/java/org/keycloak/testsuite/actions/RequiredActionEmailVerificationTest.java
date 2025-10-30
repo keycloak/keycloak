@@ -67,16 +67,13 @@ import java.io.Closeable;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -155,9 +152,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     private void clearCooldownForUser() {
         String cooldownKey = EMAIL_RESEND_COOLDOWN_KEY_PREFIX + testUserId;
-        testingClient.server().run(session -> {
-            session.singleUseObjects().remove(cooldownKey);
-        });
+        testingClient.server().run(session -> session.singleUseObjects().remove(cooldownKey));
     }
 
     protected boolean removeVerifyProfileAtImport() {
@@ -169,7 +164,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
      * see KEYCLOAK-4163
      */
     @Test
-    public void verifyEmailConfig() throws IOException, MessagingException {
+    public void verifyEmailConfig() throws MessagingException {
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -188,7 +183,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailExisting() throws IOException, MessagingException {
+    public void verifyEmailExisting() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -220,7 +215,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailRegister() throws IOException, MessagingException {
+    public void verifyEmailRegister() throws IOException {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
@@ -253,7 +248,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailRegisterSetLocale() throws IOException, MessagingException {
+    public void verifyEmailRegisterSetLocale() throws IOException {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setInternationalizationEnabled(true);
         realm.setSupportedLocales(Set.of("en", "pt"));
@@ -327,7 +322,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailResend() throws IOException, MessagingException {
+    public void verifyEmailResend() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -392,7 +387,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailResendWithRefreshes() throws IOException, MessagingException {
+    public void verifyEmailResendWithRefreshes() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -437,7 +432,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailResendFirstStillValidEvenWithSecond() throws IOException, MessagingException {
+    public void verifyEmailResendFirstStillValidEvenWithSecond() throws IOException {
         // Email verification can be performed any number of times
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -472,7 +467,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailResendFirstAndSecondStillValid() throws IOException, MessagingException {
+    public void verifyEmailResendFirstAndSecondStillValid() throws IOException {
         // Email verification can be performed any number of times
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -501,7 +496,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailResendAndVerifyWithLatestLink() throws IOException, MessagingException {
+    public void verifyEmailResendAndVerifyWithLatestLink() throws IOException {
         // Email verification can be performed any number of times
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -522,7 +517,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailNewBrowserSession() throws IOException, MessagingException {
+    public void verifyEmailNewBrowserSession() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -561,7 +556,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailInvalidKeyInVerficationLink() throws IOException, MessagingException {
+    public void verifyEmailInvalidKeyInVerficationLink() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -592,7 +587,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailExpiredCode() throws IOException, MessagingException {
+    public void verifyEmailExpiredCode() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -628,9 +623,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailExpiredCodedPerActionLifespan() throws IOException, MessagingException {
+    public void verifyEmailExpiredCodedPerActionLifespan() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         realmRep.setAttributes(UserActionTokenBuilder.create().verifyEmailLifespan(60).build());
         testRealm().update(realmRep);
@@ -672,9 +667,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailExpiredCodedPerActionMultipleTimeouts() throws IOException, MessagingException {
+    public void verifyEmailExpiredCodedPerActionMultipleTimeouts() throws IOException {
         RealmRepresentation realmRep = testRealm().toRepresentation();
-        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         //Make sure that one attribute settings won't affect the other
         realmRep.setAttributes(UserActionTokenBuilder.create().verifyEmailLifespan(60).resetCredentialsLifespan(300).build());
@@ -717,7 +712,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailExpiredCodeAndExpiredSession() throws IOException, MessagingException {
+    public void verifyEmailExpiredCodeAndExpiredSession() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -755,17 +750,17 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
 
-    public static String getEmailLink(MimeMessage message) throws IOException, MessagingException {
+    public static String getEmailLink(MimeMessage message) throws IOException {
         return MailUtils.getPasswordResetEmailLink(message);
     }
 
     // https://issues.jboss.org/browse/KEYCLOAK-5861
     @Test
-    public void verifyEmailNewBrowserSessionWithClientRedirect() throws URISyntaxException, IOException, MessagingException {
+    public void verifyEmailNewBrowserSessionWithClientRedirect() throws IOException {
         try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
           .setEmailVerified(false)
           .update()) {
-            testRealm().users().get(testUserId).executeActionsEmail(Arrays.asList(RequiredAction.VERIFY_EMAIL.name()));
+            testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.VERIFY_EMAIL.name()));
 
             Assert.assertEquals(1, greenMail.getReceivedMessages().length);
             MimeMessage message = greenMail.getLastReceivedMessage();
@@ -789,7 +784,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailNewBrowserSessionPreserveClient() throws IOException, MessagingException {
+    public void verifyEmailNewBrowserSessionPreserveClient() throws IOException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -822,7 +817,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailDuringAuthFlow() throws IOException, MessagingException {
+    public void verifyEmailDuringAuthFlow() throws IOException {
         try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
                 .setEmailVerified(false)
                 .setRequiredActions(RequiredAction.VERIFY_EMAIL)
@@ -846,12 +841,12 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailDuringAuthFlowFirstClickLink() throws IOException, MessagingException {
+    public void verifyEmailDuringAuthFlowFirstClickLink() throws IOException {
         try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
                 .setEmailVerified(false)
                 .setRequiredActions(RequiredAction.VERIFY_EMAIL)
                 .update()) {
-            testRealm().users().get(testUserId).executeActionsEmail(Arrays.asList(RequiredAction.VERIFY_EMAIL.name()));
+            testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.VERIFY_EMAIL.name()));
 
             Assert.assertEquals(1, greenMail.getReceivedMessages().length);
             MimeMessage message = greenMail.getLastReceivedMessage();
@@ -871,12 +866,12 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailClickLinkRequiredActionsCleared() throws IOException, MessagingException {
+    public void verifyEmailClickLinkRequiredActionsCleared() throws IOException {
         try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
                 .setEmailVerified(true)
                 .setRequiredActions()
                 .update()) {
-            testRealm().users().get(testUserId).executeActionsEmail(Arrays.asList(RequiredAction.VERIFY_EMAIL.name()));
+            testRealm().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.VERIFY_EMAIL.name()));
 
             Assert.assertEquals(1, greenMail.getReceivedMessages().length);
             MimeMessage message = greenMail.getLastReceivedMessage();
@@ -896,7 +891,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailDuringAuthFlowAfterLogout() throws URISyntaxException, IOException, MessagingException {
+    public void verifyEmailDuringAuthFlowAfterLogout() throws IOException {
         try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
                 .setEmailVerified(true)
                 .update()) {
@@ -913,7 +908,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailDuringAuthFlowAfterRefresh() throws URISyntaxException, IOException, MessagingException {
+    public void verifyEmailDuringAuthFlowAfterRefresh() throws IOException {
         try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
                 .setEmailVerified(true)
                 .update()) {
@@ -932,7 +927,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             driver2.findElement(By.id("password")).sendKeys("password");
             driver2.findElement(By.id("password")).submit();
 
-            assertThat(driver2.getCurrentUrl(), Matchers.startsWith(oauth.APP_AUTH_ROOT));
+            assertThat(driver2.getCurrentUrl(), Matchers.startsWith(OAuthClient.APP_AUTH_ROOT));
 
             // Admin: set required action to VERIFY_EMAIL
             try (Closeable u1 = new UserAttributeUpdater(testRealm().users().get(testUserId))
@@ -941,7 +936,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .update()) {
                 // Browser 2: Refresh window
                 driver2.navigate().refresh();
-                assertThat(driver2.getCurrentUrl(), Matchers.startsWith(oauth.APP_AUTH_ROOT));
+                assertThat(driver2.getCurrentUrl(), Matchers.startsWith(OAuthClient.APP_AUTH_ROOT));
 
                 // Browser 1: Logout
                 testAppHelper.logout();
@@ -978,7 +973,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailWhileLoggedIn() throws IOException, MessagingException {
+    public void verifyEmailWhileLoggedIn() throws IOException {
         UserAttributeUpdater userAttributeUpdater = new UserAttributeUpdater(testRealm().users().get(testUserId));
         userAttributeUpdater.setEmailVerified(true).update();
 
@@ -1010,7 +1005,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailViaAuthSessionWhileLoggedIn() throws IOException, MessagingException {
+    public void verifyEmailViaAuthSessionWhileLoggedIn() throws IOException {
         Assume.assumeTrue("Works only on auth-server-undertow",
                 AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
 
@@ -1023,8 +1018,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String realmId = testRealm().toRepresentation().getId();
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             RootAuthenticationSessionModel ras = session.authenticationSessions()
-                    .getRootAuthenticationSession(realm, new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false));
+                    .getRootAuthenticationSession(realm, new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId));
             assertThat("Expecting single auth session", ras.getAuthenticationSessions().keySet(), Matchers.hasSize(1));
             ras.getAuthenticationSessions().forEach((id, as) -> as.addRequiredAction(RequiredAction.VERIFY_EMAIL));
         });
@@ -1050,7 +1046,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailInNewBrowserWhileLoggedInFirstBrowser() throws IOException, MessagingException {
+    public void verifyEmailInNewBrowserWhileLoggedInFirstBrowser() throws IOException {
         UserAttributeUpdater userAttributeUpdater = new UserAttributeUpdater(testRealm().users().get(testUserId));
         userAttributeUpdater.setEmailVerified(true).update();
 
@@ -1098,7 +1094,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
-    public void verifyEmailExpiredRegistration() throws IOException, MessagingException {
+    public void verifyEmailExpiredRegistration() throws IOException {
         final String COMMON_ATTR = "verifyEmailRegistrationUser";
 
         driver.navigate().to(oauth.registrationForm().build());
