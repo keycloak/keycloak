@@ -1,13 +1,18 @@
 package org.keycloak.common.util;
 
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public class SecretGenerator {
 
     public static final int SECRET_LENGTH_256_BITS = 32;
     public static final int SECRET_LENGTH_384_BITS = 48;
     public static final int SECRET_LENGTH_512_BITS = 64;
+    // for auth session and user session; 128 bits entropy + 16 bits for cluster size.
+    private static final int SESSION_ID_BYTES = 18;
+    public static final Supplier<String> SECURE_ID_GENERATOR = () -> getInstance().generateBase64SecureId(SESSION_ID_BYTES);
 
     public static final char[] UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 
@@ -28,6 +33,16 @@ public class SecretGenerator {
     
     public String generateSecureID() {
         return generateSecureUUID().toString();
+    }
+
+    public String generateBase64SecureId(int nBytes) {
+        assert nBytes > 0;
+        byte[] data = new byte[nBytes];
+        SECURE_RANDOM.nextBytes(data);
+        String id = Base64.getUrlEncoder().encodeToString(data);
+        assert !id.contains(".");
+        assert !id.contains(" ");
+        return id;
     }
 
     public String randomString() {

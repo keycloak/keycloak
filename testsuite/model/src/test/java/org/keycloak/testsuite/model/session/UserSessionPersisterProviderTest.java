@@ -826,7 +826,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         int pageCount = 0;
         boolean next = true;
         List<UserSessionModel> result = new ArrayList<>();
-        String lastSessionId = "00000000-0000-0000-0000-000000000000";
+        String lastSessionId = "";
 
         while (next) {
             List<UserSessionModel> sess = persister

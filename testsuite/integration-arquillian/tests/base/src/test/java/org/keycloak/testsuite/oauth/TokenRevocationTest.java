@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.AssertEvents.isUUID;
+import static org.keycloak.testsuite.AssertEvents.isTokenId;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import java.io.IOException;
@@ -318,7 +318,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         events.expect(EventType.REVOKE_GRANT)
                 .session(tokenResponse.getSessionState())
-                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
                 .detail(Details.REFRESH_TOKEN_TYPE, expectedTokenType)
                 .client("test-app")
                 .assertEvent(true);

@@ -29,11 +29,14 @@ import org.infinispan.affinity.KeyGenerator;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @deprecated not supported and to be removed. Check {@link CacheHolder#keyGenerator()}
  */
+@Deprecated(since = "26.4", forRemoval = true)
 public class InfinispanKeyGenerator {
 
     private static final Logger log = Logger.getLogger(InfinispanKeyGenerator.class);
