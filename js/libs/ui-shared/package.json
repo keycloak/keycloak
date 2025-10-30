@@ -53,7 +53,7 @@
     "lodash-es": "^4.17.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hook-form": "7.63.0",
+    "react-hook-form": "7.65.0",
     "react-i18next": "^16.0.1"
   },
   "devDependencies": {
