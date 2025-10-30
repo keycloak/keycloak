@@ -28,13 +28,22 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+import java.nio.charset.StandardCharsets;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
@@ -48,6 +57,7 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
@@ -75,6 +85,9 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 /**
@@ -882,6 +895,80 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
             //injected redirected url should be ignored
             Assert.assertTrue(driver.getCurrentUrl().startsWith(redirectUri2));
+        }
+    }
+
+    @Test
+    public void testLogoutDifferentBrowserWithAuthenticationSessionStillPresent() throws Exception {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // start login with the test-app
+            oauth.client("test-app").openLoginForm();
+            String tab1WindowHandle = tabUtil.getActualWindowHandle();
+            loginPage.assertCurrent();
+
+            // create a second tab to initiate another login to the account-console
+            tabUtil.newTab(oauth.client(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
+                    .redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/account")
+                    .loginForm()
+                    .codeChallenge(PkceGenerator.s256())
+                    .build());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(2));
+            loginPage.assertCurrent();
+            tabUtil.switchToTab(tab1WindowHandle);
+            tabUtil.closeTab(1);
+
+            // perform an online login to create the online session, auth session is maintained a short time because the other tab
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.client("test-app", "password").redirectUri(OAuthClient.APP_ROOT + "/auth");
+            loginPage.assertCurrent();
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+            appPage.assertCurrent();
+            AccessTokenResponse responseOnline = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
+            Assert.assertNull(responseOnline.getError());
+            RefreshToken onlineRefreshToken = oauth.parseRefreshToken(responseOnline.getRefreshToken());
+            Assert.assertEquals(TokenUtil.TOKEN_TYPE_REFRESH, onlineRefreshToken.getType());
+            Assert.assertEquals("test-user@localhost", oauth.verifyToken(responseOnline.getAccessToken()).getPreferredUsername());
+
+            // perform an offline request for the client, automatic login
+            oauth.scope("openid offline_access");
+            oauth.openLoginForm();
+            appPage.assertCurrent();
+            AccessTokenResponse responseOffline = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
+            Assert.assertNull(responseOffline.getError());
+            RefreshToken offlineRefreshToken = oauth.parseRefreshToken(responseOffline.getRefreshToken());
+            Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineRefreshToken.getType());
+            Assert.assertEquals("test-user@localhost", oauth.verifyToken(responseOffline.getAccessToken()).getPreferredUsername());
+            Assert.assertEquals(onlineRefreshToken.getSessionId(), offlineRefreshToken.getSessionId());
+
+            // remove the online session using logout but not having the cookies (different browser)
+            HttpPost logoutPost = new HttpPost(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + TEST_REALM_NAME + "/protocol/openid-connect/logout");
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(
+                    List.of(new BasicNameValuePair(OAuth2Constants.ID_TOKEN_HINT, responseOnline.getIdToken())),
+                    StandardCharsets.UTF_8);
+            logoutPost.setEntity(formEntity);
+            try (CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+                    CloseableHttpResponse logoutResponse = httpClient.execute(logoutPost)) {
+                Assert.assertEquals(Response.Status.OK.getStatusCode(), logoutResponse.getStatusLine().getStatusCode());
+            }
+
+            // perform a second offline login after logoput with another user, auth session should be different
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.login("non-duplicate-email-user", getPassword("non-duplicate-email-user"));
+            appPage.assertCurrent();
+            responseOffline = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
+            Assert.assertNull(responseOffline.getError());
+            offlineRefreshToken = oauth.parseRefreshToken(responseOffline.getRefreshToken());
+            System.err.println(responseOffline.getRefreshToken());
+            Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineRefreshToken.getType());
+            Assert.assertEquals("non-duplicate-email-user", oauth.verifyToken(responseOffline.getAccessToken()).getPreferredUsername());
+            Assert.assertNotEquals(onlineRefreshToken.getSessionId(), offlineRefreshToken.getSessionId());
+
+            // refresh the token and check everything is correct
+            responseOffline = oauth.doRefreshTokenRequest(responseOffline.getRefreshToken());
+            Assert.assertNull(responseOffline.getError());
+            Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(responseOffline.getRefreshToken()).getType());
+            Assert.assertEquals("non-duplicate-email-user", oauth.verifyToken(responseOffline.getAccessToken()).getPreferredUsername());
         }
     }
 
