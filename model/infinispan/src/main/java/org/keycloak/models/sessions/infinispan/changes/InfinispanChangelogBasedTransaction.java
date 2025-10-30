@@ -187,6 +187,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         return cacheHolder.cache();
     }
 
+    public K generateKey() {
+        assert cacheHolder.keyGenerator() != null;
+        return cacheHolder.keyGenerator().get();
+    }
+
     /**
      * Imports a session from an external source into the {@link Cache}.
      * <p>

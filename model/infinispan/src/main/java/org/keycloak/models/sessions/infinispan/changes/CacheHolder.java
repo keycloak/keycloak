@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
+import java.util.function.Supplier;
+
 import org.infinispan.Cache;
 import org.infinispan.util.concurrent.ActionSequencer;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
@@ -29,5 +31,6 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 public record CacheHolder<K, V extends SessionEntity>(Cache<K, SessionEntityWrapper<V>> cache,
                                                       ActionSequencer sequencer,
                                                       SessionFunction<V> lifespanFunction,
-                                                      SessionFunction<V> maxIdleFunction) {
+                                                      SessionFunction<V> maxIdleFunction,
+                                                      Supplier<K> keyGenerator) {
 }

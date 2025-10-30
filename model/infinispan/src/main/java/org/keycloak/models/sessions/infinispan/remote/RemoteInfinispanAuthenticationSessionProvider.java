@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -29,7 +30,6 @@ import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNote
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -53,7 +53,7 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
-        return createRootAuthenticationSession(realm, KeycloakModelUtils.generateId());
+        return createRootAuthenticationSession(realm, SecretGenerator.SECURE_ID_GENERATOR.get());
     }
 
     @Override

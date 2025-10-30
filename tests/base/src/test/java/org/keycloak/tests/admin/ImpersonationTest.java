@@ -305,7 +305,7 @@ public class ImpersonationTest {
 
             EventRepresentation event = events.poll();
             Assertions.assertEquals(event.getType(), EventType.IMPERSONATE.toString());
-            MatcherAssert.assertThat(event.getSessionId(), EventMatchers.isUUID());
+            MatcherAssert.assertThat(event.getSessionId(), EventMatchers.isSessionId());
             Assertions.assertEquals(event.getUserId(), managedUser.getId());
             Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(admin)));
             Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(adminRealm)));

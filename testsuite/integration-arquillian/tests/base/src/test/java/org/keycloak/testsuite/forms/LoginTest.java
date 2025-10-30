@@ -26,6 +26,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -47,7 +48,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -1100,7 +1100,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         String authSessionId = decodedAuthSessionId.substring(0, decodedAuthSessionId.indexOf("."));
         String signature = decodedAuthSessionId.substring(decodedAuthSessionId.indexOf(".") + 1);
         Assert.assertNotNull(authSessionId);
-        Assert.assertTrue(KeycloakModelUtils.isValidUUID(authSessionId));
+        MatcherAssert.assertThat(authSessionId, AssertEvents.isSessionId());
         Assert.assertNotNull(signature);
 
         testingClient.server().run(session-> {

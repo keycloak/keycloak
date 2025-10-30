@@ -44,6 +44,13 @@ To revert to the previoius behavior and to accept non-normalized URLs, set the o
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 
+=== `session_state` and `sid` are no longer UUIDs
+
+In OpenID connect, there are several places where the protocol shares a `session_state` and a `sid`.
+The specifications define it as an opaque string.
+Previous versions of {project_name} used a UUID for it, while the current version now uses a random base64-encoded string.
+The length of the string was reduced from 36 characters to 24 characters, although it might increase in the future if additional randomness is required.
+
 === `log-console-color` will automatically enable if supported by the terminal
 
 The `log-console-color` previously defaulted to `false`, but it will now instead check if the terminal supports color.

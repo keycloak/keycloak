@@ -47,6 +47,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
@@ -118,7 +119,7 @@ public class AssertEvents implements TestRule {
                 //.detail(Details.AUTH_TYPE, AuthorizationEndpoint.CODE_AUTH_TYPE)
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
-                .session(isUUID());
+                .session(isSessionId());
     }
 
     public ExpectedEvent expectClientLogin() {
@@ -127,7 +128,7 @@ public class AssertEvents implements TestRule {
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .detail(Details.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
                 .removeDetail(Details.CODE_ID)
-                .session(isUUID());
+                .session(isSessionId());
     }
 
     public ExpectedEvent expectSocialLogin() {
@@ -136,14 +137,14 @@ public class AssertEvents implements TestRule {
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .detail(Details.AUTH_METHOD, "form")
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
-                .session(isUUID());
+                .session(isSessionId());
     }
 
     public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
         return expect(EventType.CODE_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isAccessTokenId(AuthorizationCodeGrantTypeFactory.GRANT_SHORTCUT))
-                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(sessionId);
@@ -153,7 +154,7 @@ public class AssertEvents implements TestRule {
         return expect(EventType.OAUTH2_DEVICE_VERIFY_USER_CODE)
                 .user((String) null)
                 .client(clientId)
-                .detail(Details.CODE_ID, isUUID());
+                .detail(Details.CODE_ID, isCodeId());
     }
 
     public ExpectedEvent expectDeviceLogin(String clientId, String codeId, String userId) {
@@ -171,7 +172,7 @@ public class AssertEvents implements TestRule {
                 .user(userId)
                 .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isAccessTokenId(DeviceGrantTypeFactory.GRANT_SHORTCUT))
-                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(codeId);
@@ -182,7 +183,7 @@ public class AssertEvents implements TestRule {
                 .detail(Details.TOKEN_ID, isAccessTokenId(RefreshTokenGrantTypeFactory.GRANT_SHORTCUT))
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.UPDATED_REFRESH_TOKEN_ID, isTokenId())
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
                 .session(sessionId);
     }
@@ -242,10 +243,10 @@ public class AssertEvents implements TestRule {
         return expect(EventType.AUTHREQID_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT))
-                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .session(isUUID());
+                .session(isSessionId());
     }
 
     public ExpectedEvent expectClientPolicyError(EventType eventType, String error, String reason, String clientPolicyError, String clientPolicyErrorDetail) {
@@ -466,7 +467,34 @@ public class AssertEvents implements TestRule {
     }
 
     public static Matcher<String> isCodeId() {
-        return isUUID();
+        // Make the tests pass with the old and the new encoding of code IDs
+        return Matchers.anyOf(isBase64WithAtLeast128Bits(), isUUID());
+    }
+
+    public static Matcher<String> isSessionId() {
+        // Make the tests pass with the old and the new encoding of sessions
+        return Matchers.anyOf(isBase64WithAtLeast128Bits(), isUUID());
+    }
+
+    public static Matcher<String> isTokenId() {
+        // Make the tests pass with the old and the new encoding of token IDs
+        return Matchers.anyOf(isBase64WithAtLeast128Bits(), isUUID());
+    }
+
+    public static Matcher<String> isBase64WithAtLeast128Bits() {
+        return new TypeSafeMatcher<>() {
+            private static final Pattern BASE64 = Pattern.compile("[-A-Za-z0-9+/_]*");
+
+            @Override
+            protected boolean matchesSafely(String item) {
+                return item.length() >= 24 && item.matches(BASE64.pattern());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("not an base64 ID with at least 128bits");
+            }
+        };
     }
 
     public static Matcher<String> isUUID() {
@@ -491,7 +519,7 @@ public class AssertEvents implements TestRule {
                 if (items.length != 2) return false;
                 // Grant type shortcut starts at character 4th char and is 2-chars long
                 if (items[0].substring(3, 5).equals(expectedGrantShortcut)) return false;
-                return isUUID().matches(items[1]);
+                return isTokenId().matches(items[1]);
             }
 
             @Override
