@@ -16,7 +16,6 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
@@ -80,6 +79,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -732,8 +732,8 @@ public class XMLSignatureUtil {
             byte[] exponent = pubKey.getPublicExponent().toByteArray();
 
             RSAKeyValueType rsaKeyValue = new RSAKeyValueType();
-            rsaKeyValue.setModulus(Base64.encodeBytes(modulus).getBytes(GeneralConstants.SAML_CHARSET));
-            rsaKeyValue.setExponent(Base64.encodeBytes(exponent).getBytes(GeneralConstants.SAML_CHARSET));
+            rsaKeyValue.setModulus(Base64.getEncoder().encodeToString(modulus).getBytes(GeneralConstants.SAML_CHARSET));
+            rsaKeyValue.setExponent(Base64.getEncoder().encodeToString(exponent).getBytes(GeneralConstants.SAML_CHARSET));
             return rsaKeyValue;
         } else if (key instanceof DSAPublicKey) {
             DSAPublicKey pubKey = (DSAPublicKey) key;
@@ -743,10 +743,10 @@ public class XMLSignatureUtil {
             byte[] Y = pubKey.getY().toByteArray();
 
             DSAKeyValueType dsaKeyValue = new DSAKeyValueType();
-            dsaKeyValue.setP(Base64.encodeBytes(P).getBytes(GeneralConstants.SAML_CHARSET));
-            dsaKeyValue.setQ(Base64.encodeBytes(Q).getBytes(GeneralConstants.SAML_CHARSET));
-            dsaKeyValue.setG(Base64.encodeBytes(G).getBytes(GeneralConstants.SAML_CHARSET));
-            dsaKeyValue.setY(Base64.encodeBytes(Y).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setP(Base64.getEncoder().encodeToString(P).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setQ(Base64.getEncoder().encodeToString(Q).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setG(Base64.getEncoder().encodeToString(G).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setY(Base64.getEncoder().encodeToString(Y).getBytes(GeneralConstants.SAML_CHARSET));
             return dsaKeyValue;
         }
         throw logger.unsupportedType(key.toString());

@@ -24,15 +24,14 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.Oid;
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KerberosSerializationUtils;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosPrincipal;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
-import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -157,16 +156,16 @@ public class SPNEGOAuthenticator {
     }
 
 
-    protected GSSContext establishContext() throws GSSException, IOException {
+    protected GSSContext establishContext() throws GSSException {
         GSSManager manager = GSSManager.getInstance();
 
         Oid[] supportedMechs = new Oid[] { KerberosConstants.KRB5_OID, KerberosConstants.SPNEGO_OID };
         GSSCredential gssCredential = manager.createCredential(null, GSSCredential.INDEFINITE_LIFETIME, supportedMechs, GSSCredential.ACCEPT_ONLY);
         GSSContext gssContext = manager.createContext(gssCredential);
 
-        byte[] inputToken = Base64.decode(spnegoToken);
+        byte[] inputToken = Base64.getDecoder().decode(spnegoToken);
         byte[] respToken = gssContext.acceptSecContext(inputToken, 0, inputToken.length);
-        responseToken = Base64.encodeBytes(respToken);
+        responseToken = Base64.getEncoder().encodeToString(respToken);
 
         return gssContext;
     }

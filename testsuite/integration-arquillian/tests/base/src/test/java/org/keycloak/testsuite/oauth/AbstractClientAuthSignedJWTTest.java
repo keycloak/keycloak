@@ -43,6 +43,7 @@ import java.security.interfaces.RSAKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -80,7 +81,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -951,8 +951,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         // It seems that PemUtils.decodePrivateKey, decodePublicKey can only treat RSA type keys, not EC type keys. Therefore, these are not used.
         String privateKeyBase64 = generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY);
         String publicKeyBase64 =  generatedKeys.get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
-        PrivateKey privateKey = decodePrivateKey(Base64.decode(privateKeyBase64), algorithm, curve);
-        PublicKey publicKey = decodePublicKey(Base64.decode(publicKeyBase64), algorithm, curve);
+        PrivateKey privateKey = decodePrivateKey(Base64.getDecoder().decode(privateKeyBase64), algorithm, curve);
+        PublicKey publicKey = decodePublicKey(Base64.getDecoder().decode(publicKeyBase64), algorithm, curve);
         return new KeyPair(publicKey, privateKey);
     }
 

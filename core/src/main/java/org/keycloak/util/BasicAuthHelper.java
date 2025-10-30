@@ -17,13 +17,12 @@
 
 package org.keycloak.util;
 
-import org.keycloak.common.util.Base64;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * The default implementation is compliant with <a href="https://datatracker.ietf.org/doc/html/rfc2617">RFC 2617</a>
@@ -33,7 +32,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class BasicAuthHelper {
     public static String createHeader(String username, String password) {
-        return "Basic " + Base64.encodeBytes((username + ':' + password).getBytes(StandardCharsets.UTF_8));
+        return "Basic " + Base64.getEncoder().encodeToString((username + ':' + password).getBytes(StandardCharsets.UTF_8));
     }
 
     public static String[] parseHeader(String header) {
@@ -45,8 +44,8 @@ public class BasicAuthHelper {
 
         String val;
         try {
-            val = new String(Base64.decode(header.substring(6)));
-        } catch (IOException e) {
+            val = new String(Base64.getDecoder().decode(header.substring(6)));
+        } catch (IllegalArgumentException e) {
             return null;
         }
 

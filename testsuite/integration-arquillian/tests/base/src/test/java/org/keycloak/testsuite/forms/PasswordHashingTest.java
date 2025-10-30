@@ -24,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.common.util.Base64;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -60,6 +59,7 @@ import javax.crypto.spec.PBEKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.spec.KeySpec;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -415,9 +415,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
             KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, keyLength);
             byte[] key = SecretKeyFactory.getInstance(algorithm).generateSecret(spec).getEncoded();
             if (expectedSuccess) {
-                assertEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+                assertEquals(Base64.getEncoder().encodeToString(key), credential.getPasswordSecretData().getValue());
             } else {
-                assertNotEquals(Base64.encodeBytes(key), credential.getPasswordSecretData().getValue());
+                assertNotEquals(Base64.getEncoder().encodeToString(key), credential.getPasswordSecretData().getValue());
             }
         } else if (algorithm.equals("Argon2id")) {
             org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(org.bouncycastle.crypto.params.Argon2Parameters.ARGON2_id)
@@ -432,7 +432,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
             byte[] result = new byte[32];
             generator.generateBytes(password.toCharArray(), result);
-            Assert.assertEquals(Base64.encodeBytes(result), credential.getPasswordSecretData().getValue());
+            Assert.assertEquals(Base64.getEncoder().encodeToString(result), credential.getPasswordSecretData().getValue());
         }
     }
 

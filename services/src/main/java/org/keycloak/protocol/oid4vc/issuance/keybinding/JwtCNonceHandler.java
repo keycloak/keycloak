@@ -21,7 +21,6 @@ package org.keycloak.protocol.oid4vc.issuance.keybinding;
 import jakarta.annotation.Nullable;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -44,6 +43,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +84,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
         final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
-        final String strongSalt = Base64.encodeBytes(RandomSecret.createRandomSecret(nonceLength));
+        final String strongSalt = Base64.getEncoder().encodeToString(RandomSecret.createRandomSecret(nonceLength));
 
         JsonWebToken jwtCNonce = new JwtCNonce().salt(strongSalt)
                                                 .issuer(issuer)

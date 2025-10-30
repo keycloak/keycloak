@@ -16,12 +16,11 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.util.Base64;
 import org.keycloak.representations.JsonWebToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -79,8 +78,8 @@ public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObje
 
         String userId;
         try {
-            userId = new String(Base64.decode(parsed[0]), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
+            userId = new String(Base64.getDecoder().decode(parsed[0]), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
             userId = parsed[0];
         }
         return new DefaultActionTokenKey(userId, parsed[3], Integer.parseInt(parsed[1]), UUID.fromString(parsed[2]));

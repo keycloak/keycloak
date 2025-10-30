@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -80,7 +81,7 @@ public class OID4VCIWellKnownProviderTest extends OID4VCTest {
         // Generate a random AES key (default length: 256 bits)
         byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
 
-        String secretBase64 = org.keycloak.common.util.Base64.encodeBytes(secret);
+        String secretBase64 = Base64.getEncoder().encodeToString(secret);
 
         ComponentExportRepresentation component = new ComponentExportRepresentation();
         component.setName(keyName);

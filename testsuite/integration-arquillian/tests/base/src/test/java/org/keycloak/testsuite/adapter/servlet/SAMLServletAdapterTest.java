@@ -47,6 +47,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -118,7 +119,6 @@ import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -1462,7 +1462,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Document doc = DocumentUtil.getDocument(new StringReader(xml));
         String certBase64 = DocumentUtil.getElement(doc, new QName("http://www.w3.org/2000/09/xmldsig#", "X509Certificate")).getTextContent();
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(certBase64)));
+        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(certBase64)));
         PublicKey pubkey = cert.getPublicKey();
         Assert.assertTrue(AssertionUtil.isSignatureValid(doc.getDocumentElement(), pubkey));
 
@@ -1704,7 +1704,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         String username = "pedroigor";
         String password = "password";
         String pair = username + ":" + password;
-        String authHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+        String authHeader = "Basic " + Base64.getEncoder().encodeToString(pair.getBytes());
 
         Response authenticationResponse = AdminClientUtil.createResteasyClient().target(singleSignOnService).request()
                 .header(HttpHeaders.AUTHORIZATION, authHeader)
@@ -1795,7 +1795,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         String username = "pedroigor";
         String password = "baspassword";
         String pair = username + ":" + password;
-        String authHeader = "Basic " + Base64.encodeBytes(pair.getBytes());
+        String authHeader = "Basic " + Base64.getEncoder().encodeToString(pair.getBytes());
 
         Response authenticationResponse = AdminClientUtil.createResteasyClient().target(singleSignOnService).request()
                 .header(HttpHeaders.AUTHORIZATION, authHeader)

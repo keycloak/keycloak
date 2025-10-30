@@ -17,7 +17,6 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -32,6 +31,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.interfaces.EdECPublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -120,8 +120,8 @@ public class GeneratedEddsaKeyProviderFactory extends AbstractEddsaKeyProviderFa
         KeyPair keyPair;
         try {
             keyPair = generateEddsaKeyPair(curveName);
-            model.put(EDDSA_PRIVATE_KEY_KEY, Base64.encodeBytes(keyPair.getPrivate().getEncoded()));
-            model.put(EDDSA_PUBLIC_KEY_KEY, Base64.encodeBytes(keyPair.getPublic().getEncoded()));
+            model.put(EDDSA_PRIVATE_KEY_KEY, Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+            model.put(EDDSA_PUBLIC_KEY_KEY, Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(EDDSA_ELLIPTIC_CURVE_KEY, curveName);
         } catch (Throwable t) {
             throw new ComponentValidationException("Failed to generate EdDSA keys", t);
@@ -131,7 +131,7 @@ public class GeneratedEddsaKeyProviderFactory extends AbstractEddsaKeyProviderFa
     private String getCurveFromPublicKey(String publicEddsaKeyBase64Encoded) {
         try {
             KeyFactory kf = KeyFactory.getInstance("EdDSA");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEddsaKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicEddsaKeyBase64Encoded));
             EdECPublicKey edEcKey = (EdECPublicKey) kf.generatePublic(publicKeySpec);
             return edEcKey.getParams().getName();
         } catch (Throwable t) {
