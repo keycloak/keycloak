@@ -641,7 +641,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void multiTenant1SamlTest() throws Exception {
+    public void multiTenant1SamlTest() {
         multiTenant1SamlPage.setRolesToCheck("user");
 
         try {
@@ -665,7 +665,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void multiTenant2SamlTest() throws Exception {
+    public void multiTenant2SamlTest() {
         multiTenant2SamlPage.setRolesToCheck("user");
 
         try {
@@ -691,7 +691,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     private static KeyPair NEW_KEY_PAIR;
     private static String NEW_KEY_PRIVATE_KEY_PEM;
 
-    private PublicKey createKeys(String priority) throws Exception {
+    private PublicKey createKeys(String priority) {
         if (NEW_KEY_PAIR == null) {
             NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
             NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
@@ -725,11 +725,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         throw new RuntimeException("Failed to find keys");
     }
 
-    private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage) throws Exception {
+    private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage) {
         testRotatedKeysPropagated(servletPage, loginPage, true);
     }
 
-    private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage, boolean shouldLogout) throws Exception {
+    private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage, boolean shouldLogout) {
         boolean keyDropped = false;
         try {
             log.info("Creating new key");
@@ -750,59 +750,59 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void employeeSigPostNoIdpKeyTest() throws Exception {
+    public void employeeSigPostNoIdpKeyTest() {
         testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
-    public void employeeSigPostNoIdpKeyTestNoKeyNameInKeyInfo() throws Exception {
+    public void employeeSigPostNoIdpKeyTestNoKeyNameInKeyInfo() {
         RealmRepresentation r = testRealmResource().toRepresentation();
         r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.NONE.name());
         testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
-    public void employeeSigPostNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() throws Exception {
+    public void employeeSigPostNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() {
         RealmRepresentation r = testRealmResource().toRepresentation();
         r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.CERT_SUBJECT.name());
         testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
-    public void employeeSigPostNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() throws Exception {
+    public void employeeSigPostNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() {
         RealmRepresentation r = testRealmResource().toRepresentation();
         r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.KEY_ID.name());
         testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
-    public void employeeSigRedirNoIdpKeyTest() throws Exception {
+    public void employeeSigRedirNoIdpKeyTest() {
         testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
-    public void employeeSigRedirNoIdpKeyTestNoKeyNameInKeyInfo() throws Exception {
+    public void employeeSigRedirNoIdpKeyTestNoKeyNameInKeyInfo() {
         RealmRepresentation r = testRealmResource().toRepresentation();
         r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.NONE.name());
         testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
-    public void employeeSigRedirNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() throws Exception {
+    public void employeeSigRedirNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() {
         RealmRepresentation r = testRealmResource().toRepresentation();
         r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.CERT_SUBJECT.name());
         testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
-    public void employeeSigRedirNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() throws Exception {
+    public void employeeSigRedirNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() {
         RealmRepresentation r = testRealmResource().toRepresentation();
         r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.KEY_ID.name());
         testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
-    public void employeeSigRedirOptNoIdpKeyTest() throws Exception {
+    public void employeeSigRedirOptNoIdpKeyTest() {
         testRotatedKeysPropagated(employeeSigRedirOptNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
     }
 
@@ -812,7 +812,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void testLogoutRedirectToExternalPage() throws Exception {
+    public void testLogoutRedirectToExternalPage() {
         employeeServletPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
@@ -824,7 +824,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void salesMetadataTest() throws Exception {
+    public void salesMetadataTest() {
         Document doc = IOUtil.loadXML(SAMLServletAdapterTest.class.getResourceAsStream("/adapter-test/keycloak-saml/sp-metadata.xml"));
 
         IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "Location", "8080", System.getProperty("app.server.http.port", null));
@@ -886,7 +886,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void salesPostEncSignedAssertionsOnlyTest() throws Exception {
+    public void salesPostEncSignedAssertionsOnlyTest() {
         testSuccessfulAndUnauthorizedLogin(salesPostEncSignAssertionsOnlyServletPage, testRealmSAMLPostLoginPage);
     }
 
@@ -1215,7 +1215,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void testRelayStateEncoding() throws Exception {
+    public void testRelayStateEncoding() {
         // this test has a hardcoded SAMLRequest and we hack a SP face servlet to get the SAMLResponse so we can look
         // at the relay state
         employeeServletPage.navigateTo();
@@ -1486,7 +1486,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     //KEYCLOAK-4020
-    public void testBooleanAttribute() throws Exception {
+    public void testBooleanAttribute() {
         new SamlClientBuilder()
           .authnRequest(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2, getAppServerSamlEndpoint(employee2ServletPage).toString(), Binding.POST).build()
           .login().user(bburkeUser).build()
@@ -1518,7 +1518,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void testNameIDUnset() throws Exception {
+    public void testNameIDUnset() {
         new SamlClientBuilder()
           .navigateTo(employee2ServletPage.toString())
           .processSamlResponse(Binding.POST).build()
@@ -1548,7 +1548,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void testDestinationUnset() throws Exception {
+    public void testDestinationUnset() {
         new SamlClientBuilder()
           .navigateTo(employee2ServletPage.toString())
           .processSamlResponse(Binding.POST).build()
@@ -1621,7 +1621,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     /* KEYCLOAK-4980 */
-    public void testAutodetectBearerOnly() throws Exception {
+    public void testAutodetectBearerOnly() {
         Client client = AdminClientUtil.createResteasyClient();
 
         // Do not redirect client to login page if it's an XHR
@@ -1678,7 +1678,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         //printDocument(authnRequestMessage.getSOAPPart().getContent(), System.out);
 
-        Iterator<jakarta.xml.soap.Node> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
+        Iterator<jakarta.xml.soap.Node> it = authnRequestMessage.getSOAPHeader().getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
         SOAPHeaderElement ecpRequestHeader = (SOAPHeaderElement)it.next();
         NodeList idpList = ecpRequestHeader.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "IDPList");
 
@@ -1765,11 +1765,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 .get();
 
         SOAPMessage authnRequestMessage = MessageFactory.newInstance().createMessage(null, new ByteArrayInputStream(authnRequestResponse.readEntity(byte[].class)));
-        Iterator<jakarta.xml.soap.Node> it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:liberty:paos:2003-08", "Request"));
+        Iterator<jakarta.xml.soap.Node> it = authnRequestMessage.getSOAPHeader().getChildElements(new QName("urn:liberty:paos:2003-08", "Request"));
 
         it.next();
 
-        it = authnRequestMessage.getSOAPHeader().<SOAPHeaderElement>getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
+        it = authnRequestMessage.getSOAPHeader().getChildElements(new QName("urn:oasis:names:tc:SAML:2.0:profiles:SSO:ecp", "Request"));
         jakarta.xml.soap.Node ecpRequestHeader = it.next();
         NodeList idpList = ((SOAPHeaderElement)ecpRequestHeader).getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "IDPList");
 
@@ -1819,10 +1819,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
      * into roles that exist in the application domain. For this test a {@link org.keycloak.adapters.saml.PropertiesBasedRoleMapper}
      * has been setup in the adapter, performing the mappings as specified in the {@code role-mappings.properties} file.
      *
-     * @throws Exception if an error occurs while running the test.
      */
     @Test
-    public void testAdapterRoleMappings() throws Exception {
+    public void testAdapterRoleMappings() {
         // bburke user is missing required coordinator role, which is only available via mapping of the supervisor role.
         assertForbiddenLogin(employeeRoleMappingPage, bburkeUser.getUsername(), getPasswordOf(bburkeUser),
                 testRealmSAMLPostLoginPage, "bburke@redhat.com");
@@ -1881,7 +1880,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void testMultipleTabsParallelLogin() throws Exception {
+    public void testMultipleTabsParallelLogin() {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // open an application in tab1 and go to the login page
             Assert.assertEquals(1, tabUtil.getCountOfTabs());
@@ -1915,7 +1914,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    public void testMultipleTabsParallelLoginAfterAuthSessionExpiration() throws Exception {
+    public void testMultipleTabsParallelLoginAfterAuthSessionExpiration() {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // open an application in tab1 and go to the login page
             Assert.assertEquals(1, tabUtil.getCountOfTabs());
@@ -1935,7 +1934,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             final String authSessionId = sessionCookie.getValue();
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(DEMO);
-                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+                session.getContext().setRealm(realm);
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId);
                 RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
                 session.authenticationSessions().removeRootAuthenticationSession(realm, root);
             });
@@ -2016,7 +2016,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         authenticate.navigateTo();
         waitForPageToLoad();
         errorPage.assertCurrent();
-        cookies.stream().forEach(c -> driver.manage().addCookie(c));
+        cookies.forEach(c -> driver.manage().addCookie(c));
         driver.navigate().refresh();
         waitForPageToLoad();
         infoPage.assertCurrent();
@@ -2074,7 +2074,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         checkLoggedOut(employeeDomServletPage, testRealmSAMLPostLoginPage);
     }
 
-    public static void printDocument(Source doc, OutputStream out) throws IOException, TransformerException {
+    public static void printDocument(Source doc, OutputStream out) throws TransformerException {
         TransformerFactory tf = TransformerFactory.newInstance();
         Transformer transformer = tf.newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");

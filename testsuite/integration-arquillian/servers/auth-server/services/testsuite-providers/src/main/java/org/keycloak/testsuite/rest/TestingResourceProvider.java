@@ -362,7 +362,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.client(client);
         }
 
-        if (types != null & !types.isEmpty()) {
+        if (types != null && !types.isEmpty()) {
             EventType[] t = new EventType[types.size()];
             for (int i = 0; i < t.length; i++) {
                 t[i] = EventType.valueOf(types.get(i));
@@ -761,7 +761,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/run-on-server")
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
-    public String runOnServer(String runOnServer) throws Exception {
+    public String runOnServer(String runOnServer) {
         try {
             Object r = SerializationUtil.decode(runOnServer, TestClassLoader.getInstance());
 
@@ -785,12 +785,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Produces(MediaType.TEXT_PLAIN_UTF_8)
     public String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
-                                       @QueryParam("testMethodName") String testMethodName) throws Exception {
+                                       @QueryParam("testMethodName") String testMethodName) {
         try {
-            Class testClass = TestClassLoader.getInstance().loadClass(testClassName);
+            Class<?> testClass = TestClassLoader.getInstance().loadClass(testClassName);
             Method testMethod = testClass.getDeclaredMethod(testMethodName, KeycloakSession.class);
 
-            Object test = testClass.newInstance();
+            Object test = testClass.getDeclaredConstructor().newInstance();
             testMethod.invoke(test, session);
 
             return "SUCCESS";
@@ -804,15 +804,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
-        doWithProperties(file, props -> {
-            props.setProperty(PropertiesProfileConfigResolver.getPropertyKey(featureProfile), newState);
-        });
+        doWithProperties(file, props -> props.setProperty(PropertiesProfileConfigResolver.getPropertyKey(featureProfile), newState));
     }
 
     private void unsetFeatureInProfileFile(File file, Profile.Feature featureProfile) {
-        doWithProperties(file, props -> {
-            props.remove(PropertiesProfileConfigResolver.getPropertyKey(featureProfile));
-        });
+        doWithProperties(file, props -> props.remove(PropertiesProfileConfigResolver.getPropertyKey(featureProfile)));
     }
 
     private void doWithProperties(File file, Consumer<Properties> callback) {
@@ -919,8 +915,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
                 Profile current = Profile.getInstance();
 
-                Map<Profile.Feature, Boolean> updatedFeatures = new HashMap<>();
-                updatedFeatures.putAll(current.getFeatures());
+                Map<Feature, Boolean> updatedFeatures = new HashMap<>(current.getFeatures());
                 updatedFeatures.put(feature, shouldEnable);
 
                 Profile.init(current.getName(), updatedFeatures);
@@ -955,7 +950,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public void reinitializeProviderFactoryWithSystemPropertiesScope(@QueryParam("provider-type") String providerType, @QueryParam("provider-id") String providerId,
                                                                      @QueryParam("system-properties-prefix") String systemPropertiesPrefix) throws Exception {
         Class<? extends Provider> providerClass = (Class<? extends Provider>) Class.forName(providerType);
-        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
+        ProviderFactory<?> factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
         factory.init(new Config.SystemPropertiesScope(systemPropertiesPrefix));
     }
 
@@ -992,7 +987,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         builder.append("  </HEAD>");
         builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
 
-        builder.append("    <FORM METHOD=\"POST\" ACTION=\"" + postRequestUrl + "\">");
+        builder.append("    <FORM METHOD=\"POST\" ACTION=\"").append(postRequestUrl).append("\">");
 
         for (Map.Entry<String, String> param : params.entrySet()) {
             builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
@@ -1089,7 +1084,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     public Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realmName, @QueryParam("authSessionId") String authSessionId) {
         RealmModel realm = getRealmByName(realmName);
-        String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+        session.getContext().setRealm(realm);
+        String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId);
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
         if (rootAuthSession == null) {
             return 0;

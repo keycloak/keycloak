@@ -138,11 +138,13 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             assertTrue(changePasswordPage.isCancelDisplayed());
 
             Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
-            String authSessionId = authSessionCookie.getValue().split("\\.")[0];
+            assertNotNull(authSessionCookie);
+            String authSessionId = authSessionCookie.getValue();
             testingClient.server().run(session -> {
                 // ensure that our logic to detect the authentication session works as expected
                 RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId, false);
+                session.getContext().setRealm(realm);
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId);
                 assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId));
             });
 
@@ -151,7 +153,9 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             testingClient.server().run(session -> {
                 // ensure that the authentication session has been terminated
                 RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-                assertNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+                session.getContext().setRealm(realm);
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId);
+                assertNull(session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId));
             });
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
@@ -184,7 +188,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     }
 
     @Test
-    public void resetPasswordRequiresReAuth() throws Exception {
+    public void resetPasswordRequiresReAuth() {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -284,10 +288,9 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     /**
      * See GH-12943
-     * @throws Exception
      */
     @Test
-    public void resetPasswordRequiresReAuthWithMaxAuthAgePasswordPolicy() throws Exception {
+    public void resetPasswordRequiresReAuthWithMaxAuthAgePasswordPolicy() {
 
         // set password policy
         RealmRepresentation currentTestRealmRep = testRealm().toRepresentation();
@@ -332,7 +335,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     }
 
     @Test
-    public void cancelChangePassword() throws Exception {
+    public void cancelChangePassword() {
         doAIA();
 
         loginPage.login("test-user@localhost", "password");
@@ -350,7 +353,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     }
 
     @Test
-    public void cancelWhenOTPRequiredAction() throws Exception {
+    public void cancelWhenOTPRequiredAction() {
         // Add OTP required action to the user
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
@@ -373,7 +376,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     }
 
     @Test
-    public void resetPasswordUserHasUpdatePasswordRequiredAction() throws Exception {
+    public void resetPasswordUserHasUpdatePasswordRequiredAction() {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 

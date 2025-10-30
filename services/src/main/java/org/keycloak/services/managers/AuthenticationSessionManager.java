@@ -132,7 +132,7 @@ public class AuthenticationSessionManager {
         }
     }
 
-    public String decodeBase64AndValidateSignature(String encodedBase64AuthSessionId, boolean validate) {
+    public String decodeBase64AndValidateSignature(String encodedBase64AuthSessionId) {
         try {
             String decodedAuthSessionId = new String(Base64Url.decode(encodedBase64AuthSessionId), StandardCharsets.UTF_8);
             int dotIndex = decodedAuthSessionId.lastIndexOf('.');
@@ -141,9 +141,6 @@ public class AuthenticationSessionManager {
                 return null;
             }
             String authSessionId = decodedAuthSessionId.substring(0, dotIndex);
-            if (!validate) {
-                return authSessionId;
-            }
             String signature = decodedAuthSessionId.substring(dotIndex + 1);
             return validateAuthSessionIdSignature(authSessionId, signature);
         } catch (Exception e) {
@@ -200,7 +197,7 @@ public class AuthenticationSessionManager {
         // in case the id is encoded with a route when running in a cluster
         String decodedAuthSessionId = routeEncoder.decodeSessionId(oldEncodedId);
 
-        decodedAuthSessionId = decodeBase64AndValidateSignature(decodedAuthSessionId, true);
+        decodedAuthSessionId = decodeBase64AndValidateSignature(decodedAuthSessionId);
         if(decodedAuthSessionId == null) {
             return null;
         }
@@ -293,7 +290,7 @@ public class AuthenticationSessionManager {
     }
 
     public AuthenticationSessionModel getAuthenticationSessionByEncodedIdAndClient(RealmModel realm, String encodedAuthSesionId, ClientModel client, String tabId) {
-        String decodedAuthSessionId = decodeBase64AndValidateSignature(encodedAuthSesionId, true);
+        String decodedAuthSessionId = decodeBase64AndValidateSignature(encodedAuthSesionId);
         return decodedAuthSessionId==null ? null : getAuthenticationSessionByIdAndClient(realm, decodedAuthSessionId, client, tabId);
     }
 
