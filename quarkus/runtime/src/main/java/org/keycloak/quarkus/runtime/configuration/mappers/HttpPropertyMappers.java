@@ -159,6 +159,8 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromFeature(Profile.Feature.HTTP_OPTIMIZED_SERIALIZERS)
                         .to("quarkus.rest.jackson.optimization.enable-reflection-free-serializers")
+                        .build(),
+                fromOption(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)
                         .build()
         );
     }
