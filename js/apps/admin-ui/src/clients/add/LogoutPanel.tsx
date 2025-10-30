@@ -122,7 +122,7 @@ export const LogoutPanel = ({
               name={convertAttributeNameToForm<FormFields>(
                 "attributes.backchannel.logout.session.required",
               )}
-              defaultValue="true"
+              defaultValue="false"
               control={control}
               render={({ field }) => (
                 <Switch
