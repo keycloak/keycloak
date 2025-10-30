@@ -118,7 +118,9 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	protected static final KeyWrapper RSA_KEY = getRsaKey();
 
-	protected static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
+    protected static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person";
+
+    protected static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
 	protected static final String sdJwtTypeCredentialConfigurationIdName = "sd-jwt-credential-config-id";
 
 	protected static final String jwtTypeCredentialScopeName = "jwt-credential";

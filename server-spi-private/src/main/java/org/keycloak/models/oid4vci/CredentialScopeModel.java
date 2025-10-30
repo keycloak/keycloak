@@ -47,7 +47,7 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String FORMAT_DEFAULT = "dc+sd-jwt";
     public static final String HASH_ALGORITHM_DEFAULT = "SHA-256";
     public static final String TOKEN_TYPE_DEFAULT = "JWS";
-    public static final int EXPIRY_IN_SECONDS_DEFAULT = 31536000;
+    public static final int EXPIRY_IN_SECONDS_DEFAULT = 31536000; // 1 year
     public static final String CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT = "jwk";
 
     /**
