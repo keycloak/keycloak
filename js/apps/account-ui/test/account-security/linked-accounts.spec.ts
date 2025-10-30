@@ -58,12 +58,12 @@ test.describe("Linked accounts", () => {
         clientId: "groups-idp",
         clientSecret: "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
         validateSignature: "false",
-        tokenUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/token`,
-        jwksUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/certs`,
-        issuer: `${SERVER_URL}realms/${externalRealm}`,
-        authorizationUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/auth`,
-        logoutUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/logout`,
-        userInfoUrl: `${SERVER_URL}realms/${externalRealm}/protocol/openid-connect/userinfo`,
+        tokenUrl: `${SERVER_URL}/realms/${externalRealm}/protocol/openid-connect/token`,
+        jwksUrl: `${SERVER_URL}/realms/${externalRealm}/protocol/openid-connect/certs`,
+        issuer: `${SERVER_URL}/realms/${externalRealm}`,
+        authorizationUrl: `${SERVER_URL}/realms/${externalRealm}/protocol/openid-connect/auth`,
+        logoutUrl: `${SERVER_URL}/realms/${externalRealm}/protocol/openid-connect/logout`,
+        userInfoUrl: `${SERVER_URL}/realms/${externalRealm}/protocol/openid-connect/userinfo`,
       },
     });
 

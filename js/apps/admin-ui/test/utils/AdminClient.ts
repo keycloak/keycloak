@@ -15,7 +15,7 @@ import { merge } from "lodash-es";
 
 class AdminClient {
   readonly #client = new KeycloakAdminClient({
-    baseUrl: "http://localhost:8080/",
+    baseUrl: "http://localhost:8080",
     realmName: "master",
   });
 
