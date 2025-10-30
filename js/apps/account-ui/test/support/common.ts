@@ -1,7 +1,7 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
 import { generatePath } from "react-router-dom";
 
-export const SERVER_URL = new URL("http://localhost:8080");
+export const SERVER_URL = "http://localhost:8080";
 export const ACCOUNT_ROOT_PATH = "/realms/:realm/account" as const;
 export const ADMIN_ROOT_PATH = "/admin/:realm/console" as const;
 export const DEFAULT_REALM = "master";
