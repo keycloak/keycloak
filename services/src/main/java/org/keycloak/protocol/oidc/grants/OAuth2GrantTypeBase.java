@@ -292,8 +292,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     }
 
     /**
-     * Handle missing authorization_details parameter by allowing processors to generate authorization details response.
-     * This is used in Pre-Authorized Code Flow where the credential offer contains the authorized credential configuration IDs.
+     * Allows processors to generate an authorization details response when the authorization_details parameter is missing in the request.
+     * This applies to flows where pre-authorization or credential offers are present, and is general to all AuthorizationDetailsProcessor implementations.
      *
      * @param userSession the user session
      * @param clientSessionCtx the client session context

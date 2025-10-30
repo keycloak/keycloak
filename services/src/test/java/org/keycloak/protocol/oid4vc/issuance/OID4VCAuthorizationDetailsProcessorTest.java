@@ -44,7 +44,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         AuthorizationDetail authDetail = new AuthorizationDetail();
         authDetail.setType("openid_credential");
         authDetail.setCredentialConfigurationId("test-config-id");
-        authDetail.setLocations(Arrays.asList("https://test-issuer.com"));
+        authDetail.setLocations(List.of("https://test-issuer.com"));
         return authDetail;
     }
 
@@ -271,7 +271,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
     public void testClaimsDescriptionWithEmptyPath() {
         // Test claims description with empty path
         ClaimsDescription claim = new ClaimsDescription();
-        claim.setPath(Arrays.asList());
+        claim.setPath(List.of());
         claim.setMandatory(true);
 
         // Verify empty path handling
@@ -302,9 +302,9 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         // Test valid authorization details structure that would be parsed
         AuthorizationDetail authDetail = createValidAuthorizationDetail();
         ClaimsDescription claim = createValidClaimsDescription();
-        authDetail.setClaims(Arrays.asList(claim));
+        authDetail.setClaims(List.of(claim));
 
-        List<AuthorizationDetail> authDetails = Arrays.asList(authDetail);
+        List<AuthorizationDetail> authDetails = List.of(authDetail);
 
         // Verify the structure that parseAuthorizationDetails() would process
         assertNotNull("Authorization details list should not be null", authDetails);
@@ -342,8 +342,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         for (ClaimsDescription claim : validClaims) {
             assertNotNull("Each claim path should not be null", claim.getPath());
             assertFalse("Each claim path should not be empty", claim.getPath().isEmpty());
-            assertTrue("Each claim path should start with credentialSubject",
-                    claim.getPath().get(0).equals("credentialSubject"));
+            assertEquals("Each claim path should start with credentialSubject", "credentialSubject", claim.getPath().get(0));
         }
 
         // Test invalid claims that would fail validation
@@ -351,7 +350,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         assertNull("Invalid claim path should be null", invalidClaim.getPath());
 
         ClaimsDescription emptyPathClaim = new ClaimsDescription();
-        emptyPathClaim.setPath(Arrays.asList()); // Empty path
+        emptyPathClaim.setPath(List.of()); // Empty path
         emptyPathClaim.setMandatory(true);
 
         assertNotNull("Empty path claim should not be null", emptyPathClaim.getPath());
@@ -363,7 +362,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         // Test authorization detail that would be used to build response
         AuthorizationDetail authDetail = createValidAuthorizationDetail();
         ClaimsDescription claim = createValidClaimsDescription();
-        authDetail.setClaims(Arrays.asList(claim));
+        authDetail.setClaims(List.of(claim));
 
         // Verify the data structure that buildAuthorizationDetailResponse() would process
         assertValidAuthorizationDetail(authDetail);
@@ -373,8 +372,8 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         // Test the response structure that would be built
         String expectedType = "openid_credential";
         String expectedCredentialConfigurationId = "test-config-id";
-        List<String> expectedCredentialIdentifiers = Arrays.asList("test-identifier-123");
-        List<ClaimsDescription> expectedClaims = Arrays.asList(claim);
+        List<String> expectedCredentialIdentifiers = List.of("test-identifier-123");
+        List<ClaimsDescription> expectedClaims = List.of(claim);
 
         // Verify the response data that would be created
         assertEquals("Response type should match", expectedType, "openid_credential");
@@ -390,9 +389,9 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         // Test valid stored authorization details
         AuthorizationDetail storedDetail = createValidAuthorizationDetail();
         ClaimsDescription claim = createValidClaimsDescription();
-        storedDetail.setClaims(Arrays.asList(claim));
+        storedDetail.setClaims(List.of(claim));
 
-        List<AuthorizationDetail> storedDetails = Arrays.asList(storedDetail);
+        List<AuthorizationDetail> storedDetails = List.of(storedDetail);
 
         // Verify the stored details structure that processStoredAuthorizationDetails() would process
         assertNotNull("Stored details should not be null", storedDetails);
@@ -429,7 +428,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
         }
 
         // Test empty credential configuration IDs
-        List<String> emptyConfigIds = Arrays.asList();
+        List<String> emptyConfigIds = List.of();
         assertNotNull("Empty configuration IDs should not be null", emptyConfigIds);
         assertTrue("Empty configuration IDs should be empty", emptyConfigIds.isEmpty());
     }
@@ -450,7 +449,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
 
         // Test empty claims error handling
         ClaimsDescription emptyPathClaim = new ClaimsDescription();
-        emptyPathClaim.setPath(Arrays.asList());
+        emptyPathClaim.setPath(List.of());
         emptyPathClaim.setMandatory(true);
 
         assertNotNull("Empty path claim should not be null", emptyPathClaim.getPath());

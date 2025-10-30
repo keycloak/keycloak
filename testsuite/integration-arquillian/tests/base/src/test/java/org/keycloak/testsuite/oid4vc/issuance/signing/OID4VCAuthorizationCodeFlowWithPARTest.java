@@ -76,13 +76,6 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
     }
 
     /**
-     * Get the credential format (jwt_vc or sd_jwt_vc)
-     */
-    protected String getCredentialFormat() {
-        return "jwt_vc";
-    }
-
-    /**
      * Get the credential client scope
      */
     protected ClientScopeRepresentation getCredentialClientScope() {
@@ -137,7 +130,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         AuthorizationDetail authDetail = new AuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL_TYPE);
         authDetail.setCredentialConfigurationId(credentialConfigurationId);
-        authDetail.setClaims(Arrays.asList(claim));
+        authDetail.setClaims(List.of(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
         List<AuthorizationDetail> authDetails = List.of(authDetail);
@@ -265,8 +258,6 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Step 1: Create PAR request with INVALID authorization_details
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-
         // Create authorization details with INVALID credential configuration ID
         AuthorizationDetail authDetail = new AuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL_TYPE);
