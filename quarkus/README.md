@@ -75,13 +75,13 @@ Please make sure to read our [Contribution Guidelines](../CONTRIBUTING.md) befor
 
 To run the server in Quarkus' development mode, invoke the following command:
 
-    ../mvnw -f server/pom.xml compile quarkus:dev -Dquarkus.args="start-dev"
+    ../mvnw -f server/pom.xml compile quarkus:dev -Dkc.config.built=true -Dquarkus.args="start-dev"
 
 You will be able to attach your debugger to port `5005`.
 
 For debugging the build steps right after start, you can suspend the JVM by running:
 
-    ../mvnw -f server/pom.xml -Dsuspend=true compile quarkus:dev -Dquarkus.args="start-dev"
+    ../mvnw -f server/pom.xml -Dsuspend=true compile quarkus:dev -Dkc.config.built=true -Dquarkus.args="start-dev"
 
 When running using `quarkus:dev` you are able to do live coding whenever you change / add code in the `server` module, for example when creating a new custom provider.
 
