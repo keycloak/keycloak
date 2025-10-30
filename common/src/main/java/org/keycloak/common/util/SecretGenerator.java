@@ -10,7 +10,16 @@ public class SecretGenerator {
     public static final int SECRET_LENGTH_256_BITS = 32;
     public static final int SECRET_LENGTH_384_BITS = 48;
     public static final int SECRET_LENGTH_512_BITS = 64;
-    // for auth session and user session; 128 bits entropy + 16 bits for cluster size.
+    /**
+     * Session ID length in bytes.
+     * <p />
+     * Both NIST and ANSSI ask for at least 128 bits of entropy in , see <a href="https://github.com/keycloak/keycloak/issues/38663">#38663</a>
+     * As we are about to filter those session IDs on each node to find a key of the local segment using Infinispan's org.infinispan.affinity.KeyAffinityServiceFactory,
+     * we add some more entropy so that the filtering then leaves enough entropy for those IDs.
+     * Usually there are 256 segments in a cache. Just in case someone increases it, we add 16 bits.
+     * This should handle the case when a caller connects to one node and generates codes (as it is the case with a keep-alive HTTP connection),
+     * instead of a caller connecting to a random node on each request.
+     */
     private static final int SESSION_ID_BYTES = 18;
     public static final Supplier<String> SECURE_ID_GENERATOR = () -> getInstance().generateBase64SecureId(SESSION_ID_BYTES);
 
