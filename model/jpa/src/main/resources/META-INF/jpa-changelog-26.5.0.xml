@@ -32,7 +32,7 @@
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
         </createIndex>
         <modifySql dbms="postgresql">
-            <append value="WHERE CLIENT_ID != 'external'" />
+            <append value="WHERE CLIENT_STORAGE_PROVIDER = 'local'" />
         </modifySql>
     </changeSet>
 
@@ -50,18 +50,6 @@
         <modifySql dbms="postgresql">
             <append value="WHERE CLIENT_ID = 'external'" />
         </modifySql>
-    </changeSet>
-
-    <changeSet author="keycloak" id="26.5.0-index-offline-css-by-user-session-id">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <not>
-                <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION" />
-            </not>
-        </preConditions>
-        <createIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION">
-            <column name="USER_SESSION_ID" type="VARCHAR(255)"/>
-            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
-        </createIndex>
     </changeSet>
 
 </databaseChangeLog>
