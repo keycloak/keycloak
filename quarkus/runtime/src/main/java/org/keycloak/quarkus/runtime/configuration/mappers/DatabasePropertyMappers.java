@@ -132,15 +132,10 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
         String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
         String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
-        String dbUrlProperties = Configuration.getConfigValue(DatabaseOptions.DB_URL_PROPERTIES).getValue();
 
         if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
                 !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
             // Custom JDBC-Driver, for example, AWS JDBC Wrapper.
-            return null;
-        }
-        if (dbUrlProperties != null && dbUrl != null && dbUrl.contains("${kc.db-url-properties:}") && dbUrlProperties.contains("targetServerType")) {
-            // targetServerType already set to same or different value in db-url-properties, ignore
             return null;
         }
         if (dbUrl != null && dbUrl.contains("targetServerType")) {
@@ -151,8 +146,57 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return "primary";
     }
 
+    /**
+     * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
+     * <p />
+     * Alternatives considered and rejected:
+     * <ul>
+     * <li>customizing H2 Database dialect -&gt; wouldn't work for existing Liquibase scripts.</li>
+     * <li>adding quotes to <code>@Column(name="VALUE")</code> annotations -&gt; would require testing for all DBs, wouldn't work for existing Liquibase scripts.</li>
+     * </ul>
+     * Downsides of this solution: Release notes needed to point out that any H2 JDBC URL parameter with <code>NON_KEYWORDS</code> needs to add the keyword <code>VALUE</code> manually.
+     * @return JDBC URL with <code>NON_KEYWORDS=VALUE</code> appended if the URL doesn't contain <code>NON_KEYWORDS=</code> yet
+     */
+    private static String addH2NonKeywords(String jdbcUrl) {
+        if (!jdbcUrl.contains("NON_KEYWORDS=")) {
+            jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
+        }
+        return jdbcUrl;
+    }
+
+    /**
+     * Required so that the H2 db instance is closed only when the Agroal connection pool is closed during
+     * Keycloak shutdown. We cannot rely on the default H2 ShutdownHook as this can result in the DB being
+     * closed before dependent resources, e.g. JDBC_PING2, are shutdown gracefully. This solution also
+     * requires the Agroal min-pool connection size to be at least 1.
+     */
+    private static String addH2CloseOnExit(String jdbcUrl) {
+        if (!jdbcUrl.contains("DB_CLOSE_ON_EXIT=")) {
+            jdbcUrl = jdbcUrl + ";DB_CLOSE_ON_EXIT=FALSE";
+        }
+        if (!jdbcUrl.contains("DB_CLOSE_DELAY=")) {
+            jdbcUrl = jdbcUrl + ";DB_CLOSE_DELAY=0";
+        }
+        return jdbcUrl;
+    }
+
+    private static String amendH2(String jdbcUrl) {
+        return addH2CloseOnExit(addH2NonKeywords(jdbcUrl));
+    }
+
     private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
-        return Database.getDefaultUrl(name, value).orElse(null);
+        String url = Database.getDefaultUrl(name, value).orElse(null);
+        if (isDevModeDatabase(value)) {
+            String key = Optional.ofNullable(name).map(
+                    n -> DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB_URL_PROPERTIES, n).orElseThrow())
+                    .orElse(DatabaseOptions.DB_URL_PROPERTIES.getKey());
+            String urlProps = Configuration.getKcConfigValue(key).getValue();
+            if (urlProps != null) {
+                url += urlProps;
+            }
+            url = amendH2(url);
+        }
+        return url;
     }
 
     private static String getXaOrNonXaDriver(String name, String value, ConfigSourceInterceptorContext context) {
