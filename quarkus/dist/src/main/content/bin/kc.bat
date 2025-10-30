@@ -22,10 +22,33 @@ if "%OS%" == "Windows_NT" (
 set SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dquarkus-log-max-startup-records=10000 -Dpicocli.disable.closures=true
 
 set DEBUG_MODE=false
-set DEBUG_PORT_VAR=8787
-set DEBUG_ADDRESS=0.0.0.0:%DEBUG_PORT_VAR%
+set DEBUG_ADDRESS=8787
 set DEBUG_SUSPEND_VAR=n
 set CONFIG_ARGS=
+
+if NOT "x%KC_DEBUG%" == "x" (
+    set DEBUG_MODE=%KC_DEBUG%
+) else (
+    if NOT "x%DEBUG%" == "x" (
+        set DEBUG_MODE=%DEBUG%
+    )
+)
+
+if NOT "x%KC_DEBUG_PORT%" == "x" (
+    set DEBUG_ADDRESS=%KC_DEBUG_PORT%
+) else (
+    if NOT "x%DEBUG_PORT%" == "x" (
+        set DEBUG_ADDRESS=%DEBUG_PORT%
+    )
+)
+
+if NOT "x%KC_DEBUG_SUSPEND%" == "x" (
+    set DEBUG_SUSPEND_VAR=%KC_DEBUG_SUSPEND%
+) else (
+    if NOT "x%DEBUG_SUSPEND%" == "x" (
+        set DEBUG_SUSPEND_VAR=%DEBUG_SUSPEND%
+    )
+)
 
 rem Read command-line args, the ~ removes the quotes from the parameter
 :READ-ARGS
@@ -35,26 +58,12 @@ if "%KEY%" == "" (
 )
 if "%KEY%" == "--debug" (
     set DEBUG_MODE=true
-    if 1%2 EQU +1%2 (
-        rem Plain port
-        set DEBUG_ADDRESS=0.0.0.0:%2
-        shift
-    ) else (
-        rem IPv4 or IPv6 address with optional port
-        (echo %2 | findstr /R "[0-9].*\." >nul || echo %2 | findstr /R "\[.*:.*\]" >nul) && (
-            (echo %2 | findstr /R "]:[0-9][0-9]*" >nul || echo %2 | findstr /R "^[0-9].*:[0-9][0-9]*" >nul) && (
-                set DEBUG_ADDRESS=%2
-            ) || (
-                set DEBUG_ADDRESS=%2:%DEBUG_PORT_VAR%
-            )
+    if NOT "x%~2" == "x" (
+        echo %~2 | findstr /R "^[0-9[]" >nul && (
+            set DEBUG_ADDRESS=%~2
             shift
         )
     )
-    shift
-    goto READ-ARGS
-)
-if "%KEY%" == "start-dev" (
-    set CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY%
     shift
     goto READ-ARGS
 )
@@ -138,32 +147,6 @@ set "JAVA_OPTS=%JAVA_OPTS% %JAVA_LOCALE%"
 if not "x%JAVA_OPTS_APPEND%" == "x" (
     echo "Appending additional Java properties to JAVA_OPTS"
     set JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_APPEND%
-)
-
-if NOT "x%KC_DEBUG%" == "x" (
-    set DEBUG_MODE=%KC_DEBUG%
-) else (
-    if NOT "x%DEBUG%" == "x" (
-        set DEBUG_MODE=%DEBUG%
-    )
-)
-
-if NOT "x%KC_DEBUG_PORT%" == "x" (
-    set DEBUG_PORT_VAR=%KC_DEBUG_PORT%
-    set DEBUG_ADDRESS=0.0.0.0:!DEBUG_PORT_VAR!
-) else (
-    if NOT "x%DEBUG_PORT%" == "x" (
-        set DEBUG_PORT_VAR=%DEBUG_PORT%
-        set DEBUG_ADDRESS=0.0.0.0:!DEBUG_PORT_VAR!
-    )
-)
-
-if NOT "x%KC_DEBUG_SUSPEND%" == "x" (
-    set DEBUG_SUSPEND_VAR=%KC_DEBUG_SUSPEND%
-) else (
-    if NOT "x%DEBUG_SUSPEND%" == "x" (
-        set DEBUG_SUSPEND_VAR=%DEBUG_SUSPEND%
-    )
 )
 
 rem Set debug settings if not already set
