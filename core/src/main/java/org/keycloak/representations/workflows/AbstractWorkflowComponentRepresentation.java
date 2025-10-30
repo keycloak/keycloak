@@ -124,6 +124,9 @@ public abstract class AbstractWorkflowComponentRepresentation {
     }
 
     protected void setConfigValue(String key, List<String> values) {
+        if (values == null) {
+            return;
+        }
         if (this.config == null) {
             this.config = new MultivaluedHashMap<>();
         }
@@ -131,6 +134,9 @@ public abstract class AbstractWorkflowComponentRepresentation {
     }
 
     protected void addConfigValue(String key, String value) {
+        if (value == null) {
+            return;
+        }
         if (this.config == null) {
             this.config = new MultivaluedHashMap<>();
         }

@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.jakarta.rs.yaml.JacksonYAMLProvider;
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -86,7 +88,6 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.utils.MailUtils;
-import org.keycloak.util.JsonSerialization;
 
 @KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
 public class WorkflowManagementTest {
@@ -884,9 +885,10 @@ public class WorkflowManagementTest {
     }
 
     @Test
-    public void testCreateUsingYaml() throws IOException {
+    public void testCreateWorkflowsUsingYaml() throws IOException {
         WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name(UserCreationTimeWorkflowProviderFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -896,17 +898,35 @@ public class WorkflowManagementTest {
                                 .build()
                 ).build();
 
-        Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);
-        WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
-                .path("admin")
-                .path("realms")
-                .path(managedRealm.getName())
-                .path("workflows")
-                .path("set")
-                .register(new BearerAuthFilter(adminClient.tokenManager()));
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            httpClient.register(JacksonYAMLProvider.class);
+            // multiple workflows
+            WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin")
+                    .path("realms")
+                    .path(managedRealm.getName())
+                    .path("workflows")
+                    .path("set")
+                    .register(new BearerAuthFilter(adminClient.tokenManager()));
 
-        Response response = target.request().post(Entity.entity(JsonSerialization.writeValueAsString(expectedWorkflows), "application/yaml"));
-        response.close();
+            Entity<WorkflowSetRepresentation> entitySet = Entity.entity(expectedWorkflows, YAMLMediaTypes.APPLICATION_JACKSON_YAML_TYPE);
+            try (Response response = target.request().post(entitySet)) {
+                assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            }
+
+            // single workflow
+            target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin")
+                    .path("realms")
+                    .path(managedRealm.getName())
+                    .path("workflows")
+                    .register(new BearerAuthFilter(adminClient.tokenManager()));
+
+            Entity<WorkflowRepresentation> entity = Entity.entity(expectedWorkflows.getWorkflows().get(0), YAMLMediaTypes.APPLICATION_JACKSON_YAML_TYPE);
+            try (Response response = target.request().post(entity)) {
+                assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            }
+        }
     }
 
     public static List<MimeMessage> findEmailsByRecipient(MailServer mailServer, String expectedRecipient) {
