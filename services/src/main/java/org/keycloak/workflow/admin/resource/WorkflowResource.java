@@ -1,7 +1,6 @@
 package org.keycloak.workflow.admin.resource;
 
-import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
-
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -52,7 +51,7 @@ public class WorkflowResource {
     }
 
     @GET
-    @Produces(APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
     public WorkflowRepresentation toRepresentation() {
         return manager.toRepresentation(workflow);
     }
