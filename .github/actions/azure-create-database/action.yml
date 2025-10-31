@@ -8,21 +8,23 @@ inputs:
   region:
     description: 'The Azure region used to host the SQL server'
     required: true
-  subscription:
-    description: 'Azure subscription id'
-    required: true
-  admin-password:
-    description: 'The admin password for the SQL server'
+  azure-credentials:
+    description: 'Azure service principal credentials JSON'
     required: true
   admin-user:
     description: 'The admin username for the SQL server'
-    required: true
-  db-password:
-    description: 'The password for the keycloak DB user'
-    required: true
+    required: false
+    default: 'sqladmin'
   db-user:
     description: 'The db username for the Keycloak DB'
-    required: true
+    required: false
+    default: 'keycloak'
+  admin-password:
+    description: 'Override admin password (auto-generated if not provided)'
+    required: false
+  db-password:
+    description: 'Override DB password (auto-generated if not provided)'
+    required: false
 
 outputs:
   endpoint:
@@ -34,10 +36,62 @@ outputs:
   username:
     description: 'DB user principal'
     value: ${{ steps.create.outputs.username }}
+  subscription:
+    description: 'Subscription ID'
+    value: ${{ steps.parse-creds.outputs.subscription }}
 
 runs:
   using: "composite"
   steps:
+    - name: Parse Azure credentials
+      id: parse-creds
+      shell: bash
+      run: |
+        SUBSCRIPTION=$(echo '${{ inputs.azure-credentials }}' | jq -r '.subscriptionId')
+        if [[ -z "$SUBSCRIPTION" || "$SUBSCRIPTION" == "null" ]]; then
+          echo "ERROR:Failed to parse subscriptionId from AZURE_CREDENTIALS"
+          exit 1
+        fi
+        # Mask BEFORE outputting to ensure it's redacted in logs
+        echo "::add-mask::$SUBSCRIPTION"
+        echo "subscription=$SUBSCRIPTION" >> $GITHUB_OUTPUT
+
+    - name: Generate secure passwords
+      id: generate-passwords
+      shell: bash
+      run: |
+        # Generate passwords using OpenSSL
+        generate_password() {
+          openssl rand -base64 48 | tr -d '\n/' | head -c 32
+        }
+        
+        # Use provided passwords or generate random ones
+        if [[ -n "${{ inputs.admin-password }}" ]]; then
+          ADMIN_PASSWORD="${{ inputs.admin-password }}"
+          echo "INFO: Using provided admin password"
+        else
+          ADMIN_PASSWORD=$(generate_password)
+          echo "INFO: Using generated admin password"
+        fi
+        
+        if [[ -n "${{ inputs.db-password }}" ]]; then
+          DB_PASSWORD="${{ inputs.db-password }}"
+          echo "INFO: Using provided DB password"
+        else
+          DB_PASSWORD=$(generate_password)
+          echo "INFO: Using generated DB password"
+        fi
+        
+        # Mask passwords
+        echo "::add-mask::$ADMIN_PASSWORD"
+        echo "::add-mask::$DB_PASSWORD"
+        
+        # Export to environment for subsequent steps
+        {
+          echo "AZURE_ADMIN_PASSWORD=$ADMIN_PASSWORD"
+          echo "AZURE_DB_PASSWORD=$DB_PASSWORD"
+        } >> $GITHUB_ENV
+    
     - name: Install sqlcmd (mssql-tools)
       shell: bash
       run: |
@@ -57,8 +111,8 @@ runs:
       env:
         AZURE_NAME: ${{ inputs.name }}
         AZURE_REGION: ${{ inputs.region }}
-        AZURE_SUBSCRIPTION: ${{ inputs.subscription }}
-        AZURE_ADMIN_PASSWORD: ${{ inputs.admin-password }}
+        AZURE_SUBSCRIPTION: ${{ steps.parse-creds.outputs.subscription }}
+        AZURE_ADMIN_PASSWORD: ${{ env.AZURE_ADMIN_PASSWORD }}
         AZURE_ADMIN_USER: ${{ inputs.admin-user }}
-        AZURE_DB_PASSWORD: ${{ inputs.db-password }}
+        AZURE_DB_PASSWORD: ${{ env.AZURE_DB_PASSWORD }}
         AZURE_DB_USER: ${{ inputs.db-user }}
