@@ -561,7 +561,7 @@ public class ModelToRepresentation {
         }
 
         if (export) {
-            List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream()
+            List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream(IdentityProviderQuery.any())
                     .map(provider -> toRepresentation(realm, provider, export)).collect(Collectors.toList());
             rep.setIdentityProviders(identityProviders);
             List<IdentityProviderMapperRepresentation> identityProviderMappers = session.identityProviders().getMappersStream()

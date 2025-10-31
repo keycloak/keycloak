@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.SecretGenerator;
@@ -1534,8 +1535,8 @@ public class TokenManager {
     private Stream<OIDCIdentityProvider> getOIDCIdentityProviders(LogoutToken logoutToken, KeycloakSession session) {
         try {
             return session.identityProviders()
-                    .getAllStream(Map.of(
-                            OIDCIdentityProviderConfig.ISSUER, logoutToken.getIssuer()
+                    .getAllStream(IdentityProviderQuery.userAuthentication()
+                            .with(OIDCIdentityProviderConfig.ISSUER, logoutToken.getIssuer()
                     ), -1, -1)
                     .map(model -> {
                         var idp = IdentityBrokerService.getIdentityProvider(session, model.getAlias());

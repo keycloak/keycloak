@@ -35,6 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.http.HttpRequest;
@@ -151,7 +152,7 @@ public class LinkedAccountsResource {
                     IdentityProviderModel.ALIAS_NOT_IN, fedAliasesToExclude,
 					IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name());
 
-            linkedAccounts = session.identityProviders().getAllStream(searchOptions, firstResult, maxResults)
+            linkedAccounts = session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), firstResult, maxResults)
                     .map(idp -> this.toLinkedAccount(idp, null, null))
                     .toList();
         }
@@ -195,7 +196,7 @@ public class LinkedAccountsResource {
 
     @Deprecated
     public List<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.identityProviders().getAllStream(Map.of(IdentityProviderModel.ENABLED, "true"), null, null)
+        return session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(IdentityProviderModel.ENABLED, "true"), null, null)
                 .map(provider -> toLinkedAccountRepresentation(provider, session.users().getFederatedIdentitiesStream(realm, user)))
                 .filter(Objects::nonNull)
                 .sorted().toList();

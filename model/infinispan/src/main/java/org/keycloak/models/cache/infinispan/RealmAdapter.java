@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
 
 import org.keycloak.Config;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.Profile;
@@ -918,7 +919,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream());
+        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication()));
     }
 
     @Override

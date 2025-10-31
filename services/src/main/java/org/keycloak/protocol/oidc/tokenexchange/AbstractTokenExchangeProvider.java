@@ -19,6 +19,7 @@
 package org.keycloak.protocol.oidc.tokenexchange;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -64,6 +65,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
+import static org.keycloak.models.IdentityProviderType.EXCHANGE_EXTERNAL_TOKEN;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -449,7 +451,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
         } catch (IdentityBrokerException ignore) {
         }
 
-        return session.identityProviders().getAllStream().map(idpModel -> {
+        return session.identityProviders().getAllStream(IdentityProviderQuery.type(EXCHANGE_EXTERNAL_TOKEN)).map(idpModel -> {
             IdentityProvider<?> idp = IdentityBrokerService.getIdentityProvider(session, idpModel.getAlias());
 
             if (idp instanceof ExchangeExternalToken external && external.isIssuer(alias, formParams)) {

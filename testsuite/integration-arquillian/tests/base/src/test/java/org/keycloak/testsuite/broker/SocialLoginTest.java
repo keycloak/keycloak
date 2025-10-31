@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.authorization.model.Policy;
@@ -239,7 +240,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientPolicyRep);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientPolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
-        session.identityProviders().getAllStream().forEach(idp -> {
+        session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication()).forEach(idp -> {
             management.idps().setPermissionsEnabled(idp, true);
             management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
         });
