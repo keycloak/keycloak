@@ -216,4 +216,13 @@ public class TracingDistTest {
 
         cliResult.assertStarted();
     }
+
+    @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--log-level=io.opentelemetry:fine", "--tracing-header-Authorization=\"Bearer asdlkfjadsflkj\"", "--tracing-header-Host=localhost:8080"})
+    void headers(CLIResult cliResult) {
+        assertTracingEnabled(cliResult);
+
+        // There is no message in the attributes about headers
+        cliResult.assertStarted();
+    }
 }
