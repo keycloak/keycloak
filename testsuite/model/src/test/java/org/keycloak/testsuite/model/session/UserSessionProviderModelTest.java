@@ -169,6 +169,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
 
                 // assert the user session is still there
                 UserSessionModel userSession = session.sessions().getUserSession(realm, origSessions[0].getId());
