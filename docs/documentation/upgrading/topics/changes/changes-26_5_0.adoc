@@ -103,6 +103,13 @@ make sure the users granted with the `realm-admin` role are expected to have thi
 The documentation is also updated with additional information about the different types of realm administrators.
 For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
 
+=== Added database indexes on `OFFLINE_CLIENT_SESSION` table
+
+This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
+
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
