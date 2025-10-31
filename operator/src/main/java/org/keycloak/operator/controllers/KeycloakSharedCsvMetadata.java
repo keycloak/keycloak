@@ -144,7 +144,8 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
     ),
     labels = {
         @CSVMetadata.Label(name = "operatorframework.io/arch.amd64", value = "supported"),
-        @CSVMetadata.Label(name = "operatorframework.io/arch.arm64", value = "supported")
+        @CSVMetadata.Label(name = "operatorframework.io/arch.arm64", value = "supported"),
+        @CSVMetadata.Label(name = "operatorframework.io/arch.ppc64le", value = "supported")
     }
 )
 public class KeycloakSharedCsvMetadata implements SharedCSVMetadata {
