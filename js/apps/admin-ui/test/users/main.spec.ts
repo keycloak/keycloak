@@ -15,7 +15,10 @@ import {
 import { DEFAULT_REALM } from "../utils/constants.ts";
 import { selectItem } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
-import { assertNotificationMessage } from "../utils/masthead.ts";
+import {
+  assertNotificationMessage,
+  selectActionToggleItem,
+} from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { goToUsers } from "../utils/sidebar.ts";
 import {
@@ -105,6 +108,10 @@ test.describe("User creation", () => {
 
     await confirmModal(page);
     await confirmModal(page);
+
+    await selectActionToggleItem(page, "Delete");
+    await confirmModal(page);
+    await assertNotificationMessage(page, "The user has been deleted");
   });
 });
 
