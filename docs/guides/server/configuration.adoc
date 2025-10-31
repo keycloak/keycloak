@@ -264,7 +264,7 @@ The `--optimized` parameter tells {project_name} to assume a pre-built, already 
 You can enter all configuration options at startup; these options are the ones in <@links.server id="all-config"/> that are **not** marked with a tool icon.
 
 * If a build option is found at startup with a value that is equal to the value used when entering the `build`, that option gets silently ignored when you use the `--optimized` parameter.
-* If that option has a different value than the value used when a build was entered, a warning appears in the logs and the previously built value is used. For this value to take effect, run a new `build` before starting.
+* If that option has a different value than the value used when a build was entered, an error occurs. For this value to take effect, run a new `build` before starting.
 
 .Create an optimized build
 
@@ -288,8 +288,6 @@ https-certificate-file
 . Start the server with the optimized parameter
 +
     <@kc.start parameters="--optimized"/>
-
-You can achieve most optimizations to startup and runtime behavior by using the `build` command. Also, by using the `keycloak.conf` file as a configuration source, you avoid some steps at startup that would otherwise require command line parameters, such as initializing the CLI itself. As a result, the server starts up even faster.
 
 == Using system variables in the realm configuration
 
