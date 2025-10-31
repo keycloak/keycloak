@@ -53,6 +53,11 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     }
 
     @Override
+    public boolean isSupported() {
+        return session.getContext().getRealm().isVerifiableCredentialsEnabled();
+    }
+
+    @Override
     public List<AuthorizationDetailsResponse> process(UserSessionModel userSession, ClientSessionContext clientSessionCtx, String authorizationDetailsParameter) {
         if (authorizationDetailsParameter == null) {
             return null; // authorization_details is optional
