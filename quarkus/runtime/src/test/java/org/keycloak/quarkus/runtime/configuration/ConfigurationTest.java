@@ -270,7 +270,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
-        assertEquals("jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
@@ -403,7 +403,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testNestedDatabaseProperties() {
         SmallRyeConfig config = createConfig();
-        assertEquals("jdbc:h2:file:"+Environment.getHomeDir()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
+        assertEquals("jdbc:h2:file:"+Environment.getHomeDir().orElseThrow()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
 
         Assert.assertEquals("foo-def-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
 
@@ -423,7 +423,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
-        String conf = Environment.getHomeDir() + File.separator + "conf" + File.separator;
+        String conf = Environment.getHomeDir().orElseThrow() + File.separator + "conf" + File.separator;
         Assert.assertEquals(conf + "cache-ispn.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
 
         // If explicitly set, then it is always used regardless of the profile

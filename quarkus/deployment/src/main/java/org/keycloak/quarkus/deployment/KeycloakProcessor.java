@@ -48,6 +48,7 @@ import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeMultipleLastResourcesMode;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.PreExceptionMapperHandlerBuildItem;
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
@@ -997,7 +998,7 @@ class KeycloakProcessor {
                     URL url = descriptorsUrls.nextElement();
                     List<ScriptProviderDescriptor> descriptors = getScriptProviderDescriptorsFromJarFile(url);
 
-                    if (!Environment.isDistribution()) {
+                    if (LaunchMode.current().isDevOrTest() || Environment.getHomeDir().isEmpty()) {
                         // script providers are only loaded from classpath when running embedded
                         descriptors = new ArrayList<>(descriptors);
                         descriptors.addAll(getScriptProviderDescriptorsFromClassPath(url));

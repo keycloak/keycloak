@@ -33,6 +33,6 @@ public class QuarkusBlacklistPasswordPolicyProviderFactory extends BlacklistPass
 
     @Override
     public String getDefaultBlacklistsBasePath() {
-        return Environment.getDataDir() + File.separator + PASSWORD_BLACKLISTS_FOLDER;
+        return Environment.getDataDir().map(d -> d + File.separator + PASSWORD_BLACKLISTS_FOLDER).orElse(null);
     }
 }
