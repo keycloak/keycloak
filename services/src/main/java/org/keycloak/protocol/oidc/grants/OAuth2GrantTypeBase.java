@@ -292,8 +292,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     }
 
     /**
-     * Handle missing authorization_details parameter by allowing processors to generate authorization details response.
-     * This is used in Pre-Authorized Code Flow where the credential offer contains the authorized credential configuration IDs.
+     * Allows processors to generate an authorization details response when the authorization_details parameter is missing in the request.
+     * This applies to flows where pre-authorization or credential offers are present, and is general to all AuthorizationDetailsProcessor implementations.
      *
      * @param userSession the user session
      * @param clientSessionCtx the client session context
@@ -313,6 +313,44 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
             logger.warnf(e, "Error when handling missing authorization_details");
             return null;
         }
+    }
+
+    /**
+     * Process stored authorization_details from the authorization request (e.g., from PAR).
+     * This method is specifically for Authorization Code Flow where authorization_details was used
+     * in the authorization request but is missing from the token request.
+     *
+     * @param userSession the user session
+     * @param clientSessionCtx the client session context
+     * @return the authorization details response if processing was successful, null otherwise
+     */
+    protected List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
+        // Check if authorization_details was stored during authorization request (e.g., from PAR)
+        String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS_PARAM);
+        if (storedAuthDetails != null) {
+            logger.debugf("Found authorization_details in client session, processing it");
+            try {
+                return session.getKeycloakSessionFactory()
+                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
+                        .sorted((f1, f2) -> f2.order() - f1.order())
+                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
+                        .map(processor -> {
+                            try {
+                                return processor.processStoredAuthorizationDetails(userSession, clientSessionCtx, storedAuthDetails);
+                            } catch (OAuthErrorException e) {
+                                // Wrap OAuthErrorException in CorsErrorResponseException for proper HTTP response
+                                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+                            }
+                        })
+                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
+                        .findFirst()
+                        .orElse(null);
+            } catch (RuntimeException e) {
+                logger.warnf(e, "Error when processing stored authorization_details");
+                throw e;
+            }
+        }
+        return null;
     }
 
     @Override
