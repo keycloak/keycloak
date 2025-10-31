@@ -6,6 +6,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.authentication.requiredactions.UpdateEmail;
 import org.keycloak.common.Profile;
@@ -310,9 +311,10 @@ public class AccountConsole implements AccountResourceProvider {
         }
 
         IdentityProviderStorageProvider identityProviders = session.identityProviders();
-        Stream<IdentityProviderModel> realmBrokers = identityProviders.getAllStream(Map.of(
-                IdentityProviderModel.ENABLED, "true",
-                IdentityProviderModel.ORGANIZATION_ID, ""), 0, 1);
+        Stream<IdentityProviderModel> realmBrokers = identityProviders.getAllStream(IdentityProviderQuery.userAuthentication()
+                .with(IdentityProviderModel.ENABLED, "true")
+                .with(IdentityProviderModel.ORGANIZATION_ID, ""),
+                0, 1);
         Stream<IdentityProviderModel> linkedBrokers = session.users().getFederatedIdentitiesStream(realm, user)
                 .map(FederatedIdentityModel::getIdentityProvider)
                 .map(identityProviders::getByAlias);

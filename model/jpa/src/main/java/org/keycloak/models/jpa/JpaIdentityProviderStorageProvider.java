@@ -35,8 +35,11 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.provider.util.IdentityProviderTypeUtil;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -218,16 +221,27 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
     }
 
     @Override
-    public Stream<IdentityProviderModel> getAllStream(Map<String, String> attrs, Integer first, Integer max) {
+    public Stream<IdentityProviderModel> getAllStream(IdentityProviderQuery query, Integer first, Integer max) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<IdentityProviderEntity> query = builder.createQuery(IdentityProviderEntity.class);
-        Root<IdentityProviderEntity> idp = query.from(IdentityProviderEntity.class);
+        CriteriaQuery<IdentityProviderEntity> cq = builder.createQuery(IdentityProviderEntity.class);
+        Root<IdentityProviderEntity> idp = cq.from(IdentityProviderEntity.class);
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.equal(idp.get("realmId"), getRealm().getId()));
 
-        if (attrs != null) {
-            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+        List<String> includedProviderFactories = null;
+        if (query.getType() != null && query.getType() != IdentityProviderType.ANY) {
+            includedProviderFactories = IdentityProviderTypeUtil.listFactoriesByType(session, query.getType());
+        } else if (query.getCapability() != null) {
+            includedProviderFactories = IdentityProviderTypeUtil.listFactoriesByCapability(session, query.getCapability());
+        }
+
+        if (includedProviderFactories != null) {
+            predicates.add(builder.in(idp.get("providerId")).value(includedProviderFactories));
+        }
+
+        if (query.getOptions() != null) {
+            for (Map.Entry<String, String> entry : query.getOptions().entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
                 if (StringUtil.isBlank(key)) {
@@ -290,8 +304,8 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
             }
         }
 
-        query.orderBy(builder.asc(idp.get(ALIAS)));
-        TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(query.select(idp).where(predicates.toArray(Predicate[]::new)));
+        cq.orderBy(builder.asc(idp.get(ALIAS)));
+        TypedQuery<IdentityProviderEntity> typedQuery = em.createQuery(cq.select(idp).where(predicates.toArray(Predicate[]::new)));
         return closing(paginateQuery(typedQuery, first, max).getResultStream()).map(this::toModel);
     }
 

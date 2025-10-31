@@ -103,6 +103,7 @@ export const UserIdentityProviderLinks = ({
       first: first!,
       max: max!,
       realmOnly: false,
+      capability: "USER_LINKING",
     };
     if (search) {
       params.search = search;

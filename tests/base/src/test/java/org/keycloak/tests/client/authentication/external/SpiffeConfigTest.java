@@ -11,8 +11,6 @@ import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.IdentityProviderShowInAccountConsole;
-import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
@@ -62,16 +60,6 @@ public class SpiffeConfigTest {
 
         checkNotDisplayOnLoginPages("testConfig");
         checkNoIdpsInAccountConsole();
-
-        rep = realm.admin().identityProviders().get("testConfig").toRepresentation();
-        Assertions.assertTrue(rep.isHideOnLogin());
-        Assertions.assertEquals(IdentityProviderShowInAccountConsole.NEVER.name(), rep.getConfig().get(IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE));
-
-        runOnServer.run(s -> {
-            IdentityProviderModel idp = s.getProvider(IdentityProviderStorageProvider.class, "jpa").getByAlias("testConfig");
-            Assertions.assertTrue(idp.isHideOnLogin());
-            Assertions.assertEquals(IdentityProviderShowInAccountConsole.NEVER.name(), idp.getConfig().get(IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE));
-        });
     }
 
     @Test

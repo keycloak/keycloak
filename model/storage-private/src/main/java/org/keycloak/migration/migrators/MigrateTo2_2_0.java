@@ -17,9 +17,8 @@
 
 package org.keycloak.migration.migrators;
 
-import java.util.Map;
-
 import org.jboss.logging.Logger;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -55,7 +54,7 @@ public class MigrateTo2_2_0 implements Migration {
 
     private void addIdentityProviderAuthenticator(KeycloakSession session, RealmModel realm) {
         String defaultProvider = session.identityProviders()
-                .getAllStream(Map.of(IdentityProviderModel.ENABLED, "true", IdentityProviderModel.AUTHENTICATE_BY_DEFAULT, "true"), 0, 1)
+                .getAllStream(IdentityProviderQuery.userAuthentication().with(IdentityProviderModel.ENABLED, "true").with(IdentityProviderModel.AUTHENTICATE_BY_DEFAULT, "true"), 0, 1)
                 .map(IdentityProviderModel::getAlias)
                 .findFirst().orElse(null);
         DefaultAuthenticationFlows.addIdentityProviderAuthenticator(realm, defaultProvider);

@@ -93,12 +93,28 @@ public interface IdentityProviderStorageProvider extends Provider {
     }
 
     /**
-     * Returns all identity providers in the current realm.
-     *
-     * @return a non-null stream of {@link IdentityProviderModel}s.
+     * @deprecated Use {@link #getAllStream(IdentityProviderQuery)}
      */
+    @Deprecated
     default Stream<IdentityProviderModel> getAllStream() {
-        return getAllStream(Map.of(), null, null);
+        return getAllStream(IdentityProviderQuery.userAuthentication(), null, null);
+    }
+
+    /**
+     * Returns all identity providers in the current realm of a given type.
+     * @param query the query of identity provider to return
+     * @return a non-null stream of {@link IdentityProviderModel}s that match the specified type
+     */
+    default Stream<IdentityProviderModel> getAllStream(IdentityProviderQuery query) {
+        return getAllStream(query, null, null);
+    }
+
+    /**
+     * @deprecated Use {@link #getAllStream(IdentityProviderQuery, Integer, Integer)}
+     */
+    @Deprecated
+    default Stream<IdentityProviderModel> getAllStream(Map<String, String> options, Integer first, Integer max) {
+        return getAllStream(IdentityProviderQuery.userAuthentication().with(options), first, max);
     }
 
     /**
@@ -113,12 +129,12 @@ public interface IdentityProviderStorageProvider extends Provider {
      *     option</li>
      * </ul>
      *
-     * @param options a {@link Map} containing identity provider search options that must be matched.
+     * @param query the query for identity providers to match.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
      */
-    Stream<IdentityProviderModel> getAllStream(Map<String, String> options, Integer first, Integer max);
+    Stream<IdentityProviderModel> getAllStream(IdentityProviderQuery query, Integer first, Integer max);
 
     /**
      * Returns all identity providers associated with the organization with the provided id.
@@ -129,7 +145,7 @@ public interface IdentityProviderStorageProvider extends Provider {
      * @return a non-null stream of {@link IdentityProviderModel}s that match the search criteria.
      */
     default Stream<IdentityProviderModel> getByOrganization(String orgId, Integer first, Integer max) {
-        return getAllStream(Map.of(IdentityProviderModel.ORGANIZATION_ID, orgId != null ? orgId : ""), first, max);
+        return getAllStream(IdentityProviderQuery.userAuthentication().with(IdentityProviderModel.ORGANIZATION_ID, orgId != null ? orgId : ""), first, max);
     }
 
     /**
@@ -168,7 +184,7 @@ public interface IdentityProviderStorageProvider extends Provider {
             // fetch all realm-only IDPs - i.e. those not associated with orgs.
             Map<String, String> searchOptions = LoginFilter.getLoginSearchOptions();
             searchOptions.put(IdentityProviderModel.ORGANIZATION_ID, null);
-            result = Stream.concat(result, getAllStream(searchOptions, null, null));
+            result = Stream.concat(result, getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), null, null));
         }
         if (mode == FetchMode.ORG_ONLY || mode == FetchMode.ALL) {
             // fetch IDPs associated with organizations.
@@ -179,7 +195,7 @@ public interface IdentityProviderStorageProvider extends Provider {
             } else {
                 searchOptions.put(IdentityProviderModel.ORGANIZATION_ID_NOT_NULL, "");
             }
-            result = Stream.concat(result, getAllStream(searchOptions, null, null));
+            result = Stream.concat(result, getAllStream(IdentityProviderQuery.userAuthentication().with(searchOptions), null, null));
         }
         return result;
     }
@@ -198,7 +214,7 @@ public interface IdentityProviderStorageProvider extends Provider {
      * otherwise.
      */
     default boolean isIdentityFederationEnabled() {
-        return getAllStream(Map.of(), 0, 1).findFirst().isPresent();
+        return getAllStream(IdentityProviderQuery.userAuthentication(), 0, 1).findFirst().isPresent();
     }
 
     /**

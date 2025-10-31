@@ -17,8 +17,7 @@
 
 package org.keycloak.migration.migrators;
 
-import java.util.Map;
-
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -69,7 +68,7 @@ public class MigrateTo1_7_0 implements Migration {
         DefaultAuthenticationFlows.migrateFlows(realm);
         AuthenticationFlowModel firstBrokerLoginFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
 
-        session.identityProviders().getAllStream(Map.of(IdentityProviderModel.FIRST_BROKER_LOGIN_FLOW_ID, ""), null, null)
+        session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication().with(IdentityProviderModel.FIRST_BROKER_LOGIN_FLOW_ID, ""), null, null)
                     .forEach(provider -> {
                         provider.setFirstBrokerLoginFlowId(firstBrokerLoginFlow.getId());
                         session.identityProviders().update(provider);
