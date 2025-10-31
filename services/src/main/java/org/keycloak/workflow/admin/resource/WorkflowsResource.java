@@ -2,7 +2,6 @@ package org.keycloak.workflow.admin.resource;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.Consumes;
@@ -79,10 +78,10 @@ public class WorkflowsResource {
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Stream<WorkflowRepresentation> list() {
+    @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
+    public List<WorkflowRepresentation> list() {
         auth.realm().requireManageRealm();
 
-        return manager.getWorkflows().map(manager::toRepresentation);
+        return manager.getWorkflows().map(manager::toRepresentation).toList();
     }
 }
