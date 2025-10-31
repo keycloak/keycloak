@@ -32,7 +32,10 @@
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
         </createIndex>
         <modifySql dbms="postgresql">
-            <append value="WHERE CLIENT_STORAGE_PROVIDER = 'local'" />
+            <append value="WHERE CLIENT_ID != 'external'" />
+        </modifySql>
+        <modifySql dbms="mssql">
+            <append value="WHERE CLIENT_ID != 'external'" />
         </modifySql>
     </changeSet>
 
@@ -48,7 +51,10 @@
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
         </createIndex>
         <modifySql dbms="postgresql">
-            <append value="WHERE CLIENT_ID = 'external'" />
+            <append value="WHERE CLIENT_STORAGE_PROVIDER != 'internal'" />
+        </modifySql>
+        <modifySql dbms="mssql">
+            <append value="WHERE CLIENT_STORAGE_PROVIDER != 'internal'" />
         </modifySql>
     </changeSet>
 
