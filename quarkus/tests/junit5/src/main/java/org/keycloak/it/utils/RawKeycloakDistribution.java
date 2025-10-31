@@ -334,7 +334,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void waitForReadiness(String scheme, int port) throws MalformedURLException {
-        URL contextRoot = new URL(scheme + "://localhost:" + port + ("/" + relativePath + "/realms/master/").replace("//", "/"));
+        var myRelativePath = relativePath;
+        if (!myRelativePath.endsWith("/")) {
+            myRelativePath += "/";
+        }
+        URL contextRoot = new URL(scheme + "://localhost:" + port + myRelativePath + "realms/master/");
         HttpURLConnection connection = null;
         long startTime = System.currentTimeMillis();
         Exception ex = null;
