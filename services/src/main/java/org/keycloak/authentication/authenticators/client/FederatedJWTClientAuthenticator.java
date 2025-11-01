@@ -16,6 +16,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.resources.IdentityBrokerService;
 
 import java.util.Collections;
@@ -32,10 +33,22 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     public static final String JWT_CREDENTIAL_ISSUER_KEY = "jwt.credential.issuer";
     public static final String JWT_CREDENTIAL_SUBJECT_KEY = "jwt.credential.sub";
 
-    private static final List<ProviderConfigProperty> CLIENT_CONFIG = List.of(
-            new ProviderConfigProperty(JWT_CREDENTIAL_ISSUER_KEY, "Identity provider", "Issuer of the client assertion", ProviderConfigProperty.STRING_TYPE, null),
-            new ProviderConfigProperty(JWT_CREDENTIAL_SUBJECT_KEY, "Federated subject", "External clientId (subject)", ProviderConfigProperty.STRING_TYPE, null)
-    );
+    private static final List<ProviderConfigProperty> CLIENT_CONFIG =
+            ProviderConfigurationBuilder.create()
+                    .property()
+                    .name(JWT_CREDENTIAL_ISSUER_KEY)
+                    .label("Identity provider")
+                    .helpText("Issuer of the client assertion. Use the alias of an identity provider set up in this realm.")
+                    .type(ProviderConfigProperty.STRING_TYPE)
+                    .required(true)
+                    .add()
+                    .property().name(JWT_CREDENTIAL_SUBJECT_KEY)
+                    .label("Federated subject")
+                    .helpText("External clientId (subject) as provided by the identity provider.")
+                    .type(ProviderConfigProperty.STRING_TYPE)
+                    .required(true)
+                    .add()
+                    .build();
 
     private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT, SpiffeConstants.CLIENT_ASSERTION_TYPE);
 

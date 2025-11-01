@@ -122,7 +122,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public String getDisplayType() {
-        return "Signed Jwt";
+        return "Signed JWT";
     }
 
     @Override
