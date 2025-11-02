@@ -247,6 +247,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
