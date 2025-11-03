@@ -225,6 +225,7 @@ public class Picocli {
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
+        warnOnDuplicatedOptionsInCli();
 
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
@@ -950,6 +951,27 @@ public class Picocli {
         Environment.setProfile(profile);
         if (!cliArgs.contains(HelpAllMixin.HELP_ALL_OPTION)) {
             parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        }
+    }
+
+    // Show warning about duplicated options in CLI
+    public void warnOnDuplicatedOptionsInCli() {
+        var duplicatedOptions = ConfigArgsConfigSource.getDuplicatedArgs();
+        if (!duplicatedOptions.isEmpty()) {
+            Function<String, String> removeNamespace = option -> option.startsWith(NS_KEYCLOAK_PREFIX) ? option.substring(NS_KEYCLOAK_PREFIX.length()) : option;
+
+            var polishedOptionNames = duplicatedOptions.entrySet().stream()
+                    .map(option -> "%s (used value '%s')".formatted(removeNamespace.apply(option.getKey()), option.getValue()))
+                    .toList();
+
+            String duplicatedNames;
+            if (duplicatedOptions.size() > 2) {
+                duplicatedNames = "\n" + String.join("\n", polishedOptionNames.stream().map("- %s"::formatted).toList());
+            } else {
+                duplicatedNames = String.join(", ", polishedOptionNames);
+            }
+
+            warn("Duplicated options present in CLI: %s".formatted(duplicatedNames));
         }
     }
 

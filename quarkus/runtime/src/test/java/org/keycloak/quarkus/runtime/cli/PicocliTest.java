@@ -985,6 +985,34 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void duplicatedCliOptions() {
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-enabled=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: http-access-log-enabled (used value 'false')"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-enabled=false", "--db=postgres", "--db=dev-mem");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: db (used value 'dev-mem'), http-access-log-enabled (used value 'false')"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev",
+                "--http-access-log-enabled=true", "--http-access-log-enabled=false",
+                "--db=postgres", "--db=dev-mem",
+                "--db-kind-my-store=mariadb", "--db-kind-my-store=dev-mem");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Duplicated options present in CLI:"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("- db-kind-my-store (used value 'dev-mem')"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("- db (used value 'dev-mem')"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("- http-access-log-enabled (used value 'false')"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--non-existing=yes", "--non-existing=no");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("WARNING: Duplicated options present in CLI: non-existing (used value 'no')")));
+    }
+
+    @Test
     public void httpOptimizedSerializers() {
         var nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);

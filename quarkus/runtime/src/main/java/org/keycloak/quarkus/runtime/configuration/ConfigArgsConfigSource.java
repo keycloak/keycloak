@@ -52,6 +52,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     private static final String CLI_ARGS = "kc.config.args";
     public static final String NAME = "CliConfigSource";
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
+    private static Map<String, String> duplicates;
 
     protected ConfigArgsConfigSource() {
         super(parseArguments(), NAME, 600);
@@ -104,17 +105,25 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static Map<String, String> parseArguments() {
         Map<String, String> properties = new HashMap<>();
+        duplicates = new HashMap<>();
 
         parseConfigArgs(getAllCliArgs(), new BiConsumer<String, String>() {
             @Override
             public void accept(String key, String value) {
                 PropertyMappers.getKcKeyFromCliKey(key).ifPresent(s -> {
+                    if (properties.containsKey(s)) {
+                        duplicates.put(s, value);
+                    }
                     properties.put(s, value);
                 });
             }
         }, ignored -> {});
 
         return properties;
+    }
+
+    public static Map<String, String> getDuplicatedArgs() {
+        return Collections.unmodifiableMap(duplicates);
     }
 
     public static void parseConfigArgs(List<String> args, BiConsumer<String, String> valueArgConsumer, Consumer<String> unaryConsumer) {
