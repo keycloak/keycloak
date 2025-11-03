@@ -81,4 +81,23 @@ public class WorkflowResource {
         provider.bind(workflow, type, resourceId);
     }
 
+    /**
+     * Deactivate the workflow for the resource.
+     *
+     * @param type the resource type
+     * @param resourceId the resource id
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("deactivate/{type}/{resourceId}")
+    public void deactivate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId) {
+        Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
+
+        if (resource == null) {
+            throw new BadRequestException("Resource with id " + resourceId + " not found");
+        }
+
+        provider.deactivate(workflow, resourceId);
+    }
+
 }

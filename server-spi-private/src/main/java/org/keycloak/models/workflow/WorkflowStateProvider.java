@@ -34,6 +34,14 @@ public interface WorkflowStateProvider extends Provider {
     void removeByResource(String resourceId);
 
     /**
+     * Deletes the state records associated with the given {@code resourceId} of the given {@code workflowId}.
+     *
+     * @param workflowId the id of the workflow.
+     * @param resourceId the id of the resource.
+     */
+    void removeByWorkflowAndResource(String workflowId, String resourceId);
+
+    /**
      * Removes any record identified by the specified {@code workflowId}.
      * @param workflowId the id of the workflow.
      */

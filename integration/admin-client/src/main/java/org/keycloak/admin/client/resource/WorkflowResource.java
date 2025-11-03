@@ -37,4 +37,9 @@ public interface WorkflowResource {
     @Consumes(MediaType.APPLICATION_JSON)
     void bind(@PathParam("type") String type, @PathParam("resourceId") String resourceId, Long milliseconds);
 
+    @Path("deactivate/{type}/{resourceId}")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    void deactivate(@PathParam("type") String type, @PathParam("resourceId") String resourceId);
+
 }
