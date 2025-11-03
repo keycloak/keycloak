@@ -20,6 +20,13 @@ package org.keycloak.services.cors;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
@@ -27,14 +34,23 @@ import org.keycloak.models.KeycloakSessionFactory;
 public class DefaultCorsFactory implements CorsFactory {
 
     private static final String PROVIDER_ID = "default";
+    private String allowedHeaders;
 
     @Override
     public Cors create(KeycloakSession session) {
-        return new DefaultCors(session);
+        return new DefaultCors(session, allowedHeaders);
     }
 
     @Override
     public void init(Config.Scope config) {
+        Set<String> allowedHeaders = new HashSet<>(Cors.DEFAULT_ALLOW_HEADERS);
+
+        String[] customAllowedHeaders = config.getArray("allowedHeaders");
+        if (customAllowedHeaders != null) {
+            allowedHeaders.addAll(Arrays.asList(customAllowedHeaders));
+        }
+
+        this.allowedHeaders = String.join(", ", allowedHeaders);
     }
 
     @Override
@@ -50,4 +66,15 @@ public class DefaultCorsFactory implements CorsFactory {
         return PROVIDER_ID;
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("allowedHeaders")
+                .type("string")
+                .helpText("A comma-separated list of additional allowed headers for CORS requests")
+                .defaultValue(false)
+                .add()
+                .build();
+    }
 }

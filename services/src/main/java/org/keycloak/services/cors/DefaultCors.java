@@ -47,6 +47,7 @@ public class DefaultCors implements Cors {
     private final HttpResponse response;
     private final KeycloakSession session;
     private ResponseBuilder builder;
+    private final String allowedHeaders;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
     private Set<String> exposedHeaders;
@@ -55,10 +56,11 @@ public class DefaultCors implements Cors {
     private boolean auth;
     private boolean failOnInvalidOrigin;
 
-    DefaultCors(KeycloakSession session) {
+    DefaultCors(KeycloakSession session, String allowedHeaders) {
         this.session = session;
         this.request = session.getContext().getHttpRequest();
         this.response = session.getContext().getHttpResponse();
+        this.allowedHeaders = allowedHeaders;
     }
 
     @Override
@@ -197,9 +199,9 @@ public class DefaultCors implements Cors {
 
         if (preflight) {
             if (auth) {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", allowedHeaders, AUTHORIZATION_HEADER));
             } else {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, allowedHeaders);
             }
         }
 

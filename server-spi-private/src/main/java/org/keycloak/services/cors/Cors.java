@@ -18,6 +18,7 @@
 package org.keycloak.services.cors;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Response;
@@ -36,7 +37,14 @@ public interface Cors extends Provider {
 
     long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
     String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
-    String DEFAULT_ALLOW_HEADERS = "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, DPoP";
+    Set<String> DEFAULT_ALLOW_HEADERS = Set.of(
+            "Origin",
+            "Accept",
+            "X-Requested-With",
+            "Content-Type",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "DPoP");
 
     String ORIGIN_HEADER = "Origin";
     String AUTHORIZATION_HEADER = "Authorization";
