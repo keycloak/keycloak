@@ -106,10 +106,11 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             String scopeParam = formParams.getFirst(OAuth2Constants.SCOPE);
             //TODO: scopes processing
 
-            UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "authorization-grant", false, null, null);
-            event.session(userSession);
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);
+            UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
+                    clientConnection.getRemoteHost(), "authorization-grant", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+            event.session(userSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession, authSession);
             return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, null);
         }
@@ -127,6 +128,11 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         return authSession;
+    }
+
+    @Override
+    protected boolean useRefreshToken() {
+        return false; // jwt auth grant never generates the refresh token
     }
 
     @Override
