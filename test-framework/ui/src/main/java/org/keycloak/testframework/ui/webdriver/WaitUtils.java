@@ -48,7 +48,7 @@ public class WaitUtils {
     }
 
     private WebDriverWait createDefaultWait() {
-        return new WebDriverWait(managed.driver(), Duration.ofSeconds(10), Duration.ofMillis(50));
+        return new WebDriverWait(managed.driver(), Duration.ofSeconds(5), Duration.ofMillis(50));
     }
 
 }

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
@@ -13,6 +14,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -88,8 +90,19 @@ public class RealmConfigBuilder {
         return RoleConfigBuilder.update(role).name(roleName);
     }
 
+    public AuthenticationFlowConfigBuilder addAuthenticationFlow(String alias, String description, String providerId, boolean topLevel, boolean builtIn) {
+        AuthenticationFlowRepresentation flow = new AuthenticationFlowRepresentation();
+        rep.setAuthenticationFlows(Collections.combine(rep.getAuthenticationFlows(), flow));
+        return AuthenticationFlowConfigBuilder.update(flow).alias(alias).description(description).providerId(providerId).topLevel(topLevel).builtIn(builtIn);
+    }
+
     public RealmConfigBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
         rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+        return this;
+    }
+
+    public RealmConfigBuilder registrationAllowed(boolean allowed) {
+        rep.setRegistrationAllowed(allowed);
         return this;
     }
 
@@ -264,6 +277,106 @@ public class RealmConfigBuilder {
         List<ClientProfileRepresentation> profiles = clientProfiles.getProfiles();
         profiles.add(clientProfileRep);
         rep.setParsedClientProfiles(clientProfiles);
+        return this;
+    }
+
+    public RealmConfigBuilder browserFlow(String browserFlow) {
+        rep.setBrowserFlow(browserFlow);
+        return this;
+    }
+
+    public RealmConfigBuilder requiredAction(RequiredActionProviderRepresentation requiredAction) {
+        rep.setRequiredActions(Collections.combine(rep.getRequiredActions(), requiredAction));
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicySignatureAlgorithms(List<String> algorithms) {
+        rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyAttestationConveyancePreference(String preference) {
+        rep.setWebAuthnPolicyAttestationConveyancePreference(preference);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyAuthenticatorAttachment(String attachment) {
+        rep.setWebAuthnPolicyAuthenticatorAttachment(attachment);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyRequireResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyRequireResidentKey(residentKey);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyUserVerificationRequirement(String requirement) {
+        rep.setWebAuthnPolicyUserVerificationRequirement(requirement);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyRpEntityName(String entityName) {
+        rep.setWebAuthnPolicyRpEntityName(entityName);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyRpId(String rpId) {
+        rep.setWebAuthnPolicyRpId(rpId);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyCreateTimeout(Integer timeout) {
+        rep.setWebAuthnPolicyCreateTimeout(timeout);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyAvoidSameAuthenticatorRegister(Boolean register) {
+        rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(register);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> algorithms) {
+        rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessAttestationConveyancePreference(String preference) {
+        rep.setWebAuthnPolicyPasswordlessAttestationConveyancePreference(preference);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessAuthenticatorAttachment(String attachment) {
+        rep.setWebAuthnPolicyPasswordlessAuthenticatorAttachment(attachment);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessRequireResidentKey(String residentKey) {
+        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(residentKey);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessUserVerificationRequirement(String requirement) {
+        rep.setWebAuthnPolicyPasswordlessUserVerificationRequirement(requirement);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessRpEntityName(String entityName) {
+        rep.setWebAuthnPolicyPasswordlessRpEntityName(entityName);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessCreateTimeout(Integer timeout) {
+        rep.setWebAuthnPolicyPasswordlessCreateTimeout(timeout);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(Boolean register) {
+        rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(register);
+        return this;
+    }
+
+    public RealmConfigBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
+        rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
         return this;
     }
 
