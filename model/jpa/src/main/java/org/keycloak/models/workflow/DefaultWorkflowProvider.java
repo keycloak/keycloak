@@ -133,6 +133,11 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     }
 
     @Override
+    public void deactivate(Workflow workflow, String resourceId) {
+        stateProvider.removeByWorkflowAndResource(workflow.getId(),  resourceId);
+    }
+
+    @Override
     public void bindToAllEligibleResources(Workflow workflow) {
         if (workflow.isEnabled()) {
             WorkflowProvider provider = getWorkflowProvider(workflow);

@@ -46,6 +46,8 @@ public interface WorkflowProvider extends Provider {
 
     void bind(Workflow workflow, ResourceType type, String resourceId);
 
+    void deactivate(Workflow workflow, String resourceId);
+
     void submit(WorkflowEvent event);
 
     void runScheduledSteps();

@@ -135,6 +135,21 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
+    public void removeByWorkflowAndResource(String workflowId, String resourceId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaDelete<WorkflowStateEntity> delete = cb.createCriteriaDelete(WorkflowStateEntity.class);
+        Root<WorkflowStateEntity> root = delete.from(WorkflowStateEntity.class);
+        delete.where(cb.and(cb.equal(root.get("workflowId"), workflowId),  cb.equal(root.get("resourceId"), resourceId)));
+        int deletedCount = em.createQuery(delete).executeUpdate();
+
+        if (LOGGER.isTraceEnabled()) {
+            if (deletedCount > 0) {
+                LOGGER.tracev("Deleted {0} state records for resource {1} of workflow {2}", deletedCount, resourceId, workflowId);
+            }
+        }
+    }
+
+    @Override
     public void removeByWorkflow(String workflowId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaDelete<WorkflowStateEntity> delete = cb.createCriteriaDelete(WorkflowStateEntity.class);
