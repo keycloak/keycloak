@@ -1,5 +1,7 @@
 package org.keycloak.tests.oauth;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.OAuth2Constants;
@@ -177,7 +179,7 @@ public class JWTAuthorizationGrantTest  {
     }
 
     @Test
-    public void testInvalidSignature() throws Exception {
+    public void testInvalidSignature() {
         JsonWebToken token = createDefaultAuthorizationGrantToken();
         OAuthIdentityProvider.OAuthIdentityProviderKeys newKeys = getIdentityProvider().createKeys();
         OAuthIdentityProvider.OAuthIdentityProviderKeys keys = getIdentityProvider().getKeys();
@@ -267,7 +269,10 @@ public class JWTAuthorizationGrantTest  {
 
     protected void assertSuccess(String expectedClientId, String username, AccessTokenResponse response) {
         Assertions.assertTrue(response.isSuccess());
+        Assertions.assertNull(response.getRefreshToken());
         AccessToken accessToken = oAuthClient.parseToken(response.getAccessToken(), AccessToken.class);
+        Assertions.assertNull(accessToken.getSessionId());
+        MatcherAssert.assertThat(accessToken.getId(), Matchers.startsWith("trrtag:"));
         Assertions.assertEquals(expectedClientId, accessToken.getIssuedFor());
         Assertions.assertEquals(username, accessToken.getPreferredUsername());
         EventAssertion.assertSuccess(events.poll())

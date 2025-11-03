@@ -17,13 +17,12 @@
 
 package org.keycloak.protocol.oidc.grants;
 
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -34,7 +33,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -45,7 +43,6 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 
@@ -111,8 +108,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         // persisting of userSession by default
         UserSessionModel.SessionPersistenceState sessionPersistenceState = UserSessionModel.SessionPersistenceState.PERSISTENT;
 
-        boolean useRefreshToken = clientConfig.isUseRefreshTokenForClientCredentialsGrant();
-        if (!useRefreshToken) {
+        if (!useRefreshToken()) {
             // we don't want to store a session hence we mark it as transient, see KEYCLOAK-9551
             sessionPersistenceState = UserSessionModel.SessionPersistenceState.TRANSIENT;
         }
@@ -143,60 +139,20 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
-                .generateAccessToken();
-
-        // Make refresh token generation optional, see KEYCLOAK-9551
-        if (useRefreshToken) {
-            responseBuilder = responseBuilder.generateRefreshToken();
-            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {
-                // for client credentials the online session can be removed
-                session.sessions().removeUserSession(realm, userSession);
-            }
-        } else {
-            responseBuilder.getAccessToken().setSessionId(null);
-            event.session((String) null);
-        }
-
-        checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
-
-        String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
-        if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken().generateAccessTokenHash();
-        }
-
-        try {
-            session.clientPolicy().triggerOnEvent(new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
-        } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
-
-        // TODO : do the same as codeToToken()
-        AccessTokenResponse res = null;
-        try {
-            res = responseBuilder.build();
-        } catch (RuntimeException re) {
-            event.detail(Details.REASON, re.getMessage());
-            event.error(Errors.INVALID_REQUEST);
-            if ("can not get encryption KEK".equals(re.getMessage())) {
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        "can not get encryption KEK", Response.Status.BAD_REQUEST);
-            } else {
-                throw re;
-            }
-        }
-        event.success();
-
-        return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
+        // client credentials grant always removes the online session
+        clientSessionCtx.getClientSession().setNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
+        return createTokenResponse(clientUser, userSession, clientSessionCtx, scope, true,
+                responseBuilder -> new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
     }
 
     @Override
     public EventType getEventType() {
         return EventType.CLIENT_LOGIN;
+    }
+
+    @Override
+    protected boolean useRefreshToken() {
+        return clientConfig.isUseRefreshTokenForClientCredentialsGrant();
     }
 
     /**
