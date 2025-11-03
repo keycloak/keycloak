@@ -127,12 +127,12 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         return getAttribute(DYNAMIC_SCOPE_REGEXP);
     }
 
-    default boolean isIncludedInOpenIDProviderMetadata() {
-        String includedInOpenIDProviderMetadata = getAttribute(INCLUDE_IN_OPENID_PROVIDER_METADATA);
-        return includedInOpenIDProviderMetadata == null ? true : Boolean.parseBoolean(includedInOpenIDProviderMetadata);
+    default boolean isIncludeInOpenIDProviderMetadata() {
+        String includeInOpenIDProviderMetadata = getAttribute(INCLUDE_IN_OPENID_PROVIDER_METADATA);
+        return includeInOpenIDProviderMetadata == null ? true : Boolean.parseBoolean(includeInOpenIDProviderMetadata);
     }
 
-    default void setIncludedInOpenIDProviderMetadata(boolean includedInOpenIDProviderMetadata) {
-        setAttribute(INCLUDE_IN_OPENID_PROVIDER_METADATA, String.valueOf(includedInOpenIDProviderMetadata));
+    default void setIncludeInOpenIDProviderMetadata(boolean includeInOpenIDProviderMetadata) {
+        setAttribute(INCLUDE_IN_OPENID_PROVIDER_METADATA, String.valueOf(includeInOpenIDProviderMetadata));
     }
 }
