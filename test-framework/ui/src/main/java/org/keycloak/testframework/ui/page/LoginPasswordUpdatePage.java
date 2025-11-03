@@ -51,7 +51,9 @@ public class LoginPasswordUpdatePage extends AbstractLoginPage {
     public void changePassword(String newPassword, String passwordConfirm) {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
+    }
 
+    public void submit() {
         submitButton.click();
     }
 

@@ -5,7 +5,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class WelcomePage extends AbstractPage {
+public class WelcomePage extends AbstractLoginPage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
