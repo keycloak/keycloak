@@ -55,6 +55,13 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: "false",
   });
 
+  const selectedProtocol = useWatch({
+    control,
+    name: "protocol",
+  });
+
+  const isNotSaml = selectedProtocol != "saml";
+
   const setDynamicRegex = (value: string, append: boolean) =>
     setValue(
       convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -175,6 +182,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           labelIcon={t("includeInTokenScopeHelp")}
           stringify
         />
+        {isNotSaml && (
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+              "attributes.include.in.openid.provider.metadata",
+            )}
+            defaultValue="true"
+            label={t("includeInOpenIdProviderMetadata")}
+            labelIcon={t("includeInOpenIdProviderMetadataHelp")}
+            stringify
+          />
+        )}
         <TextControl
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.gui.order",

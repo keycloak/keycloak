@@ -1,6 +1,15 @@
 
 === Limiting scope
 
-By default, new client applications have unlimited `role scope mappings`. Every access token for that client contains all permissions that the user has. If an attacker compromises the client and obtains the client's access tokens, each system that the user can access is compromised. 
+==== Scope availability
+
+By default, new client applications have unlimited `role scope mappings`. Every access token for that client contains all permissions that the user has. If an attacker compromises the client and obtains the client's access tokens, each system that the user can access is compromised.
 
 Limit the roles of an access token by using the <<_role_scope_mappings, Scope menu>> for each client. Alternatively, you can set role scope mappings at the Client Scope level and assign Client Scopes to your client by using the <<_client_scopes_linking, Client Scope menu>>.
+
+Removing the offline scope for a client also removes the ability to issue long-lived offline tokens for a client and offers better control over sessions by users.
+
+==== Scope visibility
+
+By default, all scopes are included in the OpenID Connect discovery endpoint.
+To reduce the discoverability and OSINT-exposure, you can configure each scope to be excluded.
