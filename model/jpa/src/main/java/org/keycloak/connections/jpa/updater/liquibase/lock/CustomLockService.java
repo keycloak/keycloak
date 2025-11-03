@@ -32,7 +32,7 @@ import liquibase.statement.core.CreateDatabaseChangeLogLockTableStatement;
 import liquibase.statement.core.DropTableStatement;
 import liquibase.statement.core.InitializeDatabaseChangeLogLockTableStatement;
 import liquibase.statement.core.LockDatabaseChangeLogStatement;
-import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import liquibase.structure.core.PrimaryKey;
 import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
@@ -154,7 +154,7 @@ public class CustomLockService extends StandardLockService {
         // Keycloak doesn't support Derby, but keep it for sure...
         if (executor.updatesDatabase() && database instanceof DerbyDatabase && ((DerbyDatabase) database).supportsBooleanDataType()) { //check if the changelog table is of an old smallint vs. boolean format
             String lockTable = database.escapeTableName(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(), database.getDatabaseChangeLogLockTableName());
-            Object obj = executor.queryForObject(new RawSqlStatement("select min(locked) as test from " + lockTable + " fetch first row only"), Object.class);
+            Object obj = executor.queryForObject(new RawParameterizedSqlStatement("select min(locked) as test from " + lockTable + " fetch first row only"), Object.class);
             if (!(obj instanceof Boolean)) { //wrong type, need to recreate table
                 executor.execute(new DropTableStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(), database.getDatabaseChangeLogLockTableName(), false));
                 executor.execute(new CreateDatabaseChangeLogLockTableStatement());
@@ -174,7 +174,7 @@ public class CustomLockService extends StandardLockService {
             String lockTableName = database.escapeTableName(database.getLiquibaseCatalogName(),
                     database.getLiquibaseSchemaName(),
                     database.getDatabaseChangeLogLockTableName());
-            SqlStatement sqlStatement = new RawSqlStatement("SELECT " + idColumnName + " FROM " + lockTableName);
+            SqlStatement sqlStatement = new RawParameterizedSqlStatement("SELECT " + idColumnName + " FROM " + lockTableName);
             List<Map<String, ?>> rows = executor.queryForList(sqlStatement);
             Set<Integer> ids = rows.stream().map(columnMap -> ((Number) columnMap.get("ID")).intValue()).collect(Collectors.toSet());
             database.commit();

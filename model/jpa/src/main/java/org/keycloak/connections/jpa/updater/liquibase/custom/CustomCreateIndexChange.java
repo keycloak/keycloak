@@ -19,6 +19,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 import java.io.StringWriter;
 
 import liquibase.Scope;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
@@ -79,7 +80,7 @@ public class CustomCreateIndexChange extends CreateIndexChange {
                 return super.generateStatements(database);
 
             int result = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database)
-                    .queryForInt(new RawSqlStatement("SELECT COUNT(*) FROM " + getTableNameForSqlSelects(database, getTableName())));
+                    .queryForInt(new RawParameterizedSqlStatement("SELECT COUNT(*) FROM " + getTableNameForSqlSelects(database, getTableName())));
 
             if (result > this.indexCreationThreshold) {
                 String loggingString = createLoggingString(database);

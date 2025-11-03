@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.InsertStatement;
-import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
 import org.keycloak.models.Constants;
@@ -65,13 +65,13 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
 
             statements.add(
                 // copy data from REALM_DEFAULT_ROLES to COMPOSITE_ROLE
-                new RawSqlStatement("INSERT INTO " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) " +
-                        "SELECT '" + id + "', ROLE_ID FROM " + getTableName("REALM_DEFAULT_ROLES") +
-                        " WHERE REALM_ID = '" + database.escapeStringForDatabase(entry.getKey()) + "'")
+                new RawParameterizedSqlStatement("INSERT INTO " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) " +
+                         "SELECT '" + id + "', ROLE_ID FROM " + getTableName("REALM_DEFAULT_ROLES") +
+                         " WHERE REALM_ID = '" + database.escapeStringForDatabase(entry.getKey()) + "'")
             );
             statements.add(
                 // copy data from CLIENT_DEFAULT_ROLES to COMPOSITE_ROLE
-                new RawSqlStatement("INSERT INTO " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) " +
+                new RawParameterizedSqlStatement("INSERT INTO " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) " +
                         "SELECT '" + id + "', " + clientDefaultRolesTable + ".ROLE_ID FROM " + 
                         clientDefaultRolesTable + " INNER JOIN " + clientTable + " ON " + 
                         clientTable + ".ID = " + clientDefaultRolesTable + ".CLIENT_ID AND " +
