@@ -756,6 +756,10 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} -f testsuite/integration-arquillian/tests/base/pom.xml 2>&1 | misc/log/trimmer.sh
 
+      - name: Run new Forms IT
+        run: |
+          ./mvnw package -f tests/pom.xml -Dkc.test.browser=${{ matrix.browser }} -Dtest=FormsTestSuite
+
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
