@@ -58,4 +58,12 @@
         </modifySql>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.5.0-40929-user-entity-version">
+        <addColumn tableName="USER_ENTITY">
+            <column name="VERSION" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

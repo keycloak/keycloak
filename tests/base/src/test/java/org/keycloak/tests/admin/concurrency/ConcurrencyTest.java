@@ -17,7 +17,6 @@
 
 package org.keycloak.tests.admin.concurrency;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -59,8 +58,8 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
 
     // Verify that no attribute values are duplicated, and there are no locking exceptions when adding attributes in parallel
     // https://github.com/keycloak/keycloak/issues/38868
+    // Fixed with optimistic locking in issue #40929
     @Test
-    @Disabled
     public void createUserAttributes() throws Throwable {
         AtomicInteger c = new AtomicInteger();
 

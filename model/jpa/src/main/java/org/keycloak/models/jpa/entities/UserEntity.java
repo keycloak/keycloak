@@ -34,6 +34,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -122,6 +123,10 @@ public class UserEntity {
 
     @Column(name="NOT_BEFORE")
     protected int notBefore;
+
+    @Version
+    @Column(name="VERSION")
+    private int version;
 
     public String getId() {
         return id;
@@ -270,6 +275,14 @@ public class UserEntity {
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 
     @Override
