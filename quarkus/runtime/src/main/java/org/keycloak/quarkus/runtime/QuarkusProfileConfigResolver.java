@@ -5,9 +5,9 @@ import org.keycloak.common.profile.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.profile.ProfileConfigResolver;
 import org.keycloak.common.profile.SingleProfileConfigResolver;
 import org.keycloak.config.FeatureOptions;
+import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,12 +30,11 @@ public class QuarkusProfileConfigResolver implements ProfileConfigResolver {
 
     protected Map<String, Boolean> getQuarkusFeatureState() {
         var map = new HashMap<String, Boolean>();
-        var index = FeatureOptions.FEATURE.getKey().indexOf(WildcardPropertyMapper.WILDCARD_FROM_START);
-        var featureEnabledOptionPrefix = NS_KEYCLOAK_PREFIX + FeatureOptions.FEATURE.getKey().substring(0, index);
+        var featureEnabledOptionPrefix = NS_KEYCLOAK_PREFIX + WildcardOptionsUtil.getWildcardPrefix(FeatureOptions.FEATURE.getKey());
 
         Configuration.getPropertyNames().forEach(property -> {
             if (property.startsWith(NS_KEYCLOAK_PREFIX) && property.startsWith(featureEnabledOptionPrefix)) {
-                var feature = property.substring(featureEnabledOptionPrefix.length());
+                var feature = WildcardOptionsUtil.getWildcardValue(FeatureOptions.FEATURE, property);
                 var value = Configuration.getOptionalValue(property).orElseThrow(
                         () -> new PropertyException("Missing value for feature '%s'".formatted(feature)));
 

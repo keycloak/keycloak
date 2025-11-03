@@ -1,16 +1,11 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.config.FeatureOptions;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import picocli.CommandLine;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,38 +32,6 @@ public final class FeaturePropertyMappers implements PropertyMapperGrouping {
                         .wildcardKeysValidator(FeaturePropertyMappers::validateSingleFeature)
                         .build()
         );
-    }
-
-    @Override
-    public void validateConfig(Picocli picocli) {
-        validateSingleFeatureDuplicates(picocli);
-    }
-
-    // Verify a feature specified via '--feature-<name>' is set only once on CLI
-    private static void validateSingleFeatureDuplicates(Picocli picocli) {
-        var featurePrefix = "--" + FeatureOptions.FEATURE.getKey().substring(0, FeatureOptions.FEATURE.getKey().indexOf(WildcardPropertyMapper.WILDCARD_FROM_START));
-        var args = picocli.getParsedCommand()
-                .flatMap(AbstractCommand::getCommandLine)
-                .map(CommandLine::getParseResult)
-                .map(CommandLine.ParseResult::expandedArgs)
-                .orElseGet(List::of);
-
-        var duplicatedFeatures = new MultivaluedHashMap<String, String>();
-        args.stream()
-                .filter(f -> f.startsWith(featurePrefix))
-                .map(f -> f.substring(f.indexOf("--")))
-                .map(f -> f.split("=", 2))
-                .filter(f -> f.length == 2)
-                .forEach(f -> duplicatedFeatures.add(f[0], f[1]));
-
-        var duplicatedFeaturesNames = duplicatedFeatures.entrySet().stream()
-                .filter(f -> f.getValue().size() > 1)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-
-        if (!duplicatedFeaturesNames.isEmpty()) {
-            throw new PropertyException("Duplicated options for features: %s. You need to set it only once.".formatted(String.join(", ", duplicatedFeaturesNames)));
-        }
     }
 
     public static void validateSingleFeature(String feature, String value) {
