@@ -1,7 +1,6 @@
 # Active maintainers
 
 * [Alexander Schwartz](https://github.com/ahus1)
-* [Bruno Oliveira da Silva](https://github.com/abstractj)
 * [Marek Posolda](https://github.com/mposolda)
 * [Pedro Igor](https://github.com/pedroigor)
 * [Sebastian Schuster](https://github.com/sschu)
@@ -13,6 +12,7 @@
 
 # Emeritus maintainers
 
+* [Bruno Oliveira da Silva](https://github.com/abstractj)
 * [Hynek Mlnařík](https://github.com/hmlnarik)
 * [Michal Hajas](https://github.com/mhajas)
 * [Pavel Drozd](https://github.com/pdrozd)
