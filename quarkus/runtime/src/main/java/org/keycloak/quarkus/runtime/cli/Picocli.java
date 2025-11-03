@@ -170,6 +170,13 @@ public class Picocli {
                 addCommandOptions(cliArgs, cl);
             }
 
+            // ParseResult retain memory. Clear it, so it's not on the stack while the command runs
+            result = null;
+
+            // there's another ParseResult being created under the covers here.
+            // to reuse the previous result either means we need to duplicate the logic in the execute method
+            // or refactor the above logic so that it happens in the command logic
+            // We could also reduce the memory footprint of the ParseResult, but that looks a little hackish
             int exitCode = cmd.execute(argArray);
 
             exit(exitCode);

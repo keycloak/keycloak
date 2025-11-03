@@ -474,7 +474,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void fastStartOptimizedSucceeds() {
+    public void startOptimizedSucceeds() {
         build("build", "--db=dev-file");
 
         System.setProperty("kc.http-enabled", "true");
