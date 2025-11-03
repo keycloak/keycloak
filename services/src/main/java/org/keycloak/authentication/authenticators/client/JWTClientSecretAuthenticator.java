@@ -167,7 +167,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public String getDisplayType() {
-        return "Signed Jwt with Client Secret";
+        return "Signed JWT with Client Secret";
     }
 
     @Override
