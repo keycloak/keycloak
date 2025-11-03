@@ -169,7 +169,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // Include client scopes can be disabled in the environments with thousands of client scopes to avoid potentially expensive iteration over client scopes
         if (includeClientScopes) {
             List<String> scopeNames = realm.getClientScopesStream()
-                    .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
+                    .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()) && clientScope.isIncludeInOpenIDProviderMetadata())
                     .map(ClientScopeModel::getName)
                     .collect(Collectors.toList());
             if (!scopeNames.contains(OAuth2Constants.SCOPE_OPENID)) {
