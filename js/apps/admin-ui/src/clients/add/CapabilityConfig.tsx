@@ -42,6 +42,12 @@ export const CapabilityConfig = ({
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
   const authorization = watch("authorizationServicesEnabled");
+  const jwtAuthorizationGrantEnabled = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.oauth2.jwt.authorization.grant.enabled",
+    ),
+    false,
+  );
   const isFeatureEnabled = useIsFeatureEnabled();
   const [idps, setIdps] = useState<IdentityProviderRepresentation[]>([]);
   const [search, setSearch] = useState("");
@@ -425,7 +431,8 @@ export const CapabilityConfig = ({
             ]}
           />
           {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
-            showIdentityProviders && (
+            showIdentityProviders &&
+            jwtAuthorizationGrantEnabled.toString() === "true" && (
               <MultiValuedListComponent
                 name={convertAttributeNameToForm<FormFields>(
                   "attributes.oauth2.jwt.authorization.grant.idp",
