@@ -473,7 +473,7 @@ public class Profile {
     }
 
     public static boolean isFeatureEnabled(Feature feature) {
-        return getInstance().features.get(feature);
+        return CURRENT != null && CURRENT.features.get(feature);
     }
 
     public static boolean isAnyVersionOfFeatureEnabled(Feature feature) {

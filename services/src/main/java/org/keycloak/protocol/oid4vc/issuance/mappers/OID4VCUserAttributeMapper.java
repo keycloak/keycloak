@@ -18,11 +18,10 @@
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.models.KeycloakSession;
@@ -74,32 +73,6 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         CONFIG_PROPERTIES.add(aggregateAttributesConfig);
     }
 
-    @Override
-    protected List<ProviderConfigProperty> getIndividualConfigProperties() {
-        return CONFIG_PROPERTIES;
-    }
-
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
-        // nothing to do for the mapper.
-    }
-
-    @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        List<String> attributePath = getMetadataAttributePath();
-        String propertyName = attributePath.get(attributePath.size() - 1);
-        String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
-        boolean aggregateAttributes = Optional.ofNullable(mapperModel.getConfig().get(AGGREGATE_ATTRIBUTES_KEY))
-                .map(Boolean::parseBoolean).orElse(false);
-        Collection<String> attributes =
-                KeycloakModelUtils.resolveAttribute(userSessionModel.getUser(), userAttribute,
-                        aggregateAttributes);
-        attributes.removeAll(Collections.singleton(null));
-        if (!attributes.isEmpty()) {
-            claims.put(propertyName, String.join(",", attributes));
-        }
-    }
-
     public static ProtocolMapperModel create(String mapperName, String userAttribute, String propertyName,
                                              boolean aggregateAttributes) {
         var mapperModel = new ProtocolMapperModel();
@@ -112,6 +85,31 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         mapperModel.setProtocolMapper(MAPPER_ID);
         return mapperModel;
+    }
+
+    @Override
+    protected List<ProviderConfigProperty> getIndividualConfigProperties() {
+        return CONFIG_PROPERTIES;
+    }
+
+    public void setClaimsForCredential(VerifiableCredential verifiableCredential, UserSessionModel userSessionModel) {
+        // nothing to do for the mapper.
+    }
+
+    @Override
+    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+        UserModel userModel = userSessionModel.getUser();
+        List<String> attributePath = getMetadataAttributePath();
+        String propertyName = attributePath.get(attributePath.size() - 1);
+        String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
+        boolean aggregate = Optional.ofNullable(mapperModel.getConfig().get(AGGREGATE_ATTRIBUTES_KEY))
+                .map(Boolean::parseBoolean).orElse(false);
+        var attributes = KeycloakModelUtils.resolveAttribute(userModel, userAttribute, aggregate).stream()
+                .filter(Objects::nonNull)
+                .toList();
+        if (!attributes.isEmpty()) {
+            claims.put(propertyName, String.join(",", attributes));
+        }
     }
 
     @Override

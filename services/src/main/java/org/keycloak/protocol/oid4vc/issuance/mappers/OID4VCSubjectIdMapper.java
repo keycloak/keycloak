@@ -21,11 +21,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Objects;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -42,6 +44,9 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-subject-id-mapper";
 
+    public static final String CLAIM_NAME_ID = "id";
+    public static final String USER_ATTRIBUTE_DID = "did";
+
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
     static {
@@ -49,9 +54,30 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         idPropertyNameConfig.setName(CLAIM_NAME);
         idPropertyNameConfig.setLabel("ID Property Name");
         idPropertyNameConfig.setHelpText("Name of the property to contain the id.");
-        idPropertyNameConfig.setDefaultValue("id");
         idPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(idPropertyNameConfig);
+
+        ProviderConfigProperty userAttributeConfig = new ProviderConfigProperty();
+        userAttributeConfig.setName(USER_ATTRIBUTE_KEY);
+        userAttributeConfig.setLabel("User attribute");
+        userAttributeConfig.setHelpText("The user attribute to be added to the credential subject.");
+        userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
+        userAttributeConfig.setOptions(
+                List.of(UserModel.USERNAME, UserModel.LOCALE, UserModel.FIRST_NAME, UserModel.LAST_NAME,
+                        UserModel.DISABLED_REASON, UserModel.EMAIL, UserModel.EMAIL_VERIFIED));
+        CONFIG_PROPERTIES.add(userAttributeConfig);
+    }
+
+    public static ProtocolMapperModel create(String name) {
+        var mapperModel = new ProtocolMapperModel();
+        mapperModel.setName(name);
+        Map<String, String> configMap = new HashMap<>();
+        configMap.put(CLAIM_NAME, CLAIM_NAME_ID);
+        configMap.put(USER_ATTRIBUTE_KEY, USER_ATTRIBUTE_DID);
+        mapperModel.setConfig(configMap);
+        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
+        mapperModel.setProtocolMapper(MAPPER_ID);
+        return mapperModel;
     }
 
     @Override
@@ -59,44 +85,37 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
-    @Override
-    public List<String> getMetadataAttributePath() {
-        return ListUtils.union(getAttributePrefix(), List.of("id"));
-    }
-
-    public static ProtocolMapperModel create(String name, String subjectId) {
-        var mapperModel = new ProtocolMapperModel();
-        mapperModel.setName(name);
-        Map<String, String> configMap = new HashMap<>();
-        configMap.put(CLAIM_NAME, subjectId);
-        mapperModel.setConfig(configMap);
-        mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        mapperModel.setProtocolMapper(MAPPER_ID);
-        return mapperModel;
-    }
-
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaimsForCredential(VerifiableCredential verifiableCredential, UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
     }
 
     @Override
     public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+        UserModel userModel = userSessionModel.getUser();
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);
-        claims.put(propertyName,
-                   mapperModel.getConfig().getOrDefault(OID4VCMapper.CLAIM_NAME,
-                                                        String.format("urn:uuid:%s", UUID.randomUUID())));
+        var userAttr = KeycloakModelUtils.resolveAttribute(userModel, USER_ATTRIBUTE_DID,false).stream()
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        if (userAttr != null) {
+            claims.put(propertyName, userAttr);
+        }
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        return ListUtils.union(getAttributePrefix(), List.of(CLAIM_NAME_ID));
     }
 
     @Override
     public String getDisplayType() {
-        return "CredentialSubject ID Mapper";
+        return "Subject ID Mapper";
     }
 
     @Override
     public String getHelpText() {
-        return "Assigns a subject ID to the credentials subject. If no specific id is configured, a randomly generated one is used.";
+        return "Assigns the Subject ID from the User's DID";
     }
 
     @Override
@@ -105,7 +124,5 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     }
 
     @Override
-    public String getId() {
-        return MAPPER_ID;
-    }
+    public String getId() { return MAPPER_ID; }
 }
