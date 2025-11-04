@@ -11,11 +11,11 @@ import java.util.stream.Stream;
 /**
  * Dummy class used in combination with ReceiverKey ComponentModels
  */
-public class TransmitterKeyProvider implements KeyProvider {
+public class SsfTransmitterKeyProvider implements KeyProvider {
 
-    protected static final Logger log = Logger.getLogger(TransmitterKeyProvider.class);
+    protected static final Logger log = Logger.getLogger(SsfTransmitterKeyProvider.class);
 
-    public TransmitterKeyProvider(KeycloakSession session, ComponentModel model) {
+    public SsfTransmitterKeyProvider(KeycloakSession session, ComponentModel model) {
     }
 
     @Override

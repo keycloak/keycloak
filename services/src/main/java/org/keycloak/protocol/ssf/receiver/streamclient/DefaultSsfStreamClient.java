@@ -17,7 +17,7 @@ public class DefaultSsfStreamClient implements SsfStreamClient {
 
     protected static final Logger log = Logger.getLogger(DefaultSsfStreamClient.class);
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
 
     public DefaultSsfStreamClient(KeycloakSession session) {
         this.session = session;
@@ -31,8 +31,8 @@ public class DefaultSsfStreamClient implements SsfStreamClient {
 
         try {
             log.debugf("Sending stream creation request. %s", JsonSerialization.writeValueAsPrettyString(createStreamRequest));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException ioe) {
+            throw new SsfStreamException("Could not serialize stream creation request", ioe, Response.Status.INTERNAL_SERVER_ERROR);
         }
         String uri = transmitterMetadata.getConfigurationEndpoint();
         var httpCall = createHttpClient(session).doPost(uri).auth(transmitterAccessToken).json(createStreamRequest);
@@ -51,13 +51,13 @@ public class DefaultSsfStreamClient implements SsfStreamClient {
     }
 
     @Override
-    public void deleteStream(SsfTransmitterMetadata transmitterMetadata, String authorizationToken, String streamId) {
+    public void deleteStream(SsfTransmitterMetadata transmitterMetadata, String transmitterAccessToken, String streamId) {
 
         RealmModel realm = session.getContext().getRealm();
         log.debugf("Sending stream deletion request. realm=%s stream_id=%s", realm.getName(), streamId);
 
         String uri = transmitterMetadata.getConfigurationEndpoint() + "?stream_id=" + streamId;
-        var httpCall = createHttpClient(session).doDelete(uri).auth(authorizationToken);
+        var httpCall = createHttpClient(session).doDelete(uri).auth(transmitterAccessToken);
         try (var response = httpCall.asResponse()) {
             log.debugf("Stream deletion response. status=%s", response.getStatus());
 
@@ -71,13 +71,13 @@ public class DefaultSsfStreamClient implements SsfStreamClient {
     }
 
     @Override
-    public SsfStreamRepresentation getStream(SsfTransmitterMetadata transmitterMetadata, String authorizationToken, String streamId) {
+    public SsfStreamRepresentation getStream(SsfTransmitterMetadata transmitterMetadata, String transmitterAccessToken, String streamId) {
 
         RealmModel realm = session.getContext().getRealm();
         log.debugf("Sending stream read request. realm=%s stream_id=%s", realm.getName(), streamId);
 
         String uri = transmitterMetadata.getConfigurationEndpoint() + "?stream_id=" + streamId;
-        var httpCall = createHttpClient(session).doGet(uri).auth(authorizationToken);
+        var httpCall = createHttpClient(session).doGet(uri).auth(transmitterAccessToken);
         try (var response = httpCall.asResponse()) {
             log.debugf("Stream read response. status=%s", response.getStatus());
 

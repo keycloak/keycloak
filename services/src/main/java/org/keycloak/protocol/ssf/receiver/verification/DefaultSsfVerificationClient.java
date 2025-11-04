@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.ssf.receiver.ReceiverModel;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
 
 public class DefaultSsfVerificationClient implements SsfVerificationClient {
@@ -18,9 +18,9 @@ public class DefaultSsfVerificationClient implements SsfVerificationClient {
     }
 
     @Override
-    public void requestVerification(ReceiverModel model, SsfTransmitterMetadata metadata, String state) {
+    public void requestVerification(SsfReceiverModel model, SsfTransmitterMetadata metadata, String state) {
 
-        var verificationRequest = new VerificationRequest();
+        var verificationRequest = new SsfStreamVerificationRequest();
         verificationRequest.setStreamId(model.getStreamId());
         verificationRequest.setState(state);
 
@@ -37,7 +37,7 @@ public class DefaultSsfVerificationClient implements SsfVerificationClient {
         }
     }
 
-    protected SimpleHttpRequest prepareHttpCall(String verifyUri, String token, VerificationRequest verificationRequest) {
+    protected SimpleHttpRequest prepareHttpCall(String verifyUri, String token, SsfStreamVerificationRequest verificationRequest) {
         return createHttpClient(session).doPost(verifyUri).auth(token).json(verificationRequest);
     }
 

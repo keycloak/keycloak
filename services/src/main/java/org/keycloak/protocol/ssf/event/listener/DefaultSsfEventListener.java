@@ -6,7 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
+import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectUserLookup;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
@@ -25,11 +25,11 @@ public class DefaultSsfEventListener implements SsfEventListener {
     }
 
     @Override
-    public void onEvent(SsfEventContext eventContext, String eventId, SsfEvent event) {
+    public void onEvent(SsfSecurityEventContext eventContext, String eventId, SsfEvent event) {
         String eventType = event.getEventType();
         SubjectId subjectId = event.getSubjectId();
         var eventClass = event.getClass();
-        log.infof("Security event received. eventId=%s eventType=%s subjectId=%s eventClass=%s", eventId, eventType, subjectId, eventClass.getName());
+        log.debugf("Security event received. eventId=%s eventType=%s subjectId=%s eventClass=%s", eventId, eventType, subjectId, eventClass.getName());
 
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
@@ -48,15 +48,24 @@ public class DefaultSsfEventListener implements SsfEventListener {
             return;
         }
 
-        if (ssfEvent instanceof SessionRevoked) {
-            List<UserSessionModel> sessions = session.sessions().getUserSessionsStream(realm, user).toList();
-            if (!sessions.isEmpty()) {
-                for (var userSession : sessions) {
-                    session.sessions().removeUserSession(realm, userSession);
-                }
-                log.debugf("Removed %s sessions for user. realm=%s userId=%s", sessions.size(), realm.getName(), user.getId());
-            }
+        if (ssfEvent instanceof SessionRevoked sessionRevoked) {
+            handleSessionRevokedEvent(realm, user, sessionRevoked);
         }
+    }
+
+    protected void handleSessionRevokedEvent(RealmModel realm, UserModel user, SessionRevoked sessionRevoked) {
+
+        List<UserSessionModel> sessions = session.sessions().getUserSessionsStream(realm, user).toList();
+        if (sessions.isEmpty()) {
+            return;
+        }
+
+        for (var userSession : sessions) {
+            session.sessions().removeUserSession(realm, userSession);
+        }
+
+        log.debugf("Removed %s sessions for user. realm=%s userId=%s for SessionRevoked event. reasonAdmin=%s reasonUser=%s",
+                sessions.size(), realm.getName(), user.getId(), sessionRevoked.getReasonAdmin(), sessionRevoked.getReasonUser());
     }
 
 }
