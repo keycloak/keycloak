@@ -136,4 +136,10 @@ public final class ShowConfig extends AbstractCommand {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isHelpAll() {
+        return false;
+    }
+
 }

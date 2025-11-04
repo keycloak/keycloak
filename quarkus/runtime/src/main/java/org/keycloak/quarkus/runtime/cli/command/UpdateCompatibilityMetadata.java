@@ -59,11 +59,6 @@ public class UpdateCompatibilityMetadata extends AbstractUpdatesCommand {
     }
 
     @Override
-    public boolean includeRuntime() {
-        return true;
-    }
-
-    @Override
     protected void validateConfig() {
         super.validateConfig();
         validateFileParameter();

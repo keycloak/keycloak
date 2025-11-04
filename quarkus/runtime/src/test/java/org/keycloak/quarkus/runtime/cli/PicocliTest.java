@@ -33,7 +33,6 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -104,10 +103,10 @@ public class PicocliTest extends AbstractConfigurationTest {
         }
 
         @Override
-        public void initConfig(List<String> cliArgs, AbstractCommand command) {
+        public void initConfig(AbstractCommand command) {
             KeycloakConfigSourceProvider.reload();
             boolean checkBuild = Environment.isRebuildCheck();
-            super.initConfig(cliArgs, command);
+            super.initConfig(command);
             if (!checkBuild && PersistedConfigSource.getInstance().getConfigValueProperties().isEmpty()) {
                 System.getProperties().remove(Environment.KC_CONFIG_REBUILD_CHECK);
             }
@@ -620,9 +619,9 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void buildOptionChangedWithOptimized() {
         build("build", "--db=dev-file");
 
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--db=dev-mem");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--optimized", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertTrue(nonRunningPicocli.getErrString().contains("Build time option: '--db' not usable with pre-built image and --optimized"));
+        assertTrue(nonRunningPicocli.getErrString(), nonRunningPicocli.getErrString().contains("kc.db"));
     }
 
     @Test
@@ -827,7 +826,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=%s".formatted(logHandlerName), "--log-%s-async-queue-length=768".formatted(logHandlerOptionsName));
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--log-%s-async-queue-length'. Available only when %s is activated and asynchronous logging is enabled".formatted(logHandlerOptionsName, logHandlerFullName)));
-
     }
 
     @Test
