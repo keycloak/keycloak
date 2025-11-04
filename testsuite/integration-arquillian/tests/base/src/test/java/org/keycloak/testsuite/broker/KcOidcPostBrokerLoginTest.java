@@ -252,6 +252,7 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
 
+        loginTotpPage.login(totp.generateTOTP(totpSecret));
         appPage.assertCurrent();
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
