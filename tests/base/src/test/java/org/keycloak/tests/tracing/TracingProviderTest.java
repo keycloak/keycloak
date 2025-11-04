@@ -1,21 +1,4 @@
-/*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.keycloak.testsuite.tracing;
+package org.keycloak.tests.tracing;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
@@ -23,24 +6,18 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.sdk.trace.ReadableSpan;
-import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.data.ExceptionEventData;
+import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.semconv.ExceptionAttributes;
-import org.jboss.arquillian.container.test.api.ContainerController;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
-import org.keycloak.tracing.NoopTracingProvider;
+import org.junit.jupiter.api.Test;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tracing.TracingProvider;
 
 import java.io.Serializable;
-import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
@@ -48,76 +25,29 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
-@AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.UNDERTOW)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest(config = TracingProviderTest.ServerConfigWithTracing.class)
+public class TracingProviderTest {
 
-    @ArquillianResource
-    protected ContainerController controller;
-
-    private static boolean initialized;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
-
-    @Before
-    public void setContainer() {
-        assertThat(suiteContext.getAuthServerInfo().isQuarkus(), is(true));
-
-        if (!initialized) {
-            startContainer();
-            initialized = true;
-        }
-    }
-
-    @Test
-    // reset configuration and restart server as the last step of tests execution
-    public void zzzzAfterClass() {
-        try {
-            var container = (AbstractQuarkusDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.resetConfiguration();
-            container.restartServer();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        getTestingClient().server(TEST_REALM_NAME).run(session -> {
-            TracingProvider provider = session.getProvider(TracingProvider.class);
-            assertThat(provider.getClass().getSimpleName(), is(NoopTracingProvider.class.getSimpleName()));
-        });
-    }
-
-    void startContainer() {
-        var containerQualifier = suiteContext.getAuthServerInfo().getQualifier();
-        AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-        try {
-            controller.stop(containerQualifier);
-            container.setAdditionalBuildArgs(List.of("--tracing-enabled=true", "--log-level=org.keycloak.quarkus.runtime.tracing:debug"));
-            controller.start(containerQualifier);
-            reconnectAdminClient();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void parentSpan() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             Span current = tracing.getCurrentSpan();
             assertThat(current, notNullValue());
 
             assertThat(current instanceof ReadableSpan, is(true));
             ReadableSpan readableSpan = (ReadableSpan) current;
             assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.function")), is("runOnServer"));
-            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.namespace")), is("org.keycloak.testsuite.rest.TestingResourceProvider"));
-            assertThat(readableSpan.getName(), is("TestingResourceProvider.runOnServer"));
+            assertThat(readableSpan.getAttribute(AttributeKey.stringKey("code.namespace")), is("org.keycloak.testframework.remote.providers.runonserver.RunOnServerRealmResourceProvider"));
+            assertThat(readableSpan.getName(), is("RunOnServerRealmResourceProvider.runOnServer"));
         });
     }
 
     @Test
     public void differentTracer() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             var tracer1 = tracing.getTracer("tracer1");
             var tracer2 = tracing.getTracer("tracer2");
             var tracer3 = tracing.getTracer("tracer1");
@@ -142,7 +72,7 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void spanInfo() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             var span = tracing.startSpan("MyTracer", "sameSpan");
             try {
                 var current = tracing.getCurrentSpan();
@@ -170,7 +100,7 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void errorInSpan() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             var span = tracing.startSpan("MyTracer", "something");
             try {
                 try {
@@ -214,7 +144,7 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void traceSuccessful() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             tracing.trace(OpenTelemetry.class, "successful", span -> {
                 assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OpenTelemetry.successful"));
             });
@@ -223,7 +153,7 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void traceSuccessfulValue() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             var spanName = tracing.trace(OpenTelemetry.class, "successful", (span) -> {
                 var finalName = "OpenTelemetry.successful";
                 assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is(finalName));
@@ -237,10 +167,10 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void traceWithError() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             try {
-                tracing.trace(OTelTracingProviderTest.class, "errorSpan", span -> {
-                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.errorSpan"));
+                tracing.trace(TracingProviderTest.class, "errorSpan", span -> {
+                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.errorSpan"));
 
                     if (true) {
                         throw new IllegalStateException("some invalid error");
@@ -256,12 +186,12 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void traceNestedSpans() {
-        runOnServer(tracing -> {
-            tracing.trace(OTelTracingProviderTest.class, "test1", span -> {
-                assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test1"));
+        runOnServerTracing(tracing -> {
+            tracing.trace(TracingProviderTest.class, "test1", span -> {
+                assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test1"));
 
-                tracing.trace(OTelTracingProviderTest.class, "test2", span2 -> {
-                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test2"));
+                tracing.trace(TracingProviderTest.class, "test2", span2 -> {
+                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test2"));
 
                     // parent - span, child span2
                     assertThat(span.getSpanContext().getSpanId(), is(((ReadableSpan) span2).getParentSpanContext().getSpanId()));
@@ -274,15 +204,15 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void traceNestedSpansNotEnded() {
-        runOnServer(tracing -> {
-            tracing.trace(OTelTracingProviderTest.class, "test1", span -> {
-                assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test1"));
+        runOnServerTracing(tracing -> {
+            tracing.trace(TracingProviderTest.class, "test1", span -> {
+                assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test1"));
 
-                var span2 = tracing.startSpan(OTelTracingProviderTest.class, "test2");
+                var span2 = tracing.startSpan(TracingProviderTest.class, "test2");
                 try {
                     assertThat(span2, notNullValue());
                     assertThat(span2, is(tracing.getCurrentSpan()));
-                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test2"));
+                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test2"));
                     // parent - span, child span2
                     assertThat(span.getSpanContext().getSpanId(), is(((ReadableSpan) span2).getParentSpanContext().getSpanId()));
                 } finally {
@@ -296,30 +226,30 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void multipleNotEnded() {
-        runOnServer(tracing -> {
-            var span1 = tracing.startSpan(OTelTracingProviderTest.class, "test1");
-            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test1"));
+        runOnServerTracing(tracing -> {
+            var span1 = tracing.startSpan(TracingProviderTest.class, "test1");
+            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test1"));
 
-            var span2 = tracing.startSpan(OTelTracingProviderTest.class, "test2");
-            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test2"));
+            var span2 = tracing.startSpan(TracingProviderTest.class, "test2");
+            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test2"));
             // parent - span1, child span2
             assertThat(span1.getSpanContext().getSpanId(), is(((ReadableSpan) span2).getParentSpanContext().getSpanId()));
 
-            var span3 = tracing.startSpan(OTelTracingProviderTest.class, "test3");
-            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test3"));
+            var span3 = tracing.startSpan(TracingProviderTest.class, "test3");
+            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test3"));
             // parent - span2, child span3
             assertThat(span2.getSpanContext().getSpanId(), is(((ReadableSpan) span3).getParentSpanContext().getSpanId()));
 
-            var span4 = tracing.startSpan(OTelTracingProviderTest.class, "test4");
-            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test4"));
+            var span4 = tracing.startSpan(TracingProviderTest.class, "test4");
+            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test4"));
             // parent - span3, child span4
             assertThat(span3.getSpanContext().getSpanId(), is(((ReadableSpan) span4).getParentSpanContext().getSpanId()));
             tracing.endSpan();
 
-            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test3"));
+            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test3"));
 
-            var span5 = tracing.startSpan(OTelTracingProviderTest.class, "test5");
-            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test5"));
+            var span5 = tracing.startSpan(TracingProviderTest.class, "test5");
+            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test5"));
             // parent - span3, child span5
             assertThat(span1.getSpanContext().getSpanId(), is(((ReadableSpan) span2).getParentSpanContext().getSpanId()));
 
@@ -329,38 +259,38 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void traceMultipleAlwaysEnded() {
-        runOnServer(tracing -> {
+        runOnServerTracing(tracing -> {
             // Level 1
-            tracing.trace(OTelTracingProviderTest.class, "test1", span -> {
-                assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test1"));
+            tracing.trace(TracingProviderTest.class, "test1", span -> {
+                assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test1"));
 
                 // Level 2
-                tracing.trace(OTelTracingProviderTest.class, "test2", span2 -> {
-                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test2"));
+                tracing.trace(TracingProviderTest.class, "test2", span2 -> {
+                    assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test2"));
                     // parent - span, child span2
                     assertThat(span.getSpanContext().getSpanId(), is(((ReadableSpan) span2).getParentSpanContext().getSpanId()));
 
                     // Level 3
-                    tracing.trace(OTelTracingProviderTest.class, "test3", span3 -> {
-                        assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test3"));
+                    tracing.trace(TracingProviderTest.class, "test3", span3 -> {
+                        assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test3"));
                         // parent - span2, child span3
                         assertThat(span2.getSpanContext().getSpanId(), is(((ReadableSpan) span3).getParentSpanContext().getSpanId()));
                     });
 
-                    tracing.trace(OTelTracingProviderTest.class, "test4", span4 -> {
-                        assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test4"));
+                    tracing.trace(TracingProviderTest.class, "test4", span4 -> {
+                        assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test4"));
                         // parent - span2, child span4
                         assertThat(span2.getSpanContext().getSpanId(), is(((ReadableSpan) span4).getParentSpanContext().getSpanId()));
                     });
 
-                    tracing.trace(OTelTracingProviderTest.class, "test5", span5 -> {
-                        assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test5"));
+                    tracing.trace(TracingProviderTest.class, "test5", span5 -> {
+                        assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test5"));
                         // parent - span2, child span5
                         assertThat(span2.getSpanContext().getSpanId(), is(((ReadableSpan) span5).getParentSpanContext().getSpanId()));
 
                         // Level 4
-                        tracing.trace(OTelTracingProviderTest.class, "test6", span6 -> {
-                            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("OTelTracingProviderTest.test6"));
+                        tracing.trace(TracingProviderTest.class, "test6", span6 -> {
+                            assertThat(((ReadableSpan) tracing.getCurrentSpan()).toSpanData().getName(), is("TracingProviderTest.test6"));
                             // parent - span5, child span6
                             assertThat(span5.getSpanContext().getSpanId(), is(((ReadableSpan) span6).getParentSpanContext().getSpanId()));
                         });
@@ -371,8 +301,8 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    void runOnServer(TracingConsumer tracing) {
-        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+    void runOnServerTracing(TracingConsumer tracing) {
+        runOnServer.run(session -> {
             TracingProvider provider = session.getProvider(TracingProvider.class);
             assertThat(provider.getClass().getSimpleName(), is("OTelTracingProvider"));
             tracing.accept(provider);
@@ -387,5 +317,14 @@ public class OTelTracingProviderTest extends AbstractTestRealmKeycloakTest {
     @FunctionalInterface
     interface TracingConsumer extends Serializable {
         void accept(TracingProvider tracing);
+    }
+
+    public static class ServerConfigWithTracing implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config
+                    .option("tracing-enabled", "true")
+                    .option("log-level", "INFO,org.keycloak.quarkus.runtime.tracing:debug");
+        }
     }
 }
