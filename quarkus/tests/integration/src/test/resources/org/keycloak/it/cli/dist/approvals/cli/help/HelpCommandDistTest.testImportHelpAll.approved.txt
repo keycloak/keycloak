@@ -460,6 +460,17 @@ Import:
                      Set if existing data should be overwritten. If set to false, data will be
                        ignored. Default: true.
 
+OpenAPI configuration:
+
+--openapi-enabled <true|false>
+                     If the server should expose OpenAPI Endpoint. If enabled, OpenAPI is available
+                       at '/openapi'. Default: false. Available only when OpenAPI feature is
+                       enabled.
+--openapi-ui-enabled <true|false>
+                     If the server should expose OpenApi-UI Endpoint. If enabled, OpenAPI UI is
+                       available at '/openapi/ui'. Default: false. Available only when OpenAPI
+                       Endpoint is enabled.
+
 Bootstrap Admin:
 
 --bootstrap-admin-client-id <client id>

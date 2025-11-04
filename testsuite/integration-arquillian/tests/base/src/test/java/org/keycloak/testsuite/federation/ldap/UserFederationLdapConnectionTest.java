@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin;
+package org.keycloak.testsuite.federation.ldap;
 
 import java.util.List;
 import java.util.Map;

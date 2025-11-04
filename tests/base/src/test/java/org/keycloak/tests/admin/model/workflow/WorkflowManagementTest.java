@@ -33,10 +33,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fasterxml.jackson.jakarta.rs.yaml.JacksonYAMLProvider;
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import org.hamcrest.Matchers;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -86,7 +92,6 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.utils.MailUtils;
-import org.keycloak.util.JsonSerialization;
 
 @KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
 public class WorkflowManagementTest {
@@ -885,8 +890,10 @@ public class WorkflowManagementTest {
 
     @Test
     public void testCreateUsingYaml() throws IOException {
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
+        YAMLMapper yamlMapper = YAMLMapper.builder().serializationInclusion(Include.NON_NULL).build();
+        WorkflowRepresentation expected = WorkflowRepresentation.create()
                 .of(UserCreationTimeWorkflowProviderFactory.ID)
+                .name("test")
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -894,19 +901,44 @@ public class WorkflowManagementTest {
                         WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
                                 .build()
-                ).build();
+                ).build().getWorkflows().get(0);
 
-        Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true);
-        WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
-                .path("admin")
-                .path("realms")
-                .path(managedRealm.getName())
-                .path("workflows")
-                .path("set")
-                .register(new BearerAuthFilter(adminClient.tokenManager()));
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            httpClient.register(JacksonYAMLProvider.class);
+            WebTarget workflowsApi = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin")
+                    .path("realms")
+                    .path(managedRealm.getName())
+                    .path("workflows")
+                    .register(new BearerAuthFilter(adminClient.tokenManager()));
 
-        Response response = target.request().post(Entity.entity(JsonSerialization.writeValueAsString(expectedWorkflows), "application/yaml"));
-        response.close();
+            try (Response response = workflowsApi.request().post(Entity.entity(yamlMapper.writeValueAsString(expected),
+                    YAMLMediaTypes.APPLICATION_JACKSON_YAML))) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            try (Response response = workflowsApi.request().accept(YAMLMediaTypes.APPLICATION_JACKSON_YAML).get()) {
+                assertEquals(Status.OK.getStatusCode(), response.getStatus());
+                List<WorkflowRepresentation> workflows = yamlMapper.readValue(response.readEntity(String.class),
+                        new TypeReference<>() {
+                        });
+                assertFalse(workflows.isEmpty());
+                expected = workflows.get(0);
+            }
+
+            try (Response response = workflowsApi.path(expected.getId()).request()
+                    .accept(YAMLMediaTypes.APPLICATION_JACKSON_YAML).get()) {
+                assertEquals(Status.OK.getStatusCode(), response.getStatus());
+                WorkflowRepresentation actual = yamlMapper.readValue(response.readEntity(String.class), WorkflowRepresentation.class);
+                assertEquals(expected.getId(), actual.getId());
+                assertEquals(expected.getName(), actual.getName());
+            }
+
+            try (Response response = workflowsApi.path(expected.getId()).request()
+                    .put(Entity.entity(yamlMapper.writeValueAsString(expected), YAMLMediaTypes.APPLICATION_JACKSON_YAML))) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+        }
     }
 
     public static List<MimeMessage> findEmailsByRecipient(MailServer mailServer, String expectedRecipient) {

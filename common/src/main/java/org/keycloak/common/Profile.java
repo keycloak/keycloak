@@ -59,6 +59,8 @@ public class Profile {
 
         ADMIN_API("Admin API", Type.DEFAULT),
 
+        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.EXPERIMENTAL, 2, Feature.ADMIN_API),
+
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
         LOGIN_V2("New Login Theme", Type.DEFAULT, 2, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
@@ -151,6 +153,8 @@ public class Profile {
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
         HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
+
+        OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
