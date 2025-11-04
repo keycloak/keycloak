@@ -59,7 +59,7 @@ import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
  */
 public class UPConfigUtils {
 
-    private static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
+    public static final String SYSTEM_DEFAULT_CONFIG_RESOURCE = "keycloak-default-user-profile.json";
     public static final String ROLE_USER = UserProfileConstants.ROLE_USER;
     public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
@@ -320,7 +320,7 @@ public class UPConfigUtils {
     }
 
     public static String readSystemDefaultConfig() {
-        try (InputStream is = getSystemDefaultConfig()) {
+        try (InputStream is = getUserProfileConfig(SYSTEM_DEFAULT_CONFIG_RESOURCE)) {
             return StreamUtil.readString(is, Charset.defaultCharset());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to load default user profile config file", cause);
@@ -328,7 +328,11 @@ public class UPConfigUtils {
     }
 
     public static UPConfig parseSystemDefaultConfig() {
-        return parseConfig(getSystemDefaultConfig());
+        return parseUserProfileConfig(SYSTEM_DEFAULT_CONFIG_RESOURCE);
+    }
+
+    public static UPConfig parseUserProfileConfig(String resource) {
+        return parseConfig(getUserProfileConfig(resource));
     }
 
     public static UPConfig parseConfig(Path configPath) {
@@ -351,7 +355,7 @@ public class UPConfigUtils {
         }
     }
 
-    private static InputStream getSystemDefaultConfig() {
-        return UPConfigUtils.class.getResourceAsStream(SYSTEM_DEFAULT_CONFIG_RESOURCE);
+    private static InputStream getUserProfileConfig(String resource) {
+        return UPConfigUtils.class.getResourceAsStream(resource);
     }
 }

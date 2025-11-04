@@ -73,6 +73,7 @@ import org.keycloak.validate.validators.EmailValidator;
 
 import static java.util.Optional.ofNullable;
 
+import static org.keycloak.common.Profile.Feature.OID4VC_VCI;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
@@ -105,7 +106,64 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     public static void setDefaultConfig(UPConfig defaultConfig) {
         if (PARSED_DEFAULT_RAW_CONFIG == null) {
+            if (Profile.isFeatureEnabled(OID4VC_VCI)) {
+                addDefaultAttributesForVerifiableCredentials(defaultConfig);
+            }
             PARSED_DEFAULT_RAW_CONFIG = defaultConfig;
+        }
+    }
+
+    private static void addDefaultAttributesForVerifiableCredentials(UPConfig defaultConfig) {
+
+        // For all intends and purposes a Verifiable Credential (VC) is bound to a Holder's Digital Identity (DID).
+        // The Holder's DID is in turn bound to Key Material that the Issuer + Verifier can discover from the DID Document.
+        // In case of "did:key:..." the Public Key is already encoded in the DID.
+        //
+        // Here, we make sure that the default UserProfile has a 'did' attribute when --feature=oid4vc-vci is enabled.
+        // Conceptually, it is however debatable whether the Issuer should know even one of the Holder's DIDs
+        //
+        // In future, it may be possible that ...
+        //
+        //  * The Holder communicates the DID at the time of Authentication
+        //  * The Issuer then verifies Holder possession of the associated Key Material
+        //  * The Issuer then somehow associates the Authentication request with a registered User
+        //  * The VC is then issued to the Holder without the Issuer needing to remember that Holder DID
+        //
+        // This kind of Authentication protocol is for example required by EBSI, which we aim to become compatible with.
+        // https://hub.ebsi.eu/conformance/build-solutions/issue-to-holder-functional-flows
+        //
+        // Note, that current EBSI Compatibility Tests use the Holder's DID as OIDC client_id in the AuthenticationRequest.
+        // That is something we need to work with, but I don't think we should model it like that in our realm config.
+        //
+        // Here the attribute definition that we add by default (when not defined already)
+        //
+        //   {
+        //     "name": "did",
+        //     "displayName": "DID",
+        //     "permissions": {
+        //       "view": ["admin", "user"],
+        //       "edit": ["admin", "user"]
+        //     },
+        //     "validations": {
+        //       "pattern": {
+        //         "pattern": "^did:.+:.+$",
+        //         "error-message": "Value must start with 'did:scheme:'"
+        //       }
+        //     }
+        //   }
+        
+        if (!defaultConfig.hasAttribute("did")) {
+            var attr = new UPAttribute("did");
+            attr.setDisplayName("DID");
+            attr.setMultivalued(false);
+            attr.setPermissions(new UPAttributePermissions(
+                    Set.of(UserProfileConstants.ROLE_ADMIN, UserProfileConstants.ROLE_USER), // view
+                    Set.of(UserProfileConstants.ROLE_ADMIN, UserProfileConstants.ROLE_USER)  // edit
+            ));
+            attr.setValidations(Map.of("pattern", Map.of(
+                "pattern", "^did:.+:.+$",
+                "error-message", "Value must start with 'did:scheme:'")));
+            defaultConfig.addOrReplaceAttribute(attr);
         }
     }
 
