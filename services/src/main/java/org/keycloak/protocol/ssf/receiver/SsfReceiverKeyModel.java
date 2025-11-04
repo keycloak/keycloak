@@ -3,11 +3,11 @@ package org.keycloak.protocol.ssf.receiver;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyUse;
 
-public class ReceiverKeyModel extends ComponentModel {
+public class SsfReceiverKeyModel extends ComponentModel {
 
-    public ReceiverKeyModel() {}
+    public SsfReceiverKeyModel() {}
 
-    public ReceiverKeyModel(ComponentModel model) {
+    public SsfReceiverKeyModel(ComponentModel model) {
         super(model);
     }
 

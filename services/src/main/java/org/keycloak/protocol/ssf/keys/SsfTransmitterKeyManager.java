@@ -7,7 +7,7 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
-public class TransmitterKeyManager {
+public class SsfTransmitterKeyManager {
 
     public static PublicKey decodePublicKey(String key, String keyType, String alg){
         try{
