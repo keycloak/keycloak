@@ -1,14 +1,12 @@
 package org.keycloak.protocol.ssf.receiver.verification;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class SsfStreamVerificationState {
 
-public class VerificationRequest {
-
-    @JsonProperty("stream_id")
     protected String streamId;
 
-    @JsonProperty("state")
     protected String state;
+
+    protected long timestamp;
 
     public String getStreamId() {
         return streamId;
@@ -26,11 +24,20 @@ public class VerificationRequest {
         this.state = state;
     }
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     @Override
     public String toString() {
-        return "VerificationRequest{" +
+        return "VerificationState{" +
                "streamId='" + streamId + '\'' +
                ", state='" + state + '\'' +
+               ", timestamp=" + timestamp +
                '}';
     }
 }

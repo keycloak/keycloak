@@ -1,16 +1,16 @@
 package org.keycloak.protocol.ssf.event;
 
-import org.keycloak.protocol.ssf.support.SsfFailureResponse;
+import org.keycloak.protocol.ssf.support.SsfSetPushDeliveryFailureResponse;
 
 public class ErrorSecurityEventToken extends SecurityEventToken {
 
-    protected final SsfFailureResponse failureResponse;
+    protected final SsfSetPushDeliveryFailureResponse failureResponse;
 
     public ErrorSecurityEventToken(String errorCode, String message) {
-        this.failureResponse = new SsfFailureResponse(errorCode, message);
+        this.failureResponse = new SsfSetPushDeliveryFailureResponse(errorCode, message);
     }
 
-    public SsfFailureResponse getFailureResponse() {
+    public SsfSetPushDeliveryFailureResponse getFailureResponse() {
         return failureResponse;
     }
 
