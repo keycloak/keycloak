@@ -821,6 +821,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
 
         em.remove(groupEntity);
+        // flush removal to avoid ModelDuplicateException when re-importing group (see Issue #43819)
+        em.flush();
         return true;
 
 
