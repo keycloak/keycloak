@@ -23,6 +23,6 @@ public interface JWTAuthorizationGrantProvider {
 
     int getAllowedClockSkew();
 
-    boolean isSingleUseAssertion();
+    boolean isAssertionReuseAllowed();
 
 }

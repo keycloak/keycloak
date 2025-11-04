@@ -157,19 +157,15 @@ public class JWTAuthorizationGrantTest  {
 
     @Test
     public void testReplayToken() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
-            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION, "false");
-        });
-
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
 
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertSuccess("test-app", "basic-user", response);
+        assertFailure("Token reuse detected", response, events.poll());
 
         realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
-            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION, "true");
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "true");
         });
 
         jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
@@ -177,7 +173,7 @@ public class JWTAuthorizationGrantTest  {
         assertSuccess("test-app", "basic-user", response);
 
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Token reuse detected", response, events.poll());
+        assertSuccess("test-app", "basic-user", response);
     }
 
     @Test
@@ -256,7 +252,6 @@ public class JWTAuthorizationGrantTest  {
                             .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
                             .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
                             .setAttribute(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
-                            .setAttribute(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION, Boolean.TRUE.toString())
                             .build());
             return realm;
         }

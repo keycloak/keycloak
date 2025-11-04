@@ -43,7 +43,7 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "jwtAuthorizationGrantEnabled";
 
-    public static final String JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION = "jwtAuthorizationGrantSingleUseAssertion";
+    public static final String JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED = "jwtAuthorizationGrantAssertionReuseAllowed";
 
     public OAuth2IdentityProviderConfig(IdentityProviderModel model) {
         super(model);
@@ -169,8 +169,8 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_ENABLED, "false"));
     }
 
-    public boolean getJwtAuthorizationGrantSingleUseAssertion() {
-        return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_SINGLE_USE_ASSERTION, "false"));
+    public boolean getJwtAuthorizationGrantAssertionReuseAllowed() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "false"));
     }
 
     public void setPkceEnabled(boolean enabled) {

@@ -20,9 +20,9 @@ export const JwtAuthorizationGrantSettings = () => {
       />
       {authorizationGrantEnabled === "true" && (
         <DefaultSwitchControl
-          name="config.jwtAuthorizationGrantSingleUseAssertion"
-          label={t("jwtAuthorizationGrantSingleUseAssertion")}
-          labelIcon={t("jwtAuthorizationGrantSingleUseAssertionHelp")}
+          name="config.jwtAuthorizationGrantAssertionReuseAllowed"
+          label={t("jwtAuthorizationGrantAssertionReuseAllowed")}
+          labelIcon={t("jwtAuthorizationGrantAssertionReuseAllowedHelp")}
           stringify
         />
       )}

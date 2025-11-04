@@ -1092,7 +1092,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public boolean isSingleUseAssertion() {
-        return getConfig().getJwtAuthorizationGrantSingleUseAssertion();
+    public boolean isAssertionReuseAllowed() {
+        return getConfig().getJwtAuthorizationGrantAssertionReuseAllowed();
     }
 }
