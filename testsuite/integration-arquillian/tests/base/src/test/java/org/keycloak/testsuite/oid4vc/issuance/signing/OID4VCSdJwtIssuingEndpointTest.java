@@ -553,7 +553,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             JsonWebToken jsonWebToken = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().toJws(), JsonWebToken.class).getToken();
 
             assertNotNull("A valid credential string should have been responded", jsonWebToken);
-            assertNotNull("The credentials should include the id claim", jsonWebToken.getId());
             assertNotNull("The credentials should be included at the vct-claim.", jsonWebToken.getOtherClaims().get("vct"));
             assertEquals("The credentials should be included at the vct-claim.", vct, jsonWebToken.getOtherClaims().get("vct").toString());
 
@@ -568,6 +567,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                     })
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             assertFalse("Only mappers supported for the requested type should have been evaluated.", disclosureMap.containsKey("given_name"));
+            assertTrue("Test credential shall include an iat claim.", disclosureMap.containsKey("iat"));
             assertTrue("The credentials should include the firstName claim.", disclosureMap.containsKey("firstName"));
             assertEquals("firstName claim incorrectly mapped.", "John", disclosureMap.get("firstName").get(2).asText());
             assertTrue("The credentials should include the lastName claim.", disclosureMap.containsKey("lastName"));
@@ -580,7 +580,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             assertTrue("The credentials should include the email claim.", disclosureMap.containsKey("email"));
             assertEquals("email claim incorrectly mapped.", "john@email.cz", disclosureMap.get("email").get(2).asText());
 
-            assertNotNull("Test credential shall include an iat claim.", jsonWebToken.getIat());
             assertNotNull("Test credential shall include an nbf claim.", jsonWebToken.getNbf());
         }
     }

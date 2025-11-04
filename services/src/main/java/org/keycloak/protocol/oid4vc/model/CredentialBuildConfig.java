@@ -53,6 +53,9 @@ public class CredentialBuildConfig {
     // The vct field to be used for the SD-JWT.
     private String credentialType;
 
+    // Credential expiry as defined on the model
+    private Integer expiryInSeconds;
+
     // The type of the token to be created.
     // Will be used as `typ` claim in the JWT-Header.
     private String tokenJwsType;
@@ -85,22 +88,27 @@ public class CredentialBuildConfig {
     // Needs to fit the provided signing key.
     private String ldpProofType;
 
-    public static CredentialBuildConfig parse(KeycloakSession keycloakSession,
-                                              SupportedCredentialConfiguration credentialConfiguration,
-                                              CredentialScopeModel credentialModel) {
-        final String credentialIssuer = Optional.ofNullable(credentialModel.getIssuerDid()).orElse(
+    public static CredentialBuildConfig parse(
+        KeycloakSession keycloakSession,
+        SupportedCredentialConfiguration credConfig,
+        CredentialScopeModel credModel
+) {
+        var credentialIssuer = Optional.ofNullable(credModel.getIssuerDid()).orElse(
                 OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
 
-        return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
-                                          .setCredentialId(credentialConfiguration.getId())
-                                          .setCredentialType(credentialConfiguration.getVct())
-                                          .setTokenJwsType(credentialModel.getTokenJwsType())
-                                          .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
-                                          .setSigningKeyId(credentialModel.getSigningKeyId())
-                                          .setSigningAlgorithm(credentialConfiguration.getCredentialSigningAlgValuesSupported()
-                                                                                      .get(0))
-                                          .setHashAlgorithm(credentialModel.getHashAlgorithm())
-                                          .setSdJwtVisibleClaims(credentialModel.getSdJwtVisibleClaims());
+        var signingAlgSupported = credConfig.getCredentialSigningAlgValuesSupported();
+        var buildConfig = new CredentialBuildConfig()
+            .setCredentialIssuer(credentialIssuer)
+            .setCredentialId(credConfig.getId())
+            .setCredentialType(credConfig.getVct())
+            .setExpiryInSeconds(credModel.getExpiryInSeconds())
+            .setTokenJwsType(credModel.getTokenJwsType())
+            .setNumberOfDecoys(credModel.getSdJwtNumberOfDecoys())
+            .setSigningKeyId(credModel.getSigningKeyId())
+            .setSigningAlgorithm(signingAlgSupported.get(0))
+            .setHashAlgorithm(credModel.getHashAlgorithm())
+            .setSdJwtVisibleClaims(credModel.getSdJwtVisibleClaims());
+        return buildConfig;
     }
 
     public String getCredentialIssuer() {
@@ -118,6 +126,15 @@ public class CredentialBuildConfig {
 
     public CredentialBuildConfig setCredentialId(String credentialId) {
         this.credentialId = credentialId;
+        return this;
+    }
+
+    public Integer getExpiryInSeconds() {
+        return expiryInSeconds;
+    }
+
+    public CredentialBuildConfig setExpiryInSeconds(Integer expiryInSeconds) {
+        this.expiryInSeconds = expiryInSeconds;
         return this;
     }
 
