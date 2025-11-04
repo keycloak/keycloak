@@ -7,7 +7,7 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
 
 import java.nio.charset.StandardCharsets;
 

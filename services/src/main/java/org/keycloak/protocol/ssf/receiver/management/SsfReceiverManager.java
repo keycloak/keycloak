@@ -11,13 +11,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.SsfException;
-import org.keycloak.protocol.ssf.keys.TransmitterKeyProviderFactory;
-import org.keycloak.protocol.ssf.keys.TransmitterPublicKeyLoader;
-import org.keycloak.protocol.ssf.receiver.ReceiverConfig;
-import org.keycloak.protocol.ssf.receiver.ReceiverKeyModel;
-import org.keycloak.protocol.ssf.receiver.ReceiverModel;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverFactory;
+import org.keycloak.protocol.ssf.keys.SsfTransmitterKeyProviderFactory;
+import org.keycloak.protocol.ssf.keys.SsfTransmitterPublicKeyLoader;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverConfig;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverKeyModel;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverFactory;
 import org.keycloak.protocol.ssf.receiver.transmitterclient.SsfTransmitterClient;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
@@ -27,27 +27,27 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class ReceiverManager {
+public class SsfReceiverManager {
 
-    protected static final Logger log = Logger.getLogger(ReceiverManager.class);
+    protected static final Logger log = Logger.getLogger(SsfReceiverManager.class);
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public ReceiverManager(KeycloakSession session) {
+    public SsfReceiverManager(KeycloakSession session) {
         this.session = session;
     }
 
-    public ReceiverModel createOrUpdateReceiver(KeycloakContext context, String receiverAlias, ReceiverConfig receiverConfig) {
+    public SsfReceiverModel createOrUpdateReceiver(KeycloakContext context, String receiverAlias, SsfReceiverConfig receiverConfig) {
 
         RealmModel realm = context.getRealm();
 
         String componentId = createReceiverComponentId(realm, receiverAlias);
 
         ComponentModel existingComponent = realm.getComponent(componentId);
-        ReceiverModel receiverModel;
+        SsfReceiverModel receiverModel;
         if (existingComponent == null) {
-            log.infof("Creating new receiver. realm=%s alias=%s", realm.getName(), receiverAlias);
-            receiverModel = ReceiverModel.create(receiverAlias, receiverConfig);
+            log.debugf("Creating new receiver. realm=%s alias=%s", realm.getName(), receiverAlias);
+            receiverModel = SsfReceiverModel.create(receiverAlias, receiverConfig);
             receiverModel.setId(componentId);
             receiverModel.setParentId(realm.getId());
             receiverModel.setName(receiverAlias);
@@ -57,11 +57,11 @@ public class ReceiverManager {
 
             realm.addComponentModel(receiverModel);
         } else {
-            receiverModel = new ReceiverModel(existingComponent);
-            log.infof("Updating existing receiver. realm=%s alias=%s stream_id=%s", realm.getName(), receiverAlias, receiverModel.getStreamId());
+            receiverModel = new SsfReceiverModel(existingComponent);
+            log.debugf("Updating existing receiver. realm=%s alias=%s stream_id=%s", realm.getName(), receiverAlias, receiverModel.getStreamId());
         }
 
-        SsfReceiver receiver = lookupReceiver(context, receiverAlias);
+        SsfReceiver receiver = loadReceiverFromAlias(context, receiverAlias);
         registerKeys(receiverModel);
 
         if (Boolean.TRUE.equals(receiverModel.getManagedStream())) {
@@ -82,22 +82,22 @@ public class ReceiverManager {
         return receiverModel;
     }
 
-    protected void updateReceiverModel(RealmModel realm, ReceiverModel model) {
+    protected void updateReceiverModel(RealmModel realm, SsfReceiverModel model) {
 
         model.setModifiedAt(Time.currentTimeMillis());
-        int hash = ReceiverModel.computeConfigHash(model);
+        int hash = SsfReceiverModel.computeConfigHash(model);
         model.setConfigHash(hash);
 
         realm.updateComponent(model);
     }
 
-    protected ReceiverModel importStreamMetadata(ReceiverModel model) {
-        SsfReceiver receiver = lookupReceiver(model);
+    protected SsfReceiverModel importStreamMetadata(SsfReceiverModel model) {
+        SsfReceiver receiver = loadReceiverFromModel(model);
         receiver.importStream();
         return receiver.getReceiverModel();
     }
 
-    public void registerKeys(ReceiverModel receiverModel) {
+    public void registerKeys(SsfReceiverModel receiverModel) {
 
         SsfProvider sharedSignals = session.getProvider(SsfProvider.class);
         SsfTransmitterClient ssfTransmitterClient = sharedSignals.transmitterClient();
@@ -110,9 +110,9 @@ public class ReceiverManager {
         refreshKeys(session.getContext(), receiverModel, transmitterMetadata);
     }
 
-    protected void refreshKeys(KeycloakContext context, ReceiverModel receiverModel, SsfTransmitterMetadata transmitterMetadata) {
+    protected void refreshKeys(KeycloakContext context, SsfReceiverModel receiverModel, SsfTransmitterMetadata transmitterMetadata) {
         RealmModel realm = context.getRealm();
-        TransmitterPublicKeyLoader publicKeyLoader = new TransmitterPublicKeyLoader(session, transmitterMetadata);
+        SsfTransmitterPublicKeyLoader publicKeyLoader = new SsfTransmitterPublicKeyLoader(session, transmitterMetadata);
         try {
             PublicKeysWrapper publicKeysWrapper = publicKeyLoader.loadKeys();
             List<KeyWrapper> keys = publicKeysWrapper.getKeys();
@@ -125,19 +125,19 @@ public class ReceiverManager {
         }
     }
 
-    private static void createOrUpdateReceiverKey(ReceiverModel receiverModel, KeyWrapper key, RealmModel realm) {
+    protected void createOrUpdateReceiverKey(SsfReceiverModel receiverModel, KeyWrapper key, RealmModel realm) {
         String receiverKeyComponentId = createReceiverKeyComponentId(receiverModel, key.getKid());
 
-        ReceiverKeyModel receiverKeyModel;
+        SsfReceiverKeyModel receiverKeyModel;
         ComponentModel existing = realm.getComponent(receiverKeyComponentId);
         if (existing != null) {
-            receiverKeyModel = new ReceiverKeyModel(existing);
+            receiverKeyModel = new SsfReceiverKeyModel(existing);
         } else {
-            receiverKeyModel = new ReceiverKeyModel();
+            receiverKeyModel = new SsfReceiverKeyModel();
             receiverKeyModel.setId(receiverKeyComponentId);
             receiverKeyModel.setParentId(receiverModel.getId());
             receiverKeyModel.setProviderType(KeyProvider.class.getName());
-            receiverKeyModel.setProviderId(TransmitterKeyProviderFactory.PROVIDER_ID);
+            receiverKeyModel.setProviderId(SsfTransmitterKeyProviderFactory.PROVIDER_ID);
             String receiverKeyModelName = receiverModel.getName() + " Key Provider " + key.getKid();
             receiverKeyModel.setName(receiverKeyModelName);
         }
@@ -166,18 +166,18 @@ public class ReceiverManager {
         });
     }
 
-    public void removeReceiver(KeycloakContext context, ReceiverModel receiverModel) {
+    public void removeReceiver(KeycloakContext context, SsfReceiverModel receiverModel) {
         removeReceiver(context.getRealm(), receiverModel);
     }
 
-    public void removeReceiver(RealmModel realm, ReceiverModel receiverModel) {
+    public void removeReceiver(RealmModel realm, SsfReceiverModel receiverModel) {
 
-        SsfReceiver receiver = lookupReceiver(receiverModel);
+        SsfReceiver receiver = loadReceiverFromModel(receiverModel);
         if (receiver == null) {
             return;
         }
 
-        ReceiverModel model = receiver.getReceiverModel();
+        SsfReceiverModel model = receiver.getReceiverModel();
 
         if (receiverModel.getStreamId() == null) {
             log.debugf("Skipping unregister stream for unknown streamId. realm=%s receiver=%s", realm.getName(), model.getAlias());
@@ -192,24 +192,24 @@ public class ReceiverManager {
         log.debugf("Removed receiver component with id %s. realm=%s receiver=%s", model.getId(), realm.getName(), model.getAlias());
     }
 
-    public void unregisterKeys(RealmModel realm, ReceiverModel model) {
+    public void unregisterKeys(RealmModel realm, SsfReceiverModel model) {
 
-        for (ComponentModel receiverKeyModel : realm.getComponentsStream(model.getId(), TransmitterKeyProviderFactory.PROVIDER_ID).toList()) {
+        for (ComponentModel receiverKeyModel : realm.getComponentsStream(model.getId(), SsfTransmitterKeyProviderFactory.PROVIDER_ID).toList()) {
             realm.removeComponent(receiverKeyModel);
             log.debugf("Removed %s receiver key component with id %s. realm=%s receiver=%s", receiverKeyModel.getName(), receiverKeyModel.getId(), realm.getName(), model.getAlias());
         }
     }
 
-    public SsfReceiver lookupReceiver(KeycloakContext context, String receiverAlias) {
+    public SsfReceiver loadReceiverFromAlias(KeycloakContext context, String receiverAlias) {
 
-        ReceiverModel receiverModel = getReceiverModel(context, receiverAlias);
+        SsfReceiverModel receiverModel = getReceiverModel(context, receiverAlias);
         if (receiverModel == null) {
             return null;
         }
-        return lookupReceiver(receiverModel);
+        return loadReceiverFromModel(receiverModel);
     }
 
-    public SsfReceiver lookupReceiver(ReceiverModel receiverModel) {
+    public SsfReceiver loadReceiverFromModel(SsfReceiverModel receiverModel) {
 
         KeycloakSessionFactory ksf = session.getKeycloakSessionFactory();
         SsfReceiverFactory receiverFactory = (SsfReceiverFactory) ksf.getProviderFactory(SsfReceiver.class);
@@ -222,49 +222,49 @@ public class ReceiverManager {
     }
 
 
-    public static String createReceiverComponentId(RealmModel realm, String receiverAlias) {
+    public String createReceiverComponentId(RealmModel realm, String receiverAlias) {
         String componentId = UUID.nameUUIDFromBytes((realm.getId() + receiverAlias).getBytes()).toString();
         return componentId;
     }
 
-    public static String createReceiverKeyComponentId(ReceiverModel model, String kid) {
+    public String createReceiverKeyComponentId(SsfReceiverModel model, String kid) {
         String componentId = UUID.nameUUIDFromBytes((model.getId() + "::" + kid).getBytes()).toString();
         return componentId;
     }
 
-    public List<ReceiverModel> listReceivers(KeycloakContext context) {
+    public List<SsfReceiverModel> listReceivers(KeycloakContext context) {
 
         RealmModel realm = context.getRealm();
         return listReceivers(realm);
     }
 
-    public List<ReceiverModel> listReceivers(RealmModel realm) {
-        List<ReceiverModel> receiverModels = realm
+    public List<SsfReceiverModel> listReceivers(RealmModel realm) {
+        List<SsfReceiverModel> receiverModels = realm
                 .getComponentsStream(realm.getId(), SsfReceiver.class.getName())
-                .map(ReceiverModel::new)
+                .map(SsfReceiverModel::new)
                 .toList();
 
         return receiverModels;
     }
 
-    public ReceiverModel getReceiverModel(KeycloakContext context, String alias) {
+    public SsfReceiverModel getReceiverModel(KeycloakContext context, String alias) {
        return getReceiverModel(context.getRealm(), alias);
     }
 
-    public ReceiverModel getReceiverModel(RealmModel realm, String alias) {
+    public SsfReceiverModel getReceiverModel(RealmModel realm, String alias) {
         String componentId = createReceiverComponentId(realm, alias);
         ComponentModel component = realm.getComponent(componentId);
         if (component != null) {
-            return new ReceiverModel(component);
+            return new SsfReceiverModel(component);
         }
         return null;
     }
 
-    public void refreshReceiver(KeycloakContext context, ReceiverModel receiverModel) {
+    public void refreshReceiver(KeycloakContext context, SsfReceiverModel receiverModel) {
 
         SsfTransmitterMetadata transmitterMetadata = refreshTransmitterMetadata(receiverModel);
         refreshKeys(context, receiverModel, transmitterMetadata);
-        ReceiverModel updatedModel = refreshStream(receiverModel);
+        SsfReceiverModel updatedModel = refreshStream(receiverModel);
 
         RealmModel realm = context.getRealm();
         updateReceiverModel(realm, updatedModel);
@@ -272,14 +272,14 @@ public class ReceiverManager {
         log.debugf("Refreshed receiver model. realm=%s receiver=%s", realm.getName(), receiverModel.getAlias());
     }
 
-    public ReceiverModel refreshStream(ReceiverModel receiverModel) {
-        ReceiverModel updatedModel = importStreamMetadata(receiverModel);
+    public SsfReceiverModel refreshStream(SsfReceiverModel receiverModel) {
+        SsfReceiverModel updatedModel = importStreamMetadata(receiverModel);
         return updatedModel;
     }
 
-    public SsfTransmitterMetadata refreshTransmitterMetadata(ReceiverModel receiverModel) {
+    public SsfTransmitterMetadata refreshTransmitterMetadata(SsfReceiverModel receiverModel) {
 
-        SsfReceiver receiver = lookupReceiver(receiverModel);
+        SsfReceiver receiver = loadReceiverFromModel(receiverModel);
         if (receiver == null) {
             return null;
         }

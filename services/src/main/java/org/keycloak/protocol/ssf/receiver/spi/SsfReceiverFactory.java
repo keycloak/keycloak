@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.receiver;
+package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.keycloak.component.ComponentFactory;
 

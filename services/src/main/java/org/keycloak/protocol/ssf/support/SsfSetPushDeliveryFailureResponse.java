@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * See https://www.rfc-editor.org/rfc/rfc8935.html#section-2.3
  */
-public class SsfFailureResponse {
+public class SsfSetPushDeliveryFailureResponse {
 
     public static final String ERROR_INVALID_REQUEST = "invalid_request";
 
@@ -30,7 +30,7 @@ public class SsfFailureResponse {
     @JsonProperty("description")
     private final String description;
 
-    public SsfFailureResponse(String error, String description) {
+    public SsfSetPushDeliveryFailureResponse(String error, String description) {
         this.error = error;
         this.description = description;
     }

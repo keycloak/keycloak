@@ -1,17 +1,19 @@
-package org.keycloak.protocol.ssf.receiver;
+package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
 
-public class DefaultSsfReceiverFactory implements SsfReceiverFactory {
+public class DefaultSsfReceiverFactory implements SsfReceiverFactory, EnvironmentDependentProviderFactory {
 
     protected static final Logger log = Logger.getLogger(DefaultSsfReceiverFactory.class);
 
@@ -63,5 +65,10 @@ public class DefaultSsfReceiverFactory implements SsfReceiverFactory {
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.SSF);
     }
 }

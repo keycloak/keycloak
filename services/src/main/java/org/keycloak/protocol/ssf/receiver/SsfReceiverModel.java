@@ -3,6 +3,7 @@ package org.keycloak.protocol.ssf.receiver;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
+import org.keycloak.protocol.ssf.stream.StreamStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,26 +12,26 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class ReceiverModel extends ComponentModel {
+public class SsfReceiverModel extends ComponentModel {
 
     public static final int DEFAULT_MAX_EVENTS = 32;
 
-    public ReceiverModel() {
+    public SsfReceiverModel() {
     }
 
-    public ReceiverModel(ComponentModel model) {
+    public SsfReceiverModel(ComponentModel model) {
         super(model);
     }
 
-    public static ReceiverModel create(String alias, ReceiverConfig config) {
+    public static SsfReceiverModel create(String alias, SsfReceiverConfig config) {
 
-        ReceiverModel model = new ReceiverModel();
+        SsfReceiverModel model = new SsfReceiverModel();
         model.setAlias(alias);
         model.setDescription(config.getDescription());
 
         model.setTransmitterAccessToken(config.getTransmitterAccessToken());
-        if (config.getPushAuthorizationToken() != null) {
-            model.setPushAuthorizationToken(config.getPushAuthorizationToken());
+        if (config.getPushAuthorizationHeader() != null) {
+            model.setPushAuthorizationHeader(config.getPushAuthorizationHeader());
         }
 
         String transmitterUrl = Objects.requireNonNull(config.getTransmitterUrl(), "transmitterUrl");
@@ -96,6 +97,14 @@ public class ReceiverModel extends ComponentModel {
 
     public void setStreamId(String streamId) {
         getConfig().putSingle("streamId", streamId);
+    }
+
+    public StreamStatus getStreamStatus() {
+        return StreamStatus.valueOf(getConfig().getFirst("streamStatus"));
+    }
+
+    public void setStreamStatus(StreamStatus status) {
+        getConfig().putSingle("streamStatus", status.name());
     }
 
     public String getTransmitterUrl() {
@@ -258,7 +267,7 @@ public class ReceiverModel extends ComponentModel {
     }
 
 
-    public static int computeConfigHash(ReceiverModel receiverModel) {
+    public static int computeConfigHash(SsfReceiverModel receiverModel) {
         var copy = new MultivaluedHashMap<>(receiverModel.getConfig());
         copy.remove("modifiedAt");
         copy.remove("configHash");
@@ -277,12 +286,12 @@ public class ReceiverModel extends ComponentModel {
         getConfig().putSingle("configHash", Integer.toString(configHash));
     }
 
-    public void setPushAuthorizationToken(String pushAuthorizationToken) {
-        getConfig().putSingle("pushAuthorizationToken", pushAuthorizationToken);
+    public void setPushAuthorizationHeader(String authorizationHeader) {
+        getConfig().putSingle("pushAuthorizationHeader", authorizationHeader);
     }
 
-    public String getPushAuthorizationToken() {
-        return getConfig().getFirst("pushAuthorizationToken");
+    public String getPushAuthorizationHeader() {
+        return getConfig().getFirst("pushAuthorizationHeader");
     }
 
     public int getConnectTimeout() {

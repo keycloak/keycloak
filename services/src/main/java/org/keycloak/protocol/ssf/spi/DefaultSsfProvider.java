@@ -1,8 +1,6 @@
 package org.keycloak.protocol.ssf.spi;
 
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.delivery.push.PushEndpoint;
 import org.keycloak.protocol.ssf.event.listener.DefaultSsfEventListener;
@@ -10,20 +8,21 @@ import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
 import org.keycloak.protocol.ssf.event.parser.DefaultSsfEventParser;
 import org.keycloak.protocol.ssf.event.parser.SsfEventParser;
 import org.keycloak.protocol.ssf.event.processor.DefaultSsfEventProcessor;
-import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
+import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
 import org.keycloak.protocol.ssf.event.processor.SsfEventProcessor;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
-import org.keycloak.protocol.ssf.receiver.management.ReceiverManagementEndpoint;
-import org.keycloak.protocol.ssf.receiver.management.ReceiverManager;
-import org.keycloak.protocol.ssf.receiver.management.ReceiverStreamManager;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManagementEndpoint;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManager;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverStreamManager;
 import org.keycloak.protocol.ssf.receiver.streamclient.DefaultSsfStreamClient;
 import org.keycloak.protocol.ssf.receiver.streamclient.SsfStreamClient;
 import org.keycloak.protocol.ssf.receiver.transmitterclient.DefaultSsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.transmitterclient.SsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.verification.DefaultSsfVerificationClient;
-import org.keycloak.protocol.ssf.receiver.verification.DefaultVerificationStore;
+import org.keycloak.protocol.ssf.receiver.verification.DefaultSsfStreamSsfStreamVerificationStore;
 import org.keycloak.protocol.ssf.receiver.verification.SsfVerificationClient;
-import org.keycloak.protocol.ssf.receiver.verification.VerificationStore;
+import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 
 public class DefaultSsfProvider implements SsfProvider {
 
@@ -37,11 +36,11 @@ public class DefaultSsfProvider implements SsfProvider {
 
     protected PushEndpoint pushEndpoint;
 
-    protected ReceiverManagementEndpoint receiverManagementEndpoint;
+    protected SsfReceiverManagementEndpoint ssfReceiverManagementEndpoint;
 
     protected SsfVerificationClient securityEventsVerifier;
 
-    protected VerificationStore verificationStore;
+    protected SsfStreamVerificationStore verificationStore;
 
     protected SsfStreamClient streamClient;
 
@@ -49,9 +48,9 @@ public class DefaultSsfProvider implements SsfProvider {
 
     protected SsfVerificationClient ssfVerificationClient;
 
-    protected ReceiverManager receiverManager;
+    protected SsfReceiverManager receiverManager;
 
-    protected ReceiverStreamManager receiverStreamManager;
+    protected SsfReceiverStreamManager ssfReceiverStreamManager;
 
     public DefaultSsfProvider(KeycloakSession session) {
         this.session = session;
@@ -82,16 +81,16 @@ public class DefaultSsfProvider implements SsfProvider {
         return pushEndpoint;
     }
 
-    protected ReceiverManagementEndpoint getReceiverManagementEndpoint() {
-        if (receiverManagementEndpoint == null) {
-            receiverManagementEndpoint = new ReceiverManagementEndpoint(session, getReceiverManager());
+    protected SsfReceiverManagementEndpoint getReceiverManagementEndpoint() {
+        if (ssfReceiverManagementEndpoint == null) {
+            ssfReceiverManagementEndpoint = new SsfReceiverManagementEndpoint(session, getReceiverManager());
         }
-        return receiverManagementEndpoint;
+        return ssfReceiverManagementEndpoint;
     }
 
-    protected ReceiverManager getReceiverManager() {
+    protected SsfReceiverManager getReceiverManager() {
         if (receiverManager == null) {
-            receiverManager = new ReceiverManager(session);
+            receiverManager = new SsfReceiverManager(session);
         }
         return receiverManager;
     }
@@ -137,27 +136,30 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     @Override
-    public SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfEventContext processingContext) {
+    public SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfSecurityEventContext securityEventContext) {
         var parser = getSsfEventParser();
-        return parser.parseSecurityEventToken(encodedSecurityEventToken, processingContext.getReceiver());
+        return parser.parseSecurityEventToken(encodedSecurityEventToken, securityEventContext.getReceiver());
     }
 
     @Override
-    public void processSecurityEvents(SsfEventContext securityEventProcessingContext) {
-        var processor = getSecurityEventProcessor();
-        processor.processSecurityEvents(securityEventProcessingContext);
+    public void processSecurityEvents(SsfSecurityEventContext securityEventContext) {
+        eventProcessor().processSecurityEvents(securityEventContext);
     }
 
     @Override
-    public VerificationStore verificationStore() {
+    public SsfStreamVerificationStore verificationStore() {
         return getVerificationStore();
     }
 
-    public VerificationStore getVerificationStore() {
+    protected SsfStreamVerificationStore getVerificationStore() {
         if (verificationStore == null) {
-            verificationStore = new DefaultVerificationStore(session);
+            verificationStore = new DefaultSsfStreamSsfStreamVerificationStore(session);
         }
         return verificationStore;
+    }
+
+    public SsfEventProcessor eventProcessor() {
+        return getSecurityEventProcessor();
     }
 
     @Override
@@ -166,20 +168,20 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     @Override
-    public ReceiverManagementEndpoint receiverManagementEndpoint() {
+    public SsfReceiverManagementEndpoint receiverManagementEndpoint() {
         return getReceiverManagementEndpoint();
     }
 
     @Override
-    public ReceiverStreamManager receiverStreamManager() {
+    public SsfReceiverStreamManager receiverStreamManager() {
         return getReceiverStreamManager();
     }
 
-    protected ReceiverStreamManager getReceiverStreamManager() {
-        if (receiverStreamManager == null) {
-            receiverStreamManager = new ReceiverStreamManager(this);
+    protected SsfReceiverStreamManager getReceiverStreamManager() {
+        if (ssfReceiverStreamManager == null) {
+            ssfReceiverStreamManager = new SsfReceiverStreamManager(this);
         }
-        return receiverStreamManager;
+        return ssfReceiverStreamManager;
     }
 
     @Override
@@ -193,44 +195,21 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     @Override
-    public SsfEventContext createSecurityEventProcessingContext(SecurityEventToken securityEventToken, String receiverAlias) {
-        SsfEventContext context = new SsfEventContext();
+    public SsfSecurityEventContext createSecurityEventContext(SecurityEventToken securityEventToken, SsfReceiverModel receiverModel) {
+
+        SsfReceiver receiver = receiverManager().loadReceiverFromModel(receiverModel);
+
+        SsfSecurityEventContext context = new SsfSecurityEventContext();
         context.setSecurityEventToken(securityEventToken);
         context.setSession(session);
-        SsfReceiver receiver = getReceiverManager().lookupReceiver(session.getContext(), receiverAlias);
         context.setReceiver(receiver);
+
         return context;
     }
 
     @Override
-    public ReceiverManager receiverManager() {
+    public SsfReceiverManager receiverManager() {
         return getReceiverManager();
     }
 
-    public static class Factory implements SsfProviderFactory {
-
-        @Override
-        public String getId() {
-            return "default";
-        }
-
-        @Override
-        public SsfProvider create(KeycloakSession keycloakSession) {
-            return new DefaultSsfProvider(keycloakSession);
-        }
-
-        @Override
-        public void init(Config.Scope scope) {
-        }
-
-        @Override
-        public void postInit(KeycloakSessionFactory keycloakSessionFactory) {
-
-        }
-
-        @Override
-        public void close() {
-
-        }
-    }
 }

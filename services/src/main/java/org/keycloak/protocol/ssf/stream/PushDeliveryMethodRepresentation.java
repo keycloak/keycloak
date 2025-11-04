@@ -9,8 +9,7 @@ import java.util.Objects;
 /**
  * See: 10.3.1.1. Push Delivery using HTTP https://openid.net/specs/openid-sharedsignals-framework-1_0.html#section-10.3.1.1
  */
-public class PushDeliveryMethodRepresentation extends AbstractDeliveryMethodRepresentation {
-
+public class PushDeliveryMethodRepresentation extends AbstractSetDeliveryMethodRepresentation {
 
     /**
      * authorization_header
@@ -21,20 +20,34 @@ public class PushDeliveryMethodRepresentation extends AbstractDeliveryMethodRepr
     protected String authorizationHeader;
 
     /**
+     * endpoint_url
+     * The URL where events are pushed through HTTP POST. This is set by the Receiver. If a Receiver is using multiple streams from a single Transmitter and needs to keep the SETs separated, it is RECOMMENDED that the URL for each stream be unique.
+     */
+    @JsonProperty("endpoint_url")
+    protected String endpointUrl;
+
+    /**
      * @param endpointUrl MUST be supplied by the Receiver
      * @param authorizationHeader MAY be supploed by the Receiver
      */
-    public PushDeliveryMethodRepresentation(URI endpointUrl, String authorizationHeader) {
-        super(DeliveryMethod.PUSH, Objects.requireNonNull(endpointUrl, "endpointUrl"));
+    public PushDeliveryMethodRepresentation(String endpointUrl, String authorizationHeader) {
+        super(DeliveryMethod.PUSH);
+        this.endpointUrl = Objects.requireNonNull(endpointUrl, "endpointUrl");
         this.authorizationHeader = authorizationHeader;
     }
 
-    @Override
+    public String getEndpointUrl() {
+        return endpointUrl;
+    }
+
+    public void setEndpointUrl(String endpointUrl) {
+        this.endpointUrl = Objects.requireNonNull(endpointUrl, "endpointUrl");
+    }
+
     public String getAuthorizationHeader() {
         return authorizationHeader;
     }
 
-    @Override
     public void setAuthorizationHeader(String authorizationHeader) {
         this.authorizationHeader = authorizationHeader;
     }

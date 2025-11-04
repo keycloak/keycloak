@@ -1,16 +1,16 @@
 package org.keycloak.protocol.ssf.spi;
 
-
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.delivery.push.PushEndpoint;
-import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
-import org.keycloak.protocol.ssf.receiver.management.ReceiverManagementEndpoint;
-import org.keycloak.protocol.ssf.receiver.management.ReceiverManager;
-import org.keycloak.protocol.ssf.receiver.management.ReceiverStreamManager;
+import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManagementEndpoint;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManager;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverStreamManager;
 import org.keycloak.protocol.ssf.receiver.streamclient.SsfStreamClient;
 import org.keycloak.protocol.ssf.receiver.transmitterclient.SsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.verification.SsfVerificationClient;
-import org.keycloak.protocol.ssf.receiver.verification.VerificationStore;
+import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 import org.keycloak.provider.Provider;
 
 import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
@@ -22,20 +22,20 @@ public interface SsfProvider extends Provider {
         // NOOP
     }
 
-    SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfEventContext processingContext);
+    SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfSecurityEventContext securityEventContext);
 
-    void processSecurityEvents(SsfEventContext ssfEventContext);
+    void processSecurityEvents(SsfSecurityEventContext ssfSecurityEventContext);
 
-    SsfEventContext createSecurityEventProcessingContext(SecurityEventToken securityEventToken, String receiverAlias);
+    SsfSecurityEventContext createSecurityEventContext(SecurityEventToken securityEventToken, SsfReceiverModel receiverModel);
 
     // SSF Receiver Support
     PushEndpoint pushEndpoint();
 
-    ReceiverManagementEndpoint receiverManagementEndpoint();
+    SsfReceiverManagementEndpoint receiverManagementEndpoint();
 
-    ReceiverStreamManager receiverStreamManager();
+    SsfReceiverStreamManager receiverStreamManager();
 
-    VerificationStore verificationStore();
+    SsfStreamVerificationStore verificationStore();
 
     SsfVerificationClient verificationClient();
 
@@ -43,7 +43,7 @@ public interface SsfProvider extends Provider {
 
     SsfTransmitterClient transmitterClient();
 
-    ReceiverManager receiverManager();
+    SsfReceiverManager receiverManager();
 
     static SsfProvider current() {
         return getKeycloakSession().getProvider(SsfProvider.class);

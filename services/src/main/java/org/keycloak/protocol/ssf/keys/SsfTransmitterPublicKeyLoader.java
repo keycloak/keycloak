@@ -10,15 +10,15 @@ import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
 import org.keycloak.util.JWKSUtils;
 
-public class TransmitterPublicKeyLoader implements PublicKeyLoader {
+public class SsfTransmitterPublicKeyLoader implements PublicKeyLoader {
 
-    protected static final Logger log = Logger.getLogger(TransmitterPublicKeyLoader.class);
+    protected static final Logger log = Logger.getLogger(SsfTransmitterPublicKeyLoader.class);
 
     protected final KeycloakSession session;
 
     protected final SsfTransmitterMetadata transmitterMetadata;
 
-    public TransmitterPublicKeyLoader(KeycloakSession session, SsfTransmitterMetadata transmitterMetadata) {
+    public SsfTransmitterPublicKeyLoader(KeycloakSession session, SsfTransmitterMetadata transmitterMetadata) {
         this.session = session;
         this.transmitterMetadata = transmitterMetadata;
     }

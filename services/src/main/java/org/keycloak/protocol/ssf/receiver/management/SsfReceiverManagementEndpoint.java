@@ -11,23 +11,23 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.ssf.receiver.ReceiverConfig;
-import org.keycloak.protocol.ssf.receiver.ReceiverModel;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverConfig;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.protocol.ssf.support.SsfResponseUtil.newSharedSignalFailureResponse;
+import static org.keycloak.protocol.ssf.support.SsfSetPushDeliveryResponseUtil.newSsfSetPushDeliveryFailureResponse;
 
-public class ReceiverManagementEndpoint {
+public class SsfReceiverManagementEndpoint {
 
-    protected static final Logger log = Logger.getLogger(ReceiverManagementEndpoint.class);
+    protected static final Logger log = Logger.getLogger(SsfReceiverManagementEndpoint.class);
 
     private final KeycloakSession session;
 
-    private final ReceiverManager receiverManager;
+    private final SsfReceiverManager receiverManager;
 
-    public ReceiverManagementEndpoint(KeycloakSession session, ReceiverManager receiverManager) {
+    public SsfReceiverManagementEndpoint(KeycloakSession session, SsfReceiverManager receiverManager) {
         this.session = session;
         this.receiverManager = receiverManager;
     }
@@ -39,15 +39,15 @@ public class ReceiverManagementEndpoint {
      */
     @PUT
     @Path("/receivers/{receiverAlias}")
-    public Response updateReceiverConfig(@PathParam("receiverAlias") String alias, ReceiverConfig config) {
+    public Response updateReceiverConfig(@PathParam("receiverAlias") String alias, SsfReceiverConfig config) {
 
-        ReceiverModel receiverModel;
+        SsfReceiverModel receiverModel;
         try {
             receiverModel = receiverManager.createOrUpdateReceiver(session.getContext(), alias, config);
         } catch (SsfStreamException sse) {
-            throw newSharedSignalFailureResponse(sse.getStatus(), sse.getStatus().getReasonPhrase(), "Could not update receiver config: "+ sse.getMessage());
+            throw newSsfSetPushDeliveryFailureResponse(sse.getStatus(), sse.getStatus().getReasonPhrase(), "Could not update receiver config: " + sse.getMessage());
         } catch (Exception e) {
-            throw newSharedSignalFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(), "Could not update receiver config: " + e.getMessage());
+            throw newSsfSetPushDeliveryFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(), "Could not update receiver config: " + e.getMessage());
         }
 
         return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).entity(modelToRep(receiverModel)).build();
@@ -58,7 +58,7 @@ public class ReceiverManagementEndpoint {
     public Response refreshReceiver(@PathParam("receiverAlias") String alias) {
 
         KeycloakContext context = session.getContext();
-        ReceiverModel receiverModel = receiverManager.getReceiverModel(context, alias);
+        SsfReceiverModel receiverModel = receiverManager.getReceiverModel(context, alias);
         if (receiverModel == null) {
             return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
@@ -78,7 +78,7 @@ public class ReceiverManagementEndpoint {
     public Response deleteReceiverConfig(@PathParam("receiverAlias") String alias) {
 
         KeycloakContext context = session.getContext();
-        ReceiverModel receiverModel = receiverManager.getReceiverModel(context, alias);
+        SsfReceiverModel receiverModel = receiverManager.getReceiverModel(context, alias);
         if (receiverModel == null) {
             return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
@@ -92,8 +92,8 @@ public class ReceiverManagementEndpoint {
     @Path("/receivers")
     public Response listReceivers() {
 
-        List<ReceiverModel> receiverModels = receiverManager.listReceivers(session.getContext());
-        List<ReceiverRepresentation> reps = receiverModels.stream().map(this::modelToRep).toList();
+        List<SsfReceiverModel> receiverModels = receiverManager.listReceivers(session.getContext());
+        List<SsfReceiverRepresentation> reps = receiverModels.stream().map(this::modelToRep).toList();
         return Response.ok().entity(reps).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -101,7 +101,7 @@ public class ReceiverManagementEndpoint {
     @Path("/receivers/{receiverAlias}")
     public Response getReceiver(@PathParam("receiverAlias") String alias) {
 
-        ReceiverModel receiverModel = receiverManager.getReceiverModel(session.getContext(), alias);
+        SsfReceiverModel receiverModel = receiverManager.getReceiverModel(session.getContext(), alias);
         if (receiverModel == null) {
             return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
@@ -109,8 +109,8 @@ public class ReceiverManagementEndpoint {
         return Response.ok().entity(modelToRep(receiverModel)).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
-    protected ReceiverRepresentation modelToRep(ReceiverModel model) {
-        ReceiverRepresentation rep = new ReceiverRepresentation();
+    protected SsfReceiverRepresentation modelToRep(SsfReceiverModel model) {
+        SsfReceiverRepresentation rep = new SsfReceiverRepresentation();
 
         rep.setComponentId(model.getId());
         rep.setAlias(model.getAlias());
@@ -119,7 +119,7 @@ public class ReceiverManagementEndpoint {
         rep.setManagedStream(model.getManagedStream());
         rep.setEventsDelivered(model.getEventsDelivered());
         rep.setPollIntervalSeconds(model.getPollIntervalSeconds());
-        rep.setPushAuthorizationToken(model.getPushAuthorizationToken());
+        rep.setPushAuthorizationToken(model.getPushAuthorizationHeader());
         rep.setTransmitterUrl(model.getTransmitterUrl());
         rep.setTransmitterPollUrl(model.getTransmitterPollUrl());
         rep.setReceiverPushUrl(model.getReceiverPushUrl());
