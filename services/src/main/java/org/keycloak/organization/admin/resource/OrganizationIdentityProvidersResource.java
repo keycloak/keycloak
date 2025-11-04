@@ -163,7 +163,7 @@ public class OrganizationIdentityProvidersResource {
     }
 
     private IdentityProviderRepresentation toRepresentation(IdentityProviderModel idp) {
-        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, idp));
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, idp));
     }
 
     private boolean isOrganizationBroker(IdentityProviderModel broker) {

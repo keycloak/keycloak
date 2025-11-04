@@ -24,6 +24,18 @@ public class IdentityProviderTypeUtil {
     private IdentityProviderTypeUtil() {
     }
 
+    public static List<IdentityProviderType> listTypesFromFactory(KeycloakSession session, String factoryId) {
+        KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
+        ProviderFactory<?> factory = sf.getProviderFactory(IdentityProvider.class, factoryId);
+        if (factory == null) {
+            return List.of();
+        }
+        Class<?> providerType = getType(factory);
+        return Arrays.stream(IdentityProviderType.values())
+                .filter(t -> !t.equals(IdentityProviderType.ANY) && toTypeClass(t).isAssignableFrom(providerType))
+                .collect(Collectors.toList());
+    }
+
     public static List<String> listFactoriesByCapability(KeycloakSession session, IdentityProviderCapability capability) {
         Set<IdentityProviderType> types = Arrays.stream(IdentityProviderType.values()).filter(t -> t.getCapabilities().contains(capability)).collect(Collectors.toSet());
         return listFactoriesByTypes(session, types);

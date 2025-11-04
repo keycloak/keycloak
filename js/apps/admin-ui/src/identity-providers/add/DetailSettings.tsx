@@ -1,8 +1,12 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import IdentityProviderRepresentation, {
+  IdentityProviderType,
+} from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   Action,
   KeycloakDataTable,
+  KeycloakSpinner,
+  ListEmptyState,
   ScrollForm,
   useAlerts,
   useFetch,
@@ -34,8 +38,6 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
-import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
 import {
   RoutableTabs,
@@ -70,6 +72,7 @@ import { SpiffeSettings } from "./SpiffeSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
+import { JwtAuthorizationGrantSettings } from "./JwtAuthorizationGrantSettings";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -417,6 +420,10 @@ export default function DetailSettings() {
   const isSPIFFE = provider.providerId!.includes("spiffe");
   const isKubernetes = provider.providerId!.includes("kubernetes");
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
+  const isJwtAuthorizationGrantSupported =
+    (isOAuth2 || isOIDC) &&
+    !!provider?.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
+    isFeatureEnabled(Feature.JWTAuthorizationGrant);
 
   const loader = async () => {
     const [loaderMappers, loaderMapperTypes] = await Promise.all([
@@ -489,6 +496,19 @@ export default function DetailSettings() {
           <UserProfileClaimsSettings />
           <ExtendedOAuth2Settings />
         </>
+      ),
+    },
+    {
+      title: t("authorizationGrantSettings"),
+      isHidden: !isJwtAuthorizationGrantSupported,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <JwtAuthorizationGrantSettings />
+        </Form>
       ),
     },
     {
