@@ -4,7 +4,7 @@ import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
 
 import java.util.Set;
 
-public class ReceiverConfig {
+public class SsfReceiverConfig {
 
     protected String alias;
 
@@ -22,7 +22,10 @@ public class ReceiverConfig {
 
     protected DeliveryMethod deliveryMethod;
 
-    protected String pushAuthorizationToken;
+    /**
+     * Expected value of the Authorization header in push requests
+     */
+    protected String pushAuthorizationHeader;
 
     protected String receiverPushUrl;
 
@@ -102,12 +105,12 @@ public class ReceiverConfig {
         this.deliveryMethod = deliveryMethod;
     }
 
-    public String getPushAuthorizationToken() {
-        return pushAuthorizationToken;
+    public String getPushAuthorizationHeader() {
+        return pushAuthorizationHeader;
     }
 
-    public void setPushAuthorizationToken(String pushAuthorizationToken) {
-        this.pushAuthorizationToken = pushAuthorizationToken;
+    public void setPushAuthorizationHeader(String pushAuthorizationHeader) {
+        this.pushAuthorizationHeader = pushAuthorizationHeader;
     }
 
     public String getReceiverPushUrl() {

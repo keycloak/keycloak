@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.receiver;
+package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
@@ -7,13 +7,18 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
-import org.keycloak.protocol.ssf.keys.TransmitterKeyManager;
+import org.keycloak.protocol.ssf.keys.SsfTransmitterKeyManager;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverKeyModel;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
 import org.keycloak.protocol.ssf.receiver.streamclient.DefaultSsfStreamClient;
 import org.keycloak.protocol.ssf.receiver.transmitterclient.SsfTransmitterClient;
-import org.keycloak.protocol.ssf.receiver.verification.VerificationState;
-import org.keycloak.protocol.ssf.receiver.verification.VerificationStore;
+import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
+import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
+import org.keycloak.protocol.ssf.stream.PollSetDeliveryMethodRepresentation;
+import org.keycloak.protocol.ssf.stream.PushDeliveryMethodRepresentation;
 import org.keycloak.protocol.ssf.stream.SsfStreamRepresentation;
+import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
 
 import java.net.URI;
@@ -32,15 +37,15 @@ public class DefaultSsfReceiver implements SsfReceiver {
 
     protected final SsfProvider ssfProvider;
 
-    protected final ReceiverModel receiverModel;
+    protected final SsfReceiverModel receiverModel;
 
     public DefaultSsfReceiver(KeycloakSession session, ComponentModel model) {
         this.session = session;
         this.ssfProvider = session.getProvider(SsfProvider.class);
-        if (model instanceof ReceiverModel rm) {
+        if (model instanceof SsfReceiverModel rm) {
             this.receiverModel = rm;
         } else {
-            this.receiverModel = new ReceiverModel(model);
+            this.receiverModel = new SsfReceiverModel(model);
         }
     }
 
@@ -49,7 +54,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
     }
 
     @Override
-    public ReceiverModel getReceiverModel() {
+    public SsfReceiverModel getReceiverModel() {
         return receiverModel;
     }
 
@@ -63,9 +68,9 @@ public class DefaultSsfReceiver implements SsfReceiver {
 
         RealmModel realm = session.getContext().getRealm();
 
-        return realm.getComponentsStream(receiverModel.getId(), KeyProvider.class.getName()).map(ReceiverKeyModel::new).map(receiverKey -> {
+        return realm.getComponentsStream(receiverModel.getId(), KeyProvider.class.getName()).map(SsfReceiverKeyModel::new).map(receiverKey -> {
             String encodedPublicKey = receiverKey.getPublicKey();
-            PublicKey publicKey = TransmitterKeyManager.decodePublicKey(encodedPublicKey, receiverKey.getType(), receiverKey.getAlgorithm());
+            PublicKey publicKey = SsfTransmitterKeyManager.decodePublicKey(encodedPublicKey, receiverKey.getType(), receiverKey.getAlgorithm());
             KeyWrapper key = new KeyWrapper();
             key.setKid(receiverKey.getKid());
             key.setAlgorithm(receiverKey.getAlgorithm());
@@ -108,7 +113,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
     }
 
     @Override
-    public ReceiverModel registerStream() {
+    public SsfReceiverModel registerStream() {
 
         SsfStreamRepresentation streamRep = ssfProvider.receiverStreamManager().createReceiverStream(session.getContext(), receiverModel);
         updateReceiverModelFromStreamRepresentation(streamRep);
@@ -117,7 +122,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
     }
 
     @Override
-    public ReceiverModel importStream() {
+    public SsfReceiverModel importStream() {
 
         SsfStreamRepresentation streamRep = ssfProvider.receiverStreamManager().getStream(receiverModel);
         updateReceiverModelFromStreamRepresentation(streamRep);
@@ -143,11 +148,13 @@ public class DefaultSsfReceiver implements SsfReceiver {
         receiverModel.setDeliveryMethod(deliveryMethod);
         switch(deliveryMethod) {
             case PUSH -> {
-                receiverModel.setPushAuthorizationToken(streamRep.getDelivery().getAuthorizationHeader());
-                receiverModel.setReceiverPushUrl(streamRep.getDelivery().getEndpointUrl().toString());
+                var pushDelivery = (PushDeliveryMethodRepresentation)streamRep.getDelivery();
+                receiverModel.setPushAuthorizationHeader(pushDelivery.getAuthorizationHeader());
+                receiverModel.setReceiverPushUrl(pushDelivery.getEndpointUrl());
             }
             case POLL -> {
-                receiverModel.setTransmitterPollUrl(streamRep.getDelivery().getEndpointUrl().toString());
+                var pollDelivery = (PollSetDeliveryMethodRepresentation)streamRep.getDelivery();
+                receiverModel.setTransmitterPollUrl(pollDelivery.getEndpointUrl());
             }
         }
 
@@ -160,11 +167,11 @@ public class DefaultSsfReceiver implements SsfReceiver {
     @Override
     public void requestVerification() {
 
-        VerificationStore storage = ssfProvider.verificationStore();
+        SsfStreamVerificationStore storage = ssfProvider.verificationStore();
 
         // store current verification state
         RealmModel realm = session.getContext().getRealm();
-        VerificationState verificationState = storage.getVerificationState(realm, receiverModel);
+        SsfStreamVerificationState verificationState = storage.getVerificationState(realm, receiverModel);
         if (verificationState != null) {
             log.debugf("Resetting pending verification state for stream. %s", verificationState);
             storage.clearVerificationState(realm, receiverModel);
@@ -174,9 +181,16 @@ public class DefaultSsfReceiver implements SsfReceiver {
         SsfTransmitterMetadata transmitterMetadata = ssfTransmitterClient.loadTransmitterMetadata(receiverModel);
         String state = UUID.randomUUID().toString();
 
-        ssfProvider.verificationClient().requestVerification(receiverModel, transmitterMetadata, state);
-
         // store current verification state
         storage.setVerificationState(realm, receiverModel, state);
+
+        ssfProvider.verificationClient().requestVerification(receiverModel, transmitterMetadata, state);
+    }
+
+    @Override
+    public void updateStreamStatus(StreamStatus newStatus) {
+        StreamStatus oldStatus = receiverModel.getStreamStatus();
+        receiverModel.setStreamStatus(newStatus);
+        log.debugf("Changed stream status from %s to %s", oldStatus, newStatus);
     }
 }

@@ -1,12 +1,11 @@
 package org.keycloak.protocol.ssf.receiver.management;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Set;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ReceiverRepresentation {
+public class SsfReceiverRepresentation {
 
     protected String alias;
 

@@ -1,22 +1,18 @@
 package org.keycloak.protocol.ssf;
 
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.ssf.event.delivery.push.PushEndpoint;
-import org.keycloak.protocol.ssf.receiver.management.ReceiverManagementEndpoint;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManagementEndpoint;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
-import org.keycloak.services.resource.RealmResourceProviderFactory;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 public class SsfRealmResourceProvider implements RealmResourceProvider {
@@ -49,7 +45,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      */
     @Path("/push")
     public PushEndpoint pushEndpoint() {
-        authenticate();
+        // push endpoint authentication checked by PushEndpoit directly.
         return SsfProvider.current().pushEndpoint();
     }
 
@@ -63,10 +59,21 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      * @return
      */
     @Path("/management")
-    public ReceiverManagementEndpoint receiverManagementEndpoint() {
-        // TODO check manage permissions
-        authenticate();
+    public SsfReceiverManagementEndpoint receiverManagementEndpoint() {
+
+        var auth = authenticate();
+
+        // TODO define proper permission check
+        // checkManageReceiversPermission(auth);
+
         return SsfProvider.current().receiverManagementEndpoint();
+    }
+
+    protected void checkManageReceiversPermission(AuthenticationManager.AuthResult auth) {
+        AdminAuth adminAuth = new AdminAuth(auth.session().getRealm(), auth.token(), auth.user(), auth.client());
+        AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(KeycloakSessionUtil.getKeycloakSession(), adminAuth.getRealm(), adminAuth);
+
+        realmAuth.clients().requireManage();
     }
 
 
@@ -75,42 +82,4 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
         // NOOP
     }
 
-    //    @AutoService(RealmResourceProviderFactory.class)
-    public static class Factory implements RealmResourceProviderFactory, EnvironmentDependentProviderFactory {
-
-        private static final SsfRealmResourceProvider INSTANCE = new SsfRealmResourceProvider();
-
-        /**
-         * Exposes the SSF endpoints via $ISSUER/ssf
-         *
-         * @return
-         */
-        @Override
-        public String getId() {
-            return "ssf";
-        }
-
-        @Override
-        public RealmResourceProvider create(KeycloakSession keycloakSession) {
-            return INSTANCE;
-        }
-
-        @Override
-        public void init(Config.Scope scope) {
-        }
-
-        @Override
-        public void postInit(KeycloakSessionFactory keycloakSessionFactory) {
-            // NOOP
-        }
-
-        @Override
-        public void close() {
-        }
-
-        @Override
-        public boolean isSupported(Config.Scope config) {
-            return Profile.isFeatureEnabled(Profile.Feature.SSF);
-        }
-    }
 }
