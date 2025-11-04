@@ -14,7 +14,7 @@ import java.util.Map;
  * See SET Token Delivery Using HTTP Profile https://openid.net/specs/openid-sharedsignals-framework-1_0.html#section-10.3.1.1
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public abstract class AbstractDeliveryMethodRepresentation {
+public abstract class AbstractSetDeliveryMethodRepresentation {
 
     /**
      * Receiver-Supplied, REQUIRED. The specific delivery method to be used. This can be any one of "urn:ietf:rfc:8935" (push) or "urn:ietf:rfc:8936" (poll), but not both.
@@ -22,42 +22,14 @@ public abstract class AbstractDeliveryMethodRepresentation {
     @JsonProperty("method")
     private final DeliveryMethod method;
 
-    /**
-     * endpoint_url
-     * The URL where events are pushed through HTTP POST. This is set by the Receiver. If a Receiver is using multiple streams from a single Transmitter and needs to keep the SETs separated, it is RECOMMENDED that the URL for each stream be unique.
-     */
-    @JsonProperty("endpoint_url")
-    private final URI endpointUrl;
-
-    /**
-     * authorization_header
-     *
-     * The HTTP Authorization header that the Transmitter MUST set with each event delivery, if the configuration is present. The value is optional, and it is set by the Receiver.
-     */
-    @JsonProperty("authorization_header")
-    private String authorizationHeader;
-
     private Map<String, Object> metadata;
 
-    protected AbstractDeliveryMethodRepresentation(DeliveryMethod method, URI endpointUrl) {
+    protected AbstractSetDeliveryMethodRepresentation(DeliveryMethod method) {
         this.method = method;
-        this.endpointUrl = endpointUrl;
     }
 
     public DeliveryMethod getMethod() {
         return method;
-    }
-
-    public URI getEndpointUrl() {
-        return endpointUrl;
-    }
-
-    public String getAuthorizationHeader() {
-        return authorizationHeader;
-    }
-
-    public void setAuthorizationHeader(String authorizationHeader) {
-        this.authorizationHeader = authorizationHeader;
     }
 
     @JsonAnySetter
@@ -76,12 +48,12 @@ public abstract class AbstractDeliveryMethodRepresentation {
     }
 
     @JsonCreator
-    public static AbstractDeliveryMethodRepresentation create(@JsonProperty("method") DeliveryMethod method, @JsonProperty("endpoint_url") URI endpointUrl, @JsonProperty("authorization_header") String authorizationHeader) {
+    public static AbstractSetDeliveryMethodRepresentation create(@JsonProperty("method") DeliveryMethod method, @JsonProperty("endpoint_url") String endpointUrl, @JsonProperty("authorization_header") String authHeader) {
         switch (method) {
             case PUSH:
-                return new PushDeliveryMethodRepresentation(endpointUrl, authorizationHeader);
+                return new PushDeliveryMethodRepresentation(endpointUrl, authHeader);
             case POLL:
-                return new PollDeliveryMethodRepresentation(endpointUrl);
+                return new PollSetDeliveryMethodRepresentation(endpointUrl);
             default:
                 throw new IllegalArgumentException();
         }

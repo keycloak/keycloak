@@ -1,6 +1,8 @@
-package org.keycloak.protocol.ssf.receiver;
+package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
 import org.keycloak.provider.Provider;
 
@@ -14,15 +16,17 @@ public interface SsfReceiver extends Provider {
 
     Stream<KeyWrapper> getKeys();
 
-    ReceiverModel getReceiverModel();
+    SsfReceiverModel getReceiverModel();
 
-    ReceiverModel registerStream();
+    SsfReceiverModel registerStream();
 
-    ReceiverModel importStream();
+    SsfReceiverModel importStream();
 
     void unregisterStream();
 
     SsfTransmitterMetadata refreshTransmitterMetadata();
 
     void requestVerification();
+
+    void updateStreamStatus(StreamStatus status);
 }

@@ -6,11 +6,11 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.ssf.receiver.ReceiverModel;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
-import org.keycloak.protocol.ssf.support.SsfFailureResponse;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
+import org.keycloak.protocol.ssf.support.SsfSetPushDeliveryFailureResponse;
 
-import static org.keycloak.protocol.ssf.support.SsfResponseUtil.newSharedSignalFailureResponse;
+import static org.keycloak.protocol.ssf.support.SsfSetPushDeliveryResponseUtil.newSsfSetPushDeliveryFailureResponse;
 
 public class SsfVerificationEndpoint {
 
@@ -18,11 +18,11 @@ public class SsfVerificationEndpoint {
 
     protected final KeycloakSession session;
 
-    protected final ReceiverManager receiverManager;
+    protected final SsfReceiverManager receiverManager;
 
     protected final String receiverAlias;
 
-    public SsfVerificationEndpoint(KeycloakSession session, ReceiverManager receiverManager, String receiverAlias) {
+    public SsfVerificationEndpoint(KeycloakSession session, SsfReceiverManager receiverManager, String receiverAlias) {
         this.session = session;
         this.receiverManager = receiverManager;
         this.receiverAlias = receiverAlias;
@@ -32,19 +32,19 @@ public class SsfVerificationEndpoint {
     public Response triggerVerification() {
 
         KeycloakContext context = session.getContext();
-        ReceiverModel receiverModel = receiverManager.getReceiverModel(context, receiverAlias);
+        SsfReceiverModel receiverModel = receiverManager.getReceiverModel(context, receiverAlias);
         if (receiverModel == null) {
             return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
 
-        SsfReceiver receiver = receiverManager.lookupReceiver(receiverModel);
+        SsfReceiver receiver = receiverManager.loadReceiverFromModel(receiverModel);
 
         // TODO reject pending verification
 
         try {
             receiver.requestVerification();
         } catch (Exception e) {
-            throw newSharedSignalFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, SsfFailureResponse.ERROR_INTERNAL_ERROR, e.getMessage());
+            throw newSsfSetPushDeliveryFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, SsfSetPushDeliveryFailureResponse.ERROR_INTERNAL_ERROR, e.getMessage());
         }
 
         return Response.noContent().type(MediaType.APPLICATION_JSON).build();

@@ -2,9 +2,9 @@ package org.keycloak.protocol.ssf.event.processor;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
 
-public class SsfEventContext {
+public class SsfSecurityEventContext {
 
     protected KeycloakSession session;
 

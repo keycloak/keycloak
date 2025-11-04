@@ -4,12 +4,12 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-public class SsfResponseUtil {
+public class SsfSetPushDeliveryResponseUtil {
 
-    public static WebApplicationException newSharedSignalFailureResponse(Response.Status status, String errorCode, String errorMessage) {
+    public static WebApplicationException newSsfSetPushDeliveryFailureResponse(Response.Status status, String errorCode, String errorMessage) {
         Response response = Response.status(status)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(new SsfFailureResponse(errorCode, errorMessage))
+                .entity(new SsfSetPushDeliveryFailureResponse(errorCode, errorMessage))
                 .build();
         return new WebApplicationException(response);
     }
