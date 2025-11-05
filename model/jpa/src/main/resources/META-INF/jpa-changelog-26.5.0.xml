@@ -58,4 +58,19 @@
         </modifySql>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.5.0-idp-config-allow-null">
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="TRUST_EMAIL"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="TRUST_EMAIL" columnDataType="BOOLEAN"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="STORE_TOKEN" columnDataType="BOOLEAN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="STORE_TOKEN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="ADD_TOKEN_ROLE"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="ADD_TOKEN_ROLE" columnDataType="BOOLEAN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="AUTHENTICATE_BY_DEFAULT"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="AUTHENTICATE_BY_DEFAULT" columnDataType="BOOLEAN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="LINK_ONLY"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="LINK_ONLY" columnDataType="BOOLEAN"/>
+        <!-- HIDE_ON_LOGIN did not have a non-null constraint -->
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="HIDE_ON_LOGIN"/>
+    </changeSet>
+
 </databaseChangeLog>

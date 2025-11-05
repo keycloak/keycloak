@@ -857,13 +857,13 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private void updateIdPSyncMode(IdentityProviderRepresentation idProvider, IdentityProviderResource idProviderResource,
-                                   IdentityProviderSyncMode syncMode, boolean trustEmail) {
+                                   IdentityProviderSyncMode syncMode, Boolean trustEmail) {
         assertThat(idProvider, Matchers.notNullValue());
         assertThat(idProviderResource, Matchers.notNullValue());
         assertThat(syncMode, Matchers.notNullValue());
 
         if (idProvider.getConfig().get(IdentityProviderModel.SYNC_MODE).equals(syncMode.name())
-                && idProvider.isTrustEmail() == trustEmail) {
+                && trustEmail.equals(idProvider.isTrustEmail())) {
             return;
         }
 

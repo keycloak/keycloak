@@ -80,6 +80,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
@@ -413,7 +414,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         JsonWebToken idToken = validateToken(encodedIdToken);
 
-        if (getConfig().isPassMaxAge()) {
+        if (Booleans.isTrue(getConfig().isPassMaxAge())) {
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
             if (isAuthTimeExpired(idToken, authSession)) {
@@ -464,7 +465,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
             }
 
-            if (getConfig().isStoreToken()) {
+            if (Booleans.isTrue(getConfig().isStoreToken())) {
                 if (tokenResponse.getExpiresIn() > 0) {
                     long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
                     tokenResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
@@ -976,7 +977,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
 
-        if (getConfig().isPassMaxAge() && maxAge != null) {
+        if (Booleans.isTrue(getConfig().isPassMaxAge()) && maxAge != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
 
@@ -1023,7 +1024,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 .orElseGet(() -> contextData.get(VALIDATED_ACCESS_TOKEN));
         Boolean emailVerified = getEmailVerifiedClaim(token);
 
-        if (!config.isTrustEmail() || emailVerified == null) {
+        if (Booleans.isFalse(config.isTrustEmail()) || emailVerified == null) {
             // fallback to the default behavior if trust is disabled or there is no email_verified claim
             super.setEmailVerified(user, context);
             return;
