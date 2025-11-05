@@ -33,7 +33,7 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
             throw new RuntimeException("Not running on Kubernetes and Kubernetes JWKS endpoint not set");
         }
 
-        if (providerEndpoint == null || providerEndpoint.isEmpty() || globalEndpoint.equals(providerEndpoint)) {
+        if (globalEndpoint != null && !globalEndpoint.isEmpty() && globalEndpoint.equals(providerEndpoint)) {
             this.endpoint = globalEndpoint;
             authenticate = true;
         } else {
