@@ -10,12 +10,11 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.api.FieldValidation;
-import org.keycloak.provider.Provider;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-public interface ClientApi extends Provider {
+public interface ClientApi {
 
     // TODO move these
     String CONTENT_TYPE_MERGE_PATCH = "application/merge-patch+json";

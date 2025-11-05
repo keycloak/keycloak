@@ -194,6 +194,16 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Get representation of the client")
     public ClientRepresentation getClient() {
+        viewClientModel();
+
+        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
+
+        representation.setAccess(auth.clients().getAccess(client));
+
+        return representation;
+    }
+
+    public ClientModel viewClientModel() {
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
@@ -201,12 +211,7 @@ public class ClientResource {
         }
 
         auth.clients().requireView(client);
-
-        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
-
-        representation.setAccess(auth.clients().getAccess(client));
-
-        return representation;
+        return client;
     }
 
     /**

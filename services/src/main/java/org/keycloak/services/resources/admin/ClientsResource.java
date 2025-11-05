@@ -119,6 +119,20 @@ public class ClientsResource {
                                                  @QueryParam("q") String searchQuery,
                                                  @Parameter(description = "the first result") @QueryParam("first") Integer firstResult,
                                                  @Parameter(description = "the max results to return") @QueryParam("max") Integer maxResults) {
+        return ModelToRepresentation.filterValidRepresentations(
+                getClientModels(clientId, viewableOnly, search, searchQuery, firstResult, maxResults), c -> {
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(c, session);
+                    representation.setAccess(auth.clients().getAccess(c));
+                    return representation;
+                });
+    }
+
+    public Stream<ClientModel> getClientModels(String clientId,
+            boolean viewableOnly,
+            boolean search,
+            String searchQuery,
+            Integer firstResult,
+            Integer maxResults) {
         auth.clients().requireList();
 
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || auth.clients().canView();
@@ -152,21 +166,7 @@ public class ClientsResource {
             throw new ErrorResponseException(Errors.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
-        Stream<ClientRepresentation> s = ModelToRepresentation.filterValidRepresentations(clientModels,
-                c -> {
-                    ClientRepresentation representation = null;
-                    if (canView || auth.clients().canView(c)) {
-                        representation = ModelToRepresentation.toRepresentation(c, session);
-                        representation.setAccess(auth.clients().getAccess(c));
-                    } else if (!viewableOnly && auth.clients().canView(c)) {
-                        representation = new ClientRepresentation();
-                        representation.setId(c.getId());
-                        representation.setClientId(c.getClientId());
-                        representation.setDescription(c.getDescription());
-                    }
-
-                    return representation;
-                });
+        Stream<ClientModel> s = clientModels.filter(m -> canView || auth.clients().canView(m));
 
         if (!canView) {
             s = paginatedStream(s, firstResult, maxResults);
@@ -196,6 +196,11 @@ public class ClientsResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response createClient(final ClientRepresentation rep) {
+        var created = createClientModel(rep);
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(created.getId()).build()).build();
+    }
+
+    public ClientModel createClientModel(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
         try {
@@ -232,7 +237,7 @@ public class ClientsResource {
             session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
 
-            return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
+            return clientModel;
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
         } catch (ClientPolicyException cpe) {

@@ -6,9 +6,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.mapper.ModelMapper;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.resources.admin.ClientResource;
+import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 
 import java.util.Optional;
@@ -27,35 +30,45 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public Optional<ClientRepresentation> getClient(RealmModel realm, String clientId,
+    public Optional<ClientRepresentation> getClient(ClientResource clientResource, RealmModel realm, String clientId,
             ClientProjectionOptions projectionOptions) {
-        return Optional.ofNullable(realm.getClientByClientId(clientId)).map(mapper::fromModel);
+        // TODO: is the access map on the representation needed
+        return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel).map(mapper::fromModel);
     }
 
     @Override
-    public Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions,
-            ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions) {
-        return realm.getClientsStream().map(mapper::fromModel);
+    public Stream<ClientRepresentation> getClients(ClientsResource clientsResource, RealmModel realm,
+            ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions,
+            ClientSortAndSliceOptions sortAndSliceOptions) {
+        // TODO: is the access map on the representation needed
+        return clientsResource.getClientModels(null, true, false, null, null, null).map(mapper::fromModel);
     }
 
     @Override
-    public CreateOrUpdateResult createOrUpdate(RealmModel realm, ClientRepresentation client, boolean allowUpdate)
-            throws ServiceException {
+    public CreateOrUpdateResult createOrUpdate(ClientsResource clientsResource, ClientResource clientResource,
+            RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException {
         boolean created = false;
-        ClientModel model = realm.getClientByClientId(client.getClientId());
-        if (model != null) {
+        ClientModel model = null;
+        if (clientResource != null) {
             if (!allowUpdate) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
+            model = clientResource.viewClientModel();
+            mapper.toModel(model, client, realm);
+            var rep = ModelToRepresentation.toRepresentation(model, session);
+            clientResource.update(rep);
         } else {
-            validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
-            model = realm.addClient(client.getClientId());
             created = true;
+            validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
+
+            // dummy add/remove to obtain a detached model
+            model = realm.addClient(client.getClientId());
+            realm.removeClient(model.getId());
+
+            mapper.toModel(model, client, realm);
+            var rep = ModelToRepresentation.toRepresentation(model, session);
+            model = clientsResource.createClientModel(rep);
         }
-
-        // TODO: defaulting, validation, canonicalization
-
-        mapper.toModel(model, client, realm);
 
         var updated = mapper.fromModel(model);
 
@@ -73,7 +86,6 @@ public class DefaultClientService implements ClientService {
         // TODO Auto-generated method stub
         return null;
     }
-
 
     @Override
     public void close() {
