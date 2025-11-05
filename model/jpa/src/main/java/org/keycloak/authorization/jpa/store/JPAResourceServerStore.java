@@ -65,6 +65,21 @@ public class JPAResourceServerStore implements ResourceServerStore {
         String id = client.getId();
         ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
         if (entity == null) return;
+
+        // reordering deletions to avoid FK issues, but it is not a fix, but only a workaround
+        // proper fix would be to refactor the whole mess with bidirectional relationships with proper cascade-on-delete behavior.
+        // this method would become just a one-liner entityManager.remove(entity);
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findPermissionTicketIdByServerId", String.class);
+
+            query.setParameter("serverId", id);
+
+            List<String> result = query.getResultList();
+            for (String permissionId : result) {
+                entityManager.remove(entityManager.getReference(PermissionTicketEntity.class, permissionId));
+            }
+        }
+
         //This didn't work, had to loop through and remove each policy individually
         //entityManager.createNamedQuery("deletePolicyByResourceServer")
         //        .setParameter("serverId", id).executeUpdate();
@@ -77,17 +92,6 @@ public class JPAResourceServerStore implements ResourceServerStore {
                 PolicyEntity policyEntity = entityManager.find(PolicyEntity.class, policyId);
                 policyEntity.getAssociatedPolicies().clear();
                 entityManager.remove(policyEntity);
-            }
-        }
-
-        {
-            TypedQuery<String> query = entityManager.createNamedQuery("findPermissionTicketIdByServerId", String.class);
-
-            query.setParameter("serverId", id);
-
-            List<String> result = query.getResultList();
-            for (String permissionId : result) {
-                entityManager.remove(entityManager.getReference(PermissionTicketEntity.class, permissionId));
             }
         }
 
