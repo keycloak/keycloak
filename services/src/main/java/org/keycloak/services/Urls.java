@@ -184,6 +184,10 @@ public class Urls {
         return tokenBase(baseUri).path(OIDCLoginProtocolService.class, "logout");
     }
 
+    public static URI tokenEndpoint(URI baseUri, String realmName) {
+        return tokenBase(baseUri).path(OIDCLoginProtocolService.class, "token").build(realmName);
+    }
+
     public static URI realmRegisterAction(URI baseUri, String realmName) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "processRegister").build(realmName);
     }

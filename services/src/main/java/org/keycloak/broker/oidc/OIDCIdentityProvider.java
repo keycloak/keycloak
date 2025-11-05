@@ -75,6 +75,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -86,6 +87,7 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1095,5 +1097,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public boolean isAssertionReuseAllowed() {
         return getConfig().getJwtAuthorizationGrantAssertionReuseAllowed();
+    }
+
+    @Override
+    public List<String> getAllowedAudienceForJWTGrant() {
+        RealmModel realm = session.getContext().getRealm();
+
+        URI baseUri = session.getContext().getUri().getBaseUri();
+        String issuer = Urls.realmIssuer(baseUri, realm.getName());
+        String tokenEndpoint = Urls.tokenEndpoint(baseUri, realm.getName()).toString();
+        return List.of(issuer, tokenEndpoint);
     }
 }
