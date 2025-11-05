@@ -21,14 +21,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Single Proof object for Credential Request in OID4VCI.
- * This represents a single proof with proof_type and jwt fields.
- * Used when the request contains a "proof" field (singular) instead of "proofs" (array).
+ * Deprecated: Represents a single JWT-based proof (historical 'proof' structure).
+ * Prefer using {@link Proofs} with the appropriate array field (e.g., jwt).
+ * This class is kept for backward compatibility only.
  *
  * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-15.html#name-credential-request">OID4VCI Credential Request</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Proof {
+@Deprecated
+public class JwtProof {
 
     @JsonProperty("jwt")
     private String jwt;
@@ -36,10 +37,10 @@ public class Proof {
     @JsonProperty("proof_type")
     private String proofType;
 
-    public Proof() {
+    public JwtProof() {
     }
 
-    public Proof(String jwt, String proofType) {
+    public JwtProof(String jwt, String proofType) {
         this.jwt = jwt;
         this.proofType = proofType;
     }
@@ -48,7 +49,7 @@ public class Proof {
         return jwt;
     }
 
-    public Proof setJwt(String jwt) {
+    public JwtProof setJwt(String jwt) {
         this.jwt = jwt;
         return this;
     }
@@ -57,7 +58,7 @@ public class Proof {
         return proofType;
     }
 
-    public Proof setProofType(String proofType) {
+    public JwtProof setProofType(String proofType) {
         this.proofType = proofType;
         return this;
     }

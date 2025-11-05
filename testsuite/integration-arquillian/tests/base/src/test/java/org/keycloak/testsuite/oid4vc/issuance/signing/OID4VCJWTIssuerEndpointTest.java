@@ -53,7 +53,7 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.Proof;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -955,7 +955,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     .setCredentialConfigurationId(credentialConfigurationId);
 
             // Create a single proof object
-            Proof singleProof = new Proof()
+            JwtProof singleProof = new JwtProof()
                     .setJwt("dummy-jwt")
                     .setProofType("jwt");
             requestWithProof.setProof(singleProof);
@@ -965,6 +965,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             try {
                 // This should work because the conversion happens in validateRequestEncryption
                 issuerEndpoint.requestCredential(requestPayload);
+                Assert.fail();
             } catch (Exception e) {
                 // We expect JWT validation to fail, but the conversion should have worked
                 assertTrue("Error should be related to JWT validation, not conversion",
@@ -989,6 +990,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             } catch (BadRequestException e) {
                 int statusCode = e.getResponse().getStatus();
                 assertEquals("Expected HTTP 400 Bad Request", 400, statusCode);
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
+                assertTrue("Error description should mention proof and proofs exclusivity",
+                        error.getErrorDescription() != null && error.getErrorDescription().toLowerCase().contains("proof")
+                                && error.getErrorDescription().toLowerCase().contains("proofs"));
             }
         });
     }
