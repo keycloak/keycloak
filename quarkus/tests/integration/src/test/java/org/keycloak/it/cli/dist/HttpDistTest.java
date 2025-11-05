@@ -61,14 +61,14 @@ public class HttpDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--log-level=INFO,org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter:debug", "--http-access-log-enabled=true"})
+    @Launch({"start-dev", "--log-level=INFO,org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter:debug", "--http-accept-non-normalized-paths=false", "--http-access-log-enabled=true"})
     public void preventNonNormalizedURLs() {
         when().get("/realms/master").then().statusCode(200);
         when().get("/realms/xxx/../master").then().statusCode(400);
     }
 
     @Test
-    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-accept-non-normalized-paths=true"})
+    @Launch({"start-dev", "--http-access-log-enabled=true"})
     public void allowNonNormalizedURLs() {
         when().get("/realms/master").then().statusCode(200);
         when().get("/realms/xxx/../master").then().statusCode(200);

@@ -16,3 +16,14 @@ This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance w
 If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
+
+=== Accepting only normalized paths in requests
+
+{project_name} accepts HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986.
+As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization can now be disabled, and {project_name} then responds with an HTTP 400 response code.
+
+To reject non-normalized URLs, set the option `http-accept-non-normalized-paths` to `false`.
+To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
+
+In future versions, {project_name} will reject non-normalized URLs be enabled by default and accepting non-normalized paths will be deprecated.
+Due to that, we encourage users to enable this option while paying attention to client configurations and logs for errors due to misconfigured clients and calls with non-normalized URLs.
