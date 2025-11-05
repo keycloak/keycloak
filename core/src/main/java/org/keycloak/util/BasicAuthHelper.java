@@ -81,13 +81,34 @@ public class BasicAuthHelper {
             }
 
             try {
+                String username = val[0];
+                String password = val[1];
+
+                boolean usernameIsEncoded = containsValidUrlEncoding(username);
+                boolean passwordIsEncoded = containsValidUrlEncoding(password);
+
                 return new String[]{
-                    URLDecoder.decode(val[0], "UTF-8"),
-                    URLDecoder.decode(val[1], "UTF-8")
+                    usernameIsEncoded ? URLDecoder.decode(username, "UTF-8") : username,
+                    passwordIsEncoded ? URLDecoder.decode(password, "UTF-8") : password
                 };
             } catch (UnsupportedEncodingException e) {
                 return null;
+            } catch (IllegalArgumentException e) {
+                return val;
             }
+        }
+
+        /**
+         * Check if a string appears to be URL-encoded by looking for common URL-encoded patterns.
+         * We check for percent-encoded sequences that are commonly used in URLs and would
+         * be present if the string was URL-encoded.
+         *
+         */
+        private static boolean containsValidUrlEncoding(String value) {
+            if (value == null || value.isEmpty()) {
+                return false;
+            }
+            return value.matches(".*%(?:2[0-9A-Fa-f]|3[0-9A-Fa-f]|40|21).*");
         }
     }
 }
