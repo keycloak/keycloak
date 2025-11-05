@@ -128,12 +128,12 @@ public interface HostnameProvider extends Provider {
      * @param type type of the request
      * @return the base URI
      */
-    default URI getBaseUri(UriInfo delegate, UrlType type) {
-        String scheme = getScheme(delegate, type);
-        String hostname = getHostname(delegate, type);
-        int port = getPort(delegate, type);
-        String contextPath = getContextPath(delegate, type);
-        return delegate.getBaseUriBuilder().scheme(scheme).host(hostname).port(port).replacePath(contextPath).build();
+    default URI getBaseUri(UriInfo originalUriInfo, UrlType type) {
+        String scheme = getScheme(originalUriInfo, type);
+        String hostname = getHostname(originalUriInfo, type);
+        int port = getPort(originalUriInfo, type);
+        String contextPath = getContextPath(originalUriInfo, type);
+        return originalUriInfo.getBaseUriBuilder().scheme(scheme).host(hostname).port(port).replacePath(contextPath).build();
     }
 
 }
