@@ -63,9 +63,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -136,7 +134,6 @@ import org.jboss.resteasy.reactive.NoCache;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -260,10 +257,7 @@ public class UserResource {
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             session.getTransactionManager().setRollbackOnly();
-            throw new ErrorResponseException(e.getMessage(),
-                    ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(),
-                            e.getParameters()),
-                    Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
@@ -424,10 +418,15 @@ public class UserResource {
             AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession,
                     session.getContext().getUri(), clientConnection, headers, true);
         }
+        EventBuilder event = new EventBuilder(realm, session, clientConnection);
+
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user,
+                user.getUsername(), clientConnection.getRemoteHost(), "impersonate", false, null, null);
 
         UserModel adminUser = auth.adminAuth().getUser();
         String impersonatorId = adminUser.getId();
         String impersonator = adminUser.getUsername();
+
         URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
         int expires = Time.currentTime() + 60;
 
@@ -813,22 +812,18 @@ public class UserResource {
             throw new BadRequestException("Can't reset password as account is read only");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(e.getMessage(),
-                    ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(),
-                            e.getParameters()),
+                    MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
                     Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
-            String exceptionMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-            logger.warnf("Could not update password for user %s. Reason: %s", user.getUsername(), exceptionMessage);
-            if (logger.isTraceEnabled()) {
-                logger.trace("Could not update user password.", e);
-            }
+            logger.warn("Could not update user password.", e);
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(e.getMessage(),
-                    ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(),
-                            e.getParameters()),
+                    MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
                     Status.BAD_REQUEST);
         }
         if (cred.isTemporary() != null && cred.isTemporary()) {
@@ -1256,9 +1251,9 @@ public class UserResource {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me) {
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(me.getMessage(),
-                    ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), me.getMessage(),
-                            me.getParameters()),
+                    MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
                     Status.BAD_REQUEST);
         }
     }
@@ -1312,7 +1307,10 @@ public class UserResource {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(USER_API, user);
 
-        return profile.getAttributes().getUnmanagedAttributes().entrySet().stream()
+        attributes.remove(UserModel.USERNAME);
+        attributes.remove(UserModel.EMAIL);
+
+        return attributes.entrySet().stream()
                 .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream()
                         .anyMatch(StringUtil::isNotBlank))
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
