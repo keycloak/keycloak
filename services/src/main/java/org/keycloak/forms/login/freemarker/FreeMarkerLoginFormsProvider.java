@@ -49,6 +49,7 @@ import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
+import org.keycloak.forms.login.freemarker.model.OAuth2DeviceConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.forms.login.freemarker.model.PasswordPoliciesBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
@@ -73,6 +74,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareIdentityProviderBean;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.Urls;
@@ -313,6 +315,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case OAUTH_GRANT:
                 attributes.put("oauth",
                         new OAuthGrantBean(accessCode, client, clientScopesRequested));
+                break;
+            case LOGIN_OAUTH2_DEVICE_CONFIRM:
+                String userCode = authenticationSession.getClientNote(DeviceGrantType.OAUTH2_DEVICE_VERIFIED_USER_CODE);
+                attributes.put("deviceConfirm", new OAuth2DeviceConfirmBean(client, userCode, accessCode));
                 break;
             case CODE:
                 attributes.remove("message"); // No need to include "message" attribute as error is included in separate field anyway
@@ -791,6 +797,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createOAuth2DeviceVerifyUserCodePage() {
         return createResponse(LoginFormsPages.LOGIN_OAUTH2_DEVICE_VERIFY_USER_CODE);
+    }
+
+    @Override
+    public Response createOAuth2DeviceConfirmPage() {
+        return createResponse(LoginFormsPages.LOGIN_OAUTH2_DEVICE_CONFIRM);
     }
 
     @Override

@@ -64,6 +64,7 @@ import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationE
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
+import org.keycloak.testsuite.pages.OAuth2DeviceConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestEnhancedPluggableTokenManagerExecutorFactory;
@@ -91,6 +92,9 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
 
     @Page
     protected OAuth2DeviceVerificationPage verificationPage;
+
+    @Page
+    protected OAuth2DeviceConfirmPage deviceConfirmPage;
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -294,10 +298,9 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         verificationPage.assertApprovedPage();
 
@@ -349,10 +352,9 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         verificationPage.assertApprovedPage();
 

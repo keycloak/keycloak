@@ -261,6 +261,16 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response verifyUserCode() {
         MultivaluedMap<String, String> formData = httpRequest.getDecodedFormParameters();
+
+        String cancel = formData.getFirst("cancel");
+        if (cancel != null) {
+            LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
+            String restartUri = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri())
+                    .build(realm.getName()).toString();
+            return forms.setAttribute("messageHeader", forms.getMessage(Messages.OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER))
+                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, restartUri).setError(Messages.OAUTH2_DEVICE_CONSENT_DENIED).createInfoPage();
+        }
+
         return verifyUserCode(formData.getFirst(OAUTH2_DEVICE_USER_CODE));
     }
 

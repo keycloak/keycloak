@@ -51,7 +51,8 @@ public interface CommonClientSessionModel {
         LOGGED_OUT,
         LOGGING_OUT,
         REQUIRED_ACTIONS,
-        USER_CODE_VERIFICATION
+        USER_CODE_VERIFICATION,
+        DEVICE_CONFIRM
     }
 
     @ProtoTypeId(65537) // see org.keycloak.Marshalling

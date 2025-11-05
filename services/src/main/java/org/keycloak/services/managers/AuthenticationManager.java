@@ -1117,7 +1117,10 @@ public class AuthenticationManager {
         }
 
         final var client = authSession.getClient();
-        if (client.isConsentRequired() || isOAuth2DeviceVerificationFlow(authSession)) {
+        if (isOAuth2DeviceVerificationFlow(authSession)) {
+            return Action.DEVICE_CONFIRM.name();
+        }
+        if (client.isConsentRequired()) {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
@@ -1179,7 +1182,30 @@ public class AuthenticationManager {
         // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-5.4
         // The spec says "The authorization server SHOULD display information about the device",
         // so the consent is required when running a verification flow of OAuth 2.0 Device Authorization Grant.
-        if (client.isConsentRequired() || isOAuth2DeviceVerificationFlow(authSession)) {
+
+        if (isOAuth2DeviceVerificationFlow(authSession)) {
+            String execution = AuthenticatedClientSessionModel.Action.DEVICE_CONFIRM.name();
+
+            ClientSessionCode<AuthenticationSessionModel> accessCode =
+                    new ClientSessionCode<>(session, realm, authSession);
+            accessCode.setAction(Action.REQUIRED_ACTIONS.name());
+            authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution);
+
+            URI actionUri = UriBuilder.fromUri(Urls.realmOAuth2DeviceConfirmAction(session.getContext().getUri().getBaseUri(), realm.getName()))
+                    .queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, authSession.getTabId())
+                    .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession))
+                    .build();
+
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
+                    .setExecution(execution)
+                    .setClientSessionCode(accessCode.getOrGenerateCode())
+                    .setActionUri(actionUri)
+                    .createOAuth2DeviceConfirmPage();
+        }
+
+        if (client.isConsentRequired()) {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 

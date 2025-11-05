@@ -1077,6 +1077,47 @@ public class LoginActionsService {
         return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession);
     }
 
+    /**
+     * Device authorization confirmation page. You should not invoke this directly!
+     *
+     * @return
+     */
+    @Path("device-confirm")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processDeviceConfirm() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+        event.event(EventType.LOGIN);
+        String code = formData.getFirst(SESSION_CODE);
+        String clientId = session.getContext().getUri().getQueryParameters().getFirst(Constants.CLIENT_ID);
+        String tabId = session.getContext().getUri().getQueryParameters().getFirst(Constants.TAB_ID);
+        String clientData = session.getContext().getUri().getQueryParameters().getFirst(Constants.CLIENT_DATA);
+        SessionCodeChecks checks = checksForCode(null, code, null, clientId, tabId, clientData, REQUIRED_ACTION);
+        if (!checks.verifyRequiredAction(AuthenticationSessionModel.Action.DEVICE_CONFIRM.name())) {
+            return checks.getResponse();
+        }
+
+        AuthenticationSessionModel authSession = checks.getAuthenticationSession();
+
+        initLoginEvent(authSession);
+
+        UserModel user = authSession.getAuthenticatedUser();
+        ClientModel client = authSession.getClient();
+
+        // User cancelled the device authorization
+        if (formData.containsKey("cancel")) {
+            event.error(Errors.REJECTED_BY_USER);
+            return DeviceGrantType.denyOAuth2DeviceAuthorization(authSession, Error.CONSENT_DENIED, session);
+        }
+
+        // User confirmed the device authorization - proceed with the flow
+        event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
+        event.success();
+        return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx, request, session.getContext().getUri(), clientConnection, event, authSession);
+    }
+
     private void initLoginEvent(AuthenticationSessionModel authSession) {
         String responseType = authSession.getClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         if (responseType == null) {
