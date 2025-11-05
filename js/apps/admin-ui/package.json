@@ -100,7 +100,7 @@
     "i18next": "^25.6.0",
     "i18next-fetch-backend": "^6.0.0",
     "jszip": "^3.10.1",
-    "keycloak-js": "^26.2.0",
+    "keycloak-js": "^26.2.1",
     "lodash-es": "^4.17.21",
     "p-debounce": "^5.0.0",
     "react": "^18.3.1",
