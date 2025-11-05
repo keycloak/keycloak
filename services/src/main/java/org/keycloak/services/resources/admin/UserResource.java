@@ -63,6 +63,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.OptimisticLockRetryUtil;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
@@ -191,23 +192,36 @@ public class UserResource {
         @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
     })
     public Response updateUser(final UserRepresentation rep) {
-
         auth.users().requireManage(user);
+
+        // Reload user on each retry to get fresh version number
+        String userId = user.getId();
+        return OptimisticLockRetryUtil.retry(session, () -> {
+            UserModel freshUser = session.users().getUserById(realm, userId);
+            if (freshUser == null) {
+                throw new NotFoundException("User not found");
+            }
+            return performUserUpdate(freshUser, rep);
+        });
+    }
+
+    private Response performUserUpdate(final UserModel userModel, final UserRepresentation rep) {
+        // Use the fresh userModel parameter instead of the stale 'user' field
         try {
 
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
-                if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
-                    UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, user.getId());
+                if (!userModel.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, userModel)) {
+                    UserLoginFailureModel failureModel = session.loginFailures().getUserLoginFailure(realm, userModel.getId());
                     if (failureModel != null) {
-                        session.loginFailures().removeUserLoginFailure(realm, user.getId());
+                        session.loginFailures().removeUserLoginFailure(realm, userModel.getId());
                         adminEvent.clone(session).resource(ResourceType.USER_LOGIN_FAILURE)
                                 .resourcePath(session.getContext().getUri())
                                 .operation(OperationType.DELETE)
                                 .success();
                     }
                 }
-                wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
+                wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, userModel);
             }
 
             Map<String, List<String>> attributes = new HashMap<>(rep.getRawAttributes());
@@ -215,24 +229,24 @@ public class UserResource {
             if (rep.getAttributes() == null) {
                 // include existing attributes in case no attributes are set so that validation takes into account the existing
                 // attributes associated with the user
-                for (Map.Entry<String, List<String>> entry : user.getAttributes().entrySet()) {
+                for (Map.Entry<String, List<String>> entry : userModel.getAttributes().entrySet()) {
                     attributes.putIfAbsent(entry.getKey(), entry.getValue());
                 }
             }
 
-            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, user);
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, userModel);
 
             Response response = validateUserProfile(profile, session, auth.adminAuth());
             if (response != null) {
                 return response;
             }
             profile.update(rep.getAttributes() != null);
-            updateUserFromRep(profile, user, rep, session, true);
-            RepresentationToModel.createCredentials(rep, session, realm, user, true);
+            updateUserFromRep(profile, userModel, rep, session, true);
+            RepresentationToModel.createCredentials(rep, session, realm, userModel, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
             if (wasPermanentlyLockedOut) {
-                session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
+                session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, userModel);
             }
 
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
