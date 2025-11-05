@@ -63,6 +63,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.models.IdentityProviderType.EXCHANGE_EXTERNAL_TOKEN;
@@ -389,7 +390,7 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
                 target.importNewUser(session, realm, user, mapper, context);
             }
 
-            if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(user.getEmail())) {
+            if (Booleans.isTrue(context.getIdpConfig().isTrustEmail()) && !Validation.isBlank(user.getEmail())) {
                 logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
                 user.setEmailVerified(true);
             }

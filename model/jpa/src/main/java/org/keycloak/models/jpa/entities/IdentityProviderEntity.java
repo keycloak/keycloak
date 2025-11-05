@@ -57,22 +57,22 @@ public class IdentityProviderEntity {
     private boolean enabled;
 
     @Column(name = "TRUST_EMAIL")
-    private boolean trustEmail;
+    private Boolean trustEmail;
 
     @Column(name="STORE_TOKEN")
-    private boolean storeToken;
+    private Boolean storeToken;
 
     @Column(name="LINK_ONLY")
-    private boolean linkOnly;
+    private Boolean linkOnly;
 
     @Column(name="HIDE_ON_LOGIN")
-    private boolean hideOnLogin;
+    private Boolean hideOnLogin;
 
     @Column(name="ADD_TOKEN_ROLE")
-    protected boolean addReadTokenRoleOnCreate;
+    protected Boolean addReadTokenRoleOnCreate;
 
     @Column(name="AUTHENTICATE_BY_DEFAULT")
-    private boolean authenticateByDefault;
+    private Boolean authenticateByDefault;
 
     @Column(name="FIRST_BROKER_LOGIN_FLOW_ID")
     private String firstBrokerLoginFlowId;
@@ -129,27 +129,27 @@ public class IdentityProviderEntity {
         this.enabled = enabled;
     }
 
-    public boolean isStoreToken() {
+    public Boolean isStoreToken() {
         return this.storeToken;
     }
 
-    public void setStoreToken(boolean storeToken) {
+    public void setStoreToken(Boolean storeToken) {
         this.storeToken = storeToken;
     }
 
-    public boolean isAuthenticateByDefault() {
+    public Boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
-    public void setAuthenticateByDefault(boolean authenticateByDefault) {
+    public void setAuthenticateByDefault(Boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }
 
-    public boolean isLinkOnly() {
+    public Boolean isLinkOnly() {
         return linkOnly;
     }
 
-    public void setLinkOnly(boolean linkOnly) {
+    public void setLinkOnly(Boolean linkOnly) {
         this.linkOnly = linkOnly;
     }
 
@@ -177,11 +177,11 @@ public class IdentityProviderEntity {
         this.organizationId = organizationId;
     }
 
-    public boolean isHideOnLogin() {
+    public Boolean isHideOnLogin() {
         return this.hideOnLogin;
     }
 
-    public void setHideOnLogin(boolean hideOnLogin) {
+    public void setHideOnLogin(Boolean hideOnLogin) {
         this.hideOnLogin = hideOnLogin;
     }
 
@@ -193,19 +193,19 @@ public class IdentityProviderEntity {
         this.config = config;
     }
 
-    public boolean isAddReadTokenRoleOnCreate() {
+    public Boolean isAddReadTokenRoleOnCreate() {
         return addReadTokenRoleOnCreate;
     }
 
-    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+    public void setAddReadTokenRoleOnCreate(Boolean addReadTokenRoleOnCreate) {
         this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
     }
 
-    public boolean isTrustEmail() {
+    public Boolean isTrustEmail() {
         return trustEmail;
     }
 
-    public void setTrustEmail(boolean trustEmail) {
+    public void setTrustEmail(Boolean trustEmail) {
         this.trustEmail = trustEmail;
     }
 

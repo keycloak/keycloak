@@ -90,6 +90,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
@@ -357,7 +358,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             event.error(Errors.INVALID_REQUEST);
             return exchangeUnsupportedRequiredType();
         }
-        if (!getConfig().isStoreToken()) {
+        if (Booleans.isFalse(getConfig().isStoreToken())) {
             // if token isn't stored, we need to see if this session has been linked
             String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
             brokerId = brokerId == null ? tokenUserSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
@@ -474,7 +475,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         BrokeredIdentityContext context = doGetFederatedIdentity(accessToken);
 
-        if (getConfig().isStoreToken() && response.startsWith("{")) {
+        if (Booleans.isTrue(getConfig().isStoreToken()) && response.startsWith("{")) {
             try {
                 OAuthResponse tokenResponse = JsonSerialization.readValue(response, OAuthResponse.class);
                 if (tokenResponse.getExpiresIn() != null && tokenResponse.getExpiresIn() > 0) {
@@ -512,7 +513,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         AuthenticationSessionModel authenticationSession = request.getAuthenticationSession();
         String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
-        if (getConfig().isLoginHint() && loginHint != null) {
+        if (Booleans.isTrue(getConfig().isLoginHint()) && loginHint != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
 
@@ -745,7 +746,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
                 BrokeredIdentityContext federatedIdentity = provider.getFederatedIdentity(response);
 
-                if (providerConfig.isStoreToken()) {
+                if (Booleans.isTrue(providerConfig.isStoreToken())) {
                     // make sure that token wasn't already set by getFederatedIdentity();
                     // want to be able to allow provider to set the token itself.
                     if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);

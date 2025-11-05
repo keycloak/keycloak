@@ -96,6 +96,7 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.GET;
@@ -395,7 +396,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             if (identityProviderModel == null) {
                 throw new IdentityBrokerException("Identity Provider [" + providerAlias + "] not found.");
             }
-            if (identityProviderModel.isLinkOnly()) {
+            if (Booleans.isTrue(identityProviderModel.isLinkOnly())) {
                 throw new IdentityBrokerException("Identity Provider [" + providerAlias + "] is not allowed to perform a login.");
             }
             if (clientSessionCode.getClientSession() != null && loginHint != null) {
@@ -504,7 +505,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
                 IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
 
-                if (identityProviderConfig.isStoreToken()) {
+                if (Booleans.isTrue(identityProviderConfig.isStoreToken())) {
                     FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, authResult.user(), providerAlias);
 
                     if (identity == null) {
@@ -553,7 +554,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         String providerAlias = identityProviderConfig.getAlias();
-        if (!identityProviderConfig.isStoreToken()) {
+        if (Booleans.isFalse(identityProviderConfig.isStoreToken())) {
             if (isDebugEnabled()) {
                 logger.debugf("Token will not be stored for identity provider [%s].", providerAlias);
             }
@@ -731,7 +732,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             event.user(federatedUser);
             event.detail(Details.USERNAME, federatedUser.getUsername());
 
-            if (context.getIdpConfig().isAddReadTokenRoleOnCreate()) {
+            if (Booleans.isTrue(context.getIdpConfig().isAddReadTokenRoleOnCreate())) {
                 ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
                 if (brokerClient == null) {
                     throw new IdentityBrokerException("Client 'broker' not available. Maybe realm has not migrated to support the broker token exchange service");
@@ -1014,7 +1015,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
 
         if (federatedUser != null) {
-            if (context.getIdpConfig().isStoreToken()) {
+            if (Booleans.isTrue(context.getIdpConfig().isStoreToken())) {
                 FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
                 if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {
                     this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, newModel);
@@ -1155,7 +1156,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     private void updateToken(BrokeredIdentityContext context, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        if (context.getIdpConfig().isStoreToken() && !ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
+        if (Booleans.isTrue(context.getIdpConfig().isStoreToken()) && !ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
             // like in OIDCIdentityProvider.exchangeStoredToken()
             // we shouldn't override the refresh token if it is null in the context and not null in the DB
             // as for google IDP it will be lost forever

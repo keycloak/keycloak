@@ -417,7 +417,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         // import endpoint simply converts IDPSSODescriptor into key value pairs.
         // check that saml-idp-metadata.xml was properly converted into key value pairs
         //System.out.println(config);
-        List<String> keys = new ArrayList<>(List.of("syncMode",
+        List<String> keys = new ArrayList<>(List.of(
                 "validateSignature",
                 "singleLogoutServiceUrl",
                 "postBindingLogout",

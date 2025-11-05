@@ -13,7 +13,11 @@ public final class IdentityProviderMapperSyncModeDelegate {
     protected static final Logger logger = Logger.getLogger(IdentityProviderMapperSyncModeDelegate.class);
 
     public static void delegateUpdateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context, IdentityProviderMapper mapper) {
-        IdentityProviderSyncMode effectiveSyncMode = combineIdpAndMapperSyncMode(context.getIdpConfig().getSyncMode(), mapperModel.getSyncMode());
+        IdentityProviderSyncMode idpSyncMode = context.getIdpConfig().getSyncMode();
+        if (idpSyncMode == null) {
+            idpSyncMode = IdentityProviderSyncMode.LEGACY;
+        }
+        IdentityProviderSyncMode effectiveSyncMode = combineIdpAndMapperSyncMode(idpSyncMode, mapperModel.getSyncMode());
 
         if (!mapper.supportsSyncMode(effectiveSyncMode)) {
             logger.warnf("The mapper %s does not explicitly support sync mode %s. Please ensure that the SPI supports the sync mode correctly and update it to reflect this.", mapper.getDisplayType(), effectiveSyncMode);

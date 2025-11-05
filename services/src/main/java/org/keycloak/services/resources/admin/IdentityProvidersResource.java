@@ -129,12 +129,7 @@ public class IdentityProvidersResource {
         String providerId = formDataMap.getFirst("providerId").asString();
         String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
         IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
-        final Map<String, String> parsedConfig = providerFactory.parseConfig(session, config);
-        String syncMode = parsedConfig.get(IdentityProviderModel.SYNC_MODE);
-        if (syncMode == null) {
-            parsedConfig.put(IdentityProviderModel.SYNC_MODE, "LEGACY");
-        }
-        return parsedConfig;
+        return providerFactory.parseConfig(session, config);
     }
 
     /**

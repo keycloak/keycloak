@@ -31,6 +31,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.MapJoin;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.hibernate.Session;
@@ -252,10 +253,11 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                     case ENABLED:
                     case HIDE_ON_LOGIN:
                     case LINK_ONLY: {
+                        Path<Boolean> path = idp.get(key);
                         if (Boolean.parseBoolean(value)) {
-                            predicates.add(builder.isTrue(idp.get(key)));
+                            predicates.add(builder.isTrue(path));
                         } else {
-                            predicates.add(builder.isFalse(idp.get(key)));
+                            predicates.add(builder.or(builder.isNull(path), builder.equal(path, Boolean.FALSE)));
                         }
                         break;
                     }

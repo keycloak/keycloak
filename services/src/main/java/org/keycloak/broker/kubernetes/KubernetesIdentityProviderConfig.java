@@ -17,7 +17,7 @@ public class KubernetesIdentityProviderConfig extends OIDCIdentityProviderConfig
     }
 
     @Override
-    public boolean isHideOnLogin() {
+    public Boolean isHideOnLogin() {
         return true;
     }
 

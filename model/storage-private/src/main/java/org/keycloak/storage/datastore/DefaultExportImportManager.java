@@ -110,6 +110,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
@@ -1514,7 +1515,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         String defaultProvider = null;
         if (rep.getIdentityProviders() != null) {
             for (IdentityProviderRepresentation i : rep.getIdentityProviders()) {
-                if (i.isEnabled() && i.isAuthenticateByDefault()) {
+                if (i.isEnabled() && Booleans.isTrue(i.isAuthenticateByDefault())) {
                     defaultProvider = i.getProviderId();
                     break;
                 }

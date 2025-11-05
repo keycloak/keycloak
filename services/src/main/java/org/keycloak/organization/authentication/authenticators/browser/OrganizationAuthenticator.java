@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -66,6 +65,7 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
@@ -429,7 +429,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
     }
 
     private boolean hasPublicBrokers(OrganizationModel organization) {
-        return organization.getIdentityProviders().anyMatch(Predicate.not(IdentityProviderModel::isHideOnLogin));
+        return organization.getIdentityProviders().anyMatch(i -> Booleans.isFalse(i.isHideOnLogin()));
     }
 
     private OrganizationProvider getOrganizationProvider() {

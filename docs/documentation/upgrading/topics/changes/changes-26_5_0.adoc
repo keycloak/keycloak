@@ -30,6 +30,10 @@ For anyone implementing a custom federated user authentication identity provider
 by Keycloak or `AbstractIdentityProvider` you need to update your implementation to implement
 the new `UserAuthenticationIdentityProvider` interface (all methods remain the same, they have just been moved).
 
+Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` are now using Boolean values to allow
+configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
+not need these configurations.
+
 === Accepting only normalized paths in requests
 
 Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986.
