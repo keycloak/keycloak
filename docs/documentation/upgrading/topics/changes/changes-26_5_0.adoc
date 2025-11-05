@@ -114,6 +114,10 @@ This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance w
 If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
+=== Default authorization policies and resources are no longer auto-created
+
+When enabling authorization on a new client (creating a Resource Server), Keycloak no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

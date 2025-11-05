@@ -39,7 +39,6 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -137,11 +136,6 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         representation.setAuthorizationServicesEnabled(true);
 
         client.update(representation);
-
-        ResourcesResource resources = client.authorization().resources();
-        List<ResourceRepresentation> defaultResource = resources.findByName("Default Resource");
-
-        resources.resource(defaultResource.get(0).getId()).remove();
     }
 
     @Test

@@ -421,9 +421,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     public void testResolveResourcesWithSameUri() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
-        List<ResourceRepresentation> defaultResource = authorization.resources().findByName("Default Resource");
-        assertThat(defaultResource.isEmpty(), is(false));
-        authorization.resources().resource(defaultResource.get(0).getId()).remove();
 
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
         policy.setName(KeycloakModelUtils.generateId());

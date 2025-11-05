@@ -14,7 +14,6 @@ import {
 } from "../utils/table.ts";
 import {
   assertClipboardHasText,
-  assertDefaultResource,
   assertDownload,
   clickAuthenticationSaveButton,
   clickCopyButton,
@@ -69,9 +68,8 @@ test.describe.serial("Client authentication subtab", () => {
 
   test("Should create a resource", async ({ page }) => {
     await goToResourcesSubTab(page);
-    await assertDefaultResource(page);
     await createResource(page, {
-      name: "Resource",
+      name: "Test Resource",
       displayName: "The display name",
       type: "type",
       uris: ["one", "two"],
@@ -83,7 +81,7 @@ test.describe.serial("Client authentication subtab", () => {
 
   test("Edit a resource", async ({ page }) => {
     await goToResourcesSubTab(page);
-    await clickTableRowItem(page, "Default Resource");
+    await clickTableRowItem(page, "Test Resource");
 
     await fillForm(page, { displayName: "updated" });
     await clickSaveButton(page);
@@ -115,7 +113,7 @@ test.describe.serial("Client authentication subtab", () => {
       name: "Permission name",
       description: "Something describing this permission",
     });
-    await selectResource(page, "Default Resource");
+    await selectResource(page, "Test Resource");
 
     await clickSaveButton(page);
     await assertNotificationMessage(
@@ -139,7 +137,7 @@ test.describe.serial("Client authentication subtab", () => {
 
   test("Should delete a policy", async ({ page }) => {
     await goToPoliciesSubTab(page);
-    await deletePolicy(page, "Default Policy");
+    await deletePolicy(page, "Regex Policy");
 
     await assertNotificationMessage(page, "The Policy successfully deleted");
   });
@@ -175,6 +173,7 @@ test.describe.serial("Client authentication subtab", () => {
 test.describe
   .serial("Client authorization tab access for view-realm-authorization", () => {
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
+  const resourceName = `test-resource-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
     await adminClient.createRealm("realm-view-authz");
@@ -196,6 +195,10 @@ test.describe
       authorizationServicesEnabled: true,
       serviceAccountsEnabled: true,
       standardFlowEnabled: true,
+    });
+    await adminClient.createResource(clientId, {
+      realm: "realm-view-authz",
+      name: resourceName,
     });
   });
 
@@ -219,7 +222,7 @@ test.describe
     await goToAuthorizationTab(page);
 
     await goToResourcesSubTab(page);
-    await clickTableRowItem(page, "Default Resource");
+    await clickTableRowItem(page, resourceName);
     await page.goBack();
 
     await goToScopesSubTab(page);

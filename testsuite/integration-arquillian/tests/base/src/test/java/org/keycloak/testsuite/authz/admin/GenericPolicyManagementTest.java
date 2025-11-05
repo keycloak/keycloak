@@ -70,7 +70,7 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
         List<PolicyRepresentation> policies = getClientResource().authorization().policies().policies();
 
-        assertEquals(6, policies.size());
+        assertEquals(4, policies.size());
 
         assertAssociatedPolicy("Test Associated A", newPolicy);
         assertAssociatedPolicy("Test Associated B", newPolicy);
