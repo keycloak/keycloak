@@ -166,6 +166,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
@@ -192,6 +193,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 int timeOffset = 1728000 + (i * 86400);
 
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 setTimeOffset(timeOffset);
                 log.infof("Set time offset to %d. Time is: %d", timeOffset, Time.currentTime());
 
@@ -215,6 +217,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 // assert session0 is the only session found
@@ -297,6 +300,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 // Expire everything except offline client sessions
@@ -307,6 +311,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 sessionManager = new UserSessionManager(session);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 

@@ -169,6 +169,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
         SessionUpdatesList<V> sessionUpdates = entry.getValue();
         SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
         RealmModel realm = sessionUpdates.getRealm();
+        session.getContext().setRealm(realm);
         UserSessionPersisterProvider userSessionPersister = session.getProvider(UserSessionPersisterProvider.class);
 
         switch (merged.getOperation()) {
@@ -433,6 +434,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
         SessionUpdatesList<V> sessionUpdates = entry.getValue();
         SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
         RealmModel realm = sessionUpdates.getRealm();
+        session.getContext().setRealm(realm);
         UserSessionPersisterProvider userSessionPersister = session.getProvider(UserSessionPersisterProvider.class);
         UserSessionEntity entity = (UserSessionEntity) sessionWrapper.getEntity();
 

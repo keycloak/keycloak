@@ -259,6 +259,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         UserResource userResource = testRealm().users().get(newUserId1);
 
         try {
+            user1.setFirstName(user1.getFirstName() + " updated");
             userResource.update(user1);
             Assert.fail("Not expected to successfully update user");
         } catch (WebApplicationException expected) {
