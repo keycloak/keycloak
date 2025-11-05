@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 
 import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -58,7 +59,8 @@ abstract class BaseUserSessionExpirationListener {
             new EventBuilder(realm, session)
                     .session(userSessionId)
                     .user(userId)
-                    .event(EventType.USER_SESSION_EXPIRED)
+                    .event(EventType.USER_SESSION_DELETED)
+                    .detail(Details.REASON, Details.EXPIRED_DETAIL)
                     .success();
         });
     }

@@ -190,9 +190,10 @@ public class AssertEvents implements TestRule {
     }
 
     public ExpectedEvent expectSessionExpired(String sessionId, String userId) {
-        return expect(EventType.USER_SESSION_EXPIRED)
+        return expect(EventType.USER_SESSION_DELETED)
                 .session(sessionId)
                 .user(userId)
+                .detail(Details.REASON, Details.EXPIRED_DETAIL)
                 .client((String) null)
                 .ipAddress((String) null);
     }
@@ -206,7 +207,7 @@ public class AssertEvents implements TestRule {
                 .error(Errors.INVALID_TOKEN)
                 .user((String) null);
         EventRepresentation e = poll(5);
-        if (e.getType().equals(EventType.USER_SESSION_EXPIRED.name())) {
+        if (e.getType().equals(EventType.USER_SESSION_DELETED.name())) {
             // if we get an expiration event, we must receive the refresh token error event.
             expired.assertEvent(e);
             refresh.assertEvent();

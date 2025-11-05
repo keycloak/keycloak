@@ -19,6 +19,7 @@ package org.keycloak.testsuite.model.session;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.infinispan.Cache;
@@ -26,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -65,6 +67,7 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = createRealm(s, "test");
         realm.setEventsEnabled(true);
+        realm.setEnabledEventTypes(Set.of(EventType.USER_SESSION_DELETED.name()));
         s.getContext().setRealm(realm);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(IDLE_TIMEOUT);
@@ -156,16 +159,18 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
     private static long eventsCount(KeycloakSession session) {
         EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
         return provider.createQuery()
-                .type(EventType.USER_SESSION_EXPIRED)
+                .type(EventType.USER_SESSION_DELETED)
                 .getResultStream()
+                .filter(event -> Details.EXPIRED_DETAIL.equals(event.getDetails().get(Details.REASON)))
                 .count();
     }
 
     private static Map<String, String> events(KeycloakSession session) {
         EventStoreProvider provider = session.getProvider(EventStoreProvider.class);
         return provider.createQuery()
-                .type(EventType.USER_SESSION_EXPIRED)
+                .type(EventType.USER_SESSION_DELETED)
                 .getResultStream()
+                .filter(event -> Details.EXPIRED_DETAIL.equals(event.getDetails().get(Details.REASON)))
                 .collect(Collectors.toUnmodifiableMap(Event::getSessionId, Event::getUserId));
     }
 

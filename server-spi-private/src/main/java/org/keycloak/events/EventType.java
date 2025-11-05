@@ -186,7 +186,7 @@ public enum EventType implements EnumWithStableIndex {
     INVITE_ORG(60, true),
     INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true),
 
-    USER_SESSION_EXPIRED(61, true)
+    USER_SESSION_DELETED(61, false)
     ;
 
     private final int stableIndex;

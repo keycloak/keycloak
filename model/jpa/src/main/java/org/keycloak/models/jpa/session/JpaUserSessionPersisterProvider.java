@@ -21,6 +21,7 @@ import org.hibernate.jpa.AvailableHints;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -759,7 +760,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         expiredSessions.forEach(sessionAndUser -> new EventBuilder(realm, session)
                 .user(sessionAndUser.userId())
                 .session(sessionAndUser.userSessionId())
-                .event(EventType.USER_SESSION_EXPIRED)
+                .event(EventType.USER_SESSION_DELETED)
+                .detail(Details.REASON, Details.EXPIRED_DETAIL)
                 .success());
     }
 
