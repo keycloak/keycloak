@@ -35,10 +35,7 @@ public final class ImportRealmMixin {
             paramLabel = NO_PARAM_LABEL,
             arity = "0")
     public void setImportRealm(boolean importRealm) {
-        File importDir = Environment.getHomePath().resolve("data").resolve("import").toFile();
-
-        if (importDir.exists()) {
-            ExportImportConfig.setDir(importDir.getAbsolutePath());
-        }
+        Environment.getHomePath().map(p -> p.resolve("data").resolve("import").toFile()).filter(File::exists)
+                .map(File::getAbsolutePath).ifPresent(ExportImportConfig::setDir);
     }
 }

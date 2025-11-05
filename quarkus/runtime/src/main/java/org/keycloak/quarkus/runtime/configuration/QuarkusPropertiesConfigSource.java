@@ -22,7 +22,6 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,20 +43,6 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
     private static final String FILE_NAME = "quarkus.properties";
     public static final String NAME = "KcQuarkusPropertiesConfigSource";
 
-    public static Path getConfigurationFile() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", FILE_NAME).toFile();
-
-            if (file.exists()) {
-                return file.toPath();
-            }
-        }
-
-        return null;
-    }
-
     @Override
     protected String[] getFileExtensions() {
         return new String[] { "properties" };
@@ -74,11 +59,9 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
     public synchronized List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
         List<ConfigSource> configSources = new ArrayList<>();
 
-        Path configFile = getConfigurationFile();
-
-        if (configFile != null) {
-            configSources.addAll(loadConfigSources(configFile.toUri().toString(), KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader));
-        }
+        Environment.getHomeDir().map(p -> Paths.get(p, "conf", FILE_NAME).toFile()).filter(File::exists)
+                .ifPresent(configFile -> configSources.addAll(loadConfigSources(configFile.toPath().toUri().toString(),
+                        KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader)));
 
         return configSources;
     }

@@ -89,15 +89,9 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
             }
 
             if (filePath == null) {
-                String homeDir = Environment.getHomeDir();
-
-                if (homeDir != null) {
-                    File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_CONF_FILE).toFile();
-
-                    if (file.exists()) {
-                        filePath = file.getAbsolutePath();
-                    }
-                }
+                filePath = Environment.getHomeDir()
+                        .map(f -> Paths.get(f, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_CONF_FILE).toFile())
+                        .filter(File::exists).map(File::getAbsolutePath).orElse(null);
             }
 
             if (filePath == null) {

@@ -202,17 +202,8 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static File getDefaultKeystorePathValue() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
-
-            if (file.exists()) {
-                return file;
-            }
-        }
-
-        return null;
+        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", "server.keystore").toFile()).filter(File::exists)
+                .orElse(null);
     }
 
     private static String resolveKeyStoreType(String value,

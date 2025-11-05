@@ -69,7 +69,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-jgroups-mtls--default--enabled")
                         .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "a TCP based cache-stack is used")
                         .build(),
-                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getConfPathValue("cache-mtls-keystore.p12")))
                         .paramLabel("file")
                         .to("kc.spi-jgroups-mtls--default--keystore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
@@ -82,7 +82,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE))
                         .build(),
-                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getConfPathValue("cache-mtls-truststore.p12")))
                         .paramLabel("file")
                         .to("kc.spi-jgroups-mtls--default--truststore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
@@ -204,39 +204,12 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {
-        String homeDir = Environment.getHomeDir();
-
-        return homeDir == null ?
-                value :
-                homeDir + (homeDir.endsWith(File.separator) ? "" : File.separator) + "conf" + File.separator + value;
+        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
     }
 
-    private static String getDefaultKeystorePathValue() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "cache-mtls-keystore.p12").toFile();
-
-            if (file.exists()) {
-                return file.getAbsolutePath();
-            }
-        }
-
-        return null;
-    }
-
-    private static String getDefaultTruststorePathValue() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "cache-mtls-truststore.p12").toFile();
-
-            if (file.exists()) {
-                return file.getAbsolutePath();
-            }
-        }
-
-        return null;
+    private static String getConfPathValue(String file) {
+        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", file).toFile()).filter(File::exists)
+                .map(File::getAbsolutePath).orElse(null);
     }
 
     private static PropertyMapper<?> maxCountOpt(String cacheName, BooleanSupplier isEnabled, String enabledWhen) {

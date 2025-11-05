@@ -188,7 +188,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db-kind-asdf=dev-file", "--db-url-properties-asdf=;DB_CLOSE_ON_EXIT=true");
         initConfig();
         assertExternalConfig(Map.of(
-                "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2-asdf/keycloakdb-asdf;DB_CLOSE_ON_EXIT=true;NON_KEYWORDS=VALUE;DB_CLOSE_DELAY=0",
+                "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2-asdf/keycloakdb-asdf;DB_CLOSE_ON_EXIT=true;NON_KEYWORDS=VALUE;DB_CLOSE_DELAY=0",
                 "quarkus.datasource.\"asdf\".db-kind", "h2"
         ));
         onAfter();
@@ -283,7 +283,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void nestedDatasourceProperties() {
         initConfig();
-        assertExternalConfig("quarkus.datasource.foo", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/keycloakdb");
+        assertExternalConfig("quarkus.datasource.foo", "jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/keycloakdb");
         assertExternalConfig("quarkus.datasource.bar", "foo-def-suffix");
 
         System.setProperty("kc.prop5", "val5");

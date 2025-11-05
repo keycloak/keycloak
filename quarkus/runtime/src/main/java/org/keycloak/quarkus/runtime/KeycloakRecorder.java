@@ -88,9 +88,9 @@ public class KeycloakRecorder {
         String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .map(s -> s.split(",")).orElse(new String[0]);
 
-        String dataDir = Environment.getDataDir();
+        Optional<String> dataDir = Environment.getDataDir();
 
-        File truststoresDir = Optional.ofNullable(Environment.getHomePath()).map(path -> path.resolve("conf").resolve("truststores").toFile()).orElse(null);
+        File truststoresDir = Environment.getHomePath().map(p -> p.resolve("conf").resolve("truststores").toFile()).orElse(null);
 
         if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
             truststores = Stream.concat(Stream.of(truststoresDir.getAbsolutePath()), Stream.of(truststores)).toArray(String[]::new);
@@ -98,7 +98,7 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir);
+        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir.orElseThrow());
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {
