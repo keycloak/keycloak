@@ -19,42 +19,34 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
-public class RemoteStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory {
+public class RemoteStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory, StickySessionEncoderProvider {
 
     private static final Logger log = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final char SEPARATOR = '.';
 
-    private static final StickySessionEncoderProvider NO_ROUTER_PROVIDER = new BaseProvider() {
-        @Override
-        public String encodeSessionId(String sessionId) {
-            return sessionId;
-        }
-
-        @Override
-        public boolean shouldAttachRoute() {
-            return false;
-        }
-    };
-
     private volatile boolean shouldAttachRoute;
-    private volatile StickySessionEncoderProvider provider;
+    private volatile String route;
 
     @Override
     public StickySessionEncoderProvider create(KeycloakSession session) {
-        return shouldAttachRoute ? provider : NO_ROUTER_PROVIDER;
+        return this;
     }
 
     @Override
@@ -65,7 +57,7 @@ public class RemoteStickySessionEncoderProviderFactory implements StickySessionE
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         try (var session = factory.create()) {
-            provider = new AttachRouteProvider(getRoute(session));
+            route = InfinispanUtil.getTopologyInfo(session).getMyNodeName();
         }
     }
 
@@ -102,47 +94,39 @@ public class RemoteStickySessionEncoderProviderFactory implements StickySessionE
     }
 
     @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanConnectionProvider.class);
+    }
+
+    @Override
     public void setShouldAttachRoute(boolean shouldAttachRoute) {
         this.shouldAttachRoute = shouldAttachRoute;
         log.debugf("Should attach route to the sticky session cookie: %b", shouldAttachRoute);
     }
 
-    private static String getRoute(KeycloakSession session) {
-        return InfinispanUtil.getTopologyInfo(session).getMyNodeName();
+    @Override
+    public String encodeSessionId(String message, String ignored) {
+        Objects.requireNonNull(message);
+        return shouldAttachRoute ? message + SEPARATOR + route : message;
     }
 
-    private static abstract class BaseProvider implements StickySessionEncoderProvider {
-
-        @Override
-        public final String decodeSessionId(String encodedSessionId) {
-            // Try to decode regardless if shouldAttachRoute is true/false.
-            // It is possible that some loadbalancers may forward the route information attached by them to the backend keycloak server.
-            // We need to remove it then.
-            int index = encodedSessionId.indexOf(SEPARATOR);
-            return index == -1 ? encodedSessionId : encodedSessionId.substring(0, index);
+    @Override
+    public SessionIdAndRoute decodeSessionIdAndRoute(String encodedSessionId) {
+        int index = encodedSessionId.indexOf('.');
+        if (index == -1) {
+            //route not present
+            return new SessionIdAndRoute(encodedSessionId, null);
         }
-
-        @Override
-        public final void close() {
-        }
+        return new SessionIdAndRoute(encodedSessionId.substring(0, index), encodedSessionId.substring(index, encodedSessionId.length() - 1));
     }
 
-    private static class AttachRouteProvider extends BaseProvider {
+    @Override
+    public boolean shouldAttachRoute() {
+        return shouldAttachRoute;
+    }
 
-        private final String route;
-
-        private AttachRouteProvider(String route) {
-            this.route = route;
-        }
-
-        @Override
-        public String encodeSessionId(String sessionId) {
-            return sessionId + SEPARATOR + route;
-        }
-
-        @Override
-        public boolean shouldAttachRoute() {
-            return true;
-        }
+    @Override
+    public String sessionIdRoute(String ignored) {
+        return shouldAttachRoute ? route : null;
     }
 }

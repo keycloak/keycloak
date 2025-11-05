@@ -138,6 +138,8 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
                 String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionCookie);
                 String keyOwner = InfinispanUtil.getTopologyInfo(session).getRouteName(authSessionCache, decodedAuthSessionId);
                 assertTrue(keyOwner.startsWith("node1"));
+                keyOwner = session.getProvider(StickySessionEncoderProvider.class).sessionIdRoute(decodedAuthSessionId);
+                assertTrue(keyOwner.startsWith("node1"));
             });
         }
 
