@@ -18,7 +18,6 @@
 package org.keycloak.events;
 
 import java.util.Map;
-import java.util.Objects;
 import org.keycloak.util.EnumWithStableIndex;
 
 /**
@@ -185,14 +184,16 @@ public enum EventType implements EnumWithStableIndex {
     REMOVE_CREDENTIAL_ERROR(0x10000 + REMOVE_CREDENTIAL.getStableIndex(), true),
 
     INVITE_ORG(60, true),
-    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true);
+    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true),
+
+    USER_SESSION_EXPIRED(61, true)
+    ;
 
     private final int stableIndex;
     private final boolean saveByDefault;
     private static final Map<Integer, EventType> BY_ID = EnumWithStableIndex.getReverseIndex(values());
 
     EventType(int stableIndex, boolean saveByDefault) {
-        Objects.requireNonNull(stableIndex);
         this.stableIndex = stableIndex;
         this.saveByDefault = saveByDefault;
     }
@@ -204,7 +205,6 @@ public enum EventType implements EnumWithStableIndex {
 
     /**
      * Determines whether this event is stored when the admin has not set a specific set of event types to save.
-     * @return
      */
     public boolean isSaveByDefault() {
         return saveByDefault;

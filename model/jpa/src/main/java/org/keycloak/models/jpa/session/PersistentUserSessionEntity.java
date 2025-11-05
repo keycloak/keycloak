@@ -29,6 +29,7 @@ import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -37,7 +38,10 @@ import java.io.Serializable;
         @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
         @NamedQuery(name="deleteUserSessionsByRealmSessionType", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId and sess.offline = :offline"),
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
+        // The query "deleteExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="deleteExpiredUserSessions", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
+        @NamedQuery(name="deleteUserSessions", query="delete from PersistentUserSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (:userSessionId)"),
+        @NamedQuery(name="findExpiredUserSessions", query="select sess.userSessionId, sess.userId from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
         @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh where sess.realmId = :realmId" +
                 " AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
@@ -192,10 +196,8 @@ public class PersistentUserSessionEntity {
 
             Key key = (Key) o;
 
-            if (this.userSessionId != null ? !this.userSessionId.equals(key.userSessionId) : key.userSessionId != null) return false;
-            if (this.offline != null ? !this.offline.equals(key.offline) : key.offline != null) return false;
-
-            return true;
+            return Objects.equals(this.userSessionId, key.userSessionId) &&
+                    Objects.equals(this.offline, key.offline);
         }
 
         @Override

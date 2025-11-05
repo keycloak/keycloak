@@ -17,9 +17,12 @@
 
 package org.keycloak.models.jpa.session;
 
+import org.hibernate.jpa.AvailableHints;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -259,15 +262,27 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
 
-        int cs = em.createNamedQuery("deleteExpiredClientSessions")
+        TypedQuery<Object[]> query = em.createNamedQuery("findExpiredUserSessions", Object[].class)
                 .setParameter("realmId", realm.getId())
                 .setParameter("lastSessionRefresh", expired)
                 .setParameter("offline", offlineStr)
+                .setHint(AvailableHints.HINT_READ_ONLY, true);
+
+        var expiredSessions = query.getResultStream()
+                .map(JpaUserSessionPersisterProvider::userSessionAndUserProjection)
+                .toList();
+
+        sendExpirationEvents(realm, expiredSessions);
+
+        var sessionIds = expiredSessions.stream().map(UserSessionAndUser::userSessionId).toList();
+
+        int cs = em.createNamedQuery("deleteClientSessionsByUserSessions")
+                .setParameter("userSessionId", sessionIds)
+                .setParameter("offline", offlineStr)
                 .executeUpdate();
 
-        int us = em.createNamedQuery("deleteExpiredUserSessions")
-                .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expired)
+        int us = em.createNamedQuery("deleteUserSessions")
+                .setParameter("userSessionId", sessionIds)
                 .setParameter("offline", offlineStr)
                 .executeUpdate();
 
@@ -302,12 +317,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         String offlineStr = offlineToString(offline);
 
-        TypedQuery<PersistentUserSessionEntity> userSessionQuery = em.createNamedQuery("findUserSession", PersistentUserSessionEntity.class);
-        userSessionQuery.setParameter("realmId", realm.getId());
-        userSessionQuery.setParameter("offline", offlineStr);
-        userSessionQuery.setParameter("userSessionId", userSessionId);
-        userSessionQuery.setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline));
-        userSessionQuery.setMaxResults(1);
+        TypedQuery<PersistentUserSessionEntity> userSessionQuery = em.createNamedQuery("findUserSession", PersistentUserSessionEntity.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("offline", offlineStr)
+                .setParameter("userSessionId", userSessionId)
+                .setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline))
+                .setMaxResults(1);
 
         return handleSingleQuery(userSessionQuery, offlineStr);
     }
@@ -740,7 +755,25 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         );
     }
 
+    private void sendExpirationEvents(RealmModel realm, List<UserSessionAndUser> expiredSessions) {
+        expiredSessions.forEach(sessionAndUser -> new EventBuilder(realm, session)
+                .user(sessionAndUser.userId())
+                .session(sessionAndUser.userSessionId())
+                .event(EventType.USER_SESSION_EXPIRED)
+                .success());
+    }
+
     private static boolean hasClient(PersistentAuthenticatedClientSessionAdapter clientSession) {
         return clientSession.getClient() != null;
+    }
+
+    private record UserSessionAndUser(String userSessionId, String userId) {
+    }
+
+    private static UserSessionAndUser userSessionAndUserProjection(Object[] projection) {
+        assert projection.length == 2;
+        assert projection[0] != null;
+        assert projection[1] != null;
+        return new UserSessionAndUser(String.valueOf(projection[0]), String.valueOf(projection[1]));
     }
 }
