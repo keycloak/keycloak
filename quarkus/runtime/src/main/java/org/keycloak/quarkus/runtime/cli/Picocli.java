@@ -225,6 +225,7 @@ public class Picocli {
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
+        warnOnDuplicatedOptionsInCli();
 
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
@@ -950,6 +951,15 @@ public class Picocli {
         Environment.setProfile(profile);
         if (!cliArgs.contains(HelpAllMixin.HELP_ALL_OPTION)) {
             parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        }
+    }
+
+    // Show warning about duplicated options in CLI
+    public void warnOnDuplicatedOptionsInCli() {
+        var duplicatedOptionsNames = ConfigArgsConfigSource.getDuplicatedArgNames();
+        if (!duplicatedOptionsNames.isEmpty()) {
+            warn("Duplicated options present in CLI: %s".formatted(String.join(", ", duplicatedOptionsNames)));
+            ConfigArgsConfigSource.clearDuplicatedArgNames();
         }
     }
 

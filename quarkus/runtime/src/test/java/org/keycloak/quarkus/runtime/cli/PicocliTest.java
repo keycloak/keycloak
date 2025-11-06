@@ -985,6 +985,43 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void duplicatedCliOptions() {
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-enabled=false");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --http-access-log-enabled"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--http-access-log-enabled=true", "--http-access-log-enabled=false", "--db=postgres", "--db=dev-mem");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --http-access-log-enabled, --db"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev",
+                "--http-access-log-enabled=true", "--http-access-log-enabled=false",
+                "--db=postgres", "--db=dev-mem",
+                "--db-kind-my-store=mariadb", "--db-kind-my-store=dev-mem");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("Duplicated options present in CLI: --db-kind-my-store, --http-access-log-enabled, --db"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--non-existing=yes", "--non-existing=no");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("WARNING: Duplicated options present in CLI: --non-existing")));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--non-existing'"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "-Dsome.property=123", "-Dsome.property=456");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: -Dsome.property"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "something-wrong=asdf", "something-wrong=not-here");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("WARNING: Duplicated options present in CLI: something-wrong")));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: 'something-wrong'"));
+    }
+
+    @Test
     public void httpOptimizedSerializers() {
         var nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
