@@ -44,7 +44,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import jakarta.ws.rs.core.Response;
-import java.util.List;
 
 public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
@@ -53,7 +52,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         setContext(context);
 
         String assertion = formParams.getFirst(OAuth2Constants.ASSERTION);
-        String expectedAudience = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
 
         try {
 
@@ -64,7 +62,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             authorizationGrantContext.validateClient();
 
             //mandatory claims
-            authorizationGrantContext.validateTokenAudience(List.of(expectedAudience), false);
             authorizationGrantContext.validateIssuer();
             authorizationGrantContext.validateSubject();
 
@@ -87,6 +84,9 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             // assign the provider and perform validations associated to the jwt grant provider
             authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), 300, jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
+
+            // Validate audience
+            authorizationGrantContext.validateTokenAudience(jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant(), false);
 
             //validate the JWT assertion and get the brokered identity from the idp
             BrokeredIdentityContext brokeredIdentityContext = jwtAuthorizationGrantProvider.validateAuthorizationGrantAssertion(authorizationGrantContext);

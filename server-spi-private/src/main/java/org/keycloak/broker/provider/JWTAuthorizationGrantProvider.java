@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 package org.keycloak.broker.provider;
+import java.util.List;
+
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 
 public interface JWTAuthorizationGrantProvider {
@@ -24,5 +26,10 @@ public interface JWTAuthorizationGrantProvider {
     int getAllowedClockSkew();
 
     boolean isAssertionReuseAllowed();
+
+    /**
+     * @return list of allowed audience values. JWT assertion is considered valid if it's audience is one of the audiences returned from this method
+     */
+    List<String> getAllowedAudienceForJWTGrant();
 
 }
