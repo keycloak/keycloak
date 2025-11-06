@@ -99,6 +99,16 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             String route = authSessionCookie.substring(authSessionCookie.indexOf(".") + 1);
             visitedRoutes.add(route);
 
+            getTestingClientFor(backendNode(0)).server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                session.getContext().setRealm(realm);
+                StickySessionEncoderProvider provider = session.getProvider(StickySessionEncoderProvider.class);
+                StickySessionEncoderProvider.SessionIdAndRoute sessionIdAndRoute = provider.decodeSessionIdAndRoute(authSessionCookie);
+                assertThat(sessionIdAndRoute.route(), Matchers.startsWith("node1"));
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(sessionIdAndRoute.sessionId());
+                assertTrue(sessionIdAndRoute.isSameRoute(provider.sessionIdRoute(decodedAuthSessionId)));
+            });
+
             // Drop all cookies before continue
             driver.manage().deleteAllCookies();
         }

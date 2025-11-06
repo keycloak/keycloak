@@ -124,11 +124,12 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
     @Override
     public SessionIdAndRoute decodeSessionIdAndRoute(String encodedSessionId) {
         int index = encodedSessionId.indexOf(SEPARATOR);
-        if (index == -1) {
+        int length = encodedSessionId.length();
+        if (index == -1 || index == (length - 1)) {
             //route not present
             return new SessionIdAndRoute(encodedSessionId, null);
         }
-        return new SessionIdAndRoute(encodedSessionId.substring(0, index), encodedSessionId.substring(index, encodedSessionId.length() - 1));
+        return new SessionIdAndRoute(encodedSessionId.substring(0, index), encodedSessionId.substring(index + 1, length));
     }
 
     @Override
