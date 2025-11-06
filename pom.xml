@@ -45,8 +45,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.27.0</quarkus.version>
-        <quarkus.build.version>3.27.0</quarkus.build.version>
+        <quarkus.version>3.28.5</quarkus.version>
+        <quarkus.build.version>3.28.5</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -169,7 +169,7 @@
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
-        <mssql-jdbc.version>13.2.0.jre11</mssql-jdbc.version>
+        <mssql-jdbc.version>13.2.1.jre11</mssql-jdbc.version>
         <oracledb.version>23.5</oracledb.version>
         <oracledb.container>mirror.gcr.io/gvenzl/oracle-free:${oracledb.version}-slim-faststart</oracledb.container>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
@@ -187,7 +187,7 @@
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <!-- Needs to be aligned with Quarkus, handled in quarkus/set-quarkus-version.sh script -->
-        <version.surefire.plugin>3.5.3</version.surefire.plugin>
+        <version.surefire.plugin>3.5.4</version.surefire.plugin>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <assertj-core.version>3.22.0</assertj-core.version>
