@@ -27,8 +27,8 @@ class RealmPermissionsV2 extends RealmPermissions {
 
     @Override
     public boolean canManageAuthorizationDefault(ResourceServer resourceServer) {
-        if (resourceServer == null) {
-            return super.canManageAuthorizationDefault(resourceServer);
+        if (super.canManageAuthorizationDefault(resourceServer)) {
+            return true;
         }
 
         return root.clients().canManage(getClient(resourceServer));
@@ -36,8 +36,8 @@ class RealmPermissionsV2 extends RealmPermissions {
 
     @Override
     public boolean canViewAuthorizationDefault(ResourceServer resourceServer) {
-        if (resourceServer == null) {
-            return super.canViewAuthorizationDefault(resourceServer);
+        if (super.canViewAuthorizationDefault(resourceServer)) {
+            return true;
         }
 
         return root.clients().canView(getClient(resourceServer));
