@@ -121,8 +121,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
                 .password(password);
 
         if (totpSecret != null){
-            builder.totpSecret(totpSecret)
-                    .otpEnabled();
+            builder.totpSecret(totpSecret);
         }
 
         return builder.build();

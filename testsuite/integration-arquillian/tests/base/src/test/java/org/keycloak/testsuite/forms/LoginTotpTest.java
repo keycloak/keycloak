@@ -71,8 +71,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         super.configureTestRealm(testRealm);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user)
-                   .totpSecret("totpSecret")
-                   .otpEnabled();
+                   .totpSecret("totpSecret");
     }
 
     @Rule

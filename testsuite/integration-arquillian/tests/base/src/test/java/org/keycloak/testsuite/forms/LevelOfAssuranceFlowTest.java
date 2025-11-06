@@ -145,8 +145,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
             UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
             UserBuilder.edit(user)
-                    .totpSecret("totpSecret")
-                    .otpEnabled();
+                    .totpSecret("totpSecret");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -161,8 +160,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         userRep.setId(null);
         UserBuilder.edit(userRep)
                 .password(generatePassword("test-user@localhost"))
-                .totpSecret("totpSecret")
-                .otpEnabled();
+                .totpSecret("totpSecret");
         Response response = testRealm().users().create(userRep);
         Assert.assertEquals(201, response.getStatus());
         response.close();

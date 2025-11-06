@@ -155,7 +155,6 @@ public class UserBuilder {
         }
 
         rep.getCredentials().add(credential);
-        rep.setTotp(true);
         return this;
     }
 
@@ -169,11 +168,6 @@ public class UserBuilder {
         CredentialRepresentation credential = ModelToRepresentation.toRepresentation(
                 OTPCredentialModel.createHOTP(hotpSecret, 6, 0, HmacOTP.HMAC_SHA1));
         return secret(credential);
-    }
-
-    public UserBuilder otpEnabled() {
-        rep.setTotp(Boolean.TRUE);
-        return this;
     }
 
     public UserBuilder addGroups(String... group) {

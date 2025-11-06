@@ -118,7 +118,6 @@ public class UserConfigBuilder {
     public UserConfigBuilder totpSecret(String totpSecret) {
         rep.setCredentials(Collections.combine(rep.getCredentials(), ModelToRepresentation.toRepresentation(
                 OTPCredentialModel.createTOTP(totpSecret, 6, 30, HmacOTP.HMAC_SHA1))));
-        rep.setTotp(true);
         return this;
     }
 

@@ -43,6 +43,16 @@ To analyze rejected requests in the server log, enable debug logging for `org.ke
 
 To revert to the previoius behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
 
+=== Method `UserRepresentation#isTotp` removed
+
+The method `isTotp` has been removed from the `UserRepresentation` class after a long period of deprecation.
+
+As an alternative to query whether a user has OTP configured, you can use the Admin REST API endpoint to get the user's
+credentials and check for the presence of a credential of type `otp`, `totp`, or `hotp`.
+
+If have JSON files you are using to import back up users that include the `totp` field, you can safely remove this field from your files as it is no longer used.
+Not doing that will cause failure during user import because the field is unrecognized.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

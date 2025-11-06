@@ -365,7 +365,6 @@ spec:
         createdTimestamp: 1645713689127
         username: test
         enabled: true
-        totp: false
         emailVerified: false
         credentials:
           - id: 5c2bcf07-204a-4c19-aa40-c652198b289a
