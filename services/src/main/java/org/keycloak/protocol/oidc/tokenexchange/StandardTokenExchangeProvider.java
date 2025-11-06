@@ -229,7 +229,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         try {
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession,
-                    !OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)); // create transient session if needed except for refresh
+                    context.getRestrictedScopes(), !OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)); // create transient session if needed except for refresh
 
             if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
                     && clientSessionCtx.getClientScopesStream().filter(s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())).findAny().isPresent()) {

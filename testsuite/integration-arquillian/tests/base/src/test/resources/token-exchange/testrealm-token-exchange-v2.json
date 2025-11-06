@@ -891,7 +891,7 @@
     "fullScopeAllowed" : false,
     "nodeReRegistrationTimeout" : -1,
     "defaultClientScopes" : [ "service_account", "acr", "default-scope1", "roles", "basic" ],
-    "optionalClientScopes" : [ "optional-scope2", "optional-requester-scope", "offline_access" ]
+    "optionalClientScopes" : [ "optional-scope2", "optional-requester-scope", "offline_access", "profile", "email" ]
   }, {
       "id" : "952643a3-2943-4734-9b51-8fa5956ebf55",
       "clientId" : "requester-client-2",
@@ -1091,8 +1091,8 @@
         "userinfo.token.claim" : "false"
       }
     } ],
-    "defaultClientScopes" : [ "service_account", "acr", "roles", "profile", "basic" ],
-    "optionalClientScopes" : [ "optional-requester-scope" ]
+    "defaultClientScopes" : [ "service_account", "acr", "roles", "profile", "basic", "email" ],
+    "optionalClientScopes" : [ "optional-scope2", "optional-requester-scope" ]
   }, {
     "id" : "192692cd-c5e4-42ff-a7ec-d5cb6228c0c7",
     "clientId" : "target-client1",

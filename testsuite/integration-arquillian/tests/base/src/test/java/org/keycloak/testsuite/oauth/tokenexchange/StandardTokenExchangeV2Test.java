@@ -58,6 +58,7 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
+import org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -1044,6 +1045,65 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    @Test
+    public void testDownscopeClientPolicies() throws Exception {
+
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile((new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Profile")
+                        .addExecutor(DownscopeAssertionGrantEnforcerExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()).toString();
+        updateProfiles(json);
+
+        // register policy with condition on token exchange grant
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Client Scope Policy", Boolean.TRUE)
+                        .addCondition(GrantTypeConditionFactory.PROVIDER_ID,
+                                createGrantTypeConditionConfig(List.of(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()).toString();
+        updatePolicies(json);
+
+        // request initial token with optional scope optional-scope2
+        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret", "optional-scope2").getAccessToken();
+        AccessToken token = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken();
+        assertScopes(token, List.of("email", "profile", "optional-scope2"));
+
+        // request with the all the scopes allowed in the initial token, all are optional in requester-client
+        // only those should be there, even default-scope1 is supressed
+        oauth.scope("email profile optional-scope2");
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertAudiencesAndScopes(response, john, List.of("target-client2"), List.of("email", "profile", "optional-scope2"));
+
+        // exchange with downscope to only optional-scope2
+        oauth.scope("optional-scope2");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertAudiencesAndScopes(response, john, List.of("target-client2"), List.of("optional-scope2"));
+
+        // exchange for a invisible scope returns error although it is added by default
+        oauth.scope("basic optional-scope2");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [basic] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
+
+        // exchange for another optional that is not in the token
+        oauth.scope("optional-requester-scope");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [optional-requester-scope] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
+
+        // exchange for a optional that is not in initial token
+        oauth.scope("default-scope1");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [default-scope1] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
     }
 
     @Test
