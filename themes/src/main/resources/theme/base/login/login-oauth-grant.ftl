@@ -53,14 +53,18 @@
                 <ul>
                     <#list optionalScopes as clientScope>
                         <li>
-                            <input type="checkbox" name="scope_${clientScope.id}" id="scope_${clientScope_index}_optional" value="${clientScope.id}" checked />
-                            <label for="scope_${clientScope_index}_optional">
+                            <#if oauth.allowUserDeselectOptionalScopes>
+                                <input type="checkbox" name="scope_${clientScope.id}" id="scope_${clientScope_index}_optional" value="${clientScope.id}" checked />
+                                <label for="scope_${clientScope_index}_optional">
+                            </#if>
                                 <#if !clientScope.dynamicScopeParameter??>
                                     ${advancedMsg(clientScope.consentScreenText)}
                                 <#else>
                                     ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
                                 </#if>
-                            </label>
+                            <#if oauth.allowUserDeselectOptionalScopes>
+                                </label>
+                            </#if>
                         </li>
                     </#list>
                 </ul>

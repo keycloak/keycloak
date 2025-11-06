@@ -76,6 +76,7 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
@@ -1061,12 +1062,24 @@ public class LoginActionsService {
                 .map(ClientScopeModel::getId)
                 .collect(Collectors.toSet());
 
+        // Check if the client allows users to deselect optional scopes
+        boolean allowDeselectOptionalScopes = OIDCAdvancedConfigWrapper.fromClientModel(client)
+                .isAllowUserDeselectOptionalScopes();
+
         // Process scopes - grant required scopes and selected optional scopes
         for (String clientScopeId : authSession.getClientScopes()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
             if (clientScope != null) {
                 boolean isRequired = defaultScopeIds.contains(clientScopeId);
-                boolean isSelected = isRequired || formData.containsKey("scope_" + clientScopeId);
+                boolean isSelected;
+
+                if (allowDeselectOptionalScopes) {
+                    // New behavior: Allow deselection of optional scopes
+                    isSelected = isRequired || formData.containsKey("scope_" + clientScopeId);
+                } else {
+                    // Old behavior: Grant all scopes in authSession (backward compatibility)
+                    isSelected = true;
+                }
 
                 // Only grant if it's required or was selected by the user
                 if (isSelected && !grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {

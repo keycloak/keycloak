@@ -19,6 +19,7 @@ package org.keycloak.forms.login.freemarker.model;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OrderedModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.rar.AuthorizationDetails;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class OAuthGrantBean {
     private List<ClientScopeEntry> clientScopesRequested = new ArrayList<>();
     private String code;
     private ClientModel client;
+    private boolean allowUserDeselectOptionalScopes;
 
     public OAuthGrantBean(String code, ClientModel client, List<AuthorizationDetails> clientScopesRequested) {
         this(code, client, clientScopesRequested, null);
@@ -43,6 +45,8 @@ public class OAuthGrantBean {
     public OAuthGrantBean(String code, ClientModel client, List<AuthorizationDetails> clientScopesRequested, Set<String> defaultScopeIds) {
         this.code = code;
         this.client = client;
+        this.allowUserDeselectOptionalScopes = OIDCAdvancedConfigWrapper.fromClientModel(client)
+                .isAllowUserDeselectOptionalScopes();
 
         for (AuthorizationDetails authDetails : clientScopesRequested) {
             ClientScopeModel clientScope = authDetails.getClientScope();
@@ -64,6 +68,10 @@ public class OAuthGrantBean {
 
     public List<ClientScopeEntry> getClientScopesRequested() {
         return clientScopesRequested;
+    }
+
+    public boolean isAllowUserDeselectOptionalScopes() {
+        return allowUserDeselectOptionalScopes;
     }
 
 
