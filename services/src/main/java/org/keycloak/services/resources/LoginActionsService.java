@@ -113,6 +113,8 @@ import jakarta.ws.rs.core.UriBuilderException;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
@@ -1054,10 +1056,20 @@ public class LoginActionsService {
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
         boolean updateConsentRequired = false;
 
+        // Get default (required) scopes - always grant these
+        Set<String> defaultScopeIds = client.getClientScopes(true).values().stream()
+                .map(ClientScopeModel::getId)
+                .collect(Collectors.toSet());
+
+        // Process scopes - grant required scopes and selected optional scopes
         for (String clientScopeId : authSession.getClientScopes()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
             if (clientScope != null) {
-                if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
+                boolean isRequired = defaultScopeIds.contains(clientScopeId);
+                boolean isSelected = isRequired || formData.containsKey("scope_" + clientScopeId);
+
+                // Only grant if it's required or was selected by the user
+                if (isSelected && !grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
                     grantedConsent.addGrantedClientScope(clientScope);
                     updateConsentRequired = true;
                 }

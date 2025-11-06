@@ -14,20 +14,75 @@
     <#elseif section = "form">
         <div id="kc-oauth" class="content-area">
             <h3>${msg("oauthGrantRequest")}</h3>
-            <ul>
-                <#if oauth.clientScopesRequested??>
-                    <#list oauth.clientScopesRequested as clientScope>
+
+            <#-- Group scopes by required vs optional -->
+            <#assign requiredScopes = []>
+            <#assign optionalScopes = []>
+            <#if oauth.clientScopesRequested??>
+                <#list oauth.clientScopesRequested as clientScope>
+                    <#if clientScope.required>
+                        <#assign requiredScopes = requiredScopes + [clientScope]>
+                    <#else>
+                        <#assign optionalScopes = optionalScopes + [clientScope]>
+                    </#if>
+                </#list>
+            </#if>
+
+            <#-- Display required scopes -->
+            <#if requiredScopes?has_content>
+                <h4>${msg("consentRequiredScopes", "Required permissions")}</h4>
+                <ul>
+                    <#list requiredScopes as clientScope>
                         <li>
-                            <span><#if !clientScope.dynamicScopeParameter??>
-                                        ${advancedMsg(clientScope.consentScreenText)}
-                                    <#else>
-                                        ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
+                            <input type="checkbox" id="scope_${clientScope?index}_required" checked disabled />
+                            <label for="scope_${clientScope?index}_required">
+                                <#if !clientScope.dynamicScopeParameter??>
+                                    ${advancedMsg(clientScope.consentScreenText)}
+                                <#else>
+                                    ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
                                 </#if>
-                            </span>
+                            </label>
                         </li>
                     </#list>
-                </#if>
-            </ul>
+                </ul>
+            </#if>
+
+            <#-- Display optional scopes -->
+            <#if optionalScopes?has_content>
+                <h4>${msg("consentOptionalScopes", "Optional permissions")}</h4>
+                <ul>
+                    <#list optionalScopes as clientScope>
+                        <li>
+                            <input type="checkbox" name="scope_${clientScope.id}" id="scope_${clientScope_index}_optional" value="${clientScope.id}" checked />
+                            <label for="scope_${clientScope_index}_optional">
+                                <#if !clientScope.dynamicScopeParameter??>
+                                    ${advancedMsg(clientScope.consentScreenText)}
+                                <#else>
+                                    ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
+                                </#if>
+                            </label>
+                        </li>
+                    </#list>
+                </ul>
+            </#if>
+
+            <#-- If no scopes at all, show original simple list -->
+            <#if !requiredScopes?has_content && !optionalScopes?has_content>
+                <ul>
+                    <#if oauth.clientScopesRequested??>
+                        <#list oauth.clientScopesRequested as clientScope>
+                            <li>
+                                <span><#if !clientScope.dynamicScopeParameter??>
+                                            ${advancedMsg(clientScope.consentScreenText)}
+                                        <#else>
+                                            ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
+                                    </#if>
+                                </span>
+                            </li>
+                        </#list>
+                    </#if>
+                </ul>
+            </#if>
             <#if client.attributes.policyUri?? || client.attributes.tosUri??>
                 <h3>
                     <#if client.name?has_content>
