@@ -32,6 +32,7 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.FipsUtils;
 
 import java.util.Map;
 
@@ -69,7 +70,11 @@ public class ServerInfoTest {
 
         assertNotNull(info.getMemoryInfo());
         assertNotNull(info.getSystemInfo());
+
+        FipsUtils fipsUtils = FipsUtils.create(info);
+
         assertNotNull(info.getCryptoInfo());
+        Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), fipsUtils.getExpectedSupportedKeyStoreTypes());
         Assert.assertNames(info.getCryptoInfo().getClientSignatureSymmetricAlgorithms(), Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
         Assert.assertNames(info.getCryptoInfo().getClientSignatureAsymmetricAlgorithms(),
                 Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
@@ -85,6 +90,7 @@ public class ServerInfoTest {
                 .stream()
                 .filter(configProp -> Attributes.KEY_SIZE_KEY.equals(configProp.getName()))
                 .findFirst().orElseThrow(() -> new RuntimeException("Not found provider with ID 'rsa-generated'"));
+        Assert.assertNames(keySizeRep.getOptions(), fipsUtils.getExpectedSupportedRsaKeySizes());
 
         assertEquals(Version.VERSION, info.getSystemInfo().getVersion());
         assertNotNull(info.getSystemInfo().getServerTime());
