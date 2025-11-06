@@ -35,12 +35,8 @@ public final class FeaturePropertyMappers implements PropertyMapperGrouping {
     }
 
     public static void validateSingleFeature(String feature, String value) {
-        if (feature.equals(Profile.Feature.Type.PREVIEW.name().toLowerCase())) {
-            if (!value.equals("enabled") && !value.equals("disabled")) {
-                throw new PropertyException("Wrong value for features profile '%s': %s. You can specify either 'enabled' or 'disabled'.".formatted(feature, value));
-            }
-        } else if (!Profile.getAllUnversionedFeatureNames().contains(feature)) {
-            throw new PropertyException("'%s' is an unrecognized feature, it should be one of %s".formatted(feature, FeatureOptions.getFeatureValues(false)));
+        if (!Profile.getAllUnversionedFeatureNames().contains(feature)) {
+            throw new PropertyException("'%s' is an unrecognized feature, it should be one of %s".formatted(feature, FeatureOptions.getFeatureValues(false, false)));
         }
 
         Matcher matcher = VERSION_SUFFIX_PATTERN.matcher(value);

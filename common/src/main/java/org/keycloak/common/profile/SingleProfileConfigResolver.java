@@ -16,11 +16,7 @@ public class SingleProfileConfigResolver implements ProfileConfigResolver {
 
     @Override
     public Profile.ProfileName getProfileName() {
-        Boolean state = features.get(Profile.ProfileName.PREVIEW.name().toLowerCase());
-        if (state != null && state) {
-            return Profile.ProfileName.PREVIEW;
-        }
-
+        // not supporting profiles yet - see https://github.com/keycloak/keycloak/issues/44003
         return null;
     }
 

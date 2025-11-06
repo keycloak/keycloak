@@ -32,6 +32,10 @@ public class FeatureOptions {
             .build();
 
     public static List<String> getFeatureValues(boolean toEnable) {
+        return getFeatureValues(toEnable, true);
+    }
+
+    public static List<String> getFeatureValues(boolean toEnable, boolean includeProfiles) {
         List<String> features = new ArrayList<>();
 
         if (toEnable) {
@@ -43,7 +47,9 @@ public class FeatureOptions {
             features.addAll(Profile.getDisableableUnversionedFeatureNames());
         }
 
-        features.add(Profile.Feature.Type.PREVIEW.name().toLowerCase());
+        if (includeProfiles) {
+            features.add(Profile.Feature.Type.PREVIEW.name().toLowerCase());
+        }
 
         Collections.sort(features);
 
