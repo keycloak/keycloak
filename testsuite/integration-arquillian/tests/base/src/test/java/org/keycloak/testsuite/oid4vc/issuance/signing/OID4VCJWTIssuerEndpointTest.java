@@ -992,9 +992,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 assertEquals("Expected HTTP 400 Bad Request", 400, statusCode);
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                 assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
-                assertTrue("Error description should mention proof and proofs exclusivity",
-                        error.getErrorDescription() != null && error.getErrorDescription().toLowerCase().contains("proof")
-                                && error.getErrorDescription().toLowerCase().contains("proofs"));
+                assertEquals("Both 'proof' and 'proofs' must not be present at the same time",
+                        error.getErrorDescription());
             }
         });
     }
