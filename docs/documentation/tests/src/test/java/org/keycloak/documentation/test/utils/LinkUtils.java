@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -117,7 +118,7 @@ public class LinkUtils {
                     } else {
                         String anchor = link.contains("#") ? link.split("#")[1] : null;
                         if (anchor != null) {
-                            String w = FileUtils.readFileToString(f, "utf-8");
+                            String w = FileUtils.readFileToString(f, StandardCharsets.UTF_8);
                             if (!(w.contains("id=\"" + anchor + "\"") || w.contains("name=\"" + anchor + "\""))) {
                                 invalidLinks.add(new InvalidLink(link, "invalid anchor " + anchor));
                             }

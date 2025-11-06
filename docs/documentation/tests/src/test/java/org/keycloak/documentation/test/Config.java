@@ -7,6 +7,7 @@ import org.asciidoctor.OptionsBuilder;
 import org.asciidoctor.ast.Document;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,11 +153,11 @@ public class Config {
     }
 
     private List<String> loadConfig(String resource) {
-        return IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
+        return IOUtils.readLines(Config.class.getResourceAsStream(resource), StandardCharsets.UTF_8);
     }
 
     private Map<String, String> loadConfigMap(String resource) {
-        List<String> lines = IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
+        List<String> lines = IOUtils.readLines(Config.class.getResourceAsStream(resource), StandardCharsets.UTF_8);
         Map<String, String> m = new HashMap<>();
         for (String l : lines) {
             String[] s = l.split("=");

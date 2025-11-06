@@ -27,6 +27,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -116,7 +117,7 @@ public class FileConfigHandler implements ConfigHandler {
                         op.update(config);
 
                         // save config to file
-                        byte [] content = JsonSerialization.writeValueAsPrettyString(config).getBytes("utf-8");
+                        byte [] content = JsonSerialization.writeValueAsPrettyString(config).getBytes(StandardCharsets.UTF_8);
                         file.seek(0);
                         file.write(content);
                         file.setLength(content.length);

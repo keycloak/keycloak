@@ -47,7 +47,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.PublicKey;
@@ -196,7 +196,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
     }
 
     @Test
-    public void testSamlImportAndExportDisabled() throws URISyntaxException, IOException, ParsingException {
+    public void testSamlImportAndExportDisabled() throws URISyntaxException, IOException {
 
         // Use import-config to convert IDPSSODescriptor file into key value pairs
         // to use when creating a SAML Identity Provider
@@ -205,7 +205,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata-disabled.xml");
         byte[] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
-        String body = new String(content, Charset.forName("utf-8"));
+        String body = new String(content, StandardCharsets.UTF_8);
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-disabled.xml");
 
         Map<String, String> result = managedRealm.admin().identityProviders().importFrom(form);
@@ -231,7 +231,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata-two-signing-certs.xml");
         byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
-        String body = new String(content, Charset.forName("utf-8"));
+        String body = new String(content, StandardCharsets.UTF_8);
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-two-signing-certs");
 
         Map<String, String> result = managedRealm.admin().identityProviders().importFrom(form);
@@ -270,7 +270,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata.xml");
         byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
-        String body = new String(content, Charset.forName("utf-8"));
+        String body = new String(content, StandardCharsets.UTF_8);
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
 
         Map<String, String> result = managedRealm.admin().identityProviders().importFrom(form);
@@ -304,7 +304,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource("saml-idp-metadata.xml");
         byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
-        String body = new String(content, Charset.forName("utf-8"));
+        String body = new String(content, StandardCharsets.UTF_8);
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
 
         Map<String, String> result = managedRealm.admin().identityProviders().importFrom(form);
@@ -365,7 +365,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
 
         URL idpMeta = IdentityProviderSamlTest.class.getResource(fileName);
         byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
-        String body = new String(content, Charset.forName("utf-8"));
+        String body = new String(content, StandardCharsets.UTF_8);
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, fileName);
 
         Map<String, String> result = managedRealm.admin().identityProviders().importFrom(form);
@@ -467,7 +467,7 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         //System.out.println(body);
 
         Object entBody = SAMLParser.getInstance().parse(
-                new ByteArrayInputStream(body.getBytes(Charset.forName("utf-8"))));
+                new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
 
         Assertions.assertEquals(EntityDescriptorType.class, entBody.getClass(), "Parsed export type");
         EntityDescriptorType entity = (EntityDescriptorType) entBody;

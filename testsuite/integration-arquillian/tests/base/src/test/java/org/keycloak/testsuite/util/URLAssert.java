@@ -31,7 +31,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
@@ -150,18 +150,11 @@ public class URLAssert {
 
             char [] buf = new char[8192];
             StringWriter out = new StringWriter();
-            Reader in = new InputStreamReader(entity.getContent(), Charset.forName("utf-8"));
-            int rc;
-            try {
+            try (out; Reader in = new InputStreamReader(entity.getContent(), StandardCharsets.UTF_8)) {
+                int rc;
                 while ((rc = in.read(buf)) != -1) {
                     out.write(buf, 0, rc);
                 }
-            } finally {
-                try {
-                    in.close();
-                } catch (Exception ignored) {}
-
-                out.close();
             }
 
             assertResponseBody(out.toString());

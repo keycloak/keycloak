@@ -38,7 +38,7 @@ import org.keycloak.subsystem.adapter.saml.extension.logging.KeycloakLogger;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -101,7 +101,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             } finally {
                 streamWriter.close();
             }
-            return new String(output.toByteArray(), Charset.forName("utf-8"));
+            return output.toString(StandardCharsets.UTF_8);
         }
         return null;
     }

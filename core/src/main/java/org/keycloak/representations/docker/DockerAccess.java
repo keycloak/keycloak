@@ -2,8 +2,8 @@ package org.keycloak.representations.docker;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,7 +26,6 @@ public class DockerAccess {
     public static final int ACCESS_TYPE = 0;
     public static final int REPOSITORY_NAME = 1;
     public static final int PERMISSIONS = 2;
-    public static final String DECODE_ENCODING = "UTF-8";
 
     @JsonProperty("type")
     protected String type;
@@ -40,21 +39,17 @@ public class DockerAccess {
 
     public DockerAccess(final String scopeParam) {
         if (scopeParam != null) {
-            try {
-                final String unencoded = URLDecoder.decode(scopeParam, DECODE_ENCODING);
-                final String[] parts = unencoded.split(":");
-                if (parts.length != 3) {
-                    throw new IllegalArgumentException(String.format("Expecting input string to have %d parts delineated by a ':' character.  " +
-                            "Found %d parts: %s", 3, parts.length, unencoded));
-                }
+            final String unencoded = URLDecoder.decode(scopeParam, StandardCharsets.UTF_8);
+            final String[] parts = unencoded.split(":");
+            if (parts.length != 3) {
+                throw new IllegalArgumentException(String.format("Expecting input string to have %d parts delineated by a ':' character.  " +
+                        "Found %d parts: %s", 3, parts.length, unencoded));
+            }
 
-                type = parts[ACCESS_TYPE];
-                name = parts[REPOSITORY_NAME];
-                if (parts[PERMISSIONS] != null) {
-                    actions = Arrays.asList(parts[PERMISSIONS].split(","));
-                }
-            } catch (final UnsupportedEncodingException e) {
-                throw new IllegalStateException("Error attempting to decode scope parameter using encoding: " + DECODE_ENCODING);
+            type = parts[ACCESS_TYPE];
+            name = parts[REPOSITORY_NAME];
+            if (parts[PERMISSIONS] != null) {
+                actions = Arrays.asList(parts[PERMISSIONS].split(","));
             }
         }
     }

@@ -41,9 +41,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -61,7 +61,6 @@ public class HttpUtil {
     public static final String APPLICATION_XML = "application/xml";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_FORM_URL_ENCODED = "application/x-www-form-urlencoded";
-    public static final String UTF_8 = "utf-8";
 
     private static HttpClient httpClient;
     private static SSLConnectionSocketFactory sslsf;
@@ -246,11 +245,7 @@ public class HttpUtil {
     }
 
     public static String urlencode(String value) {
-        try {
-            return URLEncoder.encode(value, UTF_8);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Failed to urlencode", e);
-        }
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     public static void setTruststore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
@@ -318,7 +313,7 @@ public class HttpUtil {
                 if (query.length() > 0) {
                     query.append("&");
                 }
-                query.append(params.getKey()).append("=").append(URLEncoder.encode(params.getValue(), "utf-8"));
+                query.append(params.getKey()).append("=").append(URLEncoder.encode(params.getValue(), StandardCharsets.UTF_8));
             } catch (Exception e) {
                 throw new IllegalArgumentException("Failed to encode query params: " + params.getKey() + "=" + params.getValue());
             }

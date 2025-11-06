@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,7 +20,7 @@ import java.util.regex.Pattern;
 public class DocUtils {
 
     public static String readBody(File htmlFile) throws IOException {
-        String s = FileUtils.readFileToString(htmlFile, "utf-8");
+        String s = FileUtils.readFileToString(htmlFile, StandardCharsets.UTF_8);
 
         Pattern p = Pattern.compile("<body.*?>(.*?)</body>.*?",Pattern.DOTALL);
         Matcher m = p.matcher(s);
@@ -41,7 +42,7 @@ public class DocUtils {
             }
 
             StringWriter w = new StringWriter();
-            IOUtils.copy(connection.getInputStream(), w, "utf-8");
+            IOUtils.copy(connection.getInputStream(), w, StandardCharsets.UTF_8);
             String s = w.toString();
 
             Pattern p;
