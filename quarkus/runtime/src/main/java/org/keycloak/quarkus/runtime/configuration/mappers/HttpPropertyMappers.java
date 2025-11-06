@@ -40,7 +40,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     private static void setCustomExceptionTransformer() {
         ExecutionExceptionHandler.addExceptionTransformer(TlsUtils.class, exception -> {
             if (exception instanceof IOException ioe) {
-                return new PropertyException("Failed to load 'https-trust-store' or 'https-key-' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
+                return new PropertyException("Failed to load 'https-*' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
             } else if (exception instanceof IllegalArgumentException iae) {
                 if (iae.getMessage().contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)) {
                     return new PropertyException("Unable to determine 'https-trust-store-type' automatically. " +
