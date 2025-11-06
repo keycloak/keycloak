@@ -84,6 +84,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import java.io.IOException;
@@ -1107,5 +1108,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String issuer = Urls.realmIssuer(baseUri, realm.getName());
         String tokenEndpoint = Urls.tokenEndpoint(baseUri, realm.getName()).toString();
         return List.of(issuer, tokenEndpoint);
+    }
+
+    @Override
+    public int getMaxAllowedExpiration() {
+        return getConfig().getJwtAuthorizationGrantMaxAllowedAssertionExpiration();
+    }
+
+    @Override
+    public String getAssertionSignatureAlg() {
+        String alg = getConfig().getJwtAuthorizationGrantAssertionSignatureAlg();
+        return StringUtil.isBlank(alg) ? null : alg;
     }
 }

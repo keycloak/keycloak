@@ -9,6 +9,7 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -34,6 +35,8 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.client.authentication.external.ClientAuthIdpServerConfig;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -62,6 +65,8 @@ public class JWTAuthorizationGrantTest  {
     @InjectEvents
     Events events;
 
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     @Test
     public void testPublicClient() {
@@ -122,6 +127,34 @@ public class JWTAuthorizationGrantTest  {
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() - 1L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token is not active", response, events.poll());
+
+        //test max exp default settings
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 301L));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
+
+        //reduce max expiration to 10 seconds
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "10");
+        });
+
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 11L));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
+
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 5L));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", "basic-user", response);
+
+        //test with iat
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
+        timeOffSet.set(15);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Token was issued too far in the past to be used now", response, events.poll());
+
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", "basic-user", response);
     }
 
     @Test
@@ -208,6 +241,23 @@ public class JWTAuthorizationGrantTest  {
     }
 
     @Test
+    public void testSignatureAlg() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES256);
+        });
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", "basic-user", response);
+
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES512);
+        });
+        jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid signature algorithm", response, events.poll());
+    }
+
+    @Test
     public void testInvalidSignature() {
         JsonWebToken token = createDefaultAuthorizationGrantToken();
         OAuthIdentityProvider.OAuthIdentityProviderKeys newKeys = getIdentityProvider().createKeys();
@@ -230,16 +280,21 @@ public class JWTAuthorizationGrantTest  {
     }
 
     protected JsonWebToken createAuthorizationGrantToken(String subject, String audience, String issuer) {
-        return createAuthorizationGrantToken(subject, audience, issuer, Time.currentTime() + 300L);
+        return createAuthorizationGrantToken(subject, audience, issuer, Time.currentTime() + 300L, (long) Time.currentTime());
     }
 
     protected JsonWebToken createAuthorizationGrantToken(String subject, String audience, String issuer, Long exp) {
+        return createAuthorizationGrantToken(subject, audience, issuer, exp, null);
+    }
+
+    protected JsonWebToken createAuthorizationGrantToken(String subject, String audience, String issuer, Long exp, Long iat) {
         JsonWebToken token = new JsonWebToken();
         token.id(UUID.randomUUID().toString());
         token.subject(subject);
         token.audience(audience);
         token.issuer(issuer);
         token.exp(exp);
+        token.iat(iat);
         return token;
     }
 
