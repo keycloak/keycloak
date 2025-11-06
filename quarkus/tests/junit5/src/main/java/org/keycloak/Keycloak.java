@@ -55,6 +55,7 @@ import io.quarkus.bootstrap.workspace.WorkspaceModuleId;
 import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
 public class Keycloak {
 
@@ -123,7 +124,7 @@ public class Keycloak {
             addOptionIfNotSet(args, HttpOptions.HTTP_PORT);
             addOptionIfNotSet(args, HttpOptions.HTTPS_PORT);
 
-            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).map(FipsMode::valueOf).orElse(FipsMode.DISABLED).isFipsEnabled();
+            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).map(FipsMode::valueOfOption).orElse(FipsMode.DISABLED).isFipsEnabled();
 
             if (isFipsEnabled) {
                 String logLevel = getOptionValue(args, LoggingOptions.LOG_LEVEL);
@@ -241,11 +242,9 @@ public class Keycloak {
                 .addExclusion("org.jboss.logmanager", "log4j-jboss-logmanager");
 
         if (fipsEnabled) {
-            serverDependency.addExclusion("org.bouncycastle", "bcprov-jdk18on");
-            serverDependency.addExclusion("org.bouncycastle", "bcpkix-jdk18on");
-            serverDependency.addExclusion("org.keycloak", "keycloak-crypto-default");
+            IgnoredArtifacts.FIPS_ENABLED.stream().map(s -> s.split(":")).forEach(d -> serverDependency.addExclusion(d[0], d[1]));
         } else {
-            serverDependency.addExclusion("org.keycloak", "keycloak-crypto-fips1402");
+            IgnoredArtifacts.FIPS_DISABLED.stream().map(s -> s.split(":")).forEach(d -> serverDependency.addExclusion(d[0], d[1]));
         }
 
         WorkspaceModule.Mutable builder = WorkspaceModule.builder()
@@ -255,12 +254,6 @@ public class Keycloak {
                 .addDependencyConstraint(
                         Dependency.pomImport("org.keycloak", "keycloak-quarkus-parent", keycloakVersion))
                 .addDependency(serverDependency.build());
-
-        if (fipsEnabled) {
-            builder.addDependency(Dependency.of("org.bouncycastle", "bc-fips"));
-            builder.addDependency(Dependency.of("org.bouncycastle", "bctls-fips"));
-            builder.addDependency(Dependency.of("org.bouncycastle", "bcpkix-fips"));
-        }
 
         for (Dependency dependency : dependencies) {
             builder.addDependency(dependency);

@@ -115,8 +115,7 @@ public class KeycloakServerConfigBuilder {
     public boolean tlsEnabled() {
         return tlsEnabled ;
     }
-
-
+    
     public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
         try {
             Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
