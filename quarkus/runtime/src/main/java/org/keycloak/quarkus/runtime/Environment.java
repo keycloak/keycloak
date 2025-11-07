@@ -201,7 +201,7 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver());
+            profile = Profile.configure(new QuarkusSingleProfileConfigResolver(), new QuarkusProfileConfigResolver());
         }
 
         return profile;

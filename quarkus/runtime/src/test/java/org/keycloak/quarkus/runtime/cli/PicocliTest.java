@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
@@ -263,7 +264,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("build", "--features", "xyz,account3");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
-                containsString("xyz is an unrecognized feature, it should be one of"));
+                containsString("'xyz' is an unrecognized feature, it should be one of"));
     }
 
     @Test
@@ -1086,5 +1087,145 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Overridden-by-me=yes", "--tracing-header-Authorization=Bearer asdlkfjadsflkj", "--tracing-header-Host=localhost:8080");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Overridden-by-me=yes");
+    }
+
+    @Test
+    public void singleFeatureFlag() {
+        var nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=enabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(true));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=ENABLED");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'ipa-tuura-federation': ENABLED. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=v1");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(true));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-ipa-tuura-federation=V1");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'ipa-tuura-federation': V1. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-admin-fine-grained-authz=v1");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ), is(true));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-admin-fine-grained-authz=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-admin-fine-grained-authz=enabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2), is(true));
+        onAfter();
+
+        // duplicates
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        // we should throw an error or warn when duplicates are present
+        // assertThat(nonRunningPicocli.getErrString(), containsString("Duplicated options for features: --feature-passkeys. You need to set it only once."));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.PASSKEYS), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled", "--feature-spiffe=v1", "--feature-spiffe=disabled");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        // we should throw an error or warn when duplicates are present
+        //assertThat(nonRunningPicocli.getErrString(), containsString("Duplicated options for features: --feature-spiffe, --feature-passkeys. You need to set it only once."));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.PASSKEYS), is(false));
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.SPIFFE), is(false));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled", "--feature-spiffe=v1", "--feature-spiffe=");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'spiffe'"));
+        onAfter();
+
+        // Non-existing
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-not-here=enabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'not-here' is an unrecognized feature, it should be one of"));
+        assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-non-existing=v2");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'non-existing' is an unrecognized feature, it should be one of"));
+        assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-non-existing-feature=disabled");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("'non-existing-feature' is an unrecognized feature, it should be one of"));
+        assertThat(nonRunningPicocli.getErrString(), not(containsString("preview")));
+        onAfter();
+
+        // wrong value
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=false");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'impersonation': false. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=v3");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Feature 'impersonation' has an unrecognized feature version, it should be one of [1]"));
+        onAfter();
+
+        nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonation=");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'impersonation'"));
+        onAfter();
+
+        // ENV variables
+        putEnvVar("KC_FEATURE_IPA_TUURA_FEDERATION", "v1");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.IPA_TUURA_FEDERATION), is(true));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_TRANSIENT_USERS", "enabled");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS), is(true));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_TRANSIENT_USERS", "");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Missing value for feature 'transient-users'"));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_TRANSIENT_USERS", "v1");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS), is(true));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_DPOP", "disabled");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(Profile.isFeatureEnabled(Profile.Feature.DPOP), is(false));
+        onAfter();
+
+        putEnvVar("KC_FEATURE_DPOP", "wrong");
+        nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Wrong value for feature 'dpop': wrong. You can specify either 'enabled', 'disabled', or specific version (lowercase) that will be enabled"));
     }
 }
