@@ -121,7 +121,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             ctx.credentialsOffer = JsonSerialization.readValue(s, CredentialsOffer.class);
         }
 
-        HttpGet getIssuerMetadata = new HttpGet(ctx.credentialsOffer.getCredentialIssuer() + "/.well-known/openid-credential-issuer");
+        HttpGet getIssuerMetadata = new HttpGet(ctx.credentialsOffer.getIssuerMetadataUrl());
         try (CloseableHttpResponse response = httpClient.execute(getIssuerMetadata)) {
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
             String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
