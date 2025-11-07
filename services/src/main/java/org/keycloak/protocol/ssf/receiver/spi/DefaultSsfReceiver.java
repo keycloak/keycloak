@@ -6,7 +6,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
+import org.keycloak.protocol.ssf.event.DeliveryMethod;
 import org.keycloak.protocol.ssf.keys.SsfTransmitterKeyManager;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverKeyModel;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
@@ -100,6 +100,14 @@ public class DefaultSsfReceiver implements SsfReceiver {
     }
 
     @Override
+    public SsfTransmitterMetadata getTransmitterMetadata() {
+
+        SsfTransmitterClient ssfTransmitterClient = ssfProvider.transmitterClient();
+        SsfTransmitterMetadata transmitterMetadata = ssfTransmitterClient.loadTransmitterMetadata(receiverModel);
+        return transmitterMetadata;
+    }
+
+    @Override
     public void unregisterStream() {
         try {
             if (Boolean.TRUE.equals(receiverModel.getManagedStream())) {
@@ -146,14 +154,14 @@ public class DefaultSsfReceiver implements SsfReceiver {
 
         DeliveryMethod deliveryMethod = streamRep.getDelivery().getMethod();
         receiverModel.setDeliveryMethod(deliveryMethod);
-        switch(deliveryMethod) {
+        switch (deliveryMethod) {
             case PUSH -> {
-                var pushDelivery = (PushDeliveryMethodRepresentation)streamRep.getDelivery();
+                var pushDelivery = (PushDeliveryMethodRepresentation) streamRep.getDelivery();
                 receiverModel.setPushAuthorizationHeader(pushDelivery.getAuthorizationHeader());
                 receiverModel.setReceiverPushUrl(pushDelivery.getEndpointUrl());
             }
             case POLL -> {
-                var pollDelivery = (PollSetDeliveryMethodRepresentation)streamRep.getDelivery();
+                var pollDelivery = (PollSetDeliveryMethodRepresentation) streamRep.getDelivery();
                 receiverModel.setTransmitterPollUrl(pollDelivery.getEndpointUrl());
             }
         }
@@ -171,10 +179,10 @@ public class DefaultSsfReceiver implements SsfReceiver {
 
         // store current verification state
         RealmModel realm = session.getContext().getRealm();
-        SsfStreamVerificationState verificationState = storage.getVerificationState(realm, receiverModel);
+        SsfStreamVerificationState verificationState = storage.getVerificationState(realm, receiverModel.getAlias(), receiverModel.getStreamId());
         if (verificationState != null) {
             log.debugf("Resetting pending verification state for stream. %s", verificationState);
-            storage.clearVerificationState(realm, receiverModel);
+            storage.clearVerificationState(realm, receiverModel.getAlias(), receiverModel.getStreamId());
         }
 
         SsfTransmitterClient ssfTransmitterClient = ssfProvider.transmitterClient();
@@ -182,7 +190,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
         String state = UUID.randomUUID().toString();
 
         // store current verification state
-        storage.setVerificationState(realm, receiverModel, state);
+        storage.setVerificationState(realm, receiverModel.getAlias(), receiverModel.getStreamId(), state);
 
         ssfProvider.verificationClient().requestVerification(receiverModel, transmitterMetadata, state);
     }

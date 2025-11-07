@@ -24,6 +24,8 @@ public interface SsfReceiver extends Provider {
 
     void unregisterStream();
 
+    SsfTransmitterMetadata getTransmitterMetadata();
+
     SsfTransmitterMetadata refreshTransmitterMetadata();
 
     void requestVerification();
