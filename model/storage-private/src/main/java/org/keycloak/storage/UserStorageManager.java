@@ -1146,9 +1146,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     private UserModel tryResolveFederatedUser(RealmModel realm, Function<UserLookupProvider, UserModel> loader) {
-        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, loader)
-                .findFirst()
-                .orElse(null);
+        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, provider -> {
+            try {
+                return loader.apply(provider);
+            } catch (StorageUnavailableException e) {
+                logger.warnf(e, "User storage provider %s is unavailable. " +
+                             "Continuing with other providers for graceful degradation.",
+                             provider.getClass().getSimpleName());
+                return null;
+            }
+        })
+        .findFirst()
+        .orElse(null);
     }
 
     private boolean isSyncSettingsUpdated(UserStorageProviderModel previous, UserStorageProviderModel actual) {
