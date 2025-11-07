@@ -18,13 +18,10 @@
 package org.keycloak.testsuite.cluster;
 
 import org.hamcrest.Matchers;
-import org.infinispan.Cache;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -43,8 +40,8 @@ import java.util.Set;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
@@ -99,11 +96,21 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             String route = authSessionCookie.substring(authSessionCookie.indexOf(".") + 1);
             visitedRoutes.add(route);
 
+            getTestingClientFor(backendNode(0)).server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                session.getContext().setRealm(realm);
+                StickySessionEncoderProvider provider = session.getProvider(StickySessionEncoderProvider.class);
+                StickySessionEncoderProvider.SessionIdAndRoute sessionIdAndRoute = provider.decodeSessionIdAndRoute(authSessionCookie);
+                assertThat(sessionIdAndRoute.route(), Matchers.startsWith("node1"));
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(sessionIdAndRoute.sessionId());
+                assertTrue(sessionIdAndRoute.isSameRoute(provider.sessionIdRoute(decodedAuthSessionId)));
+            });
+
             // Drop all cookies before continue
             driver.manage().deleteAllCookies();
         }
 
-        assertThat(visitedRoutes, Matchers.containsInAnyOrder(Matchers.startsWith("node1"), Matchers.startsWith("node2")));
+        assertThat(visitedRoutes, Matchers.contains(Matchers.startsWith("node1")));
     }
 
 
@@ -134,10 +141,8 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             getTestingClientFor(backendNode(0)).server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
                 session.getContext().setRealm(realm);
-                Cache<?, ?> authSessionCache = session.getProvider(InfinispanConnectionProvider.class).getCache(AUTHENTICATION_SESSIONS_CACHE_NAME);
                 String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionCookie);
-                String keyOwner = InfinispanUtil.getTopologyInfo(session).getRouteName(authSessionCache, decodedAuthSessionId);
-                assertTrue(keyOwner.startsWith("node1"));
+                assertNull(session.getProvider(StickySessionEncoderProvider.class).sessionIdRoute(decodedAuthSessionId));
             });
         }
 
