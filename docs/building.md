@@ -65,7 +65,7 @@ To avoid this, you can skip this check by adding the following property:
 
 ### Starting Keycloak
 
-For more details, follow the [`quarkus` module documentation](../quarkus/README.md).
+Follow the [`quarkus` module documentation](../quarkus/README.md#running-in-keycloak-development-mode) for instructions how to run Keycloak in dev environment.
 
 ## Working with the codebase
 
