@@ -52,11 +52,7 @@ As an alternative, you can build the distribution artifacts directly without a r
 ## Running in Keycloak development mode
 When you start Keycloak in production mode, the HTTP port is disabled by default, and you need to provide the key material to configure HTTPS, a hostname and other configuration suitable for production. 
 
-For development purposes, you can run the server in development mode instead using `start-dev`:
-
-    java -jar server/target/lib/quarkus-run.jar start-dev
-
-This spins up Keycloak using a development database (h2-file) and with insecure HTTP enabled.
+For development purposes, you can run the server in development mode instead using `start-dev`.
 
 ### Running from your IDE
 Alternatively, you can run the server in development mode from your IDE. For that, run the `org.keycloak.Keycloak` main class in the `tests/junit5` directory.
