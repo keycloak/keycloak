@@ -6,7 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.SecurityEvents;
 import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
-import org.keycloak.protocol.ssf.event.parser.SsfParsingException;
+import org.keycloak.protocol.ssf.event.parser.SecurityEventTokenParsingException;
 import org.keycloak.protocol.ssf.event.subjects.OpaqueSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
@@ -81,7 +81,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
                     handleEvent(securityEventContext, eventId, ssfEvent);
                     successfullyProcessedEventCounter++;
                 }
-            } catch (final SsfParsingException spe) {
+            } catch (final SecurityEventTokenParsingException spe) {
                 securityEventContext.setProcessedSuccessfully(false);
                 throw spe;
             }
@@ -96,7 +96,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         Class<? extends SsfEvent> eventClass = getEventType(securityEventType);
 
         if (eventClass == null) {
-            throw new SsfParsingException("Could not parse security event. Unknown event type: " + securityEventType);
+            throw new SecurityEventTokenParsingException("Could not parse security event. Unknown event type: " + securityEventType);
         }
 
         try {
@@ -109,7 +109,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
 
             return ssfEvent;
         } catch (Exception e) {
-            throw new SsfParsingException("Could not parse security event.", e);
+            throw new SecurityEventTokenParsingException("Could not parse security event.", e);
         }
     }
 
@@ -142,7 +142,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
 
         if (givenState.equals(expectedState)) {
             log.debugf("Verification successful!. jti=%s state=%s", jti, givenState);
-            verificationStore.clearVerificationState(realm, receiverModel);
+            verificationStore.clearVerificationState(realm, receiverModel.getAlias(), receiverModel.getStreamId());
             return true;
         }
 
@@ -167,7 +167,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
 
 
     protected SsfStreamVerificationState getVerificationState(RealmModel realm, SsfReceiverModel receiverModel) {
-        return verificationStore.getVerificationState(realm, receiverModel);
+        return verificationStore.getVerificationState(realm, receiverModel.getAlias(), receiverModel.getStreamId());
     }
 
     protected String extractStreamIdFromVerificationEvent(SsfSecurityEventContext securityEventContext, SsfEvent ssfEvent) {

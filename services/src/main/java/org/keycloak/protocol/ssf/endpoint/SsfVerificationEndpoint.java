@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.receiver.management;
+package org.keycloak.protocol.ssf.endpoint;
 
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.core.MediaType;
@@ -7,6 +7,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManager;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
 import org.keycloak.protocol.ssf.support.SsfSetPushDeliveryFailureResponse;
 

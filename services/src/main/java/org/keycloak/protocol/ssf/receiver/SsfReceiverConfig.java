@@ -1,6 +1,6 @@
 package org.keycloak.protocol.ssf.receiver;
 
-import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
+import org.keycloak.protocol.ssf.event.DeliveryMethod;
 
 import java.util.Set;
 

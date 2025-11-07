@@ -1,6 +1,6 @@
 package org.keycloak.protocol.ssf.keys;
 
-import org.keycloak.protocol.ssf.event.parser.SsfParsingException;
+import org.keycloak.protocol.ssf.event.parser.SecurityEventTokenParsingException;
 
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -18,7 +18,7 @@ public class SsfTransmitterKeyManager {
             return kf.generatePublic(X509publicKey);
         }
         catch(Exception e){
-            throw new SsfParsingException("Could not decode public key", e);
+            throw new SecurityEventTokenParsingException("Could not decode public key", e);
         }
     }
 }

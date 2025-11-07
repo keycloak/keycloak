@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.event.delivery.push;
+package org.keycloak.protocol.ssf.endpoint;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
@@ -14,7 +14,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.event.parser.SsfParsingException;
+import org.keycloak.protocol.ssf.event.parser.SecurityEventTokenParsingException;
 import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
@@ -31,13 +31,13 @@ import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
  * <p>
  * https://www.rfc-editor.org/rfc/rfc8935.html
  */
-public class PushEndpoint {
+public class SsfPushDeliveryEndpoint {
 
-    protected static final Logger log = Logger.getLogger(PushEndpoint.class);
+    protected static final Logger log = Logger.getLogger(SsfPushDeliveryEndpoint.class);
 
     protected final SsfProvider ssfProvider;
 
-    public PushEndpoint(SsfProvider ssfProvider) {
+    public SsfPushDeliveryEndpoint(SsfProvider ssfProvider) {
         this.ssfProvider = ssfProvider;
     }
 
@@ -107,19 +107,10 @@ public class PushEndpoint {
         return ssfProvider.receiverManager().getReceiverModel(context, receiverAlias);
     }
 
-    protected void checkPushAuthorizationToken(String receivedAuthHeader, SsfReceiverModel receiverModel) {
-        String configuredAuthHeader = receiverModel.getPushAuthorizationHeader();
-        if (configuredAuthHeader != null) {
-            if (!isValidPushAuthorizationHeader(receiverModel, receivedAuthHeader, configuredAuthHeader)) {
-                throw newSsfSetPushDeliveryFailureResponse(Response.Status.UNAUTHORIZED, SsfSetPushDeliveryFailureResponse.ERROR_AUTHENTICATION_FAILED, "Invalid push authorization header");
-            }
-        }
-    }
-
     protected SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfSecurityEventContext securityEventContext) {
         try {
             return ssfProvider.parseSecurityEventToken(encodedSecurityEventToken, securityEventContext);
-        } catch (SsfParsingException sepe) {
+        } catch (SecurityEventTokenParsingException sepe) {
             // see https://www.rfc-editor.org/rfc/rfc8935.html#section-2.4
             throw newSsfSetPushDeliveryFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_REQUEST, sepe.getMessage());
         }
@@ -130,23 +121,46 @@ public class PushEndpoint {
     }
 
     protected void checkIssuer(SsfReceiverModel receiverModel, SecurityEventToken securityEventToken, String issuer) {
-        if (isValidIssuer(receiverModel, issuer)) {
+
+        String expectedIssuer = receiverModel.getReceiverProviderConfig() != null ? receiverModel.getReceiverProviderConfig().getIssuer() : null;
+        if (expectedIssuer == null) {
+            expectedIssuer = receiverModel.getIssuer();
+        }
+
+        if (!isValidIssuer(receiverModel, expectedIssuer, issuer)) {
             throw newSsfSetPushDeliveryFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_ISSUER, "Invalid issuer");
         }
     }
 
+    protected void checkPushAuthorizationToken(String receivedAuthHeader, SsfReceiverModel receiverModel) {
+
+        String expectedAuthHeader = receiverModel.getReceiverProviderConfig() != null ? receiverModel.getReceiverProviderConfig().getPushAuthorizationHeader() : null;
+        if (expectedAuthHeader == null) {
+            expectedAuthHeader = receiverModel.getPushAuthorizationHeader();
+        }
+
+        if (expectedAuthHeader != null) {
+            if (!isValidPushAuthorizationHeader(receiverModel, receivedAuthHeader, expectedAuthHeader)) {
+                throw newSsfSetPushDeliveryFailureResponse(Response.Status.UNAUTHORIZED, SsfSetPushDeliveryFailureResponse.ERROR_AUTHENTICATION_FAILED, "Invalid push authorization header");
+            }
+        }
+    }
+
     protected void checkAudience(SsfReceiverModel receiverModel, SecurityEventToken securityEventToken, String[] audience) {
-        if (isValidAudience(receiverModel, audience)) {
+
+        var expectedAudience = receiverModel.getAudience();
+
+        if (!isValidAudience(receiverModel, expectedAudience, audience)) {
             throw newSsfSetPushDeliveryFailureResponse(Response.Status.BAD_REQUEST, SsfSetPushDeliveryFailureResponse.ERROR_INVALID_AUDIENCE, "Invalid audience");
         }
     }
 
-    protected boolean isValidIssuer(SsfReceiverModel receiverModel, String issuer) {
-        return !receiverModel.getIssuer().equals(issuer);
+    protected boolean isValidIssuer(SsfReceiverModel receiverModel, String expectedIssuer, String issuer) {
+        return expectedIssuer.equals(issuer);
     }
 
-    protected boolean isValidAudience(SsfReceiverModel receiverModel, String[] audience) {
-        return !receiverModel.getAudience().containsAll(Set.of(audience));
+    protected boolean isValidAudience(SsfReceiverModel receiverModel, Set<String> expectedAudience, String[] audience) {
+        return expectedAudience.containsAll(Set.of(audience));
     }
 
     protected boolean isValidPushAuthorizationHeader(SsfReceiverModel receiverModel, String authHeader, String expectedAuthHeader) {

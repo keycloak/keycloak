@@ -2,7 +2,7 @@ package org.keycloak.protocol.ssf.receiver;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
+import org.keycloak.protocol.ssf.event.DeliveryMethod;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
 
 import java.util.ArrayList;
@@ -16,11 +16,18 @@ public class SsfReceiverModel extends ComponentModel {
 
     public static final int DEFAULT_MAX_EVENTS = 32;
 
+    private SsfReceiverProviderConfig receiverProviderConfig;
+
     public SsfReceiverModel() {
     }
 
     public SsfReceiverModel(ComponentModel model) {
+        this(model, null);
+    }
+
+    public SsfReceiverModel(ComponentModel model, SsfReceiverProviderConfig receiverProviderConfig) {
         super(model);
+        this.receiverProviderConfig = receiverProviderConfig;
     }
 
     public static SsfReceiverModel create(String alias, SsfReceiverConfig config) {
@@ -73,6 +80,14 @@ public class SsfReceiverModel extends ComponentModel {
         }
 
         return model;
+    }
+
+    public SsfReceiverProviderConfig getReceiverProviderConfig() {
+        return receiverProviderConfig;
+    }
+
+    public void setReceiverProviderConfig(SsfReceiverProviderConfig receiverProviderConfig) {
+        this.receiverProviderConfig = receiverProviderConfig;
     }
 
     public void setIssuer(String issuer) {
