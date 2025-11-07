@@ -17,9 +17,13 @@
 
 package org.keycloak.models.jpa.session;
 
+import org.hibernate.jpa.AvailableHints;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -259,19 +263,32 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
 
-        int cs = em.createNamedQuery("deleteExpiredClientSessions")
+        TypedQuery<Object[]> query = em.createNamedQuery("findExpiredUserSessions", Object[].class)
                 .setParameter("realmId", realm.getId())
                 .setParameter("lastSessionRefresh", expired)
                 .setParameter("offline", offlineStr)
-                .executeUpdate();
+                .setHint(AvailableHints.HINT_READ_ONLY, true);
 
-        int us = em.createNamedQuery("deleteExpiredUserSessions")
-                .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expired)
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
+        var expiredSessions = query.getResultStream()
+                .map(JpaUserSessionPersisterProvider::userSessionAndUserProjection)
+                .toList();
 
-        logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
+        sendExpirationEvents(realm, expiredSessions);
+
+        StreamsUtil.chunkedStream(expiredSessions.stream().map(UserSessionAndUser::userSessionId), 100).forEach(chunk -> {
+            // SQL databases only allow a limited number of items in an IN clause. While PostgreSQL allows possibly 32k, we are not sure about the rest
+            int cs = em.createNamedQuery("deleteClientSessionsByUserSessions")
+                    .setParameter("userSessionId", chunk)
+                    .setParameter("offline", offlineStr)
+                    .executeUpdate();
+
+            int us = em.createNamedQuery("deleteUserSessions")
+                    .setParameter("userSessionId", chunk)
+                    .setParameter("offline", offlineStr)
+                    .executeUpdate();
+            logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
+        });
+
     }
 
     @Override
@@ -302,12 +319,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         String offlineStr = offlineToString(offline);
 
-        TypedQuery<PersistentUserSessionEntity> userSessionQuery = em.createNamedQuery("findUserSession", PersistentUserSessionEntity.class);
-        userSessionQuery.setParameter("realmId", realm.getId());
-        userSessionQuery.setParameter("offline", offlineStr);
-        userSessionQuery.setParameter("userSessionId", userSessionId);
-        userSessionQuery.setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline));
-        userSessionQuery.setMaxResults(1);
+        TypedQuery<PersistentUserSessionEntity> userSessionQuery = em.createNamedQuery("findUserSession", PersistentUserSessionEntity.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("offline", offlineStr)
+                .setParameter("userSessionId", userSessionId)
+                .setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline))
+                .setMaxResults(1);
 
         return handleSingleQuery(userSessionQuery, offlineStr);
     }
@@ -740,7 +757,26 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         );
     }
 
+    private void sendExpirationEvents(RealmModel realm, List<UserSessionAndUser> expiredSessions) {
+        expiredSessions.forEach(sessionAndUser -> new EventBuilder(realm, session)
+                .user(sessionAndUser.userId())
+                .session(sessionAndUser.userSessionId())
+                .event(EventType.USER_SESSION_DELETED)
+                .detail(Details.REASON, Details.EXPIRED_DETAIL)
+                .success());
+    }
+
     private static boolean hasClient(PersistentAuthenticatedClientSessionAdapter clientSession) {
         return clientSession.getClient() != null;
+    }
+
+    private record UserSessionAndUser(String userSessionId, String userId) {
+    }
+
+    private static UserSessionAndUser userSessionAndUserProjection(Object[] projection) {
+        assert projection.length == 2;
+        assert projection[0] != null;
+        assert projection[1] != null;
+        return new UserSessionAndUser(String.valueOf(projection[0]), String.valueOf(projection[1]));
     }
 }

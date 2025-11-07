@@ -36,7 +36,7 @@ public class EventOptions {
                 "execute_actions", "execute_action_token", "client_info", "client_register", "client_update", "client_delete", "client_initiated_account_linking", "token_exchange",
                 "oauth2_device_auth", "oauth2_device_verify_user_code", "oauth2_device_code_to_token", "authreqid_to_token", "permission_token", "delete_account", "pushed_authorization_request",
                 "user_disabled_by_permanent_lockout", "user_disabled_by_temporary_lockout", "oauth2_extension_grant", "federated_identity_override_link", "update_credential", "remove_credential",
-                "invite_org", "remove_totp", "update_totp", "update_password"));
+                "invite_org", "remove_totp", "update_totp", "update_password", "user_session_deleted"));
         events.sort(String::compareToIgnoreCase);
         return events;
     }

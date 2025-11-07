@@ -557,13 +557,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
                 createClientSession(session, realmId, realm.getClientByClientId("test-app"), userSession, "http://redirect", "state");
                 userSessionsInner.add(userSession.getId());
+                persistUserSession(session, userSession, true);
             }
-
-            for (String userSessionId : userSessionsInner) {
-                UserSessionModel userSession2 = session.sessions().getUserSession(realm, userSessionId);
-                persistUserSession(session, userSession2, true);
-            }
-
             return null;
         });
 
