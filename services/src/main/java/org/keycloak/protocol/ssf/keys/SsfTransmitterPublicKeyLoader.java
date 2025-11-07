@@ -16,16 +16,20 @@ public class SsfTransmitterPublicKeyLoader implements PublicKeyLoader {
 
     protected final KeycloakSession session;
 
-    protected final SsfTransmitterMetadata transmitterMetadata;
+    protected String jwksUri;
+
+    public SsfTransmitterPublicKeyLoader(KeycloakSession session, String jwksUri) {
+        this.session = session;
+        this.jwksUri = jwksUri;
+    }
 
     public SsfTransmitterPublicKeyLoader(KeycloakSession session, SsfTransmitterMetadata transmitterMetadata) {
-        this.session = session;
-        this.transmitterMetadata = transmitterMetadata;
+        this(session, transmitterMetadata.getJwksUri());
     }
 
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
-        JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, transmitterMetadata.getJwksUri());
+        JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUri);
         return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
     }
 }

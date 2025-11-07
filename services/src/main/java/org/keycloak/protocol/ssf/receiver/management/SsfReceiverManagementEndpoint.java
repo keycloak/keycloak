@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.ssf.endpoint.SsfVerificationEndpoint;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverConfig;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
 
