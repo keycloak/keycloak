@@ -92,7 +92,7 @@ public class HttpDistTest {
 
         result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
         result.assertExitCode(-1);
-        result.assertMessage("ERROR: Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException not-there.ks");
+        result.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException not-there.ks");
 
         dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
