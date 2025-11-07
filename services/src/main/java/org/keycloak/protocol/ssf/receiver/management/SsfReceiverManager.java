@@ -6,6 +6,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -16,6 +17,8 @@ import org.keycloak.protocol.ssf.keys.SsfTransmitterPublicKeyLoader;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverConfig;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverKeyModel;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderConfig;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverFactory;
 import org.keycloak.protocol.ssf.receiver.transmitterclient.SsfTransmitterClient;
@@ -252,10 +255,16 @@ public class SsfReceiverManager {
     }
 
     public SsfReceiverModel getReceiverModel(RealmModel realm, String alias) {
+
         String componentId = createReceiverComponentId(realm, alias);
+        IdentityProviderModel maybeSsfReceiverProvider = session.identityProviders().getByAlias(alias);
+        SsfReceiverProviderConfig receiverProviderConfig = null;
+        if (maybeSsfReceiverProvider != null && SsfReceiverProviderFactory.PROVIDER_ID.equals(maybeSsfReceiverProvider.getProviderId())) {
+            receiverProviderConfig = new SsfReceiverProviderConfig(maybeSsfReceiverProvider);
+        }
         ComponentModel component = realm.getComponent(componentId);
         if (component != null) {
-            return new SsfReceiverModel(component);
+            return new SsfReceiverModel(component, receiverProviderConfig);
         }
         return null;
     }

@@ -4,9 +4,8 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
+import org.keycloak.protocol.ssf.event.DeliveryMethod;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 

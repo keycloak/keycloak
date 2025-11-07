@@ -4,7 +4,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.protocol.ssf.event.delivery.push.PushEndpoint;
+import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryEndpoint;
 import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManagementEndpoint;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
 import org.keycloak.services.managers.AppAuthManager;
@@ -44,7 +44,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      * @return
      */
     @Path("/push")
-    public PushEndpoint pushEndpoint() {
+    public SsfPushDeliveryEndpoint pushEndpoint() {
         // push endpoint authentication checked by PushEndpoit directly.
         return SsfProvider.current().pushEndpoint();
     }
