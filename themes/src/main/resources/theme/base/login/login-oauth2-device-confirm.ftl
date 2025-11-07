@@ -15,6 +15,24 @@
                 </div>
             </div>
 
+            <#if oauth?? && oauth.clientScopesRequested??>
+                <div class="${properties.kcFormGroupClass!}">
+                    <h3>${msg("oauthGrantRequest")}</h3>
+                    <ul>
+                        <#list oauth.clientScopesRequested as clientScope>
+                            <li>
+                                <span><#if !clientScope.dynamicScopeParameter??>
+                                            ${advancedMsg(clientScope.consentScreenText)}
+                                        <#else>
+                                            ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
+                                    </#if>
+                                </span>
+                            </li>
+                        </#list>
+                    </ul>
+                </div>
+            </#if>
+
             <form class="form-actions" action="${url.loginAction}" method="POST">
                 <input type="hidden" name="session_code" value="${deviceConfirm.code}"/>
                 <div class="${properties.kcFormGroupClass!}">

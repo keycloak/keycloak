@@ -26,6 +26,7 @@ import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
 import org.keycloak.forms.login.freemarker.DetachedInfoStateCookie;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -77,7 +78,10 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
+import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
+import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -113,6 +117,7 @@ import jakarta.ws.rs.core.UriBuilderException;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
@@ -1110,7 +1115,44 @@ public class LoginActionsService {
             return DeviceGrantType.denyOAuth2DeviceAuthorization(authSession, Error.CONSENT_DENIED, session);
         }
 
-        // User confirmed the device authorization - proceed with the flow
+        if (DeviceGrantType.isOAuth2DeviceVerificationFlow(authSession)) {
+            String verifiedUserCode = authSession.getClientNote(DeviceGrantType.OAUTH2_DEVICE_VERIFIED_USER_CODE);
+            OAuth2DeviceCodeModel deviceCodeModel = DeviceEndpoint.getDeviceByUserCode(session, realm, verifiedUserCode);
+
+            if (deviceCodeModel == null || deviceCodeModel.isDenied() || !deviceCodeModel.isPending()) {
+                event.error(Errors.REJECTED_BY_USER);
+                UriBuilder uriBuilder = DeviceGrantType.oauth2DeviceVerificationCompletedUrl(session.getContext().getUri());
+                return Response.status(302).location(
+                        uriBuilder.queryParam(OAuth2Constants.ERROR, OAuthErrorException.ACCESS_DENIED)
+                                .build(realm.getName())
+                ).build();
+            }
+        }
+
+        if (client.isConsentRequired()) {
+            UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
+            if (grantedConsent == null) {
+                grantedConsent = new UserConsentModel(client);
+                UserConsentManager.addConsent(session, realm, user, grantedConsent);
+            }
+
+            boolean updateConsentRequired = false;
+
+            String scopeParam = authSession.getClientNote(OIDCLoginProtocol.SCOPE_PARAM);
+            Stream<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(session, scopeParam, client, user);
+
+            for (ClientScopeModel clientScope : (Iterable<ClientScopeModel>) clientScopes::iterator) {
+                if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
+                    grantedConsent.addGrantedClientScope(clientScope);
+                    updateConsentRequired = true;
+                }
+            }
+
+            if (updateConsentRequired) {
+                UserConsentManager.updateConsent(session, realm, user, grantedConsent);
+            }
+        }
+
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);

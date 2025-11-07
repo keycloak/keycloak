@@ -1197,11 +1197,15 @@ public class AuthenticationManager {
                     .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession))
                     .build();
 
+            List<AuthorizationDetails> clientScopesToDisplay =
+                    getClientScopesToApproveOnConsentScreen(null, session, authSession);
+
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setExecution(execution)
                     .setClientSessionCode(accessCode.getOrGenerateCode())
                     .setActionUri(actionUri)
+                    .setAccessRequest(clientScopesToDisplay)
                     .createOAuth2DeviceConfirmPage();
         }
 
