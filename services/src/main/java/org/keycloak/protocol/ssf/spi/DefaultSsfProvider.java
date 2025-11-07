@@ -2,11 +2,11 @@ package org.keycloak.protocol.ssf.spi;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.event.delivery.push.PushEndpoint;
+import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryEndpoint;
 import org.keycloak.protocol.ssf.event.listener.DefaultSsfEventListener;
 import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
-import org.keycloak.protocol.ssf.event.parser.DefaultSsfEventParser;
-import org.keycloak.protocol.ssf.event.parser.SsfEventParser;
+import org.keycloak.protocol.ssf.event.parser.DefaultSsfSecurityEventTokenParser;
+import org.keycloak.protocol.ssf.event.parser.SsfSecurityEventTokenParser;
 import org.keycloak.protocol.ssf.event.processor.DefaultSsfEventProcessor;
 import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
 import org.keycloak.protocol.ssf.event.processor.SsfEventProcessor;
@@ -28,13 +28,13 @@ public class DefaultSsfProvider implements SsfProvider {
 
     protected final KeycloakSession session;
 
-    protected SsfEventParser ssfEventParser;
+    protected SsfSecurityEventTokenParser securityEventTokenParser;
 
-    protected SsfEventProcessor ssfEventProcessor;
+    protected SsfEventProcessor eventProcessor;
 
-    protected SsfEventListener ssfEventListener;
+    protected SsfEventListener eventListener;
 
-    protected PushEndpoint pushEndpoint;
+    protected SsfPushDeliveryEndpoint pushDeliveryEndpoint;
 
     protected SsfReceiverManagementEndpoint ssfReceiverManagementEndpoint;
 
@@ -44,41 +44,41 @@ public class DefaultSsfProvider implements SsfProvider {
 
     protected SsfStreamClient streamClient;
 
-    protected SsfTransmitterClient ssfTransmitterClient;
+    protected SsfTransmitterClient transmitterClient;
 
-    protected SsfVerificationClient ssfVerificationClient;
+    protected SsfVerificationClient verificationClient;
 
     protected SsfReceiverManager receiverManager;
 
-    protected SsfReceiverStreamManager ssfReceiverStreamManager;
+    protected SsfReceiverStreamManager receiverStreamManager;
 
     public DefaultSsfProvider(KeycloakSession session) {
         this.session = session;
     }
 
-    protected SsfEventParser getSsfEventParser() {
-        if (ssfEventParser == null) {
-            ssfEventParser = new DefaultSsfEventParser(session);
+    protected SsfSecurityEventTokenParser getSsfEventParser() {
+        if (securityEventTokenParser == null) {
+            securityEventTokenParser = new DefaultSsfSecurityEventTokenParser(session);
         }
-        return ssfEventParser;
+        return securityEventTokenParser;
     }
 
     protected SsfEventProcessor getSecurityEventProcessor() {
-        if (ssfEventProcessor == null) {
-            ssfEventProcessor = new DefaultSsfEventProcessor(
+        if (eventProcessor == null) {
+            eventProcessor = new DefaultSsfEventProcessor(
                     this,
-                    getSsfEventListener(),
+                    getEventListener(),
                     getVerificationStore()
             );
         }
-        return ssfEventProcessor;
+        return eventProcessor;
     }
 
-    protected PushEndpoint getPushEndpoint() {
-        if (pushEndpoint == null) {
-            pushEndpoint = new PushEndpoint(this);
+    protected SsfPushDeliveryEndpoint getPushEndpoint() {
+        if (pushDeliveryEndpoint == null) {
+            pushDeliveryEndpoint = new SsfPushDeliveryEndpoint(this);
         }
-        return pushEndpoint;
+        return pushDeliveryEndpoint;
     }
 
     protected SsfReceiverManagementEndpoint getReceiverManagementEndpoint() {
@@ -95,11 +95,11 @@ public class DefaultSsfProvider implements SsfProvider {
         return receiverManager;
     }
 
-    protected SsfEventListener getSsfEventListener() {
-        if (ssfEventListener == null) {
-            ssfEventListener = new DefaultSsfEventListener(session);
+    protected SsfEventListener getEventListener() {
+        if (eventListener == null) {
+            eventListener = new DefaultSsfEventListener(session);
         }
-        return ssfEventListener;
+        return eventListener;
     }
 
     protected SsfVerificationClient getSecurityEventsVerifier() {
@@ -117,10 +117,10 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     protected SsfTransmitterClient getTransmitterClient() {
-        if (ssfTransmitterClient == null) {
-            ssfTransmitterClient = new DefaultSsfTransmitterClient(session);
+        if (transmitterClient == null) {
+            transmitterClient = new DefaultSsfTransmitterClient(session);
         }
-        return ssfTransmitterClient;
+        return transmitterClient;
     }
 
     @Override
@@ -129,10 +129,10 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     protected SsfVerificationClient getVerificationClient() {
-        if (ssfVerificationClient == null) {
-            ssfVerificationClient = new DefaultSsfVerificationClient(session);
+        if (verificationClient == null) {
+            verificationClient = new DefaultSsfVerificationClient(session);
         }
-        return ssfVerificationClient;
+        return verificationClient;
     }
 
     @Override
@@ -163,7 +163,7 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     @Override
-    public PushEndpoint pushEndpoint() {
+    public SsfPushDeliveryEndpoint pushEndpoint() {
         return getPushEndpoint();
     }
 
@@ -178,10 +178,10 @@ public class DefaultSsfProvider implements SsfProvider {
     }
 
     protected SsfReceiverStreamManager getReceiverStreamManager() {
-        if (ssfReceiverStreamManager == null) {
-            ssfReceiverStreamManager = new SsfReceiverStreamManager(this);
+        if (receiverStreamManager == null) {
+            receiverStreamManager = new SsfReceiverStreamManager(this);
         }
-        return ssfReceiverStreamManager;
+        return receiverStreamManager;
     }
 
     @Override

@@ -19,25 +19,25 @@ public class DefaultSsfStreamSsfStreamVerificationStore implements SsfStreamVeri
     }
 
     @Override
-    public void setVerificationState(RealmModel realm, SsfReceiverModel model, String state) {
+    public void setVerificationState(RealmModel realm, String receiverAlias, String streamId, String state) {
         // TODO check for pending verifications
 
         var singleUseObject = session.getProvider(SingleUseObjectProvider.class);
 
-        String key = createVerificationKey(model.getStreamId());
+        String key = createVerificationKey(receiverAlias, streamId);
         Map<String, String> verificationData = Map.of("state", state, "timestamp", String.valueOf(Time.currentTime()));
         singleUseObject.put(key, verificationStateLifespanSeconds, verificationData);
     }
 
-    protected String createVerificationKey(String streamId) {
-        return "ssf.verification." + streamId;
+    protected String createVerificationKey(String receiverAlias, String streamId) {
+        return "ssf.verification:" + receiverAlias + ":" + streamId;
     }
 
     @Override
-    public SsfStreamVerificationState getVerificationState(RealmModel realm, SsfReceiverModel model) {
+    public SsfStreamVerificationState getVerificationState(RealmModel realm, String receiverAlias, String streamId) {
 
         var singleUseObject = session.getProvider(SingleUseObjectProvider.class);
-        String key = createVerificationKey(model.getStreamId());
+        String key = createVerificationKey(receiverAlias, streamId);
         Map<String, String> verificationData = singleUseObject.get(key);
 
         if (verificationData == null) {
@@ -50,15 +50,15 @@ public class DefaultSsfStreamSsfStreamVerificationStore implements SsfStreamVeri
         SsfStreamVerificationState verificationState = new SsfStreamVerificationState();
         verificationState.setTimestamp(timestamp);
         verificationState.setState(state);
-        verificationState.setStreamId(model.getStreamId());
+        verificationState.setStreamId(streamId);
 
         return verificationState;
     }
 
     @Override
-    public void clearVerificationState(RealmModel realm, SsfReceiverModel model) {
+    public void clearVerificationState(RealmModel realm, String receiverAlias, String streamId) {
         var singleUseObject = session.getProvider(SingleUseObjectProvider.class);
-        String key = createVerificationKey(model.getStreamId());
+        String key = createVerificationKey(receiverAlias, streamId);
         singleUseObject.remove(key);
     }
 

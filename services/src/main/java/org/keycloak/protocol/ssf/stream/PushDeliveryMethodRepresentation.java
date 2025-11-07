@@ -1,9 +1,8 @@
 package org.keycloak.protocol.ssf.stream;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.protocol.ssf.event.delivery.DeliveryMethod;
+import org.keycloak.protocol.ssf.event.DeliveryMethod;
 
-import java.net.URI;
 import java.util.Objects;
 
 /**
