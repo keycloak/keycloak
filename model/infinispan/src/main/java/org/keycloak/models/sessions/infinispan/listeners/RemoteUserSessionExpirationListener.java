@@ -53,7 +53,7 @@ public class RemoteUserSessionExpirationListener extends BaseUserSessionExpirati
             }
             sendExpirationEvent(entity.getUserSessionId(), entity.getUserId(), entity.getRealmId());
         } catch (Exception e) {
-            logger.error("Error", e);
+            logger.error("Error handling an expired entry", e);
         }
     }
 

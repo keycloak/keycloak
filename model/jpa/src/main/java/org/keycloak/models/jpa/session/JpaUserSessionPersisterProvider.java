@@ -275,19 +275,20 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         sendExpirationEvents(realm, expiredSessions);
 
-        var sessionIds = expiredSessions.stream().map(UserSessionAndUser::userSessionId).toList();
+        StreamsUtil.chunkedStream(expiredSessions.stream().map(UserSessionAndUser::userSessionId), 100).forEach(chunk -> {
+            // SQL databases only allow a limited number of items in an IN clause. While PostgreSQL allows possibly 32k, we are not sure about the rest
+            int cs = em.createNamedQuery("deleteClientSessionsByUserSessions")
+                    .setParameter("userSessionId", chunk)
+                    .setParameter("offline", offlineStr)
+                    .executeUpdate();
 
-        int cs = em.createNamedQuery("deleteClientSessionsByUserSessions")
-                .setParameter("userSessionId", sessionIds)
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
+            int us = em.createNamedQuery("deleteUserSessions")
+                    .setParameter("userSessionId", chunk)
+                    .setParameter("offline", offlineStr)
+                    .executeUpdate();
+            logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
+        });
 
-        int us = em.createNamedQuery("deleteUserSessions")
-                .setParameter("userSessionId", sessionIds)
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
-
-        logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
     }
 
     @Override

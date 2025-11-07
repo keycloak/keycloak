@@ -56,6 +56,7 @@ abstract class BaseUserSessionExpirationListener {
             if (realm == null) {
                 return;
             }
+            session.getContext().setRealm(realm);
             new EventBuilder(realm, session)
                     .session(userSessionId)
                     .user(userId)

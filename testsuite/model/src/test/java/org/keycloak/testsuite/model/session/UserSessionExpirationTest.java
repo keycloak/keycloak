@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.awaitility.Awaitility;
 import org.infinispan.Cache;
 import org.junit.Assert;
 import org.junit.Test;
@@ -109,37 +110,27 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
                 .collect(Collectors.toUnmodifiableMap(UserSessionModel::getId, s -> s.getUser().getId()));
 
         inComittedTransaction(session -> {
-            try {
-                Time.setOffset(IDLE_TIMEOUT + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
-                RealmModel realm = session.realms().getRealm(realmId);
-                session.getContext().setRealm(realm);
-                session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
+            // Time offset is automatically cleaned up in KeycloakModelTest.cleanEnvironment()
+            Time.setOffset(IDLE_TIMEOUT + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
+            RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
-                var hotRodServer = getParameters(HotRodServerRule.class).findFirst();
-                if (hotRodServer.isEmpty()) {
-                    InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-                    processExpiration(provider.getCache(USER_SESSION_CACHE_NAME));
-                    processExpiration(provider.getCache(OFFLINE_USER_SESSION_CACHE_NAME));
-                } else {
-                    hotRodServer.get().streamCacheManagers()
-                            .forEach(cacheManager -> {
-                                processExpiration(cacheManager.getCache(USER_SESSION_CACHE_NAME));
-                                processExpiration(cacheManager.getCache(OFFLINE_USER_SESSION_CACHE_NAME));
-                            });
-                }
-
-                // Infinispan events are async, let's ensure it is stored in the database before proceed.
-                for (int i = 0; i < 5; ++i) {
-                    if (eventsCount(session) == sessionIdAndUsers.size()) {
-                        break;
-                    }
-                    Thread.sleep(500);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } finally {
-                Time.setOffset(0);
+            var hotRodServer = getParameters(HotRodServerRule.class).findFirst();
+            if (hotRodServer.isEmpty()) {
+                InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                processExpiration(provider.getCache(USER_SESSION_CACHE_NAME));
+                processExpiration(provider.getCache(OFFLINE_USER_SESSION_CACHE_NAME));
+            } else {
+                hotRodServer.get().streamCacheManagers()
+                        .forEach(cacheManager -> {
+                            processExpiration(cacheManager.getCache(USER_SESSION_CACHE_NAME));
+                            processExpiration(cacheManager.getCache(OFFLINE_USER_SESSION_CACHE_NAME));
+                        });
             }
+
+            // Infinispan events are async, let's ensure it is stored in the database before proceed.
+            Awaitility.await().until(() -> eventsCount(session) == sessionIdAndUsers.size());
         });
 
         inComittedTransaction(session -> {
@@ -148,7 +139,6 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
             // user session id -> user id
             Map<String, String> eventsData = events(session);
             Assert.assertEquals(sessionIdAndUsers, eventsData);
-
         });
     }
 
