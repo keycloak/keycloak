@@ -26,7 +26,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.*;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.Attributes;

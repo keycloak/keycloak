@@ -17,7 +17,7 @@
 
 package org.keycloak.theme;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.theme.Theme.Type.LOGIN;
 
 import org.junit.Test;

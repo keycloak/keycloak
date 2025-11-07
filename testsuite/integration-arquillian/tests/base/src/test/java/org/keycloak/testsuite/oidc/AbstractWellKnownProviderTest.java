@@ -78,7 +78,6 @@ import java.util.stream.Stream;
 import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
 import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import static org.keycloak.utils.MediaType.APPLICATION_JWKS;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

@@ -124,6 +124,20 @@ You can either use your IDE to fix these issues; or Spotless can fix them for yo
 ./mvnw spotless:apply
 ```
 
+### Rewrite
+
+Rewrite is used to check and apply sanity check. To check your code locally before sending a PR run:
+
+```
+./mvnw rewrite:dryRun
+```
+
+You can either use your IDE to fix these issues; or Rewrite can fix them for you by running:
+
+```
+./mvnw rewrite:run
+```
+
 A good practice is to create a commit with your changes prior to running `spotless:apply` then you can see and
 review what changes Spotless has applied, for example by using a diff tool. Finally, if you are happy with the changes
 Spotless has applied you can amend the changes to your commit by running:

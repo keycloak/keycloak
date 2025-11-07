@@ -1557,9 +1557,37 @@
                         </java>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.openrewrite.maven</groupId>
+                    <artifactId>rewrite-maven-plugin</artifactId>
+                    <version>6.23.0</version>
+                    <configuration>
+                        <activeRecipes>
+                            <recipe>org.keycloak.openrewrite.SanityCheck</recipe>
+                        </activeRecipes>
+                        <exportDatatables>true</exportDatatables>
+                        <failOnDryRunResults>true</failOnDryRunResults>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-migrate-java</artifactId>
+                            <version>3.21.1</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-static-analysis</artifactId>
+                            <version>2.21.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-rewrite</artifactId>
+                            <version>0.15.0</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
         </pluginManagement>
-
     </build>
 
     <profiles>

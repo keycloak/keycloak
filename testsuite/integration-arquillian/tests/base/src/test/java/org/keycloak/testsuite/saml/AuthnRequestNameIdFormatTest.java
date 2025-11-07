@@ -31,7 +31,7 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.*;
-import static org.keycloak.testsuite.util.SamlClient.*;
+import static org.keycloak.testsuite.util.SamlClient.Binding;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
