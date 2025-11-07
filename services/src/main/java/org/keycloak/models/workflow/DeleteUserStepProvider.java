@@ -22,15 +22,21 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
+import org.keycloak.models.cache.UserCache;
+import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageUtil;
 
 public class DeleteUserStepProvider implements WorkflowStepProvider {
 
+    public static final String PROPAGATE_TO_SP = "propagate-to-provider";
+
     private final KeycloakSession session;
+    private final ComponentModel stepModel;
     private final Logger log = Logger.getLogger(DeleteUserStepProvider.class);
 
     public DeleteUserStepProvider(KeycloakSession session, ComponentModel model) {
         this.session = session;
+        this.stepModel = model;
     }
 
     @Override
@@ -46,7 +52,19 @@ public class DeleteUserStepProvider implements WorkflowStepProvider {
             return;
         }
 
-        log.debugv("Deleting user {0} ({1})", user.getUsername(), user.getId());
-        session.users().removeUser(realm, user);
+        if (!user.isFederated() || stepModel.get(PROPAGATE_TO_SP, false)) {
+          log.debugv("Deleting user {0} ({1})", user.getUsername(), user.getId());
+          session.users().removeUser(realm, user);
+          return;
+        }
+
+        // delete the local user only
+        UserStoragePrivateUtil.userLocalStorage(session).removeUser(realm, user);
+        log.debugv("Deleting federated user {0} ({1}) from local storage only", user.getUsername(), user.getId());
+        UserCache userCache = UserStorageUtil.userCache(session);
+        // if cache is enabled, evict the user from cache
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
     }
 }
