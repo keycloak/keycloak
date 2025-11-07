@@ -1550,6 +1550,9 @@
                         <java>
                             <removeUnusedImports />
                             <forbidWildcardImports />
+                            <importOrder>
+                                <order>java|javax,jakarta,org.keycloak,,\#java|javax,\#jakarta,\#org.keycloak,\#</order>
+                            </importOrder>
                         </java>
                     </configuration>
                 </plugin>
