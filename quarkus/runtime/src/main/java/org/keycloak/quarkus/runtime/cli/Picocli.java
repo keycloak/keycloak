@@ -565,6 +565,7 @@ public class Picocli {
             if (value.getValue() == null || value.getConfigSourceName() == null
                     || (quarkus && !value.getConfigSourceName().contains(QuarkusPropertiesConfigSource.NAME))) {
                 // only persist build options resolved from config sources and not default values
+                // instead we'll persist the profile (if set) because that may influence the defaults
                 return;
             }
             // since we're persisting all quarkus values, this may leak some runtime information - we don't want
@@ -589,8 +590,10 @@ public class Picocli {
         }
 
         String profile = org.keycloak.common.util.Environment.getProfile();
-        properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
-        properties.put(LaunchMode.current().getProfileKey(), profile);
+        if (profile != null) {
+            properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
+            properties.put(LaunchMode.current().getProfileKey(), profile);
+        }
 
         return properties;
     }
