@@ -1139,15 +1139,13 @@ public class PicocliTest extends AbstractConfigurationTest {
         // duplicates
         nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        // we should throw an error or warn when duplicates are present
-        // assertThat(nonRunningPicocli.getErrString(), containsString("Duplicated options for features: --feature-passkeys. You need to set it only once."));
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --feature-passkeys"));
         assertThat(Profile.isFeatureEnabled(Profile.Feature.PASSKEYS), is(false));
         onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--feature-passkeys=enabled", "--feature-passkeys=disabled", "--feature-spiffe=v1", "--feature-spiffe=disabled");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        // we should throw an error or warn when duplicates are present
-        //assertThat(nonRunningPicocli.getErrString(), containsString("Duplicated options for features: --feature-spiffe, --feature-passkeys. You need to set it only once."));
+        assertThat(nonRunningPicocli.getOutString(), containsString("WARNING: Duplicated options present in CLI: --feature-spiffe, --feature-passkeys"));
         assertThat(Profile.isFeatureEnabled(Profile.Feature.PASSKEYS), is(false));
         assertThat(Profile.isFeatureEnabled(Profile.Feature.SPIFFE), is(false));
         onAfter();
