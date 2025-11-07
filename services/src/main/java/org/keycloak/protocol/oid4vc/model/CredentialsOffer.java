@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.beans.Transient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -50,6 +51,18 @@ public class CredentialsOffer {
     public CredentialsOffer setCredentialIssuer(String credentialIssuer) {
         this.credentialIssuer = credentialIssuer;
         return this;
+    }
+
+    @Transient
+    public String getIssuerMetadataUrl() {
+        var metadataUrl = credentialIssuer + "/.well-known/openid-credential-issuer";
+        var idx = credentialIssuer.indexOf("/realms");
+        if (idx > 0) {
+            var baseUrl = credentialIssuer.substring(0, idx);
+            var realmPath = credentialIssuer.substring(idx);
+            metadataUrl = baseUrl + "/.well-known/openid-credential-issuer" + realmPath;
+        }
+        return metadataUrl;
     }
 
     public List<String> getCredentialConfigurationIds() {

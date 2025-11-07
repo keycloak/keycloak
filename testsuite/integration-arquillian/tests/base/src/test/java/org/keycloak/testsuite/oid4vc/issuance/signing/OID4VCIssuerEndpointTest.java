@@ -68,7 +68,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
@@ -92,12 +91,10 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -472,11 +469,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         String testCredentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
 
         try (Client client = AdminClientUtil.createResteasyClient()) {
-            UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
-            URI oid4vciDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder)
-                    .build(TEST_REALM_NAME,
-                            OID4VCIssuerWellKnownProviderFactory.PROVIDER_ID);
-            WebTarget oid4vciDiscoveryTarget = client.target(oid4vciDiscoveryUri);
+            String metadataUrl = getRealmMetadataPath(TEST_REALM_NAME);
+            WebTarget oid4vciDiscoveryTarget = client.target(metadataUrl);
 
             // 1. Get authoriZation code without scope specified by wallet
             // 2. Using the code to get accesstoken
@@ -527,7 +521,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected String getRealmPath(String realm) {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + realm;
+        return suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/" + realm;
+    }
+
+    protected String getRealmMetadataPath(String realm) {
+        return suiteContext.getAuthServerInfo().getContextRoot() + "/auth/.well-known/openid-credential-issuer/realms/" + realm;
     }
 
     protected void requestCredential(String token,
@@ -557,7 +555,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     public CredentialIssuer getCredentialIssuerMetadata() {
-        final String endpoint = getRealmPath(TEST_REALM_NAME) + "/.well-known/openid-credential-issuer";
+        final String endpoint = getRealmMetadataPath(TEST_REALM_NAME);
         HttpGet getMetadataRequest = new HttpGet(endpoint);
         try (CloseableHttpResponse metadataResponse = httpClient.execute(getMetadataRequest)) {
             assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusLine().getStatusCode());
