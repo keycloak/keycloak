@@ -81,7 +81,7 @@ public class DBusSignal extends Message {
     }
 
     /**
-     * Create a new signal. This contructor MUST be called by all sub classes.
+     * Create a new signal. This constructor MUST be called by all sub classes.
      *
      * @param _objectPath The path to the object this is emitted from.
      * @param _args The parameters of the signal.

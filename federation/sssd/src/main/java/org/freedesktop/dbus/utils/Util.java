@@ -63,7 +63,7 @@ public final class Util {
     private Util() {}
 
     /**
-     * Trys to read a properties file.
+     * Tries to read a properties file.
      * Returns null if properties file could not be loaded
      * @param _file property file to read
      * @return Properties Object or null

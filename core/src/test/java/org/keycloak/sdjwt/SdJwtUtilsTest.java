@@ -78,7 +78,7 @@ public class SdJwtUtilsTest {
     }
 
     /**
-     * As we are expexting json serializer to behave differently
+     * As we are expecting json serializer to behave differently
      * 
      * https://drafts.oauth.net/oauth-selective-disclosure-jwt/draft-ietf-oauth-selective-disclosure-jwt.html#section-5.2.1
      * 

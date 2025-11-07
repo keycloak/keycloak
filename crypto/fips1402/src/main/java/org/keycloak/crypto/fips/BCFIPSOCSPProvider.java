@@ -336,7 +336,7 @@ public class BCFIPSOCSPProvider extends OCSPProvider {
                 } else {
                     // See Sun's OCSP implementation.
                     // https://www.ietf.org/rfc/rfc2560.txt, if nextUpdate is not set,
-                    // the responder is indicating that newer update is avilable all the time
+                    // the responder is indicating that newer update is available all the time
                     long current = date == null ? System.currentTimeMillis() : date.getTime();
                     Date stop = new Date(current + (long) TIME_SKEW);
                     Date start = new Date(current - (long) TIME_SKEW);
