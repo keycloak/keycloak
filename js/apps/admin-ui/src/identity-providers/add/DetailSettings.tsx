@@ -70,6 +70,7 @@ import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { SpiffeSettings } from "./SpiffeSettings";
+import { SsfReceiverSettings } from "./SsfReceiverSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
@@ -434,6 +435,7 @@ export default function DetailSettings() {
   const isSAML = provider.providerId!.includes("saml");
   const isOAuth2 = provider.providerId!.includes("oauth2");
   const isSPIFFE = provider.providerId!.includes("spiffe");
+  const isSsfReceiver = provider.providerId!.includes("ssf-receiver");
   const isKubernetes = provider.providerId!.includes("kubernetes");
   const isJWTAuthorizationGrant = provider.providerId!.includes(
     "jwt-authorization-grant",
@@ -475,7 +477,7 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
-      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant  || isSsfReceiver,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -568,6 +570,20 @@ export default function DetailSettings() {
     },
     {
       title: t("generalSettings"),
+      isHidden: !isSsfReceiver,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <SsfReceiverSettings />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
       isHidden: !isJWTAuthorizationGrant,
       panel: (
         <Form
@@ -624,7 +640,7 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
-      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -681,7 +697,7 @@ export default function DetailSettings() {
           </Tab>
           <Tab
             id="mappers"
-            isHidden={isSPIFFE || isKubernetes || isJWTAuthorizationGrant}
+            isHidden={isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver}
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}

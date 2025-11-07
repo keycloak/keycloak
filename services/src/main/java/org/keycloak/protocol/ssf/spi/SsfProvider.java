@@ -1,7 +1,7 @@
 package org.keycloak.protocol.ssf.spi;
 
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.event.delivery.push.PushEndpoint;
+import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryEndpoint;
 import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
 import org.keycloak.protocol.ssf.receiver.management.SsfReceiverManagementEndpoint;
@@ -29,7 +29,7 @@ public interface SsfProvider extends Provider {
     SsfSecurityEventContext createSecurityEventContext(SecurityEventToken securityEventToken, SsfReceiverModel receiverModel);
 
     // SSF Receiver Support
-    PushEndpoint pushEndpoint();
+    SsfPushDeliveryEndpoint pushEndpoint();
 
     SsfReceiverManagementEndpoint receiverManagementEndpoint();
 

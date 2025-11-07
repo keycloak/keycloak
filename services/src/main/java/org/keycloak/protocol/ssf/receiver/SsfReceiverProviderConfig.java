@@ -1,0 +1,69 @@
+package org.keycloak.protocol.ssf.receiver;
+
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
+
+import java.util.Set;
+
+public class SsfReceiverProviderConfig extends IdentityProviderModel {
+
+    public static final String DESCRIPTION = "description";
+
+    public static final String STREAM_ID = "streamId";
+
+    public static final String TRANSMITTER_ACCESS_TOKEN = "transmitterAccessToken";
+
+    public static final String PUSH_AUTHORIZATION_HEADER = "pushAuthorizationHeader";
+
+    public SsfReceiverProviderConfig() {
+    }
+
+    public SsfReceiverProviderConfig(IdentityProviderModel model) {
+        super(model);
+    }
+
+    public String getIssuer() {
+        return getConfig().get(ISSUER);
+    }
+
+    public void setIssuer(String issuer) {
+        getConfig().put(ISSUER, issuer);
+    }
+
+    public String getDescription() {
+        return getConfig().get(DESCRIPTION);
+    }
+
+    public void setDescription(String description) {
+        getConfig().put(DESCRIPTION, description);
+    }
+
+    public String getTransmitterAccessToken() {
+        return getConfig().get(TRANSMITTER_ACCESS_TOKEN);
+    }
+
+    public void setTransmitterAccessToken(String transmitterAccessToken) {
+        getConfig().put(TRANSMITTER_ACCESS_TOKEN, transmitterAccessToken);
+    }
+
+    public String getPushAuthorizationHeader() {
+        return getConfig().get(PUSH_AUTHORIZATION_HEADER);
+    }
+
+    public void setPushAuthorizationHeader(String pushAuthorizationHeader) {
+        getConfig().put(PUSH_AUTHORIZATION_HEADER, pushAuthorizationHeader);
+    }
+
+    public String getStreamId() {
+        return getConfig().get(STREAM_ID);
+    }
+
+    public void setStreamId(String streamId) {
+        getConfig().put(STREAM_ID, streamId);
+    }
+
+    @Override
+    public void validate(RealmModel realm) {
+        super.validate(realm);
+    }
+}
