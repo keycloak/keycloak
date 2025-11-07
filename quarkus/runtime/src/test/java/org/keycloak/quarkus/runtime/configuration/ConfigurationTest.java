@@ -87,6 +87,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testEnvVarPriorityOverPropertiesFileMixedSpiNamingConventions() {
+        putEnvVar("KC_SPI_HOSTNAME_OTHER_FRONTEND_URL", "http://envvar.unittest");
+        assertEquals("http://envvar.unittest", initConfig("hostname", "other").get("frontendUrl"));
+    }
+
+    @Test
     public void testKeycloakConfPlaceholder() {
         assertEquals("info", createConfig().getRawValue("kc.log-level"));
         assertTrue(Configuration.getConfig().isPropertyPresent("quarkus.log.category.\"io.k8s\".level"));
