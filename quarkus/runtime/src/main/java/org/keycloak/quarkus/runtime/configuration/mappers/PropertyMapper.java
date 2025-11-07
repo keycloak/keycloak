@@ -549,7 +549,7 @@ public class PropertyMapper<T> {
         public Builder<T> wildcardKeysValidator(BiConsumer<String, String> validator) {
             addValidator((mapper, configValue) -> {
                 var wildcardMapper = (WildcardPropertyMapper<?>) mapper;
-                var key = wildcardMapper.extractWildcardValue(configValue.getName()).orElseThrow(() -> new PropertyException("Cannot determine feature name."));
+                var key = wildcardMapper.extractWildcardValue(configValue.getName()).orElseThrow(() -> new PropertyException("Cannot determine wildcard key."));
                 validator.accept(key, configValue.getValue());
             });
             return this;
