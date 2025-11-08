@@ -25,6 +25,8 @@ import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.Objects;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
@@ -36,8 +38,10 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
+import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
@@ -345,5 +349,73 @@ public class SamlProtocolUtils {
         SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
         writer.write(responseType);
         return DocumentUtil.getDocument(new ByteArrayInputStream(bos.toByteArray()));
+    }
+
+    private static String checkLoAExact(String current, Map<String, Integer> acrLoaMap, int minLevel) {
+        // authentication context in the authentication statement MUST be the exact match of at least one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        return level >= minLevel ? current : null;
+    }
+
+    private static String checkLoAMinimum(String current, Map<String, Integer> acrLoaMap, String minLoa, int minLevel) {
+        // authentication context in the authentication statement MUST be as strong as one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        // check if current value is OK, if not return minLoa which is valid because is greater than current
+        return (level >= minLevel) ?  current : minLoa;
+    }
+
+    private static String checkLoAMaximum(String current, Map<String, Integer> acrLoaMap, int minLevel) {
+        // authentication context in the authentication statement MUST be as strong as possible without exceeding the strength of at least one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        // only valid if it is better than minLoa
+        return level >= minLevel ? current : null;
+    }
+
+    private static String checkLoABetter(String current, Map<String, Integer> acrLoaMap, String minLoa, int minLevel) {
+        // authentication context in the authentication statement MUST be stronger than any one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        // if minLoa is valid return minLoa
+        if (minLevel > level) {
+            return minLoa;
+        }
+        // find any level that is better than level, get the min of them
+        return acrLoaMap.entrySet().stream()
+                .filter(e -> e.getValue() > level)
+                .min((Map.Entry<String, Integer> e1, Map.Entry<String, Integer> e2) -> e1.getValue().compareTo(e2.getValue()))
+                .map(Map.Entry::getKey)
+                .orElse(null);
+    }
+
+    private static String checkLoa(AuthnContextComparisonType comparison, String current, Map<String, Integer> acrLoaMap, String minLoa, int minLevel) {
+        if (comparison == null) {
+            comparison = AuthnContextComparisonType.EXACT;
+        }
+        return switch (comparison) {
+            case EXACT -> checkLoAExact(current, acrLoaMap, minLevel);
+            case MINIMUM -> checkLoAMinimum(current, acrLoaMap, minLoa, minLevel);
+            case MAXIMUM -> checkLoAMaximum(current, acrLoaMap, minLevel);
+            case BETTER -> checkLoABetter(current, acrLoaMap, minLoa, minLevel);
+        };
+    }
+
+    public static String getSelectedLoA(RequestedAuthnContextType requestedAuthnContext, Map<String, Integer> acrLoaMap, String minLoa) {
+        Integer minLevel = minLoa != null ? acrLoaMap.get(minLoa) : null;
+        return requestedAuthnContext.getAuthnContextClassRef().stream()
+                .map(current -> checkLoa(requestedAuthnContext.getComparison(), current, acrLoaMap, minLoa, minLevel != null ? minLevel : Integer.MIN_VALUE))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 }
