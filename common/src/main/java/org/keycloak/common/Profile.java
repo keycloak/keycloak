@@ -95,6 +95,7 @@ public class Profile {
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+        STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.EXPERIMENTAL, Feature.STEP_UP_AUTHENTICATION),
 
         CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.PREVIEW),
 
