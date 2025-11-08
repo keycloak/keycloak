@@ -60,6 +60,9 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         try {
+            // Mark it as attempted for all items that return directly
+            context.attempted();
+
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
 
             if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
