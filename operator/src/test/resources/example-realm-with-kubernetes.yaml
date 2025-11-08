@@ -413,6 +413,20 @@ spec:
       realmRoles: []
       clientRoles: {}
       subGroups: []
+    users:
+    - id: 4471cbb3-832e-4a3e-982c-30632c0d6a37
+      username: service-account-count2
+      emailVerified: false
+      enabled: true
+      createdTimestamp: 1756281352997
+      totp: false
+      serviceAccountClientId: count2
+      disableableCredentialTypes: []
+      requiredActions: []
+      realmRoles:
+      - default-roles-master
+      notBefore: 0
+      groups: []
     defaultRole:
       id: 999fa353-a573-4a20-b8b0-07d7e52faf85
       name: default-roles-count0
@@ -690,7 +704,7 @@ spec:
       surrogateAuthRequired: false
       enabled: true
       alwaysDisplayInConsole: false
-      clientAuthenticatorType: client-secret
+      clientAuthenticatorType: federated-jwt
       secret: count2-secret
       redirectUris:
       - "*"
@@ -701,13 +715,48 @@ spec:
       standardFlowEnabled: true
       implicitFlowEnabled: false
       directAccessGrantsEnabled: true
-      serviceAccountsEnabled: false
+      serviceAccountsEnabled: true
       publicClient: false
       frontchannelLogout: false
       protocol: openid-connect
       attributes:
         backchannel.logout.session.required: 'true'
         backchannel.logout.revoke.offline.tokens: 'false'
+        jwt.credential.issuer: 'kubernetes'
+        jwt.credential.sub: 'https://kubernetes.default.svc.cluster.local'
+      authenticationFlowBindingOverrides: {}
+      fullScopeAllowed: true
+      nodeReRegistrationTimeout: -1
+      defaultClientScopes:
+      - web-origins
+      - profile
+      - roles
+      - email
+      optionalClientScopes:
+      - address
+      - phone
+      - offline_access
+      - microprofile-jwt
+    - id: 12345678-1234-1234-1234-1234567890ab
+      clientId: kubernetes
+      name: ''
+      surrogateAuthRequired: false
+      enabled: true
+      alwaysDisplayInConsole: false
+      clientAuthenticatorType: federated-jwt
+      redirectUris:
+      - "*"
+      webOrigins: []
+      notBefore: 0
+      bearerOnly: false
+      consentRequired: false
+      standardFlowEnabled: true
+      implicitFlowEnabled: false
+      directAccessGrantsEnabled: false
+      serviceAccountsEnabled: true
+      publicClient: false
+      frontchannelLogout: true
+      protocol: openid-connect
       authenticationFlowBindingOverrides: {}
       fullScopeAllowed: true
       nodeReRegistrationTimeout: -1
@@ -1203,7 +1252,26 @@ spec:
     enabledEventTypes: []
     adminEventsEnabled: false
     adminEventsDetailsEnabled: false
-    identityProviders: []
+    identityProviders:
+    - internalId: "f0bde858-f56b-4c2c-8891-68a2b69d065f"
+      alias: "kubernetes"
+      providerId: "kubernetes"
+      enabled: true
+      updateProfileFirstLoginMode: "on"
+      trustEmail: false
+      storeToken: false
+      addReadTokenRoleOnCreate: false
+      authenticateByDefault: false
+      linkOnly: false
+      hideOnLogin: true
+      config:
+        syncMode: "LEGACY"
+        allowCreate: "true"
+        showInAccountConsole: "NEVER"
+        issuer: "https://kubernetes.default.svc.cluster.local"
+        supportsClientAssertions: "true"
+        supportsClientAssertionReuse: "true"
+        validateSignature: "true"
     identityProviderMappers: []
     components:
       org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy:
@@ -1579,6 +1647,12 @@ spec:
         authenticatorFlow: false
         requirement: ALTERNATIVE
         priority: 40
+        userSetupAllowed: false
+        autheticatorFlow: false
+      - authenticator: federated-jwt
+        authenticatorFlow: false
+        requirement: ALTERNATIVE
+        priority: 50
         userSetupAllowed: false
         autheticatorFlow: false
     - id: 4bcfaa9e-e23e-4a49-ae37-d9e635339816
