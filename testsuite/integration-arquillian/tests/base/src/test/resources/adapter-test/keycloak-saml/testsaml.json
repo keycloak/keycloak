@@ -112,6 +112,23 @@
             "clientRoles" : {
                 "realm-management" : [ "impersonation", "view-users" ]
             }
+        },
+        {
+          "username" : "user-with-one-configured-otp",
+          "enabled": true,
+          "email" : "otp1@redhat.com",
+          "credentials" : [
+            {
+              "type" : "password",
+              "value" : "password"
+            },
+            {
+              "id" : "unique",
+              "type" : "otp",
+              "secretData" : "{\"value\":\"DJmQfC73VGFhw7D4QJ8A\"}",
+              "credentialData" : "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\",\"subType\":\"totp\"}"
+            }
+          ]
         }
     ],
     "clients": [

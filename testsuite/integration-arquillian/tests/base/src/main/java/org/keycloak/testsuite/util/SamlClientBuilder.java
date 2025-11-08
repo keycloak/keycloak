@@ -37,6 +37,7 @@ import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
 import org.keycloak.testsuite.util.saml.HandleArtifactStepBuilder;
 import org.keycloak.testsuite.util.saml.IdPInitiatedLoginBuilder;
 import org.keycloak.testsuite.util.saml.LoginBuilder;
+import org.keycloak.testsuite.util.saml.OtpLoginBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
 import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
@@ -204,6 +205,10 @@ public class SamlClientBuilder {
     /** Handles login page */
     public LoginBuilder login() {
         return addStepBuilder(new LoginBuilder(this));
+    }
+
+    public OtpLoginBuilder otpLogin() {
+        return addStepBuilder(new OtpLoginBuilder(this));
     }
 
     /** Handles update profile page after login */
