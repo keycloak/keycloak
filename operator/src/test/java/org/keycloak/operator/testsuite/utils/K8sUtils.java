@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,8 +132,7 @@ public final class K8sUtils {
     }
 
     public static CurlResult inClusterCurlCommand(KubernetesClient k8sClient, String namespace, Map<String, String> labels, String commandString, String... args) {
-        Log.infof("Executing curl labels: %s commandString: %s args: %s", labels, commandString, String.join(" ", args));
-
+        Log.infof("Executing curl labels: %s commandString: %s %s", labels, commandString, String.join(" ", Arrays.stream(args).map(s -> s.contains(" ") ? "'" + s + "'" : s).toList()));
 
         Log.infof("Starting cURL in namespace '%s' with labels '%s'", namespace, labels);
         var podName = "curl-pod" + (labels.isEmpty()?"":("-" + UUID.randomUUID()));
@@ -155,14 +155,19 @@ public final class K8sUtils {
             }
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream error = new ByteArrayOutputStream();
 
             String[] command = Stream.concat(Stream.of(commandString), Stream.of(args)).toArray(String[]::new);
-            Log.infof("Executing curl command: %s", String.join(" ", command));
             try (ExecWatch watch = k8sClient.pods().resource(curlPod).withReadyWaitTimeout(15000)
                     .writingOutput(output)
+                    .writingError(error)
                     .exec(command)) {
                 var exitCode = watch.exitCode().get(5, TimeUnit.SECONDS);
-                return new CurlResult(exitCode, output.toString(StandardCharsets.UTF_8));
+                output.close();
+                error.close();
+                var curlResult = new CurlResult(exitCode, output.toString(StandardCharsets.UTF_8), error.toString(StandardCharsets.UTF_8));
+                Log.infof("curl result: %s", curlResult);
+                return curlResult;
             } finally {
                 if (!labels.isEmpty()) {
                     k8sClient.resource(curlPod).delete();
@@ -194,7 +199,7 @@ public final class K8sUtils {
                         .addNewSource()
                             .withNewServiceAccountToken()
                                 .withAudience("https://example.com:8443/realms/count0")
-                                .withExpirationSeconds(600L)
+                                .withExpirationSeconds(3600L)
                                 .withPath("test-aud-token")
                             .endServiceAccountToken()
                         .endSource()
@@ -246,5 +251,5 @@ public final class K8sUtils {
         keycloak.getSpec().getHttpSpec().setTlsSecret(null);
     }
 
-    public record CurlResult(int exitCode, String stdout) {}
+    public record CurlResult(int exitCode, String stdout, String stderr) {}
 }

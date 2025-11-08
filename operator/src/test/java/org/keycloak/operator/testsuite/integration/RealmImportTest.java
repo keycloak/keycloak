@@ -20,6 +20,8 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -36,12 +38,17 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -125,14 +132,28 @@ public class RealmImportTest extends BaseOperatorTest {
 
     @DisabledIfApiServerTest
     @Test
-    public void testSignedJWTs() {
+    public void testSignedJWTs() throws IOException {
         // Arrange
         var kc = getTestKeycloakDeployment(false);
+
+        if (kc.getSpec().getFeatureSpec() ==null) {
+            kc.getSpec().setFeatureSpec(new FeatureSpec());
+        }
+        kc.getSpec().getFeatureSpec().setEnabledFeatures(List.of("kubernetes-service-accounts", "client-auth-federated"));
+        PodTemplateSpec podTemplate = new PodTemplateSpec();
+        kc.getSpec().setUnsupported(new UnsupportedSpec(podTemplate));
+        PodSpec podSpec = new PodSpec();
+        podTemplate.setSpec(podSpec);
+        Container container = new Container();
+        podSpec.setContainers(List.of(container));
+        container.setEnv(List.of(new EnvVar("JAVA_OPTS_APPEND", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787", null)));
 
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
+        String realm = new String(getClass().getResourceAsStream("/example-realm.yaml").readAllBytes(), StandardCharsets.UTF_8);
+        realm = realm.replaceAll("jwt.credential.sub: 'https://kubernetes.default.svc.cluster.local'", "jwt.credential.sub: 'system:serviceaccount:" + namespace + ":default'");
+        K8sUtils.set(k8sclient, new ByteArrayInputStream(realm.getBytes(StandardCharsets.UTF_8)));
 
         // Assert
         waitForRealmImport(kc);
@@ -254,15 +275,15 @@ public class RealmImportTest extends BaseOperatorTest {
 
             String url =
                     "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + KEYCLOAK_HTTPS_PORT + "/realms/count0/protocol/openid-connect/token";
+            // To not quote arguments as this is only necessary on a shell CLI, but this is executed directly and it then confuses cURL
             String[] args = {
                     "-v", "-k",
-                    "-X", "POST",
-                    "\"" + url + "\"",
-                    "-H", "\"Content-Type: application/x-www-form-urlencoded\"",
-                    "--data-urlencode", "\"grant_type=client_credentials\"",
-                    "--data-urlencode", "\"client_id=kubernetes\"",
-                    "--data-urlencode", "\"client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer\"",
-                    "--data-urlencode", "\"client_assertion=" + token + "\""
+                    url,
+                    "-H", "Content-Type: application/x-www-form-urlencoded",
+                    "--data-urlencode", "grant_type=client_credentials",
+                    "--data-urlencode", "client_id=system:serviceaccount:" + namespace + ":default",
+                    "--data-urlencode", "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+                    "--data-urlencode", "client_assertion=" + token
             };
             Log.info("Url: '" + url + "'");
             String clientCredentialsOutput = inClusterCurl(k8sclient, namespace, args);
