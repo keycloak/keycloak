@@ -1,11 +1,12 @@
 package org.keycloak.tests.client.authentication.external;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public abstract class AbstractBaseClientAuthTest extends AbstractClientAuthTest {
 

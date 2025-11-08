@@ -1,14 +1,10 @@
 package org.keycloak.tests.client.authentication.external;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.admin.client.resource.IdentityProvidersResource;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
@@ -29,10 +25,15 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.common.BasicUserConfig;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.openqa.selenium.NoSuchElementException;
 
-import java.io.IOException;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.openqa.selenium.NoSuchElementException;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 @TestMethodOrder(MethodOrderer.MethodName.class)

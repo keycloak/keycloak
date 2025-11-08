@@ -16,10 +16,11 @@
  */
 package org.keycloak.crypto.def.test.sdjwt;
 
-import org.junit.Assume;
-import org.junit.Before;
 import org.keycloak.common.util.Environment;
 import org.keycloak.sdjwt.SdJwtFacadeTest;
+
+import org.junit.Assume;
+import org.junit.Before;
 
 /**
  * @author <a href="mailto:rodrick.awambeng@adorsys.com">Rodrick Awambeng</a>

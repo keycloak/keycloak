@@ -19,10 +19,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -33,10 +29,16 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeTrue;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
  *

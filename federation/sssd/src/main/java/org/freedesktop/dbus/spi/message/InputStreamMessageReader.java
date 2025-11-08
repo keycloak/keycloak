@@ -1,12 +1,5 @@
 package org.freedesktop.dbus.spi.message;
 
-import org.freedesktop.dbus.exceptions.DBusException;
-import org.freedesktop.dbus.exceptions.MessageProtocolVersionException;
-import org.freedesktop.dbus.messages.Message;
-import org.freedesktop.dbus.messages.MessageFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -14,6 +7,13 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Objects;
+
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.MessageProtocolVersionException;
+import org.freedesktop.dbus.messages.Message;
+import org.freedesktop.dbus.messages.MessageFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class InputStreamMessageReader implements IMessageReader {
     private final Logger        logger = LoggerFactory.getLogger(getClass());

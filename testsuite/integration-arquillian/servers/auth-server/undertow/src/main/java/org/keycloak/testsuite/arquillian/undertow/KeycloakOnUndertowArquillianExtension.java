@@ -1,8 +1,9 @@
 package org.keycloak.testsuite.arquillian.undertow;
 
+import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer;
+
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.core.spi.LoadableExtension;
-import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer;
 
 /**
  *

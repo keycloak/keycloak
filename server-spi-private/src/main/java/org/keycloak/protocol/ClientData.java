@@ -21,11 +21,12 @@ package org.keycloak.protocol;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * Encapsulates necessary data about client login request (OIDC or SAML request). Can be useful for cases when authenticationSession

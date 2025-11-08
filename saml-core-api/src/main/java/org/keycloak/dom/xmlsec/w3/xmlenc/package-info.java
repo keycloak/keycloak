@@ -15,4 +15,3 @@
  * limitations under the License.
  */
 package org.keycloak.dom.xmlsec.w3.xmlenc;
-

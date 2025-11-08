@@ -16,13 +16,15 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.representations.JsonWebToken;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
+import org.keycloak.representations.JsonWebToken;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *

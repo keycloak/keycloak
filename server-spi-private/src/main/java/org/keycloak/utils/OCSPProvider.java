@@ -29,6 +29,9 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.models.KeycloakSession;
+
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -38,8 +41,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.models.KeycloakSession;
 
 
 /**

@@ -17,12 +17,17 @@
  */
 package org.keycloak.authorization.protection;
 
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.permission.PermissionService;
+import org.keycloak.authorization.protection.permission.PermissionTicketService;
+import org.keycloak.authorization.protection.policy.UserManagedPermissionService;
 import org.keycloak.authorization.protection.resource.ResourceService;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
@@ -32,11 +37,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.Response.Status;
-import org.keycloak.authorization.protection.permission.PermissionTicketService;
-import org.keycloak.authorization.protection.policy.UserManagedPermissionService;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

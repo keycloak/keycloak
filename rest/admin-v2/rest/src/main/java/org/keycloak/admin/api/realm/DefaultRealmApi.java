@@ -1,11 +1,12 @@
 package org.keycloak.admin.api.realm;
 
+import java.util.Objects;
+
 import jakarta.ws.rs.Path;
+
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-
-import java.util.Objects;
 
 public class DefaultRealmApi implements RealmApi {
     private final KeycloakSession session;

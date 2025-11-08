@@ -21,17 +21,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoReserved;
-import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoReserved;
+import org.infinispan.protostream.annotations.ProtoTypeId;
+import org.jboss.logging.Logger;
 
 /**
  *

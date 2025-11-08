@@ -19,7 +19,8 @@
 
 package org.keycloak.testsuite.providers;
 
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
@@ -35,7 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 
-import java.util.List;
+import org.junit.Test;
 
 /**
  * Test for having multiple providerFactory of smae SPI with same providerId

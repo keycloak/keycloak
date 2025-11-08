@@ -17,10 +17,8 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Collectors;
+
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.representations.AccessToken;
@@ -38,7 +36,10 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.util.stream.Collectors;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author rmartinc

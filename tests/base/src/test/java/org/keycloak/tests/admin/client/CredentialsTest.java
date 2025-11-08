@@ -17,9 +17,16 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+
+import jakarta.ws.rs.core.MediaType;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -43,17 +50,11 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-
-import jakarta.ws.rs.core.MediaType;
 import org.keycloak.tests.utils.admin.GenerateKeystoreForTestUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;

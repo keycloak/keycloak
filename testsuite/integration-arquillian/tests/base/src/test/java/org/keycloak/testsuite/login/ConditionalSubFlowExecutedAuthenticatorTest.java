@@ -17,10 +17,7 @@
 package org.keycloak.testsuite.login;
 
 import java.util.Map;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory;
@@ -40,6 +37,11 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * <p>Test for the ConditionalSubFlowExecutedAuthenticator. A <em>test</em> parent

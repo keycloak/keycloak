@@ -2,6 +2,7 @@ package org.keycloak.validation.jakarta;
 
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.validation.Validator;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;

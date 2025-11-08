@@ -16,16 +16,18 @@
  */
 package org.keycloak.adapters.saml.elytron;
 
-import org.keycloak.adapters.saml.SamlSession;
-import org.keycloak.adapters.spi.SessionIdMapper;
-
 import java.util.Objects;
+
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionAttributeListener;
 import jakarta.servlet.http.HttpSessionBindingEvent;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionIdListener;
 import jakarta.servlet.http.HttpSessionListener;
+
+import org.keycloak.adapters.saml.SamlSession;
+import org.keycloak.adapters.spi.SessionIdMapper;
+
 import org.jboss.logging.Logger;
 
 /**

@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableMap;
-import org.junit.Test;
+import java.util.Collections;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.mappers.XPathAttributeMapper;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -17,14 +17,16 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
-import java.util.Collections;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
  * Integration test for the {@link XPathAttributeMapper}.

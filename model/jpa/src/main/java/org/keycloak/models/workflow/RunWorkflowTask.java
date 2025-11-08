@@ -2,8 +2,9 @@ package org.keycloak.models.workflow;
 
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 class RunWorkflowTask extends WorkflowTransactionalTask {
 

@@ -17,9 +17,9 @@
 
 package org.keycloak.connections.jpa;
 
-import org.jboss.logging.Logger;
-
 import jakarta.persistence.EntityManager;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

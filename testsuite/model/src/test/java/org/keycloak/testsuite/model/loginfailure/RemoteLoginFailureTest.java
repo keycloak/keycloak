@@ -20,10 +20,6 @@ package org.keycloak.testsuite.model.loginfailure;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.Constants;
@@ -36,6 +32,11 @@ import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 
 @RequireProvider(UserLoginFailureProvider.class)
 @RequireProvider(UserProvider.class)

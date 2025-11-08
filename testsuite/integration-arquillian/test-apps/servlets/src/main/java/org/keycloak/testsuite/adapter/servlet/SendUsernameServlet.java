@@ -18,11 +18,19 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.adapters.saml.SamlAuthenticationError;
-import org.keycloak.adapters.saml.SamlPrincipal;
-import org.keycloak.adapters.saml.SamlSession;
-import org.keycloak.adapters.spi.AuthenticationError;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map.Entry;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,19 +44,13 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.security.Principal;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map.Entry;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+
+import org.keycloak.adapters.saml.SamlAuthenticationError;
+import org.keycloak.adapters.saml.SamlPrincipal;
+import org.keycloak.adapters.saml.SamlSession;
+import org.keycloak.adapters.spi.AuthenticationError;
+
+import org.jboss.resteasy.reactive.NoCache;
 import org.w3c.dom.Document;
 
 /**

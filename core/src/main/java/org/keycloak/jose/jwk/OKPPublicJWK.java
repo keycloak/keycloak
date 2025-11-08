@@ -17,9 +17,9 @@
 
 package org.keycloak.jose.jwk;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.crypto.KeyType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**

@@ -18,6 +18,7 @@ package org.keycloak.storage;
 
 import java.util.Map;
 import java.util.stream.Stream;
+
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.KeycloakSession;

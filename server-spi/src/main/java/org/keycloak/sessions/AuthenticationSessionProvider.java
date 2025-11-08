@@ -17,11 +17,11 @@
 
 package org.keycloak.sessions;
 
+import java.util.Map;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -16,14 +16,14 @@
  */
 package org.keycloak.themeverifier;
 
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.net.URL;
-import java.util.List;
 
 class VerifyMessagePropertiesTest {
 

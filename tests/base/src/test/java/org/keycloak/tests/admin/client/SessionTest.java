@@ -17,7 +17,8 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.junit.jupiter.api.Test;
+import java.util.List;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -35,7 +36,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import java.util.List;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

@@ -17,13 +17,13 @@
 
 package org.keycloak.theme.beans;
 
-import freemarker.template.TemplateModelException;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
+
+import freemarker.template.TemplateModelException;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

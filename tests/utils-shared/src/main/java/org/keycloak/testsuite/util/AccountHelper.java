@@ -16,17 +16,18 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UserResource;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import jakarta.ws.rs.core.Response;
-import java.util.Optional;
 
 public class AccountHelper {
 

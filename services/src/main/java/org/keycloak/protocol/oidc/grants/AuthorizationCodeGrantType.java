@@ -17,13 +17,11 @@
 
 package org.keycloak.protocol.oidc.grants;
 
-import jakarta.ws.rs.core.Response;
-
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -36,20 +34,23 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
-import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
+
+import org.jboss.logging.Logger;
+
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 

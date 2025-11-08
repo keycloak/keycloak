@@ -1,15 +1,14 @@
 package org.keycloak.tests.admin.identityprovider;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
-import org.keycloak.models.IdentityProviderCapability;
-import org.keycloak.models.IdentityProviderType;
+import java.util.List;
+
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
+import org.keycloak.models.IdentityProviderCapability;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -21,7 +20,9 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.client.authentication.external.SpiffeClientAuthTest;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
-import java.util.List;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 public class IdentityProviderTypeTest {

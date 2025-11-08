@@ -17,7 +17,11 @@
 
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
+import java.security.MessageDigest;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.EventBuilder;
@@ -32,10 +36,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import java.security.MessageDigest;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
+import org.jboss.logging.Logger;
 
 /**
  * TODO: Remove this and probably also ClientSessionParser. It's unnecessary genericity and abstraction, which is not needed anymore when clientSessionModel was fully removed.

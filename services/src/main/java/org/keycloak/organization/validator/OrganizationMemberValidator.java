@@ -17,11 +17,6 @@
 
 package org.keycloak.organization.validator;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
-import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
-import static org.keycloak.validate.BuiltinValidators.emailValidator;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +42,12 @@ import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
+import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
+import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
 public class OrganizationMemberValidator extends AbstractSimpleValidator implements EnvironmentDependentProviderFactory {
 

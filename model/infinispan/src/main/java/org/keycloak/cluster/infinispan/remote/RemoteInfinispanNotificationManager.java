@@ -25,6 +25,16 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterListener;
+import org.keycloak.cluster.ClusterProvider.DCNotify;
+import org.keycloak.cluster.infinispan.TaskCallback;
+import org.keycloak.cluster.infinispan.WrapperClusterEvent;
+import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
+import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.connections.infinispan.TopologyInfo;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
@@ -35,15 +45,6 @@ import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterListener;
-import org.keycloak.cluster.ClusterProvider.DCNotify;
-import org.keycloak.cluster.infinispan.TaskCallback;
-import org.keycloak.cluster.infinispan.WrapperClusterEvent;
-import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
-import org.keycloak.common.util.Retry;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.connections.infinispan.TopologyInfo;
 
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 

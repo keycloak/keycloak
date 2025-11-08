@@ -1,12 +1,12 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientregistration.policy.AbstractClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
-
-import java.util.List;
 
 public class RegistrationWebOriginsPolicyFactory extends AbstractClientRegistrationPolicyFactory {
 

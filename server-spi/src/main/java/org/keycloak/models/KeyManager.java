@@ -17,18 +17,18 @@
 
 package org.keycloak.models;
 
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.keys.SecretKeyMetadata;
-import org.keycloak.keys.RsaKeyMetadata;
-
-import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.stream.Stream;
+import javax.crypto.SecretKey;
+
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.keys.RsaKeyMetadata;
+import org.keycloak.keys.SecretKeyMetadata;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

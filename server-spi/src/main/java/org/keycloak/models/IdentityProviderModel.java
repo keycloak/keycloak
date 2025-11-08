@@ -16,12 +16,13 @@
  */
 package org.keycloak.models;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 
 /**
  * <p>A model type representing the configuration for identity providers. It provides some common properties and also a {@link org.keycloak.models.IdentityProviderModel#config}

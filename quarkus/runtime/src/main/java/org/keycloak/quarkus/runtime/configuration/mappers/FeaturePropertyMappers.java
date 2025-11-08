@@ -1,15 +1,15 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
-import org.keycloak.config.FeatureOptions;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
-
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.config.FeatureOptions;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 

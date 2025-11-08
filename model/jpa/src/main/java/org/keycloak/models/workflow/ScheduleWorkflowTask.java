@@ -1,9 +1,10 @@
 package org.keycloak.models.workflow;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import org.jboss.logging.Logger;
 
 final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
 

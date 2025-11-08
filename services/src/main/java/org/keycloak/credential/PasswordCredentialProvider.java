@@ -16,10 +16,12 @@
  */
 package org.keycloak.credential;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Tag;
-import org.jboss.logging.Logger;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -34,11 +36,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tag;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.credential.PasswordCredentialProviderFactory.METER_ALGORITHM_TAG;
 import static org.keycloak.credential.PasswordCredentialProviderFactory.METER_HASHING_STRENGTH_TAG;

@@ -17,17 +17,18 @@
 
 package org.keycloak.models.utils;
 
-import org.junit.Test;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.ClientSecretConstants;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.idm.*;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.*;
+
+import org.junit.Test;
 
 import static org.junit.Assert.*;
 
@@ -273,4 +274,3 @@ public class StripSecretsUtilsTest {
     }
 
 }
-

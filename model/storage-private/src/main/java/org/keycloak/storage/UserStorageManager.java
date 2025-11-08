@@ -17,11 +17,6 @@
 
 package org.keycloak.storage;
 
-import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
-import static org.keycloak.storage.managers.UserStorageSyncManager.notifyToRefreshPeriodicSync;
-import static org.keycloak.utils.StreamsUtil.distinctByKey;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +30,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.opentelemetry.api.trace.StatusCode;
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
@@ -85,6 +78,14 @@ import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
+
+import io.opentelemetry.api.trace.StatusCode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+import static org.keycloak.storage.managers.UserStorageSyncManager.notifyToRefreshPeriodicSync;
+import static org.keycloak.utils.StreamsUtil.distinctByKey;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

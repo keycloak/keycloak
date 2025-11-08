@@ -17,11 +17,11 @@
 
 package org.keycloak.models;
 
+import java.util.stream.Stream;
+
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.group.GroupLookupProvider;
-
-import java.util.stream.Stream;
 
 /**
  *

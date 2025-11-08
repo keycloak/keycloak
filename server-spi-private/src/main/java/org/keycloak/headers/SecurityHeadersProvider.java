@@ -16,10 +16,10 @@
  */
 package org.keycloak.headers;
 
-import org.keycloak.provider.Provider;
-
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
+
+import org.keycloak.provider.Provider;
 
 public interface SecurityHeadersProvider extends Provider {
 

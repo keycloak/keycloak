@@ -18,10 +18,10 @@ package org.keycloak.urls;
 
 import java.net.URI;
 
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.provider.Provider;
-
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * The Hostname provider is used by Keycloak to decide URLs for frontend and backend requests. A provider can either

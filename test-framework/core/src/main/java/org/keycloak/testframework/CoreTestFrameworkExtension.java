@@ -1,10 +1,10 @@
 package org.keycloak.testframework;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.testframework.admin.AdminClientFactorySupplier;
 import org.keycloak.testframework.admin.AdminClientSupplier;
-import org.keycloak.testframework.http.SimpleHttpSupplier;
-import org.keycloak.testframework.https.ManagedCertificates;
-import org.keycloak.testframework.infinispan.InfinispanExternalServerSupplier;
 import org.keycloak.testframework.database.DevFileDatabaseSupplier;
 import org.keycloak.testframework.database.DevMemDatabaseSupplier;
 import org.keycloak.testframework.database.TestDatabase;
@@ -13,7 +13,10 @@ import org.keycloak.testframework.events.EventsSupplier;
 import org.keycloak.testframework.events.SysLogServerSupplier;
 import org.keycloak.testframework.http.HttpClientSupplier;
 import org.keycloak.testframework.http.HttpServerSupplier;
+import org.keycloak.testframework.http.SimpleHttpSupplier;
 import org.keycloak.testframework.https.CertificatesSupplier;
+import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.infinispan.InfinispanExternalServerSupplier;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.realm.ClientSupplier;
 import org.keycloak.testframework.realm.RealmSupplier;
@@ -23,9 +26,6 @@ import org.keycloak.testframework.server.EmbeddedKeycloakServerSupplier;
 import org.keycloak.testframework.server.KeycloakServer;
 import org.keycloak.testframework.server.KeycloakUrlsSupplier;
 import org.keycloak.testframework.server.RemoteKeycloakServerSupplier;
-
-import java.util.List;
-import java.util.Map;
 
 public class CoreTestFrameworkExtension implements TestFrameworkExtension {
 

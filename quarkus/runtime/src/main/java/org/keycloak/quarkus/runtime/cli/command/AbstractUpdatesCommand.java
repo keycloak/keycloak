@@ -28,6 +28,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+
 import picocli.CommandLine;
 
 public abstract class AbstractUpdatesCommand extends AbstractAutoBuildCommand {

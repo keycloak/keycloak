@@ -16,11 +16,11 @@
  */
 package org.keycloak.broker.oidc;
 
+import java.util.Map;
+
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-
-import java.util.Map;
 
 /**
  * @author Pedro Igor

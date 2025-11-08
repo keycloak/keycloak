@@ -16,10 +16,11 @@
  */
 package org.keycloak.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  *

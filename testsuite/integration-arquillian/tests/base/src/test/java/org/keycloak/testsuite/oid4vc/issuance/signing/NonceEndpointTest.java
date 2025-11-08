@@ -18,18 +18,19 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import jakarta.ws.rs.core.UriBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.OAuth2Constants;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.TokenVerifier;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
@@ -39,15 +40,16 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
+import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.util.JsonSerialization;
 
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Pascal Knüppel

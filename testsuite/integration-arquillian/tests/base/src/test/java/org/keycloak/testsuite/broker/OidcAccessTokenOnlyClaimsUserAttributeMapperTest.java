@@ -1,9 +1,8 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-
 import java.util.List;
 import java.util.Map;
+
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderSyncMode;
@@ -11,6 +10,8 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 
 public class OidcAccessTokenOnlyClaimsUserAttributeMapperTest extends OidcUserAttributeMapperTest {
 

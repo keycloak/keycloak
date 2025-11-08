@@ -1,18 +1,18 @@
 package org.keycloak.quarkus.runtime.oas;
 
-import io.quarkus.smallrye.openapi.OpenApiFilter;
-import org.eclipse.microprofile.openapi.OASFactory;
-import org.eclipse.microprofile.openapi.OASFilter;
-import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.Operation;
-import org.eclipse.microprofile.openapi.models.PathItem;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.quarkus.smallrye.openapi.OpenApiFilter;
+import org.eclipse.microprofile.openapi.OASFactory;
+import org.eclipse.microprofile.openapi.OASFilter;
+import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.eclipse.microprofile.openapi.models.Operation;
+import org.eclipse.microprofile.openapi.models.PathItem;
 
 @OpenApiFilter(OpenApiFilter.RunStage.BUILD)
 public class OASModelFilter implements OASFilter {

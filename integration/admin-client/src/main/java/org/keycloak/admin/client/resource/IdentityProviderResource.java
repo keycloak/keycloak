@@ -17,9 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -32,8 +31,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.Map;
+
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  * @author pedroigor

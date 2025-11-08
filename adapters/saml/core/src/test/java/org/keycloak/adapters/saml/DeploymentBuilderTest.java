@@ -21,10 +21,11 @@ package org.keycloak.adapters.saml;
 
 import java.io.InputStream;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

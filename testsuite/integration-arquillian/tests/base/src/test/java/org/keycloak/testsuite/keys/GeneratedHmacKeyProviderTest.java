@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.keys;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.List;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
@@ -37,12 +38,14 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 
-import jakarta.ws.rs.core.Response;
-import java.util.List;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -197,4 +200,3 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
     }
 
 }
-

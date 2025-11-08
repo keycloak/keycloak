@@ -19,10 +19,11 @@ package org.keycloak.it.junit5.extension;
 
 import java.util.Arrays;
 
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.configuration.StringConfiguration;
 import org.jboss.logging.Logger;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.testcontainers.images.PullPolicy;
 
 public class InfinispanContainer extends org.infinispan.server.test.core.InfinispanContainer {

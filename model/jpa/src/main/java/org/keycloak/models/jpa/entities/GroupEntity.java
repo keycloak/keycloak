@@ -17,11 +17,12 @@
 
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.Nationalized;
-
-import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.LinkedList;
+
+import jakarta.persistence.*;
+
+import org.hibernate.annotations.Nationalized;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

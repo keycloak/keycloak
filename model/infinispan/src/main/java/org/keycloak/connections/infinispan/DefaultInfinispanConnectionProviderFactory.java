@@ -28,18 +28,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import org.infinispan.client.hotrod.RemoteCacheManager;
-import org.infinispan.commons.configuration.io.ConfigurationWriter;
-import org.infinispan.commons.io.StringBuilderWriter;
-import org.infinispan.commons.util.Version;
-import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.infinispan.health.CacheHealth;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
@@ -67,6 +55,19 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
+
+import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.commons.configuration.io.ConfigurationWriter;
+import org.infinispan.commons.io.StringBuilderWriter;
+import org.infinispan.commons.util.Version;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.health.CacheHealth;
+import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;

@@ -1,7 +1,5 @@
 package org.keycloak.tests.admin.finegrainedadminv1;
 
-import org.jboss.logging.Logger;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -34,6 +32,9 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 
 public class AbstractFineGrainedAdminTest {
 

@@ -16,8 +16,9 @@
  */
 package org.keycloak.authentication.actiontoken.idpverifyemail;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Representation of a token that represents a time-limited verify e-mail action.

@@ -1,13 +1,13 @@
 package org.keycloak.testframework.server;
 
-import io.quarkus.maven.dependency.Dependency;
-
-import javax.net.ssl.SSLException;
 import java.net.ConnectException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLException;
+
+import io.quarkus.maven.dependency.Dependency;
 
 public class RemoteKeycloakServer implements KeycloakServer {
 

@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.broker;
 
-import org.junit.Before;
+import java.util.function.BiConsumer;
 
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -24,7 +24,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import java.util.function.BiConsumer;
+
+import org.junit.Before;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;

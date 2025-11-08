@@ -17,14 +17,14 @@
 
 package org.keycloak.it.storage.database.dist;
 
-import io.quarkus.test.junit.main.Launch;
-
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.junit5.extension.WithEnvVars;
+
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @DistributionTest
 @WithDatabase(alias = "postgres")

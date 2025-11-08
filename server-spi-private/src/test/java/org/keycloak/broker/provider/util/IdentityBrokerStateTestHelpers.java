@@ -1,14 +1,14 @@
 package org.keycloak.broker.provider.util;
 
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
-import org.keycloak.representations.idm.RealmRepresentation;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.*;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 public class IdentityBrokerStateTestHelpers {
 

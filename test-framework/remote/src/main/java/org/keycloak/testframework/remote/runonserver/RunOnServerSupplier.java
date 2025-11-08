@@ -1,6 +1,8 @@
 package org.keycloak.testframework.remote.runonserver;
 
-import org.apache.http.client.HttpClient;
+import java.util.Arrays;
+import java.util.HashSet;
+
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -9,8 +11,7 @@ import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.RemoteProviders;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import org.apache.http.client.HttpClient;
 
 public class RunOnServerSupplier implements Supplier<RunOnServerClient, InjectRunOnServer> {
 

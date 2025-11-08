@@ -16,12 +16,12 @@
  */
 package org.keycloak.storage.client;
 
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
-
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Abstraction interface for lookoup of clients by id and clientId.  These methods required for participating in login flows.

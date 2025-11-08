@@ -16,9 +16,9 @@
  */
 package org.keycloak.scripting;
 
-import org.keycloak.models.ScriptModel;
-
 import javax.script.ScriptException;
+
+import org.keycloak.models.ScriptModel;
 
 /**
  * Augments a {@link ScriptException} and adds additional metadata.

@@ -1,11 +1,12 @@
 package org.keycloak.admin.api.realm;
 
+import java.util.Optional;
+
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import org.keycloak.models.KeycloakSession;
 
-import java.util.Optional;
+import org.keycloak.models.KeycloakSession;
 
 public class DefaultRealmsApi implements RealmsApi {
     private final KeycloakSession session;

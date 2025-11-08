@@ -18,11 +18,12 @@
 
 package org.keycloak.tests.admin.client;
 
+import java.util.Map;
+import java.util.Optional;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.common.Profile;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -31,8 +32,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import java.util.Map;
-import java.util.Optional;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Pascal Knüppel

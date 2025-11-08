@@ -15,6 +15,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
+
 import org.openqa.selenium.WebDriver;
 
 public abstract class AbstractWorkflowTest {

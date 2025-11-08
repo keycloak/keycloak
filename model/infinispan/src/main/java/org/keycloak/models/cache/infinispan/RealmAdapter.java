@@ -17,13 +17,19 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.keycloak.Config;
-import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.Profile;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -36,6 +42,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
@@ -55,14 +62,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -17,18 +17,6 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
-import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
-import static org.infinispan.configuration.global.TransportConfiguration.STACK;
-import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_NODE_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_SITE_NAME;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.MACHINE_NAME;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.NODE_NAME;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.RACK_NAME;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.SITE_NAME;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.TRACING;
-
 import java.lang.invoke.MethodHandles;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -40,12 +28,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
+
+import org.keycloak.Config;
+import org.keycloak.common.util.Retry;
+import org.keycloak.config.CachingOptions;
+import org.keycloak.config.Option;
+import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.jgroups.header.TracerHeader;
+import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
+import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
+import org.keycloak.spi.infinispan.impl.Util;
+import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 
 import org.infinispan.commons.configuration.attributes.Attribute;
 import org.infinispan.configuration.global.TransportConfigurationBuilder;
@@ -66,25 +73,19 @@ import org.jgroups.util.DefaultSocketFactory;
 import org.jgroups.util.ExtendedUUID;
 import org.jgroups.util.SocketFactory;
 import org.jgroups.util.UUID;
-import org.keycloak.Config;
-import org.keycloak.common.util.Retry;
-import org.keycloak.config.CachingOptions;
-import org.keycloak.config.Option;
-import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
-import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
-import org.keycloak.jgroups.header.TracerHeader;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
-import org.keycloak.spi.infinispan.impl.Util;
-import org.keycloak.storage.configuration.ServerConfigStorageProvider;
+
+import static org.keycloak.config.CachingOptions.CACHE_EMBEDDED_PREFIX;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_NODE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.JBOSS_SITE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.MACHINE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.NODE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.RACK_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.SITE_NAME;
+import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.TRACING;
+
+import static org.infinispan.configuration.global.TransportConfiguration.CLUSTER_NAME;
+import static org.infinispan.configuration.global.TransportConfiguration.STACK;
 
 /**
  * Utility class to configure JGroups based on the Keycloak configuration.

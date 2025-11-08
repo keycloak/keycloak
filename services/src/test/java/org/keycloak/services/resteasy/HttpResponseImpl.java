@@ -17,11 +17,12 @@
 
 package org.keycloak.services.resteasy;
 
-import jakarta.ws.rs.core.NewCookie;
-import org.keycloak.http.HttpResponse;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import jakarta.ws.rs.core.NewCookie;
+
+import org.keycloak.http.HttpResponse;
 
 public class HttpResponseImpl implements HttpResponse {
 

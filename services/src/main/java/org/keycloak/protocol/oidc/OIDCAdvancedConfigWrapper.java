@@ -17,8 +17,11 @@
 
 package org.keycloak.protocol.oidc;
 
-import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE;
-import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.models.ClientModel;
@@ -26,11 +29,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_RFC9068_ACCESS_TOKEN_HEADER_TYPE;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -1,12 +1,13 @@
 package org.keycloak.compatibility;
 
-import static org.keycloak.compatibility.KeycloakCompatibilityMetadataProvider.VERSION_KEY;
-
 import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.ProfileConfigResolver;
+
+import org.junit.Test;
+
+import static org.keycloak.compatibility.KeycloakCompatibilityMetadataProvider.VERSION_KEY;
 
 public class KeycloakCompatibilityMetadataProviderTest extends AbstractCompatibilityMetadataProviderTest {
 

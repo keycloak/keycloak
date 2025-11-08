@@ -16,10 +16,10 @@
  */
 package org.keycloak.dom.saml.v1.protocol;
 
-import org.keycloak.dom.saml.common.CommonResponseType;
-
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.net.URI;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.dom.saml.common.CommonResponseType;
 
 /**
  * <complexType name="ResponseAbstractType" abstract="true"> <sequence>

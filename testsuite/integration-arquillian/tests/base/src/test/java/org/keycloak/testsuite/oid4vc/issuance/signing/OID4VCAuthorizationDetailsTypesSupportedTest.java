@@ -17,10 +17,11 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.util.List;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
-import org.junit.Before;
-import org.junit.Test;
+
 import org.keycloak.common.Profile;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -30,14 +31,16 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE;
 
 /**
  * Test to verify that authorization_details_types_supported is included in the OAuth Authorization Server

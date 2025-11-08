@@ -1,10 +1,11 @@
 package org.keycloak.models.workflow.conditions.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ErrorListener extends BaseErrorListener {
     private boolean hasErrors = false;

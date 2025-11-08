@@ -16,13 +16,13 @@
  */
 package org.keycloak.crypto;
 
-import org.keycloak.common.VerificationException;
-import org.keycloak.common.crypto.CryptoIntegration;
-
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Signature;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.crypto.CryptoIntegration;
 
 public class AsymmetricSignatureVerifierContext implements SignatureVerifierContext {
 

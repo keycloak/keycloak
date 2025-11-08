@@ -17,7 +17,12 @@
 
 package org.keycloak.storage.ldap.idm.query.internal;
 
-import org.jboss.logging.Logger;
+import java.util.*;
+import javax.naming.NamingException;
+import javax.naming.directory.SearchControls;
+import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -30,12 +35,7 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 
-import javax.naming.NamingException;
-import javax.naming.directory.SearchControls;
-import javax.naming.ldap.LdapContext;
-import javax.naming.ldap.LdapName;
-
-import java.util.*;
+import org.jboss.logging.Logger;
 
 import static java.util.Collections.unmodifiableSet;
 

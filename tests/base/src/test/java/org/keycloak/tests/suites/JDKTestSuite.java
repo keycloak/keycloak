@@ -1,8 +1,9 @@
 package org.keycloak.tests.suites;
 
+import org.keycloak.tests.admin.client.CredentialsTest;
+
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-import org.keycloak.tests.admin.client.CredentialsTest;
 
 @Suite
 @SelectClasses({CredentialsTest.class})

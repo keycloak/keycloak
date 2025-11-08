@@ -17,9 +17,9 @@
 
 package org.keycloak.authentication.authenticators.broker.util;
 
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
+
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

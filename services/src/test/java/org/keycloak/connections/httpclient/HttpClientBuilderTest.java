@@ -1,12 +1,12 @@
 package org.keycloak.connections.httpclient;
 
+import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.lang.reflect.Field;
-import java.util.concurrent.TimeUnit;
 
 public class HttpClientBuilderTest {
 

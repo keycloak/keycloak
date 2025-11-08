@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.model;
 
-import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserLoginFailureProvider;
@@ -10,6 +9,8 @@ import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanAuthentica
 import org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider;
 import org.keycloak.models.sessions.infinispan.remote.RemoteUserLoginFailureProvider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
+
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;

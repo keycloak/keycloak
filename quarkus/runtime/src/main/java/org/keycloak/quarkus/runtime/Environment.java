@@ -28,12 +28,12 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.quarkus.runtime.LaunchMode;
-import io.smallrye.config.SmallRyeConfig;
-
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.NetworkUtils;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+
+import io.quarkus.runtime.LaunchMode;
+import io.smallrye.config.SmallRyeConfig;
 
 public final class Environment {
 

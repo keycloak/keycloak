@@ -25,10 +25,6 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -49,14 +45,20 @@ import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
+import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createSessions;
+
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
-import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createSessions;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>

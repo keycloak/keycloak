@@ -1,11 +1,11 @@
 package org.keycloak.validation.jakarta;
 
+import java.util.Set;
+import java.util.function.Function;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
-
-import java.util.Set;
-import java.util.function.Function;
 
 public class HibernateValidatorProvider implements JakartaValidatorProvider {
     private final Validator validator;

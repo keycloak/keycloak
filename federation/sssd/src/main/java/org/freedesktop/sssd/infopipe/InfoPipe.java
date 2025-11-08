@@ -19,6 +19,7 @@ package org.freedesktop.sssd.infopipe;
 
 import java.util.List;
 import java.util.Map;
+
 import org.freedesktop.dbus.annotations.DBusInterfaceName;
 import org.freedesktop.dbus.annotations.DBusMemberName;
 import org.freedesktop.dbus.interfaces.DBusInterface;

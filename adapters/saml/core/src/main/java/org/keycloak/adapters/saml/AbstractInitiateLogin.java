@@ -17,8 +17,10 @@
 
 package org.keycloak.adapters.saml;
 
+import java.io.IOException;
+import java.security.KeyPair;
+
 import org.keycloak.adapters.saml.SamlDeployment.IDP.SingleSignOnService;
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -28,8 +30,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 
-import java.io.IOException;
-import java.security.KeyPair;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

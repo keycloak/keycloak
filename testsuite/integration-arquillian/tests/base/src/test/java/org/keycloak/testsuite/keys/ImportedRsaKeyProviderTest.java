@@ -17,9 +17,16 @@
 
 package org.keycloak.testsuite.keys;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.cert.Certificate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.List;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -43,17 +50,13 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 
-import jakarta.ws.rs.core.Response;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.cert.Certificate;
-import java.util.List;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import static org.junit.Assert.*;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -342,4 +345,3 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         return rep;
     }
 }
-

@@ -16,11 +16,6 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -56,6 +51,12 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.ExpressionConfigSourceInterceptor;
 import io.smallrye.config.Expressions;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 public class PropertyMapper<T> {
 
