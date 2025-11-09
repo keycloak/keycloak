@@ -198,7 +198,7 @@ public final class K8sUtils {
                     .withNewProjected()
                         .addNewSource()
                             .withNewServiceAccountToken()
-                                .withAudience("https://example.com:8443/realms/count0")
+                                .withAudience("https://example.com:8443/realms/test")
                                 .withExpirationSeconds(3600L)
                                 .withPath("test-aud-token")
                             .endServiceAccountToken()
