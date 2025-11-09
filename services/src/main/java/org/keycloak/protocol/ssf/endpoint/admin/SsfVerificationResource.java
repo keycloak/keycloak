@@ -26,6 +26,12 @@ public class SsfVerificationResource {
         this.receiverAlias = receiverAlias;
     }
 
+    /**
+     * This calls the verification_endpoint provided by the associated SSF Transmitter.
+     *
+     * Note that the verification_endpoint is called with the current stream_id and the transmitter access token.
+     * @return
+     */
     @POST
     public Response triggerVerification() {
 
@@ -44,6 +50,5 @@ public class SsfVerificationResource {
         }
 
         return Response.noContent().type(MediaType.APPLICATION_JSON).build();
-
     }
 }
