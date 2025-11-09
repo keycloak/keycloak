@@ -81,7 +81,7 @@ export default function PolicyDetails() {
     async () => {
       if (policyId) {
         const result = await Promise.all([
-          adminClient.clients.findOnePolicy({
+          adminClient.clients.findOnePolicyWithType({
             id: permissionClientId ?? id,
             type: policyType!,
             policyId,
