@@ -7,8 +7,8 @@ import org.keycloak.protocol.ssf.event.listener.DefaultSsfEventListener;
 import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
 import org.keycloak.protocol.ssf.event.parser.DefaultSsfSecurityEventTokenParser;
 import org.keycloak.protocol.ssf.event.parser.SsfSecurityEventTokenParser;
-import org.keycloak.protocol.ssf.event.processor.DefaultSsfEventProcessor;
-import org.keycloak.protocol.ssf.event.processor.SsfEventProcessor;
+import org.keycloak.protocol.ssf.event.processor.DefaultSsfSecurityEventProcessor;
+import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventProcessor;
 import org.keycloak.protocol.ssf.event.processor.SsfSecurityEventContext;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.DefaultSsfTransmitterClient;
@@ -24,7 +24,7 @@ public class DefaultSsfProvider implements SsfProvider {
 
     protected SsfSecurityEventTokenParser securityEventTokenParser;
 
-    protected SsfEventProcessor eventProcessor;
+    protected SsfSecurityEventProcessor eventProcessor;
 
     protected SsfEventListener eventListener;
 
@@ -49,9 +49,9 @@ public class DefaultSsfProvider implements SsfProvider {
         return securityEventTokenParser;
     }
 
-    protected SsfEventProcessor getSecurityEventProcessor() {
+    protected SsfSecurityEventProcessor getSecurityEventProcessor() {
         if (eventProcessor == null) {
-            eventProcessor = new DefaultSsfEventProcessor(
+            eventProcessor = new DefaultSsfSecurityEventProcessor(
                     this,
                     getEventListener(),
                     getVerificationStore()
@@ -123,7 +123,7 @@ public class DefaultSsfProvider implements SsfProvider {
         return verificationStore;
     }
 
-    public SsfEventProcessor eventProcessor() {
+    public SsfSecurityEventProcessor eventProcessor() {
         return getSecurityEventProcessor();
     }
 

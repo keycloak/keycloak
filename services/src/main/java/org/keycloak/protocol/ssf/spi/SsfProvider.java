@@ -9,6 +9,9 @@ import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStor
 import org.keycloak.protocol.ssf.receiver.verification.SsfVerificationClient;
 import org.keycloak.provider.Provider;
 
+/**
+ * SsfProvider exposes the SSF infrastructure components.
+ */
 public interface SsfProvider extends Provider {
 
     @Override
