@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.event.parser;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.JWSHeader;
@@ -15,6 +16,9 @@ import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Default implementation of a {@link SsfSecurityEventTokenParser}.
+ */
 public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventTokenParser {
 
     protected static final Logger log = Logger.getLogger(DefaultSsfSecurityEventTokenParser.class);
@@ -25,18 +29,31 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
         this.session = session;
     }
 
+    /**
+     * Parses the encoded SecurityEventToken in the context of the given {@link SsfReceiver} into a {@link SecurityEventToken}.
+     *
+     * The parsing decodes the SecurityEventToken and validates it's signature.
+     *
+     * @param encodedSecurityEventToken
+     * @param receiver
+     * @return
+     */
     @Override
     public SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfReceiver receiver) {
 
         try {
-            // custom decode method to use keys from ReceiverComponent
-            var securityEventToken = decode(encodedSecurityEventToken, receiver);
-            return securityEventToken;
+            return decode(encodedSecurityEventToken, receiver);
         } catch (Exception e) {
             throw new SecurityEventTokenParsingException("Could not parse security event token", e);
         }
     }
 
+    /**
+     * Decode and validate the given encoded Security Event Token string.
+     * @param encodedSecurityEventToken
+     * @param receiver
+     * @return
+     */
     protected SecurityEventToken decode(String encodedSecurityEventToken, SsfReceiver receiver) {
 
         if (encodedSecurityEventToken == null) {
@@ -49,30 +66,64 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
             String kid = header.getKeyId();
             String alg = header.getRawAlgorithm();
 
-            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), receiver.getReceiverProviderConfig().getInternalId());
+            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), receiver.getConfig().getInternalId());
 
-            KeyWrapper publicKey = getTransmitterPublicKey(receiver, modelKey, kid, alg);
+            KeyWrapper publicKey = resolveTransmitterPublicKey(receiver, modelKey, kid, alg);
 
             if (publicKey == null) {
                 throw new SecurityEventTokenParsingException("Could not find publicKey with kid " + kid);
             }
 
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
+            SignatureProvider signatureProvider = resolveSignatureProvider(alg);
             if (signatureProvider == null) {
                 throw new SecurityEventTokenParsingException("Could not find verifier for alg " + alg);
             }
 
             byte[] tokenBytes = jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
-            boolean valid = signatureProvider.verifier(publicKey)
-                    .verify(tokenBytes, jws.getSignature());
-            return valid ? jws.readJsonContent(SecurityEventToken.class) : null;
+            boolean valid = verify(signatureProvider, publicKey, tokenBytes, jws);
+            if (!valid) {
+                return null;
+            }
+
+            return jws.readJsonContent(SecurityEventToken.class);
         } catch (Exception e) {
             log.debug("Failed to decode token", e);
             return null;
         }
     }
 
-    protected KeyWrapper getTransmitterPublicKey(SsfReceiver receiver, String modelKey, String kid, String alg) {
+    /**
+     * Verify the token signature.
+     * @param signatureProvider
+     * @param publicKey
+     * @param tokenBytes
+     * @param jws
+     * @return
+     * @throws VerificationException
+     */
+    protected boolean verify(SignatureProvider signatureProvider, KeyWrapper publicKey, byte[] tokenBytes, JWSInput jws) throws VerificationException {
+        return signatureProvider.verifier(publicKey)
+                .verify(tokenBytes, jws.getSignature());
+    }
+
+    /**
+     * Resolve Signature provider.
+     * @param alg
+     * @return
+     */
+    protected SignatureProvider resolveSignatureProvider(String alg) {
+        return session.getProvider(SignatureProvider.class, alg);
+    }
+
+    /**
+     * Resolve public key of SSF Transmitter for signature validation.
+     * @param receiver
+     * @param modelKey
+     * @param kid
+     * @param alg
+     * @return
+     */
+    protected KeyWrapper resolveTransmitterPublicKey(SsfReceiver receiver, String modelKey, String kid, String alg) {
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
         SsfTransmitterMetadata transmitterMetadata = receiver.getTransmitterMetadata();
         SsfTransmitterPublicKeyLoader loader = new SsfTransmitterPublicKeyLoader(session, transmitterMetadata);

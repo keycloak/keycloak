@@ -12,6 +12,9 @@ import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
 import java.util.UUID;
 
+/**
+ * SsfReceiverProvider is an adapter that uses the Identity Provider infrastructure to manage SSF Receivers.
+ */
 public class SsfReceiverProvider implements IdentityProvider<SsfReceiverProviderConfig> {
 
     protected static final Logger log = Logger.getLogger(SsfReceiverProvider.class);
@@ -31,6 +34,8 @@ public class SsfReceiverProvider implements IdentityProvider<SsfReceiverProvider
     }
 
     public void requestVerification() {
+
+        // TODO make this callable from the Admin UI via the SSF Identity Provider component.
 
         var ssfProvider = session.getProvider(SsfProvider.class);
         SsfStreamVerificationStore storage = ssfProvider.verificationStore();

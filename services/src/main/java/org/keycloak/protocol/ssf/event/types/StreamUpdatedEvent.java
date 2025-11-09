@@ -1,10 +1,12 @@
 package org.keycloak.protocol.ssf.event.types;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.protocol.ssf.StreamStatus;
+import org.keycloak.protocol.ssf.stream.StreamStatus;
 
 /**
- * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-ID3.html#section-7.1.5
+ * SSF Stream status updated event.
+ *
+ * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html#name-stream-updated-event
  */
 public class StreamUpdatedEvent extends SsfEvent {
 
@@ -21,7 +23,6 @@ public class StreamUpdatedEvent extends SsfEvent {
      */
     @JsonProperty("reason")
     protected String reason;
-
 
     public StreamUpdatedEvent() {
         super(TYPE);

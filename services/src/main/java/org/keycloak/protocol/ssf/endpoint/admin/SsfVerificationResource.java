@@ -10,8 +10,9 @@ import org.keycloak.protocol.ssf.endpoint.SsfSetPushDeliveryFailureResponse;
 import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 
-import static org.keycloak.protocol.ssf.endpoint.SsfSetPushDeliveryResponseUtil.newSsfSetPushDeliveryFailureResponse;
-
+/**
+ * SsfVerificationResource is used to verify the stream and event delivery setup for a SSF Receiver
+ */
 public class SsfVerificationResource {
 
     protected static final Logger log = Logger.getLogger(SsfVerificationResource.class);
@@ -33,12 +34,13 @@ public class SsfVerificationResource {
         if (receiver == null) {
             return Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
-        // TODO reject pending verification
+
+        // TODO handle pending verifications
 
         try {
             receiver.requestVerification();
         } catch (Exception e) {
-            throw newSsfSetPushDeliveryFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, SsfSetPushDeliveryFailureResponse.ERROR_INTERNAL_ERROR, e.getMessage());
+            throw SsfSetPushDeliveryFailureResponse.newFailureResponse(Response.Status.INTERNAL_SERVER_ERROR, SsfSetPushDeliveryFailureResponse.ERROR_INTERNAL_ERROR, e.getMessage());
         }
 
         return Response.noContent().type(MediaType.APPLICATION_JSON).build();

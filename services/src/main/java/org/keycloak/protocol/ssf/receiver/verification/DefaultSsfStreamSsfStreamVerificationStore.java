@@ -7,6 +7,10 @@ import org.keycloak.models.SingleUseObjectProvider;
 
 import java.util.Map;
 
+/**
+ * Default {@link SsfStreamVerificationStore} implementation that uses the {@link SingleUseObjectProvider} to manage the
+ * verification state of a stream associated with a SSF Receiver.
+ */
 public class DefaultSsfStreamSsfStreamVerificationStore implements SsfStreamVerificationStore {
 
     protected int verificationStateLifespanSeconds = 300;

@@ -28,7 +28,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
     }
 
     @Override
-    public SsfReceiverProviderConfig getReceiverProviderConfig() {
+    public SsfReceiverProviderConfig getConfig() {
         return receiverProviderConfig;
     }
 

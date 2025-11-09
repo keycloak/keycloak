@@ -4,13 +4,17 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.protocol.ssf.event.InitiatingEntity;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectIdJsonDeserializer;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Represents a generic SSF event.
+ *
+ * See: https://datatracker.ietf.org/doc/html/rfc8417
+ */
 public abstract class SsfEvent {
 
     @JsonProperty("subject")
