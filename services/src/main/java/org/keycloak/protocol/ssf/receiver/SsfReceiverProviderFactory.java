@@ -6,6 +6,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.util.Map;
@@ -39,6 +40,15 @@ public class SsfReceiverProviderFactory extends AbstractIdentityProviderFactory<
             return ssfModel;
         }
         return new SsfReceiverProviderConfig(model);
+    }
+
+    public static SsfReceiver getSsfReceiver(KeycloakSession session, RealmModel realm, String alias) {
+        IdentityProviderModel maybeSsfReceiverProvider = session.identityProviders().getByAlias(alias);
+        SsfReceiverProviderConfig receiverProviderConfig = null;
+        if (maybeSsfReceiverProvider != null && SsfReceiverProviderFactory.PROVIDER_ID.equals(maybeSsfReceiverProvider.getProviderId())) {
+            receiverProviderConfig = new SsfReceiverProviderConfig(maybeSsfReceiverProvider);
+        }
+        return new DefaultSsfReceiver(session, receiverProviderConfig);
     }
 
     @Override

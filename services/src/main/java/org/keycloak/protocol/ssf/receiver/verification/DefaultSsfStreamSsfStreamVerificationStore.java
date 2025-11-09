@@ -4,7 +4,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
 
 import java.util.Map;
 

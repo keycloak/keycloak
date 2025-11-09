@@ -10,8 +10,8 @@ import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.keys.SsfTransmitterPublicKeyLoader;
-import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
-import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
 import java.nio.charset.StandardCharsets;
 
@@ -49,13 +49,9 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
             String kid = header.getKeyId();
             String alg = header.getRawAlgorithm();
 
+            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), receiver.getReceiverProviderConfig().getInternalId());
 
-            String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), receiver.getReceiverModel().getReceiverProviderConfig().getInternalId());
-
-            PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            SsfTransmitterMetadata transmitterMetadata = receiver.getTransmitterMetadata();
-            SsfTransmitterPublicKeyLoader loader = new SsfTransmitterPublicKeyLoader(session, transmitterMetadata);
-            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, loader);
+            KeyWrapper publicKey = getTransmitterPublicKey(receiver, modelKey, kid, alg);
 
             if (publicKey == null) {
                 throw new SecurityEventTokenParsingException("Could not find publicKey with kid " + kid);
@@ -74,5 +70,13 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
             log.debug("Failed to decode token", e);
             return null;
         }
+    }
+
+    protected KeyWrapper getTransmitterPublicKey(SsfReceiver receiver, String modelKey, String kid, String alg) {
+        PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+        SsfTransmitterMetadata transmitterMetadata = receiver.getTransmitterMetadata();
+        SsfTransmitterPublicKeyLoader loader = new SsfTransmitterPublicKeyLoader(session, transmitterMetadata);
+        KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, loader);
+        return publicKey;
     }
 }

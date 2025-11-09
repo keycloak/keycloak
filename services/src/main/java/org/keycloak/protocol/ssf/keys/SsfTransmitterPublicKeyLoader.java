@@ -7,7 +7,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
-import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 import org.keycloak.util.JWKSUtils;
 
 public class SsfTransmitterPublicKeyLoader implements PublicKeyLoader {

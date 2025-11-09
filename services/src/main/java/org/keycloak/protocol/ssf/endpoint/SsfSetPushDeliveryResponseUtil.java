@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.support;
+package org.keycloak.protocol.ssf.endpoint;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;

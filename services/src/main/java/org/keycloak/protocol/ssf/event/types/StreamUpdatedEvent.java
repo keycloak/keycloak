@@ -1,7 +1,7 @@
 package org.keycloak.protocol.ssf.event.types;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.protocol.ssf.stream.StreamStatus;
+import org.keycloak.protocol.ssf.StreamStatus;
 
 /**
  * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-ID3.html#section-7.1.5

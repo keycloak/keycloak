@@ -3,6 +3,7 @@ package org.keycloak.protocol.ssf.receiver;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class SsfReceiverProviderConfig extends IdentityProviderModel {
@@ -10,6 +11,8 @@ public class SsfReceiverProviderConfig extends IdentityProviderModel {
     public static final String DESCRIPTION = "description";
 
     public static final String STREAM_ID = "streamId";
+
+    public static final String STREAM_AUDIENCE = "streamAudience";
 
     public static final String TRANSMITTER_ACCESS_TOKEN = "transmitterAccessToken";
 
@@ -60,6 +63,22 @@ public class SsfReceiverProviderConfig extends IdentityProviderModel {
 
     public void setStreamId(String streamId) {
         getConfig().put(STREAM_ID, streamId);
+    }
+
+    public String getStreamAudience() {
+        return getConfig().get(STREAM_AUDIENCE);
+    }
+
+    public void setStreamAudience(String streamAudience) {
+        getConfig().put(STREAM_AUDIENCE, streamAudience);
+    }
+
+    public Set<String> streamAudience() {
+        String streamAudience = getStreamAudience();
+        if (streamAudience == null) {
+            return null;
+        }
+        return Set.of(streamAudience.split(","));
     }
 
     @Override
