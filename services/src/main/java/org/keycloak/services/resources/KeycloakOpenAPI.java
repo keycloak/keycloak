@@ -57,6 +57,7 @@ public class KeycloakOpenAPI {
             public static final String SCOPE_MAPPINGS = "Scope Mappings";
             public static final String USERS = "Users";
             public static final String ORGANIZATIONS = "Organizations";
+            public static final String SSF_PUSH = "SSF Push Delivery";
             private Tags() { }
         }
 

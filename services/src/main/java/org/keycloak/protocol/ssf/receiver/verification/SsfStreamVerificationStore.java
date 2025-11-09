@@ -2,6 +2,9 @@ package org.keycloak.protocol.ssf.receiver.verification;
 
 import org.keycloak.models.RealmModel;
 
+/**
+ * Store to handle the verification state.
+ */
 public interface SsfStreamVerificationStore {
 
     void setVerificationState(RealmModel realm, String receiverAlias, String streamId, String state);

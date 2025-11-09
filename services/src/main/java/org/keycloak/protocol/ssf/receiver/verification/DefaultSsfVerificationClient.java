@@ -21,11 +21,11 @@ public class DefaultSsfVerificationClient implements SsfVerificationClient {
     public void requestVerification(SsfReceiver receiver, SsfTransmitterMetadata metadata, String state) {
 
         var verificationRequest = new SsfStreamVerificationRequest();
-        verificationRequest.setStreamId(receiver.getReceiverProviderConfig().getStreamId());
+        verificationRequest.setStreamId(receiver.getConfig().getStreamId());
         verificationRequest.setState(state);
 
         log.debugf("Sending verification request to %s. %s", metadata.getVerificationEndpoint(), verificationRequest);
-        var verificationHttpCall = prepareHttpCall(metadata.getVerificationEndpoint(), receiver.getReceiverProviderConfig().getTransmitterAccessToken(), verificationRequest);
+        var verificationHttpCall = prepareHttpCall(metadata.getVerificationEndpoint(), receiver.getConfig().getTransmitterAccessToken(), verificationRequest);
         try (var response = verificationHttpCall.asResponse()) {
             log.debugf("Received verification response. status=%s", response.getStatus());
 

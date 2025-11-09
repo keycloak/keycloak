@@ -13,7 +13,7 @@ public class SsfRealmResourceProviderFactory implements RealmResourceProviderFac
     private static final SsfRealmResourceProvider INSTANCE = new SsfRealmResourceProvider();
 
     /**
-     * Exposes the SSF endpoints via $ISSUER/ssf
+     * The SSF endpoints are available under {@code $KC_ISSUER_URL/ssf}.
      *
      * @return
      */

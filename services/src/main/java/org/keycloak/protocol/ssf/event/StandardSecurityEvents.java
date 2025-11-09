@@ -3,6 +3,7 @@ package org.keycloak.protocol.ssf.event;
 
 import org.keycloak.protocol.ssf.event.types.GenericSsfEvent;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
+import org.keycloak.protocol.ssf.event.types.StreamUpdatedEvent;
 import org.keycloak.protocol.ssf.event.types.VerificationEvent;
 import org.keycloak.protocol.ssf.event.types.caep.AssuranceLevelChange;
 import org.keycloak.protocol.ssf.event.types.caep.CaepEvent;
@@ -40,19 +41,29 @@ import org.keycloak.protocol.ssf.event.types.scim.ProvisioningPutEventFull;
 import org.keycloak.protocol.ssf.event.types.scim.ProvisioningPutEventNotice;
 import org.keycloak.protocol.ssf.event.types.scim.ScimEvent;
 
-import javax.sound.midi.Patch;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SecurityEvents {
+/**
+ * Registry of Standard SSF Events.
+ */
+public class StandardSecurityEvents {
 
-    public final static Map<String, Class<? extends CaepEvent>> CAEP_EVENTS_TYPES;
-    public final static Map<String, Class<? extends RiscEvent>> RISC_EVENTS_TYPES;
+    public static final Map<String, Class<? extends SsfEvent>> SSF_EVENTS_TYPES;
+    public static final Map<String, Class<? extends CaepEvent>> CAEP_EVENTS_TYPES;
+    public static final Map<String, Class<? extends RiscEvent>> RISC_EVENTS_TYPES;
     public static final Map<String, Class<? extends ScimEvent>> SCIM_EVENTS_TYPES;
 
     static {
+        var ssfEventTypes = new HashMap<String, Class<? extends SsfEvent>>();
+        List.of(//
+                new VerificationEvent(), //
+                new StreamUpdatedEvent() //
+        ).forEach(ssfEvent -> ssfEventTypes.put(ssfEvent.getEventType(), ssfEvent.getClass()));
+        SSF_EVENTS_TYPES = Collections.unmodifiableMap(ssfEventTypes);
+
         var caepEventTypes = new HashMap<String, Class<? extends CaepEvent>>();
         List.of( //
                 new AssuranceLevelChange(), //
@@ -97,7 +108,7 @@ public class SecurityEvents {
                 new ProvisioningPatchEventNotice(), //
                 new ProvisioningPutEventFull(), //
                 new ProvisioningPutEventNotice() //
-        );
+        ).forEach(scimEvent -> scimEventTypes.put(scimEvent.getEventType(), scimEvent.getClass()));
         SCIM_EVENTS_TYPES = Collections.unmodifiableMap(scimEventTypes);
     }
 
@@ -107,6 +118,10 @@ public class SecurityEvents {
 
     public static boolean isRiscEvent(SsfEvent rawSsfEvent) {
         return RISC_EVENTS_TYPES.containsKey(rawSsfEvent.getEventType());
+    }
+
+    public static boolean isScimEvent(SsfEvent rawSsfEvent) {
+        return SCIM_EVENTS_TYPES.containsKey(rawSsfEvent.getEventType());
     }
 
     public static boolean isVerificationEventType(String eventType) {
@@ -132,6 +147,11 @@ public class SecurityEvents {
         var scimEventType = SCIM_EVENTS_TYPES.get(eventType);
         if (scimEventType != null) {
             return scimEventType;
+        }
+
+        var ssfEventType = SSF_EVENTS_TYPES.get(eventType);
+        if (scimEventType != null) {
+            return ssfEventType;
         }
 
         return GenericSsfEvent.class;

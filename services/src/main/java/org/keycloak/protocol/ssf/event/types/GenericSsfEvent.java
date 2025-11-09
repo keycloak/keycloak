@@ -1,5 +1,8 @@
 package org.keycloak.protocol.ssf.event.types;
 
+/**
+ * Fallback {@link SsfEvent} if we encounter an unknown SsfEvent type.
+ */
 public class GenericSsfEvent extends SsfEvent {
 
     public GenericSsfEvent() {

@@ -6,6 +6,9 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
+/**
+ * Exposes the {@link SsfAdminResource}
+ */
 public class SsfAdminRealmResourceProvider implements AdminRealmResourceProvider {
 
     @Override
