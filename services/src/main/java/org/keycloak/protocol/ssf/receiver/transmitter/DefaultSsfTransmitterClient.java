@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.receiver.transmitterclient;
+package org.keycloak.protocol.ssf.receiver.transmitter;
 
 import org.jboss.logging.Logger;
 import org.keycloak.http.simple.SimpleHttp;
@@ -6,8 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.ssf.SsfException;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
-import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -25,28 +24,28 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
     }
 
     @Override
-    public SsfTransmitterMetadata loadTransmitterMetadata(SsfReceiverModel receiverModel) {
+    public SsfTransmitterMetadata loadTransmitterMetadata(SsfReceiver receiver) {
 
-        SsfTransmitterMetadata metadata = loadFromCache(receiverModel);
+        SsfTransmitterMetadata metadata = loadFromCache(receiver);
 
         if (metadata != null) {
             return metadata;
         }
 
-        metadata = fetchTransmitterMetadata(receiverModel);
+        metadata = fetchTransmitterMetadata(receiver);
 
         if (metadata != null) {
-            storeToCache(receiverModel, metadata);
+            storeToCache(receiver, metadata);
         }
 
         return metadata;
     }
 
     @Override
-    public SsfTransmitterMetadata fetchTransmitterMetadata(SsfReceiverModel receiverModel) {
+    public SsfTransmitterMetadata fetchTransmitterMetadata(SsfReceiver receiver) {
 
         RealmModel realm = session.getContext().getRealm();
-        String url = receiverModel.getTransmitterConfigUrl();
+        String url = receiver.getTransmitterConfigUrl();
 
         log.debugf("Sending transmitter metadata request. realm=%s url=%s", realm.getName(), url);
         var request = createHttpClient().doGet(url);
@@ -62,10 +61,10 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
         }
     }
 
-    protected void storeToCache(SsfReceiverModel receiverModel, SsfTransmitterMetadata metadata) {
+    protected void storeToCache(SsfReceiver receiver, SsfTransmitterMetadata metadata) {
 
         RealmModel realm = session.getContext().getRealm();
-        String url = receiverModel.getTransmitterConfigUrl();
+        String url = receiver.getTransmitterConfigUrl();
 
         SingleUseObjectProvider cache = getCache();
         try {
@@ -81,9 +80,9 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
         return TimeUnit.HOURS.toSeconds(12);
     }
 
-    protected SsfTransmitterMetadata loadFromCache(SsfReceiverModel receiverModel) {
+    protected SsfTransmitterMetadata loadFromCache(SsfReceiver receiver) {
 
-        String url = receiverModel.getTransmitterConfigUrl();
+        String url = receiver.getTransmitterConfigUrl();
 
         SingleUseObjectProvider cache = getCache();
         Map<String, String> cachedTransmitterMetadata = cache.get(makeCacheKey(url));
@@ -107,10 +106,10 @@ public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
     }
 
     @Override
-    public boolean clearTransmitterMetadata(SsfReceiverModel receiverModel) {
+    public boolean clearTransmitterMetadata(SsfReceiver receiver) {
 
         SingleUseObjectProvider cache = getCache();
-        String cacheKey = makeCacheKey(receiverModel.getTransmitterConfigUrl());
+        String cacheKey = makeCacheKey(receiver.getTransmitterConfigUrl());
         Map<String, String> cachedTransmitterMetadata = cache.get(cacheKey);
         if (cachedTransmitterMetadata != null) {
             cache.remove(cacheKey);

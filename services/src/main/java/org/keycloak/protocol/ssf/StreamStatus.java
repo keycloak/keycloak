@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.stream;
+package org.keycloak.protocol.ssf;
 
 public enum StreamStatus {
 
