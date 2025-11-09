@@ -2,8 +2,13 @@ package org.keycloak.protocol.ssf.endpoint.admin;
 
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 /**
@@ -28,6 +33,12 @@ public class SsfReceiverAdminResource {
      * @param alias
      * @return
      */
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF_STREAM_VERIFICATION)
+    @Operation(summary = "Trigger SSF Stream Verification for the given receiver in this realm.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "202", description = "Accepted"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+    })
     @Path("/{receiverAlias}/verify")
     public SsfVerificationResource verificationEndpoint(@PathParam("receiverAlias") String alias) {
         return new SsfVerificationResource(session, alias);

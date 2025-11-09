@@ -59,6 +59,7 @@ public class KeycloakOpenAPI {
             public static final String ORGANIZATIONS = "Organizations";
             public static final String WORKFLOWS = "Workflows";
             public static final String SSF_PUSH = "SSF Push Delivery";
+            public static final String SSF_STREAM_VERIFICATION = "SSF Stream Verification";
             private Tags() { }
         }
 
