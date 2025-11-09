@@ -9,6 +9,11 @@ import org.keycloak.representations.JsonWebToken;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Represents a RFC8417 Security Event Token (SET).
+ *
+ * See: https://datatracker.ietf.org/doc/html/rfc8417
+ */
 public class SecurityEventToken extends JsonWebToken {
 
     @JsonProperty("sub_id")

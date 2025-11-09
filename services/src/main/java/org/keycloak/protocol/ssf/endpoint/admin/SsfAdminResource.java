@@ -7,14 +7,16 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 /**
- * http://localhost:8081/admin/realms/ssf-demo/ssf
+ * SsfAdmin resource to manage SSF related components.
+ *
+ * The endpoint is available via {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf}
  */
 public class SsfAdminResource {
 
-    private final KeycloakSession session;
-    private final RealmModel realm;
-    private final AdminPermissionEvaluator auth;
-    private final AdminEventBuilder adminEvent;
+    protected final KeycloakSession session;
+    protected final RealmModel realm;
+    protected final AdminPermissionEvaluator auth;
+    protected final AdminEventBuilder adminEvent;
 
     public SsfAdminResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
@@ -24,14 +26,33 @@ public class SsfAdminResource {
     }
 
     /**
-     * http://localhost:8081/admin/realms/ssf-demo/ssf/receivers
+     * Exposes the {@link SsfReceiverAdminResource} for managing SSF Receivers as a custom endpoint.
+     *
+     * Checks if the current user can access the SSF admin resource for receivers.
+     *
+     * The endpoint is available via {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/receivers}
      * @return
      */
     @Path("receivers")
     public SsfReceiverAdminResource receiverManagementEndpoint() {
 
-        auth.realm().requireManageIdentityProviders();
+        checkReceiverAdminResourceAccess();
 
+        return receiverAdminResource();
+    }
+
+    /**
+     * Provies the actual {@link SsfReceiverAdminResource}.
+     * @return
+     */
+    protected SsfReceiverAdminResource receiverAdminResource() {
         return new SsfReceiverAdminResource(session, auth);
+    }
+
+    /**
+     * Checks if the current user can access the SSF admin resource for receivers.
+     */
+    protected void checkReceiverAdminResourceAccess() {
+        auth.realm().requireManageIdentityProviders();
     }
 }
