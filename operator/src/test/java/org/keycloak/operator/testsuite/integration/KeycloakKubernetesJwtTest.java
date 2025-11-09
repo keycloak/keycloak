@@ -64,6 +64,7 @@ public class KeycloakKubernetesJwtTest extends BaseOperatorTest {
             kc.getSpec().setFeatureSpec(new FeatureSpec());
         }
         kc.getSpec().getFeatureSpec().setEnabledFeatures(List.of("kubernetes-service-accounts", "client-auth-federated"));
+        kc.getSpec().setStartOptimized(false);
 
         PodTemplateSpec podTemplate = new PodTemplateSpec();
         kc.getSpec().setUnsupported(new UnsupportedSpec(podTemplate));
