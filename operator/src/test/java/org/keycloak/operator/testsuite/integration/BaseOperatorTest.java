@@ -400,7 +400,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
           k8sclient.pods().withLabel("app", "keycloak-realm-import").list().getItems()
                   .forEach(pod -> log(k8sclient.pods().resource(pod), Pod::getStatus, false));
       } finally {
-//          cleanup();
+          cleanup();
       }
   }
 

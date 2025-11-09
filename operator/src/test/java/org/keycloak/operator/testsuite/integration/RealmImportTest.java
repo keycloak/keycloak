@@ -151,7 +151,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        String realm = new String(getClass().getResourceAsStream("/example-realm.yaml").readAllBytes(), StandardCharsets.UTF_8);
+        String realm = new String(getClass().getResourceAsStream("/example-realm-with-kubernetes.yaml").readAllBytes(), StandardCharsets.UTF_8);
         realm = realm.replaceAll("jwt.credential.sub: 'https://kubernetes.default.svc.cluster.local'", "jwt.credential.sub: 'system:serviceaccount:" + namespace + ":default'");
         K8sUtils.set(k8sclient, new ByteArrayInputStream(realm.getBytes(StandardCharsets.UTF_8)));
 
@@ -174,7 +174,7 @@ public class RealmImportTest extends BaseOperatorTest {
 
         // Act
         k8sclient.getKubernetesSerialization().registerKubernetesResource(KeycloakRealmImport.class);
-        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm-with-kubernetes.yaml"), obj -> {
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"), obj -> {
             KeycloakRealmImport realmImport = (KeycloakRealmImport) obj;
             realmImport.getSpec().getRealm().setSmtpServer(Map.of("port", "${MY_SMTP_PORT}", "host", "${MY_SMTP_SERVER}", "from", "admin@keycloak.org"));
             realmImport.getSpec().setPlaceholders(Map.of("MY_SMTP_PORT", new Placeholder(new SecretKeySelectorBuilder().withName("keycloak-smtp-secret").withKey("SMTP_PORT").build()),
