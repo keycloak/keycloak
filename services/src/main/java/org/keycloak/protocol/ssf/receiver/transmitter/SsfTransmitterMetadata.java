@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf.transmitter;
+package org.keycloak.protocol.ssf.receiver.transmitter;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;

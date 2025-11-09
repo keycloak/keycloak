@@ -4,12 +4,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ssf.receiver.spi.SsfReceiver;
-import org.keycloak.protocol.ssf.receiver.transmitterclient.SsfTransmitterClient;
+import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
-import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
 import java.util.UUID;
 
@@ -44,16 +43,16 @@ public class SsfReceiverProvider implements IdentityProvider<SsfReceiverProvider
             storage.clearVerificationState(realm, model.getAlias(), model.getStreamId());
         }
 
-        SsfReceiver ssfReceiver = ssfProvider.receiverManager().loadReceiverFromAlias(session.getContext(), model.getAlias());
+        SsfReceiver ssfReceiver = SsfReceiverProviderFactory.getSsfReceiver(session, realm, model.getAlias());
 
         SsfTransmitterClient ssfTransmitterClient = ssfProvider.transmitterClient();
-        SsfTransmitterMetadata transmitterMetadata = ssfTransmitterClient.loadTransmitterMetadata(ssfReceiver.getReceiverModel());
+        SsfTransmitterMetadata transmitterMetadata = ssfTransmitterClient.loadTransmitterMetadata(ssfReceiver);
         String state = UUID.randomUUID().toString();
 
         // store current verification state
         storage.setVerificationState(realm, model.getAlias(), model.getStreamId(), state);
 
-        ssfProvider.verificationClient().requestVerification(ssfReceiver.getReceiverModel(), transmitterMetadata, state);
+        ssfProvider.verificationClient().requestVerification(ssfReceiver, transmitterMetadata, state);
     }
 
     @Override
