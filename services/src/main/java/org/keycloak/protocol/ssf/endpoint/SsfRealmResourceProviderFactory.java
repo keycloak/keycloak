@@ -1,4 +1,4 @@
-package org.keycloak.protocol.ssf;
+package org.keycloak.protocol.ssf.endpoint;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
