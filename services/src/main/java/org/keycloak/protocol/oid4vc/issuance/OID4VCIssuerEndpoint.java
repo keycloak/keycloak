@@ -990,15 +990,6 @@ public class OID4VCIssuerEndpoint {
         return authResult;
     }
 
-    // get the auth result from the authentication manager
-    private AuthenticationManager.AuthResult getAuthResult(WebApplicationException errorResponse) {
-        AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
-        if (authResult == null) {
-            throw errorResponse;
-        }
-        return authResult;
-    }
-
     /**
      * Get a signed credential
      *

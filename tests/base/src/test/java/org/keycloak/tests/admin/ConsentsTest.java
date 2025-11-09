@@ -401,14 +401,6 @@ public class ConsentsTest {
         return identityProviderRepresentation;
     }
 
-    private boolean isUUID(String uuid) {
-        return 36 == uuid.length()
-                && uuid.charAt(8) == '-'
-                && uuid.charAt(13) == '-'
-                && uuid.charAt(18) == '-'
-                && uuid.charAt(23) == '-';
-    }
-
     private static class UserRealmUserConf implements UserConfig {
 
         @Override

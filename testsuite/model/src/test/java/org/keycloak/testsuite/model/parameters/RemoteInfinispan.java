@@ -98,10 +98,6 @@ public class RemoteInfinispan extends KeycloakModelParameters {
         return "site-" + (node % 2 == 0 ? 2 : 1);
     }
 
-    private static String mcastAddr(int node) {
-        return (node % 2 == 0) ? SITE_2_MCAST_ADDR : SITE_1_MCAST_ADDR;
-    }
-
     @Override
     public <T> Stream<T> getParameters(Class<T> clazz) {
         if (HotRodServerRule.class.isAssignableFrom(clazz)) {

@@ -1233,12 +1233,6 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertFalse(rep.isActive());
     }
 
-    private void isTokenEnabled(AccessTokenResponse tokenResponse, String clientId, String secret) throws IOException {
-        isAccessTokenEnabled(tokenResponse.getAccessToken(), clientId, secret);
-        AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
-        assertEquals(Response.Status.OK.getStatusCode(), tokenRefreshResponse.getStatusCode());
-    }
-
     private void isTokenDisabled(AccessTokenResponse tokenResponse, String clientId, String secret) throws IOException {
         isAccessTokenDisabled(tokenResponse.getAccessToken(), clientId, secret);
 

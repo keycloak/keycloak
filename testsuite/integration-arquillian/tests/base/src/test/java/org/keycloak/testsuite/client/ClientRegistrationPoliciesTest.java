@@ -127,10 +127,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         return response;
     }
 
-    private void assertOidcFail(ClientRegOp operation, OIDCClientRepresentation client, int expectedStatusCode) {
-        assertOidcFail(operation, client, expectedStatusCode, null);
-    }
-
     private void assertOidcFail(ClientRegOp operation, OIDCClientRepresentation client, int expectedStatusCode, String expectedErrorContains) {
         try {
             switch (operation) {

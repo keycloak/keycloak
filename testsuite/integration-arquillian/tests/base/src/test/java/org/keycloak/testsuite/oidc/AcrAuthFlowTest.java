@@ -427,15 +427,6 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         oauth.loginForm().claims(claims).open();
     }
 
-    /**
-     * Helper function to fetch the authentication flow ID based on the alias
-     * @param alias The alias to search for
-     * @return The flow ID
-     */
-    private String findFlowByAlias(String alias){
-        return testRealm().flows().getFlows().stream().filter(f -> f.getAlias().equals(alias)).findFirst().orElseThrow().getId();
-    }
-
 
     /**
      * Helper function to log out the specified user

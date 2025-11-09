@@ -101,10 +101,6 @@ public class RoleModelTest extends KeycloakModelTest {
         return withRealm(realmId, (session, realm) -> session.roles().getRolesStream(realm, rolesSubset.stream(), search, first, max).collect(Collectors.toList()));
     }
 
-    private RoleModel getMainRole() {
-        return withRealm(realmId, (session, realm) -> session.roles().getRoleById(realm, mainRoleId));
-    }
-
     private List<RoleModel> getModelResult(String search, Integer first, Integer max) {
         return withRealm(realmId, ((session, realm) -> session.roles().getRoleById(realm, mainRoleId).getCompositesStream(search, first, max).collect(Collectors.toList())));
     }

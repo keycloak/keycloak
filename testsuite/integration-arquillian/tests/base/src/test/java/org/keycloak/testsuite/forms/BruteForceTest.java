@@ -1264,10 +1264,6 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         events.expect(EventType.LOGIN_ERROR).error(error).assertEvent();
     }
 
-    private void assertUserPermanentlyDisabledEvent() {
-        events.expect(EventType.LOGIN_ERROR).error(Errors.USER_DISABLED).assertEvent();
-    }
-
     private void assertUserDisabledReason(String expected) {
         String actual = adminClient.realm("test").users()
                 .search("test-user@localhost", 0, 1)

@@ -289,10 +289,6 @@ public class RealmsResource {
         throw new NotFoundException();
     }
 
-    private void checkSsl(RealmModel realm) {
-        checkSsl(session, realm);
-    }
-
     private static void checkSsl(KeycloakSession session, RealmModel realm) {
         if (!"https".equals(session.getContext().getUri().getBaseUri().getScheme())
                 && realm.getSslRequired().isRequired(session.getContext().getConnection())) {

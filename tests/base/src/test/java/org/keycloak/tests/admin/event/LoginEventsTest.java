@@ -73,14 +73,6 @@ public class LoginEventsTest {
         oAuthClient.doLogin("bad", "user");
     }
 
-    private void pause(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000L);
-        } catch (InterruptedException e) {
-            Assertions.fail(e.getMessage());
-        }
-    }
-
     @Test
     public void eventAttributesTest() {
         badLogin();

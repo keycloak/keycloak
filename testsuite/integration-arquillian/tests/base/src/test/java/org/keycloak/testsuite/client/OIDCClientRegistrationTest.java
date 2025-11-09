@@ -101,10 +101,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         return response;
     }
 
-    private void assertCreateFail(OIDCClientRepresentation client, int expectedStatusCode) {
-        assertCreateFail(client, expectedStatusCode, null);
-    }
-
     private void assertCreateFail(OIDCClientRepresentation client, int expectedStatusCode, String expectedErrorContains) {
         try {
             reg.oidc().create(client);
