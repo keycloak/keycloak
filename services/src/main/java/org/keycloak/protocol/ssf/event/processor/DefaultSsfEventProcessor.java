@@ -12,7 +12,8 @@ import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
 import org.keycloak.protocol.ssf.event.types.StreamUpdatedEvent;
 import org.keycloak.protocol.ssf.event.types.VerificationEvent;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
+import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderConfig;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationException;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
@@ -41,10 +42,10 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         KeycloakContext keycloakContext = securityEventContext.getSession().getContext();
 
         Map<String, Map<String, Object>> events = securityEventToken.getEvents();
-        SsfReceiverModel receiverModel = securityEventContext.getReceiver().getReceiverModel();
+        SsfReceiverProviderConfig receiverProviderConfig = securityEventContext.getReceiver().getReceiverProviderConfig();
 
         log.debugf("Processing SSF events for security event token. realm=%s jti=%s streamId=%s eventCount=%s",
-                keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverModel.getStreamId(), events.size());
+                keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
 
         for (var entry : events.entrySet()) {
             String eventId = securityEventToken.getId();
@@ -128,21 +129,22 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         String streamId = extractStreamIdFromVerificationEvent(securityEventContext, verificationEvent);
 
         RealmModel realm = keycloakContext.getRealm();
-        SsfReceiverModel receiverModel = securityEventContext.getReceiver().getReceiverModel();
+        SsfReceiver receiver = securityEventContext.getReceiver();
+        SsfReceiverProviderConfig receiverProviderConfig = receiver.getReceiverProviderConfig();
 
-        if (!receiverModel.getStreamId().equals(streamId)) {
-            log.debugf("Verification failed! StreamId mismatch. jti=%s expectedStreamId=%s actualStreamId=%s", jti, receiverModel.getStreamId(), streamId);
+        if (!receiverProviderConfig.getStreamId().equals(streamId)) {
+            log.debugf("Verification failed! StreamId mismatch. jti=%s expectedStreamId=%s actualStreamId=%s", jti, receiverProviderConfig.getStreamId(), streamId);
             return false;
         }
 
-        SsfStreamVerificationState verificationState = getVerificationState(realm, receiverModel);
+        SsfStreamVerificationState verificationState = getVerificationState(realm, receiver, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
 
         String givenState = verificationEvent.getState();
         String expectedState = verificationState == null ? null : verificationState.getState();
 
         if (givenState.equals(expectedState)) {
             log.debugf("Verification successful!. jti=%s state=%s", jti, givenState);
-            verificationStore.clearVerificationState(realm, receiverModel.getAlias(), receiverModel.getStreamId());
+            verificationStore.clearVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
             return true;
         }
 
@@ -158,7 +160,7 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         SecurityEventToken securityEventToken = securityEventContext.getSecurityEventToken();
         OpaqueSubjectId opaqueSubjectId = (OpaqueSubjectId) securityEventToken.getSubjectId();
 
-        securityEventContext.getReceiver().updateStreamStatus(streamUpdatedEvent.getStatus());
+        // TODO handle stream status update
 
         log.debugf("Handled stream updated event. realm=%s jti=%s streamId=%s newStatus=%s", realm.getName(), jti, opaqueSubjectId.getId(), streamUpdatedEvent.getStatus());
 
@@ -166,8 +168,8 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
     }
 
 
-    protected SsfStreamVerificationState getVerificationState(RealmModel realm, SsfReceiverModel receiverModel) {
-        return verificationStore.getVerificationState(realm, receiverModel.getAlias(), receiverModel.getStreamId());
+    protected SsfStreamVerificationState getVerificationState(RealmModel realm, SsfReceiver receiver, String alias, String streamId) {
+        return verificationStore.getVerificationState(realm, alias, streamId);
     }
 
     protected String extractStreamIdFromVerificationEvent(SsfSecurityEventContext securityEventContext, SsfEvent ssfEvent) {

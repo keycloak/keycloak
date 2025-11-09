@@ -4,8 +4,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverModel;
-import org.keycloak.protocol.ssf.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
 public class DefaultSsfVerificationClient implements SsfVerificationClient {
 
@@ -18,14 +18,14 @@ public class DefaultSsfVerificationClient implements SsfVerificationClient {
     }
 
     @Override
-    public void requestVerification(SsfReceiverModel model, SsfTransmitterMetadata metadata, String state) {
+    public void requestVerification(SsfReceiver receiver, SsfTransmitterMetadata metadata, String state) {
 
         var verificationRequest = new SsfStreamVerificationRequest();
-        verificationRequest.setStreamId(model.getStreamId());
+        verificationRequest.setStreamId(receiver.getReceiverProviderConfig().getStreamId());
         verificationRequest.setState(state);
 
         log.debugf("Sending verification request to %s. %s", metadata.getVerificationEndpoint(), verificationRequest);
-        var verificationHttpCall = prepareHttpCall(metadata.getVerificationEndpoint(), model.getTransmitterAccessToken(), verificationRequest);
+        var verificationHttpCall = prepareHttpCall(metadata.getVerificationEndpoint(), receiver.getReceiverProviderConfig().getTransmitterAccessToken(), verificationRequest);
         try (var response = verificationHttpCall.asResponse()) {
             log.debugf("Received verification response. status=%s", response.getStatus());
 
