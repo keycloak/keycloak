@@ -90,8 +90,8 @@ public class SsfPushDeliveryResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF_PUSH)
     @Operation(summary = "SSF Push delivery endpoint for this realm.")
     @APIResponses(value = {
-            @APIResponse(responseCode = "202", description = "Accepted"),
-            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "204", description = "No content"),
+            @APIResponse(responseCode = "404", description = "Not found"),
     })
     public Response ingestSecurityEventToken(@PathParam("receiverAlias") String receiverAlias, //
                                              String encodedSecurityEventToken,  //
