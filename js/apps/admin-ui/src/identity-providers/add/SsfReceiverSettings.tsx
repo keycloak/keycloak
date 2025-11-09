@@ -43,6 +43,12 @@ export const SsfReceiverSettings = () => {
       />
 
       <TextControl
+        name="config.streamAudience"
+        label={t("ssfStreamAudience")}
+        labelIcon={t("ssfStreamAudienceHelp")}
+      />
+
+      <TextControl
         name="config.streamId"
         label={t("ssfStreamId")}
         labelIcon={t("ssfStreamIdHelp")}
