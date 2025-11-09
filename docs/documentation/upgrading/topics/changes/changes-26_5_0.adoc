@@ -75,6 +75,13 @@ This prevents problems with client IDs or passwords that contain, for example, a
 
 To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
 
+=== Permissions of the database user for PostgreSQL
+
+If you are running on PostgreSQL as a database for {project_name}, ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
+
+This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
+If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
+
 === Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
 
 If you have user storage extension and you reference the class `org.keycloak.credential.UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be

@@ -49,7 +49,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     public static final String INDEX_CREATION_THRESHOLD_PARAM = "keycloak.indexCreationThreshold";
 
-    private int indexCreationThreshold;
+    private long indexCreationThreshold;
     private Class<? extends Database> liquibaseDatabaseClazz;
 
     private static final AtomicBoolean INITIALIZATION = new AtomicBoolean(false);
@@ -97,7 +97,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
     @SuppressWarnings("unchecked")
     @Override
     public void init(Config.Scope config) {
-        indexCreationThreshold = config.getInt("indexCreationThreshold", 300000);
+        indexCreationThreshold = config.getLong("indexCreationThreshold", 300000L);
         logger.debugf("indexCreationThreshold is %d", indexCreationThreshold);
 
         // We need to explicitly handle the default here as Config might not be MicroProfile and hence no actually server config exists
