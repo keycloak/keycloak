@@ -74,7 +74,6 @@ public class UsersTest {
         users = realm.admin().users().search("user", null, null, true);
         user = users.get(0);
         assertThat(user.getRequiredActions(), nullValue());
-        assertThat(user.isTotp(), nullValue());
     }
 
     @Test

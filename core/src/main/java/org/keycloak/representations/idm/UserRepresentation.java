@@ -30,7 +30,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected String self; // link
     protected String origin;
     protected Long createdTimestamp;
-    protected Boolean totp;
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
 
@@ -68,7 +67,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
         this.self = rep.getSelf();
         this.createdTimestamp = rep.getCreatedTimestamp();
         this.enabled = rep.isEnabled();
-        this.totp = rep.isTotp();
         this.federationLink = rep.getFederationLink();
         this.serviceAccountClientId = rep.getServiceAccountClientId();
         this.credentials = rep.getCredentials();
@@ -101,16 +99,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setCreatedTimestamp(Long createdTimestamp) {
         this.createdTimestamp = createdTimestamp;
-    }
-
-    @Deprecated
-    public Boolean isTotp() {
-        return totp;
-    }
-
-    @Deprecated
-    public void setTotp(Boolean totp) {
-        this.totp = totp;
     }
 
     public List<CredentialRepresentation> getCredentials() {

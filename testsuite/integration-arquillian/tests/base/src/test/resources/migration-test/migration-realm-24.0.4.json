@@ -727,7 +727,6 @@
     "emailVerified" : false,
     "createdTimestamp" : 1716808035158,
     "enabled" : true,
-    "totp" : false,
     "credentials" : [ {
       "id" : "bac8754e-2044-4d11-8adc-fcdade4fa827",
       "type" : "password",
@@ -750,7 +749,6 @@
     "emailVerified" : false,
     "createdTimestamp" : 1589819754922,
     "enabled" : true,
-    "totp" : false,
     "credentials" : [ ],
     "disableableCredentialTypes" : [ ],
     "requiredActions" : [ ],
@@ -2619,7 +2617,6 @@
     "emailVerified" : false,
     "createdTimestamp" : 1589819834462,
     "enabled" : true,
-    "totp" : false,
     "credentials" : [ ],
     "disableableCredentialTypes" : [ ],
     "requiredActions" : [ ],
@@ -2635,7 +2632,6 @@
     "emailVerified" : false,
     "createdTimestamp" : 1589834705173,
     "enabled" : true,
-    "totp" : false,
     "credentials" : [ {
       "id" : "b22fe342-e3b6-4e31-a76c-7f7ffdeb83ab",
       "type" : "password",

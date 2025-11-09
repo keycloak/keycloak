@@ -56,8 +56,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         testRealm.setOtpPolicyDigits(6);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user)
-                   .hotpSecret("hotpSecret")
-                   .otpEnabled();
+                   .hotpSecret("hotpSecret");
     }
 
     @Rule

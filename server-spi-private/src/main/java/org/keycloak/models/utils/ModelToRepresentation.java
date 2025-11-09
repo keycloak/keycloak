@@ -47,7 +47,6 @@ import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.models.*;
-import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
@@ -247,7 +246,6 @@ public class ModelToRepresentation {
             rep.setEnabled(user.isEnabled());
         }
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
         rep.setDisableableCredentialTypes(user.credentialManager()
                 .getDisableableCredentialTypesStream().collect(Collectors.toSet()));
         rep.setFederationLink(user.getFederationLink());

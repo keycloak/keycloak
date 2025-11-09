@@ -354,7 +354,6 @@
     "createdTimestamp" : 1589819834462,
     "username" : "migration-test-user",
     "enabled" : true,
-    "totp" : false,
     "emailVerified" : false,
     "credentials" : [ ],
     "disableableCredentialTypes" : [ ],
@@ -370,7 +369,6 @@
     "createdTimestamp" : 1589834705173,
     "username" : "offline-test-user",
     "enabled" : true,
-    "totp" : false,
     "emailVerified" : false,
      "credentials" : [ {
       "type" : "password",
@@ -4027,7 +4025,6 @@
     "createdTimestamp" : 1589747978814,
     "username" : "admin",
     "enabled" : true,
-    "totp" : false,
     "emailVerified" : false,
     "credentials" : [ {
       "id" : "49082b41-019d-4c64-b127-dac90386423f",
@@ -4049,7 +4046,6 @@
     "createdTimestamp" : 1589819754922,
     "username" : "master-test-user",
     "enabled" : true,
-    "totp" : false,
     "emailVerified" : false,
     "credentials" : [ ],
     "disableableCredentialTypes" : [ ],

@@ -518,7 +518,6 @@
     "id" : "5e09dbcc-2277-4f42-b258-5a2d03061c73",
     "username" : "john",
     "enabled" : true,
-    "totp" : false,
     "emailVerified" : false,
     "credentials" : [ {
       "id" : "e55dcbf5-a385-4989-9b5c-1662760516db",
@@ -535,7 +534,6 @@
     "id" : "ae8e2cd7-c68c-4ce3-8c76-28f1dff8566d",
     "username" : "mike",
     "enabled" : true,
-    "totp" : false,
     "emailVerified" : false,
     "credentials" : [ {
       "id" : "a16e66c3-7f37-461f-9b59-4883b9d5daef",

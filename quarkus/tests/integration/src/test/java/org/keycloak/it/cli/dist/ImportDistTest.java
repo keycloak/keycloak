@@ -108,7 +108,6 @@ public class ImportDistTest {
                     + "    \"emailVerified\" : false,\n"
                     + "    \"createdTimestamp\" : 1741358612691,\n"
                     + "    \"enabled\" : true,\n"
-                    + "    \"totp\" : false,\n"
                     + "    \"credentials\" : [ ],\n"
                     + "    \"disableableCredentialTypes\" : [ ],\n"
                     + "    \"requiredActions\" : [ ],\n"

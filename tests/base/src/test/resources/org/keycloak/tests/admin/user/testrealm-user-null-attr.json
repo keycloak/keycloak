@@ -292,7 +292,6 @@
     "createdTimestamp" : 1578311988958,
     "username" : "testuser",
     "enabled" : true,
-    "totp" : false,
     "emailVerified" : false,
     "attributes" : {
       "key1" : [ "value1" ],
