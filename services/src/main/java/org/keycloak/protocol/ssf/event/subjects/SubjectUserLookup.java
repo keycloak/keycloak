@@ -1,9 +1,13 @@
 package org.keycloak.protocol.ssf.event.subjects;
 
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.Urls;
+import org.keycloak.urls.UrlType;
 
 public class SubjectUserLookup {
 
@@ -30,14 +34,15 @@ public class SubjectUserLookup {
 
     private static UserModel getUserByIssuerSub(KeycloakSession session, RealmModel realm, String iss, String sub) {
 
-        String realmIssuer = "http://localhost:18080/auth/realms/ssf-demo";
+        UriInfo frontendUriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        String realmIssuer = Urls.realmIssuer(frontendUriInfo.getBaseUri(), session.getContext().getRealm().getName());
         // TODO fixme cannot create current realmIssuer in async call context
-        // Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName());
         if (realmIssuer.equals(iss)) {
             return getUserById(session, realm, sub);
         }
 
-        // TODO lookup user by identity provider links
+        // TODO lookup user by identity provider links via session.identityProviders()
+        // session.users().getUserByFederatedIdentity(realm, new FederatedIdentityModel())
         return null;
     }
 

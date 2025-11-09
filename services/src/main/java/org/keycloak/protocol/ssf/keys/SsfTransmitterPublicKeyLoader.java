@@ -10,6 +10,9 @@ import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 import org.keycloak.util.JWKSUtils;
 
+/**
+ * {@link PublicKeyLoader} to fetch the public Keycloak from the SSF Transmitter metadata.
+ */
 public class SsfTransmitterPublicKeyLoader implements PublicKeyLoader {
 
     protected static final Logger log = Logger.getLogger(SsfTransmitterPublicKeyLoader.class);

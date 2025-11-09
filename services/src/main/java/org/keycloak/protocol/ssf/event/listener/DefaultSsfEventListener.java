@@ -14,6 +14,9 @@ import org.keycloak.protocol.ssf.event.types.caep.SessionRevoked;
 
 import java.util.List;
 
+/**
+ * Default {@link SsfEventListener} implementation.
+ */
 public class DefaultSsfEventListener implements SsfEventListener {
 
     protected static final Logger log = Logger.getLogger(DefaultSsfEventListener.class);
@@ -34,38 +37,58 @@ public class DefaultSsfEventListener implements SsfEventListener {
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
 
-        UserModel user = lookupUser(realm, subjectId);
-        handleSecurityEvent(event, realm, subjectId, user);
+        handleSecurityEvent(eventContext, event, realm, subjectId);
     }
 
-    protected UserModel lookupUser(RealmModel realm, SubjectId subjectId) {
-        return SubjectUserLookup.lookupUser(session, realm, subjectId);
-    }
-
-    protected void handleSecurityEvent(SsfEvent ssfEvent, RealmModel realm, SubjectId subjectId, UserModel user) {
-
-        if (user == null) {
-            return;
-        }
+    protected void handleSecurityEvent(SsfSecurityEventContext eventContext, SsfEvent ssfEvent, RealmModel realm, SubjectId subjectId) {
 
         if (ssfEvent instanceof SessionRevoked sessionRevoked) {
-            handleSessionRevokedEvent(realm, user, sessionRevoked);
+            handleSessionRevokedEvent(eventContext, realm, subjectId, sessionRevoked);
         }
     }
 
-    protected void handleSessionRevokedEvent(RealmModel realm, UserModel user, SessionRevoked sessionRevoked) {
+    protected void handleSessionRevokedEvent(SsfSecurityEventContext eventContext, RealmModel realm, SubjectId subjectId, SessionRevoked sessionRevoked) {
 
-        List<UserSessionModel> sessions = session.sessions().getUserSessionsStream(realm, user).toList();
-        if (sessions.isEmpty()) {
+        // TODO subject is usually refering to a user, but could also be UserSession, an IdentityProvider, Organization etc. so we might need to be more flexible here
+
+        List<UserSessionModel> userSessions = getUserSessions(realm, subjectId);
+        if (userSessions == null || userSessions.isEmpty()) {
             return;
         }
 
-        for (var userSession : sessions) {
+        // TODO should this only affect online sessions or also offline sessions?
+        UserModel user = userSessions.get(0).getUser();
+        for (var userSession : userSessions) {
             session.sessions().removeUserSession(realm, userSession);
         }
 
         log.debugf("Removed %s sessions for user. realm=%s userId=%s for SessionRevoked event. reasonAdmin=%s reasonUser=%s",
-                sessions.size(), realm.getName(), user.getId(), sessionRevoked.getReasonAdmin(), sessionRevoked.getReasonUser());
+                userSessions.size(), realm.getName(), user.getId(), sessionRevoked.getReasonAdmin(), sessionRevoked.getReasonUser());
     }
 
+    /**
+     * Should return the list of user sessions for the user identified via the {@link SubjectId}.
+     *
+     * @param realm
+     * @param subjectId
+     * @return
+     */
+    protected List<UserSessionModel> getUserSessions(RealmModel realm, SubjectId subjectId) {
+        UserModel user = resolveUser(realm, subjectId);
+        if (user == null) {
+            return null;
+        }
+        return session.sessions().getUserSessionsStream(realm, user).toList();
+    }
+
+    /**
+     * Resolve {@UserModel} from {@link SubjectId}.
+     *
+     * @param realm
+     * @param subjectId
+     * @return
+     */
+    protected UserModel resolveUser(RealmModel realm, SubjectId subjectId) {
+        return SubjectUserLookup.lookupUser(session, realm, subjectId);
+    }
 }
