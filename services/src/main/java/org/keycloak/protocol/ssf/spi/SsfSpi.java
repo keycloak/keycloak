@@ -3,7 +3,9 @@ package org.keycloak.protocol.ssf.spi;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.Spi;
 
-// @AutoService(Spi.class)
+/**
+ * SPI for SSF (Shared Signals Framework) support.
+ */
 public class SsfSpi implements Spi {
 
     @Override

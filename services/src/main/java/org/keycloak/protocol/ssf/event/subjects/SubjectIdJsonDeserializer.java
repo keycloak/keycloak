@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
+/**
+ * Custom dezerializer to deal with legacy SubjectIds.
+ */
 public class SubjectIdJsonDeserializer extends JsonDeserializer<SubjectId> {
 
     @Override

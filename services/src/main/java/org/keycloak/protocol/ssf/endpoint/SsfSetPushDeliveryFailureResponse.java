@@ -1,8 +1,13 @@
 package org.keycloak.protocol.ssf.endpoint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
+ * HTTP Push delivery failure response.
+ *
  * See https://www.rfc-editor.org/rfc/rfc8935.html#section-2.3
  */
 public class SsfSetPushDeliveryFailureResponse {
@@ -41,5 +46,13 @@ public class SsfSetPushDeliveryFailureResponse {
 
     public String getDescription() {
         return description;
+    }
+
+    public static WebApplicationException newFailureResponse(Response.Status status, String errorCode, String errorMessage) {
+        Response response = Response.status(status)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(new SsfSetPushDeliveryFailureResponse(errorCode, errorMessage))
+                .build();
+        return new WebApplicationException(response);
     }
 }
