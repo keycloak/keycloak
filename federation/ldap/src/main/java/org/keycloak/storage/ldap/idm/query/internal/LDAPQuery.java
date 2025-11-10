@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.Collections.unmodifiableSet;
+import static org.keycloak.common.util.Throwables.isCausedBy;
 
 /**
  * Default IdentityQuery implementation.
@@ -186,17 +187,9 @@ public class LDAPQuery implements AutoCloseable {
                 result.add(ldapObject);
             }
         } catch (Exception e) {
-            // Check if this is an LDAP connectivity issue
-            Throwable current = e;
-            while (current != null) {
-                if (current instanceof NameNotFoundException || current instanceof CommunicationException || 
-                    current instanceof AuthenticationException) {
-                    throw new StorageUnavailableException("LDAP server is unavailable for provider [" + 
-                                                          ldapFedProvider.getModel().getName() + "]", e);
-                }
-                current = current.getCause();
+            if (isCausedBy(e, NameNotFoundException.class, CommunicationException.class, AuthenticationException.class)) {
+                throw new StorageUnavailableException("LDAP server is unavailable for provider [" + ldapFedProvider.getModel().getName() + "]", e);
             }
-            
             throw new ModelException("Failed to fetch results from the LDAP [" + ldapFedProvider.getModel().getName() + "] provider", e);
         }
 
