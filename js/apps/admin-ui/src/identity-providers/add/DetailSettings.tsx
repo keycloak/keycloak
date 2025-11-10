@@ -72,7 +72,8 @@ import { SpiffeSettings } from "./SpiffeSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
-import { JwtAuthorizationGrantSettings } from "./JwtAuthorizationGrantSettings";
+import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
+import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -419,8 +420,11 @@ export default function DetailSettings() {
   const isOAuth2 = provider.providerId!.includes("oauth2");
   const isSPIFFE = provider.providerId!.includes("spiffe");
   const isKubernetes = provider.providerId!.includes("kubernetes");
+  const isJWTAuthorizationGrant = provider.providerId!.includes(
+    "jwt-authorization-grant",
+  );
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
-  const isJwtAuthorizationGrantSupported =
+  const isJWTAuthorizationGrantSupported =
     (isOAuth2 || isOIDC) &&
     !!provider?.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
     isFeatureEnabled(Feature.JWTAuthorizationGrant);
@@ -453,7 +457,7 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
-      isHidden: isSPIFFE || isKubernetes,
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -500,14 +504,14 @@ export default function DetailSettings() {
     },
     {
       title: t("authorizationGrantSettings"),
-      isHidden: !isJwtAuthorizationGrantSupported,
+      isHidden: !isJWTAuthorizationGrantSupported,
       panel: (
         <Form
           isHorizontal
           className="pf-v5-u-py-lg"
           onSubmit={handleSubmit(save)}
         >
-          <JwtAuthorizationGrantSettings />
+          <JWTAuthorizationGrantAssertionSettings />
         </Form>
       ),
     },
@@ -521,6 +525,20 @@ export default function DetailSettings() {
           onSubmit={handleSubmit(save)}
         >
           <SpiffeSettings />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+        </Form>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isJWTAuthorizationGrant,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <JWTAuthorizationGrantSettings />
           <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
         </Form>
       ),
@@ -559,7 +577,7 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
-      isHidden: isSPIFFE || isKubernetes,
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -611,7 +629,7 @@ export default function DetailSettings() {
           </Tab>
           <Tab
             id="mappers"
-            isHidden={isSPIFFE || isKubernetes}
+            isHidden={isSPIFFE || isKubernetes || isJWTAuthorizationGrant}
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}

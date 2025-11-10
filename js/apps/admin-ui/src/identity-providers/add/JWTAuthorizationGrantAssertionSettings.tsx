@@ -3,27 +3,42 @@ import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { Divider, FormGroup } from "@patternfly/react-core";
 import { useWatch, useFormContext, Controller } from "react-hook-form";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { SelectControl, HelpItem } from "@keycloak/keycloak-ui-shared";
+import {
+  SelectControl,
+  HelpItem,
+  NumberControl,
+} from "@keycloak/keycloak-ui-shared";
 import { sortProviders } from "../../util";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
-export const JwtAuthorizationGrantSettings = () => {
+type JWTAuthorizationGrantAssertionSettingsProps = {
+  alwaysEnabled?: boolean;
+};
+
+export const JWTAuthorizationGrantAssertionSettings = ({
+  alwaysEnabled = false,
+}: JWTAuthorizationGrantAssertionSettingsProps) => {
   const { t } = useTranslation();
+  const providers = useServerInfo().providers!.signature.providers;
   const { control } = useFormContext();
-  const authorizationGrantEnabled = useWatch({
+  const authorizationGrantSwitchEnabled = useWatch({
     control,
     name: "config.jwtAuthorizationGrantEnabled",
   });
-  const providers = useServerInfo().providers!.signature.providers;
+  const isEnabled = alwaysEnabled || authorizationGrantSwitchEnabled === "true";
+
   return (
     <>
-      <DefaultSwitchControl
-        name="config.jwtAuthorizationGrantEnabled"
-        label={t("jwtAuthorizationGrantIdpEnabled")}
-        labelIcon={t("jwtAuthorizationGrantIdpEnabledHelp")}
-        stringify
-      />
-      {authorizationGrantEnabled === "true" && (
+      {!alwaysEnabled && (
+        <DefaultSwitchControl
+          name="config.jwtAuthorizationGrantEnabled"
+          label={t("jwtAuthorizationGrantIdpEnabled")}
+          labelIcon={t("jwtAuthorizationGrantIdpEnabledHelp")}
+          stringify
+        />
+      )}
+
+      {isEnabled && (
         <>
           <DefaultSwitchControl
             name="config.jwtAuthorizationGrantAssertionReuseAllowed"
@@ -69,6 +84,12 @@ export const JwtAuthorizationGrantSettings = () => {
             controller={{
               defaultValue: "",
             }}
+          />
+          <NumberControl
+            name="config.jwtAuthorizationGrantAllowedClockSkew"
+            label={t("allowedClockSkew")}
+            labelIcon={t("allowedClockSkewHelp")}
+            controller={{ defaultValue: 0, rules: { min: 0, max: 2147483 } }}
           />
         </>
       )}

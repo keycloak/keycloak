@@ -12,7 +12,7 @@ public class DefaultOAuthClientConfiguration implements ClientConfig {
                 .serviceAccountsEnabled(true)
                 .directAccessGrantsEnabled(true)
                 .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, "true")
-                .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_IDP, "authorization-grant-idp")
+                .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_IDP, "authorization-grant-idp##oidc-idp")
                 .secret("test-secret");
     }
 

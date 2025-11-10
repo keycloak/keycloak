@@ -21,3 +21,4 @@ org.keycloak.broker.saml.SAMLIdentityProviderFactory
 org.keycloak.broker.oauth.OAuth2IdentityProviderFactory
 org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory
 org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory
+org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantIdentityProviderFactory

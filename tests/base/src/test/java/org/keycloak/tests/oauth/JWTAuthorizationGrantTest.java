@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.Profile;
@@ -49,8 +50,11 @@ import org.junit.jupiter.api.Test;
 @KeycloakIntegrationTest(config = JWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
 public class JWTAuthorizationGrantTest  {
 
-    private static final String IDP_ALIAS = "authorization-grant-idp";
-    private static final String IDP_ISSUER = "authorization-grant://mytrust-domain";
+    private static final String AUTHORIZATION_GRANT_IDP_ALIAS = "authorization-grant-idp";
+    private static final String OIDC_IDP_ALIAS = "oidc-idp";
+
+    private static final String AUTHORIZATION_GRANT_IDP_ISSUER = "https://authorization-grant-issuer";
+    private static final String OIDC_IDP_ISSUER = "https://oidc-issuer";
 
     @InjectOAuthIdentityProvider(config = JWTAuthorizationGrantTest.AGIdpConfig.class)
     OAuthIdentityProvider identityProvider;
@@ -90,11 +94,11 @@ public class JWTAuthorizationGrantTest  {
 
     @Test
     public void testNotAllowedIdentityProvider() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProviderWithCleanup(OIDC_IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, "false");
         });
 
-        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), OIDC_IDP_ISSUER));
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("JWT Authorization Granted is not enabled for the identity provider", response, events.poll());
     }
@@ -122,77 +126,77 @@ public class JWTAuthorizationGrantTest  {
 
     @Test
     public void testExpiredAssertion() {
-        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, null));
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, null));
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token exp claim is required", response, events.poll());
 
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() - 1L));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() - 1L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token is not active", response, events.poll());
 
         //test max exp default settings
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 301L));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 301L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
 
         //reduce max expiration to 10 seconds
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProviderWithCleanup(AUTHORIZATION_GRANT_IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "10");
         });
 
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 11L));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 11L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
 
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 5L));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 5L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
 
         //test with iat
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
         timeOffSet.set(15);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token was issued too far in the past to be used now", response, events.poll());
 
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 20L, (long) Time.currentTime()));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
     }
 
     @Test
     public void testAudience() {
-        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", null, IDP_ISSUER, Time.currentTime() + 300L));
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", null, AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 300L));
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid token audience", response, events.poll());
 
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", "fake-audience", IDP_ISSUER));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", "fake-audience", AUTHORIZATION_GRANT_IDP_ISSUER));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid token audience", response, events.poll());
 
         // Issuer as audience works
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
 
         // Token endpoint as audience works
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getToken(), IDP_ISSUER));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getToken(), AUTHORIZATION_GRANT_IDP_ISSUER));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
 
         // Introspection endpoint as audience does not work
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIntrospection(), IDP_ISSUER));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIntrospection(), AUTHORIZATION_GRANT_IDP_ISSUER));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid token audience", response, events.poll());
 
         // Multiple audiences does not work
-        JsonWebToken jwtToken = createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER);
+        JsonWebToken jwtToken = createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER);
         jwtToken.addAudience("fake");
         jwt = getIdentityProvider().encodeToken(jwtToken);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Multiple audiences not allowed", response, events.poll());
 
         // Multiple audiences does not work (even if both are valid)
-        jwtToken = createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER);
+        jwtToken = createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER);
         jwtToken.addAudience(oAuthClient.getEndpoints().getToken());
         jwt = getIdentityProvider().encodeToken(jwtToken);
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
@@ -212,11 +216,11 @@ public class JWTAuthorizationGrantTest  {
 
     @Test
     public void testBadSubject() {
-        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken(null, oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 300L));
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken(null, oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 300L));
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Missing claim: " + IDToken.SUBJECT, response, events.poll());
 
-        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("fake-user", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 300L));
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("fake-user", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 300L));
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("User not found", response, events.poll());
     }
@@ -230,7 +234,7 @@ public class JWTAuthorizationGrantTest  {
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token reuse detected", response, events.poll());
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProviderWithCleanup(AUTHORIZATION_GRANT_IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "true");
         });
 
@@ -244,14 +248,14 @@ public class JWTAuthorizationGrantTest  {
 
     @Test
     public void testSignatureAlg() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProviderWithCleanup(AUTHORIZATION_GRANT_IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES256);
         });
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProviderWithCleanup(AUTHORIZATION_GRANT_IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES512);
         });
         jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
@@ -293,10 +297,15 @@ public class JWTAuthorizationGrantTest  {
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", "basic-user", response);
+
+        //test oidc idp from different issuer
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), OIDC_IDP_ISSUER));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", "basic-user", response);
     }
 
     protected JsonWebToken createDefaultAuthorizationGrantToken() {
-        return createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 300L);
+        return createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), AUTHORIZATION_GRANT_IDP_ISSUER, Time.currentTime() + 300L);
     }
 
     protected JsonWebToken createAuthorizationGrantToken(String subject, String audience, String issuer) {
@@ -351,9 +360,19 @@ public class JWTAuthorizationGrantTest  {
 
             realm.identityProvider(
                     IdentityProviderBuilder.create()
+                            .providerId(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID)
+                            .alias(AUTHORIZATION_GRANT_IDP_ALIAS)
+                            .setAttribute(IdentityProviderModel.ISSUER, AUTHORIZATION_GRANT_IDP_ISSUER)
+                            .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
+                            .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                            .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
+                            .setAttribute(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
+                            .build());
+            realm.identityProvider(
+                    IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
-                            .alias(IDP_ALIAS)
-                            .setAttribute(IdentityProviderModel.ISSUER, IDP_ISSUER)
+                            .alias(OIDC_IDP_ALIAS)
+                            .setAttribute(IdentityProviderModel.ISSUER, OIDC_IDP_ISSUER)
                             .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
                             .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
                             .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
@@ -367,7 +386,13 @@ public class JWTAuthorizationGrantTest  {
 
         @Override
         public UserConfigBuilder configure(UserConfigBuilder user) {
-            return user.username("basic-user").password("password").email("basic@localhost").name("First", "Last").federatedLink(IDP_ALIAS, "basic-user-id", "basic-user");
+            return user
+                    .username("basic-user")
+                    .password("password")
+                    .email("basic@localhost")
+                    .name("First", "Last")
+                    .federatedLink(AUTHORIZATION_GRANT_IDP_ALIAS, "basic-user-id", "basic-user")
+                    .federatedLink(OIDC_IDP_ALIAS, "basic-user-id", "basic-user");
         }
     }
 

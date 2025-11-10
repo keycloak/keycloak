@@ -183,7 +183,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
-            long count = idpDelegate.getAllStream(IdentityProviderQuery.userAuthentication(), 0, 1).count();
+            long count = idpDelegate.getAllStream(IdentityProviderQuery.capability(IdentityProviderCapability.USER_LINKING), 0, 1).count();
             cached = new CachedCount(loaded, getRealm(), cacheKey, count);
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         }
