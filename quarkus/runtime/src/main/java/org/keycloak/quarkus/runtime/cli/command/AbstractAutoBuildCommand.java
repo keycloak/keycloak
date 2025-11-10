@@ -66,7 +66,7 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
             Environment.setRebuildCheck(false);
             String runtimeProfile = getInitProfile();
             if (!Objects.equals(profile, runtimeProfile)) {
-                Environment.setProfile(getInitProfile());
+                Environment.setProfile(runtimeProfile);
                 Configuration.resetConfig();
             }
         }
