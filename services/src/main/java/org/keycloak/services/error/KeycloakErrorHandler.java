@@ -81,10 +81,17 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         Response.Status responseStatus = getResponseStatus(throwable);
         boolean isServerError = responseStatus.getFamily().equals(Response.Status.Family.SERVER_ERROR);
 
-        if (isServerError) {
-            logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
+        ErrorResponseHandlerProvider provider = session.getProvider(ErrorResponseHandlerProvider.class);
+
+        if (provider == null) {
+            // Default behaviour
+            if (isServerError) {
+                logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
+            } else {
+                logger.debugv(throwable, ERROR_RESPONSE_TEXT, responseStatus);
+            }
         } else {
-            logger.debugv(throwable, ERROR_RESPONSE_TEXT, responseStatus);
+            provider.prepareErrorContext(isServerError, responseStatus, throwable);
         }
 
         HttpHeaders headers = session.getContext().getRequestHeaders();
@@ -95,7 +102,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             error.setError(getErrorCode(throwable));
             if (throwable.getCause() instanceof ModelException) {
                 error.setErrorDescription(throwable.getMessage());
-            } if (throwable instanceof ModelDuplicateException) {
+            }
+            if (throwable instanceof ModelDuplicateException) {
                 error.setErrorDescription(throwable.getMessage());
             } else if (throwable instanceof JsonProcessingException || throwable.getCause() instanceof JsonProcessingException) {
                 error.setErrorDescription("Cannot parse the JSON");
@@ -120,6 +128,10 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
             FreeMarkerProvider freeMarker = session.getProvider(FreeMarkerProvider.class);
             Map<String, Object> attributes = initAttributes(session, realm, theme, locale, responseStatus);
+
+            if (provider != null) {
+                provider.enrichErrorPageModel(attributes);
+            }
 
             String templateName = "error.ftl";
 
@@ -173,7 +185,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         String path = session.getContext().getUri().getPath();
         Matcher m = realmNamePattern.matcher(path);
         String realmName;
-        if(m.matches()) {
+        if (m.matches()) {
             realmName = m.group(1);
         } else {
             realmName = Config.getAdminRealm();
@@ -194,7 +206,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         Map<String, Object> attributes = new HashMap<>();
         Properties messagesBundle = theme.getEnhancedMessages(realm, locale);
 
-        final var localeBean =  new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle);
+        final var localeBean = new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messagesBundle);
         final var lang = realm.isInternationalizationEnabled() ? localeBean.getCurrentLanguageTag() : Locale.ENGLISH.toLanguageTag();
 
         attributes.put("pageId", "error");
