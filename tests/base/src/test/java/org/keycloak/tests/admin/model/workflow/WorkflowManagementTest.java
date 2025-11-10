@@ -265,6 +265,47 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
     }
 
     @Test
+    public void testSearch() {
+        // create a few workflows with different names
+        String[] workflowNames = {"alpha-workflow", "beta-workflow", "gamma-workflow", "delta-workflow"};
+        for (String name : workflowNames) {
+            managedRealm.admin().workflows().create(WorkflowRepresentation.withName(name)
+                    .onEvent(ResourceOperationType.USER_ADDED.toString())
+                    .withSteps(
+                            WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                    .after(Duration.ofDays(5))
+                                    .build()
+                    ).build()).close();
+        }
+
+        // use the API to search for workflows by name, both partial and exact matches
+        WorkflowsResource workflows = managedRealm.admin().workflows();
+        List<WorkflowRepresentation> representations =  workflows.list("alpha", false, null, null);
+        assertThat(representations, Matchers.hasSize(1));
+        assertThat(representations.get(0).getName(), is("alpha-workflow"));
+
+        representations =  workflows.list("workflow", false, null, null);
+        assertThat(representations, Matchers.hasSize(4));
+        representations =  workflows.list("beta-workflow", true, null, null);
+        assertThat(representations, Matchers.hasSize(1));
+        assertThat(representations.get(0).getName(), is("beta-workflow"));
+        representations =  workflows.list("nonexistent", false, null, null);
+        assertThat(representations, Matchers.hasSize(0));
+
+        // test pagination parameters
+        representations =  workflows.list(null, null, 1, 2);
+        assertThat(representations, Matchers.hasSize(2));
+        // returned workflows should be ordered by name
+        assertThat(representations.get(0).getName(), is("beta-workflow"));
+        assertThat(representations.get(1).getName(), is("delta-workflow"));
+
+        representations =  workflows.list("gamma", false, 0, 10);
+        assertThat(representations, Matchers.hasSize(1));
+        assertThat(representations.get(0).getName(), is("gamma-workflow"));
+    }
+
+
+    @Test
     public void testWorkflowDoesNotFallThroughStepsInSingleRun() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_ADDED.toString())

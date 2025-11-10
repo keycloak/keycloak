@@ -17,10 +17,12 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.Comparator;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.utils.StringUtil;
 
 public interface WorkflowProvider extends Provider {
 
@@ -39,6 +41,17 @@ public interface WorkflowProvider extends Provider {
     void removeWorkflow(Workflow workflow);
 
     Stream<Workflow> getWorkflows();
+
+    default Stream<Workflow> getWorkflows(String search, Boolean exact, Integer first, Integer max) {
+        return getWorkflows().sorted(Comparator.comparing(Workflow::getName))
+                .filter(workflow -> {
+                    if (StringUtil.isBlank(search)) {
+                        return true;
+                    }
+                    return Boolean.TRUE.equals(exact) ? workflow.getName().equals(search) : workflow.getName().toLowerCase().contains(search.toLowerCase());
+                })
+                .skip(first).limit(max);
+    }
 
     WorkflowRepresentation toRepresentation(Workflow workflow);
 
