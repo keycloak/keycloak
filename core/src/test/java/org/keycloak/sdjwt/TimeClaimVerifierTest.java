@@ -32,14 +32,16 @@ import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
  */
 public class TimeClaimVerifierTest {
 
-    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(20); // 20 seconds of leeway
-
     private static final long CURRENT_TIMESTAMP = 1609459200L; // Fixed timestamp: 2021-01-01 00:00:00 UTC
+    private static final int DEFAULT_LEEWAY_SECONDS = 20;
+
+    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, false);
+    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, true);
 
     static class FixedTimeClaimVerifier extends TimeClaimVerifier {
 
-        public FixedTimeClaimVerifier(int leewaySeconds) {
-            super(leewaySeconds);
+        public FixedTimeClaimVerifier(int leewaySeconds, boolean requireClaims) {
+            super(createOptsWithLeeway(leewaySeconds, requireClaims));
         }
 
         @Override
@@ -168,8 +170,46 @@ public class TimeClaimVerifierTest {
     @Test
     public void instantiationShouldFailIfLeewayNegative() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new TimeClaimVerifier(-1));
+                () -> new TimeClaimVerifier(createOptsWithLeeway(-1, false)));
 
         assertEquals("Leeway seconds cannot be negative", exception.getMessage());
+    }
+
+    @Test
+    public void testPermissiveVerifierMissingClaims() throws VerificationException {
+        // No time claims added
+        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
+
+        // No exception expected as claims are not required
+        timeClaimVerifier.verifyIssuedAtClaim(payload);
+        timeClaimVerifier.verifyExpirationClaim(payload);
+        timeClaimVerifier.verifyNotBeforeClaim(payload);
+    }
+
+    @Test
+    public void testStrictVerifierMissingClaims() {
+        // No time claims added
+        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
+
+        VerificationException exceptionIat = assertThrows(VerificationException.class,
+                () -> strictTimeClaimVerifier.verifyIssuedAtClaim(payload));
+        assertEquals("Missing 'iat' claim or null", exceptionIat.getMessage());
+
+        VerificationException exceptionExp = assertThrows(VerificationException.class,
+                () -> strictTimeClaimVerifier.verifyExpirationClaim(payload));
+        assertEquals("Missing 'exp' claim or null", exceptionExp.getMessage());
+
+        VerificationException exceptionNbf = assertThrows(VerificationException.class,
+                () -> strictTimeClaimVerifier.verifyNotBeforeClaim(payload));
+        assertEquals("Missing 'nbf' claim or null", exceptionNbf.getMessage());
+    }
+
+    private static TimeClaimVerificationOpts createOptsWithLeeway(int leewaySeconds, boolean requireClaims) {
+        return TimeClaimVerificationOpts.builder()
+                .withLeewaySeconds(leewaySeconds)
+                .withRequireIssuedAtClaim(requireClaims)
+                .withRequireExpirationClaim(requireClaims)
+                .withRequireNotBeforeClaim(requireClaims)
+                .build();
     }
 }

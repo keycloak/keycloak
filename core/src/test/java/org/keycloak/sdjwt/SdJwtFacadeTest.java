@@ -140,9 +140,9 @@ public abstract class SdJwtFacadeTest {
 
     private IssuerSignedJwtVerificationOpts createVerificationOptions() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withValidateIssuedAtClaim(true)
-                .withValidateExpirationClaim(true)
-                .withValidateNotBeforeClaim(false)
+                .withRequireIssuedAtClaim(false)
+                .withRequireExpirationClaim(false)
+                .withRequireNotBeforeClaim(false)
                 .build();
     }
 }

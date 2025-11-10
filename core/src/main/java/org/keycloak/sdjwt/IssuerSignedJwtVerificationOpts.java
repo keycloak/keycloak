@@ -39,11 +39,12 @@ public class IssuerSignedJwtVerificationOpts extends TimeClaimVerificationOpts {
 
     public static class Builder extends TimeClaimVerificationOpts.Builder<Builder> {
 
+        @Override
         public IssuerSignedJwtVerificationOpts build() {
             return new IssuerSignedJwtVerificationOpts(
-                    validateIssuedAtClaim,
-                    validateExpirationClaim,
-                    validateNotBeforeClaim,
+                    requireIssuedAtClaim,
+                    requireExpirationClaim,
+                    requireNotBeforeClaim,
                     leewaySeconds
             );
         }

@@ -34,17 +34,14 @@ public class TimeClaimVerifier {
     public static final String CLAIM_NAME_EXP = "exp";
     public static final String CLAIM_NAME_NBF = "nbf";
 
-    /**
-     * Tolerance window to account for clock skew
-     */
-    private final int leewaySeconds;
+    private final TimeClaimVerificationOpts opts;
 
-    public TimeClaimVerifier(int leewaySeconds) {
-        if (leewaySeconds < 0) {
+    public TimeClaimVerifier(TimeClaimVerificationOpts opts) {
+        if (opts.getLeewaySeconds() < 0) {
             throw new IllegalArgumentException("Leeway seconds cannot be negative");
         }
 
-        this.leewaySeconds = leewaySeconds;
+        this.opts = opts;
     }
 
     /**
@@ -53,9 +50,17 @@ public class TimeClaimVerifier {
      * @param jwtPayload the JWT's payload
      */
     public void verifyIssuedAtClaim(JsonNode jwtPayload) throws VerificationException {
+        if (!jwtPayload.hasNonNull(CLAIM_NAME_IAT)) {
+            if (opts.mustRequireIssuedAtClaim()) {
+                throw new VerificationException("Missing 'iat' claim or null");
+            }
+
+            return; // Not required, skipping check
+        }
+
         long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
 
-        if ((currentTimestamp() + leewaySeconds) < iat) {
+        if ((currentTimestamp() + opts.getLeewaySeconds()) < iat) {
             throw new VerificationException("JWT was issued in the future");
         }
     }
@@ -66,9 +71,17 @@ public class TimeClaimVerifier {
      * @param jwtPayload the JWT's payload
      */
     public void verifyExpirationClaim(JsonNode jwtPayload) throws VerificationException {
+        if (!jwtPayload.hasNonNull(CLAIM_NAME_EXP)) {
+            if (opts.mustRequireExpirationClaim()) {
+                throw new VerificationException("Missing 'exp' claim or null");
+            }
+
+            return; // Not required, skipping check
+        }
+
         long exp = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_EXP);
 
-        if ((currentTimestamp() - leewaySeconds) >= exp) {
+        if ((currentTimestamp() - opts.getLeewaySeconds()) >= exp) {
             throw new VerificationException("JWT has expired");
         }
     }
@@ -79,9 +92,17 @@ public class TimeClaimVerifier {
      * @param jwtPayload the JWT's payload
      */
     public void verifyNotBeforeClaim(JsonNode jwtPayload) throws VerificationException {
+        if (!jwtPayload.hasNonNull(CLAIM_NAME_NBF)) {
+            if (opts.mustRequireNotBeforeClaim()) {
+                throw new VerificationException("Missing 'nbf' claim or null");
+            }
+
+            return; // Not required, skipping check
+        }
+
         long nbf = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_NBF);
 
-        if ((currentTimestamp() + leewaySeconds) < nbf) {
+        if ((currentTimestamp() + opts.getLeewaySeconds()) < nbf) {
             throw new VerificationException("JWT is not yet valid");
         }
     }
@@ -95,7 +116,7 @@ public class TimeClaimVerifier {
     public void verifyAge(JsonNode jwtPayload, int maxAge) throws VerificationException {
         long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
 
-        if ((currentTimestamp() - iat - leewaySeconds) > maxAge) {
+        if ((currentTimestamp() - iat - opts.getLeewaySeconds()) > maxAge) {
             throw new VerificationException("JWT is too old");
         }
     }

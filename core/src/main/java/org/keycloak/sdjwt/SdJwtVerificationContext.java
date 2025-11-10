@@ -289,29 +289,22 @@ public class SdJwtVerificationContext {
             JsonNode payload,
             IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts
     ) throws VerificationException {
-        int leeway = issuerSignedJwtVerificationOpts.getLeewaySeconds();
-        TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(leeway);
+        TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(issuerSignedJwtVerificationOpts);
 
         try {
-            if (issuerSignedJwtVerificationOpts.mustValidateIssuedAtClaim()) {
-                timeClaimVerifier.verifyIssuedAtClaim(payload);
-            }
+            timeClaimVerifier.verifyIssuedAtClaim(payload);
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `iat` claim", e);
         }
 
         try {
-            if (issuerSignedJwtVerificationOpts.mustValidateExpirationClaim()) {
-                timeClaimVerifier.verifyExpirationClaim(payload);
-            }
+            timeClaimVerifier.verifyExpirationClaim(payload);
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `exp` claim", e);
         }
 
         try {
-            if (issuerSignedJwtVerificationOpts.mustValidateNotBeforeClaim()) {
-                timeClaimVerifier.verifyNotBeforeClaim(payload);
-            }
+            timeClaimVerifier.verifyNotBeforeClaim(payload);
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `nbf` claim", e);
         }
@@ -326,9 +319,7 @@ public class SdJwtVerificationContext {
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
     ) throws VerificationException {
         JsonNode kbJwtPayload = keyBindingJwt.getPayload();
-
-        int leeway = keyBindingJwtVerificationOpts.getLeewaySeconds();
-        TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(leeway);
+        TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(keyBindingJwtVerificationOpts);
 
         // Check that the creation time of the Key Binding JWT, as determined by the iat claim,
         // is within an acceptable window
@@ -348,17 +339,13 @@ public class SdJwtVerificationContext {
         // Check other time claims
 
         try {
-            if (keyBindingJwtVerificationOpts.mustValidateExpirationClaim()) {
-                timeClaimVerifier.verifyExpirationClaim(kbJwtPayload);
-            }
+            timeClaimVerifier.verifyExpirationClaim(kbJwtPayload);
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `exp` claim", e);
         }
 
         try {
-            if (keyBindingJwtVerificationOpts.mustValidateNotBeforeClaim()) {
-                timeClaimVerifier.verifyNotBeforeClaim(kbJwtPayload);
-            }
+            timeClaimVerifier.verifyNotBeforeClaim(kbJwtPayload);
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `nbf` claim", e);
         }

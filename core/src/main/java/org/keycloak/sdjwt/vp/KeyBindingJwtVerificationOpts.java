@@ -105,6 +105,7 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
             return this;
         }
 
+        @Override
         public KeyBindingJwtVerificationOpts build() {
             if (!validateIssuedAtClaim) {
                 throw new IllegalArgumentException(
@@ -123,8 +124,8 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
                     allowedMaxAge,
                     nonce,
                     aud,
-                    validateExpirationClaim,
-                    validateNotBeforeClaim,
+                    requireExpirationClaim,
+                    requireNotBeforeClaim,
                     leewaySeconds
             );
         }

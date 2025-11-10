@@ -24,66 +24,74 @@ package org.keycloak.sdjwt;
  */
 public class TimeClaimVerificationOpts {
 
+    public static final int DEFAULT_LEEWAY_SECONDS = 10;
+
+    // These options configure whether the respective time claims must be present
+    // during validation. They will always be validated if present.
+
+    private final boolean requireIssuedAtClaim;
+    private final boolean requireExpirationClaim;
+    private final boolean requireNotBeforeClaim;
+
     /**
      * Tolerance window to account for clock skew when checking time claims
      */
-    public static final int DEFAULT_LEEWAY_SECONDS = 10;
-
-    private final boolean validateIssuedAtClaim;
-    private final boolean validateExpirationClaim;
-    private final boolean validateNotBeforeClaim;
     private final int leewaySeconds;
 
     protected TimeClaimVerificationOpts(
-            boolean validateIssuedAtClaim,
-            boolean validateExpirationClaim,
+            boolean requireIssuedAtClaim,
+            boolean requireExpirationClaim,
             boolean validateNotBeforeClaim,
             int leewaySeconds
     ) {
-        this.validateIssuedAtClaim = validateIssuedAtClaim;
-        this.validateExpirationClaim = validateExpirationClaim;
-        this.validateNotBeforeClaim = validateNotBeforeClaim;
+        this.requireIssuedAtClaim = requireIssuedAtClaim;
+        this.requireExpirationClaim = requireExpirationClaim;
+        this.requireNotBeforeClaim = validateNotBeforeClaim;
         this.leewaySeconds = leewaySeconds;
     }
 
-    public boolean mustValidateIssuedAtClaim() {
-        return validateIssuedAtClaim;
+    public boolean mustRequireIssuedAtClaim() {
+        return requireIssuedAtClaim;
     }
 
-    public boolean mustValidateExpirationClaim() {
-        return validateExpirationClaim;
+    public boolean mustRequireExpirationClaim() {
+        return requireExpirationClaim;
     }
 
-    public boolean mustValidateNotBeforeClaim() {
-        return validateNotBeforeClaim;
+    public boolean mustRequireNotBeforeClaim() {
+        return requireNotBeforeClaim;
     }
 
     public int getLeewaySeconds() {
         return leewaySeconds;
     }
 
-    protected static class Builder<T extends Builder<T>> {
+    public static <T extends Builder<T>> Builder<T> builder() {
+        return new Builder<>();
+    }
 
-        protected boolean validateIssuedAtClaim = false;
-        protected boolean validateExpirationClaim = true;
-        protected boolean validateNotBeforeClaim = true;
+    public static class Builder<T extends Builder<T>> {
+
+        protected boolean requireIssuedAtClaim = true;
+        protected boolean requireExpirationClaim = true;
+        protected boolean requireNotBeforeClaim = true;
         protected int leewaySeconds = DEFAULT_LEEWAY_SECONDS;
 
         @SuppressWarnings("unchecked")
-        public T withValidateIssuedAtClaim(boolean validateIssuedAtClaim) {
-            this.validateIssuedAtClaim = validateIssuedAtClaim;
+        public T withRequireIssuedAtClaim(boolean requireIssuedAtClaim) {
+            this.requireIssuedAtClaim = requireIssuedAtClaim;
             return (T) this;
         }
 
         @SuppressWarnings("unchecked")
-        public T withValidateExpirationClaim(boolean validateExpirationClaim) {
-            this.validateExpirationClaim = validateExpirationClaim;
+        public T withRequireExpirationClaim(boolean requireExpirationClaim) {
+            this.requireExpirationClaim = requireExpirationClaim;
             return (T) this;
         }
 
         @SuppressWarnings("unchecked")
-        public T withValidateNotBeforeClaim(boolean validateNotBeforeClaim) {
-            this.validateNotBeforeClaim = validateNotBeforeClaim;
+        public T withRequireNotBeforeClaim(boolean requireNotBeforeClaim) {
+            this.requireNotBeforeClaim = requireNotBeforeClaim;
             return (T) this;
         }
 
@@ -91,6 +99,15 @@ public class TimeClaimVerificationOpts {
         public T withLeewaySeconds(int leewaySeconds) {
             this.leewaySeconds = leewaySeconds;
             return (T) this;
+        }
+
+        public TimeClaimVerificationOpts build() {
+            return new TimeClaimVerificationOpts(
+                    requireIssuedAtClaim,
+                    requireExpirationClaim,
+                    requireNotBeforeClaim,
+                    leewaySeconds
+            );
         }
     }
 }

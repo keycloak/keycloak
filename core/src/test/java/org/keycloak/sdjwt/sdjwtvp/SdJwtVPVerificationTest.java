@@ -321,9 +321,7 @@ public abstract class SdJwtVPVerificationTest {
 
         testShouldFailGeneric2(
                 kbPayload,
-                defaultKeyBindingJwtVerificationOpts()
-                        .withValidateExpirationClaim(true)
-                        .build(),
+                defaultKeyBindingJwtVerificationOpts().build(),
                 "Key binding JWT: Invalid `exp` claim",
                 "JWT has expired"
         );
@@ -342,7 +340,7 @@ public abstract class SdJwtVPVerificationTest {
                 defaultIssuerVerifyingKeys(),
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
-                        .withValidateExpirationClaim(true)
+                        .withRequireExpirationClaim(true)
                         .withLeewaySeconds(10)
                         .build()
         );
@@ -357,9 +355,7 @@ public abstract class SdJwtVPVerificationTest {
 
         testShouldFailGeneric2(
                 kbPayload,
-                defaultKeyBindingJwtVerificationOpts()
-                        .withValidateNotBeforeClaim(true)
-                        .build(),
+                defaultKeyBindingJwtVerificationOpts().build(),
                 "Key binding JWT: Invalid `nbf` claim",
                 "JWT is not yet valid"
         );
@@ -462,8 +458,8 @@ public abstract class SdJwtVPVerificationTest {
 
     private IssuerSignedJwtVerificationOpts.Builder defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withValidateIssuedAtClaim(false)
-                .withValidateNotBeforeClaim(false);
+                .withRequireIssuedAtClaim(false)
+                .withRequireNotBeforeClaim(false);
     }
 
     private KeyBindingJwtVerificationOpts.Builder defaultKeyBindingJwtVerificationOpts() {
@@ -472,8 +468,8 @@ public abstract class SdJwtVPVerificationTest {
                 .withAllowedMaxAge(Integer.MAX_VALUE)
                 .withNonce("1234567890")
                 .withAud("https://verifier.example.org")
-                .withValidateExpirationClaim(false)
-                .withValidateNotBeforeClaim(false);
+                .withRequireExpirationClaim(false)
+                .withRequireNotBeforeClaim(false);
     }
 
     private ObjectNode exampleKbPayload() {
