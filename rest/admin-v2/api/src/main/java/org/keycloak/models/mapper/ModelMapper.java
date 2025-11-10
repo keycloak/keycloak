@@ -1,11 +1,7 @@
 package org.keycloak.models.mapper;
 
-import org.keycloak.provider.Provider;
-
-public interface ModelMapper extends Provider {
+public interface ModelMapper {
 
     ClientModelMapper clients();
 
-    default void close() {
-    }
 }

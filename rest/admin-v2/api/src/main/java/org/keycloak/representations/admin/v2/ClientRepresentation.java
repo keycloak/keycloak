@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.URL;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 
@@ -167,7 +166,6 @@ public class ClientRepresentation extends BaseRepresentation {
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public static class Auth {
 
-        @NotNull
         @JsonPropertyDescription("Whether authentication is enabled for this client")
         private Boolean enabled;
 
@@ -216,7 +214,6 @@ public class ClientRepresentation extends BaseRepresentation {
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public static class ServiceAccount {
 
-        @NotNull
         @JsonPropertyDescription("Whether the service account is enabled")
         private Boolean enabled;
 

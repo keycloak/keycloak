@@ -13,11 +13,14 @@ import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
+import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientsResource;
 
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 
 public class DefaultClientsApi implements ClientsApi {
@@ -31,9 +34,9 @@ public class DefaultClientsApi implements ClientsApi {
     public DefaultClientsApi(KeycloakSession session, ClientsResource clientsResource) {
         this.session = session;
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.clientService = session.getProvider(ClientService.class);
+        this.clientService = new DefaultClientService(session);
         this.response = session.getContext().getHttpResponse();
-        this.validator = session.getProvider(JakartaValidatorProvider.class);
+        this.validator = new HibernateValidatorProvider();
         this.clientsResource = clientsResource;
     }
 

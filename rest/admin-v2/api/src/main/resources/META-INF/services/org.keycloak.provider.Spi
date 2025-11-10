@@ -1,3 +1,0 @@
-org.keycloak.services.client.ClientServiceSpi
-org.keycloak.models.mapper.ModelMapperSpi
-org.keycloak.validation.jakarta.JakartaValidatorSpi

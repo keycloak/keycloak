@@ -12,6 +12,7 @@ import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
+import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 
@@ -43,7 +44,7 @@ public class DefaultClientApi implements ClientApi {
         this.session = session;
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
         this.client = Objects.requireNonNull(session.getContext().getClient());
-        this.clientService = session.getProvider(ClientService.class);
+        this.clientService = new DefaultClientService(session);
         this.response = session.getContext().getHttpResponse();
         this.clientsResource = clientsResource;
         this.clientResource = clientResource;
