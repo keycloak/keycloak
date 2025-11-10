@@ -140,7 +140,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
     attributes.splice(newIndex, 0, movedAttribute);
 
     save(
-      { attributes, groups },
+      { ...config, attributes, groups },
       {
         successMessageKey: "updatedUserProfileSuccess",
         errorMessageKey: "updatedUserProfileError",
