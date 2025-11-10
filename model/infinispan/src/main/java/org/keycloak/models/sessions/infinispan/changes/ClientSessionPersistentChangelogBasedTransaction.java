@@ -136,7 +136,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         return authenticatedClientSessionEntitySessionEntityWrapper;
     }
 
-    public static AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
+    public static AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, String userId, AuthenticatedClientSessionModel clientSession,
                                                                                       String realmId, String clientId, boolean offline) {
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
@@ -151,12 +151,13 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         entity.setTimestamp(clientSession.getTimestamp());
         entity.setOffline(offline);
         entity.setUserSessionId(userSessionId);
+        entity.setUserId(userId);
 
         return entity;
     }
 
     private SessionEntityWrapper<AuthenticatedClientSessionEntity> importClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, AuthenticatedClientSessionModel persistentClientSession, EmbeddedClientSessionKey clientSessionId) {
-        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), persistentClientSession,
+        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), userSession.getUser().getId(), persistentClientSession,
                 realm.getId(), client.getId(), userSession.isOffline());
         boolean offline = userSession.isOffline();
 
