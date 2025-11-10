@@ -32,4 +32,7 @@ public interface JWTAuthorizationGrantProvider {
      */
     List<String> getAllowedAudienceForJWTGrant();
 
+    int getMaxAllowedExpiration();
+
+    String getAssertionSignatureAlg();
 }

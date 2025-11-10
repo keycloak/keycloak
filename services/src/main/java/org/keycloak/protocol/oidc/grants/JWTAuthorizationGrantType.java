@@ -83,7 +83,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             }
 
             // assign the provider and perform validations associated to the jwt grant provider
-            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), 300, jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
+            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), jwtAuthorizationGrantProvider.getMaxAllowedExpiration(), jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
+
+            // assign the signature alg and validate
+            authorizationGrantContext.validateSignatureAlgorithm(jwtAuthorizationGrantProvider.getAssertionSignatureAlg());
 
             // Validate audience
             authorizationGrantContext.validateTokenAudience(jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant(), false);
