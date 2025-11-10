@@ -1554,6 +1554,7 @@
                     <configuration>
                         <java>
                             <removeUnusedImports />
+                            <forbidWildcardImports />
                         </java>
                     </configuration>
                 </plugin>

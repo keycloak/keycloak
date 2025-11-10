@@ -21,7 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.containsString;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.equalTo;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.is;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.not;
 
 import java.util.List;
 import java.util.regex.Pattern;

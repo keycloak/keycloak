@@ -31,11 +31,13 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.apache.http.client.methods.HttpGet;
-import org.jboss.arquillian.container.test.api.*;
+import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.*;
+import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.admin.ApiUtil;

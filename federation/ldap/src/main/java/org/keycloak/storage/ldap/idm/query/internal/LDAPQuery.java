@@ -35,7 +35,13 @@ import javax.naming.directory.SearchControls;
 import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.LdapName;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.unmodifiableSet;
 

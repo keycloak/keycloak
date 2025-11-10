@@ -45,7 +45,12 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.util.*;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.mail.internet.MimeMessage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;

@@ -60,7 +60,11 @@ import java.util.List;
 
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_DETAIL_LABEL;
 import static org.keycloak.WebAuthnConstants.AUTH_ERR_LABEL;
-import static org.keycloak.services.messages.Messages.*;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_GET;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_DIFFERENT_USER;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_USER_NOT_FOUND;
 
 /**
  * Authenticator for WebAuthn authentication, which will be typically used when WebAuthn is used as second factor.
