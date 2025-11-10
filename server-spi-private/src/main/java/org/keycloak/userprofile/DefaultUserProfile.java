@@ -49,6 +49,11 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.utils.StringUtil;
 
+// >>> Added imports for Verifiable Claims SPI
+import org.keycloak.verifiableclaims.VerifiableClaimProvider;
+import org.keycloak.verifiableclaims.model.UpdateDecision;
+// <<<
+
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
  * of {@link UserProfileProvider}.
@@ -67,7 +72,7 @@ public final class DefaultUserProfile implements UserProfile {
     private UserModel user;
 
     public DefaultUserProfile(UserProfileMetadata metadata, Attributes attributes, Function<Attributes, UserModel> userCreator, UserModel user,
-            KeycloakSession session) {
+                              KeycloakSession session) {
         this.metadata = metadata;
         this.userSupplier = userCreator;
         this.attributes = attributes;
@@ -120,7 +125,31 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         try {
-            Map<String, List<String>> writable = new HashMap<>(attributes.getWritable());
+            // >>> Begin Verifiable Claims hook: allow provider to adjust attributes before persistence
+            Attributes effective = this.attributes;
+
+            VerifiableClaimProvider vcProvider = session.getProvider(VerifiableClaimProvider.class);
+            if (vcProvider != null) {
+                RealmModel realm = session.getContext().getRealm();
+                UserProfileContext context = metadata.getContext();
+
+                UpdateDecision decision = vcProvider.onAttributesAboutToUpdate(
+                        session, realm, user, (UserProfile) this, context, effective);
+
+                if (decision != null && decision.getToPersistNow() != null) {
+                    // Wrap the returned Map into DefaultAttributes for this context
+                    effective = new DefaultAttributes(
+                            context,
+                            decision.getToPersistNow(),   // Map<String, List<String>>
+                            user,
+                            metadata,
+                            session
+                    );
+                }
+            }
+            // <<< End Verifiable Claims hook
+
+            Map<String, List<String>> writable = new HashMap<>(effective.getWritable());
 
             for (Map.Entry<String, List<String>> attribute : writable.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 String name = attribute.getKey();
@@ -157,10 +186,10 @@ public final class DefaultUserProfile implements UserProfile {
             if (removeAttributes) {
                 Set<String> attrsToRemove = new HashSet<>(user.getAttributes().keySet());
 
-                attrsToRemove.removeAll(attributes.nameSet());
+                attrsToRemove.removeAll(effective.nameSet());
 
                 for (String name : attrsToRemove) {
-                    if (attributes.isReadOnly(name)) {
+                    if (effective.isReadOnly(name)) {
                         continue;
                     }
 
@@ -226,7 +255,21 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         R rep = createUserRepresentation();
-        Map<String, List<String>> readable = attributes.getReadable();
+
+        // >>> Begin Verifiable Claims hook: allow provider to enrich attributes for read/representation
+        Attributes managed = getAttributes();
+        VerifiableClaimProvider vcProvider = session.getProvider(VerifiableClaimProvider.class);
+        if (vcProvider != null) {
+            RealmModel realm = session.getContext().getRealm();
+            UserProfileContext context = metadata.getContext();
+            Attributes enriched = vcProvider.enrichAttributesForRepresentation(session, realm, user, managed, context);
+            if (enriched != null) {
+                managed = enriched;
+            }
+        }
+        // <<< End Verifiable Claims hook
+
+        Map<String, List<String>> readable = managed.getReadable();
         Map<String, List<String>> attributesRep = new HashMap<>(readable);
 
         // all the attributes here have read access and might be available in the representation
