@@ -1,0 +1,7 @@
+---
+type: specs.openrewrite.org/v1beta/style
+name: org.keycloak.NoStarImports
+styleConfigs:
+  - org.openrewrite.java.style.ImportLayoutStyle:
+      classCountToUseStarImport: 9999
+      nameCountToUseStarImport: 9999

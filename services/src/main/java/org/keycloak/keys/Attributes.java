@@ -25,7 +25,10 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import static org.keycloak.provider.ProviderConfigProperty.*;
+import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
+import static org.keycloak.provider.ProviderConfigProperty.FILE_TYPE;
+import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
+import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

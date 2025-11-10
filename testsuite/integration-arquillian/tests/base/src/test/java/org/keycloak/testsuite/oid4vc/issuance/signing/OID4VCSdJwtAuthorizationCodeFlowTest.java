@@ -19,7 +19,9 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * SD-JWT-specific authorization code flow tests with authorization details and claims validation.

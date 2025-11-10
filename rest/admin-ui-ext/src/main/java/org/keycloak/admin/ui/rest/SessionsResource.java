@@ -28,7 +28,9 @@ import org.keycloak.utils.StringUtil;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.*;
+import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.ALL;
+import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.OFFLINE;
+import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.REGULAR;
 
 public class SessionsResource {
     private final KeycloakSession session;

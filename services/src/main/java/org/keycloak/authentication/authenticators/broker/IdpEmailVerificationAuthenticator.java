@@ -48,7 +48,8 @@ import java.util.Objects;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.util.concurrent.TimeUnit;
-import jakarta.ws.rs.core.*;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

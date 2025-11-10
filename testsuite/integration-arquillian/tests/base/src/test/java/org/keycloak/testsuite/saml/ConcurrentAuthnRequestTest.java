@@ -51,7 +51,9 @@ import org.w3c.dom.Document;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.keycloak.testsuite.util.SamlClient.*;
+import static org.keycloak.testsuite.util.SamlClient.createLoginRequestDocument;
+import static org.keycloak.testsuite.util.SamlClient.Binding;
+import static org.keycloak.testsuite.util.SamlClient.RedirectStrategyWithSwitchableFollowRedirect;
 
 /**
  *

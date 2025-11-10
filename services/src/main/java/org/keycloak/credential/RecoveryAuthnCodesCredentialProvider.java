@@ -17,7 +17,9 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.*;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_GENERATE_NEW_CODES;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_NUMBER_REMAINING;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_NUMBER_USED;
 
 public class RecoveryAuthnCodesCredentialProvider
         implements CredentialProvider<RecoveryAuthnCodesCredentialModel>, CredentialInputValidator {

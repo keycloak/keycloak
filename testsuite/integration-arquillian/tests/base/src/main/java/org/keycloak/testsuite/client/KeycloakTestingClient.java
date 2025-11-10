@@ -29,7 +29,11 @@ import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
 import org.keycloak.testsuite.client.resources.TestingResource;
-import org.keycloak.testsuite.runonserver.*;
+import org.keycloak.testsuite.runonserver.FetchOnServer;
+import org.keycloak.testsuite.runonserver.FetchOnServerWrapper;
+import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.util.JsonSerialization;
 

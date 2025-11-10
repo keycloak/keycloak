@@ -32,7 +32,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import static org.keycloak.models.AuthenticationExecutionModel.Requirement.*;
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.CONDITIONAL;
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
