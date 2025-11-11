@@ -149,20 +149,21 @@ public class KeyUtils {
     /**
      * @return key sizes, which are expected to be supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory} and {@link org.keycloak.keys.GeneratedRsaEncKeyProviderFactory}.
      */
-    public static String[] getExpectedSupportedRsaKeySizes() {
-        String expectedKeySizes = System.getProperty("auth.server.supported.rsa.key.sizes");
-        if (expectedKeySizes == null || expectedKeySizes.trim().isEmpty()) {
-            Assertions.fail("System property 'auth.server.supported.rsa.key.sizes' should be set");
-        }
-        return expectedKeySizes.split(",");
-    }
+// This doesn't work in new testsuite as we don't set these system properties
+//    public static String[] getExpectedSupportedRsaKeySizes() {
+//        String expectedKeySizes = System.getProperty("auth.server.supported.rsa.key.sizes");
+//        if (expectedKeySizes == null || expectedKeySizes.trim().isEmpty()) {
+//            Assertions.fail("System property 'auth.server.supported.rsa.key.sizes' should be set");
+//        }
+//        return expectedKeySizes.split(",");
+//    }
 
     /**
      * @return Lowest key size supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory}.
      * It is usually 1024, but can be 2048 in some environments (typically in FIPS environments)
      */
-    public static int getLowestSupportedRsaKeySize() {
-        return Integer.parseInt(getExpectedSupportedRsaKeySizes()[0]);
-    }
+//    public static int getLowestSupportedRsaKeySize() {
+//        return Integer.parseInt(getExpectedSupportedRsaKeySizes()[0]);
+//    }
 
 }

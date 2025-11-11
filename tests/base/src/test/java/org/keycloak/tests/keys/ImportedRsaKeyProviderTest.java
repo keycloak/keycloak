@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keys;
+package org.keycloak.tests.keys;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -35,47 +33,43 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.testsuite.util.saml.SamlConstants;
 
 import jakarta.ws.rs.core.Response;
+
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.Certificate;
-import java.util.List;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class ImportedRsaKeyProviderTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm
+    ManagedRealm realm;
 
-    @Page
-    protected AppPage appPage;
+    @InjectOAuthClient
+    OAuthClient oAuth;
 
-    @Page
-    protected LoginPage loginPage;
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realm);
-    }
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     @Test
     public void privateKeyOnlyForSig() throws Exception {
@@ -97,17 +91,17 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
         response.close();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst(Attributes.PRIVATE_KEY_KEY));
         assertNotNull(createdRep.getConfig().getFirst(Attributes.CERTIFICATE_KEY));
 
         assertEquals(keyPair.getPublic(), PemUtils.decodeCertificate(createdRep.getConfig().getFirst(Attributes.CERTIFICATE_KEY)).getPublicKey());
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         assertEquals(kid, keys.getActive().get(algorithm));
 
@@ -144,15 +138,15 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, certificatePem);
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
         response.close();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst(Attributes.PRIVATE_KEY_KEY));
         assertEquals(certificatePem, createdRep.getConfig().getFirst(Attributes.CERTIFICATE_KEY));
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
         assertEquals(certificatePem, key.getCertificate());
@@ -176,7 +170,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, "invalid");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "'Priority' should be a number");
     }
 
@@ -197,7 +191,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.ENABLED_KEY, "invalid");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "'Enabled' should be 'true' or 'false'");
     }
 
@@ -218,7 +212,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.ACTIVE_KEY, "invalid");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "'Active' should be 'true' or 'false'");
     }
 
@@ -237,15 +231,15 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         ComponentRepresentation rep = createRep("invalid", providerId);
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "'Private RSA Key' is required");
 
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, "nonsense");
-        response = adminClient.realm("test").components().add(rep);
+        response = realm.admin().components().add(rep);
         assertError(response, "Failed to decode private key");
 
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPublic()));
-        response = adminClient.realm("test").components().add(rep);
+        response = realm.admin().components().add(rep);
         assertError(response, "Failed to decode private key");
     }
 
@@ -262,10 +256,10 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     @Test
     public void invalidExpiredCertificate() throws Exception {
         ComponentRepresentation rep = createRep("invalid", ImportedRsaEncKeyProviderFactory.ID);
-        rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY);
+        rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY);
 
-        rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE);
-        Response response = adminClient.realm("test").components().add(rep);
+        rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Certificate is not valid");
     }
 
@@ -285,24 +279,24 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
 
         String id;
-        try (Response response = adminClient.realm("test").components().add(rep)) {
+        try (Response response = realm.admin().components().add(rep)) {
             id = ApiUtil.getCreatedId(response);
         }
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst(Attributes.PRIVATE_KEY_KEY));
         assertEquals(certificatePem, createdRep.getConfig().getFirst(Attributes.CERTIFICATE_KEY));
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
         assertEquals(certificatePem, key.getCertificate());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(KeyStatus.ACTIVE.name(), key.getStatus());
 
-        setTimeOffset(3610);
+        timeOffSet.set(3610);
 
-        keys = adminClient.realm("test").keys().getKeyMetadata();
+        keys = realm.admin().keys().getKeyMetadata();
         key = keys.getKeys().get(0);
         assertEquals(KeyStatus.PASSIVE.name(), key.getStatus());
     }
@@ -315,11 +309,11 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
 
         rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, "nonsense");
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Failed to decode certificate");
 
         rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, PemUtils.encodeCertificate(invalidCertificate));
-        response = adminClient.realm("test").components().add(rep);
+        response = realm.admin().components().add(rep);
         assertError(response, "Certificate does not match private key");
 
     }
@@ -337,7 +331,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
+        rep.setParentId(realm.admin().toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

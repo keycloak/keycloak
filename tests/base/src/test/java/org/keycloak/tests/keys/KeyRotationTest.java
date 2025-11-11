@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keys;
+package org.keycloak.tests.keys;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -32,96 +30,84 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testframework.annotations.InjectCryptoHelper;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.crypto.CryptoHelper;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import jakarta.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class KeyRotationTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class KeyRotationTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm(config = BasicRealmWithUserConfig.class)
+    ManagedRealm realm;
 
-    @Page
-    protected AppPage appPage;
+    @InjectOAuthClient
+    OAuthClient oauth;
 
-    @Page
-    protected LoginPage loginPage;
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realm);
-
-        ClientRepresentation confApp = KeycloakModelUtils.createClient(realm, "confidential-cli");
-        confApp.setSecret("secret1");
-        confApp.setServiceAccountsEnabled(Boolean.TRUE);
-    }
+    @InjectCryptoHelper
+    CryptoHelper cryptoHelper;
 
     @Test
-    public void testIdentityCookie() throws Exception {
+    public void testIdentityCookie() {
         // Create keys #1
         createKeys1();
 
         // Login with keys #1
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        AuthorizationEndpointResponse response = oauth.doLogin(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
+        assertTrue(response.isRedirected());
 
         // Create keys #2
         createKeys2();
 
         // Login again with cookie signed with old keys
-        appPage.open();
         oauth.openLoginForm();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertTrue(oauth.parseLoginResponse().isRedirected());
 
         // Drop key #1
         dropKeys1();
 
         // Login again with key #1 dropped - should pass as cookie should be refreshed
-        appPage.open();
         oauth.openLoginForm();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertTrue(oauth.parseLoginResponse().isRedirected());
 
         // Drop key #2
         dropKeys2();
 
         // Login again with key #2 dropped - should fail as cookie hasn't been refreshed
-        appPage.open();
         oauth.openLoginForm();
-        assertTrue(loginPage.isCurrent());
+        assertFalse(oauth.parseLoginResponse().isRedirected());
     }
 
     @Test
@@ -130,7 +116,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         Map<String, String> keys1 = createKeys1();
 
         // Get token with keys #1
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
         AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(200, response.getStatusCode());
         assertTokenKid(keys1.get(Algorithm.RS256), response.getAccessToken());
@@ -140,12 +126,12 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         ClientInitialAccessCreatePresentation initialToken = new ClientInitialAccessCreatePresentation();
         initialToken.setCount(100);
         initialToken.setExpiration(0);
-        ClientInitialAccessPresentation accessRep = adminClient.realm("test").clientInitialAccess().create(initialToken);
+        ClientInitialAccessPresentation accessRep = realm.admin().clientInitialAccess().create(initialToken);
         String initialAccessToken = accessRep.getToken();
 
-        ClientRegistration reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "test").build();
+        ClientRegistration reg = oauth.clientRegistration();
         reg.auth(Auth.token(initialAccessToken));
-        ClientRepresentation clientRep = reg.create(ClientBuilder.create().clientId("test").build());
+        ClientRepresentation clientRep = reg.create(ClientConfigBuilder.create().clientId("test").build());
 
         // Userinfo with keys #1
         assertUserInfo(response.getAccessToken(), 200);
@@ -233,12 +219,13 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void rotateKeys() throws InterruptedException {
+    public void rotateKeys() {
+        realm.dirty();
         for (int i = 0; i < 10; i++) {
-            String activeKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
+            String activeKid = realm.admin().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
 
             // Rotate public keys on the parent broker
-            String realmId = adminClient.realm("test").toRepresentation().getId();
+            String realmId = realm.getId();
             ComponentRepresentation keys = new ComponentRepresentation();
             keys.setName("generated" + i);
             keys.setProviderType(KeyProvider.class.getName());
@@ -246,13 +233,12 @@ public class KeyRotationTest extends AbstractKeycloakTest {
             keys.setParentId(realmId);
             keys.setConfig(new MultivaluedHashMap<>());
             keys.getConfig().putSingle("priority", "1000" + i);
-            Response response = adminClient.realm("test").components().add(keys);
+            Response response = realm.admin().components().add(keys);
             assertEquals(201, response.getStatus());
             String newId = ApiUtil.getCreatedId(response);
-            getCleanup().addComponentId(newId);
             response.close();
 
-            String updatedActiveKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
+            String updatedActiveKid = realm.admin().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
             assertNotEquals(activeKid, updatedActiveKid);
         }
     }
@@ -262,20 +248,20 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertEquals(expectedKid, new JWSInput(token).getHeader().getKeyId());
     }
 
-    private Map<String, String> createKeys1() throws Exception {
+    private Map<String, String> createKeys1() {
         return createKeys("1000");
     }
 
-    private Map<String, String> createKeys2() throws Exception {
+    private Map<String, String> createKeys2() {
         return createKeys("2000");
     }
 
-    private Map<String, String> createKeys(String priority) throws Exception {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
+    private Map<String, String> createKeys(String priority) {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(Integer.parseInt(cryptoHelper.getExpectedSupportedRsaKeySizes()[0]));
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         PublicKey publicKey = keyPair.getPublic();
 
-        String testRealmId = adminClient.realm("test").toRepresentation().getId();
+        String testRealmId = realm.getId();
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("mycomponent");
         rep.setParentId(testRealmId);
@@ -287,7 +273,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         config.addFirst(Attributes.PRIVATE_KEY_KEY, privateKeyPem);
         rep.setConfig(config);
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         response.close();
 
         rep = new ComponentRepresentation();
@@ -301,10 +287,10 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         config.addFirst(Attributes.ALGORITHM_KEY, Constants.INTERNAL_SIGNATURE_ALGORITHM);
         rep.setConfig(config);
 
-        response = adminClient.realm("test").components().add(rep);
+        response = realm.admin().components().add(rep);
         response.close();
 
-        return realmsResouce().realm("test").keys().getKeyMetadata().getActive();
+        return realm.admin().keys().getKeyMetadata().getActive();
     }
 
     private void dropKeys1() {
@@ -317,10 +303,10 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
     private void dropKeys(String priority) {
         int r = 0;
-        String parentId = adminClient.realm("test").toRepresentation().getId();
-        for (ComponentRepresentation c : adminClient.realm("test").components().query(parentId, KeyProvider.class.getName())) {
+        String parentId = realm.getId();
+        for (ComponentRepresentation c : realm.admin().components().query(parentId, KeyProvider.class.getName())) {
             if (c.getConfig().getFirst("priority").equals(priority)) {
-                adminClient.realm("test").components().component(c.getId()).remove();
+                realm.admin().components().component(c.getId()).remove();
                 r++;
             }
         }
@@ -330,16 +316,14 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     }
 
     private void assertUserInfo(String token, int expectedStatus) {
-        try (Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(AdminClientUtil.createResteasyClient(), token)) {
-            assertEquals(expectedStatus, userInfoResponse.getStatus());
-        }
+        UserInfoResponse response = oauth.doUserInfoRequest(token);
+        assertEquals(expectedStatus, response.getStatusCode());
     }
 
     private void assertTokenIntrospection(String token, boolean expectActive) {
         try {
-            JsonNode jsonNode = oauth.client("confidential-cli", "secret1").doIntrospectionAccessTokenRequest(token).asJsonNode();
+            JsonNode jsonNode = oauth.doIntrospectionAccessTokenRequest(token).asJsonNode();
             assertEquals(expectActive, jsonNode.get("active").asBoolean());
-            oauth.client("test-app", "password");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

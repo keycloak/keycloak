@@ -14,26 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.keys;
+package org.keycloak.tests.keys;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-
-import java.security.KeyFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.List;
-
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
-
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyType;
@@ -43,33 +27,32 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 
-public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
+import jakarta.ws.rs.core.Response;
+
+import java.security.KeyFactory;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@KeycloakIntegrationTest
+public class GeneratedEcdsaKeyProviderTest {
+
     private static final String DEFAULT_EC = GeneratedEcdsaKeyProviderFactory.DEFAULT_ECDSA_ELLIPTIC_CURVE;
     private static final String ECDSA_ELLIPTIC_CURVE_KEY = GeneratedEcdsaKeyProviderFactory.ECDSA_ELLIPTIC_CURVE_KEY;
     private static final String TEST_REALM_NAME = "test";
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"),
-                                             RealmRepresentation.class);
-        testRealms.add(realm);
-    }
+    @InjectRealm
+    ManagedRealm realm;
 
     @Test
     public void defaultEc() {
@@ -133,12 +116,12 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
             rep.getConfig().putSingle(Attributes.EC_GENERATE_CERTIFICATE_KEY, "true");
         }
 
-        Response response = adminClient.realm(TEST_REALM_NAME).components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
-        getCleanup().addComponentId(id);
+        realm.cleanup().add(r -> r.components().component(id).remove());
         response.close();
 
-        ComponentRepresentation createdRep = adminClient.realm(TEST_REALM_NAME).components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
 
         // stands for the number of properties in the key provider config
         assertEquals(withCertificate ? 3 : 2, createdRep.getConfig().size());
@@ -148,7 +131,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
             assertNotNull(createdRep.getConfig().getFirst(Attributes.EC_GENERATE_CERTIFICATE_KEY));
         }
 
-        KeysMetadataRepresentation keys = adminClient.realm(TEST_REALM_NAME).keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
 
@@ -166,7 +149,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
         if (withCertificate) {
             assertNotNull(key.getCertificate());
             X509Certificate certificate = PemUtils.decodeCertificate(key.getCertificate());
-            final String expectedIssuerAndSubject = "CN=" + TEST_REALM_NAME;
+            final String expectedIssuerAndSubject = "CN=" + realm.getName();
             assertEquals(expectedIssuerAndSubject, certificate.getIssuerX500Principal().getName());
             assertEquals(expectedIssuerAndSubject, certificate.getSubjectX500Principal().getName());
         }
@@ -181,20 +164,10 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, ecInNistRep);
-        boolean isEcAccepted = true;
 
-        Response response = null;
-        try {
-            response = adminClient.realm(TEST_REALM_NAME).components().add(rep);
-            String id = ApiUtil.getCreatedId(response);
-            getCleanup().addComponentId(id);
-            response.close();
-        } catch (WebApplicationException e) {
-            isEcAccepted = false;
-        } finally {
-            response.close();
-        }
-        assertEquals(isEcAccepted, false);
+        Response response = realm.admin().components().add(rep);
+        response.close();
+        Assertions.assertEquals(400, response.getStatus());
     }
 
     @Test
@@ -214,7 +187,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
 
     private void changeCurve(String FromEcInNistRep, String ToEcInNistRep) throws Exception {
         String keyComponentId = supportedEc(FromEcInNistRep, false);
-        KeysMetadataRepresentation keys = adminClient.realm(TEST_REALM_NAME).keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
         KeysMetadataRepresentation.KeyMetadataRepresentation originalKey = null;
         for (KeyMetadataRepresentation k : keys.getKeys()) {
            if (KeyType.EC.equals(k.getType()) && keyComponentId.equals(k.getProviderId())) {
@@ -223,17 +196,17 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
            }
         }
 
-        ComponentRepresentation createdRep = adminClient.realm(TEST_REALM_NAME).components().component(keyComponentId).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(keyComponentId).toRepresentation();
         createdRep.getConfig().putSingle(ECDSA_ELLIPTIC_CURVE_KEY, ToEcInNistRep);
-        adminClient.realm(TEST_REALM_NAME).components().component(keyComponentId).update(createdRep);
+        realm.admin().components().component(keyComponentId).update(createdRep);
 
-        createdRep = adminClient.realm(TEST_REALM_NAME).components().component(keyComponentId).toRepresentation();
+        createdRep = realm.admin().components().component(keyComponentId).toRepresentation();
 
         // stands for the number of properties in the key provider config
         assertEquals(2, createdRep.getConfig().size());
         assertEquals(ToEcInNistRep, createdRep.getConfig().getFirst(ECDSA_ELLIPTIC_CURVE_KEY));
 
-        keys = adminClient.realm(TEST_REALM_NAME).keys().getKeyMetadata();
+        keys = realm.admin().keys().getKeyMetadata();
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeyMetadataRepresentation k : keys.getKeys()) {
            if (KeyType.EC.equals(k.getType()) && keyComponentId.equals(k.getProviderId())) {
@@ -254,7 +227,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(adminClient.realm(TEST_REALM_NAME).toRepresentation().getId());
+        rep.setParentId(realm.admin().toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

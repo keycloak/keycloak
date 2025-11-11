@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keys;
+package org.keycloak.tests.keys;
 
-import jakarta.ws.rs.core.Response;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.keycloak.common.crypto.FipsMode;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -39,20 +37,27 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.EnableVault;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
-import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.KeystoreUtils;
+import org.keycloak.testframework.annotations.InjectCryptoHelper;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.crypto.CryptoHelper;
+import org.keycloak.testframework.crypto.KeystoreInfo;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.KeyUtils;
+import org.keycloak.testsuite.util.saml.SamlConstants;
 
+import jakarta.ws.rs.core.Response;
+
+import java.io.File;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -61,37 +66,33 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@EnableVault
-public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest(config = JavaKeystoreKeyProviderTest.JavaKeystoreVaultConfig.class)
+public class JavaKeystoreKeyProviderTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @InjectRealm
+    ManagedRealm realm;
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
-    @Page
-    protected AppPage appPage;
+    @InjectCryptoHelper
+    CryptoHelper cryptoHelper;
 
-    @Page
-    protected LoginPage loginPage;
-    private KeystoreUtils.KeystoreInfo generatedKeystore;
+    @TempDir
+    public static File folder;
+
+    protected Logger log = Logger.getLogger(this.getClass());
+
     private String keyAlgorithm;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realm);
-    }
+    private KeystoreInfo generatedKeystore;
 
     @Test
     public void createJksRSA() throws Exception {
@@ -146,7 +147,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     @Test
     public void createHMAC() throws Exception {
         // BC provider fails storing HMAC in BCFKS (although BCFIPS works)
-        createSuccess(isFips()? KeystoreUtil.KeystoreFormat.BCFKS : KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.HMAC, Algorithm.HS256, true);
+        createSuccess(cryptoHelper.isFips() ? KeystoreUtil.KeystoreFormat.BCFKS : KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.HMAC, Algorithm.HS256, true);
     }
 
     @Test
@@ -165,24 +166,24 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String keyAlgorithm, boolean vault) throws Exception {
-        KeystoreUtils.assumeKeystoreTypeSupported(keystoreType);
+        cryptoHelper.keystore().assumeKeystoreTypeSupported(keystoreType);
         generateKeystore(keystoreType, algorithmType, keyAlgorithm);
 
         long priority = System.currentTimeMillis();
 
         ComponentRepresentation rep = createRep("valid", priority, keyAlgorithm, vault? "${vault.keystore_password}" : "password");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
-        getCleanup().addComponentId(id);
+        realm.cleanup().add(r -> r.components().component(id).remove());
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(6, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
         assertEquals(vault? "${vault.keystore_password}" : ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst("keystorePassword"));
         assertEquals(vault? "${vault.keystore_password}" : ComponentRepresentation.SECRET_VALUE, createdRep.getConfig().getFirst("keyPassword"));
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
@@ -217,42 +218,42 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void invalidKeystore() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keystore", "/nosuchfile");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Failed to load keys. File not found on server.");
     }
 
     @Test
     public void invalidKeystorePassword() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keystore", "invalid");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Failed to load keys. File not found on server.");
     }
 
     @Test
     public void invalidKeyAlias() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keyAlias", "invalid");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Alias invalid does not exists in the keystore.");
     }
 
     @Test
     public void invalidKeyPassword() throws Exception {
-        KeystoreUtil.KeystoreFormat keystoreType = KeystoreUtils.getPreferredKeystoreType();
+        KeystoreUtil.KeystoreFormat keystoreType = cryptoHelper.keystore().getPreferredKeystoreType();
         if (keystoreType == KeystoreUtil.KeystoreFormat.PKCS12) {
             // only the keyStore password is significant with PKCS12. Hence we need to test with different keystore type
-            String[] supportedKsTypes = KeystoreUtils.getSupportedKeystoreTypes();
+            String[] supportedKsTypes = cryptoHelper.getExpectedSupportedKeyStoreTypes();
             if (supportedKsTypes.length <= 1) {
-                Assert.fail("Only PKCS12 type is supported, but invalidKeyPassword() scenario cannot be tested with it");
+                Assertions.fail("Only PKCS12 type is supported, but invalidKeyPassword() scenario cannot be tested with it");
             }
             keystoreType = Enum.valueOf(KeystoreUtil.KeystoreFormat.class, supportedKsTypes[1]);
             log.infof("Fallback to keystore type '%s' for the invalidKeyPassword() test", keystoreType);
@@ -261,51 +262,51 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
         rep.getConfig().putSingle("keyPassword", "invalid");
 
-        Response response = adminClient.realm("test").components().add(rep);
-        Assert.assertEquals(400, response.getStatus());
+        Response response = realm.admin().components().add(rep);
+        Assertions.assertEquals(400, response.getStatus());
         assertError(response, "Failed to load keys. Key in the keystore cannot be recovered.");
     }
 
     @Test
     public void invalidKeyAlgorithmCreatedECButRegisteredRSA() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.ECDSA, Algorithm.RS256);
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.ECDSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), Algorithm.RS256);
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Invalid RS256 key for alias keyalias. Algorithm is EC.");
     }
 
     @Test
     public void invalidKeyUsageForRS256() throws Exception {
-        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        generateKeystore(cryptoHelper.keystore().getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), Algorithm.RS256);
         rep.getConfig().putSingle(Attributes.KEY_USE, "enc");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Invalid use enc for algorithm RS256.");
     }
 
     @Test
     public void invalidKeystoreExpiredCertificate() throws Exception {
-        generateRSAExpiredCertificateStore(KeystoreUtils.getPreferredKeystoreType());
+        generateRSAExpiredCertificateStore(cryptoHelper.keystore().getPreferredKeystoreType());
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertError(response, "Certificate error on server.");
     }
 
     @Test
     public void testExpiredCertificateInOneHour() throws Exception {
         this.keyAlgorithm = Algorithm.RS256;
-        generateRSAExpiredInOneHourCertificateStore(KeystoreUtils.getPreferredKeystoreType());
+        generateRSAExpiredInOneHourCertificateStore(cryptoHelper.keystore().getPreferredKeystoreType());
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
 
-        try (Response response = adminClient.realm("test").components().add(rep)) {
+        try (Response response = realm.admin().components().add(rep)) {
             String id = ApiUtil.getCreatedId(response);
-            getCleanup().addComponentId(id);
+            realm.cleanup().add(r -> r.components().component(id).remove());
         }
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
         assertEquals(AlgorithmType.RSA.name(), key.getType());
         PublicKey exp = PemUtils.decodePublicKey(generatedKeystore.getCertificateInfo().getPublicKey(), KeyType.RSA);
@@ -314,9 +315,9 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), key.getCertificate());
         assertEquals(KeyStatus.ACTIVE.name(), key.getStatus());
 
-        setTimeOffset(3610);
+        timeOffSet.set(3610);
 
-        keys = adminClient.realm("test").keys().getKeyMetadata();
+        keys = realm.admin().keys().getKeyMetadata();
         key = keys.getKeys().get(0);
         assertEquals(KeyStatus.PASSIVE.name(), key.getStatus());
     }
@@ -338,7 +339,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, long priority, String algorithm, String password) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
+        rep.setParentId(realm.admin().toRepresentation().getId());
         rep.setProviderId(JavaKeystoreKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());
@@ -355,42 +356,55 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         this.keyAlgorithm = keyAlgorithm;
         switch (algorithmType) {
             case RSA -> {
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password");
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password");
             }
             case ECDSA -> {
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateECKey(Algorithm.ES256));
             }
             case AES -> {
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateSecretKey(Algorithm.AES, 256));
             }
             case HMAC -> {
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateSecretKey(Algorithm.HS256, 256));
             }
             case EDDSA -> {
-                this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateEdDSAKey(Algorithm.Ed25519));
             }
         }
     }
 
     private void generateRSAExpiredCertificateStore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
-        PrivateKey privKey = PemUtils.decodePrivateKey(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY);
-        X509Certificate cert = PemUtils.decodeCertificate(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE);
-        this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password", privKey, cert);
+        PrivateKey privKey = PemUtils.decodePrivateKey(SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY);
+        X509Certificate cert = PemUtils.decodeCertificate(SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE);
+        this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password", privKey, cert);
     }
 
     private void generateRSAExpiredInOneHourCertificateStore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
         KeyPair keyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
         Certificate cert = CertificateUtils.generateV1SelfSignedCertificate(
                 keyPair, "test", new BigInteger("1"), Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
-        this.generatedKeystore = KeystoreUtils.generateKeystore(folder, keystoreType, "keyalias", "password", "password", keyPair.getPrivate(), cert);
+        this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password", keyPair.getPrivate(), cert);
     }
 
-    private static boolean isFips() {
-        return AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE != FipsMode.DISABLED;
+    public static class JavaKeystoreVaultConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            try {
+                URL url = JavaKeystoreKeyProviderTest.class.getResource("vault");
+                if (url == null) {
+                    throw new RuntimeException("Unable to find the vault folder in the classpath for the default_keystore__password file!");
+                }
+                return config.option("vault", "file").option("vault-dir", Path.of(url.toURI()).toString());
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
+
 }
 

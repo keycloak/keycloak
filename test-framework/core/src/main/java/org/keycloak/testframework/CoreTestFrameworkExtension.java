@@ -2,6 +2,8 @@ package org.keycloak.testframework;
 
 import org.keycloak.testframework.admin.AdminClientFactorySupplier;
 import org.keycloak.testframework.admin.AdminClientSupplier;
+import org.keycloak.testframework.crypto.CryptoHelper;
+import org.keycloak.testframework.crypto.CryptoHelperSupplier;
 import org.keycloak.testframework.database.RemoteDatabaseSupplier;
 import org.keycloak.testframework.http.SimpleHttpSupplier;
 import org.keycloak.testframework.https.ManagedCertificates;
@@ -52,7 +54,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new HttpServerSupplier(),
                 new InfinispanExternalServerSupplier(),
                 new SimpleHttpSupplier(),
-                new CertificatesSupplier()
+                new CertificatesSupplier(),
+                new CryptoHelperSupplier()
         );
     }
 
@@ -61,8 +64,13 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
         return Map.of(
                 KeycloakServer.class, "server",
                 TestDatabase.class, "database",
-                ManagedCertificates.class, "certificates"
+                ManagedCertificates.class, "certificates",
+                CryptoHelper.class, "crypto"
         );
     }
 
+    @Override
+    public List<Class<?>> alwaysEnabledValueTypes() {
+        return List.of(CryptoHelper.class);
+    }
 }
