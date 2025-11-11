@@ -906,6 +906,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         entity.setRealmId(realmId);
         entity.setClientId(clientId);
         entity.setUserSessionId(clientSession.getUserSession().getId());
+        entity.setUserId(clientSession.getUserSession().getId());
 
         entity.setAction(clientSession.getAction());
         entity.setAuthMethod(clientSession.getProtocol());
