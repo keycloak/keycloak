@@ -12,7 +12,6 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.forms",
         "org.keycloak.tests.infinispan",
         "org.keycloak.tests.oauth",
-        "org.keycloak.tests.suites",
         "org.keycloak.tests.tracing",
         "org.keycloak.tests.welcomepage"
 })
