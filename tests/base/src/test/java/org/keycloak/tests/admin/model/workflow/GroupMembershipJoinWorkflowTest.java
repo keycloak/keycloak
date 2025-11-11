@@ -8,10 +8,10 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceOperationType;
-import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionFactory;
+import org.keycloak.models.workflow.user.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.user.SetUserAttributeStepProviderFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;

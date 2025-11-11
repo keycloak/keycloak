@@ -10,7 +10,7 @@ import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.user.SetUserAttributeStepProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;

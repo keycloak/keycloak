@@ -15,23 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.workflow;
+package org.keycloak.models.workflow.user;
 
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.workflow.ResourceType;
+import org.keycloak.models.workflow.WorkflowStepProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-public class SetUserAttributeStepProviderFactory implements WorkflowStepProviderFactory<SetUserAttributeStepProvider> {
+public class DeleteUserStepProviderFactory implements
+    WorkflowStepProviderFactory<DeleteUserStepProvider> {
 
-    public static final String ID = "set-user-attribute";
+    public static final String ID = "delete-user";
 
     @Override
-    public SetUserAttributeStepProvider create(KeycloakSession session, ComponentModel model) {
-        return new SetUserAttributeStepProvider(session, model);
+    public DeleteUserStepProvider create(KeycloakSession session, ComponentModel model) {
+        return new DeleteUserStepProvider(session, model);
     }
 
     @Override
@@ -55,13 +59,13 @@ public class SetUserAttributeStepProviderFactory implements WorkflowStepProvider
     }
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
+    public Set<ResourceType> getTypes() {
+        return Set.of(ResourceType.USERS);
     }
 
     @Override
     public String getHelpText() {
-        return "Sets an attribute on the user. Configure attributes to set as 'user.attribute.<attribute-name>' in the step's configuration.";
+        return "";
     }
 
     @Override

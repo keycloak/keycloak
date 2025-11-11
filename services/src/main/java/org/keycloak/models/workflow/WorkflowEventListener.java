@@ -28,25 +28,22 @@ public class WorkflowEventListener implements EventListenerProvider, ProviderEve
 
     @Override
     public void onEvent(Event event) {
-        WorkflowEvent workflowEvent = ResourceType.USERS.toEvent(event);
-        trySchedule(workflowEvent);
+        WorkflowEventConverter.fromEvent(session, event).ifPresent(this::trySchedule);
     }
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        WorkflowEvent workflowEvent = ResourceType.USERS.toEvent(event);
-        trySchedule(workflowEvent);
+        WorkflowEventConverter.fromEvent(event).ifPresent(this::trySchedule);
     }
 
     @Override
     public void onEvent(ProviderEvent event) {
         RealmModel realm = session.getContext().getRealm();
-
         if (realm == null) {
             return;
         }
 
-        trySchedule(ResourceType.USERS.toEvent(event));
+        WorkflowEventConverter.fromEvent(event).ifPresent(this::trySchedule);
     }
 
     private void trySchedule(WorkflowEvent event) {

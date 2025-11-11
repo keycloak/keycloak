@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.workflow;
+package org.keycloak.models.workflow.user;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
+import org.keycloak.models.workflow.WorkflowStepProvider;
 
 import org.jboss.logging.Logger;
-
 
 public class DisableUserStepProvider implements WorkflowStepProvider {
 
