@@ -125,19 +125,16 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                     .createInfoPage();
         }
 
-        // Validate that the invitation still exists in the database if invitation ID is present
-        if (token.getInvitationId() != null) {
-            OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-            OrganizationInvitationModel invitation = invitationProvider.getById(token.getInvitationId(), organization);
-            
-            if (invitation == null || invitation.isExpired()) {
-                event.user(user).error(Errors.INVALID_TOKEN);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setAuthenticationSession(authSession)
-                        .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
-                        .setInfo(Messages.STALE_INVITE_ORG_LINK)
-                        .createInfoPage();
-            }
+        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+        OrganizationInvitationModel invitation = invitationProvider.getById(token.getId(), organization);
+
+        if (invitation == null || invitation.isExpired()) {
+            event.user(user).error(Errors.INVALID_TOKEN);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                    .setInfo(Messages.STALE_INVITE_ORG_LINK)
+                    .createInfoPage();
         }
 
         final UriInfo uriInfo = tokenContext.getUriInfo();
@@ -164,10 +161,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         orgProvider.addMember(orgProvider.getById(token.getOrgId()), user);
 
         // Delete the invitation since it has been used
-        if (token.getInvitationId() != null) {
-            OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-            invitationProvider.deleteInvitation(organization, token.getInvitationId());
-        }
+        invitationProvider.deleteInvitation(organization, token.getId());
 
         String redirectUri = token.getRedirectUri();
 

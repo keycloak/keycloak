@@ -203,7 +203,7 @@ public class OrganizationInvitationResource {
         InviteOrgActionToken token = new InviteOrgActionToken(user.getId(), tokenExpiration, user.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
         token.setOrgId(organization.getId());
-        token.setInvitationId(invitationId);
+        token.id(invitationId);
 
         if (organization.getRedirectUrl() == null || organization.getRedirectUrl().isBlank()) {
             token.setRedirectUri(Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString());
@@ -340,15 +340,8 @@ public class OrganizationInvitationResource {
         }
 
         invitationProvider.deleteInvitation(organization, id);
-
-        String email = invitation.getEmail();
-        UserModel user = session.users().getUserByEmail(realm, email);
-
-        if (user == null) {
-            return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
-        }
-
-        return inviteExistingUser(user.getId());
+        
+        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
     }
 
     // Helper method to convert model to representation

@@ -329,14 +329,12 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             }
 
             // Validate that the invitation still exists in the database
-            if (token.getInvitationId() != null) {
-                OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-                OrganizationInvitationModel invitation = invitationProvider.getById(token.getInvitationId(), organization);
-                
-                if (invitation == null || invitation.isExpired()) {
-                    error.accept(List.of(new FormMessage("The invitation has expired or is no longer valid.")));
-                    return false;
-                }
+            OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+            OrganizationInvitationModel invitation = invitationProvider.getById(token.getId(), organization);
+
+            if (invitation == null || invitation.isExpired()) {
+                error.accept(List.of(new FormMessage("The invitation has expired or is no longer valid.")));
+                return false;
             }
 
             if (!token.getEmail().equals(email)) {
@@ -361,10 +359,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
 
                 // Delete the invitation since it has been used
-                if (token.getInvitationId() != null) {
-                    OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-                    invitationProvider.deleteInvitation(orgModel, token.getInvitationId());
-                }
+                OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+                invitationProvider.deleteInvitation(orgModel, token.getId());
             }
         }
     }
