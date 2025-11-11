@@ -62,6 +62,7 @@ import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakRealmImportController;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
@@ -341,12 +342,24 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       }
       Log.info("Deleting Keycloak CR");
 
+      // first graceful scaledown
+      k8sclient.resources(Keycloak.class).list().getItems().forEach(
+              k -> k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).update());
+
+      try {
+          k8sclient.resources(Keycloak.class).informOnCondition(
+                  l -> l.stream().allMatch(k -> Optional.ofNullable(k.getStatus()).map(KeycloakStatus::getInstances).orElse(0).equals(0)))
+                  .get(40, TimeUnit.SECONDS);
+      } catch (Exception e) {
+          throw KubernetesClientException.launderThrowable(e);
+      }
+
       // this can be simplified to just the root deletion after we pick up the fix
       // it can be further simplified after https://github.com/fabric8io/kubernetes-client/issues/5838
       // to just a timed foreground deletion
       var roots = List.of(Keycloak.class, KeycloakRealmImport.class);
       roots.forEach(c -> k8sclient.resources(c).delete());
-      // enforce that at least the statefulset / pods are gone
+      // enforce that at least the statefulset are gone
       try {
           k8sclient
                   .apps()
