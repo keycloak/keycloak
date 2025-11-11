@@ -66,42 +66,6 @@ public abstract class SdJwsTest {
     }
 
     @Test
-    public void testVerifyExpClaim_ExpiredJWT() {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("exp", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        assertThrows(VerificationException.class, sdJws::verifyExpClaim);
-    }
-
-    @Test
-    public void testVerifyExpClaim_Positive() throws Exception {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("exp", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        sdJws.verifyExpClaim();
-    }
-
-    @Test
-    public void testVerifyNotBeforeClaim_Negative() {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("nbf", Instant.now().plus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        assertThrows(VerificationException.class, sdJws::verifyNotBeforeClaim);
-    }
-
-    @Test
-    public void testVerifyNotBeforeClaim_Positive() throws Exception {
-        JsonNode payload = createPayload();
-        ((ObjectNode) payload).put("nbf", Instant.now().minus(1, ChronoUnit.HOURS).getEpochSecond());
-        SdJws sdJws = new SdJws(payload) {
-        };
-        sdJws.verifyNotBeforeClaim();
-    }
-
-    @Test
     public void testPayloadJwsConstruction() {
         SdJws sdJws = new SdJws(createPayload()) {
         };
@@ -158,28 +122,5 @@ public abstract class SdJwsTest {
         ((ObjectNode) payload).put("vct", "IdentityCredential");
         SdJws sdJws = new SdJws(payload) {};
         sdJws.verifyVctClaim(Collections.singletonList("IdentityCredential"));
-    }
-
-    @Test
-    public void shouldValidateAgeSinceIssued() throws VerificationException {
-        long now = Instant.now().getEpochSecond();
-        SdJws sdJws = exampleSdJws(now);
-        sdJws.verifyAge(180);
-    }
-
-    @Test
-    public void shouldValidateAgeSinceIssued_IfJwtIsTooOld() {
-        long now = Instant.now().getEpochSecond();
-        SdJws sdJws = exampleSdJws(now - 1000); // that will be too old
-        VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyAge(180));
-        assertEquals("jwt is too old", exception.getMessage());
-    }
-
-    private SdJws exampleSdJws(long iat) {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.set("iat", SdJwtUtils.mapper.valueToTree(iat));
-
-        return new SdJws(payload) {
-        };
     }
 }

@@ -22,61 +22,30 @@ package org.keycloak.sdjwt;
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class IssuerSignedJwtVerificationOpts {
-    private final boolean validateIssuedAtClaim;
-    private final boolean validateExpirationClaim;
-    private final boolean validateNotBeforeClaim;
+public class IssuerSignedJwtVerificationOpts extends TimeClaimVerificationOpts {
 
-    public IssuerSignedJwtVerificationOpts(
+    private IssuerSignedJwtVerificationOpts(
             boolean validateIssuedAtClaim,
             boolean validateExpirationClaim,
-            boolean validateNotBeforeClaim) {
-        this.validateIssuedAtClaim = validateIssuedAtClaim;
-        this.validateExpirationClaim = validateExpirationClaim;
-        this.validateNotBeforeClaim = validateNotBeforeClaim;
+            boolean validateNotBeforeClaim,
+            int leewaySeconds
+    ) {
+        super(validateIssuedAtClaim, validateExpirationClaim, validateNotBeforeClaim, leewaySeconds);
     }
 
-    public boolean mustValidateIssuedAtClaim() {
-        return validateIssuedAtClaim;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public boolean mustValidateExpirationClaim() {
-        return validateExpirationClaim;
-    }
+    public static class Builder extends TimeClaimVerificationOpts.Builder<Builder> {
 
-    public boolean mustValidateNotBeforeClaim() {
-        return validateNotBeforeClaim;
-    }
-
-    public static IssuerSignedJwtVerificationOpts.Builder builder() {
-        return new IssuerSignedJwtVerificationOpts.Builder();
-    }
-
-    public static class Builder {
-        private boolean validateIssuedAtClaim;
-        private boolean validateExpirationClaim = true;
-        private boolean validateNotBeforeClaim = true;
-
-        public Builder withValidateIssuedAtClaim(boolean validateIssuedAtClaim) {
-            this.validateIssuedAtClaim = validateIssuedAtClaim;
-            return this;
-        }
-
-        public Builder withValidateExpirationClaim(boolean validateExpirationClaim) {
-            this.validateExpirationClaim = validateExpirationClaim;
-            return this;
-        }
-
-        public Builder withValidateNotBeforeClaim(boolean validateNotBeforeClaim) {
-            this.validateNotBeforeClaim = validateNotBeforeClaim;
-            return this;
-        }
-
+        @Override
         public IssuerSignedJwtVerificationOpts build() {
             return new IssuerSignedJwtVerificationOpts(
-                    validateIssuedAtClaim,
-                    validateExpirationClaim,
-                    validateNotBeforeClaim
+                    requireIssuedAtClaim,
+                    requireExpirationClaim,
+                    requireNotBeforeClaim,
+                    leewaySeconds
             );
         }
     }

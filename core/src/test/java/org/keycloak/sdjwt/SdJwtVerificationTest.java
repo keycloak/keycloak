@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 
@@ -30,8 +31,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import org.keycloak.crypto.SignatureSignerContext;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -168,9 +167,7 @@ public abstract class SdJwtVerificationTest {
                     VerificationException.class,
                     () -> sdJwt.verify(
                             defaultIssuerVerifyingKeys(),
-                            defaultIssuerSignedJwtVerificationOpts()
-                                    .withValidateExpirationClaim(true)
-                                    .build()
+                            defaultIssuerSignedJwtVerificationOpts().build()
                     )
             );
 
@@ -188,7 +185,7 @@ public abstract class SdJwtVerificationTest {
         // exp: invalid
         ObjectNode claimSet2 = mapper.createObjectNode();
         claimSet1.put("given_name", "John");
-        claimSet1.put("exp", "should-not-be-a-string");
+        claimSet1.set("exp", null);
 
         DisclosureSpec disclosureSpec = DisclosureSpec.builder()
                 .withUndisclosedClaim("given_name", "eluV5Og3gSNII8EYnsxA_A")
@@ -203,13 +200,13 @@ public abstract class SdJwtVerificationTest {
                     () -> sdJwt.verify(
                             defaultIssuerVerifyingKeys(),
                             defaultIssuerSignedJwtVerificationOpts()
-                                    .withValidateExpirationClaim(true)
+                                    .withRequireExpirationClaim(true)
                                     .build()
                     )
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `exp` claim", exception.getMessage());
-            assertEquals("Missing or invalid 'exp' claim", exception.getCause().getMessage());
+            assertEquals("Missing 'exp' claim or null", exception.getCause().getMessage());
         }
     }
 
@@ -234,14 +231,12 @@ public abstract class SdJwtVerificationTest {
                     VerificationException.class,
                     () -> sdJwt.verify(
                             defaultIssuerVerifyingKeys(),
-                            defaultIssuerSignedJwtVerificationOpts()
-                                    .withValidateIssuedAtClaim(true)
-                                    .build()
+                            defaultIssuerSignedJwtVerificationOpts().build()
                     )
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `iat` claim", exception.getMessage());
-            assertEquals("JWT issued in the future", exception.getCause().getMessage());
+            assertEquals("JWT was issued in the future", exception.getCause().getMessage());
         }
     }
 
@@ -266,9 +261,7 @@ public abstract class SdJwtVerificationTest {
                     VerificationException.class,
                     () -> sdJwt.verify(
                             defaultIssuerVerifyingKeys(),
-                            defaultIssuerSignedJwtVerificationOpts()
-                                    .withValidateNotBeforeClaim(true)
-                                    .build()
+                            defaultIssuerSignedJwtVerificationOpts().build()
                     )
             );
 
@@ -370,9 +363,9 @@ public abstract class SdJwtVerificationTest {
 
     private IssuerSignedJwtVerificationOpts.Builder defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withValidateIssuedAtClaim(false)
-                .withValidateExpirationClaim(false)
-                .withValidateNotBeforeClaim(false);
+                .withRequireIssuedAtClaim(false)
+                .withRequireExpirationClaim(false)
+                .withRequireNotBeforeClaim(false);
     }
 
     private SdJwt.Builder exampleFlatSdJwtV1() {

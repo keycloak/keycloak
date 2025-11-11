@@ -101,8 +101,8 @@ public abstract class SdJwtPresentationConsumerTest {
 
     private IssuerSignedJwtVerificationOpts defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withValidateIssuedAtClaim(false)
-                .withValidateNotBeforeClaim(false)
+                .withRequireIssuedAtClaim(false)
+                .withRequireNotBeforeClaim(false)
                 .build();
     }
 
@@ -112,8 +112,8 @@ public abstract class SdJwtPresentationConsumerTest {
                 .withAllowedMaxAge(Integer.MAX_VALUE)
                 .withNonce("1234567890")
                 .withAud("https://verifier.example.org")
-                .withValidateExpirationClaim(false)
-                .withValidateNotBeforeClaim(false)
+                .withRequireExpirationClaim(false)
+                .withRequireNotBeforeClaim(false)
                 .build();
     }
 }

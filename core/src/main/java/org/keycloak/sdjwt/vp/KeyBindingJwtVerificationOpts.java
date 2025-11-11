@@ -17,12 +17,17 @@
 
 package org.keycloak.sdjwt.vp;
 
+import org.keycloak.sdjwt.TimeClaimVerificationOpts;
+
 /**
  * Options for Key Binding JWT verification.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class KeyBindingJwtVerificationOpts {
+public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
+
+    public static final int DEFAULT_ALLOWED_MAX_AGE = 5 * 60; // 5 minutes
+
     /**
      * Specifies the Verifier's policy whether to check Key Binding
      */
@@ -36,22 +41,20 @@ public class KeyBindingJwtVerificationOpts {
     private final String nonce;
     private final String aud;
 
-    private final boolean validateExpirationClaim;
-    private final boolean validateNotBeforeClaim;
-
-    public KeyBindingJwtVerificationOpts(
+    private KeyBindingJwtVerificationOpts(
             boolean keyBindingRequired,
             int allowedMaxAge,
             String nonce,
             String aud,
             boolean validateExpirationClaim,
-            boolean validateNotBeforeClaim) {
+            boolean validateNotBeforeClaim,
+            int leewaySeconds
+    ) {
+        super(true, validateExpirationClaim, validateNotBeforeClaim, leewaySeconds);
         this.keyBindingRequired = keyBindingRequired;
         this.allowedMaxAge = allowedMaxAge;
         this.nonce = nonce;
         this.aud = aud;
-        this.validateExpirationClaim = validateExpirationClaim;
-        this.validateNotBeforeClaim = validateNotBeforeClaim;
     }
 
     public boolean isKeyBindingRequired() {
@@ -70,25 +73,17 @@ public class KeyBindingJwtVerificationOpts {
         return aud;
     }
 
-    public boolean mustValidateExpirationClaim() {
-        return validateExpirationClaim;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public boolean mustValidateNotBeforeClaim() {
-        return validateNotBeforeClaim;
-    }
+    public static class Builder extends TimeClaimVerificationOpts.Builder<Builder> {
 
-    public static KeyBindingJwtVerificationOpts.Builder builder() {
-        return new KeyBindingJwtVerificationOpts.Builder();
-    }
-
-    public static class Builder {
         private boolean keyBindingRequired = true;
-        private int allowedMaxAge = 5 * 60;
+        protected boolean validateIssuedAtClaim = true;
+        private int allowedMaxAge = DEFAULT_ALLOWED_MAX_AGE;
         private String nonce;
         private String aud;
-        private boolean validateExpirationClaim = true;
-        private boolean validateNotBeforeClaim = true;
 
         public Builder withKeyBindingRequired(boolean keyBindingRequired) {
             this.keyBindingRequired = keyBindingRequired;
@@ -110,17 +105,14 @@ public class KeyBindingJwtVerificationOpts {
             return this;
         }
 
-        public Builder withValidateExpirationClaim(boolean validateExpirationClaim) {
-            this.validateExpirationClaim = validateExpirationClaim;
-            return this;
-        }
-
-        public Builder withValidateNotBeforeClaim(boolean validateNotBeforeClaim) {
-            this.validateNotBeforeClaim = validateNotBeforeClaim;
-            return this;
-        }
-
+        @Override
         public KeyBindingJwtVerificationOpts build() {
+            if (!validateIssuedAtClaim) {
+                throw new IllegalArgumentException(
+                        "Validating `iat` claim cannot be disabled for KB-JWT verification because mandated"
+                );
+            }
+
             if (keyBindingRequired && (aud == null || nonce == null || nonce.isEmpty())) {
                 throw new IllegalArgumentException(
                         "Missing `nonce` and `aud` claims for replay protection"
@@ -132,8 +124,9 @@ public class KeyBindingJwtVerificationOpts {
                     allowedMaxAge,
                     nonce,
                     aud,
-                    validateExpirationClaim,
-                    validateNotBeforeClaim
+                    requireExpirationClaim,
+                    requireNotBeforeClaim,
+                    leewaySeconds
             );
         }
     }
