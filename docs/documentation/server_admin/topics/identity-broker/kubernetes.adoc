@@ -1,10 +1,15 @@
+ifeval::[{project_community}==true]
 
 [[_identity_broker_kubernetes]]
 === Kubernetes identity providers
 
-:tech_feature_name: Kubernetes service accounts trust relationship provider
-:tech_feature_id: kubernetes
-include::../../topics/templates/techpreview.adoc[]
+[NOTE]
+====
+Kubernetes service accounts trust relationship provider is *Experimental* and is not fully supported.
+This feature is disabled by default.
+
+To enable start the server with `--features=kubernetes`
+====
 
 :tech_feature_name: Authenticate clients based on assertions issued by an identity provider
 :tech_feature_id: client-auth-federated
@@ -94,3 +99,4 @@ curl -k https://example.com:8443/realms/<realm>/protocol/openid-connect/token \
 }
 ----
 
+endif::[]
