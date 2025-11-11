@@ -82,7 +82,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     }
 
     public String getDatabase() {
-;        return config.getDatabase() == null ? "keycloak" : config.getDatabase();
+        return config.getDatabase() == null ? "keycloak" : config.getDatabase();
     }
 
     public String getUsername() {
