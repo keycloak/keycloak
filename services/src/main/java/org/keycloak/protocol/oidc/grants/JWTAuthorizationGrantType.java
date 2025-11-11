@@ -106,8 +106,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             event.user(user);
             event.detail(Details.USERNAME, user.getUsername());
 
-            String scopeParam = formParams.getFirst(OAuth2Constants.SCOPE);
-            //TODO: scopes processing
+            String scopeParam = getRequestedScopes();
 
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);
@@ -116,11 +115,12 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             event.session(userSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, userSession, authSession);
             return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, null);
-        }
-        catch (Exception e) {
+        } catch (CorsErrorResponseException e) {
+            throw e;
+        } catch (Exception e) {
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
