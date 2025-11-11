@@ -722,6 +722,11 @@
           "name" : "clientId",
           "type" : "string",
           "optional" : true
+        }, {
+          "id" : 10,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
         } ],
         "maps" : [ {
           "key_type" : "string",
@@ -901,6 +906,10 @@
           "optional" : true
         } ]
       }, {
+        "name" : "RemoveKeyConsumer",
+        "type_id" : 65618,
+        "fields" : [ ]
+      }, {
         "name" : "InResourceServerPredicate",
         "type_id" : 65560,
         "fields" : [ {
@@ -1056,6 +1065,20 @@
             "name" : "authenticatedClientSessionIds",
             "type" : "org.infinispan.protostream.commons.UUID"
           }
+        } ]
+      }, {
+        "name" : "ClientSessionFilterByUser",
+        "type_id" : 65617,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "realmId",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "userId",
+          "type" : "string",
+          "optional" : true
         } ]
       }, {
         "name" : "RoleUpdatedEvent",
