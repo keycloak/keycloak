@@ -29,8 +29,7 @@ import java.util.Optional;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assume.assumeTrue;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT_HTTP;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 @EnableFeature(Profile.Feature.DOCKER)
@@ -105,9 +104,9 @@ public class DockerClientTest extends AbstractKeycloakTest {
 
         final Map<String, String> environment = new HashMap<>();
         environment.put("REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY", "/tmp");
-        environment.put("REGISTRY_AUTH_TOKEN_REALM", AUTH_SERVER_SCHEME + "://" + hostIp + ":" + AUTH_SERVER_PORT + "/auth/realms/" + REALM_ID + "/protocol/docker-v2/auth");
+        environment.put("REGISTRY_AUTH_TOKEN_REALM", "http://" + hostIp + ":" + AUTH_SERVER_PORT_HTTP + "/auth/realms/" + REALM_ID + "/protocol/docker-v2/auth");
         environment.put("REGISTRY_AUTH_TOKEN_SERVICE", CLIENT_ID);
-        environment.put("REGISTRY_AUTH_TOKEN_ISSUER", AUTH_SERVER_SCHEME + "://" + hostIp + ":" + AUTH_SERVER_PORT + "/auth/realms/" + REALM_ID);
+        environment.put("REGISTRY_AUTH_TOKEN_ISSUER", "http://" + hostIp + ":" + AUTH_SERVER_PORT_HTTP + "/auth/realms/" + REALM_ID);
         environment.put("REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE", "/opt/kc-certs/" + tmpCertFile.getCanonicalFile().getName());
         environment.put("INSECURE_REGISTRY", "--insecure-registry " + REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
 
