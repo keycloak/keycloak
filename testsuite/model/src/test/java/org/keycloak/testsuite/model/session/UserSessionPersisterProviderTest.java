@@ -60,6 +60,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProvider;
+import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -862,13 +863,13 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         eventCount = doExpirationWithSessions(0, initialSessions, eventCount);
 
         // create half batch size sessions
-        eventCount = doExpirationWithSessions(Math.max(1, JpaUserSessionPersisterProvider.EXPIRATION_BATCH_SIZE / 2), initialSessions, eventCount);
+        eventCount = doExpirationWithSessions(Math.max(1, JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH / 2), initialSessions, eventCount);
 
         // exactly batch size sessions
-        eventCount = doExpirationWithSessions(JpaUserSessionPersisterProvider.EXPIRATION_BATCH_SIZE, initialSessions, eventCount);
+        eventCount = doExpirationWithSessions(JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH, initialSessions, eventCount);
 
         // double batch size sessions
-        doExpirationWithSessions(JpaUserSessionPersisterProvider.EXPIRATION_BATCH_SIZE * 2, initialSessions, eventCount);
+        doExpirationWithSessions(JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2, initialSessions, eventCount);
     }
 
     private long doExpirationWithSessions(int count, int initialSessionCount, long currentEventCount) {

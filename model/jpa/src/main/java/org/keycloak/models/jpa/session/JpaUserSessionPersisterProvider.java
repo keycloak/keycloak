@@ -67,16 +67,14 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class JpaUserSessionPersisterProvider implements UserSessionPersisterProvider {
     private static final Logger logger = Logger.getLogger(JpaUserSessionPersisterProvider.class);
 
-    // SQL databases only allow a limited amount of items in an IN clause.
-    // While PostgreSQL allows possibly 32k, we are not sure about the rest.
-    public static final int EXPIRATION_BATCH_SIZE = 32;
-
     private final KeycloakSession session;
     private final EntityManager em;
+    private final int expirationBatch;
 
-    public JpaUserSessionPersisterProvider(KeycloakSession session, EntityManager em) {
+    public JpaUserSessionPersisterProvider(KeycloakSession session, EntityManager em, int expirationBatch) {
         this.session = session;
         this.em = em;
+        this.expirationBatch = expirationBatch;
     }
 
     @Override
@@ -275,7 +273,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                     .setParameter("lastSessionRefresh", expired)
                     .setParameter("offline", offlineStr)
                     .setHint(AvailableHints.HINT_READ_ONLY, true)
-                    .setMaxResults(EXPIRATION_BATCH_SIZE);
+                    .setMaxResults(expirationBatch);
 
             var expiredSessions = query.getResultStream()
                     .map(JpaUserSessionPersisterProvider::userSessionAndUserProjection)
@@ -303,7 +301,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                     .executeUpdate();
             logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
 
-            if (expiredSessions.size() < EXPIRATION_BATCH_SIZE) {
+            if (expiredSessions.size() < expirationBatch) {
                 // This should be safe.
                 // If the hits are less than the desired batch size, we should not have expired sessions.
                 return;
