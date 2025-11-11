@@ -67,6 +67,10 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class JpaUserSessionPersisterProvider implements UserSessionPersisterProvider {
     private static final Logger logger = Logger.getLogger(JpaUserSessionPersisterProvider.class);
 
+    // SQL databases only allow a limited amount of items in an IN clause.
+    // While PostgreSQL allows possibly 32k, we are not sure about the rest.
+    public static final int EXPIRATION_BATCH_SIZE = 32;
+
     private final KeycloakSession session;
     private final EntityManager em;
 
@@ -263,31 +267,48 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
 
-        TypedQuery<Object[]> query = em.createNamedQuery("findExpiredUserSessions", Object[].class)
-                .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expired)
-                .setParameter("offline", offlineStr)
-                .setHint(AvailableHints.HINT_READ_ONLY, true);
+        while (true) {
+            // The queries executed in the loop are executed outside the JPA transaction,
+            // no need to create an independent transaction.
+            TypedQuery<Object[]> query = em.createNamedQuery("findExpiredUserSessions", Object[].class)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("lastSessionRefresh", expired)
+                    .setParameter("offline", offlineStr)
+                    .setHint(AvailableHints.HINT_READ_ONLY, true)
+                    .setMaxResults(EXPIRATION_BATCH_SIZE);
 
-        var expiredSessions = query.getResultStream()
-                .map(JpaUserSessionPersisterProvider::userSessionAndUserProjection)
-                .toList();
+            var expiredSessions = query.getResultStream()
+                    .map(JpaUserSessionPersisterProvider::userSessionAndUserProjection)
+                    .toList();
 
-        sendExpirationEvents(realm, expiredSessions);
+            if (expiredSessions.isEmpty()) {
+                return;
+            }
 
-        StreamsUtil.chunkedStream(expiredSessions.stream().map(UserSessionAndUser::userSessionId), 100).forEach(chunk -> {
-            // SQL databases only allow a limited number of items in an IN clause. While PostgreSQL allows possibly 32k, we are not sure about the rest
+            // creates the expiration events and extracts the user session IDs for the delete statement.
+            var sessionIds = expiredSessions.stream()
+                    .peek(sessionAndUser -> createExpirationEvent(realm, sessionAndUser))
+                    .map(UserSessionAndUser::userSessionId)
+                    .toList();
+
+
             int cs = em.createNamedQuery("deleteClientSessionsByUserSessions")
-                    .setParameter("userSessionId", chunk)
+                    .setParameter("userSessionId", sessionIds)
                     .setParameter("offline", offlineStr)
                     .executeUpdate();
 
             int us = em.createNamedQuery("deleteUserSessions")
-                    .setParameter("userSessionId", chunk)
+                    .setParameter("userSessionId", sessionIds)
                     .setParameter("offline", offlineStr)
                     .executeUpdate();
             logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
-        });
+
+            if (expiredSessions.size() < EXPIRATION_BATCH_SIZE) {
+                // This should be safe.
+                // If the hits are less than the desired batch size, we should not have expired sessions.
+                return;
+            }
+        }
 
     }
 
@@ -757,13 +778,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         );
     }
 
-    private void sendExpirationEvents(RealmModel realm, List<UserSessionAndUser> expiredSessions) {
-        expiredSessions.forEach(sessionAndUser -> new EventBuilder(realm, session)
-                .user(sessionAndUser.userId())
-                .session(sessionAndUser.userSessionId())
+    private void createExpirationEvent(RealmModel realm, UserSessionAndUser userSessionAndUser) {
+        new EventBuilder(realm, session)
+                .user(userSessionAndUser.userId())
+                .session(userSessionAndUser.userSessionId())
                 .event(EventType.USER_SESSION_DELETED)
                 .detail(Details.REASON, Details.EXPIRED_DETAIL)
-                .success());
+                .success();
     }
 
     private static boolean hasClient(PersistentAuthenticatedClientSessionAdapter clientSession) {
