@@ -39,6 +39,7 @@ import org.infinispan.commons.api.AsyncCache;
 import org.infinispan.commons.api.BasicCache;
 import org.infinispan.commons.util.ByRef;
 import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.context.Flag;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
@@ -78,10 +79,8 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
-import org.keycloak.models.sessions.infinispan.stream.ClientSessionFilterByUser;
 import org.keycloak.models.sessions.infinispan.stream.MapEntryToKeyMapper;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
-import org.keycloak.models.sessions.infinispan.stream.RemoveKeyConsumer;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
@@ -963,19 +962,35 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             // caching disabled
             return;
         }
+
+        var stage = CompletionStages.aggregateCompletionStage();
+
         try (var stream = getCache(offline).getAdvancedCache()
                 .entrySet()
                 .stream()
                 .filter(UserSessionPredicate.create(realmId).user(userId))
                 .map(MapEntryToKeyMapper.getInstance())) {
-            stream.forEach(RemoveKeyConsumer.getInstance());
+            var rmCache = getCache(offline).getAdvancedCache()
+                    .withFlags(Flag.ZERO_LOCK_ACQUISITION_TIMEOUT, Flag.FAIL_SILENTLY, Flag.IGNORE_RETURN_VALUES);
+            stream.iterator().forEachRemaining(id -> stage.dependsOn(rmCache.removeAsync(id)));
         }
-        try (var stream = getClientSessionCache(offline) .getAdvancedCache()
+        try (var stream = getClientSessionCache(offline).getAdvancedCache()
                 .entrySet()
                 .stream()
-                .filter(new ClientSessionFilterByUser(realmId, userId))
-                .map(MapEntryToKeyMapper.getInstance())) {
-            stream.forEach(RemoveKeyConsumer.getInstance());
+                .filter(SessionWrapperPredicate.create(realmId))) {
+            var rmCache = getClientSessionCache(offline).getAdvancedCache()
+                    .withFlags(Flag.ZERO_LOCK_ACQUISITION_TIMEOUT, Flag.FAIL_SILENTLY, Flag.IGNORE_RETURN_VALUES);
+            // We can filter remotely by realm ID but, in the worst case scenario,
+            // we have to fetch all client session to this node.
+            // Infinispan uses batches internally (state transfer chunk-size attribute, defaults to 512),
+            // so it should be safe.
+            stream.iterator().forEachRemaining(entry -> {
+                if (Objects.equals(userId, entry.getValue().getEntity().getUserId())) {
+                    stage.dependsOn(rmCache.removeAsync(entry.getKey()));
+                }
+            });
         }
+
+        CompletionStages.join(stage.freeze());
     }
 }
