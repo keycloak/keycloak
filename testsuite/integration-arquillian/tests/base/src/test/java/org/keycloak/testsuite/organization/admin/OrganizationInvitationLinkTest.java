@@ -68,6 +68,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
@@ -191,7 +192,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         registerUser(organization, email);
 
         List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
-        assertThat(users, Matchers.not(empty()));
+        assertThat(users, not(empty()));
         // user is a member
         MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
         Assert.assertNotNull(member);
@@ -233,7 +234,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         registerUser(organization, email);
         driver.findElement(By.name("submit1")).click();
         List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
-        assertThat(users, Matchers.not(empty()));
+        assertThat(users, not(empty()));
         // user is a member
         MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
         Assert.assertNotNull(member);
@@ -261,7 +262,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             registerUser(organization, email);
 
             List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
-            assertThat(users, Matchers.not(empty()));
+            assertThat(users, not(empty()));
             // user is a member
             MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
             Assert.assertNotNull(member);
@@ -511,11 +512,50 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             
             // Should show an error page saying invitation is no longer valid
             assertThat(infoPage.isCurrent(), is(true));
-            assertThat(infoPage.getInfo(), containsString("The invitation has expired or is no longer valid"));
+            assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
             
             // User should not be added to organization
             List<MemberRepresentation> members = organization.members().search(user.getEmail(), Boolean.TRUE, null, null);
             assertThat(members, Matchers.hasSize(0));
+        }
+    }
+
+    @Test
+    public void testLinkInvalidAfterResending() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        String firstInvitationLink;
+
+        try (Response response = organization.members().inviteExistingUser(user.getId())) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            // Get the invitation link from email
+            firstInvitationLink = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
+        }
+
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+
+        assertThat(invitations, Matchers.hasSize(1));
+        OrganizationInvitationRepresentation firstInvitation = invitations.get(0);
+
+        try (Response response = organization.invitations().resend(firstInvitation.getId())) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            // Get the invitation ID and delete it from the database
+            invitations = organization.invitations().list();
+            assertThat(invitations, Matchers.hasSize(1));
+            String invitationId = invitations.get(0).getId();
+            assertThat(invitationId, not(equalTo(firstInvitation.getId())));
+
+            // Now try to re-use the first invitation link (should fail)
+            driver.navigate().to(firstInvitationLink);
+            assertThat(infoPage.isCurrent(), is(true));
+            assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
+
+            // User should not be added to organization
+            List<MemberRepresentation> members = organization.members().search(user.getEmail(), Boolean.TRUE, null, null);
+            assertThat(members, Matchers.hasSize(0));
+
+            // last invitation should work
+            acceptInvitation(organization, user);
         }
     }
 }

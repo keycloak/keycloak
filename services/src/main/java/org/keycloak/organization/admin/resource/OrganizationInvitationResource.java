@@ -16,7 +16,6 @@
  */
 package org.keycloak.organization.admin.resource;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -32,6 +31,13 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
@@ -327,43 +333,22 @@ public class OrganizationInvitationResource {
     })
     public Response resendInvitation(@PathParam("id") String id) {
         OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
-
         OrganizationInvitationModel invitation = invitationProvider.getById(id, organization);
+
         if (invitation == null) {
             throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
         }
 
-        // Update the invitation's expiration date to extend its validity
-        LocalDateTime newExpiresAt = LocalDateTime.now().plusSeconds(getActionTokenLifespan());
-        invitation.setExpiresAt(newExpiresAt);
+        invitationProvider.deleteInvitation(organization, id);
 
-        // Create a temporary user to send the invitation
-        UserModel user = session.users().getUserByEmail(realm, invitation.getEmail());
+        String email = invitation.getEmail();
+        UserModel user = session.users().getUserByEmail(realm, email);
+
         if (user == null) {
-            user = new InMemoryUserAdapter(session, realm, null);
-            user.setEmail(invitation.getEmail());
-            user.setFirstName(invitation.getFirstName());
-            user.setLastName(invitation.getLastName());
+            return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
         }
 
-        String link = user.getId() == null ?
-            createRegistrationLink(user, invitation.getId()) :
-            createInvitationLink(user, invitation.getId());
-        invitation.setInviteLink(link);
-
-        try {
-            session.getProvider(EmailTemplateProvider.class)
-                    .setRealm(realm)
-                    .setUser(user)
-                    .sendOrgInviteEmail(organization, link, TimeUnit.SECONDS.toMinutes(getActionTokenLifespan()));
-        } catch (EmailException e) {
-            ServicesLogger.LOGGER.failedToSendEmail(e);
-            throw ErrorResponse.error("Failed to resend invite email", Status.INTERNAL_SERVER_ERROR);
-        }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath("invitations", id, "resend").success();
-
-        return Response.noContent().build();
+        return inviteExistingUser(user.getId());
     }
 
     // Helper method to convert model to representation

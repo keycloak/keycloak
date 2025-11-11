@@ -110,6 +110,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             event.user(user).error(Errors.ORG_NOT_FOUND);
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
                     .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
                     .createInfoPage();
         }
@@ -133,7 +134,8 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 event.user(user).error(Errors.INVALID_TOKEN);
                 return session.getProvider(LoginFormsProvider.class)
                         .setAuthenticationSession(authSession)
-                        .setInfo("The invitation has expired or is no longer valid.")
+                        .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                        .setInfo(Messages.STALE_INVITE_ORG_LINK)
                         .createInfoPage();
             }
         }

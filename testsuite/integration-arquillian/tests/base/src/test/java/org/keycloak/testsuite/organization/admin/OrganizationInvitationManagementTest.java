@@ -23,12 +23,15 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.junit.After;
@@ -144,8 +147,15 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         }
         
         // Verify invitation is still pending
-        OrganizationInvitationRepresentation invitation = organization.invitations().get(invitationId);
-        assertThat(invitation.getStatus(), equalTo(OrganizationInvitationStatus.PENDING));
+        try {
+            organization.invitations().get(invitationId);
+            fail("Expected NotFoundException");
+        } catch (NotFoundException expected) {
+        }
+
+        invitations = organization.invitations().list();
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getId(), not(equalTo(invitationId)));
     }
 
     @Test
