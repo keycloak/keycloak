@@ -249,16 +249,16 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     // Loading data
 
     private boolean isAllowed(ClientScopeModel clientScope) {
+        if (restrictedScopes != null && !restrictedScopes.contains(clientScope.getName())) {
+            logger.tracef("Client scope '%s' is not among the restricted scopes list and will not be processed", clientScope.getName());
+            return false;
+        }
+
         if (!isClientScopePermittedForUser(clientScope)) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("User '%s' not permitted to have client scope '%s'",
                         clientSession.getUserSession().getUser().getUsername(), clientScope.getName());
             }
-            return false;
-        }
-
-        if (restrictedScopes != null && !restrictedScopes.contains(clientScope.getName())) {
-            logger.tracef("Client scope '%s' is restricted and will not be processed", clientScope.getName());
             return false;
         }
 

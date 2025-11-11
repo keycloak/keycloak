@@ -59,9 +59,10 @@ public class DownscopeAssertionGrantEnforcerExecutorFactory implements ClientPol
     @Override
     public String getHelpText() {
         return """
-               It ensures that the scopes in the final access token are limited to the ones already present in the assertion passed.
-               For the moment the executor only applies to Standard Token Exchange and the limitation is done over the scopes
-               that are present in the presented subject_token.
+               It ensures that the scopes in the final access token are limited to the ones already present in the JWT assertion passed.
+               For the moment, the executor applies to certain grants where some initial token/assertion is passed (for example
+               subject_token in case of Standard Token Exchange grant). The limitation is done over the scopes that are
+               present in the initial token/assertion, returning an error if any extra scope is requested.
                """;
     }
 
