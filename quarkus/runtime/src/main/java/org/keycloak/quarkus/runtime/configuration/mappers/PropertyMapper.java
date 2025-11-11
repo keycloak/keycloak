@@ -303,7 +303,7 @@ public class PropertyMapper<T> {
             return configValue;
         }
 
-        // by unsetting the name this will not be seen as directly modified by the user
+        // by unsetting the configsource name this will not be seen as directly modified by the user
         return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceName(null).build();
     }
 

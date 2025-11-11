@@ -110,4 +110,14 @@ class BuildCommandDistTest {
     void logLevelExpressionWithDefault(CLIResult cliResult) {
         cliResult.assertBuild();
     }
+
+    /**
+     * Documented as a workaround when a provider jar conflicts with built-in classes
+     */
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"-Dquarkus.launch.rebuild=true"})
+    void forceRebuild(CLIResult cliResult) {
+        cliResult.getOutput().contains("Quarkus augmentation completed");
+    }
 }
