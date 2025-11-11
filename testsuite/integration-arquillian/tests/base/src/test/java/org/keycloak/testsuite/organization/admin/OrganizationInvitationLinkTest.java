@@ -22,7 +22,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.keycloak.services.messages.Messages.ORG_MEMBER_ALREADY;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -146,7 +145,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
             driver.navigate().to(link);
 
-            assertThat(driver.getPageSource(), containsString(ORG_MEMBER_ALREADY));
+            assertThat(driver.getPageSource(), containsString("You are already a member of the neworg organization."));
 
             infoPage.clickBackToApplicationLink();
             // redirect to the redirectUrl of the organization
