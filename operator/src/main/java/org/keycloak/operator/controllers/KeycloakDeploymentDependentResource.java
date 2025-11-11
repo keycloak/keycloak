@@ -133,8 +133,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         WatchedResources watchedResources = ContextUtils.getWatchedResources(context);
 
         StatefulSet baseDeployment = createBaseDeployment(primary, context, operatorConfig);
-        TreeSet<String> allSecrets = new TreeSet<>();
-        TreeSet<String> allConfigMaps = new TreeSet<>();
+        WatchedResources.Watched allSecrets = new WatchedResources.Watched();
+        WatchedResources.Watched allConfigMaps = new WatchedResources.Watched();
         if (isTlsConfigured(primary)) {
             configureTLS(primary, baseDeployment, allSecrets);
         }
@@ -145,13 +145,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         Optional.ofNullable(primary.getSpec().getCacheSpec())
                 .ifPresent(c -> configureCache(baseDeployment, kcContainer, c, allConfigMaps));
 
-        if (!allSecrets.isEmpty()) {
-            watchedResources.annotateDeployment(new ArrayList<>(allSecrets), Secret.class, baseDeployment, context.getClient());
-        }
-
-        if (!allConfigMaps.isEmpty()) {
-            watchedResources.annotateDeployment(new ArrayList<>(allConfigMaps), ConfigMap.class, baseDeployment, context.getClient());
-        }
+        watchedResources.annotateDeployment(allSecrets, Secret.class, baseDeployment, context);
+        watchedResources.annotateDeployment(allConfigMaps, ConfigMap.class, baseDeployment, context);
 
         // default to the new revision - will be overriden to the old one if needed
         UpdateSpec.getRevision(primary).ifPresent(rev -> addUpdateRevisionAnnotation(rev, baseDeployment));
@@ -190,7 +185,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         };
     }
 
-    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, TreeSet<String> allConfigMaps) {
+    private void configureCache(StatefulSet deployment, Container kcContainer, CacheSpec spec, WatchedResources.Watched allConfigMaps) {
         Optional.ofNullable(spec.getConfigMapFile()).ifPresent(configFile -> {
             if (configFile.getName() == null || configFile.getKey() == null) {
                 throw new IllegalStateException("Cache file ConfigMap requires both a name and a key");
@@ -211,11 +206,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
             deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
             kcContainer.getVolumeMounts().add(0, volumeMount);
-            allConfigMaps.add(configFile.getName());
+            allConfigMaps.add(configFile.getName(), configFile.getOptional());
         });
     }
 
-    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, TreeSet<String> allSecrets, TreeSet<String> allConfigMaps) {
+    private void addTruststores(Keycloak keycloakCR, StatefulSet deployment, Container kcContainer, WatchedResources.Watched allSecrets, WatchedResources.Watched allConfigMaps) {
         for (Truststore truststore : keycloakCR.getSpec().getTruststores().values()) {
             // for now we'll assume only secrets, later we can support configmaps
             TruststoreSource source = truststore.getSecret();
@@ -236,7 +231,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
                 deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
                 kcContainer.getVolumeMounts().add(0, volumeMount);
-                allSecrets.add(secretName);
+                allSecrets.add(secretName, source.getOptional());
             } else {
                 source = truststore.getConfigMap();
                 if (source != null) {
@@ -256,13 +251,13 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
                     deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
                     kcContainer.getVolumeMounts().add(0, volumeMount);
-                    allConfigMaps.add(name);
+                    allConfigMaps.add(name, source.getOptional());
                 }
             }
         }
     }
 
-    void configureTLS(Keycloak keycloakCR, StatefulSet deployment, TreeSet<String> allSecrets) {
+    void configureTLS(Keycloak keycloakCR, StatefulSet deployment, WatchedResources.Watched allSecrets) {
         var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         var volume = new VolumeBuilder()
@@ -280,7 +275,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
         kcContainer.getVolumeMounts().add(0, volumeMount);
-        allSecrets.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret());
+        allSecrets.add(keycloakCR.getSpec().getHttpSpec().getTlsSecret(), null);
     }
 
     private boolean hasExpectedMatchLabels(StatefulSet statefulSet, Keycloak keycloak) {
@@ -454,7 +449,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
     }
 
-    private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, TreeSet<String> allSecrets, Context<Keycloak> context) {
+    private void addEnvVars(StatefulSet baseDeployment, Keycloak keycloakCR, WatchedResources.Watched allSecrets, Context<Keycloak> context) {
         var distConfigurator = ContextUtils.getDistConfigurator(context);
         var firstClasssEnvVars = distConfigurator.configureDistOptions(keycloakCR);
 
@@ -484,11 +479,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // watch the secrets used by secret key - we don't currently expect configmaps or watch the initial-admin
         TreeSet<String> serverConfigSecretsNames = envVars.stream().map(EnvVar::getValueFrom).filter(Objects::nonNull)
-                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).map(SecretKeySelector::getName).collect(Collectors.toCollection(TreeSet::new));
+                .map(EnvVarSource::getSecretKeyRef).filter(Objects::nonNull).peek(s -> allSecrets.add(s.getName(), s.getOptional())).map(SecretKeySelector::getName).collect(Collectors.toCollection(TreeSet::new));
 
         Log.debugf("Found config secrets names: %s", serverConfigSecretsNames);
-
-        allSecrets.addAll(serverConfigSecretsNames);
     }
 
     private static void setTracingEnvVars(Keycloak keycloakCR, Map<String, EnvVar> varMap) {
