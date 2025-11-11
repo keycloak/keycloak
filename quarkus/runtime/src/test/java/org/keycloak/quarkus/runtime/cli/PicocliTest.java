@@ -397,7 +397,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     private NonRunningPicocli build(Consumer<String> outChecker, String... args) {
         int code = CommandLine.ExitCode.OK;
         if (Stream.of(args).anyMatch("start-dev"::equals)) {
-            Environment.setRebuildCheck();
+            Environment.setRebuildCheck(true);
             code = AbstractAutoBuildCommand.REBUILT_EXIT_CODE;
         }
         NonRunningPicocli nonRunningPicocli = pseudoLaunch(args);
@@ -423,7 +423,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=dev-file");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
-        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 
@@ -450,7 +450,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("start-dev");
 
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("--profile=dev", "export", "--file=file");
-        assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertFalse(nonRunningPicocli.reaug);
     }
 

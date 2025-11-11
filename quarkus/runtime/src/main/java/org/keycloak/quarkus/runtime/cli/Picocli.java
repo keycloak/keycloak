@@ -941,12 +941,11 @@ public class Picocli {
 
         if (!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
                 && !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG)) {
-            Environment.setRebuildCheck();
+            Environment.setRebuildCheck(true);
         }
 
-        String profile = parsedCommand.map(AbstractCommand::getInitProfile)
-                .orElseGet(() -> Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
-                        .orElse(Environment.PROD_PROFILE_VALUE));
+        String profile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
+                .or(() -> parsedCommand.map(AbstractCommand::getInitProfile)).orElse(Environment.PROD_PROFILE_VALUE);
 
         Environment.setProfile(profile);
         if (!cliArgs.contains(HelpAllMixin.HELP_ALL_OPTION)) {

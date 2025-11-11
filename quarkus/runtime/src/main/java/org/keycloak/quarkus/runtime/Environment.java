@@ -178,8 +178,8 @@ public final class Environment {
         return Boolean.getBoolean(KC_CONFIG_REBUILD_CHECK);
     }
 
-    public static void setRebuildCheck() {
-        System.setProperty(KC_CONFIG_REBUILD_CHECK, "true");
+    public static void setRebuildCheck(boolean check) {
+        System.setProperty(KC_CONFIG_REBUILD_CHECK, Boolean.toString(check));
     }
 
     public static boolean isRebuilt() {
