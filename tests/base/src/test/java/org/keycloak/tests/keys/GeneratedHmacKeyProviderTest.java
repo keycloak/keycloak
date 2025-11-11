@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keys;
+package org.keycloak.tests.keys;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
@@ -29,40 +27,30 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.runonserver.RunHelpers;
 
 import jakarta.ws.rs.core.Response;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class GeneratedHmacKeyProviderTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm
+    ManagedRealm realm;
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realm);
-    }
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void defaultKeysize() throws Exception {
@@ -72,15 +60,15 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
         response.close();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(1, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
@@ -94,7 +82,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(KeyType.OCT, key.getType());
         assertEquals(priority, key.getProviderPriority());
 
-        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        ComponentRepresentation component = runOnServer.fetch(RunHelpers.internalComponent(id));
         assertEquals(GeneratedHmacKeyProviderFactory.DEFAULT_HMAC_KEY_SIZE, Base64Url.decode(component.getConfig().getFirst("secret")).length);
     }
 
@@ -107,15 +95,15 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle("secretSize", "512");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
         response.close();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(2, createdRep.getConfig().size());
         assertEquals("512", createdRep.getConfig().getFirst("secretSize"));
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
@@ -129,7 +117,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(KeyType.OCT, key.getType());
         assertEquals(priority, key.getProviderPriority());
 
-        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        ComponentRepresentation component = runOnServer.fetch(RunHelpers.internalComponent(id));
         assertEquals(512, Base64Url.decode(component.getConfig().getFirst("secret")).length);
     }
 
@@ -141,30 +129,30 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
-        try (Response response = adminClient.realm("test").components().add(rep)) {
+        try (Response response = realm.admin().components().add(rep)) {
             rep.setId(ApiUtil.getCreatedId(response));
         }
 
-        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        ComponentRepresentation component = runOnServer.fetch(RunHelpers.internalComponent(rep.getId()));
         assertEquals(GeneratedHmacKeyProviderFactory.DEFAULT_HMAC_KEY_SIZE, Base64Url.decode(component.getConfig().getFirst("secret")).length);
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(rep.getId()).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(rep.getId()).toRepresentation();
         createdRep.getConfig().putSingle("secretSize", "512");
-        adminClient.realm("test").components().component(rep.getId()).update(createdRep);
+        realm.admin().components().component(rep.getId()).update(createdRep);
 
-        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        component = runOnServer.fetch(RunHelpers.internalComponent(rep.getId()));
         assertEquals(512, Base64Url.decode(component.getConfig().getFirst("secret")).length);
-        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        component = runOnServer.fetch(RunHelpers.internalComponent(rep.getId()));
         String secret = component.getConfig().getFirst("secret");
 
-        createdRep = adminClient.realm("test").components().component(rep.getId()).toRepresentation();
+        createdRep = realm.admin().components().component(rep.getId()).toRepresentation();
         createdRep.getConfig().putSingle("secretSize", "");
-        adminClient.realm("test").components().component(rep.getId()).update(createdRep);
+        realm.admin().components().component(rep.getId()).update(createdRep);
 
-        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        component = runOnServer.fetch(RunHelpers.internalComponent(rep.getId()));
         assertEquals("512", component.getConfig().getFirst("secretSize"));
         assertEquals(512, Base64Url.decode(component.getConfig().getFirst("secret")).length);
-        component = testingClient.server("test").fetch(RunHelpers.internalComponent(rep.getId()));
+        component = runOnServer.fetch(RunHelpers.internalComponent(rep.getId()));
         assertEquals(secret, component.getConfig().getFirst("secret"));
     }
 
@@ -173,7 +161,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         ComponentRepresentation rep = createRep("invalid", GeneratedHmacKeyProviderFactory.ID);
         rep.getConfig().putSingle("secretSize", "1234");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         assertErrror(response, "'Secret size' should be 16, 24, 32, 64, 128, 256 or 512");
     }
 
@@ -189,7 +177,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
+        rep.setParentId(realm.admin().toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

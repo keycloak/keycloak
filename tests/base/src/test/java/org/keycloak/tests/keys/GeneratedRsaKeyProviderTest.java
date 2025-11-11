@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.keys;
+package org.keycloak.tests.keys;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
@@ -30,44 +28,34 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.testframework.annotations.InjectCryptoHelper;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.crypto.CryptoHelper;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.core.Response;
+
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class GeneratedRsaKeyProviderTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm
+    ManagedRealm realm;
 
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realm);
-    }
+    @InjectCryptoHelper
+    CryptoHelper cryptoHelper;
 
     @Test
     public void defaultKeysizeForSig() throws Exception {
@@ -86,16 +74,16 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
-        getCleanup().addComponentId(id);
+        realm.cleanup().add(r -> r.components().component(id).remove());
         response.close();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(1, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
@@ -124,16 +112,16 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle("keySize", "4096");
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
-        getCleanup().addComponentId(id);
+        realm.cleanup().add(r -> r.components().component(id).remove());
         response.close();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         assertEquals(2, createdRep.getConfig().size());
         assertEquals("4096", createdRep.getConfig().getFirst("keySize"));
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
@@ -161,23 +149,23 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
-        getCleanup().addComponentId(id);
+        realm.cleanup().add(r -> r.components().component(id).remove());
         response.close();
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         String publicKey = keys.getKeys().get(0).getPublicKey();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
 
         priority += 1000;
 
         createdRep.getConfig().putSingle("priority", Long.toString(priority));
-        adminClient.realm("test").components().component(id).update(createdRep);
+        realm.admin().components().component(id).update(createdRep);
 
-        keys = adminClient.realm("test").keys().getKeyMetadata();
+        keys = realm.admin().keys().getKeyMetadata();
 
         String publicKey2 = keys.getKeys().get(0).getPublicKey();
 
@@ -202,20 +190,20 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
 
-        Response response = adminClient.realm("test").components().add(rep);
+        Response response = realm.admin().components().add(rep);
         String id = ApiUtil.getCreatedId(response);
-        getCleanup().addComponentId(id);
+        realm.cleanup().add(r -> r.components().component(id).remove());
         response.close();
 
-        KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
+        KeysMetadataRepresentation keys = realm.admin().keys().getKeyMetadata();
 
         String publicKey = keys.getKeys().get(0).getPublicKey();
 
-        ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
+        ComponentRepresentation createdRep = realm.admin().components().component(id).toRepresentation();
         createdRep.getConfig().putSingle("keySize", "4096");
-        adminClient.realm("test").components().component(id).update(createdRep);
+        realm.admin().components().component(id).update(createdRep);
 
-        keys = adminClient.realm("test").keys().getKeyMetadata();
+        keys = realm.admin().keys().getKeyMetadata();
 
         String publicKey2 = keys.getKeys().get(0).getPublicKey();
 
@@ -239,8 +227,8 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
         ComponentRepresentation rep = createRep("invalid", providerId);
         rep.getConfig().putSingle("keySize", "1234");
 
-        Response response = adminClient.realm("test").components().add(rep);
-        String expectedKeySizesDisplay = StringUtil.joinValuesWithLogicalCondition("or", Arrays.asList(KeyUtils.getExpectedSupportedRsaKeySizes()));
+        Response response = realm.admin().components().add(rep);
+        String expectedKeySizesDisplay = StringUtil.joinValuesWithLogicalCondition("or", Arrays.asList(cryptoHelper.getExpectedSupportedRsaKeySizes()));
         assertErrror(response, "'Key size' should be " + expectedKeySizesDisplay);
     }
 
@@ -257,7 +245,7 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
+        rep.setParentId(realm.admin().toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

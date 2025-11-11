@@ -3,7 +3,6 @@ LoginTotpTest
 PasswordHashingTest
 ClientAuthSignedJWTTest
 ClientAuthEdDSASignedJWTTest
-JavaKeystoreKeyProviderTest
 UserFederationLdapConnectionTest
 LDAPUserLoginTest
 org.keycloak.testsuite.x509.**
