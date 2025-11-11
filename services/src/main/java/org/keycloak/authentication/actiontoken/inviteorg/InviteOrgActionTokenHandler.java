@@ -115,7 +115,8 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             event.user(user).error(Errors.USER_ORG_MEMBER_ALREADY);
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
-                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername())
+                    .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername(), organization.getName())
                     .setAttribute("pageRedirectUri", organization.getRedirectUrl())
                     .createInfoPage();
         }
