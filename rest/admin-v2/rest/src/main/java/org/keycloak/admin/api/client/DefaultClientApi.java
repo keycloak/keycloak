@@ -20,13 +20,12 @@ import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
+import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import io.fabric8.zjsonpatch.JsonPatch;
-import io.fabric8.zjsonpatch.JsonPatchException;
 
 public class DefaultClientApi implements ClientApi {
 
@@ -39,6 +38,9 @@ public class DefaultClientApi implements ClientApi {
     private final ClientResource clientResource;
     private final ClientsResource clientsResource;
     private final String clientId;
+    private final ObjectMapper objectMapper;
+
+    private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
     public DefaultClientApi(KeycloakSession session, ClientsResource clientsResource, ClientResource clientResource, String clientId) {
         this.session = session;
@@ -49,6 +51,7 @@ public class DefaultClientApi implements ClientApi {
         this.clientsResource = clientsResource;
         this.clientResource = clientResource;
         this.clientId = clientId;
+        this.objectMapper = MAPPER;
     }
 
     @Override
@@ -76,28 +79,22 @@ public class DefaultClientApi implements ClientApi {
 
     @Override
     public ClientRepresentation patchClient(JsonNode patch) {
-        // patches don't yet allow for creating
         ClientRepresentation client = getClient();
         try {
             String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
-
-            ClientRepresentation updated = null;
-
-            // TODO: there should be a more centralized objectmapper
-            ObjectMapper objectMapper = new ObjectMapper();
-            if (MediaType.valueOf(contentType).getSubtype().equals(MediaType.APPLICATION_JSON_PATCH_JSON_TYPE.getSubtype())) {
-                JsonNode patchedNode = JsonPatch.apply(patch, objectMapper.convertValue(client, JsonNode.class));
-                updated = objectMapper.convertValue(patchedNode, ClientRepresentation.class);
-            } else { // must be merge patch
-                final ObjectReader objectReader = objectMapper.readerForUpdating(client);
-                updated = objectReader.readValue(patch);
+            MediaType mediaType = contentType == null ? null : MediaType.valueOf(contentType);
+            MediaType mergePatch = MediaType.valueOf(ClientApi.CONTENT_TYPE_MERGE_PATCH);
+            if (mediaType == null || !mediaType.isCompatible(mergePatch)) {
+                throw new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
             }
+
+            final ObjectReader objectReader = objectMapper.readerForUpdating(client);
+            ClientRepresentation updated = objectReader.readValue(patch);
 
             validateUnknownFields(updated, response);
             return clientService.createOrUpdate(clientsResource, clientResource, realm, updated, true).representation();
-        } catch (JsonPatchException e) {
-            // TODO: kubernetes uses 422 instead
-            throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (IllegalArgumentException e) {
+            throw new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
         } catch (JsonProcessingException e) {
             throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (IOException e) {
