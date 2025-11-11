@@ -891,6 +891,9 @@ jobs:
     needs:
       - build
     timeout-minutes: 45
+    strategy:
+      matrix:
+        suite: [Base1TestSuite, Base2TestSuite]
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -904,7 +907,7 @@ jobs:
         run: ./mvnw package -pl quarkus/server/,quarkus/dist/
 
       - name: Run tests
-        run: ./mvnw package -f tests/pom.xml
+        run: ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.suite }}
 
   admin-v2-tests:
     name: Admin v2
