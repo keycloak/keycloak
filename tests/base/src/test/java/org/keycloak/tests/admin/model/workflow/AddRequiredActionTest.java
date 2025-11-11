@@ -3,8 +3,8 @@ package org.keycloak.tests.admin.model.workflow;
 import java.time.Duration;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.AddRequiredActionStepProvider;
-import org.keycloak.models.workflow.AddRequiredActionStepProviderFactory;
+import org.keycloak.models.workflow.user.AddRequiredActionStepProvider;
+import org.keycloak.models.workflow.user.AddRequiredActionStepProviderFactory;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;

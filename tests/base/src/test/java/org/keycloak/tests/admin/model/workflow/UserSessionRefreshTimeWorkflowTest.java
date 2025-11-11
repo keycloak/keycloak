@@ -24,8 +24,8 @@ import jakarta.mail.internet.MimeMessage;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.DisableUserStepProviderFactory;
-import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.user.DisableUserStepProviderFactory;
+import org.keycloak.models.workflow.user.NotifyUserStepProviderFactory;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;

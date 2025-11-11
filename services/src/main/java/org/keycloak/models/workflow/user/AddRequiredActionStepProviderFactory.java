@@ -1,16 +1,20 @@
-package org.keycloak.models.workflow;
+package org.keycloak.models.workflow.user;
 
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.workflow.ResourceType;
+import org.keycloak.models.workflow.WorkflowStepProviderFactory;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-public class AddRequiredActionStepProviderFactory implements WorkflowStepProviderFactory<AddRequiredActionStepProvider>, ConfiguredProvider {
+public class AddRequiredActionStepProviderFactory implements
+    WorkflowStepProviderFactory<AddRequiredActionStepProvider>, ConfiguredProvider {
 
     public static final String ID = "set-user-required-action";
 
@@ -52,8 +56,8 @@ public class AddRequiredActionStepProviderFactory implements WorkflowStepProvide
     }
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
+    public Set<ResourceType> getTypes() {
+        return Set.of(ResourceType.USERS);
     }
 
     @Override

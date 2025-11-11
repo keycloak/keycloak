@@ -17,9 +17,11 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -124,6 +126,8 @@ public class Workflow {
     }
 
     public void addSteps(List<WorkflowStepRepresentation> steps) {
+        Set<ResourceType> allowedTypes = EnumSet.allOf(ResourceType.class);
+
         steps = ofNullable(steps).orElse(List.of());
         for (int i = 0; i < steps.size(); i++) {
             WorkflowStep step = toModel(steps.get(i));
@@ -133,6 +137,17 @@ public class Workflow {
 
             // persist the new step component.
             addStep(step);
+
+            // update allowed types
+            WorkflowStepProviderFactory<WorkflowStepProvider> stepProvider = getStepProviderFactory(step);
+            allowedTypes.retainAll(stepProvider.getTypes());
+        }
+
+        // - Should we allow workflows to have more than one supported type ?
+        // - allowedTypes should probably be saved in config, since we do not allow changing steps,
+        // so that we don't recompute it.
+        if (allowedTypes.isEmpty()) {
+            throw new ModelValidationException("Steps provided are not compatible with each other.");
         }
     }
 
@@ -163,5 +178,10 @@ public class Workflow {
             throw new BadRequestException("Not a valid resource workflow: " + id);
         }
         return component;
+    }
+
+    private WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(WorkflowStep step) {
+        return (WorkflowStepProviderFactory<WorkflowStepProvider>) session
+            .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
     }
 }
