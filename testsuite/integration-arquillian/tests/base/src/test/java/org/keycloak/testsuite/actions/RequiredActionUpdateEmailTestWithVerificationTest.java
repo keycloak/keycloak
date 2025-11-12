@@ -115,7 +115,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("test-user@localhost", user.getEmail());
 		assertTrue(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
         assertNotEquals(newEmail, user.getEmail());
-        assertFalse(user.isEmailVerified());
+        assertTrue(user.isEmailVerified());
         Map<String, List<String>> attributes = user.getAttributes();
         assertNotNull(attributes.get(UserModel.EMAIL_PENDING));
         assertEquals(1, attributes.get(UserModel.EMAIL_PENDING).size());
