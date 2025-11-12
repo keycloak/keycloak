@@ -30,7 +30,8 @@ export default function AddOpenIdConnect() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isKeycloak = pathname.includes("keycloak-oidc");
-  const id = `${isKeycloak ? "keycloak-" : ""}oidc`;
+  const isEntraId = pathname.includes("entraid-oidc");
+  const id = `${isKeycloak ? "keycloak-" : isEntraId ? "entraid-" : ""}oidc`;
 
   const form = useForm<IdentityProviderRepresentation>({
     defaultValues: { alias: id },
@@ -69,7 +70,11 @@ export default function AddOpenIdConnect() {
     <>
       <ViewHeader
         titleKey={t(
-          isKeycloak ? "addKeycloakOpenIdProvider" : "addOpenIdProvider",
+          isKeycloak
+            ? "addKeycloakOpenIdProvider"
+            : isEntraId
+              ? "addEntraIdOpenIdProvider"
+              : "addOpenIdProvider",
         )}
       />
       <PageSection variant="light">
