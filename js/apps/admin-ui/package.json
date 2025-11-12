@@ -109,7 +109,8 @@
     "react-i18next": "^16.0.1",
     "react-router-dom": "^6.30.1",
     "reactflow": "^11.11.4",
-    "use-react-router-breadcrumbs": "^4.0.1"
+    "use-react-router-breadcrumbs": "^4.0.1",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
