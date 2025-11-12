@@ -324,7 +324,7 @@ export default function ClientDetails() {
         if (!client.attributes![attr] || client.attributes![attr] === "") {
           form.setValue(
             convertAttributeNameToForm<FormFields>(`attributes.${attr}`),
-            "any"
+            "any",
           );
         }
       });
