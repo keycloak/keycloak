@@ -20,6 +20,7 @@ export enum Feature {
   Passkeys = "PASSKEYS",
   ClientAuthFederated = "CLIENT_AUTH_FEDERATED",
   Workflows = "WORKFLOWS",
+  StepUpAuthenticationSaml = "STEP_UP_AUTHENTICATION_SAML",
 }
 
 export default function useIsFeatureEnabled() {
