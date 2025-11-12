@@ -257,7 +257,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
         // revert conditions, but change one of the steps
         workflow.setConditions(null);
-        workflow.getSteps().get(0).setAfter(Duration.ofDays(8).toMillis());
+        workflow.getSteps().get(0).setAfter("8D"); // 8 days
         try (Response response = workflows.workflow(workflow.getId()).update(workflow)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
         }
@@ -679,7 +679,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 .build();
         try (Response response = managedRealm.admin().workflows().create(workflows)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step 'after' time condition cannot be negative."));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step 'after' configuration cannot be negative."));
         }
     }
 

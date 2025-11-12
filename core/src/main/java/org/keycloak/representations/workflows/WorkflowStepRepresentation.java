@@ -52,8 +52,8 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
         return getConfigValue(CONFIG_AFTER, String.class);
     }
 
-    public void setAfter(long ms) {
-        setConfig(CONFIG_AFTER, String.valueOf(ms));
+    public void setAfter(String after) {
+        setConfig(CONFIG_AFTER, after);
     }
 
     public String getPriority() {
@@ -86,21 +86,16 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
         }
 
         public Builder after(Duration duration) {
-            step.setAfter(duration.toMillis());
+            return after(String.valueOf(duration.getSeconds()));
+        }
+
+        public Builder after(String after) {
+            step.setAfter(after);
             return this;
         }
 
         public Builder id(String id) {
             step.setId(id);
-            return this;
-        }
-
-        public Builder before(WorkflowStepRepresentation targetStep, Duration timeBeforeTarget) {
-            // Calculate absolute time: targetStep.after - timeBeforeTarget
-            String targetAfter = targetStep.getConfig().get(CONFIG_AFTER).get(0);
-            long targetTime = Long.parseLong(targetAfter);
-            long thisTime = targetTime - timeBeforeTarget.toMillis();
-            step.setAfter(thisTime);
             return this;
         }
 

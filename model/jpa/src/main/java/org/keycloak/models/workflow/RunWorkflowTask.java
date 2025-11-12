@@ -3,6 +3,7 @@ package org.keycloak.models.workflow;
 import java.util.List;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.models.KeycloakSession;
 
 class RunWorkflowTask extends WorkflowTransactionalTask {
@@ -34,7 +35,7 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
 
         for (WorkflowStep step : stepsToRun) {
-            if (step.getAfter() > 0) {
+            if (DurationConverter.isPositiveDuration(step.getAfter())) {
                 // If a step has a time defined, schedule it and stop processing the other steps of workflow
                 log.debugf("Scheduling step %s to run in %d ms for resource %s (execution id: %s)",
                         step.getProviderId(), step.getAfter(), resourceId, executionId);
