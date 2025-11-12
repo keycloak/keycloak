@@ -529,11 +529,16 @@ public class TokenManager {
     }
 
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        return attachAuthenticationSession(session, userSession, authSession, false);
+        return attachAuthenticationSession(session, userSession, authSession, null, false);
     }
 
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession,
             AuthenticationSessionModel authSession, boolean createTransientIfMissing) {
+        return attachAuthenticationSession(session, userSession, authSession, null, createTransientIfMissing);
+    }
+
+    public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession,
+            AuthenticationSessionModel authSession, Set<String> restrictedScopes, boolean createTransientIfMissing) {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -579,7 +584,7 @@ public class TokenManager {
         // Remove authentication session now (just current tab, not whole "rootAuthenticationSession" in case we have more browser tabs with "authentications in progress")
         new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(realm, authSession);
 
-        return DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes, session);
+        return DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes, restrictedScopes, session);
     }
 
 

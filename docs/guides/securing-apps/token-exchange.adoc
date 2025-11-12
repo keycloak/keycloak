@@ -169,6 +169,8 @@ NOTE: The `audience` parameter can be used to filter the audiences that are comi
 no filtering occurs. As a result, the `audience` parameter is effectively used for "downscoping" the token to make sure that it contains only the requested audiences. However, the `scope` parameter is used
 to add optional client scopes and hence it can be used for "upscoping" and adding more scopes.
 
+NOTE: By default, token exchange can be used to request extra scopes and audiences that are not present in the initial `subject_token`. If, for security reasons, you want to ensure that scopes are limited to the ones already granted to the `subject_token`, the `downscope-assertion-grant-enforcer` policy executor can be applied to the client. This executor enforces that only downscoping is allowed for token exchange. See link:{adminguide_link}#_downscoping[Downscoping] and link:{adminguide_link}#_client_policies[Client Policies] chapters in the {adminguide_name} for more information.
+
 ==== Examples
 
 Here are some examples to better illustrate the behavior for scopes and audiences.
