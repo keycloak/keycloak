@@ -65,7 +65,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
             String id = ApiUtil.getCreatedId(response);
             try {
-                managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, "5D");
+                managedRealm.admin().workflows().workflow(workflow.getId()).activate(ResourceType.USERS.name(), id, "5D");
             } catch (Exception e) {
                 assertThat(e, instanceOf(BadRequestException.class));
             }
@@ -88,7 +88,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
             String id = ApiUtil.getCreatedId(response);
-            managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id);
+            managedRealm.admin().workflows().workflow(workflow.getId()).activate(ResourceType.USERS.name(), id);
         }
     }
 
@@ -107,7 +107,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
             String id = ApiUtil.getCreatedId(response);
-            managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id);
+            managedRealm.admin().workflows().workflow(workflow.getId()).activate(ResourceType.USERS.name(), id);
         }
 
         runScheduledSteps(Duration.ZERO);
@@ -135,7 +135,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
             id = ApiUtil.getCreatedId(response);
-            managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, "5D");
+            managedRealm.admin().workflows().workflow(workflow.getId()).activate(ResourceType.USERS.name(), id, "5D");
         }
 
         runScheduledSteps(Duration.ZERO);
@@ -159,7 +159,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
         }));
 
         // using seconds as the notBefore parameter just to check if this format is also working properly
-        managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, String.valueOf(Duration.ofDays(10).toSeconds()));
+        managedRealm.admin().workflows().workflow(workflow.getId()).activate(ResourceType.USERS.name(), id, String.valueOf(Duration.ofDays(10).toSeconds()));
 
         runScheduledSteps(Duration.ZERO);
 

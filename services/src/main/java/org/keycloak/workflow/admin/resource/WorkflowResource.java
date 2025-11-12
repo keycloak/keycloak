@@ -57,7 +57,7 @@ public class WorkflowResource {
     }
 
     /**
-     * Bind the workflow to the resource.
+     * Activate the workflow for the resource.
      *
      * @param type the resource type
      * @param resourceId the resource id
@@ -67,8 +67,8 @@ public class WorkflowResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("bind/{type}/{resourceId}")
-    public void bind(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, String notBefore) {
+    @Path("activate/{type}/{resourceId}")
+    public void activate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, String notBefore) {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
@@ -79,7 +79,7 @@ public class WorkflowResource {
             workflow.setNotBefore(notBefore);
         }
 
-        provider.bind(workflow, type, resourceId);
+        provider.activate(workflow, type, resourceId);
     }
 
     /**
