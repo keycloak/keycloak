@@ -344,7 +344,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
 
       // first graceful scaledown
       k8sclient.resources(Keycloak.class).list().getItems().forEach(
-              k -> k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).update());
+              k -> k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).unlock().patch());
 
       try {
           k8sclient.resources(Keycloak.class).informOnCondition(
