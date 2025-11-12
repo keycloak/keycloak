@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -58,8 +59,16 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         if (isRebuildCheck()) {
             if (requiresReAugmentation()) {
                 runReAugmentation();
+                return Optional.of(REBUILT_EXIT_CODE);
             }
-            return Optional.of(REBUILT_EXIT_CODE);
+            // clear the check, and change to the command runtime profile
+            String profile = org.keycloak.common.util.Environment.getProfile();
+            Environment.setRebuildCheck(false);
+            String runtimeProfile = getInitProfile();
+            if (!Objects.equals(profile, runtimeProfile)) {
+                Environment.setProfile(runtimeProfile);
+                Configuration.resetConfig();
+            }
         }
         return Optional.empty();
     }

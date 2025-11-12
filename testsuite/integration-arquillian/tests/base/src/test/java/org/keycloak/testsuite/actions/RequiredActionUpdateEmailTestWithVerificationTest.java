@@ -115,7 +115,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		assertEquals("test-user@localhost", user.getEmail());
 		assertTrue(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
         assertNotEquals(newEmail, user.getEmail());
-        assertFalse(user.isEmailVerified());
+        assertTrue(user.isEmailVerified());
         Map<String, List<String>> attributes = user.getAttributes();
         assertNotNull(attributes.get(UserModel.EMAIL_PENDING));
         assertEquals(1, attributes.get(UserModel.EMAIL_PENDING).size());
@@ -652,5 +652,54 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
         errorPage.assertCurrent();
         assertEquals("This email verification has been cancelled by an administrator.", errorPage.getError());
+    }
+
+    @Test
+    public void testUpdateEmailVerificationResendTooFast() throws Exception {
+        UserRepresentation testUser = testRealm().users().search("test-user@localhost").get(0);
+        
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        updateEmailPage.assertCurrent();
+        updateEmailPage.changeEmail("newemail@localhost");
+        
+        // First email should be sent
+        assertEquals(1, greenMail.getReceivedMessages().length);
+        assertThat("Should show pending verification message",
+                driver.getPageSource(), containsString("A confirmation email has been sent to newemail@localhost."));
+
+        // Logout and login again to get back to update email page for resend
+        testRealm().users().get(testUser.getId()).logout();
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        updateEmailPage.assertCurrent();
+
+        // Try to resend immediately - should be blocked by cooldown
+        updateEmailPage.changeEmail("newemail@localhost");
+        assertThat("Should show cooldown error message", 
+                driver.getPageSource(), containsString("You must wait"));
+        assertEquals("Email should not be sent again due to cooldown", 1, greenMail.getReceivedMessages().length);
+        
+        // Check that email field is pre-filled with the pending email after cooldown error
+        assertEquals("Email field should be pre-filled with pending email during cooldown", 
+                "newemail@localhost", updateEmailPage.getEmail());
+
+        try {
+            // Move time forward beyond cooldown period (default 30 seconds)
+            setTimeOffset(40);
+            
+            // Logout and login again to retry after cooldown
+            testRealm().users().get(testUser.getId()).logout();
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            updateEmailPage.assertCurrent();
+            
+            // Now resend should work
+            updateEmailPage.changeEmail("newemail@localhost");
+            assertEquals("Second email should be sent after cooldown expires", 2, greenMail.getReceivedMessages().length);
+        } finally {
+            setTimeOffset(0);
+        }
     }
 }

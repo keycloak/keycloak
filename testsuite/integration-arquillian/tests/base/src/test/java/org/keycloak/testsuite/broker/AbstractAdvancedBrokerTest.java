@@ -510,6 +510,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInWithBroker(bc);
 
+        waitForPage(driver, "sign in to", true);
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP(totpSecret));
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());

@@ -122,6 +122,7 @@ public class DescriptionConverter {
                 setOidcGrantEnabled(client, CibaConfig.OIDC_CIBA_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.CIBA_GRANT_TYPE));
                 setOidcGrantEnabled(client, OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.DEVICE_CODE_GRANT_TYPE));
                 setOidcGrantEnabled(client, OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+                setOidcGrantEnabled(client, OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, oidcGrantTypes.contains(OAuth2Constants.JWT_AUTHORIZATION_GRANT));
                 client.setAuthorizationServicesEnabled(oidcGrantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE));
                 configWrapper.setUseRefreshToken(oidcGrantTypes.contains(OAuth2Constants.REFRESH_TOKEN));
             }
@@ -136,6 +137,9 @@ public class DescriptionConverter {
             client.setPublicClient(Boolean.TRUE);
             if (oidcGrantTypes != null && oidcGrantTypes.contains(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) {
                 throw new ClientRegistrationException("Token Exchange cannot be enabled in a public client");
+            }
+            if (oidcGrantTypes != null && oidcGrantTypes.contains(OAuth2Constants.JWT_AUTHORIZATION_GRANT)) {
+                throw new ClientRegistrationException("JWT authorization grant cannot be enabled in a public client");
             }
         } else {
             ClientAuthenticatorFactory clientAuthFactory;
@@ -543,6 +547,9 @@ public class DescriptionConverter {
         }
         if (!client.isPublicClient() && oidcClient.isStandardTokenExchangeEnabled()) {
             grantTypes.add(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+        }
+        if (!client.isPublicClient() && oidcClient.getJWTAuthorizationGrantEnabled()) {
+            grantTypes.add(OAuth2Constants.JWT_AUTHORIZATION_GRANT);
         }
         return grantTypes;
     }

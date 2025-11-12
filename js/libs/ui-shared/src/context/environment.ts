@@ -15,7 +15,7 @@ export type BaseEnvironment = {
   clientId: string;
   /** The base URL of the resources. */
   resourceUrl: string;
-  /** The source URL for the the logo image. */
+  /** The source URL for the logo image. */
   logo: string;
   /** The URL to be followed when the logo is clicked. */
   logoUrl: string;

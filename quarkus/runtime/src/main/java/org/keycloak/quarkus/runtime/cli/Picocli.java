@@ -170,6 +170,13 @@ public class Picocli {
                 addCommandOptions(cliArgs, cl);
             }
 
+            // ParseResult retain memory. Clear it, so it's not on the stack while the command runs
+            result = null;
+
+            // there's another ParseResult being created under the covers here.
+            // to reuse the previous result either means we need to duplicate the logic in the execute method
+            // or refactor the above logic so that it happens in the command logic
+            // We could also reduce the memory footprint of the ParseResult, but that looks a little hackish
             int exitCode = cmd.execute(argArray);
 
             exit(exitCode);
@@ -218,6 +225,7 @@ public class Picocli {
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
+        warnOnDuplicatedOptionsInCli();
 
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
@@ -557,6 +565,7 @@ public class Picocli {
             if (value.getValue() == null || value.getConfigSourceName() == null
                     || (quarkus && !value.getConfigSourceName().contains(QuarkusPropertiesConfigSource.NAME))) {
                 // only persist build options resolved from config sources and not default values
+                // instead we'll persist the profile (if set) because that may influence the defaults
                 return;
             }
             // since we're persisting all quarkus values, this may leak some runtime information - we don't want
@@ -581,8 +590,10 @@ public class Picocli {
         }
 
         String profile = org.keycloak.common.util.Environment.getProfile();
-        properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
-        properties.put(LaunchMode.current().getProfileKey(), profile);
+        if (profile != null) {
+            properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
+            properties.put(LaunchMode.current().getProfileKey(), profile);
+        }
 
         return properties;
     }
@@ -933,16 +944,24 @@ public class Picocli {
 
         if (!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
                 && !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG)) {
-            Environment.setRebuildCheck();
+            Environment.setRebuildCheck(true);
         }
 
-        String profile = parsedCommand.map(AbstractCommand::getInitProfile)
-                .orElseGet(() -> Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
-                        .orElse(Environment.PROD_PROFILE_VALUE));
+        String profile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
+                .or(() -> parsedCommand.map(AbstractCommand::getInitProfile)).orElse(Environment.PROD_PROFILE_VALUE);
 
         Environment.setProfile(profile);
         if (!cliArgs.contains(HelpAllMixin.HELP_ALL_OPTION)) {
             parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        }
+    }
+
+    // Show warning about duplicated options in CLI
+    public void warnOnDuplicatedOptionsInCli() {
+        var duplicatedOptionsNames = ConfigArgsConfigSource.getDuplicatedArgNames();
+        if (!duplicatedOptionsNames.isEmpty()) {
+            warn("Duplicated options present in CLI: %s".formatted(String.join(", ", duplicatedOptionsNames)));
+            ConfigArgsConfigSource.clearDuplicatedArgNames();
         }
     }
 

@@ -252,6 +252,10 @@ Transaction:
 
 Feature:
 
+--feature-<name> <enabled|disabled|vX(X is version)>
+                     Enable/Disable specific feature <feature>. It takes precedence over the
+                       'features', and 'features-disabled' options. Possible values are: 'enabled',
+                       'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')
 --features <feature> Enables a set of one or more features. Possible values are: <...>.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: <...>.
@@ -285,6 +289,11 @@ Hostname v2:
 
 HTTP(S):
 
+--http-accept-non-normalized-paths <true|false>
+                     DEPRECATED. If the server should accept paths that are not normalized
+                       according to RFC3986 or that contain a double slash ('//'). While accepting
+                       those requests might be relevant for legacy applications, it is recommended
+                       to disable it to allow for more concise URL filtering. Default: false.
 --http-enabled <true|false>
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination
@@ -636,6 +645,11 @@ Tracing:
 --tracing-endpoint <url>
                      OpenTelemetry endpoint to connect to. Default: http://localhost:4317.
                        Available only when Tracing is enabled.
+--tracing-header-<header> <value>
+                     OpenTelemetry header that will be part of the exporter request (mainly useful
+                       for providing Authorization header). Check the documentation on how to set
+                       environment variables for headers containing special characters or custom
+                       case-sensitive headers. Available only when Tracing is enabled.
 --tracing-infinispan-enabled <true|false>
                      Enables the OpenTelemetry tracing for embedded Infinispan. Default: true.
                        Available only when tracing and embedded Infinispan is enabled.
@@ -697,6 +711,17 @@ Security:
                        which is by default. This option defaults to 'non-strict' when 'fips'
                        feature is enabled. Possible values are: non-strict, strict. Default:
                        disabled.
+
+OpenAPI configuration:
+
+--openapi-enabled <true|false>
+                     If the server should expose OpenAPI Endpoint. If enabled, OpenAPI is available
+                       at '/openapi'. Default: false. Available only when OpenAPI feature is
+                       enabled.
+--openapi-ui-enabled <true|false>
+                     If the server should expose OpenApi-UI Endpoint. If enabled, OpenAPI UI is
+                       available at '/openapi/ui'. Default: false. Available only when OpenAPI
+                       Endpoint is enabled.
 
 Bootstrap Admin:
 

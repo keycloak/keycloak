@@ -37,6 +37,7 @@ import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -111,7 +112,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     @Override
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
         if (id == null) {
-            id = KeycloakModelUtils.generateId();
+            id = SecretGenerator.SECURE_ID_GENERATOR.get();
         }
 
         var entity = RemoteUserSessionEntity.create(id, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
@@ -368,7 +369,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     private UserSessionUpdater initUserSessionFromQuery(UserSessionUpdater updater, RealmModel realm, UserModel user, boolean offline) {
         assert updater != null;
         assert realm != null;
-        if (updater.isDeleted()) {
+        if (updater.isInvalid()) {
             return null;
         }
         if (updater.isInitialized()) {
@@ -407,7 +408,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     private AuthenticatedClientSessionModel initClientSessionUpdater(AuthenticatedClientSessionUpdater updater, UserSessionUpdater userSession) {
-        if (updater == null || updater.isDeleted()) {
+        if (updater == null || updater.isInvalid()) {
             return null;
         }
         var client = userSession.getRealm().getClientById(updater.getKey().clientId());
@@ -463,7 +464,7 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     private static <K, V, T extends BaseUpdater<K, V>> T checkExpiration(T updater) {
         var expiration = updater.computeExpiration();
         if (expiration.isExpired()) {
-            updater.markDeleted();
+            updater.markExpired();
             return null;
         }
         return updater;

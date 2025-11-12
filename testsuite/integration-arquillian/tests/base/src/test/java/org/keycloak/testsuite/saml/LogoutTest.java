@@ -72,8 +72,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.Matchers.*;
-import static org.keycloak.testsuite.util.SamlClient.Binding.*;
+import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
+import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
+import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
 
 /**
  *

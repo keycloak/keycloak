@@ -22,10 +22,12 @@ import java.util.stream.Collectors;
 
 public class KeycloakServerConfigBuilder {
 
+    private static final String SPI_OPTION = "spi-%s--%s--%s";
+
     private final String command;
     private final Map<String, String> options = new HashMap<>();
-    private final Set<String> features = new HashSet<>();
-    private final Set<String> featuresDisabled = new HashSet<>();
+    private final Set<Profile.Feature> features = new HashSet<>();
+    private final Set<Profile.Feature> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
     private final Set<Dependency> dependencies = new HashSet<>();
     private final Set<Path> configFiles = new HashSet<>();
@@ -76,12 +78,12 @@ public class KeycloakServerConfigBuilder {
     }
 
     public KeycloakServerConfigBuilder features(Profile.Feature... features) {
-        this.features.addAll(toFeatureStrings(features));
+        this.features.addAll(List.of(features));
         return this;
     }
 
     public KeycloakServerConfigBuilder featuresDisabled(Profile.Feature... features) {
-        this.featuresDisabled.addAll(toFeatureStrings(features));
+        this.featuresDisabled.addAll(List.of(features));
         return this;
     }
 
@@ -92,6 +94,11 @@ public class KeycloakServerConfigBuilder {
 
     public KeycloakServerConfigBuilder option(String key, String value) {
         options.put(key, value);
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder spiOption(String spi, String provider, String key, String value) {
+        options.put(String.format(SPI_OPTION, spi, provider, key), value);
         return this;
     }
 
@@ -108,8 +115,7 @@ public class KeycloakServerConfigBuilder {
     public boolean tlsEnabled() {
         return tlsEnabled ;
     }
-
-
+    
     public KeycloakServerConfigBuilder cacheConfigFile(String resourcePath) {
         try {
             Path p = Paths.get(Objects.requireNonNull(getClass().getResource(resourcePath)).toURI());
@@ -224,12 +230,9 @@ public class KeycloakServerConfigBuilder {
         for (Map.Entry<String, String> e : options.entrySet()) {
             args.add("--" + e.getKey() + "=" + e.getValue());
         }
-        if (!features.isEmpty()) {
-            args.add("--features=" + String.join(",", features));
-        }
-        if (!featuresDisabled.isEmpty()) {
-            args.add("--features-disabled=" + String.join(",", featuresDisabled));
-        }
+
+        features.forEach(f -> args.add("--feature-%s=v%s".formatted(f.getUnversionedKey(), f.getVersion())));
+        featuresDisabled.forEach(f -> args.add("--feature-%s=disabled".formatted(f.getUnversionedKey())));
 
         return args;
     }
@@ -240,15 +243,6 @@ public class KeycloakServerConfigBuilder {
 
     Set<Path> toConfigFiles() {
         return configFiles;
-    }
-
-    private Set<String> toFeatureStrings(Profile.Feature... features) {
-        return Arrays.stream(features).map(f -> {
-            if (Profile.getFeatureVersions(f.getKey()).size() > 1) {
-                return f.getVersionedKey();
-            }
-            return f.name().toLowerCase().replace('_', '-');
-        }).collect(Collectors.toSet());
     }
 
     public enum LogHandlers {

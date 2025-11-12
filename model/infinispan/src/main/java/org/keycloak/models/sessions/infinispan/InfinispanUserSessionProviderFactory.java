@@ -24,12 +24,11 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.Cache;
-import org.infinispan.affinity.KeyGenerator;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
@@ -54,8 +53,8 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
+import org.keycloak.models.sessions.infinispan.listeners.EmbeddedUserSessionExpirationListener;
 import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
-import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -91,13 +90,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private CacheHolder<String, UserSessionEntity> offlineSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
+    private EmbeddedUserSessionExpirationListener expirationListener;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
     private long offlineClientSessionCacheEntryLifespanOverride;
 
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
-    private InfinispanKeyGenerator keyGenerator;
     ArrayBlockingQueue<PersistentUpdate> asyncQueuePersistentUpdate;
     private PersistentSessionsWorker persistentSessionsWorker;
     private int maxBatchSize;
@@ -110,7 +109,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             var tx = createPersistentTransaction(session);
             return new PersistentUserSessionProvider(
                     session,
-                    keyGenerator,
                     tx.userTx,
                     tx.clientTx
             );
@@ -119,7 +117,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         return new InfinispanUserSessionProvider(
                 session,
                 persisterLastSessionRefreshStore,
-                keyGenerator,
                 tx.sessionTx,
                 tx.offlineSessionTx,
                 tx.clientSessionTx,
@@ -154,17 +151,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public void postInit(final KeycloakSessionFactory factory) {
         factory.register(event -> {
             if (event instanceof PostMigrationEvent) {
-                if (!useCaches) {
-                    keyGenerator = new InfinispanKeyGenerator() {
-                        @Override
-                        protected <K> K generateKey(KeycloakSession session, Cache<K, ?> cache, KeyGenerator<K> keyGenerator) {
-                            return keyGenerator.getKey();
-                        }
-                    };
-                } else {
+                if (useCaches) {
                     KeycloakModelUtils.runJobInTransaction(factory, (KeycloakSession session) -> {
 
-                        keyGenerator = new InfinispanKeyGenerator();
                         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
                             initializePersisterLastSessionRefreshStore(factory);
                         }
@@ -199,24 +188,29 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
             if (useCaches) {
                 try (var session = factory.create()) {
-                    sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                    sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
                     offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
                     clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                     offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
                 }
             } else {
-                sessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                sessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
                 offlineSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
                 clientSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                 offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithoutCache(SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
             }
         } else {
             try (var session = factory.create()) {
-                sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs);
+                sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
                 offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
                 clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                 offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+                var blockingManager = session.getProvider(InfinispanConnectionProvider.class).getBlockingManager();
+                expirationListener = new EmbeddedUserSessionExpirationListener(session.getKeycloakSessionFactory(), blockingManager);
             }
+            // Only add the event listener to session caches
+            // The expired events for offline sessions will be triggered by JpaUserSessionPersisterProvider
+            sessionCacheHolder.cache().addListener(expirationListener);
         }
     }
 
@@ -303,6 +297,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public void close() {
         if (persistentSessionsWorker != null) {
             persistentSessionsWorker.stop();
+        }
+        if (expirationListener != null) {
+            sessionCacheHolder.cache().removeListener(expirationListener);
+            expirationListener = null;
         }
     }
 

@@ -30,31 +30,35 @@ public class ManagedCertificates {
 
     private KeyStore serverKeyStore;
     private KeyStore clientsTrustStore;
+    private final Path serverKeystorePath;
+    private final Path clientsTruststorePath;
+    private final char[] password;
 
     private final static Path KEYSTORES_DIR = Path.of(System.getProperty("java.io.tmpdir"));
-    private final static Path SERVER_KEYSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-server-keystore.jks");
-    private final static Path CLIENTS_TRUSTSTORE_FILE_PATH = KEYSTORES_DIR.resolve("kc-testing-clients-truststore.jks");
-
-    private final static char[] PASSWORD = "password".toCharArray();
-
     private final static String PRV_KEY_ENTRY = "prvKey";
     public final static String CERT_ENTRY = "cert";
 
 
-    public ManagedCertificates() throws ManagedCertificatesException {
+    public ManagedCertificates(CertificatesConfigBuilder configBuilder) throws ManagedCertificatesException {
         if (!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
         cryptoProvider = CryptoIntegration.getProvider();
-        initServerCerts();
+
+        serverKeystorePath = KEYSTORES_DIR.resolve("kc-testing-server-keystore" + "." + configBuilder.getKeystoreFormat().getPrimaryExtension());
+        clientsTruststorePath = KEYSTORES_DIR.resolve("kc-testing-clients-truststore" + "." + configBuilder.getKeystoreFormat().getPrimaryExtension());
+
+        password = configBuilder.getKeystoreFormat() == KeystoreUtil.KeystoreFormat.JKS ? "password".toCharArray() : "passwordpassword".toCharArray();
+
+        initServerCerts(configBuilder.getKeystoreFormat());
     }
 
     public String getKeycloakServerKeyStorePath() {
-        return SERVER_KEYSTORE_FILE_PATH.toString();
+        return serverKeystorePath.toString();
     }
 
     public String getKeycloakServerKeyStorePassword() {
-        return String.valueOf(PASSWORD);
+        return String.valueOf(password);
     }
 
     public KeyStore getClientTrustStore() {
@@ -79,26 +83,26 @@ public class ManagedCertificates {
         }
     }
 
-    private void initServerCerts() throws ManagedCertificatesException {
+    private void initServerCerts(KeystoreUtil.KeystoreFormat keystoreFormat) throws ManagedCertificatesException {
         try {
-            serverKeyStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
-            clientsTrustStore = cryptoProvider.getKeyStore(KeystoreUtil.KeystoreFormat.JKS);
+            serverKeyStore = cryptoProvider.getKeyStore(keystoreFormat);
+            clientsTrustStore = cryptoProvider.getKeyStore(keystoreFormat);
 
-            if (Files.exists(SERVER_KEYSTORE_FILE_PATH) && Files.exists(CLIENTS_TRUSTSTORE_FILE_PATH)) {
+            if (Files.exists(serverKeystorePath) && Files.exists(clientsTruststorePath)) {
                 LOGGER.debugv("Existing Server KeyStore files found in {0}", KEYSTORES_DIR);
 
-                loadKeyStore(serverKeyStore, SERVER_KEYSTORE_FILE_PATH, PASSWORD);
-                loadKeyStore(clientsTrustStore, CLIENTS_TRUSTSTORE_FILE_PATH, PASSWORD);
+                loadKeyStore(serverKeyStore, serverKeystorePath, password);
+                loadKeyStore(clientsTrustStore, clientsTruststorePath, password);
             } else {
                 LOGGER.debugv("Generating Server KeyStore files in {0}", KEYSTORES_DIR);
 
-                generateKeystore(serverKeyStore, clientsTrustStore, "localhost");
+                generateKeystoreAndTruststore(serverKeyStore, clientsTrustStore, "localhost");
                 // store the generated keystore and truststore in a temp folder
-                try (FileOutputStream fos = new FileOutputStream(SERVER_KEYSTORE_FILE_PATH.toFile())) {
-                    serverKeyStore.store(fos, PASSWORD);
+                try (FileOutputStream fos = new FileOutputStream(serverKeystorePath.toFile())) {
+                    serverKeyStore.store(fos, password);
                 }
-                try (FileOutputStream fos = new FileOutputStream(CLIENTS_TRUSTSTORE_FILE_PATH.toFile())) {
-                    clientsTrustStore.store(fos, PASSWORD);
+                try (FileOutputStream fos = new FileOutputStream(clientsTruststorePath.toFile())) {
+                    clientsTrustStore.store(fos, password);
                 }
             }
         } catch (Exception e) {
@@ -112,7 +116,7 @@ public class ManagedCertificates {
         }
     }
 
-    private void generateKeystore(KeyStore keyStore, KeyStore trustStore, String subject) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, IOException, KeyStoreException, Exception {
+    private void generateKeystoreAndTruststore(KeyStore keyStore, KeyStore trustStore, String subject) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, IOException, KeyStoreException, Exception {
         keyStore.load(null);
         trustStore.load(null);
 
@@ -121,7 +125,7 @@ public class ManagedCertificates {
 
         keyStore.setCertificateEntry(CERT_ENTRY, cert);
         trustStore.setCertificateEntry(CERT_ENTRY, cert);
-        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), PASSWORD, new X509Certificate[]{cert});
+        keyStore.setKeyEntry(PRV_KEY_ENTRY, keyPair.getPrivate(), password, new X509Certificate[]{cert});
     }
 
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -129,10 +133,10 @@ public class ManagedCertificates {
     }
 
     private X509Certificate generateX509CertificateCertificate(KeyPair keyPair, String subject) throws Exception {
-        // generate a v1 certificate
+        // generate a v1 root certificate authority certificate
         X509Certificate caCert = cryptoProvider.getCertificateUtils().generateV1SelfSignedCertificate(keyPair, subject);
 
-        // generate a v3 certificate
+        // generate a v3 certificate chain
         return cryptoProvider.getCertificateUtils().generateV3Certificate(keyPair, keyPair.getPrivate(), caCert, subject);
     }
 }

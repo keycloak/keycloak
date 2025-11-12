@@ -251,6 +251,8 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
             }
         } catch (LiquibaseException e) {
             throw new RuntimeException("Failed to validate database", e);
+        } finally {
+            ThreadLocalSessionContext.removeCurrentSession();
         }
 
         return Status.VALID;

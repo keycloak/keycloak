@@ -1,7 +1,7 @@
 package org.keycloak.representations.workflows;
 
-import static java.util.Optional.ofNullable;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONCURRENCY;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_IF;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
@@ -13,14 +13,12 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_US
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,14 +29,11 @@ import org.keycloak.common.util.MultivaluedHashMap;
 @JsonIgnoreProperties(CONFIG_WITH)
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
-    public static Builder create() {
-        return new Builder().of(WorkflowConstants.DEFAULT_WORKFLOW);
+    public static Builder withName(String name) {
+        return new Builder().withName(name);
     }
 
     private List<WorkflowStepRepresentation> steps;
-
-    @JsonProperty(CONFIG_IF)
-    private List<WorkflowConditionRepresentation> conditions;
 
     private WorkflowStateRepresentation state;
 
@@ -46,31 +41,21 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     private WorkflowConcurrencyRepresentation concurrency;
 
     public WorkflowRepresentation() {
-        super(null, null, null);
+        super(null, null);
     }
 
-    public WorkflowRepresentation(String id, String workflow, MultivaluedHashMap<String, String> config, List<WorkflowConditionRepresentation> conditions, List<WorkflowStepRepresentation> steps) {
-        super(id, workflow, config);
-        this.conditions = conditions;
+    public WorkflowRepresentation(String id, String name, MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
+        super(id, config);
+        setName(name);
         this.steps = steps;
     }
 
-    public <T> T getOn() {
-        return getConfigValuesOrSingle(CONFIG_ON_EVENT);
+    public String getOn() {
+        return getConfigValue(CONFIG_ON_EVENT, String.class);
     }
 
-    public void setOn(String... events) {
-        setConfigValue(CONFIG_ON_EVENT, Arrays.asList(events));
-    }
-
-    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-    public void setOn(List<String> events) {
-        setConfigValue(CONFIG_ON_EVENT, events);
-    }
-
-    @JsonIgnore
-    public List<String> getOnValues() {
-        return ofNullable(getConfigValues(CONFIG_ON_EVENT)).orElse(Collections.emptyList());
+    public void setOn(String eventConditions) {
+        setConfigValue(CONFIG_ON_EVENT, eventConditions);
     }
 
     public String getName() {
@@ -89,12 +74,13 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         setConfigValue(CONFIG_ENABLED, enabled);
     }
 
-    public void setConditions(List<WorkflowConditionRepresentation> conditions) {
-        this.conditions = conditions;
+    @JsonProperty(CONFIG_IF)
+    public String getConditions() {
+        return getConfigValue(CONFIG_CONDITIONS, String.class);
     }
 
-    public List<WorkflowConditionRepresentation> getConditions() {
-        return conditions;
+    public void setConditions(String conditions) {
+        setConfigValue(CONFIG_CONDITIONS, conditions);
     }
 
     public void setSteps(List<WorkflowStepRepresentation> steps) {
@@ -144,8 +130,7 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
         WorkflowRepresentation that = (WorkflowRepresentation) obj;
         // TODO: include state in comparison?
-        return Objects.equals(getUses(), that.getUses()) && Objects.equals(getConfig(), that.getConfig())
-            && Objects.equals(getConditions(), that.getConditions()) && Objects.equals(getSteps(), that.getSteps());
+        return Objects.equals(getConfig(), that.getConfig()) && Objects.equals(getSteps(), that.getSteps());
     }
 
     public static class Builder {
@@ -162,21 +147,17 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
             this.builders = builders;
         }
 
-        public Builder of(String providerId) {
-            WorkflowRepresentation representation = new WorkflowRepresentation();
-            representation.setUses(providerId);
-            Builder builder = new Builder(representation, builders);
-            builders.add(builder);
-            return builder;
-        }
-
         public Builder onEvent(String operation) {
             representation.addConfigValue(CONFIG_ON_EVENT, operation);
             return this;
         }
 
-        public Builder onConditions(WorkflowConditionRepresentation... condition) {
-            representation.setConditions(Arrays.asList(condition));
+        public Builder onEvent(String... operation) {
+            return onEvent(String.join(" or ", operation).toUpperCase());
+        }
+
+        public Builder onCondition(String condition) {
+            representation.setConditions(condition);
             return this;
         }
 
@@ -209,9 +190,12 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
             return this;
         }
 
-        public Builder name(String name) {
+        public Builder withName(String name) {
+            WorkflowRepresentation representation = new WorkflowRepresentation();
             representation.setName(name);
-            return this;
+            Builder builder = new Builder(representation, builders);
+            builders.add(builder);
+            return builder;
         }
 
         public WorkflowSetRepresentation build() {

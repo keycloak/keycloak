@@ -87,6 +87,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testEnvVarPriorityOverPropertiesFileMixedSpiNamingConventions() {
+        putEnvVar("KC_SPI_HOSTNAME_OTHER_FRONTEND_URL", "http://envvar.unittest");
+        assertEquals("http://envvar.unittest", initConfig("hostname", "other").get("frontendUrl"));
+    }
+
+    @Test
     public void testKeycloakConfPlaceholder() {
         assertEquals("info", createConfig().getRawValue("kc.log-level"));
         assertTrue(Configuration.getConfig().isPropertyPresent("quarkus.log.category.\"io.k8s\".level"));
@@ -270,7 +276,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
-        assertEquals("jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
@@ -403,7 +409,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testNestedDatabaseProperties() {
         SmallRyeConfig config = createConfig();
-        assertEquals("jdbc:h2:file:"+Environment.getHomeDir()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
+        assertEquals("jdbc:h2:file:"+Environment.getHomeDir().orElseThrow()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
 
         Assert.assertEquals("foo-def-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
 
@@ -423,7 +429,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
-        String conf = Environment.getHomeDir() + File.separator + "conf" + File.separator;
+        String conf = Environment.getHomeDir().orElseThrow() + File.separator + "conf" + File.separator;
         Assert.assertEquals(conf + "cache-ispn.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
 
         // If explicitly set, then it is always used regardless of the profile
@@ -631,7 +637,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testQuarkusLogPropDependentUponKeycloak() {
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
+        Environment.setRebuildCheck(true); // will be reset by the system properties logic
         ConfigArgsConfigSource.setCliArgs("--log-level=something:debug");
         SmallRyeConfig config = createConfig();
         assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"something\".level").getValue());

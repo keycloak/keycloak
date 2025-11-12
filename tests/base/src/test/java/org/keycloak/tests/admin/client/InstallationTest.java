@@ -69,7 +69,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.METADATA_NSURI;

@@ -17,66 +17,38 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
+import java.util.stream.Stream;
+
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
 
 public interface WorkflowProvider extends Provider {
 
     /**
-     * Finds all resources that are eligible for the first action of a workflow.
+     * Returns a {@link ResourceTypeSelector} for the specified resource type.
      *
-     * @return A list of eligible resource IDs.
+     * @param type     the resource type.
+     * @return the corresponding {@link ResourceTypeSelector}.
      */
-    List<String> getEligibleResourcesForInitialStep();
+    ResourceTypeSelector getResourceTypeSelector(ResourceType type);
 
-    /**
-     * Checks if the provider supports resources of the specified type.
-     *
-     * @param type the resource type.
-     * @return {@code true} if the provider supports the specified type; {@code false} otherwise.
-     */
-    boolean supports(ResourceType type);
+    Workflow toModel(WorkflowRepresentation representation);
 
-    /**
-     * Indicates whether the workflow supports being activated for a resource based on the event or not. If {@code true}, the
-     * workflow will be activated for the resource. For scheduled workflows, this means the first action will be scheduled. For
-     * immediate workflows, this means all actions will be executed right away.
-     *
-     * At the very least, implementations should validate the event's resource type and operation to ensure the workflow will
-     * only be activated on expected operations being performed on the expected type.
-     *
-     * @param event a {@link WorkflowEvent} containing details of the event that was triggered such as operation
-     *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
-     * @return {@code true} if the workflow can be activated based on the received event; {@code false} otherwise.
-     */
-    boolean activateOnEvent(WorkflowEvent event);
+    Workflow getWorkflow(String id);
 
-    /**
-     * Indicates whether the workflow supports being reset (i.e. go back to the first action) based on the event received or not.
-     * By default, this method returns false as most workflows won't support this kind of flow, but specific workflows such
-     * as one based on a resource's last updated time, or last used time, can signal that they expect the process to start
-     * over once the timestamp they are based on is updated.
-     *
-     * At the very least, implementations should validate the event's resource type and operation to ensure the workflow will
-     * only be reset on expected operations being performed on the expected type.
-     *
-     * @param event a {@link WorkflowEvent} containing details of the event that was triggered such as operation
-     *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
-     * @return {@code true} if the workflow supports resetting the flow based on the received event; {@code false} otherwise.
-     */
-    boolean resetOnEvent(WorkflowEvent event);
+    void removeWorkflow(Workflow workflow);
 
-    /**
-     * Indicates whether the workflow supports being deactivated for a resource based on the event or not. If {@code true}, the
-     * workflow will be deactivated for the resource, meaning any existing scheduled actions will be removed and no further
-     * actions will be executed.
-     *
-     * At the very least, implementations should validate the event's resource type and operation to ensure the workflow will
-     * only be deactivated on expected operations being performed on the expected type.
-     *
-     * @param event a {@link WorkflowEvent} containing details of the event that was triggered such as operation
-     *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
-     * @return {@code true} if the workflow can be deactivated based on the received event; {@code false} otherwise.
-     */
-    boolean deactivateOnEvent(WorkflowEvent event);
+    Stream<Workflow> getWorkflows();
+
+    WorkflowRepresentation toRepresentation(Workflow workflow);
+
+    void updateWorkflow(Workflow workflow, WorkflowRepresentation rep);
+
+    void bind(Workflow workflow, ResourceType type, String resourceId);
+
+    void submit(WorkflowEvent event);
+
+    void runScheduledSteps();
+
+    void bindToAllEligibleResources(Workflow workflow);
 }

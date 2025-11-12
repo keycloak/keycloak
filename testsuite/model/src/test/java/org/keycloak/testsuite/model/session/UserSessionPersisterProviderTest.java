@@ -25,8 +25,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
@@ -73,6 +79,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -166,12 +173,14 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             inComittedTransaction(session -> {
                 // Persist 1 online session
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 userSession[0] = session.sessions().getUserSession(realm, origSessions[0].getId());
                 persistUserSession(session, userSession[0], false);
             });
 
             inComittedTransaction(session -> { // Assert online session
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getContext().setRealm(realm);
                 List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, false, 1, 1, 1);
                 assertSession(loadedSessions.get(0), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
             });
@@ -180,6 +189,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             // Assert offline sessions
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 2, 2, 3);
             assertSessions(loadedSessions, new String[] { origSessions[0].getId(), origSessions[1].getId(), origSessions[2].getId() });
 
@@ -216,6 +226,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
@@ -245,6 +256,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
 
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
@@ -552,13 +564,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
                 createClientSession(session, realmId, realm.getClientByClientId("test-app"), userSession, "http://redirect", "state");
                 userSessionsInner.add(userSession.getId());
+                persistUserSession(session, userSession, true);
             }
-
-            for (String userSessionId : userSessionsInner) {
-                UserSessionModel userSession2 = session.sessions().getUserSession(realm, userSessionId);
-                persistUserSession(session, userSession2, true);
-            }
-
             return null;
         });
 
@@ -649,6 +656,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             // Update one of the sessions with lastSessionRefresh of 20 days ahead
             int lastSessionRefresh = Time.currentTime() + 1728000;
             RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
             persister.updateLastSessionRefreshes(realm, lastSessionRefresh, Collections.singleton(userSession1[0].getId()), true);
@@ -745,6 +753,113 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         });
     }
 
+
+    @Test
+    public void testUserRemoved() throws InterruptedException {
+        final String userName = "to-remove";
+        final int numberOfSessions = 5;
+        final int clusterSize = 4;
+        inComittedTransaction(session -> {
+            RealmModel realm = getRealm(session);
+            session.sessions().removeUserSessions(realm);
+            session.users().addUser(realm, userName).setEmail(userName + "@localhost");
+        });
+
+        final UserSessionCount initial = getUserSessionCount();
+        final CyclicBarrier barrier = new CyclicBarrier(clusterSize);
+        final AtomicBoolean userDeleted = new AtomicBoolean(false);
+
+        inIndependentFactories(clusterSize, 60, () -> {
+            try {
+                barrier.await(10, TimeUnit.SECONDS);
+                inComittedTransaction(session -> {
+                    RealmModel realm = getRealm(session);
+                    UserModel user = session.users().getUserByUsername(realm, userName);
+                    ClientModel testApp = realm.getClientByClientId("test-app");
+                    IntStream.range(0, numberOfSessions)
+                            .forEach(ignored -> {
+                                UserSessionModel us = session.sessions().createUserSession(null, realm, user, userName, "127.0.0.1", "form", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                                session.sessions().createClientSession(realm, testApp, us);
+                            });
+                });
+
+                barrier.await(10, TimeUnit.SECONDS);
+                assertSessionCount(numberOfSessions * clusterSize, initial);
+
+                barrier.await(10, TimeUnit.SECONDS);
+                if (userDeleted.compareAndSet(false, true)) {
+                    inComittedTransaction(session -> {
+                        RealmModel realm = getRealm(session);
+                        UserModel user = session.users().getUserByUsername(realm, userName);
+                        new UserManager(session).removeUser(realm, user);
+                    });
+                }
+
+                barrier.await(10, TimeUnit.SECONDS);
+                assertSessionCount(0, initial);
+
+                barrier.await(10, TimeUnit.SECONDS);
+            } catch (BrokenBarrierException | TimeoutException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
+
+    private UserSessionCount getUserSessionCount() {
+        if (InfinispanUtils.isEmbeddedInfinispan()) {
+            return MultiSiteUtils.isPersistentSessionsEnabled() ?
+                    new UserSessionCount(getPersistedUserSessionsCount(), getEmbeddedCachedUserSessionsCount()) :
+                    new UserSessionCount(-1, getEmbeddedCachedUserSessionsCount());
+
+        }
+        return MultiSiteUtils.isPersistentSessionsEnabled() ?
+                new UserSessionCount(getPersistedUserSessionsCount(), -1) :
+                new UserSessionCount(-1, getRemoteCachedUserSessionsCount());
+    }
+
+    private void assertSessionCount(int offset, UserSessionCount initial) {
+        UserSessionCount current = getUserSessionCount();
+        if (initial.database() != -1) {
+            assertEquals("Wrong number of session in database", initial.database() + offset, current.database());
+        } else {
+            assertEquals("Wrong number of session in database", initial.database(), current.database());
+        }
+        if (initial.cache() != -1) {
+            assertEquals("Wrong number of session in cache", initial.cache() + offset, current.cache());
+        } else {
+            assertEquals("Wrong number of session in cache", initial.cache(), current.cache());
+        }
+    }
+
+    private int getRemoteCachedUserSessionsCount() {
+        return inComittedTransaction(session -> {
+            getRealm(session);
+            return session.getProvider(InfinispanConnectionProvider.class).getRemoteCache(USER_SESSION_CACHE_NAME).size();
+        });
+    }
+
+    private int getEmbeddedCachedUserSessionsCount() {
+        return inComittedTransaction(session -> {
+            getRealm(session);
+            return session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).size();
+        });
+    }
+
+    private int getPersistedUserSessionsCount() {
+        return inComittedTransaction(session -> {
+            getRealm(session);
+            return session.getProvider(UserSessionPersisterProvider.class).getUserSessionsCount(false);
+        });
+    }
+
+    private RealmModel getRealm(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealm(realmId);
+        session.getContext().setRealm(realm);
+        return realm;
+    }
+
     private long countUserSessionsInRealm(KeycloakSession session) {
         JpaUserSessionPersisterProvider sessionPersisterProvider = (JpaUserSessionPersisterProvider) session.getProvider(UserSessionPersisterProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
@@ -826,7 +941,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         int pageCount = 0;
         boolean next = true;
         List<UserSessionModel> result = new ArrayList<>();
-        String lastSessionId = "00000000-0000-0000-0000-000000000000";
+        String lastSessionId = "";
 
         while (next) {
             List<UserSessionModel> sess = persister
@@ -885,4 +1000,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         assertThat(actual, Matchers.arrayContainingInAnyOrder(expectedSessionIds));
     }
+
+    private record UserSessionCount(int database, int cache) {}
 }

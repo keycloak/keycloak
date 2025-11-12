@@ -59,6 +59,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -1078,6 +1079,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         return Collections.emptyList();
     }
 
+    @Override
+    public UserCredentialManager getUserCredentialManager(UserModel user) {
+        return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
+    }
+
     private boolean isReadOnlyOrganizationMember(UserModel delegate) {
         if (delegate == null) {
             return false;
@@ -1140,9 +1146,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     private UserModel tryResolveFederatedUser(RealmModel realm, Function<UserLookupProvider, UserModel> loader) {
-        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, loader)
-                .findFirst()
-                .orElse(null);
+        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, provider -> {
+            try {
+                return loader.apply(provider);
+            } catch (StorageUnavailableException e) {
+                logger.warnf(e, "User storage provider %s is unavailable. " +
+                             "Continuing with other providers for graceful degradation.",
+                             provider.getClass().getSimpleName());
+                return null;
+            }
+        })
+        .findFirst()
+        .orElse(null);
     }
 
     private boolean isSyncSettingsUpdated(UserStorageProviderModel previous, UserStorageProviderModel actual) {

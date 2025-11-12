@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
 
 import org.keycloak.Config;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.Profile;
@@ -727,13 +728,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public CibaConfig getCibaPolicy() {
         if (isUpdated()) return updated.getCibaPolicy();
-        return cached.getCibaConfig(session, modelSupplier);
+        return cached.getCibaConfig(modelSupplier);
     }
 
     @Override
     public ParConfig getParPolicy() {
         if (isUpdated()) return updated.getParPolicy();
-        return cached.getParConfig(session, modelSupplier);
+        return cached.getParConfig(modelSupplier);
     }
 
     @Override
@@ -918,7 +919,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream());
+        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication()));
     }
 
     @Override

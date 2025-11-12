@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.SecretGenerator;
@@ -222,6 +223,10 @@ public class TokenManager {
                     .verify();
         } catch (VerificationException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+        }
+
+        if (userSession.isOffline() && !UserSessionUtil.isOfflineAccessGranted(session, clientSession)) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session invalid because offline access not granted anymore");
         }
 
         // Case when offline token is migrated from previous version
@@ -524,11 +529,16 @@ public class TokenManager {
     }
 
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        return attachAuthenticationSession(session, userSession, authSession, false);
+        return attachAuthenticationSession(session, userSession, authSession, null, false);
     }
 
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession,
             AuthenticationSessionModel authSession, boolean createTransientIfMissing) {
+        return attachAuthenticationSession(session, userSession, authSession, null, createTransientIfMissing);
+    }
+
+    public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession,
+            AuthenticationSessionModel authSession, Set<String> restrictedScopes, boolean createTransientIfMissing) {
         ClientModel client = authSession.getClient();
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -574,7 +584,7 @@ public class TokenManager {
         // Remove authentication session now (just current tab, not whole "rootAuthenticationSession" in case we have more browser tabs with "authentications in progress")
         new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(realm, authSession);
 
-        return DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes, session);
+        return DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopes, restrictedScopes, session);
     }
 
 
@@ -1530,8 +1540,8 @@ public class TokenManager {
     private Stream<OIDCIdentityProvider> getOIDCIdentityProviders(LogoutToken logoutToken, KeycloakSession session) {
         try {
             return session.identityProviders()
-                    .getAllStream(Map.of(
-                            OIDCIdentityProviderConfig.ISSUER, logoutToken.getIssuer()
+                    .getAllStream(IdentityProviderQuery.userAuthentication()
+                            .with(OIDCIdentityProviderConfig.ISSUER, logoutToken.getIssuer()
                     ), -1, -1)
                     .map(model -> {
                         var idp = IdentityBrokerService.getIdentityProvider(session, model.getAlias());

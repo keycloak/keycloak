@@ -92,4 +92,15 @@ public class TracingOptions {
             .defaultValue(true)
             .build();
 
+    public static final Option<String> TRACING_HEADER = new OptionBuilder<>("tracing-header-<header>", String.class)
+            .category(OptionCategory.TRACING)
+            .description("OpenTelemetry header that will be part of the exporter request (mainly useful for providing Authorization header). Check the documentation on how to set environment variables for headers containing special characters or custom case-sensitive headers.")
+            .build();
+
+    public static final Option<List<String>> TRACING_HEADERS = OptionBuilder.listOptionBuilder("tracing-headers", String.class)
+            .category(OptionCategory.TRACING)
+            .hidden()
+            .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'tracing-header-<header>' options.")
+            .build();
+
 }

@@ -65,13 +65,7 @@ To avoid this, you can skip this check by adding the following property:
 
 ### Starting Keycloak
 
-To start Keycloak during development first build as specified above, then run:
-
-    java -jar quarkus/server/target/lib/quarkus-run.jar start-dev
-
-To stop the server press `Ctrl + C`.
-
-For more details, follow the [`quarkus` module documentation](../quarkus/README.md).
+Follow the [`quarkus` module documentation](../quarkus/README.md#running-in-keycloak-development-mode) for instructions how to run Keycloak in dev environment.
 
 ## Working with the codebase
 

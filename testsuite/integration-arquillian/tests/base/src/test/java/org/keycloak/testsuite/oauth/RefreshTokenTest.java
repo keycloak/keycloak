@@ -38,9 +38,9 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.events.EventType;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -76,8 +76,8 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
@@ -85,7 +85,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.keycloak.testsuite.util.BrowserTabUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.Cookie;
 
@@ -101,26 +101,28 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN;
-import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.Assert.assertExpiration;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -176,16 +178,13 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         URI uri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget target = client.target(uri);
 
-        org.keycloak.representations.AccessTokenResponse tokenResponse = null;
-        {
-            String header = BasicAuthHelper.createHeader("test-app", "password");
-            Form form = new Form();
-            Response response = target.request()
-                    .header(HttpHeaders.AUTHORIZATION, header)
-                    .post(Entity.form(form));
-            assertEquals(400, response.getStatus());
-            response.close();
-        }
+        String header = BasicAuthHelper.createHeader("test-app", "password");
+        Form form = new Form();
+        Response response = target.request()
+                .header(HttpHeaders.AUTHORIZATION, header)
+                .post(Entity.form(form));
+        assertEquals(400, response.getStatus());
+        response.close();
         events.clear();
     }
 
@@ -256,7 +255,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         long actual = refreshToken.getExp() - getCurrentTime();
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + ALLOWED_CLOCK_SKEW)));
 
-        assertEquals(sessionId, refreshToken.getSessionState());
+        assertEquals(sessionId, refreshToken.getSessionId());
         assertNull(refreshToken.getNonce());
 
         AccessTokenResponse response = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
@@ -265,8 +264,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals(200, response.getStatusCode());
 
-        assertEquals(sessionId, refreshedToken.getSessionState());
-        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+        assertEquals(sessionId, refreshedToken.getSessionId());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionId());
 
         assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         assertThat(refreshedToken.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(250L - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300L + ALLOWED_CLOCK_SKEW)));
@@ -303,7 +302,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertNotNull(response.getRefreshToken());
         refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertEquals(sessionId, refreshToken.getSessionState());
+        assertEquals(sessionId, refreshToken.getSessionId());
         assertNull(refreshToken.getNonce());
     }
 
@@ -360,32 +359,30 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         // Test when neither client nor user session is in the cache
         testingClient.server().run(session -> {
-            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).clear();
-            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).clear();
+            session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).clear();
+            session.getProvider(InfinispanConnectionProvider.class).getCache(CLIENT_SESSION_CACHE_NAME).clear();
         });
 
         response = oauth.doRefreshTokenRequest(refreshTokenString);
         Assert.assertEquals(200, response.getStatusCode());
 
         testingClient.server().run(session -> {
-            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size(),
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).size(),
                     greaterThan(0));
-            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).size(),
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(CLIENT_SESSION_CACHE_NAME).size(),
                     greaterThan(0));
         });
 
         // Test is only the client session is missing
-        testingClient.server().run(session -> {
-            session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).clear();
-        });
+        testingClient.server().run(session -> session.getProvider(InfinispanConnectionProvider.class).getCache(CLIENT_SESSION_CACHE_NAME).clear());
 
         response = oauth.doRefreshTokenRequest(refreshTokenString);
         Assert.assertEquals(200, response.getStatusCode());
 
         testingClient.server().run(session -> {
-            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size(),
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).size(),
                     greaterThan(0));
-            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME).size(),
+            assertThat(session.getProvider(InfinispanConnectionProvider.class).getCache(CLIENT_SESSION_CACHE_NAME).size(),
                     greaterThan(0));
         });
 
@@ -428,20 +425,20 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .clientId("public-client")
                     .redirectUris("*")
                     .publicClient()
-                    .build());
+                    .build()).close();
 
             realmResource.users()
                     .create(UserBuilder.create().username("alice")
                             .firstName("alice")
                             .lastName("alice")
                             .email("alice@keycloak.org")
-                            .password("alice").addRoles("offline_access").build());
+                            .password("alice").addRoles("offline_access").build()).close();
             realmResource.users()
                     .create(UserBuilder.create().username("bob")
                             .firstName("bob")
                             .lastName("bob")
                             .email("bob@keycloak.org")
-                            .password("bob").addRoles("offline_access").build());
+                            .password("bob").addRoles("offline_access").build()).close();
 
             oauth.realm(realmName);
             oauth.client("public-client");
@@ -493,12 +490,12 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .clientId("public-client")
                     .redirectUris("*")
                     .publicClient()
-                    .build());
+                    .build()).close();
 
             realmResource.users()
-                    .create(UserBuilder.create().username("alice").password("alice").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("alice").password("alice").addRoles("offline_access").build()).close();
             realmResource.users()
-                    .create(UserBuilder.create().username("bob").password("bob").addRoles("offline_access").build());
+                    .create(UserBuilder.create().username("bob").password("bob").addRoles("offline_access").build()).close();
 
             oauth.realm(realmName);
             oauth.client("public-client");
@@ -509,7 +506,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             oauth.fillLoginForm("alice", "alice");
 
-            String aliceCode = oauth.parseLoginResponse().getCode();
+            oauth.parseLoginResponse().getCode();
 //            WebClient webClient = DroneHtmlUnitDriver.class.cast(driver).getWebClient();
 //            webClient.getCookieManager().clearCookies();
             driver.manage().deleteAllCookies();
@@ -585,7 +582,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         try {
             oauth.doLogin("test-user@localhost", "password");
 
-            String code = oauth.parseLoginResponse().getCode();
+            oauth.parseLoginResponse().getCode();
 
             String optionalScope = "phone address";
             oauth.scope(optionalScope);
@@ -999,7 +996,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             code = oauth.parseLoginResponse().getCode();
 
             AccessTokenResponse response4 = oauth.doAccessTokenRequest(code);
-            RefreshToken refreshToken4 = oauth.parseRefreshToken(response4.getRefreshToken());
+            oauth.parseRefreshToken(response4.getRefreshToken());
             events.expectCodeToToken(codeId, sessionId).assertEvent();
 
             // Client sessions should be available again now after re-authentication
@@ -1121,7 +1118,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertFalse(loginPage.isCurrent());
 
-            AccessTokenResponse tokenResponse2 = null;
+            AccessTokenResponse tokenResponse2;
             String code = oauth.parseLoginResponse().getCode();
             tokenResponse2 = oauth.doAccessTokenRequest(code);
 
@@ -1155,7 +1152,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertFalse(loginPage.isCurrent());
 
-            AccessTokenResponse tokenResponse2 = null;
+            AccessTokenResponse tokenResponse2;
             String code = oauth.parseLoginResponse().getCode();
             tokenResponse2 = oauth.doAccessTokenRequest(code);
 
@@ -1188,7 +1185,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             assertFalse(loginPage.isCurrent());
 
-            AccessTokenResponse tokenResponse2 = null;
+            AccessTokenResponse tokenResponse2;
             String code = oauth.parseLoginResponse().getCode();
             tokenResponse2 = oauth.doAccessTokenRequest(code);
 
@@ -1231,8 +1228,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
 
-        AccessToken refreshedToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(tokenResponse.getRefreshToken());
+        oauth.verifyToken(tokenResponse.getAccessToken());
+        oauth.parseRefreshToken(tokenResponse.getRefreshToken());
 
         assertEquals(200, tokenResponse.getStatusCode());
 
@@ -1281,7 +1278,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void testUserSessionRefreshAndIdleRememberMe() throws Exception {
         RealmResource testRealm = adminClient.realm("test");
 
-        try (Closeable realmUpdater = new RealmAttributeUpdater(testRealm)
+        try (Closeable ignored = new RealmAttributeUpdater(testRealm)
                 .updateWith(r -> {
                     r.setRememberMe(true);
                     r.setSsoSessionIdleTimeoutRememberMe(500);
@@ -1357,7 +1354,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void refreshTokenUserSessionMaxLifespan() throws Exception {
         RealmResource realmResource = adminClient.realm("test");
         getTestingClient().testing().setTestingInfinispanTimeService();
-        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+        try (Closeable ignored = new RealmAttributeUpdater(realmResource)
                 .updateWith(r -> {
                     r.setSsoSessionMaxLifespan(3600);
                     r.setSsoSessionIdleTimeout(7200);
@@ -1384,7 +1381,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             events.expectRefresh(refreshId, sessionId).assertEvent();
 
             setTimeOffset(3700);
-            oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+            oauth.parseRefreshToken(tokenResponse.getRefreshToken());
             tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
 
             assertEquals(400, tokenResponse.getStatusCode());
@@ -1403,7 +1400,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void refreshTokenUserClientMaxLifespanSmallerThanSession() throws Exception {
         RealmResource realmResource = adminClient.realm("test");
         getTestingClient().testing().setTestingInfinispanTimeService();
-        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+        try (Closeable ignored = new RealmAttributeUpdater(realmResource)
                 .updateWith(r -> {
                     r.setSsoSessionMaxLifespan(3600);
                     r.setSsoSessionIdleTimeout(7200);
@@ -1469,7 +1466,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     public void refreshTokenUserClientMaxLifespanGreaterThanSession() throws Exception {
         RealmResource realmResource = adminClient.realm("test");
         getTestingClient().testing().setTestingInfinispanTimeService();
-        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+        try (Closeable ignored = new RealmAttributeUpdater(realmResource)
                 .updateWith(r -> {
                     r.setSsoSessionMaxLifespan(3600);
                     r.setSsoSessionIdleTimeout(7200);
@@ -1516,7 +1513,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         RealmResource realmResource = adminClient.realm("test");
         getTestingClient().testing().setTestingInfinispanTimeService();
 
-        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+        try (Closeable ignored = new RealmAttributeUpdater(realmResource)
                 .updateWith(r -> {
                     r.setSsoSessionMaxLifespan(7200);
                     r.setSsoSessionIdleTimeout(7200);
@@ -1545,7 +1542,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             assertEquals(400, tokenResponse.getStatusCode());
             assertNull(tokenResponse.getAccessToken());
             assertNull(tokenResponse.getRefreshToken());
-            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).session(sessionId).user((String) null).assertEvent();
+            events.assertRefreshTokenErrorAndMaybeSessionExpired(sessionId, loginEvent.getUserId(), loginEvent.getClientId());
             assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
@@ -1559,7 +1556,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         RealmResource realmResource = adminClient.realm("test");
         getTestingClient().testing().setTestingInfinispanTimeService();
 
-        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+        try (Closeable ignored = new RealmAttributeUpdater(realmResource)
                 .updateWith(r -> {
                     r.setSsoSessionMaxLifespan(7200);
                     r.setSsoSessionIdleTimeout(7200);
@@ -1624,7 +1621,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         RealmResource realmResource = adminClient.realm("test");
         getTestingClient().testing().setTestingInfinispanTimeService();
 
-        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+        try (Closeable ignored = new RealmAttributeUpdater(realmResource)
                 .updateWith(r -> {
                     r.setSsoSessionMaxLifespan(7200);
                     r.setSsoSessionIdleTimeout(7200);
@@ -1684,7 +1681,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         RealmResource testRealm = adminClient.realm("test");
 
-        try (Closeable realmUpdater = new RealmAttributeUpdater(testRealm)
+        try (Closeable ignored = new RealmAttributeUpdater(testRealm)
                 .updateWith(r -> {
                     r.setRememberMe(true);
                     r.setSsoSessionMaxLifespanRememberMe(100);
@@ -1855,8 +1852,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             testingClient.server("test").run(session -> {
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 if (connections != null) {
-                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
-                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
+                    Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache = connections.getCache(USER_SESSION_CACHE_NAME);
+                    Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(CLIENT_SESSION_CACHE_NAME);
                     if (sessionCache != null) {
                         sessionCache.clear();
                     }
@@ -1891,8 +1888,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void testCheckSsl() {
-        Client client = AdminClientUtil.createResteasyClient();
-        try {
+        try (Client client = AdminClientUtil.createResteasyClient()) {
             UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
             URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget grantTarget = client.target(grantUri);
@@ -1900,7 +1896,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             URI uri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
             WebTarget refreshTarget = client.target(uri);
 
-            String refreshToken = null;
+            String refreshToken;
             {
                 Response response = executeGrantAccessTokenRequest(grantTarget);
                 assertEquals(200, response.getStatus());
@@ -1932,15 +1928,11 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                 }
             }
 
-            {
-                Response response = executeRefreshToken(refreshTarget, refreshToken);
-                assertEquals(200, response.getStatus());
-                org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
-                refreshToken = tokenResponse.getRefreshToken();
-                response.close();
-            }
+            Response response = executeRefreshToken(refreshTarget, refreshToken);
+            assertEquals(200, response.getStatus());
+            response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
+            response.close();
         } finally {
-            client.close();
             events.clear();
         }
 
@@ -1993,7 +1985,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         events.expectCodeToToken(codeId, sessionId).user(userId).assertEvent();
 
-        adminClient.realm("test").users().delete(userId);
+        adminClient.realm("test").users().delete(userId).close();
 
         response = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(400, response.getStatusCode());
@@ -2102,6 +2094,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     @Test // KEYCLOAK-17323
     public void testRefreshTokenWhenClientSessionTimeoutPassedButRealmDidNot() {
+        //noinspection resource
         getCleanup()
                 .addCleanup(new RealmAttributeUpdater(adminClient.realm("test"))
                         .setSsoSessionIdleTimeout(2592000) // 30 Days
@@ -2219,7 +2212,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                 .post(Entity.form(form));
     }
 
-    private void conductTokenRefreshRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
+    private void conductTokenRefreshRequest(String                                                                                                                              expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         try {
             // Realm setting is used for ID Token signature algorithm
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedIdTokenAlg);
@@ -2268,7 +2261,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals("Bearer", tokenResponse.getTokenType());
 
-        assertEquals(sessionId, refreshToken.getSessionState());
+        assertEquals(sessionId, refreshToken.getSessionId());
 
         AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString);
         if (response.getError() != null || response.getErrorDescription() != null) {
@@ -2280,8 +2273,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals(200, response.getStatusCode());
 
-        assertEquals(sessionId, refreshedToken.getSessionState());
-        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+        assertEquals(sessionId, refreshedToken.getSessionId());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionId());
 
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());

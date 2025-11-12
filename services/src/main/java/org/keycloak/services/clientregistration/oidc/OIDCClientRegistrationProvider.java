@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.clientregistration.oidc;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
@@ -40,10 +39,13 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.clientregistration.ErrorCodes;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.urls.UrlType;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -51,7 +53,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.keycloak.urls.UrlType;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -65,10 +66,19 @@ import java.util.stream.Collectors;
  */
 public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
-    private static final Logger logger = Logger.getLogger(OIDCClientRegistrationProvider.class);
-
     public OIDCClientRegistrationProvider(KeycloakSession session) {
         super(session);
+    }
+
+    @OPTIONS
+    public Response preflight() {
+        return Cors.builder().auth().preflight().allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS").add(Response.ok());
+    }
+
+    @OPTIONS
+    @Path("{clientId}")
+    public Response preflightClient() {
+        return preflight();
     }
 
     @POST
@@ -94,7 +104,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
-            return Response.created(uri).entity(clientOIDC).build();
+            return cors().add(Response.created(uri).entity(clientOIDC));
         } catch (ClientRegistrationException cre) {
             ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
@@ -110,7 +120,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
         ClientRepresentation clientRepresentation = get(client);
 
         OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, clientRepresentation, getRegistrationClientUri(client));
-        return Response.ok(clientOIDC).build();
+        return cors().add(Response.ok(clientOIDC));
     }
 
     @PUT
@@ -142,7 +152,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
             URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
-            return Response.ok(clientOIDC).build();
+            return cors().add(Response.ok(clientOIDC));
         } catch (ClientRegistrationException cre) {
             ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
@@ -151,8 +161,13 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
     @DELETE
     @Path("{clientId}")
-    public void deleteOIDC(@PathParam("clientId") String clientId) {
+    public Response deleteOIDC(@PathParam("clientId") String clientId) {
         delete(clientId);
+        return cors().add(Response.noContent());
+    }
+
+    private Cors cors() {
+        return Cors.builder().failOnInvalidOrigin().auth().addAllowedOrigins(getAllowedOrigins());
     }
 
     private void updatePairwiseSubMappers(ClientModel clientModel, SubjectType subjectType, String sectorIdentifierUri) {
@@ -168,7 +183,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
                 } else {
                     return false;
                 }
-            }).collect(Collectors.toList()).forEach((ProtocolMapperModel mapping) -> {
+            }).toList().forEach((ProtocolMapperModel mapping) -> {
                 PairwiseSubMapperHelper.setSectorIdentifierUri(mapping, sectorIdentifierUri);
                 clientModel.updateProtocolMapper(mapping);
             });
@@ -183,7 +198,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             // Rather find and remove all pairwise mappers
             clientModel.getProtocolMappersStream()
                     .filter(mapperRep -> mapperRep.getProtocolMapper().endsWith(AbstractPairwiseSubMapper.PROVIDER_ID_SUFFIX))
-                    .collect(Collectors.toList())
+                    .toList()
                     .forEach(clientModel::removeProtocolMapper);
         }
     }

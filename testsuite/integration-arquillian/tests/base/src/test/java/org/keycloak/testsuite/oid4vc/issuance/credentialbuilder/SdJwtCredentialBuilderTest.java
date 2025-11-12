@@ -138,9 +138,9 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         sdJwt.getSdJwtVerificationContext().verifyIssuance(
                 List.of(exampleVerifier()),
                 IssuerSignedJwtVerificationOpts.builder()
-                        .withValidateIssuedAtClaim(false)
-                        .withValidateNotBeforeClaim(false)
-                        .withValidateExpirationClaim(false)
+                        .withRequireIssuedAtClaim(false)
+                        .withRequireNotBeforeClaim(false)
+                        .withRequireExpirationClaim(false)
                         .build(),
                 null
         );

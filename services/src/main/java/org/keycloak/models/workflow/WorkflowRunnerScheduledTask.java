@@ -35,7 +35,7 @@ final class WorkflowRunnerScheduledTask implements ScheduledTask {
                 RealmModel realm = session.realms().getRealm(id);
 
                 context.setRealm(realm);
-                new WorkflowsManager(session).runScheduledSteps();
+                session.getProvider(WorkflowProvider.class).runScheduledSteps();
 
                 sessionFactory.publish(new WorkflowStepRunnerSuccessEvent(session));
             } catch (Exception e) {

@@ -75,16 +75,20 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -413,7 +417,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         JsonWebToken idToken = validateToken(encodedIdToken);
 
-        if (getConfig().isPassMaxAge()) {
+        if (Booleans.isTrue(getConfig().isPassMaxAge())) {
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
             if (isAuthTimeExpired(idToken, authSession)) {
@@ -464,7 +468,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
             }
 
-            if (getConfig().isStoreToken()) {
+            if (Booleans.isTrue(getConfig().isStoreToken())) {
                 if (tokenResponse.getExpiresIn() > 0) {
                     long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
                     tokenResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
@@ -976,7 +980,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
 
-        if (getConfig().isPassMaxAge() && maxAge != null) {
+        if (Booleans.isTrue(getConfig().isPassMaxAge()) && maxAge != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
 
@@ -1023,7 +1027,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 .orElseGet(() -> contextData.get(VALIDATED_ACCESS_TOKEN));
         Boolean emailVerified = getEmailVerifiedClaim(token);
 
-        if (!config.isTrustEmail() || emailVerified == null) {
+        if (Booleans.isFalse(config.isTrustEmail()) || emailVerified == null) {
             // fallback to the default behavior if trust is disabled or there is no email_verified claim
             super.setEmailVerified(user, context);
             return;
@@ -1069,9 +1073,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) {
+    public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) throws IdentityBrokerException {
+        if (!getConfig().getJwtAuthorizationGrantEnabled()) {
+            throw new IdentityBrokerException("JWT Authorization Granted is not enabled for the identity provider");
+        }
 
-        //TODO: proper assertion validation
+        // verify signature
+        if (!verify(context.getJws())) {
+            throw new IdentityBrokerException("Invalid signature");
+        }
+
         BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
         user.setUsername(context.getJWT().getSubject());
         user.setIdp(this);
@@ -1079,4 +1090,34 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     }
 
+    @Override
+    public int getAllowedClockSkew() {
+        return getConfig().getAllowedClockSkew();
+    }
+
+    @Override
+    public boolean isAssertionReuseAllowed() {
+        return getConfig().getJwtAuthorizationGrantAssertionReuseAllowed();
+    }
+
+    @Override
+    public List<String> getAllowedAudienceForJWTGrant() {
+        RealmModel realm = session.getContext().getRealm();
+
+        URI baseUri = session.getContext().getUri().getBaseUri();
+        String issuer = Urls.realmIssuer(baseUri, realm.getName());
+        String tokenEndpoint = Urls.tokenEndpoint(baseUri, realm.getName()).toString();
+        return List.of(issuer, tokenEndpoint);
+    }
+
+    @Override
+    public int getMaxAllowedExpiration() {
+        return getConfig().getJwtAuthorizationGrantMaxAllowedAssertionExpiration();
+    }
+
+    @Override
+    public String getAssertionSignatureAlg() {
+        String alg = getConfig().getJwtAuthorizationGrantAssertionSignatureAlg();
+        return StringUtil.isBlank(alg) ? null : alg;
+    }
 }

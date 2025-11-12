@@ -59,7 +59,21 @@ public class HttpDistTest {
         assertThat("Some of the requests should be properly rejected", statusCodes, hasItem(503));
         assertThat("None of the requests should throw an unhandled exception", statusCodes, not(hasItem(500)));
     }
-    
+
+    @Test
+    @Launch({"start-dev", "--log-level=INFO,org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter:debug", "--http-access-log-enabled=true"})
+    public void preventNonNormalizedURLs() {
+        when().get("/realms/master").then().statusCode(200);
+        when().get("/realms/xxx/../master").then().statusCode(400);
+    }
+
+    @Test
+    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-accept-non-normalized-paths=true"})
+    public void allowNonNormalizedURLs() {
+        when().get("/realms/master").then().statusCode(200);
+        when().get("/realms/xxx/../master").then().statusCode(200);
+    }
+
     @Test
     @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
     public void testHttpCertificateReloadPeriod(CLIResult result) {
@@ -78,7 +92,7 @@ public class HttpDistTest {
 
         result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
         result.assertExitCode(-1);
-        result.assertMessage("ERROR: Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException not-there.ks");
+        result.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException not-there.ks");
 
         dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);

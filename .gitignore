@@ -97,3 +97,7 @@ quarkus/data/*.db
 
 .env
 .env.test
+
+# Keycloak state dir as suggested in the docs
+# -Dkc.home.dir=.kc
+.kc

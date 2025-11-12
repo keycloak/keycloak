@@ -18,6 +18,7 @@ export const SpiffeSettings = () => {
       <TextControl
         name="config.issuer"
         label={t("spiffeTrustDomain")}
+        labelIcon={t("spiffeTrustDomainHelp")}
         rules={{
           required: t("required"),
         }}
@@ -26,6 +27,7 @@ export const SpiffeSettings = () => {
       <TextControl
         name="config.bundleEndpoint"
         label={t("spiffeBundleEndpoint")}
+        labelIcon={t("Specify a URL starting with 'https://'.")}
         rules={{
           required: t("required"),
         }}

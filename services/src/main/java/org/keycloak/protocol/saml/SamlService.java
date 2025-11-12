@@ -123,7 +123,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
-import jakarta.ws.rs.core.*;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayInputStream;
@@ -140,7 +142,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -230,7 +231,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             // assume this is a logout response
-            UserSessionModel userSession = authResult.getSession();
+            UserSessionModel userSession = authResult.session();
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.warn("Unknown saml response.");
                 logger.warn("UserSession is not tagged as logging out.");
@@ -567,7 +568,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
 
                 String bindingUri = SamlProtocol.getLogoutServiceUrl(session, client, logoutBinding, false);
-                UserSessionModel userSession = authResult.getSession();
+                UserSessionModel userSession = authResult.session();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
                 if (samlClient.requiresRealmSignature()) {
                     userSession.setNote(SamlProtocol.SAML_LOGOUT_SIGNATURE_ALGORITHM, samlClient.getSignatureAlgorithm().toString());

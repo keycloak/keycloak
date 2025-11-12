@@ -36,6 +36,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.CredentialEntity;
@@ -959,6 +960,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     @Override
     public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId) {
         return credentialStore.moveCredentialTo(realm, user, id, newPreviousCredentialId);
+    }
+
+    @Override
+    public UserCredentialManager getUserCredentialManager(UserModel user) {
+        return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
     }
 
     // Could override this to provide a custom behavior.

@@ -82,13 +82,13 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         List<Map<String, Object>> result = authMgmtResource.getClientAuthenticatorProviders();
 
         List<Map<String, Object>> expected = new LinkedList<>();
-        addClientAuthenticatorProviderInfo(expected, "client-jwt", "Signed Jwt",
+        addClientAuthenticatorProviderInfo(expected, "client-jwt", "Signed JWT",
                 "Validates client based on signed JWT issued by client and signed with the Client private key", false);
         addClientAuthenticatorProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +
                 "'client_secret' sent either in request parameters or in 'Authorization: Basic' header", true);
         addClientAuthenticatorProviderInfo(expected, "client-x509", "X509 Certificate",
                 "Validates client based on a X509 Certificate", false);
-        addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed Jwt with Client Secret",
+        addClientAuthenticatorProviderInfo(expected, "client-secret-jwt", "Signed JWT with Client Secret",
                 "Validates client based on signed JWT issued by client and signed with the Client Secret", true);
 
         compareProviders(expected, result);

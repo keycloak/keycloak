@@ -2,6 +2,9 @@ package org.keycloak.tests.client.authentication.external;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.ws.rs.core.Response;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -11,8 +14,6 @@ import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.IdentityProviderShowInAccountConsole;
-import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
@@ -31,6 +32,7 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.openqa.selenium.NoSuchElementException;
 
 import java.io.IOException;
+import java.util.Map;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -60,18 +62,24 @@ public class SpiffeConfigTest {
         IdentityProviderRepresentation rep = createConfig("testConfig", "spiffe://test", "https://localhost");
         Assertions.assertEquals(201, idps.create(rep).getStatus());
 
+        IdentityProviderRepresentation createdRep = realm.admin().identityProviders().get(rep.getAlias()).toRepresentation();
+
+        Assertions.assertTrue(createdRep.isEnabled());
+        MatcherAssert.assertThat(createdRep.getConfig(), Matchers.equalTo(Map.of("bundleEndpoint", "https://localhost", "issuer", "spiffe://test")));
+
+        Assertions.assertNull(createdRep.getUpdateProfileFirstLoginMode());
+        Assertions.assertNull(createdRep.getFirstBrokerLoginFlowAlias());
+        Assertions.assertNull(createdRep.getPostBrokerLoginFlowAlias());
+        Assertions.assertNull(createdRep.getOrganizationId());
+        Assertions.assertNull(createdRep.isAddReadTokenRoleOnCreate());
+        Assertions.assertNull(createdRep.isAuthenticateByDefault());
+        Assertions.assertNull(createdRep.isHideOnLogin());
+        Assertions.assertNull(createdRep.isLinkOnly());
+        Assertions.assertNull(createdRep.isTrustEmail());
+        Assertions.assertNull(createdRep.isStoreToken());
+
         checkNotDisplayOnLoginPages("testConfig");
         checkNoIdpsInAccountConsole();
-
-        rep = realm.admin().identityProviders().get("testConfig").toRepresentation();
-        Assertions.assertTrue(rep.isHideOnLogin());
-        Assertions.assertEquals(IdentityProviderShowInAccountConsole.NEVER.name(), rep.getConfig().get(IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE));
-
-        runOnServer.run(s -> {
-            IdentityProviderModel idp = s.getProvider(IdentityProviderStorageProvider.class, "jpa").getByAlias("testConfig");
-            Assertions.assertTrue(idp.isHideOnLogin());
-            Assertions.assertEquals(IdentityProviderShowInAccountConsole.NEVER.name(), idp.getConfig().get(IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE));
-        });
     }
 
     @Test

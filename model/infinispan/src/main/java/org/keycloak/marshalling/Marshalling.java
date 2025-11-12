@@ -45,6 +45,7 @@ import org.infinispan.protostream.SerializationContextInitializer;
  * <p>
  * Docs: <a href="https://protobuf.dev/programming-guides/proto3/">Language Guide (proto 3)</a>
  */
+@SuppressWarnings("unused")
 public final class Marshalling {
 
     public static final String PROTO_SCHEMA_PACKAGE = "keycloak";
@@ -183,6 +184,8 @@ public final class Marshalling {
     public static final int RELOAD_CERTIFICATE_FUNCTION = 65615;
 
     public static final int EMBEDDED_CLIENT_SESSION_KEY = 65616;
+    public static final int CLIENT_SESSION_USER_FILTER = 65617;
+    public static final int REMOVE_KEY_BI_CONSUMER = 65618;
 
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);

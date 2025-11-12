@@ -20,7 +20,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.namespace.QName;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.*;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ECP_PROFILE;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.METADATA_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
 
 /**
  * SAML Constants

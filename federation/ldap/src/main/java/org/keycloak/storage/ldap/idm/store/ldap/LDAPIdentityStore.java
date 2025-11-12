@@ -19,7 +19,6 @@ package org.keycloak.storage.ldap.idm.store.ldap;
 
 import javax.naming.NameAlreadyBoundException;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -47,8 +46,8 @@ import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -485,7 +484,7 @@ public class LDAPIdentityStore implements IdentityStore {
                         Object val = enumm.next();
 
                         if (val instanceof byte[]) { // byte[]
-                            String attrVal = Base64.encodeBytes((byte[]) val);
+                            String attrVal = Base64.getEncoder().encodeToString((byte[]) val);
                             attrValues.add(attrVal);
                         } else { // String
                             String attrVal = val.toString().trim();
@@ -599,9 +598,9 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             try {
-                byte[] bytes = Base64.decode(value);
+                byte[] bytes = Base64.getDecoder().decode(value);
                 attr.add(bytes);
-            } catch (IOException ioe) {
+            } catch (IllegalArgumentException iae) {
                 logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. Attribute: %s, Attribute value: %s", attrName, attrValue);
             }
         }

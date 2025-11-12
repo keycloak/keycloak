@@ -25,7 +25,17 @@ public class FeatureOptions {
             .buildTime(true)
             .build();
 
+    public static final Option<String> FEATURE = new OptionBuilder<>("feature-<name>", String.class)
+            .category(OptionCategory.FEATURE)
+            .description("Enable/Disable specific feature <feature>. It takes precedence over the '%s', and '%s' options. Possible values are: 'enabled', 'disabled', or specific version (lowercase) that will be enabled (f.e. 'v2')".formatted(FEATURES.getKey(), FEATURES_DISABLED.getKey()))
+            .buildTime(true)
+            .build();
+
     public static List<String> getFeatureValues(boolean toEnable) {
+        return getFeatureValues(toEnable, true);
+    }
+
+    public static List<String> getFeatureValues(boolean toEnable, boolean includeProfiles) {
         List<String> features = new ArrayList<>();
 
         if (toEnable) {
@@ -37,7 +47,9 @@ public class FeatureOptions {
             features.addAll(Profile.getDisableableUnversionedFeatureNames());
         }
 
-        features.add(Profile.Feature.Type.PREVIEW.name().toLowerCase());
+        if (includeProfiles) {
+            features.add(Profile.Feature.Type.PREVIEW.name().toLowerCase());
+        }
 
         Collections.sort(features);
 

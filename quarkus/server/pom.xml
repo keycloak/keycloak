@@ -40,6 +40,10 @@
             <artifactId>importmap</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-openapi</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>
@@ -70,6 +74,7 @@
                         <kc.home.dir>${kc.home.dir}</kc.home.dir>
                         <kc.db>dev-file</kc.db>
                         <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
+                        <openapi.schema.target>${project.build.directory}</openapi.schema.target>
                     </systemProperties>
                 </configuration>
                 <executions>

@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Token exchange context
@@ -53,6 +54,7 @@ public class TokenExchangeContext {
     private final Map<String, String> clientAuthAttributes;
 
     private final Params params = new Params();
+    private Set<String> restrictedScopes;
 
     // Reason why the particular tokenExchange provider cannot be supported
     private String unsupportedReason;
@@ -121,6 +123,14 @@ public class TokenExchangeContext {
 
     public Params getParams() {
         return params;
+    }
+
+    public Set<String> getRestrictedScopes() {
+        return restrictedScopes;
+    }
+
+    public void setRestrictedScopes(Set<String> restrictedScopes) {
+        this.restrictedScopes = restrictedScopes;
     }
 
     public String getUnsupportedReason() {

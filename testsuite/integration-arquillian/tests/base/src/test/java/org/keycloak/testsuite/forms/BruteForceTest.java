@@ -60,7 +60,11 @@ import jakarta.mail.internet.MimeMessage;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;

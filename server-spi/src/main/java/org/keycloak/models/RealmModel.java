@@ -472,7 +472,7 @@ public interface RealmModel extends RoleContainerModel {
      * Returns identity providers as a stream.
      *
      * @return Stream of {@link IdentityProviderModel}. Never returns {@code null}.
-     * @deprecated Use {@link IdentityProviderStorageProvider#getAllStream()} instead.
+     * @deprecated Use {@link IdentityProviderStorageProvider#getAllStream(IdentityProviderQuery)} instead.
      */
     @Deprecated
     Stream<IdentityProviderModel> getIdentityProvidersStream();

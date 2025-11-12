@@ -35,8 +35,11 @@ public class AbstractIdentityProviderTest {
 
         String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
         idpRep = StripSecretsUtils.stripSecrets(null, idpRep);
-        // if legacy hide on login page attribute was used, the attr will be removed when converted to model
-        idpRep.setHideOnLogin(Boolean.parseBoolean(idpRep.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR)));
+
+        if ("true".equals(idpRep.getConfig().get(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR))) {
+            idpRep.setHideOnLogin(true);
+            idpRep.getConfig().remove(IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR);
+        }
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
 

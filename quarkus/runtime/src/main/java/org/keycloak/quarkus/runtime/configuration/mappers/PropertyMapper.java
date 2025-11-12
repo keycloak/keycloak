@@ -40,6 +40,7 @@ import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
@@ -310,8 +311,8 @@ public class PropertyMapper<T> {
             return configValue;
         }
 
-        // by unsetting the ordinal this will not be seen as directly modified by the user
-        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceOrdinal(0).build();
+        // by unsetting the configsource name this will not be seen as directly modified by the user
+        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceName(null).build();
     }
 
     private ConfigValue convertValue(ConfigValue configValue) {
@@ -534,11 +535,31 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        /**
+         * Validates wildcard keys.
+         * You can validate whether an allowed key is provided as the wildcard key.
+         * <p>
+         * f.e. check whether existing feature is referenced
+         * <pre>
+         * kc.feature-enabled-<feature>:v1
+         * → (key, value) -> is key a feature? if not, fail
+         *
+         * @param validator validator with parameters (wildcardKey, value)
+         */
+        public Builder<T> wildcardKeysValidator(BiConsumer<String, String> validator) {
+            addValidator((mapper, configValue) -> {
+                var wildcardMapper = (WildcardPropertyMapper<?>) mapper;
+                var key = wildcardMapper.extractWildcardValue(configValue.getName()).orElseThrow(() -> new PropertyException("Cannot determine wildcard key."));
+                validator.accept(key, configValue.getValue());
+            });
+            return this;
+        }
+
         public PropertyMapper<T> build() {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
-            if (option.getKey().contains(WildcardPropertyMapper.WILDCARD_FROM_START)) {
+            if (option.getKey().contains(WildcardOptionsUtil.WILDCARD_START)) {
                 return new WildcardPropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {

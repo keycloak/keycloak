@@ -5,38 +5,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.EventBasedWorkflowProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
-import org.keycloak.models.workflow.WorkflowsManager;
-import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.representations.workflows.WorkflowConditionRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.util.ApiUtil;
-import org.openqa.selenium.WebDriver;
 
 import java.time.Duration;
 import java.util.List;
@@ -48,25 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest(config = WorkflowsServerConfig.class)
-public class ExpressionConditionWorkflowTest {
-
-    private static final String REALM_NAME = "default";
-
-    @InjectRunOnServer(permittedPackages = "org.keycloak.tests")
-    RunOnServerClient runOnServer;
-
-    @InjectRealm(lifecycle = LifeCycle.METHOD)
-    ManagedRealm managedRealm;
-
-    @InjectWebDriver
-    WebDriver driver;
-
-    @InjectPage
-    LoginPage loginPage;
-
-    @InjectOAuthClient
-    OAuthClient oauth;
+@KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
+public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
 
     @BeforeEach
     public void onBefore() {
@@ -79,16 +44,8 @@ public class ExpressionConditionWorkflowTest {
     public void testExpressionCondition() {
 
         // create a couple of groups
-        String engineeringGroup;
-        String contractorsGroup;
-        try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create()
-                .name("engineering").build())) {
-            engineeringGroup = ApiUtil.getCreatedId(response);
-        }
-        try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create()
-                .name("contractors").build())) {
-            contractorsGroup = ApiUtil.getCreatedId(response);
-        }
+        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("engineering").build()).close();
+        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("contractors").build()).close();
 
         // create a few users with different attributes, roles and group memberships
         addUser("bwayne", "Bruce", "Wayne", List.of("developer", "admin"), List.of("engineering"),
@@ -102,7 +59,7 @@ public class ExpressionConditionWorkflowTest {
 
         // we want to match members of engineering group OR users with admin role, but not those who are members of contractors group OR have attribute status=inactive
         // so only user bwayne should match this condition
-        String expression = "(is-member-of(\"" + engineeringGroup + "\") OR has-role(\"admin\")) AND !(is-member-of(\"" + contractorsGroup + "\") OR has-user-attribute(\"status\", \"inactive\"))";
+        String expression = "(is-member-of(engineering) OR has-role(admin)) AND !(is-member-of(contractors) OR has-user-attribute(status:inactive))";
         String workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", true); // matches all criteria
@@ -112,7 +69,7 @@ public class ExpressionConditionWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // now we want to match users with attribute title=partner engineer OR users in the role tester
-        expression = "has-user-attribute(\"title\", \"partner engineer\") OR has-role(\"tester\")";
+        expression = "has-user-attribute(title:partner engineer) OR has-role(tester)";
         workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", false); // is not a partner engineer nor has role tester
@@ -122,7 +79,7 @@ public class ExpressionConditionWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // now we want to match users who are tester and have attribute key=value1, value2
-        expression = "has-role(\"tester\") AND has-user-attribute(\"key\", \"value1,value2\")";
+        expression = "has-role(tester) AND has-user-attribute(key:value1,value2)";
         workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", false); // is not a tester
@@ -132,7 +89,7 @@ public class ExpressionConditionWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // now we want to match users who are not testers and also are not managers
-        expression = "!has-role(\"tester\") AND !has-user-attribute(\"title\", \"manager\")";
+        expression = "!has-role(tester) AND !has-user-attribute(title:manager)";
         workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", false); // is a manager
@@ -142,7 +99,7 @@ public class ExpressionConditionWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // same thing but using the OR condition with negation - results should be equivalent
-        expression = "!(has-role(\"tester\") OR has-user-attribute(\"title\", \"manager\"))";
+        expression = "!(has-role(tester) OR has-user-attribute(title:manager))";
         workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", false);
@@ -152,7 +109,7 @@ public class ExpressionConditionWorkflowTest {
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
         // a malformed expression should cause the condition to evaluate to false and the step should not run for all users
-        expression = ")(has-role(\"tester\") AND OR has-user-attribute(\"key\", \"value1,value2\")";
+        expression = ")(has-role(tester) AND OR has-user-attribute(key, value1,value2)";
         workflowId = createWorkflow(expression);
 
         checkWorkflowRunsForUser("bwayne", false);
@@ -172,17 +129,11 @@ public class ExpressionConditionWorkflowTest {
         assertTrue(driver.getPageSource().contains("Happy days"));
 
         // step 2 - use time offset to trigger the scheduled step for those users who match the condition
+        // set offset to 6 days to trigger the scheduled step (which is set to run after 5 days)
+        runScheduledSteps(Duration.ofDays(6));
+
         runOnServer.run((session -> {
-            RealmModel realm = configureSessionContext(session);
-
-            try {
-                // set offset to 6 days - set attribute step should run now but only for user-4 as they are the only one matching the condition
-                Time.setOffset(Math.toIntExact(Duration.ofDays(6).toSeconds()));
-                new WorkflowsManager(session).runScheduledSteps();
-            } finally {
-                Time.setOffset(0);
-            }
-
+            RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, username);
             assertNotNull(user, username + " not found");
 
@@ -222,14 +173,9 @@ public class ExpressionConditionWorkflowTest {
     }
 
     private String createWorkflow(String expression) {
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.create()
-                .of(EventBasedWorkflowProviderFactory.ID)
-                .name(EventBasedWorkflowProviderFactory.ID)
-                .onEvent(ResourceOperationType.USER_LOGIN.name())
-                .onConditions(WorkflowConditionRepresentation.create()
-                        .of(ExpressionWorkflowConditionFactory.ID)
-                        .withConfig(Map.of(ExpressionWorkflowConditionFactory.EXPRESSION, List.of(expression)))
-                        .build())
+        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.withName("myworkflow")
+                .onEvent("user-logged-in(test-app)")
+                .onCondition(expression)
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)
@@ -284,11 +230,5 @@ public class ExpressionConditionWorkflowTest {
 
             return roles.get(roleName).toRepresentation();
         }
-    }
-
-    private static RealmModel configureSessionContext(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-        session.getContext().setRealm(realm);
-        return realm;
     }
 }

@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -206,7 +207,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
         if (isNewUser || federatedEmail != null && !federatedEmail.equalsIgnoreCase(localEmail)) {
             IdentityProviderModel config = context.getIdpConfig();
-            boolean trustEmail = config.isTrustEmail();
+            boolean trustEmail = Booleans.isTrue(config.isTrustEmail());
 
             if (logger.isTraceEnabled()) {
                 logger.tracef("Email %s verified automatically after updating user '%s' through Identity provider '%s' ", trustEmail ? "" : "not", user.getUsername(), config.getAlias());

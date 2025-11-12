@@ -17,6 +17,11 @@
 
 package org.keycloak.storage.ldap.idm.query.internal;
 
+import org.keycloak.storage.StorageUnavailableException;
+
+import javax.naming.CommunicationException;
+import javax.naming.NameNotFoundException;
+import javax.naming.AuthenticationException;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ModelDuplicateException;
@@ -35,9 +40,16 @@ import javax.naming.directory.SearchControls;
 import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.LdapName;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.unmodifiableSet;
+import static org.keycloak.common.util.Throwables.isCausedBy;
 
 /**
  * Default IdentityQuery implementation.
@@ -175,6 +187,9 @@ public class LDAPQuery implements AutoCloseable {
                 result.add(ldapObject);
             }
         } catch (Exception e) {
+            if (isCausedBy(e, NameNotFoundException.class, CommunicationException.class, AuthenticationException.class)) {
+                throw new StorageUnavailableException("LDAP server is unavailable for provider [" + ldapFedProvider.getModel().getName() + "]", e);
+            }
             throw new ModelException("Failed to fetch results from the LDAP [" + ldapFedProvider.getModel().getName() + "] provider", e);
         }
 

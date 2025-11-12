@@ -95,7 +95,7 @@ public class KerberosSerializationUtils {
             out = new ObjectOutputStream(bos);
             out.writeObject(obj);
             byte[] objBytes = bos.toByteArray();
-            return Base64.encodeBytes(objBytes);
+            return java.util.Base64.getEncoder().encodeToString(objBytes);
         } finally {
             try {
                 if (out != null) {
@@ -108,7 +108,7 @@ public class KerberosSerializationUtils {
     }
 
     private static Object deserialize(String serialized) throws ClassNotFoundException, IOException {
-        byte[] bytes = Base64.decode(serialized);
+        byte[] bytes = java.util.Base64.getDecoder().decode(serialized);
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
         ObjectInputStream in = null;
         try {

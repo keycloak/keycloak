@@ -57,6 +57,7 @@ import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.controllers.WatchedResources;
+import org.keycloak.operator.controllers.WatchedResources.Watched;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
@@ -71,6 +72,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -557,15 +559,31 @@ public class PodTemplateTest {
         // Arrange
         PodTemplateSpec additionalPodTemplate = null;
 
+        var additionalOptions = List.of(
+                new ValueOrSecret("log-level-org.package.some_class", "debug"),
+                new ValueOrSecret("tracing-header-Authorization", "Bearer aldskfjqweoiruzxcv"),
+                new ValueOrSecret("tracing-header-My-BEST_$header", "api-asdflkqjwer-key")
+        );
+
         // Act
         var podTemplate = getDeployment(additionalPodTemplate, null,
-                s -> s.addToAdditionalOptions(new ValueOrSecret("log-level-org.package.some_class", "debug")))
+                s -> s.addAllToAdditionalOptions(additionalOptions))
                 .getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
-                .anyMatch(envVar -> envVar.getName().equals("KCKEY_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS")
-                        && envVar.getValue().equals("log-level-org.package.some_class"));
+        var assertEnvVarKeys = Map.of(
+                "KCKEY_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS", "log-level-org.package.some_class",
+                "KC_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS", "debug",
+                "KCKEY_TRACING_HEADER_AUTHORIZATION", "tracing-header-Authorization",
+                "KC_TRACING_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv",
+                "KCKEY_TRACING_HEADER_MY_BEST__HEADER", "tracing-header-My-BEST_$header",
+                "KC_TRACING_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key"
+        );
+
+        var envVars = podTemplate.getSpec().getContainers().get(0).getEnv().stream()
+                .filter(e -> e.getValue() != null)
+                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeys);
     }
 
     @Test
@@ -603,7 +621,7 @@ public class PodTemplateTest {
                 .findFirst().orElseThrow();
         assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
 
-        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -878,7 +896,7 @@ public class PodTemplateTest {
         envVar = env.get("SECRET");
         assertEquals("key", envVar.getValueFrom().getSecretKeyRef().getKey());
 
-        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(List.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
     }
 
 }

@@ -39,6 +39,7 @@ jobs:
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
       ci-compatibility-matrix: ${{ steps.version-compatibility.outputs.matrix }}
       ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
+      ci-admin-v2: ${{ steps.conditional.outputs.admin-v2 }}
     permissions:
       contents: read
       pull-requests: read
@@ -114,14 +115,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          SEP=""
-          PROJECTS=""
-          for i in `find -name '*Test.java' -type f | egrep -v './(operator|testsuite|quarkus|docs|tests|test-framework)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
-            PROJECTS="$PROJECTS$SEP$i"
-            SEP=","
-          done
-
-          ./mvnw test -pl "$PROJECTS" -am
+          ./mvnw test -am -pl "$(.github/scripts/find-modules-with-unit-tests.sh)"
 
   base-integration-tests:
     name: Base IT
@@ -292,7 +286,7 @@ jobs:
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
 
   jdk-integration-tests:
-    name: Java Distribution IT
+    name: Java Distribution IT/UT
     needs: build
     timeout-minutes: 100
     strategy:
@@ -332,6 +326,10 @@ jobs:
         run:
           ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
 
+      - name: Run unit tests
+        run: |
+          ./mvnw test -pl "$(.github/scripts/find-modules-with-unit-tests.sh)"
+
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
@@ -356,6 +354,10 @@ jobs:
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh login`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+      - name: Run new base tests
+        run: |
+          ./mvnw package -f tests/pom.xml -Dtest=LoginV1TestSuite
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -754,6 +756,10 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} -f testsuite/integration-arquillian/tests/base/pom.xml 2>&1 | misc/log/trimmer.sh
 
+      - name: Run new Forms IT
+        run: |
+          ./mvnw package -f tests/pom.xml -Dkc.test.browser=${{ matrix.browser }} -Dtest=FormsTestSuite
+
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
@@ -885,6 +891,9 @@ jobs:
     needs:
       - build
     timeout-minutes: 45
+    strategy:
+      matrix:
+        suite: [Base1TestSuite, Base2TestSuite]
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -898,7 +907,25 @@ jobs:
         run: ./mvnw package -pl quarkus/server/,quarkus/dist/
 
       - name: Run tests
-        run: ./mvnw package -f tests/pom.xml
+        run: ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.suite }}
+
+  admin-v2-tests:
+    name: Admin v2
+    if: needs.conditional.outputs.ci-admin-v2 == 'true'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - conditional
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run tests
+        run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml
 
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
@@ -957,6 +984,7 @@ jobs:
       - test-framework
       - base-new-integration-tests
       - mixed-cluster-compatibility-tests
+      - admin-v2-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

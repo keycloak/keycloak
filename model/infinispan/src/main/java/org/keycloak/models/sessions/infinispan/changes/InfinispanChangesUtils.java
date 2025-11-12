@@ -20,8 +20,10 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.infinispan.Cache;
+import org.infinispan.affinity.KeyAffinityServiceFactory;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
@@ -39,6 +41,9 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
  */
 public class InfinispanChangesUtils {
 
+    // by default, keep 128 keys ready to use
+    private static final int DEFAULT_KEY_BUFFER = 128;
+
     private InfinispanChangesUtils() {
     }
 
@@ -46,15 +51,38 @@ public class InfinispanChangesUtils {
                                                                                  String cacheName,
                                                                                  SessionFunction<V> lifespanFunction,
                                                                                  SessionFunction<V> maxIdleFunction) {
+        return createWithCache(session, cacheName, lifespanFunction, maxIdleFunction, null);
+    }
+
+    public static <K, V extends SessionEntity> CacheHolder<K, V> createWithCache(KeycloakSession session,
+                                                                                 String cacheName,
+                                                                                 SessionFunction<V> lifespanFunction,
+                                                                                 SessionFunction<V> maxIdleFunction,
+                                                                                 Supplier<K> keyGenerator) {
         var connections = session.getProvider(InfinispanConnectionProvider.class);
         var cache = connections.<K, SessionEntityWrapper<V>>getCache(cacheName);
         var sequencer = new ActionSequencer(connections.getExecutor(cacheName + "Replace"), false, null);
-        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction);
+        if (!cache.getCacheConfiguration().clustering().cacheMode().isClustered() || keyGenerator == null) {
+            return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, keyGenerator);
+        }
+        var local = cache.getAdvancedCache().getRpcManager().getAddress();
+        var affinity = KeyAffinityServiceFactory.newLocalKeyAffinityService(
+                cache,
+                keyGenerator::get,
+                connections.getExecutor(cacheName + "KeyGenerator"),
+                DEFAULT_KEY_BUFFER);
+        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, () -> affinity.getKeyForAddress(local));
     }
 
     public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
                                                                                     SessionFunction<V> maxIdleFunction) {
-        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction);
+        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, null);
+    }
+
+    public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
+                                                                                    SessionFunction<V> maxIdleFunction,
+                                                                                    Supplier<K> keyGenerator) {
+        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, keyGenerator);
     }
 
     public static <K, V extends SessionEntity> void runOperationInCluster(

@@ -383,6 +383,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             for (String paramName : request.getAdditionalReqParams().keySet()) {
                 authenticationSession.setClientNote(LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + paramName, request.getAdditionalReqParams().get(paramName));
             }
+
+            // Store authorization_details from authorization/PAR request for later processing
+            String authorizationDetails = request.getAdditionalReqParams().get(OAuth2Constants.AUTHORIZATION_DETAILS_PARAM);
+            if (authorizationDetails != null) {
+                authenticationSession.setClientNote(OAuth2Constants.AUTHORIZATION_DETAILS_PARAM, authorizationDetails);
+            }
         }
     }
 

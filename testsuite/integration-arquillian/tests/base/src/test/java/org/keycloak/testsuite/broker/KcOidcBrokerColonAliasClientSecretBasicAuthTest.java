@@ -26,8 +26,12 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import java.util.Map;
 
 import static org.keycloak.broker.oidc.OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
-import static org.keycloak.testsuite.broker.BrokerTestTools.*;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_SECRET;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 public class KcOidcBrokerColonAliasClientSecretBasicAuthTest extends AbstractBrokerTest {
 

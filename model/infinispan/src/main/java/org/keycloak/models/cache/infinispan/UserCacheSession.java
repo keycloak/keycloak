@@ -26,6 +26,7 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -376,7 +377,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
         }
 
-        return new UserAdapter(cached, this, session, realm);
+        UserAdapter userAdapter = new UserAdapter(cached, this, session, realm);
+
+        if (isReadOnlyOrganizationMember(session, userAdapter)) {
+            return new ReadOnlyUserModelDelegate(userAdapter, false);
+        }
+
+        return userAdapter;
     }
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
@@ -1036,6 +1043,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             return ((UserProfileDecorator) getDelegate()).decorateUserProfile(providerId, metadata);
         }
         return List.of();
+    }
+
+    @Override
+    public UserCredentialManager getUserCredentialManager(UserModel user) {
+        return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
     }
 
     public UserCacheManager getCache() {

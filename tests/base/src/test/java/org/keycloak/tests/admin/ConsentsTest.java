@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -302,8 +304,7 @@ public class ConsentsTest {
         Assertions.assertEquals(EventType.LOGIN.toString(), loginEvent.getType());
         loginEvent.getDetails().forEach((key, value) -> {
             switch (key) {
-                case Details.CODE_ID ->
-                        Assertions.assertTrue(isUUID(value));
+                case Details.CODE_ID -> MatcherAssert.assertThat(value, EventMatchers.isCodeId());
                 case Details.USERNAME -> Assertions.assertEquals(userFromUserRealm.getUsername(), value);
                 case Details.CONSENT -> Assertions.assertEquals(Details.CONSENT_VALUE_NO_CONSENT_REQUIRED, value);
                 case Details.REDIRECT_URI -> Assertions.assertEquals("http://127.0.0.1:8500/callback/oauth", value);

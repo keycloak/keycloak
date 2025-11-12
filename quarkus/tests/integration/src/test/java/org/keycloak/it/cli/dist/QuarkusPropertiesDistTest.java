@@ -203,7 +203,7 @@ public class QuarkusPropertiesDistTest {
     @Order(13)
     void testHttpCertsPathTransformer(CLIResult cliResult) {
         cliResult.assertExitCode(1);
-        cliResult.assertMessage("Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException");
+        cliResult.assertMessage("Failed to load 'https-*' material: NoSuchFileException");
     }
 
     @Test
@@ -215,7 +215,7 @@ public class QuarkusPropertiesDistTest {
     @Order(14)
     void testHttpCertsPathTransformerOnWindows(CLIResult cliResult) {
         cliResult.assertExitCode(1);
-        cliResult.assertMessage("ERROR: Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException C:");
+        cliResult.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException C:");
     }
 
     public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {

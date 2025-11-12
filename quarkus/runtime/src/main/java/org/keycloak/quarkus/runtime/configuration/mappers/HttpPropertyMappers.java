@@ -40,7 +40,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     private static void setCustomExceptionTransformer() {
         ExecutionExceptionHandler.addExceptionTransformer(TlsUtils.class, exception -> {
             if (exception instanceof IOException ioe) {
-                return new PropertyException("Failed to load 'https-trust-store' or 'https-key-' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
+                return new PropertyException("Failed to load 'https-*' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
             } else if (exception instanceof IllegalArgumentException iae) {
                 if (iae.getMessage().contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)) {
                     return new PropertyException("Unable to determine 'https-trust-store-type' automatically. " +
@@ -159,6 +159,8 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromFeature(Profile.Feature.HTTP_OPTIMIZED_SERIALIZERS)
                         .to("quarkus.rest.jackson.optimization.enable-reflection-free-serializers")
+                        .build(),
+                fromOption(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)
                         .build()
         );
     }
@@ -200,17 +202,8 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static File getDefaultKeystorePathValue() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
-
-            if (file.exists()) {
-                return file;
-            }
-        }
-
-        return null;
+        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", "server.keystore").toFile()).filter(File::exists)
+                .orElse(null);
     }
 
     private static String resolveKeyStoreType(String value,

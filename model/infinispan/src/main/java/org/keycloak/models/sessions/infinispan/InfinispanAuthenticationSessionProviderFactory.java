@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -41,7 +42,6 @@ import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessio
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
-import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -62,7 +62,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
 
-    private final InfinispanKeyGenerator keyGenerator = new InfinispanKeyGenerator();
     private CacheHolder<String, RootAuthenticationSessionEntity> cacheHolder;
 
     private int authSessionsLimit;
@@ -90,7 +89,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     public void postInit(KeycloakSessionFactory factory) {
         factory.register(this);
         try (var session = factory.create()) {
-            cacheHolder = InfinispanChangesUtils.createWithCache(session, AUTHENTICATION_SESSIONS_CACHE_NAME, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS);
+            cacheHolder = InfinispanChangesUtils.createWithCache(session, AUTHENTICATION_SESSIONS_CACHE_NAME, SessionTimeouts::getAuthSessionLifespanMS, SessionTimeouts::getAuthSessionMaxIdleMS, SecretGenerator.SECURE_ID_GENERATOR);
         }
     }
 
@@ -132,7 +131,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     @Override
     public InfinispanAuthenticationSessionProvider create(KeycloakSession session) {
-        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, createTransaction(session), authSessionsLimit);
+        return new InfinispanAuthenticationSessionProvider(session, createTransaction(session), authSessionsLimit);
     }
 
     @Override

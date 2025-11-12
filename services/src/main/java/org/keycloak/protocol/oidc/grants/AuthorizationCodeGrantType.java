@@ -225,11 +225,21 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             }
         }
 
-        // If no authorization_details were processed from the request, try to generate them from credential offer
+        // If no authorization_details were processed from the request, try to process stored authorization_details
         if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
-            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
-            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
-                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            try {
+                authorizationDetailsResponse = processStoredAuthorizationDetails(userSession, clientSessionCtx);
+                if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                    clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+                } else {
+                    authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
+                    if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                        clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+                    }
+                }
+            } catch (CorsErrorResponseException e) {
+                // Re-throw CorsErrorResponseException as it's already properly formatted for HTTP response
+                throw e;
             }
         }
 

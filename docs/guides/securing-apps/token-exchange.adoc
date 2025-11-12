@@ -54,6 +54,9 @@ _subject token_ and exchange it for another token _requested token_.
 . The _requested token_ is returned to `requester-client`. This token can now be sent to the `target-client`.
 . The `target-client` can fulfill the request and return the response to the `requester-client`. The `requester-client` can then follow and return the response to the request from step 2.
 
+.Token Exchange Example Flow
+image::token-exchange-example-flow.dio.svg[Token Exchange Example Flow]
+
 Many other use-cases exist for token exchange, but the preceding example is the most typical.
 
 ==== Example token exchange request
@@ -165,6 +168,8 @@ roles of the clients requested by the `audience`, the client scope will be filte
 NOTE: The `audience` parameter can be used to filter the audiences that are coming from the used client scopes. However, this parameter will not add more audiences. When the audience parameter is omitted,
 no filtering occurs. As a result, the `audience` parameter is effectively used for "downscoping" the token to make sure that it contains only the requested audiences. However, the `scope` parameter is used
 to add optional client scopes and hence it can be used for "upscoping" and adding more scopes.
+
+NOTE: By default, token exchange can be used to request extra scopes and audiences that are not present in the initial `subject_token`. If, for security reasons, you want to ensure that scopes are limited to the ones already granted to the `subject_token`, the `downscope-assertion-grant-enforcer` policy executor can be applied to the client. This executor enforces that only downscoping is allowed for token exchange. See link:{adminguide_link}#_downscoping[Downscoping] and link:{adminguide_link}#_client_policies[Client Policies] chapters in the {adminguide_name} for more information.
 
 ==== Examples
 

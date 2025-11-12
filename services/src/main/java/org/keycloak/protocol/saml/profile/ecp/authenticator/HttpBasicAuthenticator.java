@@ -5,7 +5,6 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
-import org.keycloak.common.util.Base64;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
@@ -15,7 +14,7 @@ import org.keycloak.models.UserModel;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 
 public class HttpBasicAuthenticator implements Authenticator {
@@ -111,13 +110,13 @@ public class HttpBasicAuthenticator implements Authenticator {
         }
 
         try {
-            String val = new String(Base64.decode(credentials));
+            String val = new String(Base64.getDecoder().decode(credentials));
             int seperatorIndex = val.indexOf(":");
             if(seperatorIndex == -1) return new String[]{val};
             String user = val.substring(0, seperatorIndex);
             String pw = val.substring(seperatorIndex + 1);
             return new String[]{user,pw};
-        } catch (final IOException e) {
+        } catch (final IllegalArgumentException e) {
             throw new RuntimeException("Failed to parse credentials.", e);
         }
     }

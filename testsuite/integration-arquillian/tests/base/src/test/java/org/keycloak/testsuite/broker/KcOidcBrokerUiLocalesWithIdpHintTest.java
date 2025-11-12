@@ -10,11 +10,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.OAuth2Constants.*;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
-import static org.keycloak.testsuite.broker.BrokerTestTools.*;
+import static org.keycloak.OAuth2Constants.UI_LOCALES_PARAM;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public class KcOidcBrokerUiLocalesWithIdpHintTest extends AbstractBrokerTest {
 

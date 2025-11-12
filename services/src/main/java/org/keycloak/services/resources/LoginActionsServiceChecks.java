@@ -133,7 +133,7 @@ public class LoginActionsServiceChecks {
         AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, true);
 
         if (authResult != null) {
-            UserSessionModel userSession = authResult.getSession();
+            UserSessionModel userSession = authResult.session();
             if (!user.equals(userSession.getUser())) {
                 // do not allow authenticated users performing actions that are bound to other user and fire an event
                 // it might be an attempt to hijack a user account or perform actions on behalf of others

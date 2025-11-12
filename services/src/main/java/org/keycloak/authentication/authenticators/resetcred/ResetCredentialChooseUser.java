@@ -20,7 +20,10 @@ package org.keycloak.authentication.authenticators.resetcred;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authentication.*;
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
@@ -79,8 +82,8 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(), context.getRealm(), true);
         //skip user choice if sso session exists
         if (authResult != null) {
-            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, authResult.getUser().getUsername());
-            context.setUser(authResult.getUser());
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, authResult.user().getUsername());
+            context.setUser(authResult.user());
             context.success();
             return;
         }

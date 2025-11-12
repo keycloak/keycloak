@@ -58,6 +58,7 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
+import org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -227,7 +228,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                     .client("requester-client")
                     .error(Errors.INVALID_REQUEST)
                     .user(john.getId())
-                    .session(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
                     .detail(Details.REASON, "requested_token_type unsupported")
                     .detail(Details.REQUESTED_TOKEN_TYPE, OAuth2Constants.REFRESH_TOKEN_TYPE)
                     .detail(Details.SUBJECT_TOKEN_CLIENT_ID, "subject-client")
@@ -252,7 +253,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         events.expect(EventType.TOKEN_EXCHANGE)
                 .client("requester-client")
                 .user(john.getId())
-                .session(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
                 .detail(Details.REQUESTED_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE)
                 .detail(Details.SUBJECT_TOKEN_CLIENT_ID, "subject-client")
                 .assertEvent();
@@ -265,7 +266,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .client("requester-client")
                 .error(Errors.INVALID_REQUEST)
                 .user(john.getId())
-                .session(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
                 .detail(Details.REASON, "requested_token_type unsupported")
                 .detail(Details.REQUESTED_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
                 .detail(Details.SUBJECT_TOKEN_CLIENT_ID, "subject-client")
@@ -279,7 +280,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .client("requester-client")
                 .error(Errors.INVALID_REQUEST)
                 .user(john.getId())
-                .session(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
                 .detail(Details.REASON, "requested_token_type unsupported")
                 .detail(Details.REQUESTED_TOKEN_TYPE, OAuth2Constants.SAML2_TOKEN_TYPE)
                 .detail(Details.SUBJECT_TOKEN_CLIENT_ID, "subject-client")
@@ -293,7 +294,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .client("requester-client")
                 .error(Errors.INVALID_REQUEST)
                 .user(john.getId())
-                .session(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
                 .detail(Details.REASON, "requested_token_type unsupported")
                 .detail(Details.REQUESTED_TOKEN_TYPE, "WRONG_TOKEN_TYPE")
                 .detail(Details.SUBJECT_TOKEN_CLIENT_ID, "subject-client")
@@ -329,7 +330,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                     .client("invalid-requester-client")
                     .error(Errors.NOT_ALLOWED)
                     .user(john.getId())
-                    .session(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
                     .detail(Details.REASON, "client is not within the token audience")
                     .assertEvent();
         }
@@ -742,7 +743,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .client("requester-client")
                 .error(Errors.INVALID_REQUEST)
                 .user(john.getId())
-                .session(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
                 .detail(Details.REASON, "Requested audience not available: target-client2")
                 .assertEvent();
 
@@ -788,9 +789,9 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             AccessToken exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             events.expect(EventType.REFRESH_TOKEN)
                     .detail(Details.TOKEN_ID, exchangedToken.getId())
-                    .detail(Details.REFRESH_TOKEN_ID, AssertEvents.isUUID())
+                    .detail(Details.REFRESH_TOKEN_ID, AssertEvents.isTokenId())
                     .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                    .detail(Details.UPDATED_REFRESH_TOKEN_ID, AssertEvents.isUUID())
+                    .detail(Details.UPDATED_REFRESH_TOKEN_ID, AssertEvents.isTokenId())
                     .session(exchangedToken.getSessionId());
 
             oauth.client("requester-client", "secret");
@@ -798,9 +799,9 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             events.expect(EventType.REFRESH_TOKEN)
                     .detail(Details.TOKEN_ID, exchangedToken.getId())
-                    .detail(Details.REFRESH_TOKEN_ID, AssertEvents.isUUID())
+                    .detail(Details.REFRESH_TOKEN_ID, AssertEvents.isTokenId())
                     .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                    .detail(Details.UPDATED_REFRESH_TOKEN_ID, AssertEvents.isUUID())
+                    .detail(Details.UPDATED_REFRESH_TOKEN_ID, AssertEvents.isTokenId())
                     .session(exchangedToken.getSessionId());
         }
     }
@@ -844,7 +845,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                     .client("requester-client")
                     .error(Errors.CONSENT_DENIED)
                     .user(mike.getId())
-                    .session(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
                     .detail(Details.REASON, "Missing consents for Token Exchange in client requester-client")
                     .assertEvent();
 
@@ -866,7 +867,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                     .client("requester-client")
                     .error(Errors.CONSENT_DENIED)
                     .user(mike.getId())
-                    .session(AssertEvents.isUUID())
+                    .session(AssertEvents.isSessionId())
                     .detail(Details.REASON, "Missing consents for Token Exchange in client requester-client")
                     .assertEvent();
 
@@ -1047,6 +1048,65 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testDownscopeClientPolicies() throws Exception {
+
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile((new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Profile")
+                        .addExecutor(DownscopeAssertionGrantEnforcerExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()).toString();
+        updateProfiles(json);
+
+        // register policy with condition on token exchange grant
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Client Scope Policy", Boolean.TRUE)
+                        .addCondition(GrantTypeConditionFactory.PROVIDER_ID,
+                                createGrantTypeConditionConfig(List.of(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()).toString();
+        updatePolicies(json);
+
+        // request initial token with optional scope optional-scope2
+        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret", "optional-scope2").getAccessToken();
+        AccessToken token = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken();
+        assertScopes(token, List.of("email", "profile", "optional-scope2"));
+
+        // request with the all the scopes allowed in the initial token, all are optional in requester-client
+        // only those should be there, even default-scope1 is supressed
+        oauth.scope("email profile optional-scope2");
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertAudiencesAndScopes(response, john, List.of("target-client2"), List.of("email", "profile", "optional-scope2"));
+
+        // exchange with downscope to only optional-scope2
+        oauth.scope("optional-scope2");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertAudiencesAndScopes(response, john, List.of("target-client2"), List.of("optional-scope2"));
+
+        // exchange for a invisible scope returns error although it is added by default
+        oauth.scope("basic optional-scope2");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [basic] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
+
+        // exchange for another optional that is not in the token
+        oauth.scope("optional-requester-scope");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [optional-requester-scope] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
+
+        // exchange for a optional that is not in initial token
+        oauth.scope("default-scope1");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [default-scope1] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
+    }
+
+    @Test
     @UncaughtServerErrorExpected
     public void testTokenRevocation() throws Exception {
         ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
@@ -1221,7 +1281,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertTrue(rep.isActive());
         events.expect(EventType.INTROSPECT_TOKEN)
                 .user(AssertEvents.isUUID())
-                .session(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
                 .client(clientId)
                 .assertEvent();
     }

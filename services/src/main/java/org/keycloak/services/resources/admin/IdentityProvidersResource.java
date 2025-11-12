@@ -24,6 +24,9 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
+import org.keycloak.models.IdentityProviderCapability;
+import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -60,7 +63,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.utils.StringUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -127,12 +129,7 @@ public class IdentityProvidersResource {
         String providerId = formDataMap.getFirst("providerId").asString();
         String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
         IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
-        final Map<String, String> parsedConfig = providerFactory.parseConfig(session, config);
-        String syncMode = parsedConfig.get(IdentityProviderModel.SYNC_MODE);
-        if (syncMode == null) {
-            parsedConfig.put(IdentityProviderModel.SYNC_MODE, "LEGACY");
-        }
-        return parsedConfig;
+        return providerFactory.parseConfig(session, config);
     }
 
     /**
@@ -182,6 +179,8 @@ public class IdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
     @Operation(summary = "List identity providers")
     public Stream<IdentityProviderRepresentation> getIdentityProviders(
+            @Parameter(description = "Filter by identity providers type") @QueryParam("type") String type,
+            @Parameter(description = "Filter by identity providers capability") @QueryParam("capability") String capability,
             @Parameter(description = "Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
@@ -195,18 +194,27 @@ public class IdentityProvidersResource {
 
         Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = Optional.ofNullable(briefRepresentation).orElse(false)
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
-                : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(realm, m));
+                : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, m));
 
         boolean searchRealmOnlyIDPs = Optional.ofNullable(realmOnly).orElse(false);
 
-        Map<String, String> searchOptions = new HashMap<>();
+        IdentityProviderQuery query;
+        if (type != null) {
+            query = IdentityProviderQuery.type(IdentityProviderType.valueOf(type));
+        } else if (capability != null) {
+            query = IdentityProviderQuery.capability(IdentityProviderCapability.valueOf(capability));
+        } else {
+            query = IdentityProviderQuery.any();
+        }
+
         if (StringUtil.isNotBlank(search)) {
-            searchOptions.put(IdentityProviderModel.SEARCH, search);
+            query.with(IdentityProviderModel.SEARCH, search);
         }
         if (searchRealmOnlyIDPs) {
-            searchOptions.put(IdentityProviderModel.ORGANIZATION_ID, null);
+            query.with(IdentityProviderModel.ORGANIZATION_ID, null);
         }
-        return session.identityProviders().getAllStream(searchOptions, firstResult, maxResults).map(toRepresentation);
+
+        return session.identityProviders().getAllStream(query, firstResult, maxResults).map(toRepresentation);
     }
 
     /**

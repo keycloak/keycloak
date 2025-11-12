@@ -17,7 +17,6 @@
 package org.keycloak.storage.jpa;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -55,6 +54,7 @@ import org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -652,7 +652,7 @@ public class JpaUserFederatedStorageProvider implements
         // Backwards compatibility - users from previous version still have "salt" in the DB filled.
         // We migrate it to new secretData format on-the-fly
         if (entity.getSalt() != null) {
-            String newSecretData = entity.getSecretData().replace("__SALT__", Base64.encodeBytes(entity.getSalt()));
+            String newSecretData = entity.getSecretData().replace("__SALT__", Base64.getEncoder().encodeToString(entity.getSalt()));
             entity.setSecretData(newSecretData);
             entity.setSalt(null);
         }

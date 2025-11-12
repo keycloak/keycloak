@@ -76,11 +76,21 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
     }
 
     @Override
+    public final boolean isExpired() {
+        return state == UpdaterState.EXPIRED;
+    }
+
+    @Override
     public final void markDeleted() {
         state = switch (state) {
             case READ, DELETED -> UpdaterState.DELETED;
-            case CREATED, DELETED_TRANSIENT -> UpdaterState.DELETED_TRANSIENT;
+            case CREATED, DELETED_TRANSIENT, EXPIRED -> UpdaterState.DELETED_TRANSIENT;
         };
+    }
+
+    @Override
+    public void markExpired() {
+        state = UpdaterState.EXPIRED;
     }
 
     @Override
@@ -141,5 +151,10 @@ public abstract class BaseUpdater<K, V> implements Updater<K, V> {
          * The entity is transient (it won't be updated in the external infinispan cluster) and deleted.
          */
         DELETED_TRANSIENT,
+        /**
+         * The entity is expired (max-idle or lifespan). No changes should be applied.
+         */
+        EXPIRED,
+
     }
 }

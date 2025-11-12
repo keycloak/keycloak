@@ -26,12 +26,13 @@ import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -40,6 +41,29 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+
+import static org.keycloak.constants.Oid4VciConstants.OID4VC_PROTOCOL;
+import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CONFIGURATION_ID;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CONTEXTS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CREDENTIAL_IDENTIFIER;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.FORMAT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.FORMAT_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.INCLUDE_IN_METADATA;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_DECOYS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.TOKEN_JWS_TYPE;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.TOKEN_TYPE_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.TYPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
 
 /**
  * Factory for creating all OID4VC related endpoints and the default mappers.
@@ -59,7 +83,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
 	public static final String PROTOCOL_ID = Oid4VciConstants.OID4VC_PROTOCOL;
 
-	private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
+	private final Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
 	@Override
 	public void init(Config.Scope config) {
@@ -91,69 +115,74 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 		return new OID4VCIssuerEndpoint(keycloakSession);
 	}
 
-	@Override
-	public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
-		LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
+    @Override
+    public void createDefaultClientScopes(RealmModel newRealm, boolean addScopesToExistingClients) {
+        LOGGER.debugf("Create default scopes for realm %s", newRealm.getName());
 
-		ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
-		if (naturalPersonScope == null) {
-			LOGGER.debug("Add natural person scope");
-			naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", Oid4VciConstants.OID4VC_PROTOCOL, "natural_person"));
-			naturalPersonScope.setDescription("OIDC$VP Scope, that adds all properties required for a natural person.");
-			naturalPersonScope.setProtocol(Oid4VciConstants.OID4VC_PROTOCOL);
-			naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
-			naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
-			naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
-			naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
-			newRealm.addDefaultClientScope(naturalPersonScope, true);
-		}
-	}
+        ClientScopeModel naturalPersonScope = KeycloakModelUtils.getClientScopeByName(newRealm, "natural_person");
+        if (naturalPersonScope == null) {
+            LOGGER.debug("Add natural person scope");
+            naturalPersonScope = newRealm.addClientScope(String.format("%s_%s", OID4VC_PROTOCOL, "natural_person"));
+            naturalPersonScope.setDescription("OID4VCI Scope, that adds properties required for a natural person.");
+            naturalPersonScope.setProtocol(OID4VC_PROTOCOL);
+            naturalPersonScope.addProtocolMapper(builtins.get(SUBJECT_ID_MAPPER));
+            naturalPersonScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
+            naturalPersonScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
+            naturalPersonScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
+            addClientScopeDefaults(naturalPersonScope);
+            newRealm.addDefaultClientScope(naturalPersonScope, true);
+        }
+    }
 
-	@Override
-	public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
-		//no-op
-	}
+    @Override
+    public void setupClientDefaults(ClientRepresentation rep, ClientModel newClient) {
+        //no-op
+    }
 
-	@Override
-	public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONFIGURATION_ID, k -> clientScope.getName());
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CREDENTIAL_IDENTIFIER,
-				k -> clientScope.getName());
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TYPES, k -> clientScope.getName());
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CONTEXTS, k -> clientScope.getName());
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.VCT, k -> clientScope.getName());
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.ISSUER_DID, k -> clientScope.getName());
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.FORMAT,
-				k -> CredentialScopeModel.FORMAT_DEFAULT);
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS,
-				k -> CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS,
-				k -> String.valueOf(CredentialScopeModel.SD_JWT_DECOYS_DEFAULT));
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS,
-				k -> CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT);
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.HASH_ALGORITHM,
-				k -> CredentialScopeModel.HASH_ALGORITHM_DEFAULT);
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.TOKEN_JWS_TYPE,
-				k -> CredentialScopeModel.TOKEN_TYPE_DEFAULT);
-		clientScope.getAttributes().computeIfAbsent(CredentialScopeModel.EXPIRY_IN_SECONDS,
-				k -> String.valueOf(CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT));
-	}
+    @Override
+    public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
 
-	@Override
-	public LoginProtocol create(KeycloakSession session) {
-		return null;
-	}
+        // Note, there is no sensible default for the Issuer's DID unless we generate a did:key:* from the signing key
+        // Leaving vc.issuer_did undefined results in the realm's url being used as the value for the Issuer's ID (iss), which is fine.
+        // clientScope.getAttributes().computeIfAbsent(ISSUER_DID, k -> <generate did or use the realm url>);
 
-	@Override
-	public String getId() {
-		return Oid4VciConstants.OID4VC_PROTOCOL;
-	}
+        clientScope.getAttributes().putIfAbsent(INCLUDE_IN_TOKEN_SCOPE, "true");
+        clientScope.getAttributes().putIfAbsent(INCLUDE_IN_METADATA, "true");
+        clientScope.getAttributes().computeIfAbsent(CONFIGURATION_ID, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CREDENTIAL_IDENTIFIER, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(TYPES, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(CONTEXTS, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(VCT, k -> clientScope.getName());
+        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> FORMAT_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(CRYPTOGRAPHIC_BINDING_METHODS, k -> CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(SD_JWT_NUMBER_OF_DECOYS, k -> String.valueOf(SD_JWT_DECOYS_DEFAULT));
+        clientScope.getAttributes().computeIfAbsent(SD_JWT_VISIBLE_CLAIMS, k -> SD_JWT_VISIBLE_CLAIMS_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(HASH_ALGORITHM, k -> HASH_ALGORITHM_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(TOKEN_JWS_TYPE, k -> TOKEN_TYPE_DEFAULT);
+        clientScope.getAttributes().computeIfAbsent(EXPIRY_IN_SECONDS, k -> String.valueOf(EXPIRY_IN_SECONDS_DEFAULT));
+    }
 
-	/**
-	 * defines the option-order in the admin-ui
-	 */
-	@Override
-	public int order() {
-		return OIDCLoginProtocolFactory.UI_ORDER - 20;
-	}
+    @Override
+    public LoginProtocol create(KeycloakSession session) {
+        return null;
+    }
+
+    @Override
+    public String getId() {
+        return OID4VC_PROTOCOL;
+    }
+
+    /**
+     * defines the option-order in the admin-ui
+     */
+    @Override
+    public int order() {
+        return OIDCLoginProtocolFactory.UI_ORDER - 20;
+    }
+
+    private void addClientScopeDefaults(ClientScopeModel clientScope) {
+        ClientScopeRepresentation clientScopeRep = ModelToRepresentation.toRepresentation(clientScope);
+        addClientScopeDefaults(clientScopeRep);
+        RepresentationToModel.updateClientScope(clientScopeRep, clientScope);
+    }
 }

@@ -32,6 +32,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
@@ -40,6 +41,7 @@ import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
@@ -78,13 +80,17 @@ public class KeycloakRecorder {
         return routingContext -> routingContext.response().end("Keycloak Management Interface");
     }
 
+    public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {
+        return !Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS) ? new RejectNonNormalizedPathFilter() : null;
+    }
+
     public void configureTruststore() {
         String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .map(s -> s.split(",")).orElse(new String[0]);
 
-        String dataDir = Environment.getDataDir();
+        Optional<String> dataDir = Environment.getDataDir();
 
-        File truststoresDir = Optional.ofNullable(Environment.getHomePath()).map(path -> path.resolve("conf").resolve("truststores").toFile()).orElse(null);
+        File truststoresDir = Environment.getHomePath().map(p -> p.resolve("conf").resolve("truststores").toFile()).orElse(null);
 
         if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
             truststores = Stream.concat(Stream.of(truststoresDir.getAbsolutePath()), Stream.of(truststores)).toArray(String[]::new);
@@ -92,7 +98,7 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir);
+        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir.orElseThrow());
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {

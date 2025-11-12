@@ -25,9 +25,6 @@ public final class HelpAllMixin {
 
     public static final String HELP_ALL_OPTION = "--help-all";
 
-    @CommandLine.Spec
-    private CommandLine.Model.CommandSpec spec;
-
     @CommandLine.Option(names = {HELP_ALL_OPTION}, usageHelp = true, description = "This same help message but with additional options.")
     public void setHelpAll(boolean allOptions) {
         Help.setAllOptions(true);

@@ -30,7 +30,6 @@ import java.util.Properties;
 import java.util.function.Function;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -88,11 +87,6 @@ public abstract class AbstractConfigurationTest {
     @After
     public void onAfter() {
         resetConfiguration();
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        Environment.removeHomeDir();
     }
 
     protected static Config.Scope initConfig(String... scope) {

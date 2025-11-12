@@ -48,10 +48,14 @@ import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig;
 import io.quarkus.narayana.jta.runtime.TransactionManagerBuildTimeConfig.UnsafeMultipleLastResourcesMode;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.PreExceptionMapperHandlerBuildItem;
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
+import io.quarkus.vertx.http.deployment.ManagementInterfaceFilterBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PersistenceUnitTransactionType;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -270,6 +274,26 @@ class KeycloakProcessor {
                                 .handler(recorder.getRedirectHandler(relativePath))
                                 .build())
                 );
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void filterAllRequests(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
+        var filter = recorder.getRejectNonNormalizedPathFilter();
+        if (filter != null) {
+            filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
+        }
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep(onlyIf = IsManagementEnabled.class)
+    @Consume(ConfigBuildItem.class)
+    void filterAllManagementRequests(BuildProducer<ManagementInterfaceFilterBuildItem> filters, KeycloakRecorder recorder) {
+        var filter = recorder.getRejectNonNormalizedPathFilter();
+        if (filter != null) {
+            filters.produce(new ManagementInterfaceFilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
+        }
     }
 
     @Record(ExecutionTime.STATIC_INIT)
@@ -974,7 +998,7 @@ class KeycloakProcessor {
                     URL url = descriptorsUrls.nextElement();
                     List<ScriptProviderDescriptor> descriptors = getScriptProviderDescriptorsFromJarFile(url);
 
-                    if (!Environment.isDistribution()) {
+                    if (LaunchMode.current().isDevOrTest() || Environment.getHomeDir().isEmpty()) {
                         // script providers are only loaded from classpath when running embedded
                         descriptors = new ArrayList<>(descriptors);
                         descriptors.addAll(getScriptProviderDescriptorsFromClassPath(url));

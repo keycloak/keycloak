@@ -119,6 +119,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         // CR
         var kc = getTestKeycloakDeployment(true);
         var deploymentName = kc.getMetadata().getName();
+        k8sclient.resource(K8sUtils.getDefaultTlsSecret()).withTimeout(30, SECONDS).delete();
         deployKeycloak(k8sclient, kc, false, false);
 
         // Check Operator has deployed Keycloak and the statefulset exists, this allows for the watched secret to be picked up
@@ -129,7 +130,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         Awaitility.await().ignoreExceptions().untilAsserted(() -> {
             assertThat(stsResource.get()).isNotNull();
             Keycloak keycloak = keycloakResource.get();
-            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
+            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false, "example-tls-secret");
             CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.READY, false);
         });
     }

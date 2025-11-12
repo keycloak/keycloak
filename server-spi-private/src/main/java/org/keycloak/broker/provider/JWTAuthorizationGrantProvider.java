@@ -15,8 +15,24 @@
  * limitations under the License.
  */
 package org.keycloak.broker.provider;
+import java.util.List;
+
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 
 public interface JWTAuthorizationGrantProvider {
-    BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext assertion);
+
+    BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext assertion) throws IdentityBrokerException;
+
+    int getAllowedClockSkew();
+
+    boolean isAssertionReuseAllowed();
+
+    /**
+     * @return list of allowed audience values. JWT assertion is considered valid if it's audience is one of the audiences returned from this method
+     */
+    List<String> getAllowedAudienceForJWTGrant();
+
+    int getMaxAllowedExpiration();
+
+    String getAssertionSignatureAlg();
 }

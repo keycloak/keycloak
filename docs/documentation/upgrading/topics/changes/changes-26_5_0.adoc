@@ -30,11 +30,30 @@ For anyone implementing a custom federated user authentication identity provider
 by Keycloak or `AbstractIdentityProvider` you need to update your implementation to implement
 the new `UserAuthenticationIdentityProvider` interface (all methods remain the same, they have just been moved).
 
+Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` are now using Boolean values to allow
+configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
+not need these configurations.
+
+=== Accepting only normalized paths in requests
+
+Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986.
+As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
+
+To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
+
+To revert to the previoius behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== `session_state` and `sid` are no longer UUIDs
+
+In OpenID connect, there are several places where the protocol shares a `session_state` and a `sid`.
+The specifications define it as an opaque string.
+Previous versions of {project_name} used a UUID for it, while the current version now uses a random base64-encoded string.
+The length of the string was reduced from 36 characters to 24 characters, although it might increase in the future if additional randomness is required.
 
 === `log-console-color` will automatically enable if supported by the terminal
 
@@ -55,6 +74,25 @@ In a scenario where {project_name} acts as a broker and connects via OpenID Conn
 This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
 
 To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
+
+=== Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
+
+If you have user storage extension and you reference the class `org.keycloak.credential.UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be
+moved to the private modules in the future releases. The class may be typically used in the method `credentialManager()` of the implementations of `UserModel` interface. In that case,
+it is recommended to replace the code like this:
+```
+@Override
+public SubjectCredentialManager credentialManager() {
+    return new UserCredentialManager(keycloakSession, realmModel, this);
+}
+```
+with the code similar to this:
+```
+@Override
+public org.keycloak.models.UserCredentialManager credentialManager() {
+    return keycloakSession.users().getUserCredentialManager(this);
+}
+```
 
 === Allowing realm administrators granted with the `realm-admin` role to assign admin roles
 
@@ -79,6 +117,13 @@ In this release, OCSP requests inherit timeouts from the outgoing HTTP client co
 
 If you relied on the previous 10-second behavior, explicitly set the HTTP client timeouts.
 
+=== Added database indexes on `OFFLINE_CLIENT_SESSION` table
+
+This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
+
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -89,6 +134,17 @@ The following sections provide details on deprecated features.
 In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC6749, it can be used to keep the default behavior of earlier versions of {project_name}.
 
 This behavior is deprecated and will be removed in a future version of Keycloak.
+
+=== `AuthenticationManager.AuthResult` is now a record
+
+The inner class `AuthenticationManager.AuthResult` in the `keycloak-services` module is now a record.
+The getter methods like `getSession()` have been deprecated in favor of the `session()` accessors.
+
+=== Accepting HTTP requests with non-normalized paths
+
+The option `http-accept-non-normalized-paths` was introduced to restore the previous behavior where {project_name} accepted non-normalized URLs.
+
+As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

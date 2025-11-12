@@ -125,6 +125,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
     }
 
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
     /**
      * KEYCLOAK-3986
      *
@@ -1658,6 +1663,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             RealmModel testRealm = ctx.getRealm();
 
             UserModel importedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(testRealm, "beckybecks");
+            Assert.assertNotNull(importedUser);
 
             // Update user 'beckybecks' in LDAP
             LDAPObject becky = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, importedUser.getUsername());

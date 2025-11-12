@@ -232,7 +232,29 @@ public class LogoutEndpoint {
             }
         }
 
-        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true, true);
+        UserSessionModel userSession = null;
+
+        // Check if we have session in the browser. If yes and it is different session than referenced by id_token_hint, the confirmation should be displayed
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
+        if (authResult != null) {
+            userSession = authResult.session();
+            if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.session().getId())) {
+                forcedConfirmation = true;
+            }
+        } else {
+            // Skip confirmation in case that valid redirect URI was setup for given client_id and there is no session in the browser as well as no id_token_hint.
+            // We can do automatic redirect as there is no logout needed at all for this scenario (Session was probably already logged-out before)
+            if (encodedIdToken == null && client != null && validatedRedirectUri != null) {
+                confirmationNeeded = false;
+            }
+        }
+
+        if (userSession == null && idToken != null && idToken.getSessionState() != null) {
+            userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
+        }
+
+        AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm,
+                new AuthenticationSessionManager(session), userSession, true, true);
         session.getContext().setAuthenticationSession(logoutSession);
         if (uiLocales != null) {
             logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
@@ -253,27 +275,6 @@ public class LogoutEndpoint {
 
         LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(logoutSession);
-
-        UserSessionModel userSession = null;
-
-        // Check if we have session in the browser. If yes and it is different session than referenced by id_token_hint, the confirmation should be displayed
-        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
-        if (authResult != null) {
-            userSession = authResult.getSession();
-            if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.getSession().getId())) {
-                forcedConfirmation = true;
-            }
-        } else {
-            // Skip confirmation in case that valid redirect URI was setup for given client_id and there is no session in the browser as well as no id_token_hint.
-            // We can do automatic redirect as there is no logout needed at all for this scenario (Session was probably already logged-out before)
-            if (encodedIdToken == null && client != null && validatedRedirectUri != null) {
-                confirmationNeeded = false;
-            }
-        }
-
-        if (userSession == null && idToken != null && idToken.getSessionState() != null) {
-            userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
-        }
 
         // Try to figure user because of localization
         if (userSession != null) {
@@ -440,7 +441,7 @@ public class LogoutEndpoint {
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
-            userSession = userSession != null ? userSession : authResult.getSession();
+            userSession = userSession != null ? userSession : authResult.session();
             return initiateBrowserLogout(userSession);
         } else if (userSession != null) {
             // identity cookie is missing but there's valid id_token_hint which matches session cookie => continue with browser logout

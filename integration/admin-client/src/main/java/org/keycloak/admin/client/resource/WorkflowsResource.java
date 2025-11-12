@@ -2,6 +2,7 @@ package org.keycloak.admin.client.resource;
 
 import java.util.List;
 
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -22,12 +23,12 @@ import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 public interface WorkflowsResource {
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
     Response create(WorkflowRepresentation representation);
 
     @Path("set")
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
     Response create(WorkflowSetRepresentation representation);
 
     @GET

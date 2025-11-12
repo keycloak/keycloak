@@ -17,6 +17,9 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.Iterator;
+import java.util.Map;
+
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.factories.ComponentRegistry;
@@ -37,13 +40,11 @@ import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessio
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
-import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import java.util.Iterator;
-import java.util.Map;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,15 +52,13 @@ import java.util.Map;
 public class InfinispanAuthenticationSessionProvider implements AuthenticationSessionProvider {
 
     private final KeycloakSession session;
-    private final InfinispanKeyGenerator keyGenerator;
     private final int authSessionsLimit;
     protected final InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> sessionTx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator,
+    public InfinispanAuthenticationSessionProvider(KeycloakSession session,
                                                    InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> sessionTx, int authSessionsLimit) {
         this.session = session;
-        this.keyGenerator = keyGenerator;
         this.authSessionsLimit = authSessionsLimit;
         this.sessionTx = sessionTx;
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
@@ -69,8 +68,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
-        String id = keyGenerator.generateKeyString(session, sessionTx.getCache());
-        return createRootAuthenticationSession(realm, id);
+        return createRootAuthenticationSession(realm, sessionTx.generateKey());
     }
 
 
@@ -185,7 +183,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     public void migrate(String modelVersion) {
         if ("26.1.0".equals(modelVersion)) {
             InfinispanConnectionProvider infinispanConnectionProvider = session.getProvider(InfinispanConnectionProvider.class);
-            Cache<String, RootAuthenticationSessionEntity> authSessionsCache = infinispanConnectionProvider.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+            Cache<String, RootAuthenticationSessionEntity> authSessionsCache = infinispanConnectionProvider.getCache(AUTHENTICATION_SESSIONS_CACHE_NAME);
             CompletionStages.join(ComponentRegistry.componentOf(authSessionsCache, PersistenceManager.class).clearAllStores(PersistenceManager.AccessMode.BOTH));
         }
     }

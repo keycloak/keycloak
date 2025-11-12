@@ -69,7 +69,14 @@ export const Keys = ({
   });
 
   useFetch(
-    () => adminClient.clients.getKeyInfo({ id: clientId, attr }),
+    async () => {
+      try {
+        return await adminClient.clients.getKeyInfo({ id: clientId, attr });
+      } catch (error) {
+        addError("getKeyInfoError", error);
+        return {} as CertificateRepresentation;
+      }
+    },
     (info) => setKeyInfo(info),
     [key],
   );
