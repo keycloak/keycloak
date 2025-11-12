@@ -82,6 +82,21 @@
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${spotless-plugin.version}</version>
+                    <configuration>
+                        <java>
+                            <removeUnusedImports />
+                        </java>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>tech.orla</groupId>
+                    <artifactId>trivy-maven-plugin</artifactId>
+                    <version>1.0.1</version>
+                    <configuration>
+                        <ignoreUnfixed>true</ignoreUnfixed>
+                        <severity>CRITICAL</severity>
+                        <vulnType>os,library</vulnType>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
