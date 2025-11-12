@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -38,8 +39,6 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  */
 public abstract class SdJws {
-
-    public static final String CLAIM_NAME_ISSUER = "iss";
 
     private final JWSInput jwsInput;
     private final JsonNode payload;
@@ -119,7 +118,7 @@ public abstract class SdJws {
      * @param issuers List of trusted issuers
      */
     public void verifyIssClaim(List<String> issuers) throws VerificationException {
-        verifyClaimAgainstTrustedValues(issuers, CLAIM_NAME_ISSUER);
+        verifyClaimAgainstTrustedValues(issuers, OID4VCConstants.CLAIM_NAME_ISSUER);
     }
 
     /**

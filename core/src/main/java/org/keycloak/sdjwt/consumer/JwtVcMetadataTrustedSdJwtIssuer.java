@@ -19,13 +19,13 @@ package org.keycloak.sdjwt.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.JwkParsingUtils;
-import org.keycloak.sdjwt.SdJws;
 import org.keycloak.sdjwt.SdJwtUtils;
 
 import java.util.ArrayList;
@@ -51,8 +51,6 @@ import java.util.stream.Collectors;
  * </a>
  */
 public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
-
-    private static final String JWT_VC_ISSUER_END_POINT = "/.well-known/jwt-vc-issuer";
 
     private final Pattern issuerUriPattern;
     private final HttpDataFetcher httpDataFetcher;
@@ -86,7 +84,7 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
     public List<SignatureVerifierContext> resolveIssuerVerifyingKeys(IssuerSignedJWT issuerSignedJWT)
             throws VerificationException {
         // Read iss (claim) and kid (header)
-        String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get(SdJws.CLAIM_NAME_ISSUER))
+        String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get(OID4VCConstants.CLAIM_NAME_ISSUER))
                 .map(JsonNode::asText)
                 .orElse("");
         String kid = issuerSignedJWT.getHeader().getKeyId();
@@ -161,7 +159,7 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
 
         issuerUri = normalizeUri(issuerUri);
         String jwtVcIssuerUri = issuerUri
-                .concat(JWT_VC_ISSUER_END_POINT); // Append well-known path
+                .concat(OID4VCConstants.JWT_VC_ISSUER_END_POINT); // Append well-known path
 
         // Fetch and parse metadata
 

@@ -38,6 +38,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -274,7 +276,7 @@ public abstract class SdJwtVerificationTest {
     public void sdJwtVerificationShouldFail_IfSdArrayElementIsNotString() throws JsonProcessingException {
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
-        claimSet.set("_sd", mapper.readTree("[123]"));
+        claimSet.set(CLAIM_NAME_SD, mapper.readTree("[123]"));
 
         SdJwt sdJwt = exampleFlatSdJwtV2(claimSet, DisclosureSpec.builder().build()).build();
 
@@ -291,7 +293,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfForbiddenClaimNames() {
-        for (String forbiddenClaimName : Arrays.asList("_sd", "...")) {
+        for (String forbiddenClaimName : Arrays.asList(CLAIM_NAME_SD, CLAIM_NAME_SD_UNDISCLOSED_ARRAY)) {
             ObjectNode claimSet = mapper.createObjectNode();
             claimSet.put(forbiddenClaimName, "Value");
 
