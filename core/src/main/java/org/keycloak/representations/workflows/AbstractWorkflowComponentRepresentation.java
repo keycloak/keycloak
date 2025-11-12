@@ -24,7 +24,7 @@ public abstract class AbstractWorkflowComponentRepresentation {
 
     public AbstractWorkflowComponentRepresentation(String id, MultivaluedHashMap<String, String> config) {
         this.id = id;
-        this.config = config;
+        this.setConfig(config);
     }
 
     public String getId() {
@@ -40,10 +40,12 @@ public abstract class AbstractWorkflowComponentRepresentation {
     }
 
     public void setConfig(MultivaluedHashMap<String, String> config) {
-        if (this.config == null) {
-            this.config = config;
+        if (config != null) {
+            if (this.config == null) {
+                this.config = new MultivaluedHashMap<>();
+            }
+            this.config.putAll(config);
         }
-        this.config.putAll(config);
     }
 
     public void setConfig(String key, String value) {

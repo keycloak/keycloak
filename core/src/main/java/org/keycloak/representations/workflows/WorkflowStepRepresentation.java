@@ -9,12 +9,14 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 @JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
     private final String uses;

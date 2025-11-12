@@ -1,5 +1,6 @@
 package org.keycloak.representations.workflows;
 
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONCURRENCY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
@@ -108,11 +109,21 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
     }
 
     public WorkflowConcurrencyRepresentation getConcurrency() {
-        return concurrency;
+        if (this.concurrency == null) {
+            Boolean cancelIfRunning = getConfigValue(CONFIG_CANCEL_IF_RUNNING, Boolean.class);
+            if (cancelIfRunning != null) {
+                this.concurrency = new WorkflowConcurrencyRepresentation();
+                this.concurrency.setCancelIfRunning(cancelIfRunning);
+            }
+        }
+        return this.concurrency;
     }
 
     public void setConcurrency(WorkflowConcurrencyRepresentation concurrency) {
         this.concurrency = concurrency;
+        if (concurrency != null) {
+            setConfigValue(CONFIG_CANCEL_IF_RUNNING, concurrency.isCancelIfRunning());
+        }
     }
 
     @JsonIgnore
