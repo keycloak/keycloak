@@ -19,7 +19,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
@@ -114,7 +113,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
                 .map(role -> RoleWorkflowConditionFactory.ID + "(" + role + ")")
                 .reduce((a, b) -> a + " AND " + b).orElse(null);
 
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.withName("myworkflow")
+        WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_ROLE_ADDED.name())
                 .onCondition(roleCondition)
                 .withSteps(
@@ -130,7 +129,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
 
         WorkflowsResource workflows = managedRealm.admin().workflows();
 
-        try (Response response = workflows.create(expectedWorkflows)) {
+        try (Response response = workflows.create(expectedWorkflow)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
     }

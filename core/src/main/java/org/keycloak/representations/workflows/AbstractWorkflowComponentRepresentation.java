@@ -82,24 +82,6 @@ public abstract class AbstractWorkflowComponentRepresentation {
         }
     }
 
-    protected <T> T getConfigValuesOrSingle(String key) {
-        if (config == null) {
-            return null;
-        }
-
-        List<String> values = config.get(key);
-
-        if (values == null || values.isEmpty()) {
-            return null;
-        }
-
-        if (values.size() == 1) {
-            return (T) values.get(0);
-        }
-
-        return (T) values;
-    }
-
     protected void setConfigValue(String key, Object... values) {
         if (values == null || values.length == 0) {
             return;

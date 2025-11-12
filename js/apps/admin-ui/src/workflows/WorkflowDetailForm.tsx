@@ -60,6 +60,7 @@ export default function WorkflowDetailForm() {
       }
       return adminClient.workflows.findOne({
         id: id!,
+        includeId: false,
       });
     },
     (workflow) => {

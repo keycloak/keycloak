@@ -1,11 +1,7 @@
 package org.keycloak.representations.workflows;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -147,16 +143,10 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     public static class Builder {
 
-        private final Map<WorkflowRepresentation, List<WorkflowStepRepresentation>> steps = new HashMap<>();
-        private List<Builder> builders = new ArrayList<>();
         private WorkflowRepresentation representation;
 
         private Builder() {
-        }
-
-        private Builder(WorkflowRepresentation representation, List<Builder> builders) {
-            this.representation = representation;
-            this.builders = builders;
+            this.representation = new WorkflowRepresentation();
         }
 
         public Builder onEvent(String operation) {
@@ -188,7 +178,7 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder withSteps(WorkflowStepRepresentation... steps) {
-            this.steps.computeIfAbsent(representation, (k) -> new ArrayList<>()).addAll(Arrays.asList(steps));
+            representation.setSteps(Arrays.asList(steps));
             return this;
         }
 
@@ -203,30 +193,12 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder withName(String name) {
-            WorkflowRepresentation representation = new WorkflowRepresentation();
             representation.setName(name);
-            Builder builder = new Builder(representation, builders);
-            builders.add(builder);
-            return builder;
+            return this;
         }
 
-        public WorkflowSetRepresentation build() {
-            List<WorkflowRepresentation> workflows = new ArrayList<>();
-
-            for (Builder builder : builders) {
-                if (builder.steps.isEmpty()) {
-                    continue;
-                }
-                for (Entry<WorkflowRepresentation, List<WorkflowStepRepresentation>> entry : builder.steps.entrySet()) {
-                    WorkflowRepresentation workflow = entry.getKey();
-
-                    workflow.setSteps(entry.getValue());
-
-                    workflows.add(workflow);
-                }
-            }
-
-            return new WorkflowSetRepresentation(workflows);
+        public WorkflowRepresentation build() {
+            return representation;
         }
     }
 }

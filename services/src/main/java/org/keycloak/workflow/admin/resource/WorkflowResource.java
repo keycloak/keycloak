@@ -9,6 +9,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -20,6 +21,7 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class WorkflowResource {
 
@@ -54,8 +56,14 @@ public class WorkflowResource {
 
     @GET
     @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
-    public WorkflowRepresentation toRepresentation() {
-        return provider.toRepresentation(workflow);
+    public WorkflowRepresentation toRepresentation(
+            @Parameter(description = "Indicates whether the workflow id should be included in the representation or not - defaults to true") @QueryParam("includeId") Boolean includeId
+    ) {
+        WorkflowRepresentation rep = provider.toRepresentation(workflow);
+        if (Boolean.FALSE.equals(includeId)) {
+            rep.setId(null);
+        }
+        return rep;
     }
 
     /**

@@ -22,7 +22,6 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -55,18 +54,6 @@ public class WorkflowsResource {
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
-    }
-
-    @Path("set")
-    @POST
-    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
-    public Response createAll(WorkflowSetRepresentation workflows) {
-        auth.realm().requireManageRealm();
-
-        for (WorkflowRepresentation workflow : Optional.ofNullable(workflows.getWorkflows()).orElse(List.of())) {
-            create(workflow).close();
-        }
-        return Response.created(session.getContext().getUri().getRequestUri()).build();
     }
 
     @Path("{id}")

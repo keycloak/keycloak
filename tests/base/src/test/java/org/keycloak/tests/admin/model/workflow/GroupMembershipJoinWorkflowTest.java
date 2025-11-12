@@ -16,7 +16,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStateRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -57,7 +56,7 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.withName("myworkflow")
+        WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADDED.name())
                 .onCondition(GROUP_CONDITION)
                 .withSteps(
@@ -70,7 +69,7 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
 
         WorkflowsResource workflows = managedRealm.admin().workflows();
 
-        try (Response response = workflows.create(expectedWorkflows)) {
+        try (Response response = workflows.create(expectedWorkflow)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
@@ -95,25 +94,27 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
     @Test
     public void testRemoveAssociatedGroup() {
         String groupId;
-
         try (Response response = managedRealm.admin().groups().add(GroupConfigBuilder.create()
                 .name("generic-group").build())) {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+        String workflowId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .onCondition(GROUP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(1))
-                                .build()
-                ).build()).close();
+                                .build())
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
 
-        WorkflowRepresentation workflowRep = managedRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
+        WorkflowRepresentation workflowRep = managedRealm.admin().workflows().workflow(workflowId).toRepresentation();
         assertThat(workflowRep.getConfig().getFirst("enabled"), nullValue());
 
         // remove group
@@ -126,7 +127,7 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
                 .timeout(Duration.ofSeconds(30))
                 .pollInterval(Duration.ofSeconds(1))
                 .untilAsserted(() -> {
-                    var rep = managedRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
+                    var rep = managedRealm.admin().workflows().workflow(workflowId).toRepresentation();
                     assertThat(rep.getEnabled(), allOf(notNullValue(), is(false)));
                     WorkflowStateRepresentation status = rep.getState();
                     assertThat(status, notNullValue());
