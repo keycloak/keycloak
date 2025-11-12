@@ -22,6 +22,7 @@ import io.micrometer.core.instrument.Tag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -33,6 +34,8 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -339,14 +342,49 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         // Check if we are creating or updating password
         UserModel user = metadataContext.getUser();
-        if (user != null && user.credentialManager().isConfiguredFor(getType())) {
-            metadataBuilder.updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
-        } else {
-            metadataBuilder.createAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        if (user != null) {
+            // Check if the user can update password
+            boolean canUpdatePassword = canUserUpdatePassword(user);
+
+            if (canUpdatePassword) {
+                if (user.credentialManager().isConfiguredFor(getType())) {
+                    metadataBuilder.updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+                } else {
+                    metadataBuilder.createAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+                }
+            }
         }
 
         return metadataBuilder
                 .removeable(false)
                 .build(session);
+    }
+
+    private boolean canUserUpdatePassword(UserModel user) {
+        if (!user.isFederated()) {
+            return true;
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+        ComponentModel componentModel = realm.getComponent(user.getFederationLink());
+
+        if (componentModel == null || !componentModel.get("enabled", true)) {
+            return false;
+        }
+
+        UserStorageProviderModel storageProviderModel = new UserStorageProviderModel(componentModel);
+        if (!storageProviderModel.isEnabled()) {
+            return false;
+        }
+
+        UserStorageProvider storageProvider =
+            (UserStorageProvider) session
+                .getProvider(UserStorageProvider.class, storageProviderModel.getId());
+
+        if (storageProvider instanceof CredentialInputUpdater updater) {
+            return updater.supportsCredentialType(getType());
+        }
+
+        return false;
     }
 }
