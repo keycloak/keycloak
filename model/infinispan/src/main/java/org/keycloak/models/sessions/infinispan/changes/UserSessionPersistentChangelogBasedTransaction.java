@@ -57,6 +57,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 LOG.debugf("user-session not found in cache for sessionId=%s offline=%s, loading from persister", key, offline);
                 wrappedEntity = getSessionEntityFromPersister(realm, key, userSession, offline);
             } else {
+                getUpdates(offline).putIfAbsent(key, new SessionUpdatesList<>(realm, wrappedEntity));
                 LOG.debugf("user-session found in cache for sessionId=%s offline=%s %s", key, offline, wrappedEntity.getEntity().getLastSessionRefresh());
             }
 
@@ -73,9 +74,6 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                 LOG.warnf("Realm mismatch for session %s. Expected realm %s, but found realm %s", wrappedEntity.getEntity(), realm.getId(), realmFromSession.getId());
                 return null;
             }
-
-            myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-            getUpdates(offline).put(key, myUpdates);
 
             return wrappedEntity;
         } else {
