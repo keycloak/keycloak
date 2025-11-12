@@ -112,7 +112,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
-    public void getRole() {
+    public void getRole() { //duplicated
         RoleRepresentation role = resource.getRole(roleIds.get(roleNameA));
         assertNotNull(role);
         assertEquals(roleNameA, role.getName());
@@ -121,7 +121,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
-    public void updateRole() {
+    public void updateRole() { //duplicated
         RoleRepresentation role = resource.getRole(roleIds.get(roleNameA));
 
         role.setName("role-a-new");
@@ -139,7 +139,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
-    public void deleteRole() {
+    public void deleteRole() { //duplicated
         assertNotNull(resource.getRole(roleIds.get(roleNameA)));
         resource.deleteRole(roleIds.get(roleNameA));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.roleByIdResourcePath(roleIds.get(roleNameA)), ResourceType.REALM_ROLE);
@@ -153,7 +153,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
-    public void composites() {
+    public void composites() { //duplicated
         assertFalse(resource.getRole(roleIds.get(roleNameA)).isComposite());
         assertEquals(0, resource.getRoleComposites(roleIds.get(roleNameA)).size());
 
