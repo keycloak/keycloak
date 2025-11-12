@@ -561,7 +561,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             }
 
             if (parameter != null && !parameter.isEmpty()) {
-                uriBuilder.queryParam(forwardParameter, URLEncoder.encode(parameter, StandardCharsets.UTF_8));
+                uriBuilder.queryParam(forwardParameter, parameter);
             }
         }
     }
