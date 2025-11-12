@@ -18,7 +18,11 @@
 package org.keycloak.connections.httpclient;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * Comprehensive tests for RetryConfig class.
@@ -29,7 +33,6 @@ public class RetryConfigTest {
     public void testDefaultValues() {
         RetryConfig config = new RetryConfig.Builder().build();
         assertEquals(0, config.getMaxRetries());
-        assertTrue(config.isRetryOnIOException());
         assertEquals(1000, config.getInitialBackoffMillis());
         assertEquals(2.0, config.getBackoffMultiplier(), 0.001);
         assertEquals(10000, config.getConnectionTimeoutMillis());
@@ -40,7 +43,6 @@ public class RetryConfigTest {
     public void testCustomValues() {
         RetryConfig config = new RetryConfig.Builder()
                 .maxRetries(5)
-                .retryOnIOException(false)
                 .initialBackoffMillis(2000)
                 .backoffMultiplier(3.0)
                 .connectionTimeoutMillis(15000)
@@ -48,7 +50,6 @@ public class RetryConfigTest {
                 .build();
 
         assertEquals(5, config.getMaxRetries());
-        assertFalse(config.isRetryOnIOException());
         assertEquals(2000, config.getInitialBackoffMillis());
         assertEquals(3.0, config.getBackoffMultiplier(), 0.001);
         assertEquals(15000, config.getConnectionTimeoutMillis());
@@ -62,7 +63,6 @@ public class RetryConfigTest {
                 .build();
 
         assertEquals(0, config.getMaxRetries());
-        assertTrue(config.isRetryOnIOException());
     }
 
     @Test
@@ -91,11 +91,9 @@ public class RetryConfigTest {
         // Test that builder methods can be chained
         RetryConfig config = new RetryConfig.Builder()
                 .maxRetries(10)
-                .retryOnIOException(false)
                 .build();
 
         assertEquals(10, config.getMaxRetries());
-        assertFalse(config.isRetryOnIOException());
     }
 
     @Test
@@ -104,8 +102,6 @@ public class RetryConfigTest {
         RetryConfig config = new RetryConfig.Builder()
                 .maxRetries(5)
                 .maxRetries(10)
-                .retryOnIOException(true)
-                .retryOnIOException(false)
                 .initialBackoffMillis(500)
                 .initialBackoffMillis(1500)
                 .backoffMultiplier(1.5)
@@ -117,7 +113,6 @@ public class RetryConfigTest {
                 .build();
 
         assertEquals(10, config.getMaxRetries());
-        assertFalse(config.isRetryOnIOException());
         assertEquals(1500, config.getInitialBackoffMillis());
         assertEquals(2.5, config.getBackoffMultiplier(), 0.001);
         assertEquals(8000, config.getConnectionTimeoutMillis());
@@ -175,7 +170,6 @@ public class RetryConfigTest {
     public void testEqualsWithSameValues() {
         RetryConfig config1 = new RetryConfig.Builder()
                 .maxRetries(5)
-                .retryOnIOException(false)
                 .initialBackoffMillis(2000)
                 .backoffMultiplier(3.0)
                 .useJitter(true)
@@ -186,7 +180,6 @@ public class RetryConfigTest {
 
         RetryConfig config2 = new RetryConfig.Builder()
                 .maxRetries(5)
-                .retryOnIOException(false)
                 .initialBackoffMillis(2000)
                 .backoffMultiplier(3.0)
                 .useJitter(true)

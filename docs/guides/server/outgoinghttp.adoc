@@ -67,8 +67,7 @@ The following are the retry configuration options:
 *max-retries*::
 Maximum number of retry attempts for failed HTTP requests. Set to 0 to disable retries. Default: 0.
 
-*retry-on-error*::
-Whether to retry HTTP requests when errors occur. Default: true.
+NOTE: Retries for requests that have already been sent (for common methods such as GET and POST) are always enabled. Use `max-retries` to control whether retries are performed.
 
 *initial-backoff-millis*::
 Initial backoff time in milliseconds before the first retry attempt. Default: 1000.
@@ -86,7 +85,6 @@ Jitter factor to apply to backoff times. A value of 0.5 means the actual backoff
 [source,bash]
 ----
 bin/kc.[sh|bat] start --spi-connections-http-client-default-max-retries=3 \
-  --spi-connections-http-client-default-retry-on-error=true \
   --spi-connections-http-client-default-initial-backoff-millis=1000 \
   --spi-connections-http-client-default-backoff-multiplier=2.0
 ----

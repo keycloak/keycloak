@@ -264,8 +264,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         if (maxRetries <= 0) {
             return; // Retries disabled
         }
-
-        boolean retryOnError = config.getBoolean("retry-on-error", true);
+        // Always enable request-sent retries for common requests (e.g., GET, POST)
         long initialBackoffMillis = config.getLong("initial-backoff-millis", 1000L);
         String backoffMultiplierStr = config.get("backoff-multiplier", "2.0");
         double backoffMultiplier = Double.parseDouble(backoffMultiplierStr);
@@ -274,7 +273,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         double jitterFactor = Double.parseDouble(jitterFactorStr);
 
         builder.getApacheHttpClientBuilder().setRetryHandler(
-                new org.apache.http.impl.client.DefaultHttpRequestRetryHandler(maxRetries, retryOnError) {
+                new org.apache.http.impl.client.DefaultHttpRequestRetryHandler(maxRetries, true) {
                     @Override
                     public boolean retryRequest(IOException exception, int executionCount,
                             org.apache.http.protocol.HttpContext context) {
@@ -397,12 +396,6 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .type("int")
                 .helpText("Maximum number of retry attempts for all outgoing HTTP requests. Set to 0 to disable retries (default).")
                 .defaultValue(0)
-                .add()
-                .property()
-                .name("retry-on-error")
-                .type("boolean")
-                .helpText("Whether to retry HTTP requests on errors.")
-                .defaultValue(true)
                 .add()
                 .property()
                 .name("initial-backoff-millis")

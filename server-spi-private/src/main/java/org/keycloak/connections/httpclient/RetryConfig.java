@@ -22,11 +22,10 @@ package org.keycloak.connections.httpclient;
  * <p>
  * This class provides configuration options for HTTP client retry behavior when
  * making requests. It allows customization of the maximum number of retry
- * attempts, whether to retry on IO exceptions, exponential backoff settings,
- * jitter for backoff times, and connection/socket timeouts.
+ * attempts, exponential backoff settings, jitter for backoff times, and
+ * connection/socket timeouts.
  * <p>
- * The default configuration is 0 retry attempts (no retries) with retries
- * enabled for IO exceptions if configured, with exponential backoff starting
+ * The default configuration is 0 retry attempts (no retries), with exponential backoff starting
  * at 1000ms and multiplying by 2.0 for each retry. Jitter is enabled by
  * default with a factor of 0.5 to prevent synchronized retry storms.
  * <p>
@@ -38,8 +37,6 @@ package org.keycloak.connections.httpclient;
  * <ul>
  * <li>{@code spi-connections-http-client-default-max-retries} - Maximum number
  * of retry attempts (default: 0)</li>
- * <li>{@code spi-connections-http-client-default-retry-on-error} - Whether
- * to retry on errors (default: true)</li>
  * <li>{@code spi-connections-http-client-default-initial-backoff-millis} - Initial
  * backoff time in milliseconds (default: 1000)</li>
  * <li>{@code spi-connections-http-client-default-backoff-multiplier} - Multiplier
@@ -51,20 +48,19 @@ package org.keycloak.connections.httpclient;
  * </ul>
  * <p>
  * Example configuration:
- * 
+ *
  * <pre>
  * spi-connections-http-client-default-max-retries=3
  * spi-connections-http-client-default-initial-backoff-millis=1000
  * spi-connections-http-client-default-backoff-multiplier=2.0
  * </pre>
- * 
+ *
  * This configuration applies to all outgoing HTTP requests from Keycloak,
  * including OCSP validation, identity provider communication, and other
  * external HTTP calls.
  */
 public class RetryConfig {
     private final int maxRetries;
-    private final boolean retryOnIOException;
     private final long initialBackoffMillis;
     private final double backoffMultiplier;
     private final boolean useJitter;
@@ -74,7 +70,6 @@ public class RetryConfig {
 
     private RetryConfig(Builder builder) {
         this.maxRetries = builder.maxRetries;
-        this.retryOnIOException = builder.retryOnIOException;
         this.initialBackoffMillis = builder.initialBackoffMillis;
         this.backoffMultiplier = builder.backoffMultiplier;
         this.useJitter = builder.useJitter;
@@ -90,16 +85,6 @@ public class RetryConfig {
      */
     public int getMaxRetries() {
         return maxRetries;
-    }
-
-    /**
-     * Determines whether to retry on IO exceptions.
-     *
-     * @return {@code true} if retries should be attempted on IO exceptions,
-     *         {@code false} otherwise
-     */
-    public boolean isRetryOnIOException() {
-        return retryOnIOException;
     }
 
     /**
@@ -181,7 +166,6 @@ public class RetryConfig {
         RetryConfig that = (RetryConfig) obj;
 
         if (maxRetries != that.maxRetries) return false;
-        if (retryOnIOException != that.retryOnIOException) return false;
         if (initialBackoffMillis != that.initialBackoffMillis) return false;
         if (Double.compare(backoffMultiplier, that.backoffMultiplier) != 0) return false;
         if (useJitter != that.useJitter) return false;
@@ -203,7 +187,6 @@ public class RetryConfig {
         int result;
         long temp;
         result = maxRetries;
-        result = 31 * result + (retryOnIOException ? 1 : 0);
         result = 31 * result + (int) (initialBackoffMillis ^ (initialBackoffMillis >>> 32));
         temp = Double.doubleToLongBits(backoffMultiplier);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
@@ -221,7 +204,6 @@ public class RetryConfig {
      * This builder uses the following defaults:
      * <ul>
      * <li>maxRetries = 0</li>
-     * <li>retryOnIOException = true</li>
      * <li>initialBackoffMillis = 1000</li>
      * <li>backoffMultiplier = 2.0</li>
      * <li>connectionTimeoutMillis = 10000</li>
@@ -230,7 +212,6 @@ public class RetryConfig {
      */
     public static class Builder {
         private int maxRetries = 0;
-        private boolean retryOnIOException = true;
         private long initialBackoffMillis = 1000;
         private double backoffMultiplier = 2.0;
         private boolean useJitter = true;
@@ -250,22 +231,6 @@ public class RetryConfig {
          */
         public Builder maxRetries(int maxRetries) {
             this.maxRetries = maxRetries;
-            return this;
-        }
-
-        /**
-         * Sets whether to retry on IO exceptions.
-         * <p>
-         * The default value is {@code true}. When set to {@code false}, the client will
-         * not
-         * retry requests that fail with IO exceptions.
-         *
-         * @param retryOnIOException {@code true} to retry on IO exceptions,
-         *                           {@code false} otherwise
-         * @return This builder instance for method chaining
-         */
-        public Builder retryOnIOException(boolean retryOnIOException) {
-            this.retryOnIOException = retryOnIOException;
             return this;
         }
 

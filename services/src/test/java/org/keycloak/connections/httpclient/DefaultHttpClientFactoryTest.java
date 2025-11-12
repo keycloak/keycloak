@@ -43,7 +43,6 @@ public class DefaultHttpClientFactoryTest {
 	private static final String DISABLE_TRUST_MANAGER_PROPERTY = "disable-trust-manager";
 	private static final String TEST_DOMAIN = "keycloak.org";
 	private static final String MAX_RETRIES_PROPERTY = "max-retries";
-	private static final String RETRY_ON_ERROR_PROPERTY = "retry-on-error";
 
 	// Common objects for tests
 	private DefaultHttpClientFactory factory;
@@ -115,7 +114,6 @@ public class DefaultHttpClientFactoryTest {
 		// Create factory with custom retry properties
 		Map<String, String> values = new HashMap<>();
 		values.put(MAX_RETRIES_PROPERTY, "5");
-		values.put(RETRY_ON_ERROR_PROPERTY, "false");
 
 		// Create provider with custom properties
 		HttpClientProvider provider = createProviderWithProperties(values);
