@@ -15,7 +15,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
@@ -175,7 +174,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
     }
 
     private String createWorkflow(String expression) {
-        WorkflowSetRepresentation expectedWorkflows = WorkflowRepresentation.withName("myworkflow")
+        WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .onEvent("user-logged-in(test-app)")
                 .onCondition(expression)
                 .withSteps(
@@ -188,7 +187,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
 
         WorkflowsResource workflows = managedRealm.admin().workflows();
 
-        try (Response response = workflows.create(expectedWorkflows.getWorkflows().get(0))) {
+        try (Response response = workflows.create(expectedWorkflow)) {
             assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
             return ApiUtil.getCreatedId(response);
         }

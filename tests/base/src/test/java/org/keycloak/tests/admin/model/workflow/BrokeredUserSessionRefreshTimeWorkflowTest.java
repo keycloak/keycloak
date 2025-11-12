@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -58,6 +60,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
@@ -127,19 +130,22 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
 
     @Test
     public void testInvalidateWorkflowOnIdentityProviderRemoval() {
-        consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+        String workflowId;
+        try (Response response = consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .onCondition(IDP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
-                                .after(Duration.ofDays(1))
-                                .build()
-                ).build()).close();
+                            .after(Duration.ofDays(1))
+                            .build())
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
 
         List<WorkflowRepresentation> workflows = consumerRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
 
-        WorkflowRepresentation workflowRep = consumerRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
+        WorkflowRepresentation workflowRep = consumerRealm.admin().workflows().workflow(workflowId).toRepresentation();
         assertThat(workflowRep.getConfig().getFirst("enabled"), nullValue());
 
         // remove IDP
@@ -152,7 +158,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
                 .timeout(Duration.ofSeconds(30))
                 .pollInterval(Duration.ofSeconds(1))
                 .untilAsserted(() -> {
-                    var rep = consumerRealm.admin().workflows().workflow(workflows.get(0).getId()).toRepresentation();
+                    var rep = consumerRealm.admin().workflows().workflow(workflowId).toRepresentation();
                     assertThat(rep.getEnabled(), allOf(notNullValue(), is(false)));
                     WorkflowStateRepresentation status = rep.getState();
                     assertThat(status, notNullValue());

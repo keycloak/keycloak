@@ -13,7 +13,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 
@@ -28,11 +27,6 @@ public interface WorkflowsResource {
     @POST
     @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
     Response create(WorkflowRepresentation representation);
-
-    @Path("set")
-    @POST
-    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
-    Response create(WorkflowSetRepresentation representation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

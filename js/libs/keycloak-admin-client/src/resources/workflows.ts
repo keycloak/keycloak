@@ -19,12 +19,13 @@ export class Workflows extends Resource<{ realm?: string }> {
   });
 
   public findOne = this.makeRequest<
-    { id: string },
+    { id: string; includeId: boolean },
     WorkflowRepresentation | undefined
   >({
     method: "GET",
     path: "/{id}",
     urlParamKeys: ["id"],
+    queryParamKeys: ["includeId"],
     catchNotFound: true,
   });
 

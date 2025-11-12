@@ -32,18 +32,15 @@ public class WorkflowDefinitionTest {
         expected.setSteps(Arrays.asList(
                 WorkflowStepRepresentation.create()
                         .of("step-1")
-                        .id("1")
                         .withConfig("key1", "v1")
                         .after(Duration.ofSeconds(10))
                         .build(),
                 WorkflowStepRepresentation.create()
                         .of("step-2")
-                        .id("2")
                         .withConfig("key1", "v1", "v2")
                         .build(),
                 WorkflowStepRepresentation.create()
                         .of("step-1")
-                        .id("3")
                         .withConfig("key1", "v1")
                         .build()));
 
