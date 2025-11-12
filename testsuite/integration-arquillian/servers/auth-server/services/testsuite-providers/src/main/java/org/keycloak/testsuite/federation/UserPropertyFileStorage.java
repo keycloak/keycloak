@@ -111,7 +111,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         addCall(COUNT_SEARCH_METHOD);
 
         String search = params.get(UserModel.SEARCH);
-        return (int) searchForUser(realm, search, null, null, username -> search == null || username.contains(search)).count();
+        return (int) searchForUser(realm, search, null, null, username -> search == null || username.contains(search), null).count();
     }
 
     @Override
@@ -229,7 +229,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 //    }
 
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults, String sortBy) {
         addCall(SEARCH_METHOD, firstResult, maxResults);
         String search = Optional.ofNullable(attributes.get(UserModel.USERNAME))
                 .orElseGet(()-> attributes.get(UserModel.SEARCH));
@@ -241,7 +241,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
                     ? username -> username.equals(search)
                     : username -> username.contains(search);
         }
-        return searchForUser(realm, search, firstResult, maxResults, p);
+        return searchForUser(realm, search, firstResult, maxResults, p, sortBy);
     }
 
     @Override
@@ -264,11 +264,19 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     }
 
-    private Stream<UserModel> searchForUser(RealmModel realm, String search, Integer firstResult, Integer maxResults, Predicate<String> matcher) {
+    private Stream<UserModel> searchForUser(RealmModel realm, String search, Integer firstResult, Integer maxResults, Predicate<String> matcher, String sortBy) {
         if (maxResults != null && maxResults == 0) return Stream.empty();
         return paginatedStream(userPasswords.keySet().stream(), firstResult, maxResults)
                 .map(String.class::cast)
                 .filter(matcher)
-                .map(username -> createUser(realm, username));
+                .map(username -> createUser(realm, username))
+                .sorted((u1, u2) -> {
+                    if (sortBy == null) {
+                        return 0;
+                    }
+                    String p1 = u1.getFirstAttribute(sortBy);
+                    String p2 = u2.getFirstAttribute(sortBy);
+                    return p1.compareTo(p2);
+                });
     }
 }

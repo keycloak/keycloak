@@ -84,6 +84,7 @@ import org.keycloak.storage.adapter.UpdateOnlyChangeUserModelDelegate;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.Sort;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
@@ -387,11 +388,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
      * <em>getUserAttributes</em>).
      */
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults, String sortBy) {
         String search = params.get(UserModel.SEARCH);
         Stream<LDAPObject> result = search != null ?
-                searchLDAP(realm, search, firstResult, maxResults) :
-                searchLDAPByAttributes(realm, params, firstResult, maxResults);
+                searchLDAP(realm, search, firstResult, maxResults, sortBy) :
+                searchLDAPByAttributes(realm, params, firstResult, maxResults, sortBy);
 
         if (model.isImportEnabled()) {
             result = result.filter(filterLocalUsers(realm));
@@ -529,7 +530,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
      * mappers then empty stream is returned (the attribute is not mapped
      * into ldap, therefore no ldap user can have the specified value).
      */
-    private Stream<LDAPObject> searchLDAPByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+    private Stream<LDAPObject> searchLDAPByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults, String sortBy) {
         // get the attributes that are managed by the configured ldap mappers
         Set<String> managedAttrs = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                 .map(mapperManager::getMapper)
@@ -541,6 +542,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
         try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
 
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+            if (sortBy != null) {
+                ldapQuery.sortBy(new Sort(sortBy, true));
+            }
 
             for (Map.Entry<String, String> entry : attributes.entrySet()) {
                 String attrName = entry.getKey();
@@ -596,10 +600,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
      *
      * This method serves for {@code search} param of {@link org.keycloak.services.resources.admin.UsersResource#getUsers}
      */
-    private Stream<LDAPObject> searchLDAP(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+    private Stream<LDAPObject> searchLDAP(RealmModel realm, String search, Integer firstResult, Integer maxResults, String sortBy) {
 
         try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+            if (sortBy != null) {
+                ldapQuery.sortBy(new Sort(sortBy, true));
+            }
 
             for (String s : search.split("\\s+")) {
                 boolean equals = false;
