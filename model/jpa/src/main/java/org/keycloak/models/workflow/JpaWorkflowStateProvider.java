@@ -24,12 +24,15 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 public class JpaWorkflowStateProvider implements WorkflowStateProvider {
@@ -57,17 +60,24 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     @Override
     public void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
         WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, executionId);
+        Duration duration = DurationConverter.parseDuration(step.getAfter());
+        if (duration == null) {
+            // shouldn't happen as the step duration should have been validated before
+            throw new IllegalArgumentException("Invalid duration (%s) found when scheduling step %s in workflow %s"
+                    .formatted(step.getAfter(), step.getProviderId(), workflow.getName()));
+        }
+
         if (entity == null) {
             entity = new WorkflowStateEntity();
             entity.setResourceId(resourceId);
             entity.setWorkflowId(workflow.getId());
             entity.setExecutionId(executionId);
             entity.setScheduledStepId(step.getId());
-            entity.setScheduledStepTimestamp(Time.currentTimeMillis() + step.getAfter());
+            entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
             em.persist(entity);
         } else {
             entity.setScheduledStepId(step.getId());
-            entity.setScheduledStepTimestamp(Time.currentTimeMillis() + step.getAfter());
+            entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
         }
     }
 

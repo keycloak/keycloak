@@ -35,6 +35,6 @@ public interface WorkflowResource {
     @Path("bind/{type}/{resourceId}")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void bind(@PathParam("type") String type, @PathParam("resourceId") String resourceId, Long milliseconds);
+    void bind(@PathParam("type") String type, @PathParam("resourceId") String resourceId, String notBefore);
 
 }

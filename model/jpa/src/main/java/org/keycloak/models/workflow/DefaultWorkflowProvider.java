@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
@@ -228,8 +229,8 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                         if (isAlreadyScheduledInSession(event, workflow)) {
                             return;
                         }
-                        // If the workflow has a notBefore set, schedule the first step with it
-                        if (workflow.getNotBefore() != null && workflow.getNotBefore() > 0) {
+                        // If the workflow has a positive notBefore set, schedule the first step with it
+                        if (DurationConverter.isPositiveDuration(workflow.getNotBefore())) {
                             scheduleWorkflow(event, workflow);
                         } else {
                             DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, event);
@@ -316,7 +317,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 throw new WorkflowInvalidStateException("Workflow restart step must be the last step.");
             }
             boolean hasScheduledStep = steps.stream()
-                    .anyMatch(step -> Integer.parseInt(ofNullable(step.getAfter()).orElse("0")) > 0);
+                    .anyMatch(step -> DurationConverter.isPositiveDuration(step.getAfter()));
             if (!hasScheduledStep) {
                 throw new WorkflowInvalidStateException("A workflow with a restart step must have at least one step with a time delay.");
             }

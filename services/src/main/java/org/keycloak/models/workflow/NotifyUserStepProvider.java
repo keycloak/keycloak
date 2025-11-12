@@ -20,6 +20,7 @@ package org.keycloak.models.workflow;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
@@ -119,21 +120,21 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
     }
 
     private String getNextStepType() {
-        Map<ComponentModel, Long> nextStepMap = getNextNonNotificationStep();
+        Map<ComponentModel, Duration> nextStepMap = getNextNonNotificationStep();
         return nextStepMap.isEmpty() ? "unknown-step" : nextStepMap.keySet().iterator().next().getProviderId();
     }
 
     private int calculateDaysUntilNextStep() {
-        Map<ComponentModel, Long> nextStepMap = getNextNonNotificationStep();
+        Map<ComponentModel, Duration> nextStepMap = getNextNonNotificationStep();
         if (nextStepMap.isEmpty()) {
             return 0;
         }
-        Long timeToNextStep = nextStepMap.values().iterator().next();
-        return Math.toIntExact(Duration.ofMillis(timeToNextStep).toDays());
+        Duration timeToNextStep = nextStepMap.values().iterator().next();
+        return Math.toIntExact(timeToNextStep.toDays());
     }
 
-    private Map<ComponentModel, Long> getNextNonNotificationStep() {
-        long timeToNextNonNotificationStep = 0L;
+    private Map<ComponentModel, Duration> getNextNonNotificationStep() {
+        Duration timeToNextNonNotificationStep = Duration.ZERO;
 
         RealmModel realm = session.getContext().getRealm();
         ComponentModel workflowModel = realm.getComponent(stepModel.getParentId());
@@ -150,7 +151,8 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
         boolean foundCurrent = false;
         for (ComponentModel step : steps) {
             if (foundCurrent) {
-                timeToNextNonNotificationStep += step.get(CONFIG_AFTER, 0L);
+                Duration duration = DurationConverter.parseDuration(step.get(CONFIG_AFTER, "0"));
+                timeToNextNonNotificationStep = timeToNextNonNotificationStep.plus(duration != null ? duration : Duration.ZERO);
                 if (!step.getProviderId().equals("notify-user")) {
                     // we found the next non-notification action, accumulate its time and break
                     return Map.of(step, timeToNextNonNotificationStep);

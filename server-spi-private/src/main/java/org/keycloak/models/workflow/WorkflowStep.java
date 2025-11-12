@@ -81,12 +81,12 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
         }
     }
 
-    public void setAfter(Long ms) {
-        setConfig(CONFIG_AFTER, String.valueOf(ms));
+    public void setAfter(String after) {
+        setConfig(CONFIG_AFTER, after);
     }
 
-    public Long getAfter() {
-        return Long.valueOf(getConfig().getFirstOrDefault(CONFIG_AFTER, "0"));
+    public String getAfter() {
+        return getConfig().getFirst(CONFIG_AFTER);
     }
 
     @Override
