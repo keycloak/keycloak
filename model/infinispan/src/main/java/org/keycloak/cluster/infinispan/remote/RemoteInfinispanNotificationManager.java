@@ -17,9 +17,12 @@
 
 package org.keycloak.cluster.infinispan.remote;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -40,15 +43,15 @@ import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
 import org.infinispan.client.hotrod.annotation.ClientListener;
-import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
-import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
-import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
+import org.infinispan.client.hotrod.event.ClientCacheEntryCustomEvent;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.io.UnsignedNumeric;
+import org.infinispan.commons.marshall.Marshaller;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 
-@ClientListener
+@ClientListener(converterFactoryName = "___eager-key-value-version-converter", useRawData = true)
 public class RemoteInfinispanNotificationManager {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
@@ -58,11 +61,13 @@ public class RemoteInfinispanNotificationManager {
     private final Executor executor;
     private final RemoteCache<String, Object> workCache;
     private final NodeInfo nodeInfo;
+    private final Marshaller marshaller;
 
     public RemoteInfinispanNotificationManager(Executor executor, RemoteCache<String, Object> workCache, NodeInfo nodeInfo) {
         this.executor = executor;
         this.workCache = workCache;
         this.nodeInfo = nodeInfo;
+        this.marshaller = workCache.getRemoteCacheContainer().getMarshaller();
     }
 
     public void addClientListener() {
@@ -119,28 +124,47 @@ public class RemoteInfinispanNotificationManager {
     }
 
     @ClientCacheEntryCreated
-    public void created(ClientCacheEntryCreatedEvent<String> event) {
-        String key = event.getKey();
-        hotrodEventReceived(key);
-    }
-
-
     @ClientCacheEntryModified
-    public void updated(ClientCacheEntryModifiedEvent<String> event) {
-        String key = event.getKey();
-        hotrodEventReceived(key);
+    public void onEntryUpdated(ClientCacheEntryCustomEvent<byte[]> event) {
+        try {
+            Map.Entry<String, Object> entry = extractEntryFromEvent(event);
+            executor.execute(() -> eventReceived(entry.getKey(), entry.getValue()));
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error("Unexpected error handling an update/create event from Infinispan cluster", e);
+        }
     }
-
 
     @ClientCacheEntryRemoved
-    public void removed(ClientCacheEntryRemovedEvent<String> event) {
-        String key = event.getKey();
-        taskFinished(key);
+    public void onEntryRemoved(ClientCacheEntryCustomEvent<byte[]> event) {
+        try {
+            String key = extractKeyFromEvent(event);
+            taskFinished(key);
+        } catch (IOException | ClassNotFoundException e) {
+            logger.error("Unexpected error handling a remove event from Infinispan cluster", e);
+        }
     }
 
-    private void hotrodEventReceived(String key) {
-        // TODO [pruivo] cache event converter may work here with protostream
-        workCache.getAsync(key).thenAcceptAsync(value -> eventReceived(key, value), executor);
+    private String extractKeyFromEvent(ClientCacheEntryCustomEvent<byte[]> event) throws IOException, ClassNotFoundException {
+        byte[] data = event.getEventData();
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        int length = UnsignedNumeric.readUnsignedInt(buffer);
+
+        // read the value
+        return (String) marshaller.objectFromByteBuffer(data, buffer.position(), length);
+    }
+
+    private Map.Entry<String, Object> extractEntryFromEvent(ClientCacheEntryCustomEvent<byte[]> event) throws IOException, ClassNotFoundException {
+        byte[] data = event.getEventData();
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        int length = UnsignedNumeric.readUnsignedInt(buffer);
+
+        String key = (String) marshaller.objectFromByteBuffer(data, buffer.position(), length);
+
+        buffer.position(buffer.position() + length);
+        length = UnsignedNumeric.readUnsignedInt(buffer);
+
+        Object value = marshaller.objectFromByteBuffer(data, buffer.position(), length);
+        return Map.entry(key, value);
     }
 
     private void eventReceived(String key, Object obj) {
