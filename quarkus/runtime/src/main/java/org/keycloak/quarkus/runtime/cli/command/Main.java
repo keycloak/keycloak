@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
+import io.quarkus.picocli.runtime.annotations.TopCommand;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
@@ -31,6 +32,7 @@ import picocli.CommandLine.ScopeType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@TopCommand
 @Command(name = "keycloak",
         header = {
                 "Keycloak - Open Source Identity and Access Management",
