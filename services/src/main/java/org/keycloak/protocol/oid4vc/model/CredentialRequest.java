@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,6 +36,7 @@ import java.util.Optional;
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CredentialRequest {
 
     @JsonProperty("credential_configuration_id")
@@ -45,6 +47,14 @@ public class CredentialRequest {
 
     @JsonProperty("proofs")
     private Proofs proofs;
+
+    /**
+     * Deprecated: use {@link #proofs} instead.
+     * This field is kept only for backward compatibility with clients sending a single 'proof'.
+     */
+    @Deprecated
+    @JsonProperty("proof")
+    private JwtProof proof;
 
     // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-format-identifier-3
     @JsonProperty("credential_definition")
@@ -77,6 +87,15 @@ public class CredentialRequest {
 
     public CredentialRequest setProofs(Proofs proofs) {
         this.proofs = proofs;
+        return this;
+    }
+
+    public JwtProof getProof() {
+        return proof;
+    }
+
+    public CredentialRequest setProof(JwtProof proof) {
+        this.proof = proof;
         return this;
     }
 

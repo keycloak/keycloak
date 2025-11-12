@@ -53,6 +53,7 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -944,6 +945,69 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                 assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+            }
+        });
+    }
+
+    /**
+     * Test that verifies the conversion from 'proof' (singular) to 'proofs' (array) works correctly.
+     * This test ensures backward compatibility with clients that send 'proof' instead of 'proofs'.
+     */
+    @Test
+    public void testProofToProofsConversion() throws Exception {
+        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+                .get(CredentialScopeModel.CONFIGURATION_ID);
+
+        testingClient.server(TEST_REALM_NAME).run(session -> {
+            AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            // Test 1: Create a request with single proof field - should be converted to proofs array
+            CredentialRequest requestWithProof = new CredentialRequest()
+                    .setCredentialConfigurationId(credentialConfigurationId);
+
+            // Create a single proof object
+            JwtProof singleProof = new JwtProof()
+                    .setJwt("dummy-jwt")
+                    .setProofType("jwt");
+            requestWithProof.setProof(singleProof);
+
+            String requestPayload = JsonSerialization.writeValueAsString(requestWithProof);
+
+            try {
+                // This should work because the conversion happens in validateRequestEncryption
+                issuerEndpoint.requestCredential(requestPayload);
+                Assert.fail();
+            } catch (Exception e) {
+                // We expect JWT validation to fail, but the conversion should have worked
+                assertTrue("Error should be related to JWT validation, not conversion",
+                        e.getMessage().contains("Could not validate provided proof"));
+            }
+
+            // Test 2: Create a request with both proof and proofs fields - should fail validation
+            CredentialRequest requestWithBoth = new CredentialRequest()
+                    .setCredentialConfigurationId(credentialConfigurationId);
+
+            requestWithBoth.setProof(singleProof);
+
+            Proofs proofsArray = new Proofs();
+            proofsArray.setJwt(List.of("dummy-jwt"));
+            requestWithBoth.setProofs(proofsArray);
+
+            String bothFieldsPayload = JsonSerialization.writeValueAsString(requestWithBoth);
+
+            try {
+                issuerEndpoint.requestCredential(bothFieldsPayload);
+                Assert.fail("Expected BadRequestException when both proof and proofs are provided");
+            } catch (BadRequestException e) {
+                int statusCode = e.getResponse().getStatus();
+                assertEquals("Expected HTTP 400 Bad Request", 400, statusCode);
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
+                assertEquals("Both 'proof' and 'proofs' must not be present at the same time",
+                        error.getErrorDescription());
             }
         });
     }
