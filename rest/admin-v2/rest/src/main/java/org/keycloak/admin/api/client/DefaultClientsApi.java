@@ -5,7 +5,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
-import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -46,9 +45,9 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     @Override
-    public ClientRepresentation createClient(@Valid ClientRepresentation client, FieldValidation fieldValidation) {
+    public ClientRepresentation createClient(@Valid ClientRepresentation client) {
         try {
-            DefaultClientApi.validateUnknownFields(fieldValidation, client, response);
+            DefaultClientApi.validateUnknownFields(client, response);
             validator.validate(client, CreateClientDefault.class);
             response.setStatus(Response.Status.CREATED.getStatusCode());
             return clientService.createOrUpdate(clientsResource, null, realm, client, false).representation();
