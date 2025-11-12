@@ -3,7 +3,6 @@ package org.keycloak.admin.api.client;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,6 +29,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 public class DefaultClientApi implements ClientApi {
+
     private final KeycloakSession session;
     private final RealmModel realm;
     private final ClientModel client;
@@ -58,12 +58,12 @@ public class DefaultClientApi implements ClientApi {
     }
 
     @Override
-    public ClientRepresentation createOrUpdateClient(ClientRepresentation client, FieldValidation fieldValidation) {
+    public ClientRepresentation createOrUpdateClient(ClientRepresentation client) {
         try {
             if (!Objects.equals(clientId, client.getClientId())) {
                 throw new WebApplicationException("cliendId in payload does not match the clientId in the path", Response.Status.BAD_REQUEST);
             }
-            validateUnknownFields(fieldValidation, client, response);
+            validateUnknownFields(client, response);
             var result = clientService.createOrUpdate(clientsResource, clientResource, realm, client, true);
             if (result.created()) {
                 response.setStatus(Response.Status.CREATED.getStatusCode());
@@ -75,7 +75,7 @@ public class DefaultClientApi implements ClientApi {
     }
 
     @Override
-    public ClientRepresentation patchClient(JsonNode patch, FieldValidation fieldValidation) {
+    public ClientRepresentation patchClient(JsonNode patch) {
         // patches don't yet allow for creating
         ClientRepresentation client = getClient();
         try {
@@ -93,7 +93,7 @@ public class DefaultClientApi implements ClientApi {
                 updated = objectReader.readValue(patch);
             }
 
-            validateUnknownFields(fieldValidation, updated, response);
+            validateUnknownFields(updated, response);
             return clientService.createOrUpdate(clientsResource, clientResource, realm, updated, true).representation();
         } catch (JsonPatchException e) {
             // TODO: kubernetes uses 422 instead
@@ -105,14 +105,9 @@ public class DefaultClientApi implements ClientApi {
         }
     }
 
-    static void validateUnknownFields(FieldValidation fieldValidation, ClientRepresentation rep, HttpResponse response) {
+    static void validateUnknownFields(ClientRepresentation rep, HttpResponse response) {
         if (!rep.getAdditionalFields().isEmpty()) {
-            if (fieldValidation == null || fieldValidation == FieldValidation.Strict) {
-                // validation failed
-                throw new WebApplicationException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
-            } else if (fieldValidation == FieldValidation.Warn) {
-                response.addHeader("WARNING", "Payload contains unknown fields: " + rep.getAdditionalFields().keySet());
-            }
+            throw new WebApplicationException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
         }
     }
 

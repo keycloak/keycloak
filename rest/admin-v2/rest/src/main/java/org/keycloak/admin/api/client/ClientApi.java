@@ -6,10 +6,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.api.FieldValidation;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,12 +24,11 @@ public interface ClientApi {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation createOrUpdateClient(@Valid ClientRepresentation client,
-                                              @QueryParam("fieldValidation") FieldValidation fieldValidation);
+    ClientRepresentation createOrUpdateClient(@Valid ClientRepresentation client);
 
     @PATCH
     @Consumes({MediaType.APPLICATION_JSON_PATCH_JSON, CONTENT_TYPE_MERGE_PATCH})
     @Produces(MediaType.APPLICATION_JSON)
-    ClientRepresentation patchClient(JsonNode patch, @QueryParam("fieldValidation") FieldValidation fieldValidation);
+    ClientRepresentation patchClient(JsonNode patch);
 
 }
