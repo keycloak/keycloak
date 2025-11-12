@@ -44,6 +44,8 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationInvitationProvider;
+import org.keycloak.organization.OrganizationInvitationModel;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -325,6 +327,15 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 return false;
             }
 
+            // Validate that the invitation still exists in the database
+            OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+            OrganizationInvitationModel invitation = invitationProvider.getById(token.getId(), organization);
+
+            if (invitation == null || invitation.isExpired()) {
+                error.accept(List.of(new FormMessage("The invitation has expired or is no longer valid.")));
+                return false;
+            }
+
             if (!token.getEmail().equals(email)) {
                 error.accept(List.of(new FormMessage(UserModel.EMAIL, "Email does not match the invitation")));
                 return false;
@@ -345,6 +356,10 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 provider.addManagedMember(orgModel, user);
                 context.getEvent().detail(Details.ORG_ID, orgModel.getId());
                 context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
+
+                // Delete the invitation since it has been used
+                OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+                invitationProvider.deleteInvitation(orgModel, token.getId());
             }
         }
     }

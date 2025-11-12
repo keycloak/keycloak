@@ -36,6 +36,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.OrganizationInvitationProvider;
+import org.keycloak.organization.OrganizationInvitationModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -107,6 +109,7 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             event.user(user).error(Errors.ORG_NOT_FOUND);
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
                     .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
                     .createInfoPage();
         }
@@ -115,8 +118,21 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             event.user(user).error(Errors.USER_ORG_MEMBER_ALREADY);
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
-                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername())
+                    .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername(), organization.getName())
                     .setAttribute("pageRedirectUri", organization.getRedirectUrl())
+                    .createInfoPage();
+        }
+
+        OrganizationInvitationProvider invitationProvider = session.getProvider(OrganizationInvitationProvider.class);
+        OrganizationInvitationModel invitation = invitationProvider.getById(token.getId(), organization);
+
+        if (invitation == null || invitation.isExpired()) {
+            event.user(user).error(Errors.INVALID_TOKEN);
+            return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
+                    .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                    .setInfo(Messages.STALE_INVITE_ORG_LINK)
                     .createInfoPage();
         }
 
@@ -142,6 +158,9 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
 
         // if we made it this far then go ahead and add the user to the organization
         orgProvider.addMember(orgProvider.getById(token.getOrgId()), user);
+
+        // Delete the invitation since it has been used
+        invitationProvider.deleteInvitation(organization, token.getId());
 
         String redirectUri = token.getRedirectUri();
 
