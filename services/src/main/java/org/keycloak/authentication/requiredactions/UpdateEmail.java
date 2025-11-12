@@ -355,7 +355,6 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     private void setPendingEmailVerification(RequiredActionContext context, String email) {
         UserModel user = context.getUser();
         user.setSingleAttribute(UserModel.EMAIL_PENDING, email);
-        user.setEmailVerified(false);
     }
 
     private String getPendingEmailVerification(RequiredActionContext context) {
