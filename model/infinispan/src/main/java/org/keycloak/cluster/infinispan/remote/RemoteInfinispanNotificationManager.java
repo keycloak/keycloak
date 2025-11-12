@@ -45,6 +45,15 @@ import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterListener;
+import org.keycloak.cluster.ClusterProvider.DCNotify;
+import org.keycloak.cluster.infinispan.TaskCallback;
+import org.keycloak.cluster.infinispan.WrapperClusterEvent;
+import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
+import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.connections.infinispan.NodeInfo;
 
 import static org.keycloak.cluster.infinispan.InfinispanClusterProvider.TASK_KEY_PREFIX;
 
@@ -57,12 +66,12 @@ public class RemoteInfinispanNotificationManager {
     private final ConcurrentMultivaluedHashMap<String, ClusterListener> listeners = new ConcurrentMultivaluedHashMap<>();
     private final Executor executor;
     private final RemoteCache<String, Object> workCache;
-    private final TopologyInfo topologyInfo;
+    private final NodeInfo nodeInfo;
 
-    public RemoteInfinispanNotificationManager(Executor executor, RemoteCache<String, Object> workCache, TopologyInfo topologyInfo) {
+    public RemoteInfinispanNotificationManager(Executor executor, RemoteCache<String, Object> workCache, NodeInfo nodeInfo) {
         this.executor = executor;
         this.workCache = workCache;
-        this.topologyInfo = topologyInfo;
+        this.nodeInfo = nodeInfo;
     }
 
     public void addClientListener() {
@@ -89,7 +98,7 @@ public class RemoteInfinispanNotificationManager {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), dcNotify, ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), dcNotify, ignoreSender);
 
         var eventKey = SecretGenerator.getInstance().generateSecureID();
 
@@ -115,7 +124,7 @@ public class RemoteInfinispanNotificationManager {
     }
 
     public String getMyNodeName() {
-        return topologyInfo.getMyNodeName();
+        return nodeInfo.nodeName();
     }
 
     @ClientCacheEntryCreated
@@ -153,7 +162,7 @@ public class RemoteInfinispanNotificationManager {
             return;
         }
 
-        if (event.rejectEvent(topologyInfo.getMyNodeName(), topologyInfo.getMySiteName())) {
+        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
             return;
         }
 

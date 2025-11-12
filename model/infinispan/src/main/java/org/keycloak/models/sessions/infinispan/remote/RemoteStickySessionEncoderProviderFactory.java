@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -58,7 +57,7 @@ public class RemoteStickySessionEncoderProviderFactory implements StickySessionE
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         try (var session = factory.create()) {
-            route = InfinispanUtil.getTopologyInfo(session).getMyNodeName();
+            route = session.getProvider(InfinispanConnectionProvider.class).getNodeInfo().nodeName();
         }
     }
 
