@@ -95,6 +95,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         entity.setLastSessionRefresh(model.getLastSessionRefresh());
         entity.setData(model.getData());
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
+        entity.setRememberMe(userSession.isRememberMe());
         em.persist(entity);
     }
 

@@ -152,6 +152,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
         this.model.setStarted(other.getStarted());
         this.model.setUserSessionId(other.getId());
         this.model.setLastSessionRefresh(other.getLastSessionRefresh());
+        this.model.setRememberMe(other.isRememberMe());
 
         this.user = other.getUser();
         this.userId = this.user.getId();
