@@ -90,6 +90,26 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
         });
     }
 
+      @Test
+    public void testInvalidUsernameImport() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+            MultivaluedHashMap<String, String> otherAttrs = new MultivaluedHashMap<>();
+            otherAttrs.put("postalAddress", List.of("123456", "654321"));
+
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "<b>bobby<em>", "Valid", "User", "valid@example.com", null, otherAttrs, "1234");
+
+            UserModel user = session.users().getUserByUsername(appRealm, "<b>bobby<em>");
+            // Test Should return NULL as username contains prohibited characters
+            Assert.assertNull("User with invalid username <b>bobby<em> should not be imported", user);
+        });
+    }
+
     @Test
     public void testUpdatingFirstNameAndLastNamePropagatesToFullnameMapper() {
 
