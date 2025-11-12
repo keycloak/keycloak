@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -34,13 +35,14 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+
 /**
  * Main entry class for selective disclosure jwt (SD-JWT).
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwt {
-    public static final String DELIMITER = "~";
 
     private final IssuerSignedJWT issuerSignedJWT;
     private final List<SdJwtClaim> claims;
@@ -93,7 +95,7 @@ public class SdJwt {
      */
     public JsonNode asNestedPayload() {
         JsonNode nestedPayload = issuerSignedJWT.getPayload();
-        ((ObjectNode) nestedPayload).remove(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM);
+        ((ObjectNode) nestedPayload).remove(CLAIM_NAME_SD_HASH_ALGORITHM);
         return nestedPayload;
     }
 
@@ -104,7 +106,7 @@ public class SdJwt {
         parts.addAll(disclosures);
         parts.add("");
 
-        return String.join(DELIMITER, parts);
+        return String.join(OID4VCConstants.SDJWT_DELIMITER, parts);
     }
 
     private static List<String> getDisclosureStrings(List<SdJwtClaim> claims) {
