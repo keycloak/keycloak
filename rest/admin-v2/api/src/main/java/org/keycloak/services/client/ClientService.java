@@ -7,6 +7,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.ClientRepresentation;
 import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.resources.admin.ClientResource;
+import org.keycloak.services.resources.admin.ClientsResource;
 
 public interface ClientService extends Service {
 
@@ -27,14 +29,14 @@ public interface ClientService extends Service {
 
     record CreateOrUpdateResult(ClientRepresentation representation, boolean created) {}
 
-    Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
+    Optional<ClientRepresentation> getClient(ClientResource clientResource, RealmModel realm, String clientId, ClientProjectionOptions projectionOptions);
 
-    Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
+    Stream<ClientRepresentation> getClients(ClientsResource clientsResource, RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
 
     ClientRepresentation deleteClient(RealmModel realm, String clientId);
 
     Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
 
-    CreateOrUpdateResult createOrUpdate(RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException;
+    CreateOrUpdateResult createOrUpdate(ClientsResource clientsResource, ClientResource clientResource, RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException;
 
 }

@@ -17,17 +17,10 @@ public class AdminRootV2 {
     @Context
     protected KeycloakSession session;
 
-    @Path("")
-    public AdminApi latestAdminApi() {
-        checkApiEnabled();
-        // we could return the latest Admin API if no version is specified
-        return session.getProvider(AdminApi.class);
-    }
-
     @Path("v2")
     public AdminApi adminApi() {
         checkApiEnabled();
-        return session.getProvider(AdminApi.class);
+        return new DefaultAdminApi(session);
     }
 
     @Path("{any:.*}")

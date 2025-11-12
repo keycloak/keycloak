@@ -1,5 +1,6 @@
 package org.keycloak.validation.jakarta;
 
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
@@ -8,10 +9,10 @@ import java.util.Set;
 import java.util.function.Function;
 
 public class HibernateValidatorProvider implements JakartaValidatorProvider {
-    private final Validator validator;
 
-    public HibernateValidatorProvider(Validator validator) {
-        this.validator = validator;
+    private final Validator validator = CDI.current().select(Validator.class).get();
+
+    public HibernateValidatorProvider() {
     }
 
     @Override
@@ -35,8 +36,4 @@ public class HibernateValidatorProvider implements JakartaValidatorProvider {
         return validator;
     }
 
-    @Override
-    public void close() {
-
-    }
 }
