@@ -164,6 +164,11 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client-tests</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
