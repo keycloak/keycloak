@@ -126,7 +126,7 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
                     aud,
                     requireExpirationClaim,
                     requireNotBeforeClaim,
-                    allowClockSkewSeconds
+                    allowedClockSkewSeconds
             );
         }
     }

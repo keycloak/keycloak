@@ -20,6 +20,8 @@ public class OID4VCConstants {
     public static final String CLAIM_NAME_EXP = "exp";
     public static final String CLAIM_NAME_NBF = "nbf";
     public static final String CLAIM_NAME_ISSUER = "iss";
+    public static final String CLAIM_NAME_CNF = "cnf";
+    public static final String CLAIM_NAME_JWK = "jwk";
 
     public static final String SD_HASH_DEFAULT_ALGORITHM = "sha-256";
     public static final int SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE = 5 * 60; // 5 minutes
@@ -28,4 +30,25 @@ public class OID4VCConstants {
      * JWT VC issuer endpoint {@see https://datatracker.ietf.org/doc/html/draft-ietf-oauth-sd-jwt-vc-13#section-5}
      */
     public static final String JWT_VC_ISSUER_END_POINT = "/.well-known/jwt-vc-issuer";
+
+    /**
+     * https://www.w3.org/TR/2022/REC-vc-data-model-20220303/#credential-subject
+     */
+    public static final String CREDENTIAL_SUBJECT = "credentialSubject";
+
+    /**
+     * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#appendix-G.6.3
+     */
+    public static final String SIGNED_METADATA_JWT_TYPE = "openidvci-issuer-metadata+jwt";
+
+    // --- Endpoints/Well-Known ---
+    public static final String WELL_KNOWN_OPENID_CREDENTIAL_ISSUER = "openid-credential-issuer";
+    public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
+    public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = "credential-offer";
+
+    // --- Keybinding/Credential Builder ---
+    public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "batch_credential_issuance.batch_size";
+
+    private OID4VCConstants() {
+    }
 }

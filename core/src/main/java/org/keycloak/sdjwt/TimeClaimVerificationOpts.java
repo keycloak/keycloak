@@ -36,18 +36,18 @@ public class TimeClaimVerificationOpts {
     /**
      * Tolerance window to account for clock skew when checking time claims
      */
-    private final int allowClockSkewSeconds;
+    private final int allowedClockSkewSeconds;
 
     protected TimeClaimVerificationOpts(
             boolean requireIssuedAtClaim,
             boolean requireExpirationClaim,
             boolean validateNotBeforeClaim,
-            int allowClockSkewSeconds
+            int allowedClockSkewSeconds
     ) {
         this.requireIssuedAtClaim = requireIssuedAtClaim;
         this.requireExpirationClaim = requireExpirationClaim;
         this.requireNotBeforeClaim = validateNotBeforeClaim;
-        this.allowClockSkewSeconds = allowClockSkewSeconds;
+        this.allowedClockSkewSeconds = allowedClockSkewSeconds;
     }
 
     public boolean mustRequireIssuedAtClaim() {
@@ -62,8 +62,8 @@ public class TimeClaimVerificationOpts {
         return requireNotBeforeClaim;
     }
 
-    public int getAllowClockSkewSeconds() {
-        return allowClockSkewSeconds;
+    public int getAllowedClockSkewSeconds() {
+        return allowedClockSkewSeconds;
     }
 
     public static <T extends Builder<T>> Builder<T> builder() {
@@ -75,7 +75,7 @@ public class TimeClaimVerificationOpts {
         protected boolean requireIssuedAtClaim = true;
         protected boolean requireExpirationClaim = true;
         protected boolean requireNotBeforeClaim = true;
-        protected int allowClockSkewSeconds = SD_JWT_DEFAULT_CLOCK_SKEW_SECONDS;
+        protected int allowedClockSkewSeconds = SD_JWT_DEFAULT_CLOCK_SKEW_SECONDS;
 
         @SuppressWarnings("unchecked")
         public T withRequireIssuedAtClaim(boolean requireIssuedAtClaim) {
@@ -96,8 +96,8 @@ public class TimeClaimVerificationOpts {
         }
 
         @SuppressWarnings("unchecked")
-        public T withAllowClockSkew(int allowClockSkewSeconds) {
-            this.allowClockSkewSeconds = allowClockSkewSeconds;
+        public T withAllowedClockSkew(int allowedClockSkewSeconds) {
+            this.allowedClockSkewSeconds = allowedClockSkewSeconds;
             return (T) this;
         }
 
@@ -106,7 +106,7 @@ public class TimeClaimVerificationOpts {
                     requireIssuedAtClaim,
                     requireExpirationClaim,
                     requireNotBeforeClaim,
-                    allowClockSkewSeconds
+                    allowedClockSkewSeconds
             );
         }
     }

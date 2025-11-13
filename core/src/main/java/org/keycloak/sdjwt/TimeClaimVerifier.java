@@ -37,8 +37,8 @@ public class TimeClaimVerifier {
     private final TimeClaimVerificationOpts opts;
 
     public TimeClaimVerifier(TimeClaimVerificationOpts opts) {
-        if (opts.getAllowClockSkewSeconds() < 0) {
-            throw new IllegalArgumentException("Leeway seconds cannot be negative");
+        if (opts.getAllowedClockSkewSeconds() < 0) {
+            throw new IllegalArgumentException("Allowed clock skew seconds cannot be negative");
         }
 
         this.opts = opts;
@@ -60,7 +60,7 @@ public class TimeClaimVerifier {
 
         long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
 
-        if ((currentTimestamp() + opts.getAllowClockSkewSeconds()) < iat) {
+        if ((currentTimestamp() + opts.getAllowedClockSkewSeconds()) < iat) {
             throw new VerificationException("JWT was issued in the future");
         }
     }
@@ -81,7 +81,7 @@ public class TimeClaimVerifier {
 
         long exp = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_EXP);
 
-        if ((currentTimestamp() - opts.getAllowClockSkewSeconds()) >= exp) {
+        if ((currentTimestamp() - opts.getAllowedClockSkewSeconds()) >= exp) {
             throw new VerificationException("JWT has expired");
         }
     }
@@ -102,7 +102,7 @@ public class TimeClaimVerifier {
 
         long nbf = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_NBF);
 
-        if ((currentTimestamp() + opts.getAllowClockSkewSeconds()) < nbf) {
+        if ((currentTimestamp() + opts.getAllowedClockSkewSeconds()) < nbf) {
             throw new VerificationException("JWT is not yet valid");
         }
     }
@@ -116,7 +116,7 @@ public class TimeClaimVerifier {
     public void verifyAge(JsonNode jwtPayload, int maxAge) throws VerificationException {
         long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
 
-        if ((currentTimestamp() - iat - opts.getAllowClockSkewSeconds()) > maxAge) {
+        if ((currentTimestamp() - iat - opts.getAllowedClockSkewSeconds()) > maxAge) {
             throw new VerificationException("JWT is too old");
         }
     }

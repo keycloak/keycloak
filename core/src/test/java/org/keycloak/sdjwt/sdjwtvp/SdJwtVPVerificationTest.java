@@ -289,7 +289,7 @@ public abstract class SdJwtVPVerificationTest {
                 defaultIssuerVerifyingKeys(),
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
-                        .withAllowClockSkew(10)
+                        .withAllowedClockSkew(10)
                         .build()
         );
     }
@@ -341,7 +341,7 @@ public abstract class SdJwtVPVerificationTest {
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
                         .withRequireExpirationClaim(true)
-                        .withAllowClockSkew(10)
+                        .withAllowedClockSkew(10)
                         .build()
         );
     }

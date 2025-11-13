@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
@@ -268,7 +269,7 @@ public class SdJwtVerificationContext {
         Objects.requireNonNull(cnf);
 
         // Read JWK
-        JsonNode cnfJwk = cnf.get("jwk");
+        JsonNode cnfJwk = cnf.get(CLAIM_NAME_JWK);
         if (cnfJwk == null) {
             throw new UnsupportedOperationException("Only cnf/jwk claim supported");
         }

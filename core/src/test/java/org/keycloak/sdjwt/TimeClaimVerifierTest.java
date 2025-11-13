@@ -33,15 +33,15 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 public class TimeClaimVerifierTest {
 
     private static final long CURRENT_TIMESTAMP = 1609459200L; // Fixed timestamp: 2021-01-01 00:00:00 UTC
-    private static final int DEFAULT_LEEWAY_SECONDS = 20;
+    private static final int DEFAULT_CLOCK_SKEW_SECONDS = 20;
 
-    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, false);
-    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, true);
+    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, false);
+    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, true);
 
     static class FixedTimeClaimVerifier extends TimeClaimVerifier {
 
         public FixedTimeClaimVerifier(int leewaySeconds, boolean requireClaims) {
-            super(createOptsWithLeeway(leewaySeconds, requireClaims));
+            super(createOptsWithAllowedClockSkew(leewaySeconds, requireClaims));
         }
 
         @Override
@@ -168,11 +168,11 @@ public class TimeClaimVerifierTest {
     }
 
     @Test
-    public void instantiationShouldFailIfLeewayNegative() {
+    public void instantiationShouldFailIfClockSkewNegative() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new TimeClaimVerifier(createOptsWithLeeway(-1, false)));
+                () -> new TimeClaimVerifier(createOptsWithAllowedClockSkew(-1, false)));
 
-        assertEquals("Leeway seconds cannot be negative", exception.getMessage());
+        assertEquals("Allowed clock skew seconds cannot be negative", exception.getMessage());
     }
 
     @Test
@@ -204,9 +204,9 @@ public class TimeClaimVerifierTest {
         assertEquals("Missing 'nbf' claim or null", exceptionNbf.getMessage());
     }
 
-    private static TimeClaimVerificationOpts createOptsWithLeeway(int leewaySeconds, boolean requireClaims) {
+    private static TimeClaimVerificationOpts createOptsWithAllowedClockSkew(int allowedClockSkewSeconds, boolean requireClaims) {
         return TimeClaimVerificationOpts.builder()
-                .withAllowClockSkew(leewaySeconds)
+                .withAllowedClockSkew(allowedClockSkewSeconds)
                 .withRequireIssuedAtClaim(requireClaims)
                 .withRequireExpirationClaim(requireClaims)
                 .withRequireNotBeforeClaim(requireClaims)

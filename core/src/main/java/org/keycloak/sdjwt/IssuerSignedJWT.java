@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 
@@ -146,7 +147,7 @@ public class IssuerSignedJWT extends SdJws {
      * Returns `cnf` claim (establishing key binding)
      */
     public Optional<JsonNode> getCnfClaim() {
-        JsonNode cnf = getPayload().get("cnf");
+        JsonNode cnf = getPayload().get(CLAIM_NAME_CNF);
         return Optional.ofNullable(cnf);
     }
 
