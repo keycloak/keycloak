@@ -143,6 +143,8 @@ Checks the certificate revocation status by using Online Certificate Status Prot
 *OCSP Fail-Open Behavior*::
 By default the OCSP check must return a positive response in order to continue with a successful authentication. Sometimes however this check can be inconclusive: for example, the OCSP server could be unreachable, overloaded, or the client certificate may not contain an OCSP responder URI. When this setting is turned ON, authentication will be denied only if an explicit negative response is received by the OCSP responder and the certificate is definitely revoked. If a valid OCSP response is not available the authentication attempt will be accepted.
 
+NOTE: OCSP retry behavior is configured server-wide through the HTTP client provider. See <@links.server id="outgoinghttp"/> for details on configuring retry settings for all outgoing HTTP requests, including OCSP validation.
+
 *OCSP Responder URI*::
 Override the value of the OCSP responder URI in the certificate.
 

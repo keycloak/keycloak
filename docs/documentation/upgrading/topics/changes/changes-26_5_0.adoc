@@ -107,6 +107,16 @@ make sure the users granted with the `realm-admin` role are expected to have thi
 The documentation is also updated with additional information about the different types of realm administrators.
 For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
 
+=== OCSP request timeouts follow HTTP client configuration
+
+In previous versions, OCSP requests used hardcoded connection and socket timeouts of 10 seconds.
+In this release, OCSP requests inherit timeouts from the outgoing HTTP client configuration (SPI `connections-http-client`, provider `default`).
+
+- **Socket timeout property**: `socket-timeout-millis` (default: `5000`)
+- **Establish connection timeout property**: `establish-connection-timeout-millis` (default: not set / `-1`)
+
+If you relied on the previous 10-second behavior, explicitly set the HTTP client timeouts.
+
 === Added database indexes on `OFFLINE_CLIENT_SESSION` table
 
 This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
