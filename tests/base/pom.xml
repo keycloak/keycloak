@@ -134,6 +134,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-tests-base</artifactId>
+            <version>999.0.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
