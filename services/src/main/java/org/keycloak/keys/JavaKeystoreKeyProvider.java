@@ -27,6 +27,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.crypto.SecretKey;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentModel;
@@ -104,6 +106,8 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
                     loadECKey(keyStore, keyAlias, KeyUse.ENC);
                 case Algorithm.EdDSA ->
                     loadEdDSAKey(keyStore, keyAlias, KeyUse.SIG);
+                case Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87 ->
+                    loadMLDSAKey(keyStore, keyAlias, KeyUse.SIG);
                 case Algorithm.AES ->
                     loadOctKey(keyStore, keyAlias, JavaAlgorithm.getJavaAlgorithm(algorithm), KeyUse.ENC);
                 case Algorithm.HS256, Algorithm.HS384, Algorithm.HS512 ->
@@ -193,6 +197,17 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
         PublicKey publicKey = x509Cert.getPublicKey();
         KeyPair keyPair = new KeyPair(publicKey, privateKey);
         return createKeyWrapper(keyPair, x509Cert, loadCertificateChain(privateKeyEntry), KeyType.OKP, keyUse, privateKey.getParams().getName());
+    }
+
+    private KeyWrapper loadMLDSAKey(KeyStore keyStore, String keyAlias, KeyUse keyUse) throws GeneralSecurityException {
+        if (Profile.isFeatureEnabled(Profile.Feature.PQC_ML_DSA)) {
+            KeyStore.PrivateKeyEntry privateKeyEntry = checkKeyEntry(keyStore, keyAlias, KeyStore.PrivateKeyEntry.class, keyUse);
+            PrivateKey privateKey = checkKey(privateKeyEntry.getPrivateKey(), keyAlias, PrivateKey.class, null);
+            X509Certificate x509Cert = checkCertificate(privateKeyEntry.getCertificate());
+            PublicKey publicKey = x509Cert.getPublicKey();
+            KeyPair keyPair = new KeyPair(publicKey, privateKey);
+            return createKeyWrapper(keyPair, x509Cert, loadCertificateChain(privateKeyEntry), KeyType.AKP, keyUse, null);
+        } else return null;
     }
 
     private KeyWrapper loadECKey(KeyStore keyStore, String keyAlias, KeyUse keyUse) throws GeneralSecurityException {
