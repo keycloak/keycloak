@@ -157,6 +157,8 @@ public class Profile {
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
+        ML_DSA("Experimental ML-DSA support for JWKs and Signatures", Type.EXPERIMENTAL),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */

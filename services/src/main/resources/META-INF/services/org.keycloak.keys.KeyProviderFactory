@@ -25,3 +25,4 @@ org.keycloak.keys.GeneratedEcdsaKeyProviderFactory
 org.keycloak.keys.GeneratedRsaEncKeyProviderFactory
 org.keycloak.keys.ImportedRsaEncKeyProviderFactory
 org.keycloak.keys.GeneratedEddsaKeyProviderFactory
+org.keycloak.keys.GeneratedMldsaKeyProviderFactory
