@@ -30,6 +30,7 @@ import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.actiontoken.impersonate.ImpersonateActionToken;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
@@ -40,9 +41,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
-import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -135,8 +134,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
@@ -412,19 +409,19 @@ public class UserResource {
         UserModel adminUser = auth.adminAuth().getUser();
         String impersonatorId = adminUser.getId();
         String impersonator = adminUser.getUsername();
-        userSession.setNote(IMPERSONATOR_ID.toString(), impersonatorId);
-        userSession.setNote(IMPERSONATOR_USERNAME.toString(), impersonator);
 
-        AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, session.getContext().getUri(), clientConnection);
         URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
+        int expires = Time.currentTime() + 60;
+
+        ImpersonateActionToken token = new ImpersonateActionToken(user.getId(), impersonator, impersonatorId, authenticatedRealm.getName(), redirect.toString(), expires);
+        String impersonateAction = LoginActionsService.actionTokenProcessor(session.getContext().getUri())
+            .queryParam(Constants.KEY, token.serialize(session, realm, session.getContext().getUri()))
+            .build(realm.getName())
+            .toString();
+
         Map<String, Object> result = new HashMap<>();
         result.put("sameRealm", sameRealm);
-        result.put("redirect", redirect.toString());
-        event.event(EventType.IMPERSONATE)
-                .session(userSession)
-                .user(user)
-                .detail(Details.IMPERSONATOR_REALM, authenticatedRealm.getName())
-                .detail(Details.IMPERSONATOR, impersonator).success();
+        result.put("redirect", impersonateAction);
 
         return result;
     }
