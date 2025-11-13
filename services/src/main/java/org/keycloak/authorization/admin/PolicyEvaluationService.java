@@ -150,7 +150,7 @@ public class PolicyEvaluationService {
         EvaluationDecisionCollector decision = new EvaluationDecisionCollector(authorization, resourceServer, request);
 
         if (permissions.isEmpty()) {
-            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(authorization.getRealm())) {
+            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(authorization.getRealm(), resourceServer.getId())) {
                 return decision;
             }
             return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(decision);
