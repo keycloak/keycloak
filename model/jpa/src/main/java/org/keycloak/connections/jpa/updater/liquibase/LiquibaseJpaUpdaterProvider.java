@@ -141,9 +141,9 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
             // create DEPLOYMENT_ID column if it doesn't exist
             if (!hasDeploymentIdColumn) {
-                ChangeLogHistoryService changelogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
-                changelogHistoryService.generateDeploymentId();
-                String deploymentId = changelogHistoryService.getDeploymentId();
+                ChangeLogHistoryService changelogHistoryService = Scope.getCurrentScope().getSingleton(ChangeLogHistoryServiceFactory.class).getChangeLogService(database);
+                // deploymentId generation handled by root scope
+                String deploymentId = Scope.getCurrentScope().getDeploymentId();
 
                 logger.debugv("Adding missing column {0}={1} to {2} table", DEPLOYMENT_ID_COLUMN, deploymentId,changelogTable.getName());
 
@@ -182,7 +182,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                 if (ranChangeSets.isEmpty()) {
                     outputChangeLogTableCreationScript(liquibase, exportWriter);
                 }
-                liquibase.update(null, new LabelExpression(), exportWriter, false);
+                liquibase.updateSql(null, new LabelExpression(), exportWriter);
             } else {
                 liquibase.update((Contexts) null);
             }
@@ -285,7 +285,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
     private void resetLiquibaseServices(KeycloakLiquibase liquibase) {
         liquibase.resetServices();
-        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
+        Scope.getCurrentScope().getSingleton(ChangeLogHistoryServiceFactory.class).register(new CustomChangeLogHistoryService());
     }
 
     private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) throws LiquibaseException {

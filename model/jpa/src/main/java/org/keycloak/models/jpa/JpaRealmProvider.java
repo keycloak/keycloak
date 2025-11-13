@@ -247,7 +247,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
         if (getRealmRole(realm, name) != null) {
-            throw new ModelDuplicateException();
+            throw new ModelDuplicateException("Realm role with name " + name + " is already present");
         }
         RoleEntity entity = new RoleEntity();
         entity.setId(id);
@@ -278,7 +278,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public RoleModel addClientRole(ClientModel client, String id, String name) {
         if (getClientRole(client, name) != null) {
-            throw new ModelDuplicateException();
+            throw new ModelDuplicateException("Client role with name " + name + " is already present");
         }
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);
