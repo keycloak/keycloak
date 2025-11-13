@@ -585,7 +585,7 @@ jobs:
           PROPS="-Dkc.test.database=remote -Dkc.test.database.vendor=postgres"
           PROPS+=" -Dkc.test.database.user=keycloak"
           PROPS+=" -Dkc.test.database.password=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
-          PROPS+=" -Dkc.test.database.url=jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}"
+          PROPS+=" -Dkc.test.database.url=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\""
           PROPS+=" -Dkc.test.database.driver=software.amazon.jdbc.Driver"
           PROPS+=" -Dkc.test.database.driver.artifact=software.amazon.jdbc:aws-advanced-jdbc-wrapper"
 
