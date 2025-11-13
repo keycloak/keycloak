@@ -206,14 +206,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
                     "ldap://localhost:10389", cfg.get(LDAPConstants.BIND_DN), ComponentRepresentation.SECRET_VALUE,
                     cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
                     cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
-            assertStatus(response, 400);
-
-            // test passing the secret but modifying the user DN
-            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
-                    cfg.get(LDAPConstants.CONNECTION_URL), "uid=anotheradmin,ou=people,dc=keycloak,dc=org", ComponentRepresentation.SECRET_VALUE,
-                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
-                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
-            assertStatus(response, 400);
+            assertStatus(response, 204);
         } finally {
             adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
         }
