@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jws;
+package org.keycloak.crypto;
 
-/**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
-public enum AlgorithmType {
+import org.keycloak.common.VerificationException;
+import org.keycloak.models.KeycloakSession;
 
-    RSA,
-    HMAC,
-    AES,
-    ECDSA,
-    EDDSA,
-    ML_DSA
+public class ServerMLDSASignatureVerifierContext extends AsymmetricSignatureVerifierContext {
 
+    public ServerMLDSASignatureVerifierContext(KeycloakSession session, String kid, String algorithm) throws VerificationException {
+        super(ServerAsymmetricSignatureVerifierContext.getKey(session, kid, algorithm));
+    }
+
+    public ServerMLDSASignatureVerifierContext(KeyWrapper key) {
+        super(key);
+    }
 }
