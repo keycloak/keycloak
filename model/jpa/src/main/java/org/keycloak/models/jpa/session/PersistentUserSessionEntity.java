@@ -105,7 +105,7 @@ public class PersistentUserSessionEntity {
     protected String data;
 
     @Column(name="REMEMBER_ME")
-    protected boolean rememberMe;
+    protected Boolean rememberMe;
 
     public String getUserSessionId() {
         return userSessionId;
@@ -173,7 +173,7 @@ public class PersistentUserSessionEntity {
     }
 
     public boolean isRememberMe() {
-        return rememberMe;
+        return rememberMe == Boolean.TRUE;
     }
 
     public void setRememberMe(boolean rememberMe) {
