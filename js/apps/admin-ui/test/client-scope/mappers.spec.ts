@@ -114,13 +114,18 @@ test.describe("Mappers tab", () => {
     await page.getByRole("button", { name: "Add mapper" }).click();
     await page.getByRole("menuitem", { name: "By configuration" }).click();
 
-    await page.locator('[role="dialog"]').getByText("Audience", { exact: true }).click();
+    await page
+      .locator('[role="dialog"]')
+      .getByText("Audience", { exact: true })
+      .click();
     await page.getByTestId("name").fill(mapperName);
     await clickSaveButton(page);
     await assertNotificationMessage(page, "Mapping successfully created");
 
     await assertRowExists(page, mapperName);
-    await page.getByRole("button", { name: "Add mapper" }).waitFor({ state: "visible" });
+    await page
+      .getByRole("button", { name: "Add mapper" })
+      .waitFor({ state: "visible" });
 
     await removeMappers(page, [mapperName]);
   });
