@@ -146,7 +146,7 @@ export const Members = () => {
                 selectedRows.map((user) =>
                   adminClient.organizations.addMember({
                     orgId,
-                    userId: user.id!,
+                    userId: `"${user.id!}"`,
                   }),
                 ),
               );
