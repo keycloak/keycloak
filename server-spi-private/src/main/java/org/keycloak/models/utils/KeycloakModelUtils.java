@@ -71,7 +71,9 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
@@ -100,6 +102,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public final class KeycloakModelUtils {
 
     private static final Logger logger = Logger.getLogger(KeycloakModelUtils.class);
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
@@ -122,6 +125,39 @@ public final class KeycloakModelUtils {
      */
     public static String generateId() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Generate a UUID v7 (time-ordered UUID)
+     * 
+     * @return UUID v7 instance
+     */
+    public static String generateIdv7() {
+        long timestamp = Instant.now().toEpochMilli();
+        
+        // Generate random bytes for the remaining parts
+        byte[] randomBytes = new byte[10];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        
+        // Construct MSB: 48-bit timestamp + 4-bit version + 12-bit random
+        long msb = (timestamp << 16) |
+                   (0x7L << 12) |
+                   (((long) randomBytes[0] & 0x0F) << 8) |
+                   ((long) randomBytes[1] & 0xFF);
+        
+        // Construct LSB: 2-bit variant + 62-bit random
+        long lsb = (0x8L << 60) |
+                   ((long) (randomBytes[2] & 0x3F) << 56) |
+                   ((long) (randomBytes[3] & 0xFF) << 48) |
+                   ((long) (randomBytes[4] & 0xFF) << 40) |
+                   ((long) (randomBytes[5] & 0xFF) << 32) |
+                   ((long) (randomBytes[6] & 0xFF) << 24) |
+                   ((long) (randomBytes[7] & 0xFF) << 16) |
+                   ((long) (randomBytes[8] & 0xFF) << 8) |
+                   (randomBytes[9] & 0xFF);
+
+        UUID uuid = new UUID(msb, lsb);
+        return uuid.toString();
     }
 
     /**
