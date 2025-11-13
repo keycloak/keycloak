@@ -23,8 +23,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.rule.CryptoInitRule;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -53,36 +56,31 @@ public abstract class SdJwsTest {
 
     @Test
     public void testVerifySignature_Positive() throws Exception {
-        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
-        };
+        SdJws<JsonNode> sdJws = createSdJws(createPayload(), testSettings.holderSigContext, "jwt");
         sdJws.verifySignature(testSettings.holderVerifierContext);
     }
 
     @Test
     public void testVerifySignature_WrongPublicKey() {
-        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
-        };
+        SdJws<JsonNode> sdJws = createSdJws(createPayload(), testSettings.holderSigContext, "jwt");
         assertThrows(VerificationException.class, () -> sdJws.verifySignature(testSettings.issuerVerifierContext));
     }
 
     @Test
     public void testPayloadJwsConstruction() {
-        SdJws sdJws = new SdJws(createPayload()) {
-        };
+        SdJws<JsonNode> sdJws = createSdJws(createPayload());
         assertNotNull(sdJws.getPayload());
     }
 
     @Test(expected = IllegalStateException.class)
     public void testUnsignedJwsConstruction() {
-        SdJws sdJws = new SdJws(createPayload()) {
-        };
+        SdJws<JsonNode> sdJws = createSdJws(createPayload());
         sdJws.toJws();
     }
 
     @Test
     public void testSignedJwsConstruction() {
-        SdJws sdJws = new SdJws(createPayload(), testSettings.holderSigContext, "jwt") {
-        };
+        SdJws<JsonNode> sdJws = createSdJws(createPayload(), testSettings.holderSigContext, "jwt");
         assertNotNull(sdJws.toJws());
     }
 
@@ -93,7 +91,7 @@ public abstract class SdJwsTest {
         List<String> allowedIssuers = Arrays.asList(new String[]{"issuer1@sdjwt.com", "issuer2@sdjwt.com"});
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("iss", "unknown-issuer@sdjwt.com");
-        SdJws sdJws = new SdJws(payload) {};
+        SdJws<JsonNode> sdJws = createSdJws(payload);
         VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyIssClaim(allowedIssuers));
         assertEquals("Unknown 'iss' claim value: unknown-issuer@sdjwt.com", exception.getMessage());
     }
@@ -103,7 +101,7 @@ public abstract class SdJwsTest {
         List<String> allowedIssuers = Arrays.asList(new String[]{"issuer1@sdjwt.com", "issuer2@sdjwt.com"});
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("iss", "issuer1@sdjwt.com");
-        SdJws sdJws = new SdJws(payload) {};
+        SdJws<JsonNode> sdJws = createSdJws(payload);
         sdJws.verifyIssClaim(allowedIssuers);
     }
 
@@ -111,7 +109,7 @@ public abstract class SdJwsTest {
     public void testVerifyVctClaim_Negative() {
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("vct", "IdentityCredential");
-        SdJws sdJws = new SdJws(payload) {};
+        SdJws<JsonNode> sdJws = createSdJws(payload);
         VerificationException exception = assertThrows(VerificationException.class, () -> sdJws.verifyVctClaim(Collections.singletonList("PassportCredential")));
         assertEquals("Unknown 'vct' claim value: IdentityCredential", exception.getMessage());
     }
@@ -120,7 +118,45 @@ public abstract class SdJwsTest {
     public void testVerifyVctClaim_Positive() throws VerificationException {
         JsonNode payload = createPayload();
         ((ObjectNode) payload).put("vct", "IdentityCredential");
-        SdJws sdJws = new SdJws(payload) {};
+        SdJws<JsonNode> sdJws = createSdJws(payload);
         sdJws.verifyVctClaim(Collections.singletonList("IdentityCredential"));
+    }
+
+    private SdJws<JsonNode> createSdJws(JsonNode payload) {
+        return new SdJws<JsonNode>(payload) {
+
+            @Override
+            protected String readClaim(JsonNode payload, String claimName) throws VerificationException {
+                return SdJwtUtils.readClaim(payload, claimName);
+            }
+
+            @Override
+            protected JsonNode readPayload(JWSInput jwsInput) {
+                try {
+                    return SdJwtUtils.mapper.readTree(jwsInput.getContent());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+    }
+
+    private SdJws<JsonNode> createSdJws(JsonNode payload, SignatureSignerContext signer, String jwsType) {
+        return new SdJws<JsonNode>(payload, signer, jwsType) {
+
+            @Override
+            protected String readClaim(JsonNode payload, String claimName) throws VerificationException {
+                return SdJwtUtils.readClaim(payload, claimName);
+            }
+
+            @Override
+            protected JsonNode readPayload(JWSInput jwsInput) {
+                try {
+                    return SdJwtUtils.mapper.readTree(jwsInput.getContent());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
     }
 }

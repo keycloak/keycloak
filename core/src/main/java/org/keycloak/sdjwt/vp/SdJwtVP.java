@@ -209,8 +209,8 @@ public class SdJwtVP {
         return issuerSignedJWT.getCnfClaim().orElse(null);
     }
 
-    public String present(List<String> disclosureDigests, JsonNode keyBindingClaims,
-            SignatureSignerContext holdSignatureSignerContext, String jwsType) {
+    public String present(List<String> disclosureDigests, KeyBindingPayload keyBindingClaims,
+            SignatureSignerContext holdSignatureSignerContext) {
         StringBuilder sb = new StringBuilder();
         if (disclosureDigests == null || disclosureDigests.isEmpty()) {
             // disclose everything
@@ -228,8 +228,8 @@ public class SdJwtVP {
             return unboundPresentation;
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
-        keyBindingClaims = ((ObjectNode) keyBindingClaims).put(OID4VCConstants.SD_HASH, sd_hash);
-        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext, jwsType);
+        keyBindingClaims.setSdHash(sd_hash);
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext);
         sb.append(keyBindingJWT.toJws());
         return sb.toString();
     }

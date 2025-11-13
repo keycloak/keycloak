@@ -28,7 +28,6 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.sdjwt.vp.KeyBindingJWT;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -50,7 +49,6 @@ public class SdJwt {
     private final SdJwtVerificationContext sdJwtVerificationContext;
 
     private SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, List<SdJwt> nesteSdJwts,
-                  Optional<KeyBindingJWT> keyBindingJWT,
                   SignatureSignerContext signer,
                   String hashAlgorithm,
                   String jwsType) {
@@ -90,12 +88,11 @@ public class SdJwt {
      * <p>
      * dropping the algo claim.
      *
-     * @param nestedSdJwt
      * @return
      */
     public JsonNode asNestedPayload() {
-        JsonNode nestedPayload = issuerSignedJWT.getPayload();
-        ((ObjectNode) nestedPayload).remove(CLAIM_NAME_SD_HASH_ALGORITHM);
+        ObjectNode nestedPayload = issuerSignedJWT.getPayload();
+        nestedPayload.remove(CLAIM_NAME_SD_HASH_ALGORITHM);
         return nestedPayload;
     }
 
@@ -229,7 +226,6 @@ public class SdJwt {
     public static class Builder {
         private DisclosureSpec disclosureSpec;
         private JsonNode claimSet;
-        private Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
         private SignatureSignerContext signer;
         private final List<SdJwt> nestedSdJwts = new ArrayList<>();
         private String hashAlgorithm;
@@ -242,11 +238,6 @@ public class SdJwt {
 
         public Builder withClaimSet(JsonNode claimSet) {
             this.claimSet = claimSet;
-            return this;
-        }
-
-        public Builder withKeyBindingJWT(KeyBindingJWT keyBindingJWT) {
-            this.keyBindingJWT = Optional.of(keyBindingJWT);
             return this;
         }
 
@@ -271,7 +262,7 @@ public class SdJwt {
         }
 
         public SdJwt build() {
-            return new SdJwt(disclosureSpec, claimSet, nestedSdJwts, keyBindingJWT, signer, hashAlgorithm, jwsType);
+            return new SdJwt(disclosureSpec, claimSet, nestedSdJwts, signer, hashAlgorithm, jwsType);
         }
     }
 

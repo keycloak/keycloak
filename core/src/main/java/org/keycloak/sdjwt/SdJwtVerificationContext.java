@@ -23,10 +23,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.sdjwt.consumer.PresentationRequirements;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
+import org.keycloak.sdjwt.vp.KeyBindingPayload;
 
+import java.security.MessageDigest;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,12 +41,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.KB_JWT_TYP;
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
-import static org.keycloak.OID4VCConstants.SD_HASH;
 
 /**
  * Runs SD-JWT verification in isolation with only essential properties.
@@ -216,6 +222,9 @@ public class SdJwtVerificationContext {
         // Check that the typ of the Key Binding JWT is kb+jwt
         validateKeyBindingJwtTyp();
 
+        // Check that the algorithm is not "none"
+        validateKeyBindingAlgorithm();
+
         // Determine the public key for the Holder from the SD-JWT
         JsonNode cnf = issuerSignedJwt.getCnfClaim().orElseThrow(
                 () -> new VerificationException("No cnf claim in Issuer-signed JWT for key binding")
@@ -255,8 +264,15 @@ public class SdJwtVerificationContext {
      */
     private void validateKeyBindingJwtTyp() throws VerificationException {
         String typ = keyBindingJwt.getHeader().getType();
-        if (!typ.equals(KeyBindingJWT.TYP)) {
-            throw new VerificationException("Key Binding JWT is not of declared typ " + KeyBindingJWT.TYP);
+        if (!KB_JWT_TYP.equals(typ)) {
+            throw new VerificationException("Key Binding JWT is not of declared typ " + KB_JWT_TYP);
+        }
+    }
+
+    private void validateKeyBindingAlgorithm() throws VerificationException {
+        Algorithm alg = keyBindingJwt.getHeader().getAlgorithm();
+        if (alg == null || Algorithm.none.equals(alg)) {
+            throw new VerificationException("Key Binding JWT has incorrect algorithm '" + Algorithm.none + "'");
         }
     }
 
@@ -299,19 +315,19 @@ public class SdJwtVerificationContext {
         TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(issuerSignedJwtVerificationOpts);
 
         try {
-            timeClaimVerifier.verifyIssuedAtClaim(payload);
+            timeClaimVerifier.verifyIssuedAtClaim(SdJwtUtils.readTimeClaimOrNull(payload, CLAIM_NAME_IAT));
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `iat` claim", e);
         }
 
         try {
-            timeClaimVerifier.verifyExpirationClaim(payload);
+            timeClaimVerifier.verifyExpirationClaim(SdJwtUtils.readTimeClaimOrNull(payload, CLAIM_NAME_EXP));
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `exp` claim", e);
         }
 
         try {
-            timeClaimVerifier.verifyNotBeforeClaim(payload);
+            timeClaimVerifier.verifyNotBeforeClaim(SdJwtUtils.readTimeClaimOrNull(payload, CLAIM_NAME_NBF));
         } catch (VerificationException e) {
             throw new VerificationException("Issuer-Signed JWT: Invalid `nbf` claim", e);
         }
@@ -325,20 +341,20 @@ public class SdJwtVerificationContext {
     private void validateKeyBindingJwtTimeClaims(
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
     ) throws VerificationException {
-        JsonNode kbJwtPayload = keyBindingJwt.getPayload();
+        KeyBindingPayload kbJwtPayload = keyBindingJwt.getPayload();
         TimeClaimVerifier timeClaimVerifier = new TimeClaimVerifier(keyBindingJwtVerificationOpts);
 
         // Check that the creation time of the Key Binding JWT, as determined by the iat claim,
         // is within an acceptable window
 
         try {
-            timeClaimVerifier.verifyIssuedAtClaim(kbJwtPayload);
+            timeClaimVerifier.verifyIssuedAtClaim(kbJwtPayload.getIssuedAt());
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `iat` claim", e);
         }
 
         try {
-            timeClaimVerifier.verifyAge(kbJwtPayload, keyBindingJwtVerificationOpts.getAllowedMaxAge());
+            timeClaimVerifier.verifyAge(kbJwtPayload.getIssuedAt(), keyBindingJwtVerificationOpts.getAllowedMaxAge());
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT is too old");
         }
@@ -346,13 +362,13 @@ public class SdJwtVerificationContext {
         // Check other time claims
 
         try {
-            timeClaimVerifier.verifyExpirationClaim(kbJwtPayload);
+            timeClaimVerifier.verifyExpirationClaim(kbJwtPayload.getExp());
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `exp` claim", e);
         }
 
         try {
-            timeClaimVerifier.verifyNotBeforeClaim(kbJwtPayload);
+            timeClaimVerifier.verifyNotBeforeClaim(kbJwtPayload.getNbf());
         } catch (VerificationException e) {
             throw new VerificationException("Key binding JWT: Invalid `nbf` claim", e);
         }
@@ -645,15 +661,15 @@ public class SdJwtVerificationContext {
     private void preventKeyBindingJwtReplay(
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
     ) throws VerificationException {
-        JsonNode nonce = keyBindingJwt.getPayload().get("nonce");
-        if (nonce == null || !nonce.isTextual()
-                || !nonce.asText().equals(keyBindingJwtVerificationOpts.getNonce())) {
+        String nonce = keyBindingJwt.getPayload().getNonce();
+        if (nonce == null || keyBindingJwtVerificationOpts.getNonce() == null
+                || !MessageDigest.isEqual(nonce.getBytes(), keyBindingJwtVerificationOpts.getNonce().getBytes())) {
             throw new VerificationException("Key binding JWT: Unexpected `nonce` value");
         }
 
-        JsonNode aud = keyBindingJwt.getPayload().get("aud");
-        if (aud == null || !aud.isTextual()
-                || !aud.asText().equals(keyBindingJwtVerificationOpts.getAud())) {
+        String aud = keyBindingJwt.getPayload().getAudience();
+        if (aud == null || keyBindingJwtVerificationOpts.getAud() == null
+                || !MessageDigest.isEqual(aud.getBytes(), keyBindingJwtVerificationOpts.getAud().getBytes())) {
             throw new VerificationException("Key binding JWT: Unexpected `aud` value");
         }
     }
@@ -671,8 +687,8 @@ public class SdJwtVerificationContext {
     private void validateKeyBindingJwtSdHashIntegrity() throws VerificationException {
         Objects.requireNonNull(sdJwtVpString);
 
-        JsonNode sdHash = keyBindingJwt.getPayload().get(SD_HASH);
-        if (sdHash == null || !sdHash.isTextual()) {
+        String sdHash = keyBindingJwt.getPayload().getSdHash();
+        if (sdHash == null) {
             throw new VerificationException("Key binding JWT: Claim `sd_hash` missing or not a string");
         }
 
@@ -682,7 +698,7 @@ public class SdJwtVerificationContext {
         String digest = SdJwtUtils.hashAndBase64EncodeNoPad(
                 toHash.getBytes(), issuerSignedJwt.getSdHashAlg());
 
-        if (!digest.equals(sdHash.asText())) {
+        if (!MessageDigest.isEqual(sdHash.getBytes(), digest.getBytes())) {
             throw new VerificationException("Key binding JWT: Invalid `sd_hash` digest");
         }
     }

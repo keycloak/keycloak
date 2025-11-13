@@ -17,14 +17,9 @@
 
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.common.VerificationException;
 
 import java.time.Instant;
-
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 /**
  * Module for checking the validity of JWT time claims.
@@ -47,18 +42,16 @@ public class TimeClaimVerifier {
     /**
      * Validates that JWT was not issued in the future
      *
-     * @param jwtPayload the JWT's payload
+     * @param iat Issued-at value. Could be null
      */
-    public void verifyIssuedAtClaim(JsonNode jwtPayload) throws VerificationException {
-        if (!jwtPayload.hasNonNull(CLAIM_NAME_IAT)) {
+    public void verifyIssuedAtClaim(Long iat) throws VerificationException {
+        if (iat == null) {
             if (opts.mustRequireIssuedAtClaim()) {
-                throw new VerificationException("Missing 'iat' claim or null");
+                throw new VerificationException("Missing 'iat' claim");
             }
 
             return; // Not required, skipping check
         }
-
-        long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
 
         if ((currentTimestamp() + opts.getAllowedClockSkewSeconds()) < iat) {
             throw new VerificationException("JWT was issued in the future");
@@ -68,18 +61,16 @@ public class TimeClaimVerifier {
     /**
      * Validates that JWT has not expired
      *
-     * @param jwtPayload the JWT's payload
+     * @param exp When the JWT is going to be expired. Could be null
      */
-    public void verifyExpirationClaim(JsonNode jwtPayload) throws VerificationException {
-        if (!jwtPayload.hasNonNull(CLAIM_NAME_EXP)) {
+    public void verifyExpirationClaim(Long exp) throws VerificationException {
+        if (exp == null) {
             if (opts.mustRequireExpirationClaim()) {
-                throw new VerificationException("Missing 'exp' claim or null");
+                throw new VerificationException("Missing 'exp' claim");
             }
 
             return; // Not required, skipping check
         }
-
-        long exp = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_EXP);
 
         if ((currentTimestamp() - opts.getAllowedClockSkewSeconds()) >= exp) {
             throw new VerificationException("JWT has expired");
@@ -89,18 +80,16 @@ public class TimeClaimVerifier {
     /**
      * Validates that JWT can yet be processed
      *
-     * @param jwtPayload the JWT's payload
+     * @param nbf When the JWT is going to be expired. Could be null
      */
-    public void verifyNotBeforeClaim(JsonNode jwtPayload) throws VerificationException {
-        if (!jwtPayload.hasNonNull(CLAIM_NAME_NBF)) {
+    public void verifyNotBeforeClaim(Long nbf) throws VerificationException {
+        if (nbf == null) {
             if (opts.mustRequireNotBeforeClaim()) {
-                throw new VerificationException("Missing 'nbf' claim or null");
+                throw new VerificationException("Missing 'nbf' claim");
             }
 
             return; // Not required, skipping check
         }
-
-        long nbf = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_NBF);
 
         if ((currentTimestamp() + opts.getAllowedClockSkewSeconds()) < nbf) {
             throw new VerificationException("JWT is not yet valid");
@@ -110,11 +99,13 @@ public class TimeClaimVerifier {
     /**
      * Validates that JWT is not too old
      *
-     * @param jwtPayload the JWT's payload
+     * @param iat When JWT was issued. Cannot be null
      * @param maxAge     maximum allowed age in seconds
      */
-    public void verifyAge(JsonNode jwtPayload, int maxAge) throws VerificationException {
-        long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
+    public void verifyAge(Long iat, int maxAge) throws VerificationException {
+        if (iat == null) {
+            throw new VerificationException("Missing 'iat' claim");
+        }
 
         if ((currentTimestamp() - iat - opts.getAllowedClockSkewSeconds()) > maxAge) {
             throw new VerificationException("JWT is too old");

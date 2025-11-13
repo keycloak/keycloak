@@ -16,6 +16,7 @@
  */
 package org.keycloak.sdjwt;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -47,11 +48,7 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public class IssuerSignedJWT extends SdJws {
-
-    public IssuerSignedJWT(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        super(payload, signer, jwsType);
-    }
+public class IssuerSignedJWT extends SdJws<ObjectNode> {
 
     public static IssuerSignedJWT fromJws(String jwsString) {
         return new IssuerSignedJWT(jwsString);
@@ -66,10 +63,6 @@ public class IssuerSignedJWT extends SdJws {
         super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures));
     }
 
-    private IssuerSignedJWT(JsonNode payload, JWSInput jwsInput) {
-        super(payload, jwsInput);
-    }
-
     private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
                             boolean nestedDisclosures, SignatureSignerContext signer, String jwsType) {
         super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures), signer, jwsType);
@@ -79,7 +72,7 @@ public class IssuerSignedJWT extends SdJws {
      * Generates the payload of the issuer signed jwt from the list
      * of claims.
      */
-    private static JsonNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
+    private static ObjectNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
                                                   boolean nestedDisclosures) {
 
         SdJwtUtils.requireNonEmpty(hashAlg, "hashAlg must not be null or empty");
@@ -178,6 +171,20 @@ public class IssuerSignedJWT extends SdJws {
         if (!secureAlgorithms.contains(hashAlg)) {
             throw new VerificationException("Unexpected or insecure hash algorithm: " + hashAlg);
         }
+    }
+
+    @Override
+    protected ObjectNode readPayload(JWSInput jwsInput) {
+        try {
+            return (ObjectNode) SdJwtUtils.mapper.readTree(jwsInput.getContent());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    protected String readClaim(ObjectNode payload, String claimName) throws VerificationException {
+        return SdJwtUtils.readClaim(payload, claimName);
     }
 
     // Builder

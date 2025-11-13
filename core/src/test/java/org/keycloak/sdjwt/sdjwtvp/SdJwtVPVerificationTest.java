@@ -17,9 +17,7 @@
 
 package org.keycloak.sdjwt.sdjwtvp;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.OID4VCConstants;
@@ -31,6 +29,7 @@ import org.keycloak.sdjwt.TestSettings;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
+import org.keycloak.sdjwt.vp.KeyBindingPayload;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import java.time.Instant;
@@ -42,9 +41,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -208,6 +204,17 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
+    public void testShouldFail_IfAlgorithmNone() {
+        testShouldFailGeneric(
+                // Key Binding JWT's header: {"kid": "holder", "typ": "kb+jwt",  "alg": "none"}
+                "sdjwt/s20.3-sdjwt+kb--wrong-algorithm.txt",
+                defaultKeyBindingJwtVerificationOpts().build(),
+                "Key Binding JWT has incorrect algorithm 'none'",
+                null
+        );
+    }
+
+    @Test
     public void testShouldFail_IfReplayChecksFail_Nonce() {
         testShouldFailGeneric(
                 "sdjwt/s20.1-sdjwt+kb.txt",
@@ -233,25 +240,25 @@ public abstract class SdJwtVPVerificationTest {
 
     @Test
     public void testShouldFail_IfKbSdHashWrongFormat() {
-        ObjectNode kbPayload = exampleKbPayload();
+        KeyBindingPayload kbPayload = exampleKbPayload();
 
         // This hash is not a string
-        kbPayload.set(OID4VCConstants.SD_HASH, mapper.valueToTree(1234));
+        kbPayload.setSdHash("1234");
 
         testShouldFailGeneric2(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts().build(),
-                "Key binding JWT: Claim `sd_hash` missing or not a string",
+                "Key binding JWT: Invalid `sd_hash` digest",
                 null
         );
     }
 
     @Test
     public void testShouldFail_IfKbSdHashInvalid() {
-        ObjectNode kbPayload = exampleKbPayload();
+        KeyBindingPayload kbPayload = exampleKbPayload();
 
         // This hash makes no sense
-        kbPayload.put(OID4VCConstants.SD_HASH, "c3FmZHFmZGZlZXNkZmZi");
+        kbPayload.setSdHash("c3FmZHFmZGZlZXNkZmZi");
 
         testShouldFailGeneric2(
                 kbPayload,
@@ -265,8 +272,8 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbIssuedInFuture() {
         long now = Instant.now().getEpochSecond();
 
-        ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(now + 1000));
+        KeyBindingPayload kbPayload = exampleKbPayload();
+        kbPayload.setIssuedAt(now + 1000);
 
         testShouldFailGeneric2(
                 kbPayload,
@@ -280,9 +287,9 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldTolerateKbIssuedInTheFutureWithinLeeway() throws VerificationException {
         long now = Instant.now().getEpochSecond();
 
-        ObjectNode kbPayload = exampleKbPayload();
+        KeyBindingPayload kbPayload = exampleKbPayload();
         // Issued just 5 seconds in the future. Should pass with a leeway of 10 seconds.
-        kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(now + 5));
+        kbPayload.setIssuedAt(now + 5);
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
         sdJwtVP.verify(
@@ -298,9 +305,9 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbTooOld() {
         long issuerSignedJwtIat = 1683000000; // same value in test vector
 
-        ObjectNode kbPayload = exampleKbPayload();
+        KeyBindingPayload kbPayload = exampleKbPayload();
         // This KB-JWT is then issued more than 60s ago
-        kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(issuerSignedJwtIat - 120));
+        kbPayload.setIssuedAt(issuerSignedJwtIat - 120);
 
         testShouldFailGeneric2(
                 kbPayload,
@@ -316,8 +323,8 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbExpired() {
         long now = Instant.now().getEpochSecond();
 
-        ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(CLAIM_NAME_EXP, mapper.valueToTree(now - 1000));
+        KeyBindingPayload kbPayload = exampleKbPayload();
+        kbPayload.setExp(now - 1000);
 
         testShouldFailGeneric2(
                 kbPayload,
@@ -331,9 +338,9 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldTolerateExpiredKbWithinLeeway() throws VerificationException {
         long now = Instant.now().getEpochSecond();
 
-        ObjectNode kbPayload = exampleKbPayload();
+        KeyBindingPayload kbPayload = exampleKbPayload();
         // Expires just 5 seconds ago. Should pass with a leeway of 10 seconds.
-        kbPayload.set(CLAIM_NAME_EXP, mapper.valueToTree(now - 5));
+        kbPayload.setExp(now - 5);
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
         sdJwtVP.verify(
@@ -350,8 +357,8 @@ public abstract class SdJwtVPVerificationTest {
     public void testShouldFail_IfKbNotBeforeTimeYet() {
         long now = Instant.now().getEpochSecond();
 
-        ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(CLAIM_NAME_NBF, mapper.valueToTree(now + 1000));
+        KeyBindingPayload kbPayload = exampleKbPayload();
+        kbPayload.setNbf(now + 1000);
 
         testShouldFailGeneric2(
                 kbPayload,
@@ -430,7 +437,7 @@ public abstract class SdJwtVPVerificationTest {
      * sample `sdjwt/s20.1-sdjwt+kb.txt` to cover different scenarios.
      */
     private void testShouldFailGeneric2(
-            JsonNode kbPayloadSubstitute,
+            KeyBindingPayload kbPayloadSubstitute,
             KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
             String exceptionMessage,
             String exceptionCauseMessage
@@ -472,21 +479,19 @@ public abstract class SdJwtVPVerificationTest {
                 .withRequireNotBeforeClaim(false);
     }
 
-    private ObjectNode exampleKbPayload() {
-        ObjectNode payload = mapper.createObjectNode();
-        payload.put("nonce", "1234567890");
-        payload.put("aud", "https://verifier.example.org");
-        payload.put(OID4VCConstants.SD_HASH, "X9RrrfWt_70gHzOcovGSIt4Fms9Tf2g2hjlWVI_cxZg");
-        payload.set("iat", mapper.valueToTree(1702315679));
-
+    private KeyBindingPayload exampleKbPayload() {
+        KeyBindingPayload payload = new KeyBindingPayload();
+        payload.setNonce("1234567890");
+        payload.setAudience("https://verifier.example.org");
+        payload.setSdHash("X9RrrfWt_70gHzOcovGSIt4Fms9Tf2g2hjlWVI_cxZg");
+        payload.setIssuedAt(1702315679L);
         return payload;
     }
 
-    private SdJwtVP exampleSdJwtWithCustomKbPayload(JsonNode kbPayloadSubstitute) {
+    private SdJwtVP exampleSdJwtWithCustomKbPayload(KeyBindingPayload kbPayloadSubstitute) {
         KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(
                 kbPayloadSubstitute,
-                testSettings.holderSigContext,
-                KeyBindingJWT.TYP
+                testSettings.holderSigContext
         );
 
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");

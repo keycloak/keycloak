@@ -16,7 +16,6 @@
  */
 package org.keycloak.sdjwt;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -30,18 +29,16 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 /**
  * Handle jws, either the issuer jwt or the holder key binding jwt.
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  *
  */
-public abstract class SdJws {
+public abstract class SdJws<PAYLOAD_TYPE> {
 
     private final JWSInput jwsInput;
-    private final JsonNode payload;
+    private final PAYLOAD_TYPE payload;
 
     public String toJws() {
         if (jwsInput == null) {
@@ -50,12 +47,12 @@ public abstract class SdJws {
         return jwsInput.getWireString();
     }
 
-    public JsonNode getPayload() {
+    public PAYLOAD_TYPE getPayload() {
         return payload;
     }
 
     // Constructor for unsigned JWS
-    protected SdJws(JsonNode payload) {
+    protected SdJws(PAYLOAD_TYPE payload) {
         this.payload = payload;
         this.jwsInput = null;
     }
@@ -67,17 +64,17 @@ public abstract class SdJws {
     }
 
     // Constructor for signed JWS
-    protected SdJws(JsonNode payload, JWSInput jwsInput) {
+    protected SdJws(PAYLOAD_TYPE payload, JWSInput jwsInput) {
         this.payload = payload;
         this.jwsInput = jwsInput;
     }
 
-    protected SdJws(JsonNode payload, SignatureSignerContext signer, String jwsType) {
+    protected SdJws(PAYLOAD_TYPE payload, SignatureSignerContext signer, String jwsType) {
         this.payload = payload;
         this.jwsInput = sign(payload, signer, jwsType);
     }
 
-    protected static JWSInput sign(JsonNode payload, SignatureSignerContext signer, String jwsType) {
+    private JWSInput sign(PAYLOAD_TYPE payload, SignatureSignerContext signer, String jwsType) {
         String jwsString = new JWSBuilder().type(jwsType).jsonContent(payload).sign(signer);
         return parse(jwsString);
     }
@@ -101,13 +98,7 @@ public abstract class SdJws {
         }
     }
 
-    private static JsonNode readPayload(JWSInput jwsInput) {
-        try {
-            return SdJwtUtils.mapper.readTree(jwsInput.getContent());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    protected abstract PAYLOAD_TYPE readPayload(JWSInput jwsInput);
 
     public JWSHeader getHeader() {
         return this.jwsInput.getHeader();
@@ -131,10 +122,12 @@ public abstract class SdJws {
 
     private void verifyClaimAgainstTrustedValues(List<String> trustedValues, String claimName)
             throws VerificationException {
-        String claimValue = SdJwtUtils.readClaim(payload, claimName);
+        String claimValue = readClaim(payload, claimName);
 
         if (!trustedValues.contains(claimValue)) {
             throw new VerificationException(String.format("Unknown '%s' claim value: %s", claimName, claimValue));
         }
     }
+
+    protected abstract String readClaim(PAYLOAD_TYPE payload, String claimName) throws VerificationException;
 }

@@ -30,7 +30,9 @@ import org.keycloak.rule.CryptoInitRule;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -186,8 +188,8 @@ public abstract class SdJwtVerificationTest {
 
         // exp: invalid
         ObjectNode claimSet2 = mapper.createObjectNode();
-        claimSet1.put("given_name", "John");
-        claimSet1.set("exp", null);
+        claimSet2.put("given_name", "John");
+        claimSet2.set("exp", null);
 
         DisclosureSpec disclosureSpec = DisclosureSpec.builder()
                 .withUndisclosedClaim("given_name", "eluV5Og3gSNII8EYnsxA_A")
@@ -196,7 +198,11 @@ public abstract class SdJwtVerificationTest {
         SdJwt sdJwtV1 = exampleFlatSdJwtV2(claimSet1, disclosureSpec).build();
         SdJwt sdJwtV2 = exampleFlatSdJwtV2(claimSet2, disclosureSpec).build();
 
-        for (SdJwt sdJwt : Arrays.asList(sdJwtV1, sdJwtV2)) {
+        Map<SdJwt, String> sdJwtsToExpectedErrorMessages = new HashMap<SdJwt, String>();
+        sdJwtsToExpectedErrorMessages.put(sdJwtV1, "Missing 'exp' claim");
+        sdJwtsToExpectedErrorMessages.put(sdJwtV2, "Invalid 'exp' claim");
+
+        for (SdJwt sdJwt : sdJwtsToExpectedErrorMessages.keySet()) {
             VerificationException exception = assertThrows(
                     VerificationException.class,
                     () -> sdJwt.verify(
@@ -208,7 +214,7 @@ public abstract class SdJwtVerificationTest {
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `exp` claim", exception.getMessage());
-            assertEquals("Missing 'exp' claim or null", exception.getCause().getMessage());
+            assertEquals(sdJwtsToExpectedErrorMessages.get(sdJwt), exception.getCause().getMessage());
         }
     }
 

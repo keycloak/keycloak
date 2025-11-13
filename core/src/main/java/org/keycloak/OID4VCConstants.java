@@ -7,21 +7,29 @@ public class OID4VCConstants {
 
     // Sd-JWT constants
     public static final String SDJWT_DELIMITER = "~";
-    public static final String SD_HASH = "sd_hash";
-    /**
-     * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
-     */
-    public static final String SD_JWT_VC_FORMAT = "dc+sd-jwt";
     public static final String CLAIM_NAME_SD = "_sd";
     public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
     public static final String CLAIM_NAME_SD_UNDISCLOSED_ARRAY = "...";
 
-    public static final String CLAIM_NAME_IAT = "iat";
-    public static final String CLAIM_NAME_EXP = "exp";
-    public static final String CLAIM_NAME_NBF = "nbf";
-    public static final String CLAIM_NAME_ISSUER = "iss";
-    public static final String CLAIM_NAME_CNF = "cnf";
-    public static final String CLAIM_NAME_JWK = "jwk";
+    /**
+     * https://drafts.oauth.net/oauth-selective-disclosure-jwt/draft-ietf-oauth-selective-disclosure-jwt.html#name-key-binding-jwt
+     */
+    public static final String KB_JWT_TYP = "kb+jwt";
+    public static final String SD_HASH = "sd_hash";
+    public static final String CLAIM_NAME_AUD = "aud";
+    public static final String CLAIM_NAME_NONCE = "nonce";
+
+    /**
+     * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
+     */
+    public static final String SD_JWT_VC_FORMAT = "dc+sd-jwt";
+
+    public static final String CLAIM_NAME_IAT = "iat"; // Issued-at
+    public static final String CLAIM_NAME_EXP = "exp"; // Expiration
+    public static final String CLAIM_NAME_NBF = "nbf"; // Not-before
+    public static final String CLAIM_NAME_ISSUER = "iss"; // Issuer
+    public static final String CLAIM_NAME_CNF = "cnf"; // Confirmation
+    public static final String CLAIM_NAME_JWK = "jwk"; // Json web key
 
     public static final String SD_HASH_DEFAULT_ALGORITHM = "sha-256";
     public static final int SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE = 5 * 60; // 5 minutes
