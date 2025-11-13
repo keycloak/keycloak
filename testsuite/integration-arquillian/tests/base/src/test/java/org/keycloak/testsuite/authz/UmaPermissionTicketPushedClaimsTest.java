@@ -22,6 +22,7 @@ import java.util.Set;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -31,6 +32,7 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -43,6 +45,7 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(Feature.SCRIPTS)
 public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerTest {
 
     @Test

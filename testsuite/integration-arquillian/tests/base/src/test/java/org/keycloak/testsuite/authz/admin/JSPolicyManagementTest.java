@@ -24,9 +24,11 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.JSPoliciesResource;
 import org.keycloak.admin.client.resource.JSPolicyResource;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 import org.junit.Test;
 
@@ -36,6 +38,7 @@ import static org.junit.Assert.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(Feature.SCRIPTS)
 public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
     
     @Test
@@ -114,7 +117,7 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
 
     private void assertRepresentation(JSPolicyRepresentation representation, JSPolicyResource permission) {
         JSPolicyRepresentation actual = permission.toRepresentation();
-        assertRepresentation(representation, actual, () -> permission.resources(), () -> Collections.emptyList(), () -> permission.associatedPolicies());
+        assertRepresentation(representation, actual, permission::resources, Collections::emptyList, permission::associatedPolicies);
         assertEquals(representation.getType(), actual.getType());
     }
 }
