@@ -170,6 +170,9 @@ export default function MappingDetails() {
         }
       }
       addAlert(t(`mapping${key}Success`), AlertVariant.success);
+      if (!isUpdating) {
+        navigate(toDetails());
+      }
     } catch (error) {
       addError(`mapping${key}Error`, error);
     }
