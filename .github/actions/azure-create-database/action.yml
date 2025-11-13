@@ -25,6 +25,9 @@ inputs:
   db-password:
     description: 'Override DB password (auto-generated if not provided)'
     required: false
+  subscription:
+    description: 'Azure subscription ID'
+    required: true
 
 outputs:
   endpoint:
@@ -36,26 +39,10 @@ outputs:
   username:
     description: 'DB user principal'
     value: ${{ steps.create.outputs.username }}
-  subscription:
-    description: 'Subscription ID'
-    value: ${{ steps.parse-creds.outputs.subscription }}
 
 runs:
   using: "composite"
   steps:
-    - name: Parse Azure credentials
-      id: parse-creds
-      shell: bash
-      run: |
-        SUBSCRIPTION=$(echo '${{ inputs.azure-credentials }}' | jq -r '.subscriptionId')
-        if [[ -z "$SUBSCRIPTION" || "$SUBSCRIPTION" == "null" ]]; then
-          echo "ERROR:Failed to parse subscriptionId from AZURE_CREDENTIALS"
-          exit 1
-        fi
-        # Mask BEFORE outputting to ensure it's redacted in logs
-        echo "::add-mask::$SUBSCRIPTION"
-        echo "subscription=$SUBSCRIPTION" >> $GITHUB_OUTPUT
-
     - name: Generate secure passwords
       id: generate-passwords
       shell: bash
@@ -111,7 +98,7 @@ runs:
       env:
         AZURE_NAME: ${{ inputs.name }}
         AZURE_REGION: ${{ inputs.region }}
-        AZURE_SUBSCRIPTION: ${{ steps.parse-creds.outputs.subscription }}
+        AZURE_SUBSCRIPTION: ${{ inputs.subscription }}
         AZURE_ADMIN_PASSWORD: ${{ env.AZURE_ADMIN_PASSWORD }}
         AZURE_ADMIN_USER: ${{ inputs.admin-user }}
         AZURE_DB_PASSWORD: ${{ env.AZURE_DB_PASSWORD }}

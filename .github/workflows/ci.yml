@@ -623,6 +623,19 @@ jobs:
           PROPS=''
           echo "maven_properties=${PROPS}" >> $GITHUB_OUTPUT
 
+      - name: Parse subscriptionId from Azure credentials
+        id: parse-creds
+        shell: bash
+        run: |
+          SUBSCRIPTION=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.subscriptionId')
+          if [[ -z "$SUBSCRIPTION" || "$SUBSCRIPTION" == "null" ]]; then
+            echo "ERROR: Failed to parse subscriptionId from AZURE_CREDENTIALS"
+            exit 1
+          fi
+          # Mask BEFORE outputting to ensure it's redacted in logs
+          echo "::add-mask::$SUBSCRIPTION"
+          echo "subscription=$SUBSCRIPTION" >> $GITHUB_OUTPUT
+
       - name: Login to Azure
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
         with:
@@ -634,7 +647,7 @@ jobs:
         with:
           name: ${{ steps.azure-init.outputs.azure-cluster-name }}
           region: ${{ steps.azure-init.outputs.region }}
-          azure-credentials: ${{ secrets.AZURE_CREDENTIALS }}
+          subscription: ${{ steps.parse-creds.outputs.subscription }}
           admin-user: ${{ vars.AZURE_ADMIN_USER }}
           db-user: ${{ vars.AZURE_DB_USER }}
           admin-password: ${{ secrets.AZURE_ADMIN_PASSWORD }}
