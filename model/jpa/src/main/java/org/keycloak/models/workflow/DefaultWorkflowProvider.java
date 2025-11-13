@@ -129,7 +129,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     }
 
     @Override
-    public void bind(Workflow workflow, ResourceType type, String resourceId) {
+    public void activate(Workflow workflow, ResourceType type, String resourceId) {
         processEvent(Stream.of(workflow), new AdhocWorkflowEvent(type, resourceId));
     }
 
@@ -139,7 +139,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     }
 
     @Override
-    public void bindToAllEligibleResources(Workflow workflow) {
+    public void activateForAllEligibleResources(Workflow workflow) {
         if (workflow.isEnabled()) {
             WorkflowProvider provider = getWorkflowProvider(workflow);
             ResourceTypeSelector selector = provider.getResourceTypeSelector(ResourceType.USERS);

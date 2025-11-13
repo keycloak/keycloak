@@ -466,8 +466,8 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
             List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
             assertEquals(1, registeredWorkflows.size());
             Workflow workflow = registeredWorkflows.get(0);
-            // assign the workflow to the eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
-            provider.bindToAllEligibleResources(workflow);
+            // activate the workflow for all eligible users - i.e. only users from the same idp who are not yet assigned to the workflow.
+            provider.activateForAllEligibleResources(workflow);
         });
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
