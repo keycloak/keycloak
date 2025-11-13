@@ -52,6 +52,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.OAuth2DeviceConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -96,6 +97,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Page
     protected OAuth2DeviceVerificationPage verificationPage;
+
+    @Page
+    protected OAuth2DeviceConfirmPage deviceConfirmPage;
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -184,10 +188,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         verificationPage.assertApprovedPage();
 
@@ -223,8 +226,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -284,8 +288,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -319,9 +324,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         openVerificationPage(response.getVerificationUriComplete());
 
-        // Consent
-        Assert.assertTrue(grantPage.getDisplayedGrants().contains("This is the custom consent screen text."));
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         oauth.client(DEVICE_APP_PUBLIC);
 
@@ -358,10 +363,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, OAuthGrantPage.PHONE_CONSENT_TEXT);
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -403,8 +407,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().deviceTokenRequest(response.getDeviceCode()).codeVerifier(pkce.getCodeVerifier()).send();
@@ -439,8 +444,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().deviceTokenRequest(response.getDeviceCode()).codeVerifier(pkce.getCodeVerifier()+"a").send();
@@ -471,9 +477,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        Assert.assertTrue(grantPage.getDisplayedGrants().contains("This is the custom consent screen text."));
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -512,8 +518,8 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         // Do Login
         oauth.fillLoginForm("device-login", "password");
-        // Consent
-        grantPage.assertCurrent();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
     }
 
     @Test
@@ -534,8 +540,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -570,10 +577,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.cancel();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.cancel();
 
         verificationPage.assertDeniedPage();
  
@@ -653,10 +659,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         // Token request from device
         AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest("x");
@@ -686,10 +691,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         verificationPage.assertApprovedPage();
 
@@ -975,9 +979,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.cancel();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.cancel();
 
         verificationPage.assertDeniedPage();
 
@@ -1007,17 +1011,16 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         // Do Login
         oauth.fillLoginForm("device-login", "password");
 
-        // Consent
-        grantPage.assertCurrent();
-        grantPage.cancel();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.cancel();
 
         //click back after cancel
         driver.navigate().back();
 
-        // Accept consent
-        grantPage.assertCurrent();
-        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
-        grantPage.accept();
+        // Device Confirm - OAuth2 device flow
+        deviceConfirmPage.assertCurrent();
+        deviceConfirmPage.accept();
 
         verificationPage.assertDeniedPage();
 

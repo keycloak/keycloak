@@ -204,6 +204,10 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "processConsent").build(realmName);
     }
 
+    public static URI realmOAuth2DeviceConfirmAction(URI baseUri, String realmName) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "processDeviceConfirm").build(realmName);
+    }
+
     public static URI firstBrokerLoginProcessor(URI baseUri, String realmName) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "firstBrokerLoginGet")
                 .build(realmName);

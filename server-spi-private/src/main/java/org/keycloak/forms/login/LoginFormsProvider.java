@@ -98,6 +98,8 @@ public interface LoginFormsProvider extends Provider {
 
     Response createOAuth2DeviceVerifyUserCodePage();
 
+    Response createOAuth2DeviceConfirmPage();
+
     Response createCode();
 
     Response createX509ConfirmPage();

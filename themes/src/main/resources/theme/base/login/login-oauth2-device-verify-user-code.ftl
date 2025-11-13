@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout; section>
+<@layout.registrationLayout displayInfo=true; section>
     <#if section = "header">
         ${msg("oauth2DeviceVerificationTitle")}
     <#elseif section = "form">
@@ -23,9 +23,14 @@
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
                         <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+                        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel" value="true" formnovalidate/>${msg("doCancel")}</button>
                     </div>
                 </div>
             </div>
         </form>
+    <#elseif section = "info">
+        <p class="instruction">
+            ${msg("oauth2DeviceVerificationWarning")}
+        </p>
     </#if>
 </@layout.registrationLayout>
