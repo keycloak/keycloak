@@ -35,7 +35,7 @@ import org.keycloak.utils.StringUtil;
  * Configuration via realm attributes (all optional):
  * - oid4vci.time.claims.strategy: off | randomize | round (default: off)
  * - oid4vci.time.randomize.window.seconds: integer seconds (default: 86400)
- * - oid4vci.time.round.unit: MINUTE | HOUR | DAY (default: DAY)
+ * - oid4vci.time.round.unit: SECOND | MINUTE | HOUR | DAY (default: SECOND)
  *
  * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
  */
@@ -54,6 +54,7 @@ public class TimeClaimNormalizer {
     }
 
     public enum RoundUnit {
+        SECOND,
         MINUTE,
         HOUR,
         DAY
@@ -65,7 +66,7 @@ public class TimeClaimNormalizer {
 
     private static final long DEFAULT_RANDOMIZE_WINDOW = 86400; // 24h default
     private static final Strategy DEFAULT_STRATEGY = Strategy.OFF;
-    private static final RoundUnit DEFAULT_ROUND_UNIT = RoundUnit.DAY;
+    private static final RoundUnit DEFAULT_ROUND_UNIT = RoundUnit.SECOND;
 
     public TimeClaimNormalizer(KeycloakSession session) {
         this(session.getContext().getRealm());
@@ -104,6 +105,7 @@ public class TimeClaimNormalizer {
         // Truncate in UTC by design to ensure consistent, timezone-independent rounding
         ZonedDateTime zdt = original.atZone(ZoneOffset.UTC);
         return switch (roundUnit) {
+            case SECOND -> zdt.truncatedTo(ChronoUnit.SECONDS).toInstant();
             case MINUTE -> zdt.truncatedTo(ChronoUnit.MINUTES).toInstant();
             case HOUR -> zdt.truncatedTo(ChronoUnit.HOURS).toInstant();
             case DAY -> zdt.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant();

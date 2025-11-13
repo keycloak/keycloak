@@ -185,8 +185,8 @@ To reduce unintended correlation across multiple issuances or presentations, you
 | When strategy is `randomize`, subtract a random number of seconds (0 to N) from the original timestamp to mitigate correlation attacks.
 
 | `oid4vci.time.round.unit`
-| `DAY`
-| When strategy is `round`, truncate timestamps to the selected unit boundary (UTC). Supported values: `MINUTE`, `HOUR`, `DAY`.
+| `SECOND`
+| When strategy is `round`, truncate timestamps to the selected unit boundary (UTC). Supported values: `SECOND`, `MINUTE`, `HOUR`, `DAY`.
 |===
 
 How it is applied during issuance:

@@ -61,6 +61,22 @@ public class TimeClaimNormalizerTest {
     }
 
     @Test
+    public void roundSecond_truncatesToSecond() {
+        Instant orig = Instant.parse("2025-01-02T03:04:05.987654Z");
+        TimeClaimNormalizer n = new TimeClaimNormalizer(TimeClaimNormalizer.Strategy.ROUND, 0L, TimeClaimNormalizer.RoundUnit.SECOND);
+        Instant normalized = n.normalize(orig);
+        assertThat(normalized, is(Instant.parse("2025-01-02T03:04:05Z")));
+    }
+
+    @Test
+    public void defaultRoundUnit_isSecond() {
+        Instant orig = Instant.parse("2025-01-02T03:04:05.987654Z");
+        TimeClaimNormalizer n = new TimeClaimNormalizer(TimeClaimNormalizer.Strategy.ROUND, null, null);
+        Instant normalized = n.normalize(orig);
+        assertThat(normalized, is(Instant.parse("2025-01-02T03:04:05Z")));
+    }
+
+    @Test
     public void randomize_withinWindow_doesNotShiftIntoFuture() {
         Instant orig = Instant.parse("2025-01-02T22:00:00Z");
         TimeClaimNormalizer n = new TimeClaimNormalizer(TimeClaimNormalizer.Strategy.RANDOMIZE, 3600L, TimeClaimNormalizer.RoundUnit.DAY);
