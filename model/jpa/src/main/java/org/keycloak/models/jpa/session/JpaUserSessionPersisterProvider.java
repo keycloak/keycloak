@@ -17,22 +17,6 @@
 
 package org.keycloak.models.jpa.session;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
 import org.hibernate.jpa.AvailableHints;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultiSiteUtils;
@@ -57,6 +41,23 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.storage.StorageId;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import jakarta.persistence.LockModeType;
 import org.keycloak.utils.StreamsUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;

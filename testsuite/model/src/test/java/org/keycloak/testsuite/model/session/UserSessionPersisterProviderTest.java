@@ -657,20 +657,22 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             persistUserSession(session, userSession2[0], true);
         });
 
-        inComittedTransaction(session -> {
+        int lastSessionRefresh = withRealm(realmId, (session, realm) -> {
             // Update one of the sessions with lastSessionRefresh of 20 days ahead
-            int lastSessionRefresh = Time.currentTime() + 1728000;
-            RealmModel realm = session.realms().getRealm(realmId);
-            session.getContext().setRealm(realm);
+            int newCurrentTime = Time.currentTime() + 1728000;
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
-            persister.updateLastSessionRefreshes(realm, lastSessionRefresh, Collections.singleton(userSession1[0].getId()), true);
+            persister.updateLastSessionRefreshes(realm, newCurrentTime, Collections.singleton(userSession1[0].getId()), true);
 
+            return newCurrentTime;
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
             // Increase time offset - 40 days
             setTimeOffset(3456000);
             try {
                 // Run expiration thread
-                persister.removeExpired(realm);
+                session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
                 // Test the updated session is still in persister. Not updated session is not there anymore
                 List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
