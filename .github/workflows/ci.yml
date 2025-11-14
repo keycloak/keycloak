@@ -91,11 +91,11 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Spotless
-        run: ./mvnw spotless:check
-
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
+
+      - name: Spotless
+        run: ./mvnw spotless:check
 
       - name: Check for unstaged proto.lock files
         if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/')
