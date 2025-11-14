@@ -17,19 +17,19 @@
 
 package org.keycloak.models.workflow;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.keycloak.common.util.DurationConverter;
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.utils.StringUtil;
 
 import static java.util.Optional.ofNullable;
 
@@ -39,10 +39,10 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NA
 
 public class Workflow {
 
+    private final String id;
     private final RealmModel realm;
     private final KeycloakSession session;
     private MultivaluedHashMap<String, String> config;
-    private String id;
     private String notBefore;
 
     public Workflow(KeycloakSession session, ComponentModel c) {
@@ -52,9 +52,10 @@ public class Workflow {
         this.config = c.getConfig();
     }
 
-    public Workflow(KeycloakSession session, Map<String, List<String>> config) {
+    public Workflow(KeycloakSession session, String id, Map<String, List<String>> config) {
         this.session = session;
         this.realm = session.getContext().getRealm();
+        this.id = id;
         MultivaluedHashMap<String, String> c = new MultivaluedHashMap<>();
         config.forEach(c::addAll);
         this.config = c;
@@ -98,6 +99,21 @@ public class Workflow {
         config.putSingle(CONFIG_ERROR, message);
     }
 
+    public void updateConfig(MultivaluedHashMap<String, String> config, List<WorkflowStepRepresentation> steps) {
+        ComponentModel component = getWorkflowComponent(this.id, WorkflowProvider.class.getName());
+        component.setConfig(config);
+        realm.updateComponent(component);
+
+        // check if there are steps to be updated as well
+        if (steps != null) {
+            steps.forEach(step -> {
+                ComponentModel stepComponent = getWorkflowComponent(step.getId(), WorkflowStepProvider.class.getName());
+                stepComponent.setConfig(step.getConfig());
+                realm.updateComponent(stepComponent);
+            });
+        }
+    }
+
     public Stream<WorkflowStep> getSteps() {
         return realm.getComponentsStream(getId(), WorkflowStepProvider.class.getName())
                 .map(WorkflowStep::new).sorted();
@@ -137,33 +153,15 @@ public class Workflow {
     }
 
     private WorkflowStep toModel(WorkflowStepRepresentation rep) {
-        validateStep(rep);
         return new WorkflowStep(rep.getUses(), rep.getConfig());
     }
 
-    private void validateStep(WorkflowStepRepresentation step) throws ModelValidationException {
+    private ComponentModel getWorkflowComponent(String id, String providerType) {
+        ComponentModel component = realm.getComponent(id);
 
-        // validate the step rep has 'uses' defined
-        if (StringUtil.isBlank(step.getUses())) {
-            throw new ModelValidationException("Step 'uses' cannot be null or empty.");
+        if (component == null || !Objects.equals(providerType, component.getProviderType())) {
+            throw new BadRequestException("Not a valid resource workflow: " + id);
         }
-
-        // validate the after time, if present
-        try {
-            Duration duration = DurationConverter.parseDuration(step.getAfter());
-            if (duration != null && duration.isNegative()) { // duration can only be null if the config is not set
-                throw new ModelValidationException("Step 'after' configuration cannot be negative.");
-            }
-        } catch (IllegalArgumentException e) {
-            throw new ModelValidationException("Step 'after' configuration is not valid: " + step.getAfter());
-        }
-
-        // verify the step does have valid provider
-        WorkflowStepProviderFactory<WorkflowStepProvider> factory = (WorkflowStepProviderFactory<WorkflowStepProvider>) session
-                .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getUses());
-
-        if (factory == null) {
-            throw new WorkflowInvalidStateException("Step not found: " + step.getUses());
-        }
+        return component;
     }
 }

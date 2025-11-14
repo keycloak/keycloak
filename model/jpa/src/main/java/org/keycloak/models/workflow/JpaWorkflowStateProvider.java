@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.List;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -197,6 +198,22 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
                 LOGGER.tracev("Deleted {0} state records for realm {1}", deletedCount, realm.getId());
             }
         }
+    }
+
+    @Override
+    public boolean hasScheduledSteps(String workflowId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> criteriaQuery = cb.createQuery(Long.class);
+        Root<WorkflowStateEntity> stateRoot = criteriaQuery.from(WorkflowStateEntity.class);
+
+        criteriaQuery.select(cb.count(stateRoot));
+        criteriaQuery.where(cb.equal(stateRoot.get("workflowId"), workflowId));
+
+        TypedQuery<Long> query = em.createQuery(criteriaQuery);
+        query.setMaxResults(1);
+
+        Long count = query.getSingleResult();
+        return count > 0;
     }
 
     @Override

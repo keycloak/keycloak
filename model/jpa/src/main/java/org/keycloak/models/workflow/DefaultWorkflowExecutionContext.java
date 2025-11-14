@@ -72,16 +72,17 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
         return resourceId;
     }
 
+    @Override
+    public WorkflowEvent getEvent() {
+        return event;
+    }
+
     String getExecutionId() {
         return this.executionId;
     }
 
     Workflow getWorkflow() {
         return workflow;
-    }
-
-    WorkflowEvent getEvent() {
-        return event;
     }
 
     WorkflowStep getCurrentStep() {
