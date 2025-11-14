@@ -10,6 +10,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
   build-keycloak:
     name: Build Keycloak
@@ -159,6 +162,8 @@ jobs:
     if: always()
     env:
       GH_TOKEN: ${{ github.token }}
+    permissions:
+      actions: write
     steps:
       - name: Delete artifacts (excluding Playwright reports and server logs)
         run: |

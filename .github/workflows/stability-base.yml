@@ -10,6 +10,9 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
 
   build:
@@ -50,6 +53,8 @@ jobs:
     if: always()
     env:
       GH_TOKEN: ${{ github.token }}
+    permissions:
+      actions: write
     steps:
       - name: Delete artifacts
         run:
