@@ -35,7 +35,7 @@ import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.TopologyInfo;
+import org.keycloak.connections.infinispan.NodeInfo;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 
 import org.infinispan.Cache;
@@ -60,17 +60,15 @@ public class InfinispanClusterProvider implements ClusterProvider {
     public static final String TASK_KEY_PREFIX = "task::";
 
     private final int clusterStartupTime;
-    private final String myAddress;
-    private final String mySite;
+    private final NodeInfo nodeInfo;
     private final Cache<String, Object> workCache;
     private final ConcurrentMultivaluedHashMap<String, ClusterListener> listeners = new ConcurrentMultivaluedHashMap<>();
     private final ConcurrentMap<String, TaskCallback> taskCallbacks = new ConcurrentHashMap<>();
 
     private final ExecutorService localExecutor;
 
-    public InfinispanClusterProvider(int clusterStartupTime, TopologyInfo topologyInfo, Cache<String, Object> workCache, ExecutorService localExecutor) {
-        this.myAddress = topologyInfo.getMyNodeName();
-        this.mySite = topologyInfo.getMySiteName();
+    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache, ExecutorService localExecutor) {
+        this.nodeInfo = nodeInfo;
         this.clusterStartupTime = clusterStartupTime;
         this.workCache = workCache;
         this.localExecutor = localExecutor;
@@ -144,7 +142,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     }
 
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
-        LockEntry myLock = new LockEntry(myAddress);
+        LockEntry myLock = new LockEntry(nodeInfo.nodeName());
 
         LockEntry existingLock = (LockEntry) workCache.putIfAbsent(cacheKey, myLock, Time.toMillis(taskTimeoutInSeconds), TimeUnit.MILLISECONDS);
         if (existingLock != null) {
@@ -191,7 +189,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, myAddress, mySite, dcNotify, ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), dcNotify, ignoreSender);
 
         String eventKey = SecretGenerator.getInstance().generateSecureID();
 
@@ -232,7 +230,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
             return;
         }
 
-        if (event.rejectEvent(myAddress, mySite)) {
+        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
             return;
         }
 

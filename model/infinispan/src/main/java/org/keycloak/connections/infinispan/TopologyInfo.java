@@ -38,7 +38,9 @@ import org.jgroups.util.NameCache;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @deprecated For removal. To get the node or site name, use {@link NodeInfo} from {@link InfinispanConnectionProvider#getNodeInfo()}.
  */
+@Deprecated(since = "26.5", forRemoval = true)
 public class TopologyInfo {
 
     private static final Logger logger = Logger.getLogger(TopologyInfo.class);
@@ -61,6 +63,7 @@ public class TopologyInfo {
         this(cacheManager);
     }
 
+    @Deprecated(since = "26.5", forRemoval = true)
     public TopologyInfo(EmbeddedCacheManager cacheManager) {
         var transportConfig = cacheManager.getCacheManagerConfiguration().transport();
         var transport = GlobalComponentRegistry.componentOf(cacheManager, Transport.class);
@@ -84,10 +87,18 @@ public class TopologyInfo {
         return InfinispanConnectionProvider.NODE_PREFIX + new SecureRandom().nextInt(1000000);
     }
 
+    /**
+     * @deprecated Use {@link NodeInfo#nodeName()} instead.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
     public String getMyNodeName() {
         return myNodeName;
     }
 
+    /**
+     * @deprecated Use {@link NodeInfo#siteName()} instead.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
     public String getMySiteName() {
         return mySiteName;
     }

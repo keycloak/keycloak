@@ -103,7 +103,7 @@ public class RemoteInfinispanClusterProviderFactory implements ClusterProviderFa
         var provider = session.getProvider(InfinispanConnectionProvider.class);
         executor = provider.getExecutor("cluster-provider");
         clusterStartupTime = initClusterStartupTime(provider.getRemoteCache(WORK_CACHE_NAME), (int) (session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000));
-        notificationManager = new RemoteInfinispanNotificationManager(executor, provider.getRemoteCache(WORK_CACHE_NAME), provider.getTopologyInfo());
+        notificationManager = new RemoteInfinispanNotificationManager(executor, provider.getRemoteCache(WORK_CACHE_NAME), provider.getNodeInfo());
         notificationManager.addClientListener();
         workCache = provider.getRemoteCache(WORK_CACHE_NAME);
 
