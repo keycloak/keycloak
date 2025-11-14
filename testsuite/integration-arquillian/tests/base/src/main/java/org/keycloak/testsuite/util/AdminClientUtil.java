@@ -88,22 +88,6 @@ public class AdminClientUtil {
                 .build();
     }
 
-    public static Keycloak createAdminClientWithClientCredentials(String realmName, String clientId, String clientSecret, String scope)
-        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-
-        boolean ignoreUnknownProperties = false;
-        ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
-
-        return KeycloakBuilder.builder()
-                .serverUrl(getAuthServerContextRoot() + "/auth")
-                .realm(realmName)
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .clientId(clientId)
-                .clientSecret(clientSecret)
-                .resteasyClient(resteasyClient)
-                .scope(scope).build();
-    }
-
     public static Keycloak createMTlsAdminClientWithClientCredentialsWithoutSecret(
         final String realmName, String clientId, String scope)
         throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
@@ -119,14 +103,6 @@ public class AdminClientUtil {
                 .resteasyClient(resteasyClient)
                 .scope(scope).build();
   }
-
-    public static Keycloak createAdminClient() throws Exception {
-        return createAdminClient(false, getAuthServerContextRoot());
-    }
-
-    public static Keycloak createAdminClient(boolean ignoreUnknownProperties) throws Exception {
-        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot());
-    }
 
     public static ResteasyClient createResteasyClient() {
         try {
