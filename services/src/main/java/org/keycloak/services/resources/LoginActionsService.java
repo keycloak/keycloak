@@ -17,7 +17,10 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -1065,6 +1068,9 @@ public class LoginActionsService {
         boolean allowDeselectOptionalScopes = OIDCAdvancedConfigWrapper.fromClientModel(client)
                 .isAllowUserDeselectOptionalScopes();
 
+        // Track which scopes should remain in the auth session
+        Set<String> grantedScopeIds = new HashSet<>();
+
         // Process scopes - grant required scopes and selected optional scopes
         for (String clientScopeId : authSession.getClientScopes()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
@@ -1081,13 +1087,21 @@ public class LoginActionsService {
                 }
 
                 // Only grant if it's required or was selected by the user
-                if (isSelected && !grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
-                    grantedConsent.addGrantedClientScope(clientScope);
-                    updateConsentRequired = true;
+                if (isSelected) {
+                    grantedScopeIds.add(clientScopeId);
+                    if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
+                        grantedConsent.addGrantedClientScope(clientScope);
+                        updateConsentRequired = true;
+                    }
                 }
             } else {
                 logger.warnf("Client scope or client with ID '%s' not found", clientScopeId);
             }
+        }
+
+        // Update auth session to only include granted scopes
+        if (allowDeselectOptionalScopes) {
+            authSession.setClientScopes(grantedScopeIds);
         }
 
         if (updateConsentRequired) {

@@ -32,7 +32,7 @@
                             <#if oauth.allowUserDeselectOptionalScopes && !clientScope.required>
                                 </label>
                             </#if>
-                            <#if clientScope.required>
+                            <#if oauth.allowUserDeselectOptionalScopes && clientScope.required>
                                 <span style="color: #888; font-size: 0.9em;"> (${msg("required")})</span>
                             </#if>
                         </li>
