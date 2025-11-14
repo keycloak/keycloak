@@ -687,4 +687,149 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         realm.clientScopes().get(optionalScopeId2).remove();
     }
 
+    @Test
+    public void testPerScopeConsentWithCodeToToken() {
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        ClientResource thirdPartyClient = findClientByClientId(realm, THIRD_PARTY_APP);
+
+        // Enable the per-scope consent feature
+        ClientRepresentation clientRep = thirdPartyClient.toRepresentation();
+        clientRep.getAttributes().put("allow.user.deselect.optional.scopes", "true");
+        thirdPartyClient.update(clientRep);
+
+        try {
+            // Create two optional scopes with role mappers
+            ClientScopeRepresentation optionalScope1 = new ClientScopeRepresentation();
+            optionalScope1.setName("test-optional-scope-1");
+            optionalScope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            optionalScope1.setConsentScreenText("Test Optional Scope 1");
+            optionalScope1.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
+
+            Response response1 = realm.clientScopes().create(optionalScope1);
+            String optionalScopeId1 = ApiUtil.getCreatedId(response1);
+            response1.close();
+
+            ClientScopeRepresentation optionalScope2 = new ClientScopeRepresentation();
+            optionalScope2.setName("test-optional-scope-2");
+            optionalScope2.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            optionalScope2.setConsentScreenText("Test Optional Scope 2");
+            optionalScope2.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
+
+            Response response2 = realm.clientScopes().create(optionalScope2);
+            String optionalScopeId2 = ApiUtil.getCreatedId(response2);
+            response2.close();
+
+            // Add as optional scopes to client
+            thirdPartyClient.addOptionalClientScope(optionalScopeId1);
+            thirdPartyClient.addOptionalClientScope(optionalScopeId2);
+
+            // Login and consent with only one optional scope selected
+            oauth.clientId(THIRD_PARTY_APP);
+            oauth.scope("openid profile email test-optional-scope-1 test-optional-scope-2");
+            oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+            grantPage.assertCurrent();
+
+            // Deselect optional-scope-2 by unchecking it
+            // The consent form should have checkboxes for optional scopes
+            driver.findElement(By.id("scope_" + optionalScopeId2)).click(); // Uncheck
+            grantPage.accept();
+
+            // Get the authorization code
+            String code = oauth.parseLoginResponse().getCode();
+            Assert.assertNotNull("Authorization code should be present", code);
+
+            events.expectLogin()
+                    .client(THIRD_PARTY_APP)
+                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                    .assertEvent();
+
+            // Exchange code for token
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            Assert.assertNotNull("Access token should be present", tokenResponse.getAccessToken());
+            Assert.assertNull("Token exchange should succeed without error", tokenResponse.getError());
+
+            // Verify token contains only the selected scopes
+            AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+            Assert.assertNotNull("Token should be valid", token);
+
+            // Verify scope claim - should include test-optional-scope-1 but NOT test-optional-scope-2
+            String scope = token.getScope();
+            Assert.assertTrue("Token should include test-optional-scope-1",
+                    scope != null && scope.contains("test-optional-scope-1"));
+            Assert.assertFalse("Token should NOT include test-optional-scope-2",
+                    scope != null && scope.contains("test-optional-scope-2"));
+
+            events.expectCodeToToken(null, null).client(THIRD_PARTY_APP).assertEvent();
+
+            // Cleanup
+            AccountHelper.revokeConsents(realm, DEFAULT_USERNAME, THIRD_PARTY_APP);
+            thirdPartyClient.removeOptionalClientScope(optionalScopeId1);
+            thirdPartyClient.removeOptionalClientScope(optionalScopeId2);
+            realm.clientScopes().get(optionalScopeId1).remove();
+            realm.clientScopes().get(optionalScopeId2).remove();
+        } finally {
+            // Restore client settings
+            clientRep = thirdPartyClient.toRepresentation();
+            clientRep.getAttributes().remove("allow.user.deselect.optional.scopes");
+            thirdPartyClient.update(clientRep);
+        }
+    }
+
+    @Test
+    public void testPerScopeConsentDisabledGrantsAllScopes() {
+        RealmResource realm = adminClient.realm(REALM_NAME);
+        ClientResource thirdPartyClient = findClientByClientId(realm, THIRD_PARTY_APP);
+
+        // Ensure the per-scope consent feature is disabled (default)
+        ClientRepresentation clientRep = thirdPartyClient.toRepresentation();
+        clientRep.getAttributes().remove("allow.user.deselect.optional.scopes");
+        thirdPartyClient.update(clientRep);
+
+        // Create an optional scope
+        ClientScopeRepresentation optionalScope = new ClientScopeRepresentation();
+        optionalScope.setName("test-optional-backward-compat");
+        optionalScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        optionalScope.setConsentScreenText("Test Optional Backward Compatibility");
+        optionalScope.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
+
+        Response response = realm.clientScopes().create(optionalScope);
+        String optionalScopeId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        thirdPartyClient.addOptionalClientScope(optionalScopeId);
+
+        try {
+            // Login and consent
+            oauth.clientId(THIRD_PARTY_APP);
+            oauth.scope("openid profile email test-optional-backward-compat");
+            oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+            grantPage.assertCurrent();
+            grantPage.accept();
+
+            // Get the authorization code
+            String code = oauth.parseLoginResponse().getCode();
+            Assert.assertNotNull("Authorization code should be present", code);
+
+            // Exchange code for token
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            Assert.assertNotNull("Access token should be present", tokenResponse.getAccessToken());
+            Assert.assertNull("Token exchange should succeed without error", tokenResponse.getError());
+
+            // Verify token contains all scopes (backward compatibility)
+            AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+            String scope = token.getScope();
+            Assert.assertTrue("Token should include the optional scope when feature is disabled",
+                    scope != null && scope.contains("test-optional-backward-compat"));
+
+            // Cleanup
+            AccountHelper.revokeConsents(realm, DEFAULT_USERNAME, THIRD_PARTY_APP);
+            thirdPartyClient.removeOptionalClientScope(optionalScopeId);
+            realm.clientScopes().get(optionalScopeId).remove();
+        } finally {
+            // No need to restore since we didn't enable the feature
+        }
+    }
+
 }
