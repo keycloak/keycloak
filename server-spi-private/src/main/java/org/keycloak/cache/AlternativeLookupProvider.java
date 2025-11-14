@@ -1,11 +1,11 @@
 package org.keycloak.cache;
 
+import java.util.Map;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
-
-import java.util.Map;
 
 public interface AlternativeLookupProvider extends Provider {
 

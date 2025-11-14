@@ -17,6 +17,13 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.enterprise.inject.spi.CDI;
+
+import org.keycloak.common.Version;
+
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -24,17 +31,12 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.semconv.incubating.CodeIncubatingAttributes;
-import jakarta.enterprise.inject.spi.CDI;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.resteasy.reactive.common.model.ResourceClass;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.model.HandlerChainCustomizer;
 import org.jboss.resteasy.reactive.server.model.ServerResourceMethod;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
-import org.keycloak.common.Version;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class KeycloakTracingCustomizer implements HandlerChainCustomizer {
 

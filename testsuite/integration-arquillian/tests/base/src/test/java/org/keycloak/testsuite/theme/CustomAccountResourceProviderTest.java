@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.theme;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class CustomAccountResourceProviderTest extends AbstractTestRealmKeycloakTest {
 

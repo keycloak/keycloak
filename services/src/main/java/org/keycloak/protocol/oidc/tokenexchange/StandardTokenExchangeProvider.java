@@ -19,12 +19,13 @@
 
 package org.keycloak.protocol.oidc.tokenexchange;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.actiontoken.TokenUtils;

@@ -16,4 +16,3 @@ public class RestartWorkflowStepProvider implements WorkflowStepProvider {
         // No resources to close
     }
 }
-

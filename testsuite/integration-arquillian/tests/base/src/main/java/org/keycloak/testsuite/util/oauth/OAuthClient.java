@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.testsuite.pages.LoginPage;
+
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 

@@ -26,9 +26,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.UserIdentityExtractor;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
+
+import org.jboss.logging.Logger;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
 import org.wildfly.security.asn1.OidsUtil;

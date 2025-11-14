@@ -16,8 +16,13 @@
  */
 package org.keycloak.locale;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
 import jakarta.enterprise.context.ContextNotActiveException;
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.HttpHeaders;
+
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakSession;
@@ -25,11 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.HttpHeaders;
-
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 

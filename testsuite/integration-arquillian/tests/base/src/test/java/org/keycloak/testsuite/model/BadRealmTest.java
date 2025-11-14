@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.model;
 
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -8,7 +9,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.utils.ReservedCharValidator;
 
-import java.util.List;
+import org.junit.Test;
 
 import static org.junit.Assert.fail;
 

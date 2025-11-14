@@ -19,12 +19,13 @@ package org.keycloak.models.sessions.infinispan.events;
 
 import java.util.Objects;
 
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoReserved;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
+
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoReserved;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

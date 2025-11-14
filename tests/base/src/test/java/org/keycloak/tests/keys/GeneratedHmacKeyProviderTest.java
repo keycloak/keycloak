@@ -17,7 +17,8 @@
 
 package org.keycloak.tests.keys;
 
-import org.junit.jupiter.api.Test;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
@@ -35,7 +36,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.runonserver.RunHelpers;
 
-import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -185,4 +186,3 @@ public class GeneratedHmacKeyProviderTest {
     }
 
 }
-

@@ -17,9 +17,11 @@
 
 package org.keycloak.testsuite.webauthn.registration;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
-import org.junit.Ignore;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
@@ -27,12 +29,11 @@ import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 import org.keycloak.utils.StringUtil;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import org.hamcrest.Matchers;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;

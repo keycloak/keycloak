@@ -17,20 +17,22 @@
 
 package org.keycloak.authentication.actiontoken;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.common.VerificationException;
-import org.keycloak.models.SingleUseObjectValueModel;
-import org.keycloak.models.DefaultActionTokenKey;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.Urls;
-
-import jakarta.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.TokenVerifier.Predicate;
+import org.keycloak.common.VerificationException;
+import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectValueModel;
+import org.keycloak.services.Urls;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Part of action token that is intended to be used e.g. in link sent in password-reset email.

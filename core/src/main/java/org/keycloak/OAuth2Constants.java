@@ -174,5 +174,3 @@ public interface OAuth2Constants {
     String ALGS_ATTRIBUTE = "algs";
 
 }
-
-

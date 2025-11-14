@@ -1,20 +1,21 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.utils.MediaType;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.utils.MediaType;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
 
 public abstract class AbstractHttpPostRequest<T, R> {
 

@@ -17,15 +17,12 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import static org.keycloak.OAuthErrorException.INVALID_REQUEST_OBJECT;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -39,6 +36,9 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuthErrorException.INVALID_REQUEST_OBJECT;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

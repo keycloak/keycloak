@@ -17,21 +17,22 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import io.smallrye.config.EnvConfigSource;
 import io.smallrye.config.PropertiesConfigSource;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
 // Not extending EnvConfigSource as it's too smart for our own good. It does unnecessary mapping of provided keys
 // leading to e.g. duplicate entries (like kc.db-password and kc.db.password), or incorrectly handling getters due to

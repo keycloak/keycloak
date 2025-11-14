@@ -17,13 +17,14 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Map;
+
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

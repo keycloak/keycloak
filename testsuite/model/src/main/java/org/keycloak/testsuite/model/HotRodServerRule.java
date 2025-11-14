@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.keycloak.Config;
+import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.api.CacheContainerAdmin;
 import org.infinispan.commons.dataconversion.MediaType;
@@ -19,9 +23,6 @@ import org.infinispan.server.hotrod.configuration.HotRodServerConfigurationBuild
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.junit.rules.ExternalResource;
-import org.keycloak.Config;
-import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.marshalling.Marshalling;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;

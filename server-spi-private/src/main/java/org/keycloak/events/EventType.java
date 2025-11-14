@@ -18,6 +18,7 @@
 package org.keycloak.events;
 
 import java.util.Map;
+
 import org.keycloak.util.EnumWithStableIndex;
 
 /**

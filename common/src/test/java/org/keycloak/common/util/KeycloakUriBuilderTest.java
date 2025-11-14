@@ -19,6 +19,7 @@
 package org.keycloak.common.util;
 
 import java.util.Collections;
+
 import org.junit.Assert;
 import org.junit.Test;
 

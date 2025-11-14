@@ -17,10 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.Map;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.ProofType;
-
-import java.util.Map;
 
 public class JwtProofValidatorFactory implements ProofValidatorFactory {
 

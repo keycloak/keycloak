@@ -1,9 +1,9 @@
 package org.keycloak.testframework.remote;
 
-import org.keycloak.testframework.injection.LifeCycle;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import org.keycloak.testframework.injection.LifeCycle;
 
 @Retention(RetentionPolicy.RUNTIME)
 public @interface InjectRemoteProviders {

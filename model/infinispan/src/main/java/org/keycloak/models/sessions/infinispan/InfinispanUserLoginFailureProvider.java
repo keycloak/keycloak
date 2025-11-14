@@ -16,12 +16,12 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
+import java.util.concurrent.Future;
+
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -35,7 +35,8 @@ import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 
-import java.util.concurrent.Future;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 

@@ -19,13 +19,13 @@ package org.keycloak.adapters.saml.elytron;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.security.auth.callback.CallbackHandler;
 
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.spi.InMemorySessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
+
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;

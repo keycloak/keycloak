@@ -18,6 +18,7 @@
 package org.keycloak.admin.client.spi;
 
 import javax.net.ssl.SSLContext;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 

@@ -24,12 +24,13 @@
 
 package org.keycloak.dom.saml.v2.ac;
 
+import java.math.BigInteger;
+
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlSeeAlso;
 import jakarta.xml.bind.annotation.XmlType;
-import java.math.BigInteger;
 
 /**
  * <p>

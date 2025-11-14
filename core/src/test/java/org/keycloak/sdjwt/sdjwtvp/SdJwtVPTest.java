@@ -16,10 +16,8 @@
  */
 package org.keycloak.sdjwt.sdjwtvp;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.util.Arrays;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.DisclosureSpec;
@@ -29,7 +27,10 @@ import org.keycloak.sdjwt.TestSettings;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import java.util.Arrays;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

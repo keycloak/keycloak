@@ -17,12 +17,12 @@
 
 package org.keycloak.authentication;
 
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.provider.ConfiguredPerClientProvider;
 import org.keycloak.provider.ProviderFactory;
-
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Factory for creating ClientAuthenticator instances.  This is a singleton and created when Keycloak boots.

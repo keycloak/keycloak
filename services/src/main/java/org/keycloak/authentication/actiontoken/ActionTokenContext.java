@@ -16,10 +16,15 @@
  */
 package org.keycloak.authentication.actiontoken;
 
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,10 +35,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilderException;
-import jakarta.ws.rs.core.UriInfo;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**

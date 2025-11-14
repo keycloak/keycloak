@@ -16,10 +16,10 @@
  */
 package org.keycloak.dom.saml.common;
 
-import org.w3c.dom.Element;
-
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.Serializable;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.w3c.dom.Element;
 
 /**
  * SAML Request Abstract Type

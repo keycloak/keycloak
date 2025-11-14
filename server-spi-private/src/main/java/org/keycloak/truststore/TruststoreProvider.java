@@ -17,15 +17,15 @@
 
 package org.keycloak.truststore;
 
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.provider.Provider;
-
-import java.security.cert.X509Certificate;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
+
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

@@ -1,6 +1,5 @@
 package org.keycloak.tests.client.authentication.external;
 
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.AccessToken;
@@ -13,6 +12,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.jupiter.api.Assertions;
 
 public abstract class AbstractClientAuthTest {
 

@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -26,9 +29,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.utils.RoleResolveUtil;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Allows mapping of user realm role mappings to an ID and Access Token claim.

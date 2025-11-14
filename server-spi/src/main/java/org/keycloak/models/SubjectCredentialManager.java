@@ -17,12 +17,12 @@
 
 package org.keycloak.models;
 
-import org.keycloak.credential.CredentialInput;
-import org.keycloak.credential.CredentialModel;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
 
 /**
  * Validates and manages the credentials of a known entity (for example, a user).

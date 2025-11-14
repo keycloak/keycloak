@@ -16,13 +16,6 @@
  */
 package org.keycloak.validate.validators;
 
-import org.keycloak.provider.ConfiguredProvider;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.validate.AbstractSimpleValidator;
-import org.keycloak.validate.ValidationContext;
-import org.keycloak.validate.ValidationError;
-import org.keycloak.validate.ValidatorConfig;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,6 +26,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.validate.AbstractSimpleValidator;
+import org.keycloak.validate.ValidationContext;
+import org.keycloak.validate.ValidationError;
+import org.keycloak.validate.ValidatorConfig;
 
 /**
  * URI validation - accepts {@link URI}, {@link URL} and single String. Null input is valid, use other validators (like

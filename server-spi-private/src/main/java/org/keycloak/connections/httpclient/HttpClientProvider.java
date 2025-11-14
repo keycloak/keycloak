@@ -17,10 +17,10 @@
 
 package org.keycloak.connections.httpclient;
 
-import org.keycloak.provider.Provider;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.keycloak.provider.Provider;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 

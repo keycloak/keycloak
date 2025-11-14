@@ -17,14 +17,14 @@
 
 package org.keycloak.testsuite.util.cli;
 
+import java.util.Objects;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.storage.UserStorageProviderModel;
-
-import java.util.Objects;
+import org.keycloak.storage.managers.UserStorageSyncManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

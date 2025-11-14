@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.cli;
 
-import org.junit.Assert;
+import java.util.List;
+
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 
-import java.util.List;
+import org.junit.Assert;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

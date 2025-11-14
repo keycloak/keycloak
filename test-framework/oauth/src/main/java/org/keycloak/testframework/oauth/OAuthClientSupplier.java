@@ -1,7 +1,5 @@
 package org.keycloak.testframework.oauth;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -13,6 +11,9 @@ import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 
 public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthClient> {

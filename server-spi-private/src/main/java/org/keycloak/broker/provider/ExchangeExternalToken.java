@@ -16,9 +16,9 @@
  */
 package org.keycloak.broker.provider;
 
-import org.keycloak.models.UserSessionModel;
-
 import jakarta.ws.rs.core.MultivaluedMap;
+
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
 

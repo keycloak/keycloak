@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin.group;
 
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.AccessToken;

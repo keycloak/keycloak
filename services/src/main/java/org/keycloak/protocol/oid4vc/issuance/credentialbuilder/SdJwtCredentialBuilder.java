@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
+
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -24,10 +28,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
 
 public class SdJwtCredentialBuilder implements CredentialBuilder {
 

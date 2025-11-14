@@ -1,5 +1,16 @@
 package org.keycloak.jgroups.protocol;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
+
 import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 import org.jgroups.Address;
@@ -10,16 +21,6 @@ import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

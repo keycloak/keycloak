@@ -16,14 +16,15 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.junit.Before;
+
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-
-import org.junit.Before;
-import org.keycloak.representations.idm.RealmRepresentation;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

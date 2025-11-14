@@ -17,12 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.List;
+
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.provider.Provider;
-
-import java.util.List;
 
 public interface ProofValidator extends Provider {
 

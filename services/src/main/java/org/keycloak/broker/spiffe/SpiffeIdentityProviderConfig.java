@@ -1,9 +1,9 @@
 package org.keycloak.broker.spiffe;
 
+import java.util.regex.Pattern;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-
-import java.util.regex.Pattern;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 

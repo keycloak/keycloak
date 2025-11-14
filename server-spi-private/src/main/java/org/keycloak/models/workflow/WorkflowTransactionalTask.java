@@ -1,13 +1,13 @@
 package org.keycloak.models.workflow;
 
-import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
-
 import java.util.Objects;
 
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
 public abstract class WorkflowTransactionalTask implements Runnable, KeycloakSessionTask {
 

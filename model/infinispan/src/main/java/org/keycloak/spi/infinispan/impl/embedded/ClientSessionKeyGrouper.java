@@ -17,8 +17,9 @@
 
 package org.keycloak.spi.infinispan.impl.embedded;
 
-import org.infinispan.distribution.group.Grouper;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
+
+import org.infinispan.distribution.group.Grouper;
 
 /**
  * A {@link Grouper} implementation that uses the User Session ID to assign the Client Session to the cache segment. It

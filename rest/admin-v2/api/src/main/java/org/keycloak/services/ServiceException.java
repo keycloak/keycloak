@@ -1,8 +1,8 @@
 package org.keycloak.services;
 
-import jakarta.ws.rs.core.Response;
-
 import java.util.Optional;
+
+import jakarta.ws.rs.core.Response;
 
 public class ServiceException extends RuntimeException {
     private Response.Status suggestedHttpResponseStatus;

@@ -19,16 +19,6 @@
 
 package org.keycloak.testframework.crypto;
 
-import org.junit.jupiter.api.Assumptions;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.common.util.Time;
-import org.keycloak.representations.idm.CertificateRepresentation;
-
-import javax.crypto.SecretKey;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.security.KeyPair;
@@ -38,6 +28,17 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.stream.Stream;
+import javax.crypto.SecretKey;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
+import org.keycloak.representations.idm.CertificateRepresentation;
+
+import org.junit.jupiter.api.Assumptions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

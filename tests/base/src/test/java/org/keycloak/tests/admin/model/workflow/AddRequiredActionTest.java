@@ -1,22 +1,24 @@
 package org.keycloak.tests.admin.model.workflow;
 
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.time.Duration;
+
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.AddRequiredActionStepProvider;
 import org.keycloak.models.workflow.AddRequiredActionStepProviderFactory;
-import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 
-import java.time.Duration;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class AddRequiredActionTest extends AbstractWorkflowTest {

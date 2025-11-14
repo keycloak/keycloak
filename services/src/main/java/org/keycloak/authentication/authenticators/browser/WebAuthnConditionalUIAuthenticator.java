@@ -16,8 +16,10 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
-import jakarta.ws.rs.core.Response;
 import java.util.function.Function;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;

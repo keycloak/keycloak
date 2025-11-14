@@ -1,7 +1,9 @@
 package org.keycloak.testsuite.cli.admin;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.models.IdentityProviderModel;
@@ -10,9 +12,8 @@ import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 

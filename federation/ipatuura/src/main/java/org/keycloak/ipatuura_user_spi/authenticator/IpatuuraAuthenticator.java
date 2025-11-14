@@ -19,9 +19,10 @@ package org.keycloak.ipatuura_user_spi.authenticator;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:jstephen@redhat.com.com">Justin Stephenson</a>

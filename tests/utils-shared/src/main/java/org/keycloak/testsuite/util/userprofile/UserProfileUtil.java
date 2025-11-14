@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.util.userprofile;
 
+import java.io.IOException;
+import java.util.Set;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.UserModel;
@@ -8,9 +11,6 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.util.Set;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
@@ -66,4 +66,3 @@ public class UserProfileUtil {
     }
 
 }
-

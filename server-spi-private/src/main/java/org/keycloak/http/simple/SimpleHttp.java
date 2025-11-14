@@ -1,10 +1,11 @@
 package org.keycloak.http.simple;
 
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.models.KeycloakSession;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.models.KeycloakSession;
 
 public class SimpleHttp {
 

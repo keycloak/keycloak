@@ -1,9 +1,5 @@
 package org.keycloak.models.workflow;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
-
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
@@ -13,6 +9,10 @@ import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser
 import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
 import org.keycloak.models.workflow.conditions.expression.EventEvaluator;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
 
 final class EventBasedWorkflow {
 

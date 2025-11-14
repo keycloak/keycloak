@@ -1,6 +1,7 @@
 package org.keycloak.broker.kubernetes;
 
-import org.jboss.logging.Logger;
+import java.nio.charset.StandardCharsets;
+
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.AbstractJWTClientValidator;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientValidator;
@@ -13,7 +14,7 @@ import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.KeycloakSession;
 
-import java.nio.charset.StandardCharsets;
+import org.jboss.logging.Logger;
 
 public class KubernetesIdentityProvider implements ClientAssertionIdentityProvider<KubernetesIdentityProviderConfig> {
 

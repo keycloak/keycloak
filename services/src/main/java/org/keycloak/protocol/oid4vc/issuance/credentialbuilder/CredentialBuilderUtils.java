@@ -17,11 +17,11 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-
 import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
 public class CredentialBuilderUtils {
 

@@ -1,10 +1,11 @@
 package org.keycloak.testframework.injection.mocks;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public class MockParentSupplier implements Supplier<MockParentValue, MockParentAnnotation> {
 

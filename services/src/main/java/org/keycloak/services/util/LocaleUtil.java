@@ -18,12 +18,6 @@
 
 package org.keycloak.services.util;
 
-import org.keycloak.locale.LocaleSelectorProvider;
-import org.keycloak.locale.LocaleUpdaterProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.sessions.AuthenticationSessionModel;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +25,12 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+
+import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.locale.LocaleUpdaterProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

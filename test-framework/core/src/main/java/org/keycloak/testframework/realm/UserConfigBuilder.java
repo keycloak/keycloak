@@ -1,15 +1,15 @@
 package org.keycloak.testframework.realm;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 public class UserConfigBuilder {
 

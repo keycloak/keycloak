@@ -23,9 +23,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -42,6 +39,10 @@ import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.FetchOnServerWrapper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test for simulating token refresh with the offline tokens created in older Keycloak versions.

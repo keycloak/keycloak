@@ -1,6 +1,10 @@
 package org.keycloak.services.client;
 
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -14,9 +18,6 @@ import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
-
-import java.util.Optional;
-import java.util.stream.Stream;
 
 // TODO
 public class DefaultClientService implements ClientService {

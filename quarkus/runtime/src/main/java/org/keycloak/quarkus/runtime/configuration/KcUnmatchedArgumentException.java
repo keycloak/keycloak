@@ -17,10 +17,11 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import picocli.CommandLine;
-
 import java.util.List;
+
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import picocli.CommandLine;
 
 import static org.keycloak.quarkus.runtime.cli.OptionRenderer.DUPLICIT_OPTION_SUFFIX;
 

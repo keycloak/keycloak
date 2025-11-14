@@ -17,9 +17,9 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import java.io.IOException;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

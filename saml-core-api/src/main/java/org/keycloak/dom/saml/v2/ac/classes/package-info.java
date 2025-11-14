@@ -16,4 +16,3 @@
  */
 
 package org.keycloak.dom.saml.v2.ac.classes;
-

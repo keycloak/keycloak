@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.page;
 
-import jakarta.ws.rs.core.UriBuilder;
-
 import java.net.URISyntaxException;
 import java.net.URL;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  *

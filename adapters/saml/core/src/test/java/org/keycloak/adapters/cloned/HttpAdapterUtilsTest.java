@@ -12,18 +12,21 @@ import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
+
+import org.keycloak.adapters.saml.config.parsers.KeycloakSamlAdapterV1QNames;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.saml.common.exceptions.ParsingException;
+
 import org.hamcrest.Matcher;
+import org.junit.Test;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import org.junit.Test;
 import static org.junit.Assert.assertThat;
-import org.keycloak.adapters.saml.config.parsers.KeycloakSamlAdapterV1QNames;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.dom.saml.v2.metadata.KeyTypes;
-import org.keycloak.saml.common.exceptions.ParsingException;
 
 /**
  *

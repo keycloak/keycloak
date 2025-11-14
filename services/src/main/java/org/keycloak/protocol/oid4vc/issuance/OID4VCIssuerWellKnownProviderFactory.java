@@ -18,12 +18,12 @@
 package org.keycloak.protocol.oid4vc.issuance;
 
 import org.keycloak.Config;
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
-import org.keycloak.constants.Oid4VciConstants;
 
 /**
  * {@link  WellKnownProviderFactory} implementation for the OID4VCI metadata

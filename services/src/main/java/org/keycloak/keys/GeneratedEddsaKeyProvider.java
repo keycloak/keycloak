@@ -16,11 +16,6 @@
  */
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.RealmModel;
-
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -28,6 +23,12 @@ import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+
+import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.RealmModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

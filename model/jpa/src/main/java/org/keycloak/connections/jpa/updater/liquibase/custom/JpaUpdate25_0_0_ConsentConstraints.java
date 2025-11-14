@@ -64,4 +64,3 @@ public class JpaUpdate25_0_0_ConsentConstraints  extends CustomKeycloakTask {
     }
 
 }
-

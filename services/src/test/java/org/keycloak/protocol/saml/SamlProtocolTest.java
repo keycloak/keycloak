@@ -1,17 +1,28 @@
 package org.keycloak.protocol.saml;
 
+import java.net.URI;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.resteasy.core.ResteasyContext;
-import org.jboss.resteasy.mock.MockHttpRequest;
-import org.jboss.resteasy.specimpl.ResteasyUriInfo;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -43,22 +54,14 @@ import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.resteasy.HttpRequestImpl;
-import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.KeyStatus;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.Algorithm;
-import java.net.URI;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+
+import org.jboss.resteasy.core.ResteasyContext;
+import org.jboss.resteasy.mock.MockHttpRequest;
+import org.jboss.resteasy.specimpl.ResteasyUriInfo;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static  org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

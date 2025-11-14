@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.arquillian.containers;
 
 import java.util.List;
-import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
+
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.jboss.logging.Logger;
 
 /**
  * @author mhajas

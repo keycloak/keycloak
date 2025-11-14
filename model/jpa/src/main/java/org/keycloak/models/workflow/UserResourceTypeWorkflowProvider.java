@@ -17,8 +17,6 @@
 
 package org.keycloak.models.workflow;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,12 +27,15 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionProvider;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 
 public class UserResourceTypeWorkflowProvider implements ResourceTypeSelector {
 

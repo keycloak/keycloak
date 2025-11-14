@@ -1,8 +1,8 @@
 package org.keycloak.testframework.conditions;
 
-import org.keycloak.testframework.server.KeycloakServer;
-
 import java.lang.annotation.Annotation;
+
+import org.keycloak.testframework.server.KeycloakServer;
 
 class DisabledForServersCondition extends AbstractDisabledForSupplierCondition {
 

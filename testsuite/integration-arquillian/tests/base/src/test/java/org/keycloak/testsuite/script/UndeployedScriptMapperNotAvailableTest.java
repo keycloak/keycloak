@@ -16,13 +16,16 @@
  */
 package org.keycloak.testsuite.script;
 
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.common.Profile.Feature.SCRIPTS;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
-
 import java.io.IOException;
+
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -35,14 +38,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.provider.ScriptProviderDescriptor;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.util.JsonSerialization;
+
+import static org.keycloak.common.Profile.Feature.SCRIPTS;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
+import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

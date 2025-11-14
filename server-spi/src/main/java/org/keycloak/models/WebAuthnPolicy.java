@@ -22,8 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.crypto.Algorithm;
+
+import org.jboss.logging.Logger;
 
 public class WebAuthnPolicy implements Serializable {
 

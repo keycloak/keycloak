@@ -17,10 +17,10 @@
 
 package org.keycloak.config;
 
-import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
-
 import java.util.Arrays;
 import java.util.List;
+
+import io.quarkus.opentelemetry.runtime.config.build.SamplerType;
 
 public class TracingOptions {
 

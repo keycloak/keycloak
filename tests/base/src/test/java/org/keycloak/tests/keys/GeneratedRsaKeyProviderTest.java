@@ -17,7 +17,11 @@
 
 package org.keycloak.tests.keys;
 
-import org.junit.jupiter.api.Test;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyUse;
@@ -36,10 +40,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.utils.StringUtil;
 
-import jakarta.ws.rs.core.Response;
-
-import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -253,4 +254,3 @@ public class GeneratedRsaKeyProviderTest {
     }
 
 }
-

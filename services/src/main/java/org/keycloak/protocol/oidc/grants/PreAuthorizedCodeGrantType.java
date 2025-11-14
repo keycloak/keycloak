@@ -17,8 +17,11 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.SecretGenerator;
@@ -29,18 +32,17 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
-import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.utils.MediaType;
 
-import java.util.List;
-import java.util.UUID;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 

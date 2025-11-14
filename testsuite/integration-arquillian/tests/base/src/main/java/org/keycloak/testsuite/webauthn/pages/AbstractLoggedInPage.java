@@ -17,15 +17,16 @@
 
 package org.keycloak.testsuite.webauthn.pages;
 
-import org.jboss.arquillian.graphene.page.Page;
+import java.util.LinkedList;
+
 import org.keycloak.testsuite.webauthn.pages.fragments.ContentAlert;
 import org.keycloak.testsuite.webauthn.pages.fragments.ContinueCancelModal;
 import org.keycloak.testsuite.webauthn.pages.fragments.LoggedInPageHeader;
 import org.keycloak.testsuite.webauthn.pages.fragments.Sidebar;
+
+import org.jboss.arquillian.graphene.page.Page;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import java.util.LinkedList;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;

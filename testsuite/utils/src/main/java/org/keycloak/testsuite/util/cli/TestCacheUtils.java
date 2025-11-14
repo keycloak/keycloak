@@ -17,14 +17,14 @@
 
 package org.keycloak.testsuite.util.cli;
 
+import java.util.Collections;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
-
-import java.util.Collections;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

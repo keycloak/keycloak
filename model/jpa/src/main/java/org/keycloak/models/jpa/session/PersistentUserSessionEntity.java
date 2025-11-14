@@ -17,9 +17,8 @@
 
 package org.keycloak.models.jpa.session;
 
-import jakarta.persistence.Version;
-import org.hibernate.annotations.DynamicUpdate;
-import org.keycloak.storage.jpa.KeyUtils;
+import java.io.Serializable;
+import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,8 +27,11 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.io.Serializable;
-import java.util.Objects;
+import jakarta.persistence.Version;
+
+import org.keycloak.storage.jpa.KeyUtils;
+
+import org.hibernate.annotations.DynamicUpdate;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

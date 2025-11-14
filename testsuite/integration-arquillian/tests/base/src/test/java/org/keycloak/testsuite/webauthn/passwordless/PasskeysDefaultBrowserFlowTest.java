@@ -19,11 +19,7 @@ package org.keycloak.testsuite.webauthn.passwordless;
 
 import java.io.Closeable;
 import java.util.List;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import static org.hamcrest.Matchers.nullValue;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
@@ -40,8 +36,15 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.firefox.FirefoxDriver;
+
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  *

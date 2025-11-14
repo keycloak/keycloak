@@ -16,12 +16,13 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 
-import java.util.Arrays;
-import java.util.List;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

@@ -17,11 +17,12 @@
 
 package org.keycloak.models.workflow;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.Objects;
 
 /**
  * Represents the state of a resource within a time-based workflow.
@@ -110,4 +111,3 @@ public class WorkflowStateEntity {
         return Objects.hash(resourceId, workflowId);
     }
 }
-

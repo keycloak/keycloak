@@ -17,11 +17,12 @@
 
 package org.keycloak.admin.client.resource;
 
+import java.io.IOException;
+import java.util.Base64;
+
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
-import java.io.IOException;
-import java.util.Base64;
 
 
 /**

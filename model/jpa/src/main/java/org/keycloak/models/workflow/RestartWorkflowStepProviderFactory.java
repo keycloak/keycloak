@@ -53,4 +53,3 @@ public class RestartWorkflowStepProviderFactory implements WorkflowStepProviderF
         return "Restarts the current workflow";
     }
 }
-

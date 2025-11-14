@@ -17,8 +17,13 @@
 
 package org.keycloak.tests.keys;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.Test;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.PublicKey;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -51,12 +56,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
-import jakarta.ws.rs.core.Response;
-
-import java.io.IOException;
-import java.security.KeyPair;
-import java.security.PublicKey;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -338,4 +339,3 @@ public class KeyRotationTest {
     }
 
 }
-

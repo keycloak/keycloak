@@ -1,5 +1,9 @@
 package org.keycloak.crypto.hash;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -9,10 +13,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Semaphore;
 
 public class Argon2PasswordHashProviderFactory implements PasswordHashProviderFactory, EnvironmentDependentProviderFactory {
 

@@ -1,10 +1,10 @@
 package org.keycloak.common.profile;
 
-import org.keycloak.common.Profile;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+
+import org.keycloak.common.Profile;
 
 // Features configuration based on the option 'feature-<name>'
 public class SingleProfileConfigResolver implements ProfileConfigResolver {

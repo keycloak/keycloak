@@ -1,8 +1,5 @@
 package org.keycloak.testsuite.model.infinispan;
 
-import static org.infinispan.test.TestingUtil.blockUntilViewsReceived;
-import static org.infinispan.test.TestingUtil.waitForNoRebalance;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +25,9 @@ import org.jgroups.protocols.pbcast.STABLE;
 import org.jgroups.stack.Protocol;
 import org.jgroups.stack.ProtocolStack;
 import org.jgroups.util.MutableDigest;
+
+import static org.infinispan.test.TestingUtil.blockUntilViewsReceived;
+import static org.infinispan.test.TestingUtil.waitForNoRebalance;
 
 public class PartitionManager {
 

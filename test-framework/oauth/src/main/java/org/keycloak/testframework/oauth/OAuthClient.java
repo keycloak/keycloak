@@ -1,11 +1,12 @@
 package org.keycloak.testframework.oauth;
 
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.OAuthClientConfig;
+
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 

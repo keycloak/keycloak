@@ -1,10 +1,11 @@
 package org.keycloak.it.cli.dist;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")

@@ -17,10 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
 
 /**
  * Proofs object for Credential Request in OID4VCI (Section 8.2).

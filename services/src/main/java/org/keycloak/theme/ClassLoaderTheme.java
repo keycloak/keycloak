@@ -17,9 +17,6 @@
 
 package org.keycloak.theme;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.util.LocaleUtil;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -27,6 +24,9 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.util.LocaleUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

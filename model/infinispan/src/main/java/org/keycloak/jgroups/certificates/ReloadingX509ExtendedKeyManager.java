@@ -25,10 +25,9 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.jboss.logging.Logger;
-
-import javax.net.ssl.X509ExtendedKeyManager;
 
 /**
  * A {@link X509ExtendedKeyManager} implementation that allows to update the keys and certificates at runtime.

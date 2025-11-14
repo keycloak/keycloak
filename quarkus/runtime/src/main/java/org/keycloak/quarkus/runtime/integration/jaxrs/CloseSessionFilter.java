@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.integration.jaxrs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.stream.Stream;
+
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -28,6 +29,7 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.ext.Provider;
+
 import org.keycloak.utils.KeycloakSessionUtil;
 
 @Provider

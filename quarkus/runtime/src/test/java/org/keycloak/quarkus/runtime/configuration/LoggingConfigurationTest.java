@@ -17,27 +17,29 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.keycloak.config.LoggingOptions;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+
+import io.quarkus.runtime.logging.LogRuntimeConfig;
+import io.smallrye.config.SmallRyeConfig;
+import org.hamcrest.CoreMatchers;
+import org.junit.Test;
+
+import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
+import static org.keycloak.config.LoggingOptions.DEFAULT_SYSLOG_OUTPUT;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.config.LoggingOptions.DEFAULT_LOG_FORMAT;
-import static org.keycloak.config.LoggingOptions.DEFAULT_SYSLOG_OUTPUT;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import io.quarkus.runtime.logging.LogRuntimeConfig;
-import org.hamcrest.CoreMatchers;
-import org.junit.Test;
-import org.keycloak.config.LoggingOptions;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
-import io.smallrye.config.SmallRyeConfig;
 
 public class LoggingConfigurationTest extends AbstractConfigurationTest {
 

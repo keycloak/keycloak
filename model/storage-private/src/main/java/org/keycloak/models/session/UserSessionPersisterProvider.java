@@ -17,16 +17,16 @@
 
 package org.keycloak.models.session;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

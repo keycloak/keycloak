@@ -1,10 +1,10 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.List;
+
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-
-import java.util.List;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 

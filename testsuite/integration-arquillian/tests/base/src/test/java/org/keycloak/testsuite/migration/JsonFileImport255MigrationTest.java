@@ -16,17 +16,18 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.junit.Test;
-import org.keycloak.exportimport.util.ImportUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.utils.io.IOUtil;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
 import org.keycloak.common.Profile;
+import org.keycloak.exportimport.util.ImportUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.utils.io.IOUtil;
+import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.

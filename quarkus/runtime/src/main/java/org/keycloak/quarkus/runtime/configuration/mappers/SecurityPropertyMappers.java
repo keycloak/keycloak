@@ -1,7 +1,5 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 import java.util.List;
 
 import org.keycloak.common.Profile;
@@ -10,6 +8,8 @@ import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.SecurityOptions;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
+
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class SecurityPropertyMappers implements PropertyMapperGrouping {
 

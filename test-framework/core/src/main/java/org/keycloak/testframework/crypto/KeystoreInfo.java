@@ -1,8 +1,8 @@
 package org.keycloak.testframework.crypto;
 
-import org.keycloak.representations.idm.CertificateRepresentation;
-
 import java.io.File;
+
+import org.keycloak.representations.idm.CertificateRepresentation;
 
 public class KeystoreInfo {
     private final CertificateRepresentation certificateInfo;

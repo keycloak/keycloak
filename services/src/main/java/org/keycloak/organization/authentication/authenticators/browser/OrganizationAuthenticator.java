@@ -17,14 +17,6 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
-import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
-import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
-import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
-import static org.keycloak.organization.utils.Organizations.getEmailDomain;
-import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
-import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
-import static org.keycloak.utils.StringUtil.isBlank;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +26,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -66,6 +59,14 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
+
+import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
+import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
+import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
+import static org.keycloak.organization.utils.Organizations.getEmailDomain;
+import static org.keycloak.organization.utils.Organizations.isEnabledAndOrganizationsPresent;
+import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 

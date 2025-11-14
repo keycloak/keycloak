@@ -16,6 +16,9 @@
  */
 package org.keycloak.client.cli.common;
 
+import java.io.File;
+import java.io.PrintWriter;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.ConfigHandler;
@@ -26,9 +29,6 @@ import org.keycloak.client.cli.util.AuthUtil;
 import org.keycloak.client.cli.util.ConfigUtil;
 import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.common.util.IoUtils;
-
-import java.io.File;
-import java.io.PrintWriter;
 
 import picocli.CommandLine.Option;
 

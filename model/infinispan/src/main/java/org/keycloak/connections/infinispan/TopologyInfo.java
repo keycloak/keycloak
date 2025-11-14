@@ -21,6 +21,8 @@ import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import java.util.Objects;
 
+import org.keycloak.Config;
+
 import org.infinispan.Cache;
 import org.infinispan.distribution.DistributionManager;
 import org.infinispan.factories.GlobalComponentRegistry;
@@ -33,7 +35,6 @@ import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.util.NameCache;
-import org.keycloak.Config;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

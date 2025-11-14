@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import jakarta.ws.rs.core.UriBuilder;
-import org.apache.http.client.methods.CloseableHttpResponse;
-
 import java.io.IOException;
 import java.util.Map;
+
+import jakarta.ws.rs.core.UriBuilder;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<AccessTokenResponse> {
 

@@ -16,14 +16,16 @@
  */
 package org.keycloak.quarkus.runtime.services.health;
 
-import io.smallrye.health.api.AsyncHealthCheck;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
-import org.eclipse.microprofile.health.Readiness;
+
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+
+import io.smallrye.health.api.AsyncHealthCheck;
+import org.eclipse.microprofile.health.Readiness;
 
 @ApplicationScoped
 public class KeycloakClusterReadyHealthCheckProducer {

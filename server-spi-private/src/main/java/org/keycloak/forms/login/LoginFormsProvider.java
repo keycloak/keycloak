@@ -17,19 +17,20 @@
 
 package org.keycloak.forms.login;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
