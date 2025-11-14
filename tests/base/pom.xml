@@ -154,4 +154,17 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>aurora</id>
+            <dependencies>
+                <dependency>
+                    <groupId>software.amazon.jdbc</groupId>
+                    <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+                    <version>${aws-jdbc-wrapper.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
 </project>
