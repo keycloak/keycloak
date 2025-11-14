@@ -67,6 +67,14 @@ public class KeyUtils {
         return kpg.generateKeyPair();
     }
 
+    public static KeyPair generateMLDSAKey(String algorithm) throws NoSuchAlgorithmException, NoSuchProviderException {
+        if (!JavaAlgorithm.isMldsaJavaAlgorithm(algorithm)) {
+            throw new NoSuchAlgorithmException("Not a ML-DSA Algorithm");
+        }
+        KeyPairGenerator kpg = CryptoIntegration.getProvider().getKeyPairGen(algorithm);
+        return kpg.generateKeyPair();
+    }
+
     public static SecretKey generateSecretKey(String algorithm, int keySize) throws NoSuchAlgorithmException, NoSuchProviderException {
         KeyGenerator keyGen = KeyGenerator.getInstance(JavaAlgorithm.getJavaAlgorithm(algorithm), BouncyIntegration.PROVIDER);
         keyGen.init(keySize);

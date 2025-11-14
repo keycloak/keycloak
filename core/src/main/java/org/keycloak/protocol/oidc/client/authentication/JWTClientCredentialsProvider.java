@@ -92,6 +92,12 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
                 }
                 this.sigCtx = new AsymmetricSignatureSignerContext(keyWrapper);
                 break;
+            case KeyType.AKP:
+                if (!JavaAlgorithm.isMldsaJavaAlgorithm(algorithm)) {
+                    throw new RuntimeException("Invalid algorithm for a AKP KeyPair: " + algorithm);
+                }
+                this.sigCtx = new AsymmetricSignatureSignerContext(keyWrapper);
+                break;
             default:
                 throw new RuntimeException("Invalid KeyPair algorithm: " + keyPair.getPublic().getAlgorithm());
         }

@@ -169,4 +169,36 @@ public class JWKBuilder {
     public JWK okp(Key key, KeyUse keyUse) {
         return EdEC_UTILS.okp(kid, algorithm, key, keyUse);
     }
+
+    public JWK akp(Key key) {
+        return akp(key, DEFAULT_PUBLIC_KEY_USE);
+    }
+
+    public JWK akp(Key key, KeyUse keyUse) {
+        AKPPublicJWK k = new AKPPublicJWK();
+        byte[] encodedKey = key.getEncoded();
+        String keyString = Base64Url.encode(encodedKey);
+
+        k.setKeyId(kid);
+        k.setKeyType(KeyType.AKP);
+        k.setAlgorithm(algorithm);
+        k.setPublicKeyUse(keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName());
+        k.setPub(keyString);
+
+        return k;
+    }
+
+    public JWK akp(Key key, KeyUse keyUse, List<X509Certificate> certificates) {
+        JWK k = akp(key, keyUse);
+
+        if (certificates != null && !certificates.isEmpty()) {
+            String[] certificateChain = new String[certificates.size()];
+            for (int i = 0; i < certificates.size(); i++) {
+                certificateChain[i] = PemUtils.encodeCertificate(certificates.get(i));
+            }
+            k.setX509CertificateChain(certificateChain);
+        }
+
+        return k;
+    }
 }

@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentModel;
@@ -159,15 +160,29 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
 
     // merge the algorithms supported for RSA and EC keys and provide them as one configuration property
     private static ProviderConfigProperty mergedAlgorithmProperties() {
-        List<String> algorithms = Stream.of(
-                        List.of(Algorithm.AES, Algorithm.EdDSA),
-                        List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512),
-                        Attributes.HS_ALGORITHM_PROPERTY.getOptions(),
-                        Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
-                        Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions(),
-                        GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_PROPERTY.getOptions())
-                .flatMap(Collection::stream)
-                .toList();
+        List<String> algorithms;
+        if (Profile.isFeatureEnabled(Profile.Feature.ML_DSA)) {
+            algorithms = Stream.of(
+                            List.of(Algorithm.AES, Algorithm.EdDSA),
+                            List.of(Algorithm.MLDSA44, Algorithm.MLDSA65, Algorithm.MLDSA87),
+                            List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512),
+                            Attributes.HS_ALGORITHM_PROPERTY.getOptions(),
+                            Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
+                            Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions(),
+                            GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_PROPERTY.getOptions())
+                    .flatMap(Collection::stream)
+                    .toList();
+        } else {
+            algorithms = Stream.of(
+                            List.of(Algorithm.AES, Algorithm.EdDSA),
+                            List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512),
+                            Attributes.HS_ALGORITHM_PROPERTY.getOptions(),
+                            Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
+                            Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions(),
+                            GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_PROPERTY.getOptions())
+                    .flatMap(Collection::stream)
+                    .toList();
+        }
         return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),
                 Attributes.RS_ALGORITHM_PROPERTY.getHelpText(), Attributes.RS_ALGORITHM_PROPERTY.getType(),
                 Attributes.RS_ALGORITHM_PROPERTY.getDefaultValue(), algorithms.toArray(String[]::new));

@@ -24,6 +24,7 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
@@ -82,6 +83,8 @@ public class JWKParser {
             return createECPublicKey(normalizedJwkNode);
         } else if (KeyType.OKP.equals(keyType)) {
             return JWKBuilder.EdEC_UTILS.createOKPPublicKey(jwk);
+        } else if (KeyType.AKP.equals(keyType)) {
+            return createAKPPublicKey(normalizedJwkNode);
         } else {
             throw new RuntimeException("Unsupported keyType " + keyType);
         }
@@ -143,8 +146,28 @@ public class JWKParser {
         }
     }
 
+    private static PublicKey createAKPPublicKey(JsonNode jwk) {
+        String alg = jwk.path(AKPPublicJWK.ALGORITHM).asText(null);
+        if (alg == null) {
+            throw new IllegalArgumentException("Missing 'alg' parameter in AKP-JWK");
+        }
+        String pub = jwk.path(AKPPublicJWK.PUB).asText(null);
+        if (pub == null) {
+            throw new IllegalArgumentException("Missing 'pub' parameter in AKP-JWK");
+        }
+
+        byte[] decodedKey = Base64Url.decode(pub);
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKey);
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance(alg);
+            return keyFactory.generatePublic(keySpec);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create AKP public key from JWK", e);
+        }
+    }
+
     public boolean isKeyTypeSupported(String keyType) {
-        return (RSAPublicJWK.RSA.equals(keyType) || ECPublicJWK.EC.equals(keyType)
+        return (RSAPublicJWK.RSA.equals(keyType) || ECPublicJWK.EC.equals(keyType) || AKPPublicJWK.AKP.equals(keyType)
                 || (JWKBuilder.EdEC_UTILS.isEdECSupported() && OKPPublicJWK.OKP.equals(keyType)));
     }
 }

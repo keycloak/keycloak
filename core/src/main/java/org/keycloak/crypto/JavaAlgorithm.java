@@ -40,6 +40,11 @@ public class JavaAlgorithm {
     public static final String SHA512 = "SHA-512";
     public static final String SHAKE256 = "SHAKE256";
 
+    /* ML-DSA */
+    public static final String MLDSA44 = "ML-DSA-44";
+    public static final String MLDSA65 = "ML-DSA-65";
+    public static final String MLDSA87 = "ML-DSA-87";
+
     public static String getJavaAlgorithm(String algorithm) {
         return getJavaAlgorithm(algorithm, null);
     }
@@ -70,6 +75,12 @@ public class JavaAlgorithm {
                 return PS384;
             case Algorithm.PS512:
                 return PS512;
+            case Algorithm.MLDSA44:
+                return MLDSA44;
+            case Algorithm.MLDSA65:
+                return MLDSA65;
+            case Algorithm.MLDSA87:
+                return MLDSA87;
             case Algorithm.EdDSA:
                 if (curve != null) {
                     return curve;
@@ -124,6 +135,10 @@ public class JavaAlgorithm {
                     }
                 }
                 return SHA512;
+            case MLDSA44:
+            case MLDSA65:
+            case MLDSA87:
+                return SHAKE256;
             case Algorithm.AES:
                 return AES;
             default:
@@ -142,6 +157,10 @@ public class JavaAlgorithm {
             case Algorithm.Ed448:
             case Algorithm.Ed25519:
                 return KeyType.OKP;
+            case Algorithm.MLDSA44:
+            case Algorithm.MLDSA65:
+            case Algorithm.MLDSA87:
+                return KeyType.AKP;
             default:
                 return KeyType.OCT;
         }
@@ -157,6 +176,10 @@ public class JavaAlgorithm {
 
     public static boolean isEddsaJavaAlgorithm(String algorithm) {
         return getJavaAlgorithm(algorithm).contains("Ed");
+    }
+
+    public static boolean isMldsaJavaAlgorithm(String algorithm) {
+        return getJavaAlgorithm(algorithm).startsWith("ML-DSA-");
     }
 
     public static boolean isHMACJavaAlgorithm(String algorithm) {

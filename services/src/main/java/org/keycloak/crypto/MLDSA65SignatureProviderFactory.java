@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,19 @@
  */
 package org.keycloak.crypto;
 
-public interface KeyType {
+import org.keycloak.models.KeycloakSession;
 
-    String EC = "EC";
-    String RSA = "RSA";
-    String OCT = "OCT";
-    String OKP = "OKP";
-    String AKP = "AKP";
+public class MLDSA65SignatureProviderFactory implements SignatureProviderFactory {
 
+    public static final String ID = Algorithm.MLDSA65;
+
+    @Override
+    public String getId() {
+        return ID;
+    }
+
+    @Override
+    public SignatureProvider create(KeycloakSession session) {
+        return new MLDSASignatureProvider(session, Algorithm.MLDSA65);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.crypto;
 
-public interface KeyType {
+import org.keycloak.common.VerificationException;
+import org.keycloak.models.KeycloakSession;
 
-    String EC = "EC";
-    String RSA = "RSA";
-    String OCT = "OCT";
-    String OKP = "OKP";
-    String AKP = "AKP";
+public class ServerMLDSASignatureVerifierContext extends  AsymmetricSignatureVerifierContext {
 
+    public ServerMLDSASignatureVerifierContext(KeycloakSession session, String kid, String algorithm) throws VerificationException {
+        super(ServerAsymmetricSignatureVerifierContext.getKey(session, kid, algorithm));
+    }
+
+    public ServerMLDSASignatureVerifierContext(KeyWrapper key) {
+        super(key);
+    }
 }
