@@ -113,10 +113,19 @@ public class SdJwtUtils {
         return (ArrayNode) jsonNode;
     }
 
-    public static long readTimeClaim(JsonNode payload, String claimName) throws VerificationException {
+    /**
+     * @param payload
+     * @param claimName
+     * @return Specified time-claim if exists. Could return null if claim does not exists
+     * @throws VerificationException
+     */
+    public static Long readTimeClaimOrNull(JsonNode payload, String claimName) throws VerificationException {
         JsonNode claim = payload.get(claimName);
-        if (claim == null || !claim.isNumber()) {
-            throw new VerificationException("Missing or invalid '" + claimName + "' claim");
+        if (claim == null) {
+            return null;
+        }
+        if (!claim.isNumber()) {
+            throw new VerificationException("Invalid '" + claimName + "' claim");
         }
 
         return claim.asLong();

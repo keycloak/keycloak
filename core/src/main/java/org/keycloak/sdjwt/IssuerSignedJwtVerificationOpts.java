@@ -45,7 +45,7 @@ public class IssuerSignedJwtVerificationOpts extends TimeClaimVerificationOpts {
                     requireIssuedAtClaim,
                     requireExpirationClaim,
                     requireNotBeforeClaim,
-                    leewaySeconds
+                    allowedClockSkewSeconds
             );
         }
     }

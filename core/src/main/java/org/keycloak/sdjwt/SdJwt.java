@@ -24,15 +24,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.sdjwt.vp.KeyBindingJWT;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 
 /**
  * Main entry class for selective disclosure jwt (SD-JWT).
@@ -40,7 +42,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwt {
-    public static final String DELIMITER = "~";
 
     private final IssuerSignedJWT issuerSignedJWT;
     private final List<SdJwtClaim> claims;
@@ -48,7 +49,6 @@ public class SdJwt {
     private final SdJwtVerificationContext sdJwtVerificationContext;
 
     private SdJwt(DisclosureSpec disclosureSpec, JsonNode claimSet, List<SdJwt> nesteSdJwts,
-                  Optional<KeyBindingJWT> keyBindingJWT,
                   SignatureSignerContext signer,
                   String hashAlgorithm,
                   String jwsType) {
@@ -88,12 +88,11 @@ public class SdJwt {
      * <p>
      * dropping the algo claim.
      *
-     * @param nestedSdJwt
      * @return
      */
     public JsonNode asNestedPayload() {
-        JsonNode nestedPayload = issuerSignedJWT.getPayload();
-        ((ObjectNode) nestedPayload).remove(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM);
+        ObjectNode nestedPayload = issuerSignedJWT.getPayload();
+        nestedPayload.remove(CLAIM_NAME_SD_HASH_ALGORITHM);
         return nestedPayload;
     }
 
@@ -104,7 +103,7 @@ public class SdJwt {
         parts.addAll(disclosures);
         parts.add("");
 
-        return String.join(DELIMITER, parts);
+        return String.join(OID4VCConstants.SDJWT_DELIMITER, parts);
     }
 
     private static List<String> getDisclosureStrings(List<SdJwtClaim> claims) {
@@ -227,7 +226,6 @@ public class SdJwt {
     public static class Builder {
         private DisclosureSpec disclosureSpec;
         private JsonNode claimSet;
-        private Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
         private SignatureSignerContext signer;
         private final List<SdJwt> nestedSdJwts = new ArrayList<>();
         private String hashAlgorithm;
@@ -240,11 +238,6 @@ public class SdJwt {
 
         public Builder withClaimSet(JsonNode claimSet) {
             this.claimSet = claimSet;
-            return this;
-        }
-
-        public Builder withKeyBindingJWT(KeyBindingJWT keyBindingJWT) {
-            this.keyBindingJWT = Optional.of(keyBindingJWT);
             return this;
         }
 
@@ -269,7 +262,7 @@ public class SdJwt {
         }
 
         public SdJwt build() {
-            return new SdJwt(disclosureSpec, claimSet, nestedSdJwts, keyBindingJWT, signer, hashAlgorithm, jwsType);
+            return new SdJwt(disclosureSpec, claimSet, nestedSdJwts, signer, hashAlgorithm, jwsType);
         }
     }
 

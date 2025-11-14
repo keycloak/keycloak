@@ -16,38 +16,50 @@
  */
 package org.keycloak.sdjwt.vp;
 
+import org.keycloak.OID4VCConstants;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.sdjwt.SdJws;
+import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 
 /**
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  *
  */
-public class KeyBindingJWT extends SdJws {
+public class KeyBindingJWT extends SdJws<KeyBindingPayload> {
 
-    public static final String TYP = "kb+jwt";
-
-    public KeyBindingJWT(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        super(payload, signer, jwsType);
+    private KeyBindingJWT(KeyBindingPayload payload, SignatureSignerContext signer) {
+        super(payload, signer, OID4VCConstants.KB_JWT_TYP);
     }
 
     public static KeyBindingJWT of(String jwsString) {
         return new KeyBindingJWT(jwsString);
     }
 
-    public static KeyBindingJWT from(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        return new KeyBindingJWT(payload, signer, jwsType);
-    }
-
-    private KeyBindingJWT(JsonNode payload, JWSInput jwsInput) {
-        super(payload, jwsInput);
+    public static KeyBindingJWT from(KeyBindingPayload payload, SignatureSignerContext signer) {
+        return new KeyBindingJWT(payload, signer);
     }
 
     private KeyBindingJWT(String jwsString) {
         super(jwsString);
+    }
+
+    // No need to support this for now.
+    @Override
+    protected String readClaim(KeyBindingPayload payload, String claimName) throws VerificationException {
+        throw new UnsupportedOperationException("Unsupported to retrieve '" + claimName + "' from KeyBindingJWT");
+    }
+
+    @Override
+    protected KeyBindingPayload readPayload(JWSInput jwsInput) {
+        try {
+            return JsonSerialization.readValue(jwsInput.getContent(), KeyBindingPayload.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

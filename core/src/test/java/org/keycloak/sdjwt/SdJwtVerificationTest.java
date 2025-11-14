@@ -30,7 +30,9 @@ import org.keycloak.rule.CryptoInitRule;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,6 +40,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -184,8 +188,8 @@ public abstract class SdJwtVerificationTest {
 
         // exp: invalid
         ObjectNode claimSet2 = mapper.createObjectNode();
-        claimSet1.put("given_name", "John");
-        claimSet1.set("exp", null);
+        claimSet2.put("given_name", "John");
+        claimSet2.set("exp", null);
 
         DisclosureSpec disclosureSpec = DisclosureSpec.builder()
                 .withUndisclosedClaim("given_name", "eluV5Og3gSNII8EYnsxA_A")
@@ -194,7 +198,11 @@ public abstract class SdJwtVerificationTest {
         SdJwt sdJwtV1 = exampleFlatSdJwtV2(claimSet1, disclosureSpec).build();
         SdJwt sdJwtV2 = exampleFlatSdJwtV2(claimSet2, disclosureSpec).build();
 
-        for (SdJwt sdJwt : Arrays.asList(sdJwtV1, sdJwtV2)) {
+        Map<SdJwt, String> sdJwtsToExpectedErrorMessages = new HashMap<SdJwt, String>();
+        sdJwtsToExpectedErrorMessages.put(sdJwtV1, "Missing 'exp' claim");
+        sdJwtsToExpectedErrorMessages.put(sdJwtV2, "Invalid 'exp' claim");
+
+        for (SdJwt sdJwt : sdJwtsToExpectedErrorMessages.keySet()) {
             VerificationException exception = assertThrows(
                     VerificationException.class,
                     () -> sdJwt.verify(
@@ -206,7 +214,7 @@ public abstract class SdJwtVerificationTest {
             );
 
             assertEquals("Issuer-Signed JWT: Invalid `exp` claim", exception.getMessage());
-            assertEquals("Missing 'exp' claim or null", exception.getCause().getMessage());
+            assertEquals(sdJwtsToExpectedErrorMessages.get(sdJwt), exception.getCause().getMessage());
         }
     }
 
@@ -274,7 +282,7 @@ public abstract class SdJwtVerificationTest {
     public void sdJwtVerificationShouldFail_IfSdArrayElementIsNotString() throws JsonProcessingException {
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
-        claimSet.set("_sd", mapper.readTree("[123]"));
+        claimSet.set(CLAIM_NAME_SD, mapper.readTree("[123]"));
 
         SdJwt sdJwt = exampleFlatSdJwtV2(claimSet, DisclosureSpec.builder().build()).build();
 
@@ -291,7 +299,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfForbiddenClaimNames() {
-        for (String forbiddenClaimName : Arrays.asList("_sd", "...")) {
+        for (String forbiddenClaimName : Arrays.asList(CLAIM_NAME_SD, CLAIM_NAME_SD_UNDISCLOSED_ARRAY)) {
             ObjectNode claimSet = mapper.createObjectNode();
             claimSet.put(forbiddenClaimName, "Value");
 

@@ -23,9 +23,6 @@ import org.keycloak.common.VerificationException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_EXP;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_IAT;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -33,15 +30,15 @@ import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
 public class TimeClaimVerifierTest {
 
     private static final long CURRENT_TIMESTAMP = 1609459200L; // Fixed timestamp: 2021-01-01 00:00:00 UTC
-    private static final int DEFAULT_LEEWAY_SECONDS = 20;
+    private static final int DEFAULT_CLOCK_SKEW_SECONDS = 20;
 
-    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, false);
-    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, true);
+    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, false);
+    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, true);
 
     static class FixedTimeClaimVerifier extends TimeClaimVerifier {
 
         public FixedTimeClaimVerifier(int leewaySeconds, boolean requireClaims) {
-            super(createOptsWithLeeway(leewaySeconds, requireClaims));
+            super(createOptsWithAllowedClockSkew(leewaySeconds, requireClaims));
         }
 
         @Override
@@ -52,97 +49,67 @@ public class TimeClaimVerifierTest {
 
     @Test
     public void testVerifyIatClaimInTheFuture() {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 100); // 100 seconds in the future
-
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyIssuedAtClaim(payload));
+                () -> timeClaimVerifier.verifyIssuedAtClaim(CURRENT_TIMESTAMP + 100)); // 100 seconds in the future
 
         assertEquals("JWT was issued in the future", exception.getMessage());
     }
 
     @Test
     public void testVerifyIatClaimValid() throws VerificationException {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 1); // Issued 1 second ago, in the past
-
-        timeClaimVerifier.verifyIssuedAtClaim(payload);
+        timeClaimVerifier.verifyIssuedAtClaim(CURRENT_TIMESTAMP - 1); // Issued 1 second ago, in the past
     }
 
     @Test
     public void testVerifyIatClaimEdge() throws VerificationException {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second leeway
-
-        timeClaimVerifier.verifyIssuedAtClaim(payload);
+        timeClaimVerifier.verifyIssuedAtClaim(CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second leeway);
     }
 
     @Test
     public void testVerifyExpClaimExpired() {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 100); // Expired 100 seconds ago
-
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyExpirationClaim(payload));
+                () -> timeClaimVerifier.verifyExpirationClaim(CURRENT_TIMESTAMP - 100)); // Expired 100 seconds ago
 
         assertEquals("JWT has expired", exception.getMessage());
     }
 
     @Test
     public void testVerifyExpClaimValid() throws VerificationException {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP + 100); // Expires 100 seconds in the future
-
-        timeClaimVerifier.verifyExpirationClaim(payload);
+        timeClaimVerifier.verifyExpirationClaim(CURRENT_TIMESTAMP + 100); // Expires 100 seconds in the future
     }
 
     @Test
     public void testVerifyExpClaimEdge() throws VerificationException {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second leeway
-
-        // No exception expected for JWT expiring within leeway
-        timeClaimVerifier.verifyExpirationClaim(payload);
+        // No exception expected for JWT expiring within clock skew
+        timeClaimVerifier.verifyExpirationClaim(CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second leeway
     }
 
     @Test
     public void testVerifyNotBeforeClaimNotYetValid() {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 100); // Not valid for another 100 seconds
-
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyNotBeforeClaim(payload));
+                () -> timeClaimVerifier.verifyNotBeforeClaim(CURRENT_TIMESTAMP + 100)); // Not valid for another 100 seconds
 
         assertEquals("JWT is not yet valid", exception.getMessage());
     }
 
     @Test
     public void testVerifyNotBeforeClaimValid() throws VerificationException {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP - 100); // Valid since 100 seconds ago
-
-        timeClaimVerifier.verifyNotBeforeClaim(payload);
+        timeClaimVerifier.verifyNotBeforeClaim(CURRENT_TIMESTAMP - 100); // Valid since 100 seconds ago
     }
 
     // Test for verifyNotBeforeClaim (edge case: valid exactly at current time with leeway)
     @Test
     public void testVerifyNotBeforeClaimEdge() throws VerificationException {
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second leeway
-
         // No exception expected for JWT becoming valid within leeway
-        timeClaimVerifier.verifyNotBeforeClaim(payload);
+        timeClaimVerifier.verifyNotBeforeClaim(CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second leeway
     }
 
     @Test
     public void testVerifyAgeJwtTooOld() {
         int maxAgeAllowed = 300; // 5 minutes
 
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 361); // 361 seconds old
-
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyAge(payload, maxAgeAllowed));
+                () -> timeClaimVerifier.verifyAge(CURRENT_TIMESTAMP - 361, maxAgeAllowed)); // 361 seconds old
 
         assertEquals("JWT is too old", exception.getMessage());
     }
@@ -151,28 +118,22 @@ public class TimeClaimVerifierTest {
     public void testVerifyAgeValid() throws VerificationException {
         int maxAgeAllowed = 300; // 5 minutes
 
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 100); // Only 100 seconds old
-
-        timeClaimVerifier.verifyAge(payload, maxAgeAllowed);
+        timeClaimVerifier.verifyAge(CURRENT_TIMESTAMP - 100, maxAgeAllowed); // Only 100 seconds old
     }
 
     @Test
     public void testVerifyAgeValidEdge() throws VerificationException {
         int maxAgeAllowed = 300; // 5 minutes
 
-        ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 320); // 320 seconds old, within the 20 second leeway
-
-        timeClaimVerifier.verifyAge(payload, maxAgeAllowed);
+        timeClaimVerifier.verifyAge(CURRENT_TIMESTAMP - 320, maxAgeAllowed); // 320 seconds old, within the 20 second leeway
     }
 
     @Test
-    public void instantiationShouldFailIfLeewayNegative() {
+    public void instantiationShouldFailIfClockSkewNegative() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new TimeClaimVerifier(createOptsWithLeeway(-1, false)));
+                () -> new TimeClaimVerifier(createOptsWithAllowedClockSkew(-1, false)));
 
-        assertEquals("Leeway seconds cannot be negative", exception.getMessage());
+        assertEquals("Allowed clock skew seconds cannot be negative", exception.getMessage());
     }
 
     @Test
@@ -181,9 +142,9 @@ public class TimeClaimVerifierTest {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
 
         // No exception expected as claims are not required
-        timeClaimVerifier.verifyIssuedAtClaim(payload);
-        timeClaimVerifier.verifyExpirationClaim(payload);
-        timeClaimVerifier.verifyNotBeforeClaim(payload);
+        timeClaimVerifier.verifyIssuedAtClaim(null);
+        timeClaimVerifier.verifyExpirationClaim(null);
+        timeClaimVerifier.verifyNotBeforeClaim(null);
     }
 
     @Test
@@ -192,21 +153,21 @@ public class TimeClaimVerifierTest {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
 
         VerificationException exceptionIat = assertThrows(VerificationException.class,
-                () -> strictTimeClaimVerifier.verifyIssuedAtClaim(payload));
-        assertEquals("Missing 'iat' claim or null", exceptionIat.getMessage());
+                () -> strictTimeClaimVerifier.verifyIssuedAtClaim(null));
+        assertEquals("Missing 'iat' claim", exceptionIat.getMessage());
 
         VerificationException exceptionExp = assertThrows(VerificationException.class,
-                () -> strictTimeClaimVerifier.verifyExpirationClaim(payload));
-        assertEquals("Missing 'exp' claim or null", exceptionExp.getMessage());
+                () -> strictTimeClaimVerifier.verifyExpirationClaim(null));
+        assertEquals("Missing 'exp' claim", exceptionExp.getMessage());
 
         VerificationException exceptionNbf = assertThrows(VerificationException.class,
-                () -> strictTimeClaimVerifier.verifyNotBeforeClaim(payload));
-        assertEquals("Missing 'nbf' claim or null", exceptionNbf.getMessage());
+                () -> strictTimeClaimVerifier.verifyNotBeforeClaim(null));
+        assertEquals("Missing 'nbf' claim", exceptionNbf.getMessage());
     }
 
-    private static TimeClaimVerificationOpts createOptsWithLeeway(int leewaySeconds, boolean requireClaims) {
+    private static TimeClaimVerificationOpts createOptsWithAllowedClockSkew(int allowedClockSkewSeconds, boolean requireClaims) {
         return TimeClaimVerificationOpts.builder()
-                .withLeewaySeconds(leewaySeconds)
+                .withAllowedClockSkew(allowedClockSkewSeconds)
                 .withRequireIssuedAtClaim(requireClaims)
                 .withRequireExpirationClaim(requireClaims)
                 .withRequireNotBeforeClaim(requireClaims)

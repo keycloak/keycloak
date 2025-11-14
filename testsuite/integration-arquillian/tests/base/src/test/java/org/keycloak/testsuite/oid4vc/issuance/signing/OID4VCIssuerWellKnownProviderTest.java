@@ -77,7 +77,6 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.StringUtil;
-import org.keycloak.constants.Oid4VciConstants;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -95,7 +94,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.constants.Oid4VciConstants.SIGNED_METADATA_JWT_TYPE;
+import static org.keycloak.OID4VCConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
+import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
@@ -110,7 +110,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         Map<String, String> attributes = Optional.ofNullable(testRealm.getAttributes()).orElseGet(HashMap::new);
         attributes.put("credential_response_encryption.encryption_required", "true");
         attributes.put(ATTR_ENCRYPTION_REQUIRED, "true");
-        attributes.put(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
+        attributes.put(BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
         attributes.put(ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION);
         testRealm.setAttributes(attributes);
 
@@ -444,7 +444,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         realm.setAttribute(ATTR_ENCRYPTION_REQUIRED, "true");
         realm.setAttribute(ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION);
-        realm.setAttribute(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
+        realm.setAttribute(BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
 
         OID4VCIssuerWellKnownProvider provider = new OID4VCIssuerWellKnownProvider(session);
         return provider.getIssuerMetadata();
@@ -770,7 +770,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     RealmModel testRealm = session.realms().createRealm("test-batch-validation-" + batchSize);
 
                     try {
-                        testRealm.setAttribute(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, batchSize);
+                        testRealm.setAttribute(BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, batchSize);
 
                         CredentialIssuer.BatchCredentialIssuance result = OID4VCIssuerWellKnownProvider.getBatchCredentialIssuance(testRealm);
 

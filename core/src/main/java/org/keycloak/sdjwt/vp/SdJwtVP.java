@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -36,13 +37,14 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
-import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.SdJwtVerificationContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
@@ -114,11 +116,11 @@ public class SdJwtVP {
     }
 
     public static SdJwtVP of(String sdJwtString) {
-        int disclosureStart = sdJwtString.indexOf(SdJwt.DELIMITER);
-        int disclosureEnd = sdJwtString.lastIndexOf(SdJwt.DELIMITER);
+        int disclosureStart = sdJwtString.indexOf(OID4VCConstants.SDJWT_DELIMITER);
+        int disclosureEnd = sdJwtString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER);
 
         if (disclosureStart == -1) {
-            throw new IllegalArgumentException("SD-JWT is malformed, expected to contain a '" + SdJwt.DELIMITER + "'");
+            throw new IllegalArgumentException("SD-JWT is malformed, expected to contain a '" + OID4VCConstants.SDJWT_DELIMITER + "'");
         }
 
         String issuerSignedJWTString = sdJwtString.substring(0, disclosureStart);
@@ -131,14 +133,14 @@ public class SdJwtVP {
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
 
         ObjectNode issuerPayload = (ObjectNode) issuerSignedJWT.getPayload();
-        String hashAlgorithm = Optional.ofNullable(issuerPayload.get(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM))
+        String hashAlgorithm = Optional.ofNullable(issuerPayload.get(CLAIM_NAME_SD_HASH_ALGORITHM))
                 .map(JsonNode::asText)
                 .orElse(JavaAlgorithm.SHA256.toLowerCase());
 
         Map<String, ArrayNode> claims = new HashMap<>();
         Map<String, String> disclosures = new HashMap<>();
 
-        List<String> split = Arrays.stream(disclosuresString.split(SdJwt.DELIMITER))
+        List<String> split = Arrays.stream(disclosuresString.split(OID4VCConstants.SDJWT_DELIMITER))
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
 
@@ -207,18 +209,18 @@ public class SdJwtVP {
         return issuerSignedJWT.getCnfClaim().orElse(null);
     }
 
-    public String present(List<String> disclosureDigests, JsonNode keyBindingClaims,
-            SignatureSignerContext holdSignatureSignerContext, String jwsType) {
+    public String present(List<String> disclosureDigests, KeyBindingPayload keyBindingClaims,
+            SignatureSignerContext holdSignatureSignerContext) {
         StringBuilder sb = new StringBuilder();
         if (disclosureDigests == null || disclosureDigests.isEmpty()) {
             // disclose everything
             sb.append(sdJwtVpString);
         } else {
             sb.append(issuerSignedJWT.toJws());
-            sb.append(SdJwt.DELIMITER);
+            sb.append(OID4VCConstants.SDJWT_DELIMITER);
             for (String disclosureDigest : disclosureDigests) {
                 sb.append(disclosures.get(disclosureDigest));
-                sb.append(SdJwt.DELIMITER);
+                sb.append(OID4VCConstants.SDJWT_DELIMITER);
             }
         }
         String unboundPresentation = sb.toString();
@@ -226,8 +228,8 @@ public class SdJwtVP {
             return unboundPresentation;
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
-        keyBindingClaims = ((ObjectNode) keyBindingClaims).put("sd_hash", sd_hash);
-        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext, jwsType);
+        keyBindingClaims.setSdHash(sd_hash);
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext);
         sb.append(keyBindingJWT.toJws());
         return sb.toString();
     }

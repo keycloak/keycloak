@@ -16,6 +16,7 @@
  */
 package org.keycloak.sdjwt;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSInput;
@@ -33,6 +35,10 @@ import org.keycloak.jose.jws.JWSInput;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 
 /**
  * Handle verifiable credentials (SD-JWT VC), enabling the parsing
@@ -42,11 +48,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public class IssuerSignedJWT extends SdJws {
-
-    public IssuerSignedJWT(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        super(payload, signer, jwsType);
-    }
+public class IssuerSignedJWT extends SdJws<ObjectNode> {
 
     public static IssuerSignedJWT fromJws(String jwsString) {
         return new IssuerSignedJWT(jwsString);
@@ -61,10 +63,6 @@ public class IssuerSignedJWT extends SdJws {
         super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures));
     }
 
-    private IssuerSignedJWT(JsonNode payload, JWSInput jwsInput) {
-        super(payload, jwsInput);
-    }
-
     private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
                             boolean nestedDisclosures, SignatureSignerContext signer, String jwsType) {
         super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures), signer, jwsType);
@@ -74,7 +72,7 @@ public class IssuerSignedJWT extends SdJws {
      * Generates the payload of the issuer signed jwt from the list
      * of claims.
      */
-    private static JsonNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
+    private static ObjectNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
                                                   boolean nestedDisclosures) {
 
         SdJwtUtils.requireNonEmpty(hashAlg, "hashAlg must not be null or empty");
@@ -117,7 +115,7 @@ public class IssuerSignedJWT extends SdJws {
 
         if (sdArray.size() > 0) {
             // drop _sd claim if empty
-            payload.set(CLAIM_NAME_SELECTIVE_DISCLOSURE, sdArray);
+            payload.set(CLAIM_NAME_SD, sdArray);
         }
         if (sdArray.size() > 0 || nestedDisclosures) {
             // add sd alg only if ay disclosure.
@@ -142,7 +140,7 @@ public class IssuerSignedJWT extends SdJws {
      * Returns `cnf` claim (establishing key binding)
      */
     public Optional<JsonNode> getCnfClaim() {
-        JsonNode cnf = getPayload().get("cnf");
+        JsonNode cnf = getPayload().get(CLAIM_NAME_CNF);
         return Optional.ofNullable(cnf);
     }
 
@@ -175,9 +173,19 @@ public class IssuerSignedJWT extends SdJws {
         }
     }
 
-    // SD-JWT Claims
-    public static final String CLAIM_NAME_SELECTIVE_DISCLOSURE = "_sd";
-    public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
+    @Override
+    protected ObjectNode readPayload(JWSInput jwsInput) {
+        try {
+            return (ObjectNode) SdJwtUtils.mapper.readTree(jwsInput.getContent());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    protected String readClaim(ObjectNode payload, String claimName) throws VerificationException {
+        return SdJwtUtils.readClaim(payload, claimName);
+    }
 
     // Builder
     public static Builder builder() {
@@ -224,8 +232,8 @@ public class IssuerSignedJWT extends SdJws {
 
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
-            hashAlg = hashAlg == null ? "sha-256" : hashAlg;
-            jwsType = jwsType == null ? "dc+sd-jwt" : jwsType;
+            hashAlg = hashAlg == null ? OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM : hashAlg;
+            jwsType = jwsType == null ? OID4VCConstants.SD_JWT_VC_FORMAT : jwsType;
             // send an empty lise if claims not set.
             claims = claims == null ? Collections.emptyList() : claims;
             decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;

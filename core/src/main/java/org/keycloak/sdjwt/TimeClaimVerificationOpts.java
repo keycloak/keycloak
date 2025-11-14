@@ -17,14 +17,14 @@
 
 package org.keycloak.sdjwt;
 
+import static org.keycloak.OID4VCConstants.SD_JWT_DEFAULT_CLOCK_SKEW_SECONDS;
+
 /**
  * Options for validating common time claims during SD-JWT verification.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class TimeClaimVerificationOpts {
-
-    public static final int DEFAULT_LEEWAY_SECONDS = 10;
 
     // These options configure whether the respective time claims must be present
     // during validation. They will always be validated if present.
@@ -36,18 +36,18 @@ public class TimeClaimVerificationOpts {
     /**
      * Tolerance window to account for clock skew when checking time claims
      */
-    private final int leewaySeconds;
+    private final int allowedClockSkewSeconds;
 
     protected TimeClaimVerificationOpts(
             boolean requireIssuedAtClaim,
             boolean requireExpirationClaim,
             boolean validateNotBeforeClaim,
-            int leewaySeconds
+            int allowedClockSkewSeconds
     ) {
         this.requireIssuedAtClaim = requireIssuedAtClaim;
         this.requireExpirationClaim = requireExpirationClaim;
         this.requireNotBeforeClaim = validateNotBeforeClaim;
-        this.leewaySeconds = leewaySeconds;
+        this.allowedClockSkewSeconds = allowedClockSkewSeconds;
     }
 
     public boolean mustRequireIssuedAtClaim() {
@@ -62,8 +62,8 @@ public class TimeClaimVerificationOpts {
         return requireNotBeforeClaim;
     }
 
-    public int getLeewaySeconds() {
-        return leewaySeconds;
+    public int getAllowedClockSkewSeconds() {
+        return allowedClockSkewSeconds;
     }
 
     public static <T extends Builder<T>> Builder<T> builder() {
@@ -75,7 +75,7 @@ public class TimeClaimVerificationOpts {
         protected boolean requireIssuedAtClaim = true;
         protected boolean requireExpirationClaim = true;
         protected boolean requireNotBeforeClaim = true;
-        protected int leewaySeconds = DEFAULT_LEEWAY_SECONDS;
+        protected int allowedClockSkewSeconds = SD_JWT_DEFAULT_CLOCK_SKEW_SECONDS;
 
         @SuppressWarnings("unchecked")
         public T withRequireIssuedAtClaim(boolean requireIssuedAtClaim) {
@@ -96,8 +96,8 @@ public class TimeClaimVerificationOpts {
         }
 
         @SuppressWarnings("unchecked")
-        public T withLeewaySeconds(int leewaySeconds) {
-            this.leewaySeconds = leewaySeconds;
+        public T withAllowedClockSkew(int allowedClockSkewSeconds) {
+            this.allowedClockSkewSeconds = allowedClockSkewSeconds;
             return (T) this;
         }
 
@@ -106,7 +106,7 @@ public class TimeClaimVerificationOpts {
                     requireIssuedAtClaim,
                     requireExpirationClaim,
                     requireNotBeforeClaim,
-                    leewaySeconds
+                    allowedClockSkewSeconds
             );
         }
     }

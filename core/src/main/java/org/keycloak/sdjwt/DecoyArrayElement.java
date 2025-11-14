@@ -17,6 +17,7 @@
 package org.keycloak.sdjwt;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.OID4VCConstants;
 
 /**
  * 
@@ -32,7 +33,7 @@ public class DecoyArrayElement extends DecoyEntry {
     }
 
     public JsonNode getVisibleValue(String hashAlg) {
-        return SdJwtUtils.mapper.createObjectNode().put("...", getDisclosureDigest(hashAlg));
+        return SdJwtUtils.mapper.createObjectNode().put(OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY, getDisclosureDigest(hashAlg));
     }
 
     public Integer getIndex() {

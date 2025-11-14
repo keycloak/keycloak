@@ -21,14 +21,19 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.TestSettings;
 import org.keycloak.sdjwt.TestUtils;
+import org.keycloak.sdjwt.vp.KeyBindingPayload;
 import org.keycloak.sdjwt.vp.SdJwtVP;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -143,12 +148,11 @@ public abstract class SdJwtVPTest {
 
     @Test
     public void testS6_2_PresentationPositive() throws VerificationException {
-        String jwsType = "dc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
-        JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
+        KeyBindingPayload keyBindingClaims = readKeyBindingPayloadFromExampleFile();
         String presentation = sdJwtVP.present(null, keyBindingClaims,
-                TestSettings.getInstance().getHolderSignerContext(), jwsType);
+                TestSettings.getInstance().getHolderSignerContext());
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
@@ -158,23 +162,22 @@ public abstract class SdJwtVPTest {
 
         // Verify with public key from cnf claim
         presenteSdJwtVP.getKeyBindingJWT().get()
-                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
+                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), Algorithm.ES256));
     }
 
     @Test(expected = VerificationException.class)
     public void testS6_2_PresentationNegative() throws VerificationException {
-        String jwsType = "dc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
-        JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
+        KeyBindingPayload keyBindingClaims = readKeyBindingPayloadFromExampleFile();
         String presentation = sdJwtVP.present(null, keyBindingClaims,
-                TestSettings.getInstance().getHolderSignerContext(), jwsType);
+                TestSettings.getInstance().getHolderSignerContext());
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
         // Verify with public key from cnf claim
         presenteSdJwtVP.getKeyBindingJWT().get()
-                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
+                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), Algorithm.ES256));
 
         // Verify with wrong public key from settings (iisuer)
         presenteSdJwtVP.getKeyBindingJWT().get().verifySignature(TestSettings.getInstance().getIssuerVerifierContext());
@@ -182,20 +185,19 @@ public abstract class SdJwtVPTest {
 
     @Test
     public void testS6_2_PresentationPartialDisclosure() throws VerificationException {
-        String jwsType = "dc+sd-jwt";
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s6.2-presented-sdjwtvp.txt");
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
-        JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
+        KeyBindingPayload keyBindingClaims = readKeyBindingPayloadFromExampleFile();
         // disclose only the given_name
         String presentation = sdJwtVP.present(Arrays.asList("jsu9yVulwQQlhFlM_3JlzMaSFzglhQG0DpfayQwLUK4"),
-                keyBindingClaims, TestSettings.getInstance().getHolderSignerContext(), jwsType);
+                keyBindingClaims, TestSettings.getInstance().getHolderSignerContext());
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
 
         // Verify with public key from cnf claim
         presenteSdJwtVP.getKeyBindingJWT().get()
-                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), "ES256"));
+                .verifySignature(TestSettings.verifierContextFrom(presenteSdJwtVP.getCnfClaim(), Algorithm.ES256));
     }
 
 
@@ -216,6 +218,15 @@ public abstract class SdJwtVPTest {
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> SdJwtVP.of(malformedSdJwt));
         assertEquals("SD-JWT is malformed, expected to contain a '~'", exception.getMessage());
+    }
+
+    private KeyBindingPayload readKeyBindingPayloadFromExampleFile() {
+        String path = "sdjwt/s6.2-key-binding-claims.json";
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
+            return JsonSerialization.readValue(is, KeyBindingPayload.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading file at path: " + path, e);
+        }
     }
 
 }
