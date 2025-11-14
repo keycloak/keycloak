@@ -47,6 +47,7 @@ import org.keycloak.jgroups.header.TracerHeader;
 import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.jgroups.protocol.OPEN_TELEMETRY;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -262,11 +263,7 @@ public final class JGroupsConfigurator {
      * one second. This prevents a split-brain scenario on a concurrent startup.
      */
     private static Address prepareJGroupsAddress(KeycloakSession session, String clusterName) {
-        var storage = session.getProvider(ServerConfigStorageProvider.class);
-        String seq = storage.loadOrCreate(JGROUPS_ADDRESS_SEQUENCE, () -> "0");
-        long value = Long.parseLong(seq) + 1;
-        String newSeq = Long.toString(value);
-        storage.replace(JGROUPS_ADDRESS_SEQUENCE, seq, newSeq);
+        long value = getNextSequence(session.getKeycloakSessionFactory());
 
         var cp = session.getProvider(JpaConnectionProvider.class);
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", cp.getEntityManager());
@@ -288,6 +285,20 @@ public final class JGroupsConfigurator {
         });
 
         return address;
+    }
+
+    private static long getNextSequence(KeycloakSessionFactory sf) {
+        // Run this in a separate transaction so that we already write the new ID to the database.
+        // This helps us in case there is an inconsistency if some old restored database and some inconsistent nodes writing
+        // their node IDs to the table. Given this is being called in a retry loop, we'll be making some progress.
+        return KeycloakModelUtils.runJobInTransactionWithResult(sf, session-> {
+            var storage = session.getProvider(ServerConfigStorageProvider.class);
+            String seq = storage.loadOrCreate(JGROUPS_ADDRESS_SEQUENCE, () -> "0");
+            long value = Long.parseLong(seq) + 1;
+            String newSeq = Long.toString(value);
+            storage.replace(JGROUPS_ADDRESS_SEQUENCE, seq, newSeq);
+            return value;
+        });
     }
 
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled) {
