@@ -21,6 +21,8 @@ import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 
+import org.keycloak.models.AuthenticationExecutionModel;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -36,4 +38,6 @@ public interface AuthenticationFlow {
     default List<AuthenticationFlowException> getFlowExceptions(){
         return Collections.emptyList();
     }
+
+    default Response continueClientAuthAfterIdPLogin(AuthenticationExecutionModel model){ throw new IllegalStateException("Not supposed to be invoked"); }
 }
