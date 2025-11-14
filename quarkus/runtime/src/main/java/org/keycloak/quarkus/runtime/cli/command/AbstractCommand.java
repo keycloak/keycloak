@@ -17,15 +17,12 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import picocli.CommandLine;
@@ -90,29 +87,12 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
     }
 
-    /**
-     * Returns true if this command should include runtime options for the CLI.
-     */
-    public boolean includeRuntime() {
-        return false;
-    }
-
-    /**
-     * Returns true if this command should include build time options for the CLI.
-     */
-    public boolean includeBuildTime() {
-        return false;
-    }
-
-    /**
-     * Returns a list of all option categories which are available for this command.
-     */
-    public List<OptionCategory> getOptionCategories() {
-        return Arrays.asList(OptionCategory.values());
+    public boolean isHiddenCategory(OptionCategory category) {
+        return category == OptionCategory.IMPORT || category == OptionCategory.EXPORT;
     }
 
     protected void validateConfig() {
-        picocli.validateConfig(ConfigArgsConfigSource.getAllCliArgs(), this);
+        picocli.validateConfig();
     }
 
     public abstract String getName();
@@ -137,6 +117,12 @@ public abstract class AbstractCommand implements Callable<Integer> {
      * @return true if the command starts an http server
      */
     public boolean isServing() {
+        return false;
+    }
+
+    public abstract boolean isHelpAll();
+
+    public boolean isOptimized() {
         return false;
     }
 
