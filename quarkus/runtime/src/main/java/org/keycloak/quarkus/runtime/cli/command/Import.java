@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import java.util.EnumSet;
-
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.ExportImportConfig;
 
@@ -47,8 +45,11 @@ public final class Import extends AbstractNonServerCommand {
     }
 
     @Override
-    protected EnumSet<OptionCategory> excludedCategories() {
-        return EnumSet.of(OptionCategory.EXPORT);
+    public boolean isHiddenCategory(OptionCategory category) {
+        if (category == OptionCategory.IMPORT) {
+            return false;
+        }
+        return super.isHiddenCategory(category);
     }
 
 }
