@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin.client;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -43,18 +44,21 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectCryptoHelper;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.crypto.CryptoHelper;
+import org.keycloak.testframework.crypto.KeystoreInfo;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.GenerateKeystoreForTestUtil;
 
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -80,6 +84,12 @@ public class CredentialsTest {
 
     @InjectAdminEvents
     AdminEvents adminEvents;
+
+    @InjectCryptoHelper
+    CryptoHelper cryptoHelper;
+
+    @TempDir
+    public static File folder;
 
     @BeforeAll
     public static void init() {
@@ -139,7 +149,7 @@ public class CredentialsTest {
         KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
 
         // Generate keystore file and upload privateKey and certificate from it as JKS store (or eventually PKCS12 or BCFKS store according to which one is preferred type)
-        GenerateKeystoreForTestUtil.KeystoreInfo generatedKeystore = GenerateKeystoreForTestUtil.generateKeystore(preferredKeystoreType, "clientkey", "storepass", "keypass");
+        KeystoreInfo generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, preferredKeystoreType, "clientkey", "storepass", "keypass");
         MultipartFormDataOutput keyCertForm = new MultipartFormDataOutput();
 
         keyCertForm.addFormData("keystoreFormat", preferredKeystoreType.toString(), MediaType.TEXT_PLAIN_TYPE);
