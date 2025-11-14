@@ -268,7 +268,7 @@ public final class CacheConfigurator {
                 throw cacheNotFound(name);
             }
             if (builder.memory().maxCount() == -1) {
-                logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of %d for cache %s.", name, SESSIONS_CACHE_DEFAULT_MAX);
+                logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of %d for cache %s.", SESSIONS_CACHE_DEFAULT_MAX, name);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
             }
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() != 1 &&
