@@ -95,6 +95,8 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider, DeploymentStateProvider {
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
+    public static final String REALM_NAME_SEARCH_PREFIX = "name:";
+    public static final String DISPLAY_NAME_SEARCH_PREFIX = "displayName:";
     private final KeycloakSession session;
     protected EntityManager em;
     private Set<String> clientSearchableAttributes;
@@ -164,7 +166,16 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (search.trim().isEmpty()) {
             return getRealmsStream();
         }
-        TypedQuery<String> query = em.createNamedQuery("getRealmIdsWithNameContaining", String.class);
+        TypedQuery<String> query;
+        if (search.startsWith(REALM_NAME_SEARCH_PREFIX)) {
+            search = search.substring(REALM_NAME_SEARCH_PREFIX.length());
+            query = em.createNamedQuery("getRealmIdsWithNameContaining", String.class);
+        } else if (search.startsWith(DISPLAY_NAME_SEARCH_PREFIX)) {
+            search = search.substring(DISPLAY_NAME_SEARCH_PREFIX.length());
+            query = em.createNamedQuery("getRealmIdsWithDisplayNameContaining", String.class);
+        } else {
+            query = em.createNamedQuery("getRealmIdsWithNameOrDisplayNameContaining", String.class);
+        }
         query.setParameter("search", search);
         return getRealms(query);
     }

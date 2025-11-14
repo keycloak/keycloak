@@ -51,6 +51,13 @@ import jakarta.persistence.Table;
 @NamedQueries({
         @NamedQuery(name="getAllRealmIds", query="select realm.id from RealmEntity realm"),
         @NamedQuery(name="getRealmIdsWithNameContaining", query="select realm.id from RealmEntity realm where LOWER(realm.name) like CONCAT('%', LOWER(:search), '%')"),
+        @NamedQuery(name="getRealmIdsWithDisplayNameContaining", query="select distinct realm.id " +
+                                                                             "from RealmEntity realm left join realm.attributes attr " +
+                                                                             "where (attr.name = 'displayName' and LOWER(attr.value) like CONCAT('%', LOWER(:search), '%'))"),
+        @NamedQuery(name="getRealmIdsWithNameOrDisplayNameContaining", query="select distinct realm.id " +
+                                                                "from RealmEntity realm left join realm.attributes attr " +
+                                                                "where LOWER(realm.name) like CONCAT('%', LOWER(:search), '%')" +
+                                                                "or (attr.name = 'displayName' and LOWER(attr.value) like CONCAT('%', LOWER(:search), '%'))"),
         @NamedQuery(name="getRealmIdByName", query="select realm.id from RealmEntity realm where realm.name = :name"),
         @NamedQuery(name="getRealmIdsWithProviderType", query="select distinct c.realm.id from ComponentEntity c where c.providerType = :providerType"),
 })
