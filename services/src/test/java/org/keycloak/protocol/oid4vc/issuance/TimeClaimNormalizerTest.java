@@ -17,8 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
-import org.junit.Test;
 import java.time.Instant;
+
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

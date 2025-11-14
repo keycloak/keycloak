@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +31,9 @@ import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBody
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
-import java.time.temporal.ChronoUnit;
 
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 

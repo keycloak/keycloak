@@ -18,18 +18,18 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import java.util.Objects;
-import java.util.function.UnaryOperator;
-import org.keycloak.models.KeycloakSession;
 
 public class JwtCredentialBuilder implements CredentialBuilder {
 

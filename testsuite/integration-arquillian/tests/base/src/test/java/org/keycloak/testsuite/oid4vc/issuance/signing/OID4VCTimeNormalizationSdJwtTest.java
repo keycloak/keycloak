@@ -17,9 +17,11 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.io.IOException;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
-import org.junit.Test;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.constants.Oid4VciConstants;
@@ -35,8 +37,8 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Map;
+import org.apache.http.HttpStatus;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
