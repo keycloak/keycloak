@@ -59,7 +59,7 @@ public enum ResourceType {
                 && this.supportedAdminOperationTypes.contains(event.getOperationType())) {
 
             ResourceOperationType resourceOperationType = toOperationType(event.getOperationType());
-            if (resourceOperationType != null) {
+            if (resourceOperationType != null && event.getResourceId() != null) {
                 return new WorkflowEvent(this, resourceOperationType, event.getResourceId(), event);
             }
         }

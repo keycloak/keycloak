@@ -57,6 +57,14 @@ public interface WorkflowStateProvider extends Provider {
      */
     void removeAll();
 
+    /**
+     * Checks whether there are any scheduled steps for the given {@code workflowId}.
+     *
+     * @param workflowId the id of the workflow.
+     * @return {@code true} if there are scheduled steps, {@code false} otherwise.
+     */
+    boolean hasScheduledSteps(String workflowId);
+
     void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId);
 
     ScheduledStep getScheduledStep(String workflowId, String resourceId);

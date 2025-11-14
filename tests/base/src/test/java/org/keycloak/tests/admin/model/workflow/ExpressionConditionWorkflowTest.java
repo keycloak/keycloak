@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -109,16 +110,10 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         checkWorkflowRunsForUser("hdent", false);
         managedRealm.admin().workflows().workflow(workflowId).delete().close();
 
-        // a malformed expression should cause the condition to evaluate to false and the step should not run for all users
+        // a malformed expression should cause the condition to evaluate to false and the workflow should not be created
         expression = ")(has-role(tester) AND OR has-user-attribute(key, value1,value2)";
-        workflowId = createWorkflow(expression);
-
-        checkWorkflowRunsForUser("bwayne", false);
-        checkWorkflowRunsForUser("lfox", false);
-        checkWorkflowRunsForUser("jgordon", false);
-        checkWorkflowRunsForUser("hdent", false);
-        managedRealm.admin().workflows().workflow(workflowId).delete().close();
-
+        workflowId = createWorkflow(expression, false);
+        assertThat(workflowId, nullValue());
     }
 
     public void checkWorkflowRunsForUser(String username, boolean shouldHaveAttribute) {
@@ -174,6 +169,10 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
     }
 
     private String createWorkflow(String expression) {
+        return this.createWorkflow(expression, true);
+    }
+
+    private String createWorkflow(String expression, boolean creationExpectedToSucceed) {
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .onEvent("user-logged-in(test-app)")
                 .onCondition(expression)
@@ -188,7 +187,12 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
         WorkflowsResource workflows = managedRealm.admin().workflows();
 
         try (Response response = workflows.create(expectedWorkflow)) {
-            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            if (creationExpectedToSucceed) {
+                assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            } else {
+                assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+                return null;
+            }
             return ApiUtil.getCreatedId(response);
         }
     }
