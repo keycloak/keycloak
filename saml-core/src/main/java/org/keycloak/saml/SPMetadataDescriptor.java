@@ -131,6 +131,7 @@ public class SPMetadataDescriptor {
         throws javax.xml.parsers.ParserConfigurationException
     {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document doc = db.newDocument();
 
