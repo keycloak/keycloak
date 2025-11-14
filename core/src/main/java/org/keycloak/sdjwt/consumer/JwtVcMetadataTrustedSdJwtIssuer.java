@@ -17,6 +17,17 @@
 
 package org.keycloak.sdjwt.consumer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.sdjwt.IssuerSignedJWT;
+import org.keycloak.sdjwt.JwkParsingUtils;
+import org.keycloak.sdjwt.JwsToken;
+import org.keycloak.sdjwt.SdJwtUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -90,7 +101,7 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
         String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get(CLAIM_NAME_ISSUER))
                 .map(JsonNode::asText)
                 .orElse("");
-        String kid = issuerSignedJWT.getHeader().getKeyId();
+        String kid = issuerSignedJWT.getJwsHeader().getKeyId();
 
         // Match the read iss claim against the trusted pattern
         Matcher matcher = issuerUriPattern.matcher(iss);

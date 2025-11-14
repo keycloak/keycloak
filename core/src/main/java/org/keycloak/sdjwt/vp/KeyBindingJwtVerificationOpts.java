@@ -17,7 +17,12 @@
 
 package org.keycloak.sdjwt.vp;
 
-import org.keycloak.sdjwt.TimeClaimVerificationOpts;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.keycloak.representations.IDToken;
+import org.keycloak.sdjwt.ClaimVerifier;
+import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
+
+import java.util.List;
 
 import static org.keycloak.OID4VCConstants.SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE;
 
@@ -26,7 +31,7 @@ import static org.keycloak.OID4VCConstants.SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MA
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
+public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOpts{
 
     /**
      * Specifies the Verifier's policy whether to check Key Binding
@@ -39,18 +44,15 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
     private final int allowedMaxAge;
 
     private final String nonce;
+
     private final String aud;
 
-    private KeyBindingJwtVerificationOpts(
-            boolean keyBindingRequired,
-            int allowedMaxAge,
-            String nonce,
-            String aud,
-            boolean validateExpirationClaim,
-            boolean validateNotBeforeClaim,
-            int allowClockSkewSeconds
-    ) {
-        super(true, validateExpirationClaim, validateNotBeforeClaim, allowClockSkewSeconds);
+    public KeyBindingJwtVerificationOpts(boolean keyBindingRequired,
+                                         int allowedMaxAge,
+                                         String nonce,
+                                         String aud,
+                                         List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+        super(contentVerifiers);
         this.keyBindingRequired = keyBindingRequired;
         this.allowedMaxAge = allowedMaxAge;
         this.nonce = nonce;
@@ -73,61 +75,123 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
         return aud;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static KeyBindingJwtVerificationOpts.Builder builder() {
+        return new KeyBindingJwtVerificationOpts.Builder();
     }
 
-    public static class Builder extends TimeClaimVerificationOpts.Builder<Builder> {
+    public static KeyBindingJwtVerificationOpts.Builder builder(Integer clockSkew) {
+        return new KeyBindingJwtVerificationOpts.Builder(clockSkew);
+    }
 
+    public static class Builder extends IssuerSignedJwtVerificationOpts.Builder {
         private boolean keyBindingRequired = true;
         protected boolean validateIssuedAtClaim = true;
-        private int allowedMaxAge = SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE;
         private String nonce;
         private String aud;
+
+        public Builder() {
+            super();
+        }
+
+        public Builder(Integer clockSkew) {
+            super(clockSkew);
+        }
 
         public Builder withKeyBindingRequired(boolean keyBindingRequired) {
             this.keyBindingRequired = keyBindingRequired;
             return this;
         }
 
-        public Builder withAllowedMaxAge(int allowedMaxAge) {
-            this.allowedMaxAge = allowedMaxAge;
-            return this;
+        public KeyBindingJwtVerificationOpts.Builder withNonceCheck(String expectedNonce) {
+            this.nonce = expectedNonce;
+            return withClaimCheck(IDToken.NONCE, expectedNonce, true);
         }
 
-        public Builder withNonce(String nonce) {
-            this.nonce = nonce;
-            return this;
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withAudCheck(String expectedAud) {
+            this.aud = expectedAud;
+            return (Builder) super.withAudCheck(expectedAud);
         }
 
-        public Builder withAud(String aud) {
-            this.aud = aud;
-            return this;
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withIatCheck(Integer allowedMaxAge) {
+            return (Builder) super.withIatCheck(allowedMaxAge);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withIatCheck(boolean isCheckOptional) {
+            return (Builder) super.withIatCheck(isCheckOptional);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withIatCheck(Integer allowedMaxAge, boolean isCheckOptional) {
+            return (Builder) super.withIatCheck(allowedMaxAge, isCheckOptional);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withNbfCheck() {
+            return (Builder) super.withNbfCheck();
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withNbfCheck(boolean isCheckOptional) {
+            return (Builder) super.withNbfCheck(isCheckOptional);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withExpCheck() {
+            return (Builder) super.withExpCheck();
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withExpCheck(boolean isCheckOptional) {
+            return (Builder) super.withExpCheck(isCheckOptional);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withClockSkew(int clockSkew) {
+            return (Builder) super.withClockSkew(clockSkew);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withClaimCheck(String claimName, String expectedValue) {
+            return (Builder) super.withClaimCheck(claimName, expectedValue);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withClaimCheck(String claimName, String expectedValue, boolean isOptionalCheck) {
+            return (Builder) super.withClaimCheck(claimName, expectedValue, isOptionalCheck);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder withContentVerifiers(List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+            return (Builder) super.withContentVerifiers(contentVerifiers);
+        }
+
+        @Override
+        public KeyBindingJwtVerificationOpts.Builder addContentVerifiers(List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+            return (Builder) super.addContentVerifiers(contentVerifiers);
         }
 
         @Override
         public KeyBindingJwtVerificationOpts build() {
             if (!validateIssuedAtClaim) {
                 throw new IllegalArgumentException(
-                        "Validating `iat` claim cannot be disabled for KB-JWT verification because mandated"
+                    "Validating `iat` claim cannot be disabled for KB-JWT verification because mandated"
                 );
             }
 
             if (keyBindingRequired && (aud == null || nonce == null || nonce.isEmpty())) {
                 throw new IllegalArgumentException(
-                        "Missing `nonce` and `aud` claims for replay protection"
+                    "Missing `nonce` and `aud` claims for replay protection"
                 );
             }
 
-            return new KeyBindingJwtVerificationOpts(
-                    keyBindingRequired,
-                    allowedMaxAge,
-                    nonce,
-                    aud,
-                    requireExpirationClaim,
-                    requireNotBeforeClaim,
-                    allowedClockSkewSeconds
-            );
+            return new KeyBindingJwtVerificationOpts(keyBindingRequired,
+                                                     allowedMaxAge,
+                                                     nonce,
+                                                     aud,
+                                                     contentVerifiers);
         }
     }
 }

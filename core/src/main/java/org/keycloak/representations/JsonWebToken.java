@@ -33,8 +33,12 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.keycloak.util.JsonSerialization;
+
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -262,5 +266,44 @@ public class JsonWebToken implements Serializable, Token {
     @Override
     public TokenCategory getCategory() {
         return TokenCategory.INTERNAL;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof JsonWebToken)) {
+            return false;
+        }
+
+        JsonWebToken that = (JsonWebToken) o;
+        return Objects.equals(id, that.id) && //
+                Objects.equals(exp, that.exp) && //
+                Objects.equals(nbf, that.nbf) && //
+                Objects.equals(iat, that.iat) && //
+                Objects.equals(issuer, that.issuer) && //
+                Arrays.equals(audience, that.audience) && //
+                Objects.equals(subject, that.subject) && //
+                Objects.equals(type, that.type) && //
+                Objects.equals(issuedFor, that.issuedFor) && //
+                Objects.equals(otherClaims, that.otherClaims);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(id);
+        result = 31 * result + Objects.hashCode(exp);
+        result = 31 * result + Objects.hashCode(nbf);
+        result = 31 * result + Objects.hashCode(iat);
+        result = 31 * result + Objects.hashCode(issuer);
+        result = 31 * result + Arrays.hashCode(audience);
+        result = 31 * result + Objects.hashCode(subject);
+        result = 31 * result + Objects.hashCode(type);
+        result = 31 * result + Objects.hashCode(issuedFor);
+        result = 31 * result + Objects.hashCode(otherClaims);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return JsonSerialization.mapper.convertValue(this, JsonNode.class).toPrettyString();
     }
 }

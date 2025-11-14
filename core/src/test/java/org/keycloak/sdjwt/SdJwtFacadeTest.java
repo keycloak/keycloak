@@ -16,6 +16,11 @@
  */
 package org.keycloak.sdjwt;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -24,10 +29,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +52,7 @@ public abstract class SdJwtFacadeTest {
 
     private SdJwtFacade sdJwtFacade;
 
-    private JsonNode claimSet;
+    private ObjectNode claimSet;
     private DisclosureSpec disclosureSpec;
 
     @Before
@@ -140,10 +142,7 @@ public abstract class SdJwtFacadeTest {
     }
 
     private IssuerSignedJwtVerificationOpts createVerificationOptions() {
-        return IssuerSignedJwtVerificationOpts.builder()
-                .withRequireIssuedAtClaim(false)
-                .withRequireExpirationClaim(false)
-                .withRequireNotBeforeClaim(false)
-                .build();
+        List<ClaimVerifier.Predicate<ObjectNode>> verifierList = new ArrayList<>();
+        return new IssuerSignedJwtVerificationOpts(verifierList);
     }
 }

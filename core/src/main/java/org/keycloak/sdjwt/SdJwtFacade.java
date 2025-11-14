@@ -16,6 +16,8 @@
  */
 package org.keycloak.sdjwt;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.util.List;
 
 import org.keycloak.common.VerificationException;
@@ -48,14 +50,12 @@ public class SdJwtFacade {
      * @param disclosureSpec The disclosure specification.
      * @return A new SD-JWT.
      */
-    public SdJwt createSdJwt(JsonNode claimSet, DisclosureSpec disclosureSpec) {
+    public SdJwt createSdJwt(ObjectNode claimSet, DisclosureSpec disclosureSpec) {
+        IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(disclosureSpec, claimSet, null,
+                                                              hashAlgorithm, true);
         return SdJwt.builder()
-                .withClaimSet(claimSet)
-                .withDisclosureSpec(disclosureSpec)
-                .withSigner(signer)
-                .withHashAlgorithm(hashAlgorithm)
-                .withJwsType(jwsType)
-                .build();
+                .withIssuerSignedJwt(issuerSignedJWT)
+                .build(signer);
     }
 
     /**

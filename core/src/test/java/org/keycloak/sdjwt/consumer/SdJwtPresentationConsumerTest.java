@@ -102,19 +102,19 @@ public abstract class SdJwtPresentationConsumerTest {
 
     private IssuerSignedJwtVerificationOpts defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withRequireIssuedAtClaim(false)
-                .withRequireNotBeforeClaim(false)
+                .withIatCheck(Integer.MAX_VALUE, true)
+                .withNbfCheck(true)
                 .build();
     }
 
     private KeyBindingJwtVerificationOpts defaultKeyBindingJwtVerificationOpts() {
         return KeyBindingJwtVerificationOpts.builder()
                 .withKeyBindingRequired(true)
-                .withAllowedMaxAge(Integer.MAX_VALUE)
-                .withNonce("1234567890")
-                .withAud("https://verifier.example.org")
-                .withRequireExpirationClaim(false)
-                .withRequireNotBeforeClaim(false)
+                .withIatCheck(Integer.MAX_VALUE)
+                .withNonceCheck("1234567890")
+                .withAudCheck("https://verifier.example.org")
+                .withNbfCheck(true)
+                .withExpCheck(true)
                 .build();
     }
 }

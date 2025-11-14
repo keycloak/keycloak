@@ -118,7 +118,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         assertEquals("The JWS token type should be included",
                 credentialBuildConfig.getTokenJwsType(),
-                jwt.getHeader().getType());
+                jwt.getJwsHeader().getType());
 
         ArrayNode sdArrayNode = (ArrayNode) jwt.getPayload().get(CLAIM_NAME_SD);
         if (sdArrayNode != null) {
@@ -137,14 +137,13 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         );
 
         // Will check disclosure conformity
-        sdJwt.getSdJwtVerificationContext().verifyIssuance(
-                List.of(exampleVerifier()),
-                IssuerSignedJwtVerificationOpts.builder()
-                        .withRequireIssuedAtClaim(false)
-                        .withRequireNotBeforeClaim(false)
-                        .withRequireExpirationClaim(false)
-                        .build(),
-                null
-        );
+        sdJwt.getSdJwtVerificationContext()
+             .verifyIssuance(List.of(exampleVerifier()),
+                             IssuerSignedJwtVerificationOpts.builder()
+                                                            .withIatCheck(true)
+                                                            .withNbfCheck(true)
+                                                            .withExpCheck(true)
+                                                            .build(),
+                             null);
     }
 }

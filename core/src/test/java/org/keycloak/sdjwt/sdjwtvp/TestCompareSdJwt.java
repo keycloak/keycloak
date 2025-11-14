@@ -47,7 +47,7 @@ import static org.junit.Assert.assertTrue;
  * the spec, i had to produce
  * the same print. This is by no way reliable enough to be used to test
  * conformity to the spec.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class TestCompareSdJwt {
@@ -64,12 +64,12 @@ public class TestCompareSdJwt {
     }
 
     private static void compareIssuerSignedJWT(IssuerSignedJWT e, IssuerSignedJWT a)
-            throws JsonMappingException, JsonProcessingException {
+            throws JsonProcessingException {
 
         assertEquals(e.getPayload(), a.getPayload());
 
-        List<String> expectedJwsStrings = Arrays.asList(e.toJws().split("\\."));
-        List<String> actualJwsStrings = Arrays.asList(a.toJws().split("\\."));
+        List<String> expectedJwsStrings = Arrays.asList(e.getJws().split("\\."));
+        List<String> actualJwsStrings = Arrays.asList(a.getJws().split("\\."));
 
         // compare json content of header
         assertEquals(toJsonNode(expectedJwsStrings.get(0)), toJsonNode(actualJwsStrings.get(0)));

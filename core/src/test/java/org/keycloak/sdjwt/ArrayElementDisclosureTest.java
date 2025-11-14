@@ -16,10 +16,12 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import static org.junit.Assert.assertEquals;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
@@ -28,7 +30,7 @@ public class ArrayElementDisclosureTest {
 
         @Test
         public void testSdJwtWithUndiclosedArrayElements6_1() {
-                JsonNode claimSet = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-holder-claims.json");
+                ObjectNode claimSet = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-holder-claims.json");
 
                 DisclosureSpec disclosureSpec = DisclosureSpec.builder()
                                 .withUndisclosedClaim("email", "JnwGqRFZjMprsoZobherdQ")
@@ -38,9 +40,9 @@ public class ArrayElementDisclosureTest {
                                 .withUndisclosedArrayElt("nationalities", 1, "nPuoQnkRFq3BIeAm7AnXFA")
                                 .build();
 
+                IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(disclosureSpec, claimSet);
                 SdJwt sdJwt = SdJwt.builder()
-                                .withDisclosureSpec(disclosureSpec)
-                                .withClaimSet(claimSet)
+                                .withIssuerSignedJwt(issuerSignedJWT)
                                 .build();
 
                 IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
@@ -52,7 +54,7 @@ public class ArrayElementDisclosureTest {
 
         @Test
         public void testSdJwtWithUndiclosedAndDecoyArrayElements6_1() {
-                JsonNode claimSet = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-holder-claims.json");
+                ObjectNode claimSet = TestUtils.readClaimSet(getClass(), "sdjwt/s6.1-holder-claims.json");
 
                 DisclosureSpec disclosureSpec = DisclosureSpec.builder()
                                 .withUndisclosedClaim("email", "JnwGqRFZjMprsoZobherdQ")
@@ -64,9 +66,9 @@ public class ArrayElementDisclosureTest {
                                 .withDecoyArrayElt("nationalities", 1, "5bPs1IquZNa0hkaFzzzZNw")
                                 .build();
 
+                IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(disclosureSpec, claimSet);
                 SdJwt sdJwt = SdJwt.builder()
-                                .withDisclosureSpec(disclosureSpec)
-                                .withClaimSet(claimSet)
+                                .withIssuerSignedJwt(issuerSignedJWT)
                                 .build();
                 IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
