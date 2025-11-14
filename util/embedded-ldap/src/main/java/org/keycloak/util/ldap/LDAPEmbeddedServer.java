@@ -17,6 +17,17 @@
 
 package org.keycloak.util.ldap;
 
+import java.io.File;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import org.keycloak.common.util.FindFile;
+import org.keycloak.common.util.StreamUtil;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
@@ -32,22 +43,12 @@ import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
 import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.normalization.NormalizationInterceptor;
 import org.apache.directory.server.ldap.ExtendedOperationHandler;
-import org.apache.directory.server.ldap.handlers.extended.StartTlsHandler;
 import org.apache.directory.server.ldap.LdapServer;
 import org.apache.directory.server.ldap.handlers.extended.PwdModifyHandler;
+import org.apache.directory.server.ldap.handlers.extended.StartTlsHandler;
 import org.apache.directory.server.protocol.shared.transport.TcpTransport;
 import org.apache.directory.server.protocol.shared.transport.Transport;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.FindFile;
-import org.keycloak.common.util.StreamUtil;
-
-import java.io.File;
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

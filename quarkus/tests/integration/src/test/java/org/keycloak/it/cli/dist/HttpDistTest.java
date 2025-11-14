@@ -17,8 +17,11 @@
 
 package org.keycloak.it.cli.dist;
 
-import io.quarkus.test.junit.main.Launch;
-import org.junit.jupiter.api.Test;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -27,10 +30,8 @@ import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -92,7 +93,7 @@ public class HttpDistTest {
 
         result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
         result.assertExitCode(-1);
-        result.assertMessage("ERROR: Failed to load 'https-trust-store' or 'https-key-' material: NoSuchFileException not-there.ks");
+        result.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException not-there.ks");
 
         dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);

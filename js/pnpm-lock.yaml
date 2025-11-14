@@ -222,6 +222,9 @@ importers:
       use-react-router-breadcrumbs:
         specifier: ^4.0.1
         version: 4.0.1(react-router-dom@6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      yaml:
+        specifier: ^2.8.1
+        version: 2.8.1
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.10.2
@@ -5141,6 +5144,7 @@ snapshots:
       react-router-dom: 6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reactflow: 11.11.4(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       use-react-router-breadcrumbs: 4.0.1(react-router-dom@6.30.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      yaml: 2.8.1
     transitivePeerDependencies:
       - '@babel/runtime'
       - '@types/react'

@@ -17,7 +17,6 @@
 
 package org.keycloak.social.paypal;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -26,6 +25,8 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author Petter Lysne (petterlysne at hotmail dot com)

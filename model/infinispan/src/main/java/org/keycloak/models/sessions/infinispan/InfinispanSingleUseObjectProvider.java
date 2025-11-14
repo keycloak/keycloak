@@ -20,15 +20,16 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.infinispan.commons.api.BasicCache;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.api.BasicCache;
+import org.jboss.logging.Logger;
 
 /**
  * TODO: Check if Boolean can be used as single-use cache argument instead of SingleUseObjectValueEntity. With respect to other single-use cache usecases like "Revoke Refresh Token" .

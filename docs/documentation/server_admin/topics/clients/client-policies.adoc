@@ -149,6 +149,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce that <<_refresh_token_rotation,refresh token rotation>> is skipped and there is no refresh token returned from the refresh token response
 * Enforce a valid redirect URI that the OAuth 2.1 specification requires
 * Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed
+* Enforce scopes granted in link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange] are restricted to the ones present in the initial `subject_token`. This executor only allows downscoping of the presented assertion. An error is returned if any extra scope, not originally granted to the JWT, is requested.
 
 Another available executor is the `auth-flow-enforce`, which can be used to enforce an authentication flow during an authentication request. For instance, it can be used to select a flow based on certain conditions, such as a specific scope or an ACR value. For more details, see the <<_client-policy-auth-flow, related documentation>>.
 

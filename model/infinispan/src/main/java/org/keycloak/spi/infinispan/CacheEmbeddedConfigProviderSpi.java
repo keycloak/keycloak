@@ -17,9 +17,10 @@
 
 package org.keycloak.spi.infinispan;
 
+import org.keycloak.provider.Spi;
+
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.keycloak.provider.Spi;
 
 /**
  * The {@link Spi} implementation for the {@link CacheEmbeddedConfigProviderFactory} and

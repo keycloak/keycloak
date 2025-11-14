@@ -16,8 +16,24 @@
  */
 package org.keycloak.testsuite.authz;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.attribute.Attributes;
@@ -40,15 +56,21 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -56,17 +78,12 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -145,7 +162,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         PolicyProvider provider = authorization.getProvider(policy.getType());
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
         provider.evaluate(evaluation);
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         // lets now override the context to use a time that exceeds the time that was set in the policy.
         long contextTime = System.currentTimeMillis() + 5400000;
@@ -153,7 +170,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(contextTime))));
         evaluation = createEvaluation(session, authorization, null, resourceServer, policy, attributes);
         provider.evaluate(evaluation);
-        Assert.assertEquals(Effect.DENY, evaluation.getEffect());
+        assertEquals(Effect.DENY, evaluation.getEffect());
     }
 
     @Test
@@ -192,7 +209,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-user-in-group-path-a-policy");
@@ -204,7 +221,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-user-in-group-path-b-policy");
@@ -228,7 +245,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-path-a-policy");
@@ -240,7 +257,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-path-a-no-parent-policy.js");
@@ -302,7 +319,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setId(null);
@@ -341,7 +358,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-trinity-in-client-role-b-policy");
@@ -379,7 +396,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setType("script-scripts/allow-child-group-in-role-policy.js");
@@ -418,7 +435,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
     }
 
     @Test
@@ -444,7 +461,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
     }
 
     @Test
@@ -470,7 +487,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
     }
 
     @Test
@@ -502,7 +519,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
     }
 
     @Test
@@ -532,7 +549,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
+        assertEquals(Effect.PERMIT, evaluation.getEffect());
     }
 
     @Test
@@ -553,27 +570,35 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
 
-        Resource resource = storeFactory.getResourceStore().create(resourceServer, "Resource A", resourceServer.getClientId());
-        Scope scope = storeFactory.getScopeStore().create(resourceServer, "Scope A");
-
-        resource.updateScopes(new HashSet<>(Arrays.asList(scope)));
-
-        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
-
-        permission.setName("testCheckReadOnlyInstances permission");
-        permission.addPolicy(policy.getId());
-        permission.addResource(resource.getId());
-
-        storeFactory.getPolicyStore().create(resourceServer, permission);
-
-        session.getTransactionManager().commit();
-
-        PermissionEvaluator evaluator = authorization.evaluators().from(Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), resourceServer)), createEvaluationContext(session, Collections.emptyMap()));
-
         try {
-            evaluator.evaluate(resourceServer, null);
-            Assert.fail("Instances should be marked as read-only");
-        } catch (Exception ignore) {
+            Resource resource = storeFactory.getResourceStore().create(resourceServer, "Resource A", resourceServer.getClientId());
+            Scope scope = storeFactory.getScopeStore().create(resourceServer, "Scope A");
+
+            resource.updateScopes(new HashSet<>(Arrays.asList(scope)));
+
+            ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+            permission.setName("testCheckReadOnlyInstances permission");
+            permission.addPolicy(policy.getId());
+            permission.addResource(resource.getId());
+
+            storeFactory.getPolicyStore().create(resourceServer, permission);
+
+            session.getTransactionManager().commit();
+
+            PermissionEvaluator evaluator = authorization.evaluators().from(Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), resourceServer)), createEvaluationContext(session, Collections.emptyMap()));
+
+            try {
+                evaluator.evaluate(resourceServer, null);
+                Assert.fail("Instances should be marked as read-only");
+            } catch (Exception ignore) {
+            }
+        } finally {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
+                AuthorizationProvider authorization1 = session1.getProvider(AuthorizationProvider.class);
+                StoreFactory storeFactory1 = authorization1.getStoreFactory();
+                storeFactory1.getPolicyStore().delete(policy.getId());
+            });
         }
     }
 
@@ -621,7 +646,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         PermissionEvaluator evaluator = authorization.evaluators().from(Arrays.asList(new ResourcePermission(resource, Arrays.asList(readScope, writeScope), resourceServer)), createEvaluationContext(session, Collections.emptyMap()));
         Collection<Permission> permissions = evaluator.evaluate(resourceServer, null);
 
-        Assert.assertEquals(0, permissions.size());
+        assertEquals(0, permissions.size());
     }
 
     private static DefaultEvaluation createEvaluation(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer, Policy policy) {
@@ -663,5 +688,42 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 return baseAttributes;
             }
         };
+    }
+
+    @Test
+    public void testEvaluation() {
+        RealmResource realmApi = realmsResouce().realm("authz-test");
+        RealmRepresentation realm = realmApi.toRepresentation();
+        realm.setAdminPermissionsEnabled(true);
+        realmApi.update(realm);
+        getCleanup(realm.getRealm()).addCleanup(() -> realm.setAdminPermissionsEnabled(false));
+        ClientsResource clientsApi = realmApi.clients();
+        ClientRepresentation client = clientsApi.findByClientId("resource-server-test").get(0);
+        ClientResource clientApi = clientsApi.get(client.getId());
+        AuthorizationResource authorizationApi = clientApi.authorization();
+        UserRepresentation user = realmApi.users().search("marta").get(0);
+        ResourceRepresentation resource = new ResourceRepresentation(KeycloakModelUtils.generateId());
+        try (Response response = authorizationApi.resources().create(resource)) {
+            assertEquals(201,  response.getStatus());
+        }
+
+        UserPolicyRepresentation policy = new UserPolicyRepresentation();
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.addUser(user.getId());
+        authorizationApi.policies().user().create(policy).close();
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+        authorizationApi.permissions().resource().create(permission).close();
+
+        PolicyEvaluationRequest request = new PolicyEvaluationRequest();
+        request.setUserId(user.getId());
+        request.setClientId(client.getId());
+//        request.addResource(resource.getName());
+        PolicyEvaluationResponse result = authorizationApi.policies().evaluate(request);
+        assertNotNull(result.getResults());
+        assertFalse(result.getResults().isEmpty());
     }
 }

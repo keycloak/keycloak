@@ -17,6 +17,13 @@
 
 package org.keycloak.broker.oidc;
 
+import java.io.IOException;
+
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -36,12 +43,6 @@ import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.JsonSerialization;
-
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

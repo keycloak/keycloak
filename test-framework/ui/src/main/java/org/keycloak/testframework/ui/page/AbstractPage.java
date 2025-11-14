@@ -1,13 +1,13 @@
 package org.keycloak.testframework.ui.page;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
 
 public abstract class AbstractPage {
 

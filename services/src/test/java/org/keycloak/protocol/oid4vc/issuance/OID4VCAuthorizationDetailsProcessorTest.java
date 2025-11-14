@@ -16,14 +16,20 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
-import org.junit.Test;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for OID4VCAuthorizationDetailsProcessor.

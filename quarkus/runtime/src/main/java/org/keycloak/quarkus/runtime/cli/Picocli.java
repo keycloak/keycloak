@@ -17,15 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
-import static java.lang.String.format;
-import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
-import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
-import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -48,10 +39,10 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.Messages;
+import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.HelpAllMixin;
-import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -81,6 +72,17 @@ import picocli.CommandLine.Model.ISetter;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.ParseResult;
+
+import static java.lang.String.format;
+
+import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
+import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
+import static org.keycloak.quarkus.runtime.cli.OptionRenderer.decorateDuplicitOptionName;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isUserModifiable;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
+import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
 
 public class Picocli {
 
@@ -225,6 +227,7 @@ public class Picocli {
         if (cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG) && !wasBuildEverRun()) {
             throw new PropertyException(Messages.optimizedUsedForFirstStartup());
         }
+        warnOnDuplicatedOptionsInCli();
 
         IncludeOptions options = getIncludeOptions(cliArgs, abstractCommand, abstractCommand.getName());
 
@@ -564,6 +567,7 @@ public class Picocli {
             if (value.getValue() == null || value.getConfigSourceName() == null
                     || (quarkus && !value.getConfigSourceName().contains(QuarkusPropertiesConfigSource.NAME))) {
                 // only persist build options resolved from config sources and not default values
+                // instead we'll persist the profile (if set) because that may influence the defaults
                 return;
             }
             // since we're persisting all quarkus values, this may leak some runtime information - we don't want
@@ -588,8 +592,10 @@ public class Picocli {
         }
 
         String profile = org.keycloak.common.util.Environment.getProfile();
-        properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
-        properties.put(LaunchMode.current().getProfileKey(), profile);
+        if (profile != null) {
+            properties.put(org.keycloak.common.util.Environment.PROFILE, profile);
+            properties.put(LaunchMode.current().getProfileKey(), profile);
+        }
 
         return properties;
     }
@@ -940,16 +946,24 @@ public class Picocli {
 
         if (!Environment.isRebuilt() && command instanceof AbstractAutoBuildCommand
                 && !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG)) {
-            Environment.setRebuildCheck();
+            Environment.setRebuildCheck(true);
         }
 
-        String profile = parsedCommand.map(AbstractCommand::getInitProfile)
-                .orElseGet(() -> Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
-                        .orElse(Environment.PROD_PROFILE_VALUE));
+        String profile = Optional.ofNullable(org.keycloak.common.util.Environment.getProfile())
+                .or(() -> parsedCommand.map(AbstractCommand::getInitProfile)).orElse(Environment.PROD_PROFILE_VALUE);
 
         Environment.setProfile(profile);
         if (!cliArgs.contains(HelpAllMixin.HELP_ALL_OPTION)) {
             parsedCommand.ifPresent(PropertyMappers::sanitizeDisabledMappers);
+        }
+    }
+
+    // Show warning about duplicated options in CLI
+    public void warnOnDuplicatedOptionsInCli() {
+        var duplicatedOptionsNames = ConfigArgsConfigSource.getDuplicatedArgNames();
+        if (!duplicatedOptionsNames.isEmpty()) {
+            warn("Duplicated options present in CLI: %s".formatted(String.join(", ", duplicatedOptionsNames)));
+            ConfigArgsConfigSource.clearDuplicatedArgNames();
         }
     }
 

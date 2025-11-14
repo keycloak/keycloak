@@ -17,7 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import org.jboss.logging.Logger;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -29,11 +34,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
 
-import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Objects;
-import java.util.Optional;
+import org.jboss.logging.Logger;
 
 /**
  * {@link CredentialSigner} implementing the JWT_VC format. It returns the signed JWT-Credential as a String.

@@ -20,9 +20,10 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

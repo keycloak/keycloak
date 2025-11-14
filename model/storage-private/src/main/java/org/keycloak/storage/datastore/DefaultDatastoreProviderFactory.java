@@ -20,7 +20,6 @@ package org.keycloak.storage.datastore;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.migration.MigrationModelManager;
@@ -44,6 +43,8 @@ import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
+
+import org.jboss.logging.Logger;
 
 public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
 

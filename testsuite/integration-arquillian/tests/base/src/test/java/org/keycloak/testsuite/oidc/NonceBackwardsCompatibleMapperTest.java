@@ -17,11 +17,10 @@
 
 package org.keycloak.testsuite.oidc;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+
 import jakarta.ws.rs.core.Response;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
@@ -47,7 +46,10 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  *

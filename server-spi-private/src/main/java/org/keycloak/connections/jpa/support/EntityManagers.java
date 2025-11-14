@@ -24,10 +24,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.hibernate.Session;
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.models.KeycloakSession;
 
-import jakarta.persistence.EntityManager;
+import org.hibernate.Session;
 
 public class EntityManagers {
 

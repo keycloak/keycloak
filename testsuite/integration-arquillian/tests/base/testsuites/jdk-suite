@@ -1,10 +1,7 @@
 AccountRestServiceTest
 AuthorizationCodeTest
-CredentialsTest
 DeployedScriptAuthenticatorTest
 ExportImportTest
-GeneratedRsaKeyProviderTest
-JavaKeystoreKeyProviderTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest

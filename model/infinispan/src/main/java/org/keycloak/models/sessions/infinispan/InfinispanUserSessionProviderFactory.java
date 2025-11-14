@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.MultiSiteUtils;
@@ -53,6 +52,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
+import org.keycloak.models.sessions.infinispan.listeners.EmbeddedUserSessionExpirationListener;
 import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -63,6 +63,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -89,6 +91,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private CacheHolder<String, UserSessionEntity> offlineSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionCacheHolder;
     private CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionCacheHolder;
+    private EmbeddedUserSessionExpirationListener expirationListener;
 
     private long offlineSessionCacheEntryLifespanOverride;
 
@@ -203,7 +206,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs);
                 clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
                 offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+                var blockingManager = session.getProvider(InfinispanConnectionProvider.class).getBlockingManager();
+                expirationListener = new EmbeddedUserSessionExpirationListener(session.getKeycloakSessionFactory(), blockingManager);
             }
+            // Only add the event listener to session caches
+            // The expired events for offline sessions will be triggered by JpaUserSessionPersisterProvider
+            sessionCacheHolder.cache().addListener(expirationListener);
         }
     }
 
@@ -290,6 +298,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public void close() {
         if (persistentSessionsWorker != null) {
             persistentSessionsWorker.stop();
+        }
+        if (expirationListener != null) {
+            sessionCacheHolder.cache().removeListener(expirationListener);
+            expirationListener = null;
         }
     }
 
@@ -403,4 +415,3 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private record PersistentTransaction(UserSessionPersistentChangelogBasedTransaction userTx, ClientSessionPersistentChangelogBasedTransaction clientTx) {}
 
 }
-

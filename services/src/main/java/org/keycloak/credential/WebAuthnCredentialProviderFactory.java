@@ -16,12 +16,13 @@
 
 package org.keycloak.credential;
 
-import com.webauthn4j.converter.util.ObjectConverter;
 import org.keycloak.Config;
 import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
+import com.webauthn4j.converter.util.ObjectConverter;
 
 public class WebAuthnCredentialProviderFactory implements CredentialProviderFactory<WebAuthnCredentialProvider>, EnvironmentDependentProviderFactory {
 

@@ -17,13 +17,14 @@
 
 package org.keycloak.migration.migrators;
 
-import org.jboss.logging.Logger;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.jboss.logging.Logger;
 
 /**
  * Implements the migration necessary for version 6.0.0.

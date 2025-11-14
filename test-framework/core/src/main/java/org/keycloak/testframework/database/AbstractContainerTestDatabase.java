@@ -5,9 +5,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.logging.JBossLogConsumer;
+
+import org.jboss.logging.Logger;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 public abstract class AbstractContainerTestDatabase implements TestDatabase {
@@ -82,7 +83,7 @@ public abstract class AbstractContainerTestDatabase implements TestDatabase {
     }
 
     public String getDatabase() {
-;        return config.getDatabase() == null ? "keycloak" : config.getDatabase();
+        return config.getDatabase() == null ? "keycloak" : config.getDatabase();
     }
 
     public String getUsername() {

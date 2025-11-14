@@ -16,12 +16,22 @@
  */
 package org.keycloak.authentication.actiontoken.idpverifyemail;
 
-import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.actiontoken.*;
+import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
+import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticator;
-import org.keycloak.events.*;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -35,12 +45,6 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
-
-import java.util.Map;
 
 /**
  * Action token handler for verification of e-mail address.

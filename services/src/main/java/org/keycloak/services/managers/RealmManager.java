@@ -16,15 +16,22 @@
  */
 package org.keycloak.services.managers;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Encode;
 import org.keycloak.connections.jpa.support.EntityManagers;
+import org.keycloak.email.EmailException;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -62,16 +69,10 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
 import org.keycloak.storage.StoreSyncEvent;
-import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import org.keycloak.email.EmailException;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SMTPUtil;
 import org.keycloak.utils.StringUtil;

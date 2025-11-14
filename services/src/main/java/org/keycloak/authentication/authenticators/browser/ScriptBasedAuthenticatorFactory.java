@@ -16,6 +16,8 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -26,9 +28,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.List;
-
 import static java.util.Arrays.asList;
+
 import static org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator.SCRIPT_CODE;
 import static org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator.SCRIPT_DESCRIPTION;
 import static org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator.SCRIPT_NAME;

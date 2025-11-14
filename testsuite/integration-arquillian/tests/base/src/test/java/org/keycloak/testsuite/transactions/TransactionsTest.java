@@ -17,11 +17,13 @@
 
 package org.keycloak.testsuite.transactions;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

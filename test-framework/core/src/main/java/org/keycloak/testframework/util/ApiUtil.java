@@ -1,6 +1,7 @@
 package org.keycloak.testframework.util;
 
 import jakarta.ws.rs.core.Response;
+
 import org.junit.jupiter.api.Assertions;
 
 public class ApiUtil {

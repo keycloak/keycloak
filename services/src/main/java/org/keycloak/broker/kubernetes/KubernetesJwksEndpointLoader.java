@@ -1,10 +1,8 @@
 package org.keycloak.broker.kubernetes;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -14,8 +12,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH;
 
@@ -33,7 +34,7 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
             throw new RuntimeException("Not running on Kubernetes and Kubernetes JWKS endpoint not set");
         }
 
-        if (globalEndpoint != null && !globalEndpoint.isEmpty() && globalEndpoint.equals(providerEndpoint)) {
+        if (globalEndpoint != null && (providerEndpoint == null || providerEndpoint.isEmpty() || globalEndpoint.equals(providerEndpoint))) {
             this.endpoint = globalEndpoint;
             authenticate = true;
         } else {

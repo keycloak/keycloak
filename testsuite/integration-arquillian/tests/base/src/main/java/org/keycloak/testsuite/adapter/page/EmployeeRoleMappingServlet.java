@@ -19,11 +19,12 @@ package org.keycloak.testsuite.adapter.page;
 
 import java.net.URL;
 
-import org.jboss.arquillian.container.test.api.OperateOnDeployment;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLogin;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import org.jboss.arquillian.container.test.api.OperateOnDeployment;
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.openqa.selenium.By;
 
 /**

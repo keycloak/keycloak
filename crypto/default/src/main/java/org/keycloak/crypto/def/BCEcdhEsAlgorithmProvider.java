@@ -37,18 +37,8 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
-
 import javax.crypto.KeyAgreement;
 
-import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
-import org.bouncycastle.crypto.engines.AESWrapEngine;
-import org.bouncycastle.crypto.params.KDFParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.util.DigestFactory;
-import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
@@ -59,6 +49,16 @@ import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWKUtil;
+
+import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
+import org.bouncycastle.crypto.engines.AESWrapEngine;
+import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 
 /**
  * ECDH Ephemeral Static Algorithm Provider.

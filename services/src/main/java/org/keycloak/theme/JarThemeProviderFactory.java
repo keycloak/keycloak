@@ -17,12 +17,12 @@
 
 package org.keycloak.theme;
 
-import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
+
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

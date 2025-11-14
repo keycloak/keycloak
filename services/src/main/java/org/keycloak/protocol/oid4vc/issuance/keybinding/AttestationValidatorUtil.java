@@ -17,30 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.SignatureProvider;
-import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
-import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
-import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
-import org.keycloak.protocol.oid4vc.model.ISO18045ResistanceLevel;
-import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
-import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
-import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -67,6 +43,31 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.ISO18045ResistanceLevel;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
+import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.services.clientpolicy.executor.FapiConstant.ALLOWED_ALGORITHMS;
 
@@ -77,7 +78,7 @@ import static org.keycloak.services.clientpolicy.executor.FapiConstant.ALLOWED_A
  */
 public class AttestationValidatorUtil {
 
-    public static final String ATTESTATION_JWT_TYP = "key-attestation+jwt ";
+    public static final String ATTESTATION_JWT_TYP = "key-attestation+jwt";
     private static final String CACERTS_PATH = System.getProperty("javax.net.ssl.trustStore",
             System.getProperty("java.home") + "/lib/security/cacerts");
     private static final char[] DEFAULT_TRUSTSTORE_PASSWORD = System.getProperty(

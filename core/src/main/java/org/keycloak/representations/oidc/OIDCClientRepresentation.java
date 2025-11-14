@@ -17,10 +17,11 @@
 
 package org.keycloak.representations.oidc;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import java.util.List;
+
 import org.keycloak.jose.jwk.JSONWebKeySet;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

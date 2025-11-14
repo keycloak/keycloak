@@ -17,16 +17,11 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
-import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
-import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -39,6 +34,12 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
+
+import static org.keycloak.quarkus.runtime.Environment.isDevMode;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
+import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.maskValue;
 
 public abstract class AbstractAutoBuildCommand extends AbstractCommand {
 
@@ -58,8 +59,16 @@ public abstract class AbstractAutoBuildCommand extends AbstractCommand {
         if (isRebuildCheck()) {
             if (requiresReAugmentation()) {
                 runReAugmentation();
+                return Optional.of(REBUILT_EXIT_CODE);
             }
-            return Optional.of(REBUILT_EXIT_CODE);
+            // clear the check, and change to the command runtime profile
+            String profile = org.keycloak.common.util.Environment.getProfile();
+            Environment.setRebuildCheck(false);
+            String runtimeProfile = getInitProfile();
+            if (!Objects.equals(profile, runtimeProfile)) {
+                Environment.setProfile(runtimeProfile);
+                Configuration.resetConfig();
+            }
         }
         return Optional.empty();
     }

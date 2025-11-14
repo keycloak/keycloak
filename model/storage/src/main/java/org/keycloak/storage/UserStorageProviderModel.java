@@ -17,8 +17,9 @@
 
 package org.keycloak.storage;
 
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.component.ComponentModel;
+
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * Stored configuration of a User Storage provider instance.

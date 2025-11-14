@@ -1,12 +1,12 @@
 package org.keycloak.testframework.events;
 
+import java.util.UUID;
+import java.util.regex.Pattern;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
-
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 public class EventMatchers {
 

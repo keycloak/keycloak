@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import org.apache.maven.plugin.logging.Log;
 import org.keycloak.common.Version;
 
 import freemarker.template.TemplateException;
+import org.apache.maven.plugin.logging.Log;
 
 public class GuideBuilder {
 

@@ -20,10 +20,6 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.infinispan.Cache;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.factories.ComponentRegistry;
-import org.infinispan.persistence.manager.PersistenceManager;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -43,6 +39,11 @@ import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.persistence.manager.PersistenceManager;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 

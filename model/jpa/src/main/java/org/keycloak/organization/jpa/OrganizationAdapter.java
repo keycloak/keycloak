@@ -17,13 +17,11 @@
 
 package org.keycloak.organization.jpa;
 
-import static java.util.Optional.ofNullable;
-
 import java.util.HashSet;
-import java.util.Map;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,6 +41,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.StringUtil;
+
+import static java.util.Optional.ofNullable;
 
 public final class OrganizationAdapter implements OrganizationModel, JpaModel<OrganizationEntity> {
 

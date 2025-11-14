@@ -4,6 +4,7 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation.js";
 import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation.js";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation.js";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
@@ -492,6 +493,25 @@ class AdminClient {
         users: [user[0].id!],
         ...policy,
       },
+    );
+  }
+
+  async createResource(
+    clientId: string,
+    resource: ResourceRepresentation & { realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, ...payload } = resource;
+
+    const client = (await this.#client.clients.find({ clientId, realm }))[0];
+
+    if (!client?.id) {
+      throw new Error(`Client ${clientId} not found in realm ${realm}`);
+    }
+
+    return await this.#client.clients.createResource(
+      { id: client.id, realm },
+      payload,
     );
   }
 

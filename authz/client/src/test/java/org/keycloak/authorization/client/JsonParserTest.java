@@ -20,10 +20,11 @@ package org.keycloak.authorization.client;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.keycloak.representations.adapters.config.AdapterConfig;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

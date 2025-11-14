@@ -24,9 +24,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Used just in cases when we want to "directly" update or retrieve the hash or salt of user credential (For example during export/import)

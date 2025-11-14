@@ -114,4 +114,6 @@ public interface Details {
 
     String CLIENT_POLICY_ERROR = "client_policy_error";
     String CLIENT_POLICY_ERROR_DETAIL = "client_policy_error_detail";
+
+    String EXPIRED_DETAIL = "expired";
 }

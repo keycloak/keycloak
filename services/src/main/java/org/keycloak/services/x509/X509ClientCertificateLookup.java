@@ -18,11 +18,11 @@
 
 package org.keycloak.services.x509;
 
-import org.keycloak.http.HttpRequest;
-import org.keycloak.provider.Provider;
-
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+
+import org.keycloak.http.HttpRequest;
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>

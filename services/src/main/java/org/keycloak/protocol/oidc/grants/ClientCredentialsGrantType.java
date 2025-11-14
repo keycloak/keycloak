@@ -19,8 +19,6 @@ package org.keycloak.protocol.oidc.grants;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -43,6 +41,8 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 

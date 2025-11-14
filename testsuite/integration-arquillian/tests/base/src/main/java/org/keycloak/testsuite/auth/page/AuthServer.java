@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.auth.page;
 
-import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 /**
  * Context path of Keycloak auth server.

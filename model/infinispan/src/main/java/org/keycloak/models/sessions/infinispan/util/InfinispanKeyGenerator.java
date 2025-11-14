@@ -22,15 +22,16 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
+import org.keycloak.sessions.StickySessionEncoderProvider;
+
 import org.infinispan.Cache;
 import org.infinispan.affinity.KeyAffinityService;
 import org.infinispan.affinity.KeyAffinityServiceFactory;
 import org.infinispan.affinity.KeyGenerator;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
-import org.keycloak.sessions.StickySessionEncoderProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

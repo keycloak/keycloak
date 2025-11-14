@@ -19,13 +19,14 @@ package org.keycloak.models.sessions.infinispan.remote;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.remote.transaction.LoginFailureChangeLogTransaction;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 

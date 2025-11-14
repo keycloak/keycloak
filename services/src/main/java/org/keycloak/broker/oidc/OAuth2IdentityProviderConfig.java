@@ -16,7 +16,7 @@
  */
 package org.keycloak.broker.oidc;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
+import java.util.Arrays;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
@@ -25,7 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
 
-import java.util.Arrays;
+import static org.keycloak.common.util.UriUtils.checkUrl;
 
 /**
  * @author Pedro Igor
@@ -44,6 +44,10 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "jwtAuthorizationGrantEnabled";
 
     public static final String JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED = "jwtAuthorizationGrantAssertionReuseAllowed";
+
+    public static final String JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION = "jwtAuthorizationGrantMaxAllowedAssertionExpiration";
+
+    public static final String JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG = "jwtAuthorizationGrantAssertionSignatureAlg";
 
     public OAuth2IdentityProviderConfig(IdentityProviderModel model) {
         super(model);
@@ -171,6 +175,14 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public boolean getJwtAuthorizationGrantAssertionReuseAllowed() {
         return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "false"));
+    }
+
+    public int getJwtAuthorizationGrantMaxAllowedAssertionExpiration() {
+        return Integer.parseInt(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "300"));
+    }
+
+    public String getJwtAuthorizationGrantAssertionSignatureAlg() {
+        return getConfig().get(JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG);
     }
 
     public void setPkceEnabled(boolean enabled) {

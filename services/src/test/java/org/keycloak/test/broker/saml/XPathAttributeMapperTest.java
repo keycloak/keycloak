@@ -1,17 +1,9 @@
 package org.keycloak.test.broker.saml;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.mappers.XPathAttributeMapper;
@@ -23,6 +15,16 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+
+import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 public class XPathAttributeMapperTest {
 

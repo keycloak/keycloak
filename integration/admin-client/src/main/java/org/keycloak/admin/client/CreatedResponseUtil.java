@@ -16,12 +16,13 @@
  */
 package org.keycloak.admin.client;
 
+import java.net.URI;
+import java.util.Map;
+
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.Map;
 
 /**
  * A Utility class that parses the Response object into the underlying ID attribute

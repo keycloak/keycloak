@@ -16,6 +16,12 @@
  */
 package org.keycloak.saml.processing.core.saml.v1.writers;
 
+import java.net.URI;
+import java.util.List;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v1.assertion.SAML11ActionType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AdviceType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
@@ -43,13 +49,8 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
-import org.w3c.dom.Element;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.List;
+import org.w3c.dom.Element;
 
 /**
  * Write the SAML 11 Assertion to stream

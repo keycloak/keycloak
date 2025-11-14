@@ -17,8 +17,9 @@
 
 package org.keycloak.credential.hash;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * Provider factory for SHA1 variant of the PBKDF2 password hash algorithm.

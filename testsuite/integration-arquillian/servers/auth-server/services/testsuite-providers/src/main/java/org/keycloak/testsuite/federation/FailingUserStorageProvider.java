@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.federation;
 
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -24,9 +27,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserCountMethodsProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
-
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Test user storage provider that simulates various failure scenarios

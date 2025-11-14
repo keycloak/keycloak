@@ -107,12 +107,26 @@ make sure the users granted with the `realm-admin` role are expected to have thi
 The documentation is also updated with additional information about the different types of realm administrators.
 For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
 
+=== OCSP request timeouts follow HTTP client configuration
+
+In previous versions, OCSP requests used hardcoded connection and socket timeouts of 10 seconds.
+In this release, OCSP requests inherit timeouts from the outgoing HTTP client configuration (SPI `connections-http-client`, provider `default`).
+
+- **Socket timeout property**: `socket-timeout-millis` (default: `5000`)
+- **Establish connection timeout property**: `establish-connection-timeout-millis` (default: not set / `-1`)
+
+If you relied on the previous 10-second behavior, explicitly set the HTTP client timeouts.
+
 === Added database indexes on `OFFLINE_CLIENT_SESSION` table
 
 This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
 
 If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Default authorization policies and resources are no longer auto-created
+
+When enabling authorization on a new client (creating a Resource Server), Keycloak no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

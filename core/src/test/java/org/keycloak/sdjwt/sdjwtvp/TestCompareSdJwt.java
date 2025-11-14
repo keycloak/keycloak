@@ -16,9 +16,6 @@
  */
 package org.keycloak.sdjwt.sdjwtvp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +30,9 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class will try to test conformity to the spec by comparing json objects.

@@ -19,14 +19,15 @@ package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.*;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.Attributes;
@@ -47,11 +48,15 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

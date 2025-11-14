@@ -17,23 +17,23 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+import java.nio.file.Paths;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.config.database.Database;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-
-import io.quarkus.test.junit.main.Launch;
-
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 
-import java.nio.file.Paths;
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
 class BuildCommandDistTest {
@@ -109,5 +109,15 @@ class BuildCommandDistTest {
     @Launch({"build", "--db=dev-file"})
     void logLevelExpressionWithDefault(CLIResult cliResult) {
         cliResult.assertBuild();
+    }
+
+    /**
+     * Documented as a workaround when a provider jar conflicts with built-in classes
+     */
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"-Dquarkus.launch.rebuild=true"})
+    void forceRebuild(CLIResult cliResult) {
+        cliResult.getOutput().contains("Quarkus augmentation completed");
     }
 }

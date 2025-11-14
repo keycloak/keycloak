@@ -73,4 +73,19 @@
         <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="HIDE_ON_LOGIN"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.5.0-remove-workflow-provider-id-column">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <columnExists tableName="WORKFLOW_STATE" columnName="WORKFLOW_PROVIDER_ID" />
+                <indexExists tableName="WORKFLOW_STATE" indexName="IDX_WORKFLOW_STATE_PROVIDER"/>
+            </and>
+        </preConditions>
+        <dropIndex tableName="WORKFLOW_STATE" indexName="IDX_WORKFLOW_STATE_PROVIDER"/>
+        <createIndex indexName="IDX_WORKFLOW_STATE_PROVIDER"
+                     tableName="WORKFLOW_STATE">
+            <column name="RESOURCE_ID" />
+        </createIndex>
+        <dropColumn tableName="WORKFLOW_STATE" columnName="WORKFLOW_PROVIDER_ID"/>
+    </changeSet>
+
 </databaseChangeLog>

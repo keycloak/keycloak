@@ -1,10 +1,11 @@
 package org.keycloak.testframework.realm;
 
-import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;

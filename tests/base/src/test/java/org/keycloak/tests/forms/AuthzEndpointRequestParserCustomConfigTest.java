@@ -1,12 +1,13 @@
 package org.keycloak.tests.forms;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Custom configuration of OIDC login protocol factory with some overriden config values

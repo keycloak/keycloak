@@ -17,15 +17,6 @@
 
 package org.keycloak.organization.jpa;
 
-import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
-import static org.keycloak.models.UserModel.EMAIL;
-import static org.keycloak.models.UserModel.FIRST_NAME;
-import static org.keycloak.models.UserModel.LAST_NAME;
-import static org.keycloak.models.UserModel.USERNAME;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
-import static org.keycloak.utils.StreamsUtil.closing;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +36,7 @@ import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
@@ -68,11 +60,20 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.storage.StorageId;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
+import static org.keycloak.models.UserModel.EMAIL;
+import static org.keycloak.models.UserModel.FIRST_NAME;
+import static org.keycloak.models.UserModel.LAST_NAME;
+import static org.keycloak.models.UserModel.USERNAME;
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
+import static org.keycloak.utils.StreamsUtil.closing;
 
 public class JpaOrganizationProvider implements OrganizationProvider {
 

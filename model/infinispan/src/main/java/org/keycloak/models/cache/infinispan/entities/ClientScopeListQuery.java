@@ -17,9 +17,9 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.RealmModel;
-
 import java.util.Set;
+
+import org.keycloak.models.RealmModel;
 
 public class ClientScopeListQuery extends AbstractRevisioned implements ClientScopeQuery {
     private final Set<String> clientScopes;

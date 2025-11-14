@@ -17,12 +17,12 @@
 
 package org.keycloak.migration.migrators;
 
-import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;

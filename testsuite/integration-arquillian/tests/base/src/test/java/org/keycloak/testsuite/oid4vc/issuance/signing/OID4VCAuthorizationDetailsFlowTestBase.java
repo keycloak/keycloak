@@ -17,33 +17,6 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
-import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.util.JsonSerialization;
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.apache.http.entity.StringEntity;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,12 +27,42 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.HttpHeaders;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicNameValuePair;
+import org.junit.Test;
+
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE;
 
 /**
  * Base class for authorization details flow tests.

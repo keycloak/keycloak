@@ -17,13 +17,6 @@
 
 package org.keycloak.protocol.saml;
 
-import org.keycloak.dom.saml.v2.metadata.EndpointType;
-import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
-import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
-import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
-import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
-import org.keycloak.dom.saml.v2.metadata.KeyTypes;
-
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -33,28 +26,35 @@ import java.util.concurrent.TimeUnit;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.dom.saml.v2.metadata.EndpointType;
+import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
+import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.saml.SignatureAlgorithm;
-import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.SAML_HTTP_POST_BINDING;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.SAML_SOAP_BINDING;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
 /**
  * @version $Revision: 1 $

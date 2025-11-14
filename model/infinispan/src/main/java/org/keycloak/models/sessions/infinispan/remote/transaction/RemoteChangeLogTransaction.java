@@ -24,12 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import org.infinispan.client.hotrod.Flag;
-import org.infinispan.client.hotrod.MetadataValue;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
-import org.infinispan.commons.util.concurrent.CompletableFutures;
-import org.infinispan.util.concurrent.BlockingManager;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
@@ -38,6 +32,13 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
+
+import org.infinispan.client.hotrod.Flag;
+import org.infinispan.client.hotrod.MetadataValue;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletableFutures;
+import org.infinispan.util.concurrent.BlockingManager;
 
 /**
  * A {@link KeycloakTransaction} implementation that keeps track of changes made to entities stored in a Infinispan
@@ -68,7 +69,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
         conditionalRemover.executeRemovals(getCache(), stage);
 
         for (var updater : entityChanges.values()) {
-            if (updater.isReadOnly() || updater.isTransient() || conditionalRemover.willRemove(updater)) {
+            if (updater.isReadOnly() || updater.isExpired() || updater.isTransient() || conditionalRemover.willRemove(updater)) {
                 continue;
             }
             if (updater.isDeleted()) {
@@ -79,7 +80,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
             var expiration = updater.computeExpiration();
 
             if (expiration.isExpired()) {
-                stage.dependsOn(commitRemove(updater));
+                // We need the cache entry expired events from the server, do nothing here.
                 continue;
             }
 
@@ -121,7 +122,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
     public T get(K key) {
         var updater = entityChanges.get(key);
         if (updater != null) {
-            return updater.isDeleted() ? null : updater;
+            return updater.isInvalid() ? null : updater;
         }
         return onEntityFromCache(key, getCache().getWithMetadata(key));
     }
@@ -135,7 +136,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
     public CompletionStage<T> getAsync(K key) {
         var updater = entityChanges.get(key);
         if (updater != null) {
-            return updater.isDeleted() ? CompletableFutures.completedNull() : CompletableFuture.completedFuture(updater);
+            return updater.isInvalid() ? CompletableFutures.completedNull() : CompletableFuture.completedFuture(updater);
         }
         return getCache().getWithMetadataAsync(key).thenApply(e -> onEntityFromCache(key, e));
     }
@@ -189,7 +190,7 @@ public class RemoteChangeLogTransaction<K, V, T extends Updater<K, V>, R extends
         }
         var updater = factory.wrapFromCache(key, entity);
         entityChanges.put(key, updater);
-        return updater.isDeleted() ? null : updater;
+        return updater.isInvalid() ? null : updater;
     }
 
     @SuppressWarnings("unchecked")

@@ -18,7 +18,17 @@
 package org.keycloak.authentication.authenticators.client;
 
 
+import java.security.PublicKey;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
@@ -32,15 +42,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
-
-import java.security.PublicKey;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 

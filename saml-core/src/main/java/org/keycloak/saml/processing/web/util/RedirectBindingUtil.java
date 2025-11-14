@@ -16,15 +16,15 @@
  */
 package org.keycloak.saml.processing.web.util;
 
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.processing.api.util.DeflateUtil;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Base64;
+
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 
 /**
  * Utility class for SAML HTTP/Redirect binding

@@ -1,10 +1,10 @@
 package org.keycloak.common.util;
 
-import org.junit.Test;
-
+import java.util.concurrent.ThreadLocalRandom;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.concurrent.ThreadLocalRandom;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

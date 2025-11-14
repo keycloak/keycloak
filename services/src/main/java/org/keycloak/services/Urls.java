@@ -16,9 +16,13 @@
  */
 package org.keycloak.services;
 
+import java.net.URI;
+
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.common.Version;
 import org.keycloak.models.Constants;
-import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
@@ -30,10 +34,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
-
 import org.keycloak.utils.StringUtil;
-import jakarta.ws.rs.core.UriBuilder;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

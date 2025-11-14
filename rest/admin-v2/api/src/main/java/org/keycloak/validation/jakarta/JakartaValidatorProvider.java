@@ -1,14 +1,13 @@
 package org.keycloak.validation.jakarta;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Validator;
-import org.keycloak.provider.Provider;
-
 import java.util.Set;
 import java.util.function.Function;
 
-public interface JakartaValidatorProvider extends Provider {
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
+
+public interface JakartaValidatorProvider {
 
     <T> void validate(T object, Class<?>... groups) throws ConstraintViolationException;
 

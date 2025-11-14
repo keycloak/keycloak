@@ -1,7 +1,10 @@
 package org.keycloak.tests.admin.client;
 
+import java.io.IOException;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
+
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -17,8 +20,7 @@ import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 
 @KeycloakIntegrationTest
 public class AbstractClientScopeTest {

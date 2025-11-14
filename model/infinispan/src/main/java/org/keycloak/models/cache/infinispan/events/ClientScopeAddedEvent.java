@@ -19,10 +19,11 @@ package org.keycloak.models.cache.infinispan.events;
 
 import java.util.Set;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 @ProtoTypeId(Marshalling.CLIENT_SCOPE_ADDED_EVENT)
 public class ClientScopeAddedEvent extends BaseClientScopeEvent {

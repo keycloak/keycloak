@@ -18,11 +18,13 @@
 package org.keycloak.client.registration;
 
 import java.util.Base64;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpRequest;
+
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpRequest;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -19,13 +19,13 @@
 
 package org.keycloak.testsuite.oauth.tokenexchange;
 
+import java.io.IOException;
+import java.util.List;
+
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.MatcherAssert;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -58,6 +58,7 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
+import org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -66,21 +67,29 @@ import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.RoleScopeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.oauth.TokenExchangeRequest;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
-import java.util.List;
+import org.hamcrest.MatcherAssert;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -89,11 +98,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -1044,6 +1048,65 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    @Test
+    public void testDownscopeClientPolicies() throws Exception {
+
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile((new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Profile")
+                        .addExecutor(DownscopeAssertionGrantEnforcerExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()).toString();
+        updateProfiles(json);
+
+        // register policy with condition on token exchange grant
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Client Scope Policy", Boolean.TRUE)
+                        .addCondition(GrantTypeConditionFactory.PROVIDER_ID,
+                                createGrantTypeConditionConfig(List.of(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()).toString();
+        updatePolicies(json);
+
+        // request initial token with optional scope optional-scope2
+        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret", "optional-scope2").getAccessToken();
+        AccessToken token = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken();
+        assertScopes(token, List.of("email", "profile", "optional-scope2"));
+
+        // request with the all the scopes allowed in the initial token, all are optional in requester-client
+        // only those should be there, even default-scope1 is supressed
+        oauth.scope("email profile optional-scope2");
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertAudiencesAndScopes(response, john, List.of("target-client2"), List.of("email", "profile", "optional-scope2"));
+
+        // exchange with downscope to only optional-scope2
+        oauth.scope("optional-scope2");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertAudiencesAndScopes(response, john, List.of("target-client2"), List.of("optional-scope2"));
+
+        // exchange for a invisible scope returns error although it is added by default
+        oauth.scope("basic optional-scope2");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [basic] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
+
+        // exchange for another optional that is not in the token
+        oauth.scope("optional-requester-scope");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [optional-requester-scope] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
+
+        // exchange for a optional that is not in initial token
+        oauth.scope("default-scope1");
+        response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        assertEquals("Scopes [default-scope1] not present in the initial access token [optional-scope2, profile, email]",
+                response.getErrorDescription());
     }
 
     @Test

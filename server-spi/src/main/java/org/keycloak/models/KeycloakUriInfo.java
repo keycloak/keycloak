@@ -16,21 +16,22 @@
  */
 package org.keycloak.models;
 
-import static org.keycloak.common.util.UriUtils.parseQueryParameters;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
-
-import org.jboss.resteasy.reactive.common.jaxrs.UriBuilderImpl;
-import org.keycloak.urls.HostnameProvider;
-import org.keycloak.urls.UrlType;
-
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
+
+import org.keycloak.urls.HostnameProvider;
+import org.keycloak.urls.UrlType;
+
+import org.jboss.resteasy.reactive.common.jaxrs.UriBuilderImpl;
+
+import static org.keycloak.common.util.UriUtils.parseQueryParameters;
 
 public class KeycloakUriInfo implements UriInfo {
 

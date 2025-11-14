@@ -16,13 +16,6 @@
  */
 package org.keycloak.saml.validators;
 
-import org.keycloak.dom.saml.common.CommonConditionsType;
-import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
-import org.keycloak.dom.saml.v2.assertion.ConditionAbstractType;
-import org.keycloak.dom.saml.v2.assertion.ConditionsType;
-import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
-import org.keycloak.dom.saml.v2.assertion.ProxyRestrictionType;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +24,15 @@ import java.util.Iterator;
 import java.util.Set;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.dom.saml.common.CommonConditionsType;
+import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
+import org.keycloak.dom.saml.v2.assertion.ConditionAbstractType;
+import org.keycloak.dom.saml.v2.assertion.ConditionsType;
+import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
+import org.keycloak.dom.saml.v2.assertion.ProxyRestrictionType;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+
 import org.jboss.logging.Logger;
 
 /**

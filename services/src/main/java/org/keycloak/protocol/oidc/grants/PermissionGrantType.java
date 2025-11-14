@@ -17,10 +17,10 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.List;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-
-import java.util.List;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;

@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.jpa;
 
-import jakarta.persistence.criteria.JoinType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,23 +29,23 @@ import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.hibernate.Session;
-import org.jboss.logging.Logger;
-import org.keycloak.models.IdentityProviderQuery;
-import org.keycloak.models.IdentityProviderType;
+
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.util.IdentityProviderTypeUtil;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.IdentityProviderShowInAccountConsole;
 import org.keycloak.models.IdentityProviderStorageProvider;
-import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -54,6 +53,9 @@ import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StringUtil;
+
+import org.hibernate.Session;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.IdentityProviderModel.ALIAS;
 import static org.keycloak.models.IdentityProviderModel.ALIAS_NOT_IN;

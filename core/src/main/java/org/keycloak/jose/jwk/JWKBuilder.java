@@ -17,8 +17,6 @@
 
 package org.keycloak.jose.jwk;
 
-import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
-
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -33,6 +31,8 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

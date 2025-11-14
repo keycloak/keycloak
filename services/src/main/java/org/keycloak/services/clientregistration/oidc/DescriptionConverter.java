@@ -17,6 +17,20 @@
 
 package org.keycloak.services.clientregistration.oidc;
 
+import java.io.IOException;
+import java.net.URI;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -51,20 +65,6 @@ import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
-
-import java.io.IOException;
-import java.net.URI;
-import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
 import static org.keycloak.OAuth2Constants.IMPLICIT;

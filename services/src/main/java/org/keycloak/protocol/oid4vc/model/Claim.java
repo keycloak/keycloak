@@ -16,12 +16,9 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -29,8 +26,12 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import java.util.List;
-import java.util.Optional;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * Holding metadata on a claim of verifiable credential.

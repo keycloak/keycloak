@@ -1,9 +1,9 @@
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.List;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
-
-import java.util.List;
 
 public class RecoveryAuthnCodesBean {
 

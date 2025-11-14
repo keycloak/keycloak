@@ -17,13 +17,14 @@
 
 package org.keycloak.testsuite.feature;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.Set;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 
-import java.util.Set;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Abstract test class for asserting a state of a particular feature after enabling/disabling

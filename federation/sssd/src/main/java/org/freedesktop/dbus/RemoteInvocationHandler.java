@@ -1,5 +1,12 @@
 package org.freedesktop.dbus;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+
 import org.freedesktop.dbus.annotations.MethodNoReply;
 import org.freedesktop.dbus.connections.AbstractConnection;
 import org.freedesktop.dbus.errors.Error;
@@ -15,13 +22,6 @@ import org.freedesktop.dbus.utils.DBusNamingUtil;
 import org.freedesktop.dbus.utils.LoggingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
-import java.util.Arrays;
 
 public class RemoteInvocationHandler implements InvocationHandler {
     public static final int CALL_TYPE_SYNC     = 0;

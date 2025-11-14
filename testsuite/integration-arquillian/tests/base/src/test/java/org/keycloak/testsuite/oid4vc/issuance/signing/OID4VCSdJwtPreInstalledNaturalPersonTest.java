@@ -16,19 +16,21 @@
  */
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.junit.Test;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.Format;
+
+import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CONFIGURATION_ID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.CONFIGURATION_ID;
 
 /**
  * OID4VCI testing for the pre-installed oid4vc_natural_person

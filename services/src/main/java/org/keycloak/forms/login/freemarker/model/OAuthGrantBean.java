@@ -16,16 +16,15 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OrderedModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.rar.AuthorizationDetails;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */

@@ -17,10 +17,11 @@
 
 package org.keycloak.services.clientregistration;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Set;
+
 import org.keycloak.representations.JsonWebToken;
 
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

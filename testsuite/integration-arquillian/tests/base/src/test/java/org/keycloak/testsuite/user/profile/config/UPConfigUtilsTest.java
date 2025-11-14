@@ -16,16 +16,17 @@
  */
 package org.keycloak.testsuite.user.profile.config;
 
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
-
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.config.UPConfigUtils;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 /**
  * Unit test for {@link UPConfigUtils}

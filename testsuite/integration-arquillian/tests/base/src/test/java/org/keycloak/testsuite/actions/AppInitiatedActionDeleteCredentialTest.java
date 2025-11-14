@@ -19,16 +19,11 @@
 
 package org.keycloak.testsuite.actions;
 
+import java.util.List;
+
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.authentication.requiredactions.DeleteCredentialAction;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -49,6 +44,14 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

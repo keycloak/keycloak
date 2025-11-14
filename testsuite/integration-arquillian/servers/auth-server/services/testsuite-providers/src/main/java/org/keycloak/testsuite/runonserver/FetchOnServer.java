@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.runonserver;
 
-import org.keycloak.models.KeycloakSession;
-
 import java.io.Serializable;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

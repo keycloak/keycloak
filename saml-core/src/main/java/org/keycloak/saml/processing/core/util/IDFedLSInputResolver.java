@@ -16,7 +16,6 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.keycloak.saml.common.util.SecurityActions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -26,6 +25,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.keycloak.saml.common.util.SecurityActions;
 
 import org.jboss.logging.Logger;
 import org.w3c.dom.ls.LSInput;

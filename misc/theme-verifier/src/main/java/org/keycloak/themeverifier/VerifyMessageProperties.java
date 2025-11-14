@@ -16,9 +16,6 @@
  */
 package org.keycloak.themeverifier;
 
-import org.apache.maven.plugin.MojoExecutionException;
-import org.owasp.html.PolicyFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,6 +30,9 @@ import java.util.Objects;
 import java.util.PropertyResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.maven.plugin.MojoExecutionException;
+import org.owasp.html.PolicyFactory;
 
 public class VerifyMessageProperties {
 

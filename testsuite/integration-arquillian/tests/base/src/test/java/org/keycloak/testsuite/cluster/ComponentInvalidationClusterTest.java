@@ -1,7 +1,11 @@
 package org.keycloak.testsuite.cluster;
 
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Before;
+import java.util.Arrays;
+import java.util.Map;
+
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -11,12 +15,10 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProviderFactoryImpl;
 
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
-
-import java.util.Map;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Before;
 import org.junit.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.hasEntry;

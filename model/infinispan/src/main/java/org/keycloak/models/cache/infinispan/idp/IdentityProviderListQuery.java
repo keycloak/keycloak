@@ -17,13 +17,13 @@
 
 package org.keycloak.models.cache.infinispan.idp;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-import org.keycloak.models.cache.infinispan.entities.InRealm;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
+import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class IdentityProviderListQuery extends AbstractRevisioned implements InRealm {
     private final String realmId;

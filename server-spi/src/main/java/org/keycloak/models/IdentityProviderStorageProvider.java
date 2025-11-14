@@ -23,8 +23,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.keycloak.util.Booleans;
 import org.keycloak.provider.Provider;
+import org.keycloak.util.Booleans;
 
 /**
  * The {@link IdentityProviderStorageProvider} is concerned with the storage/retrieval of the configured identity providers

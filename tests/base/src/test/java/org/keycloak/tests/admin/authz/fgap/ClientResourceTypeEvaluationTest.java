@@ -17,18 +17,6 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.fail;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES_COMPOSITE;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
-
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -38,8 +26,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -67,6 +54,22 @@ import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedClient;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES_COMPOSITE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.fail;
 
 @KeycloakIntegrationTest
 public class ClientResourceTypeEvaluationTest extends AbstractPermissionTest {

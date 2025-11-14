@@ -16,6 +16,13 @@
  */
 package org.keycloak.models.delegate;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -23,13 +30,6 @@ import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicMarkableReference;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  *

@@ -16,7 +16,13 @@
  */
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.interfaces.EdECPublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+import java.util.List;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -27,12 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.interfaces.EdECPublicKey;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>

@@ -1,10 +1,10 @@
 package org.keycloak.models;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.theme.Theme;
-
 import java.io.IOException;
 import java.util.Set;
+
+import org.keycloak.provider.Provider;
+import org.keycloak.theme.Theme;
 
 public interface ThemeManager extends Provider {
 

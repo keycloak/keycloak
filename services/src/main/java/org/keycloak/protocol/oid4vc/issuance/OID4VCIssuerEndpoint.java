@@ -17,97 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.jose.JOSEHeader;
-import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEException;
-import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
-import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
-import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
-import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
-import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
-import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.services.ErrorResponseException;
-import org.keycloak.protocol.oid4vc.model.ErrorResponse;
-import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.NonceResponse;
-import org.keycloak.protocol.oid4vc.model.OfferUriType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.ProofType;
-import org.keycloak.protocol.oid4vc.model.Proofs;
-import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
-import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.saml.processing.api.util.DeflateUtil;
-import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.cors.Cors;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.DPoPUtil;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.MediaType;
-import org.keycloak.representations.dpop.DPoP;
-import org.keycloak.common.VerificationException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -122,6 +31,104 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
+import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
+import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import org.keycloak.protocol.oid4vc.model.OfferUriType;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.dpop.DPoP;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
+import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPost;
+import org.jboss.logging.Logger;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -172,7 +179,7 @@ public class OID4VCIssuerEndpoint {
     private final int preAuthorizedCodeLifeSpan;
 
     // constant for the OID4VCI enabled attribute key
-    private static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
 
     /**
      * Credential builders are responsible for initiating the production of
@@ -298,22 +305,29 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Handles CORS preflight requests for credential offer URI endpoint.
+     * Preflight requests return CORS headers for all origins (standard CORS behavior).
+     * The actual request will validate origins against client configuration.
+     */
+    @OPTIONS
+    @Path("credential-offer-uri")
+    public Response getCredentialOfferURIPreflight() {
+        configureCors(true);
+        cors.preflight();
+        return cors.add(Response.ok());
+    }
+
+    /**
      * Provides the URI to the OID4VCI compliant credentials offer
      */
     @GET
     @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
     @Path("credential-offer-uri")
     public Response getCredentialOfferURI(@QueryParam("credential_configuration_id") String vcId, @QueryParam("type") @DefaultValue("uri") OfferUriType type, @QueryParam("width") @DefaultValue("200") int width, @QueryParam("height") @DefaultValue("200") int height) {
+        configureCors(true);
 
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
-
-        // Initialize CORS configuration and validate if the client is enabled for OID4VCI
-        cors = Cors.builder()
-                .auth()
-                .allowedMethods("GET")
-                .auth()
-                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
-
+        cors.allowedOrigins(session, clientSession.getClient());
         checkClientEnabled();
 
         Map<String, SupportedCredentialConfiguration> credentialsMap = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
@@ -321,7 +335,11 @@ public class OID4VCIssuerEndpoint {
         if (!credentialsMap.containsKey(vcId)) {
             LOGGER.debugf("No credential with id %s exists.", vcId);
             LOGGER.debugf("Supported credentials are %s.", credentialsMap);
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.toString(),
+                    "Invalid credential configuration ID",
+                    Response.Status.BAD_REQUEST);
         }
         SupportedCredentialConfiguration supportedCredentialConfiguration = credentialsMap.get(vcId);
 
@@ -350,14 +368,17 @@ public class OID4VCIssuerEndpoint {
             LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
         } catch (JsonProcessingException e) {
             LOGGER.errorf("Could not convert the offer POJO to JSON: %s", e.getMessage());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_CREDENTIAL_REQUEST.toString(),
+                    "Failed to process credential offer",
+                    Response.Status.BAD_REQUEST);
         }
 
         return switch (type) {
             case URI -> getOfferUriAsUri(sessionCode);
             case QR_CODE -> getOfferUriAsQr(sessionCode, width, height);
         };
-
     }
 
     private Response getOfferUriAsUri(String sessionCode) {
@@ -365,10 +386,9 @@ public class OID4VCIssuerEndpoint {
                 .setIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/" + OID4VCLoginProtocolFactory.PROTOCOL_ID + "/" + CREDENTIAL_OFFER_PATH)
                 .setNonce(sessionCode);
 
-        return Response.ok()
+        return cors.add(Response.ok()
                 .type(MediaType.APPLICATION_JSON)
-                .entity(credentialOfferURI)
-                .build();
+                .entity(credentialOfferURI));
     }
 
     private Response getOfferUriAsQr(String sessionCode, int width, int height) {
@@ -378,11 +398,35 @@ public class OID4VCIssuerEndpoint {
             BitMatrix bitMatrix = qrCodeWriter.encode("openid-credential-offer://?credential_offer_uri=" + encodedOfferUri, BarcodeFormat.QR_CODE, width, height);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
-            return Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()).build();
+            return cors.add(Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(bos.toByteArray()));
         } catch (WriterException | IOException e) {
             LOGGER.warnf("Was not able to create a qr code of dimension %s:%s.", width, height, e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Was not able to generate qr.").build();
         }
+    }
+
+    /**
+     * Configures basic CORS for error responses before authentication
+     */
+    private void configureCors(boolean authenticated) {
+        cors = Cors.builder()
+                .allowedMethods(HttpGet.METHOD_NAME, HttpOptions.METHOD_NAME)
+                .allowAllOrigins()
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS, HttpHeaders.CONTENT_TYPE);
+        if (authenticated) {
+            cors = cors.auth();
+        }
+    }
+
+    /**
+     * Handles CORS preflight requests for credential offer endpoint
+     */
+    @OPTIONS
+    @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
+    public Response getCredentialOfferPreflight(@PathParam("sessionCode") String sessionCode) {
+        configureCors(false);
+        cors.preflight();
+        return cors.add(Response.ok());
     }
 
     /**
@@ -392,6 +436,8 @@ public class OID4VCIssuerEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path(CREDENTIAL_OFFER_PATH + "{sessionCode}")
     public Response getCredentialOffer(@PathParam("sessionCode") String sessionCode) {
+        configureCors(false);
+
         if (sessionCode == null) {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
         }
@@ -399,9 +445,8 @@ public class OID4VCIssuerEndpoint {
         CredentialsOffer credentialsOffer = getOfferFromSessionCode(sessionCode);
         LOGGER.debugf("Responding with offer: %s", credentialsOffer);
 
-        return Response.ok()
-                .entity(credentialsOffer)
-                .build();
+        return cors.add(Response.ok()
+                .entity(credentialsOffer));
     }
 
     private void checkScope(CredentialScopeModel requestedCredential) {
@@ -445,7 +490,7 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        cors = Cors.builder().auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+        cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
 
@@ -657,7 +702,9 @@ public class OID4VCIssuerEndpoint {
         }
 
         try {
-            return JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+            CredentialRequest credentialRequest = JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+            normalizeProofFields(credentialRequest);
+            return credentialRequest;
         } catch (JsonProcessingException e) {
             String errorMessage = "Failed to parse JSON request: " + e.getMessage();
             LOGGER.debug(errorMessage);
@@ -737,7 +784,9 @@ public class OID4VCIssuerEndpoint {
 
         // Parse decrypted content to CredentialRequest
         try {
-            return JsonSerialization.mapper.readValue(content, CredentialRequest.class);
+            CredentialRequest credentialRequest = JsonSerialization.mapper.readValue(content, CredentialRequest.class);
+            normalizeProofFields(credentialRequest);
+            return credentialRequest;
         } catch (JsonProcessingException e) {
             throw new JWEException("Failed to parse decrypted JWE payload: " + e.getMessage());
         }
@@ -762,6 +811,36 @@ public class OID4VCIssuerEndpoint {
             }
         }
         throw new JWEException("Unsupported compression algorithm");
+    }
+
+    /**
+     * Normalizes legacy 'proof' field into 'proofs' and validates mutual exclusivity.
+     * <p>
+     * If a single 'proof' is present and 'proofs' is absent, converts it into a
+     * single-element JWT list under 'proofs' for backward compatibility.
+     * If both are present, throws a BadRequestException.
+     */
+    private void normalizeProofFields(CredentialRequest credentialRequest) {
+        if (credentialRequest == null) {
+            return;
+        }
+
+        if (credentialRequest.getProof() != null && credentialRequest.getProofs() != null) {
+            String message = "Both 'proof' and 'proofs' must not be present at the same time";
+            LOGGER.debug(message);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, message));
+        }
+
+        if (credentialRequest.getProof() != null) {
+            LOGGER.debugf("Converting single 'proof' field to 'proofs' array for backward compatibility");
+            JwtProof singleProof = credentialRequest.getProof();
+            Proofs proofsArray = new Proofs();
+            if (singleProof.getJwt() != null) {
+                proofsArray.setJwt(List.of(singleProof.getJwt()));
+            }
+            credentialRequest.setProofs(proofsArray);
+            credentialRequest.setProof(null);
+        }
     }
 
     private String selectKeyManagementAlg(CredentialResponseEncryptionMetadata metadata, JWK jwk) {
@@ -953,7 +1032,11 @@ public class OID4VCIssuerEndpoint {
                 getAuthenticatedClientSessionByClient(
                         authResult.client().getId());
         if (clientSession == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_TOKEN.toString(),
+                    "Invalid or missing token",
+                    Response.Status.BAD_REQUEST);
         }
         return clientSession;
     }
@@ -961,7 +1044,11 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult getAuthResult() {
         AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_TOKEN.toString(),
+                    "Invalid or missing token",
+                    Response.Status.BAD_REQUEST);
         }
 
         // Validate DPoP nonce if present in the DPoP proof
@@ -982,7 +1069,11 @@ public class OID4VCIssuerEndpoint {
                     );
                 } catch (VerificationException e) {
                     LOGGER.debugf("DPoP nonce validation failed: %s", e.getMessage());
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_TOKEN));
+                    throw new CorsErrorResponseException(
+                            cors,
+                            ErrorType.INVALID_TOKEN.toString(),
+                            "Invalid or missing token",
+                            Response.Status.BAD_REQUEST);
                 }
             }
         }

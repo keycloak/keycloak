@@ -17,15 +17,15 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>

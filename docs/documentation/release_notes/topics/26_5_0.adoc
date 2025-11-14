@@ -29,3 +29,13 @@ It is mainly useful for providing tokens in the request.
 You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
 
 For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
+
+= Enable/disable features via a single option
+
+You can now enable or disable individual features using the `feature-<name>` option (like `feature-spiffe=enabled`).
+
+This provides a more fine-grained way to manage features and eliminates the need to maintain long lists of enabled or disabled features.
+
+The `feature-<name>` option takes precedence over both `features` and `features-disabled`.
+
+For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.

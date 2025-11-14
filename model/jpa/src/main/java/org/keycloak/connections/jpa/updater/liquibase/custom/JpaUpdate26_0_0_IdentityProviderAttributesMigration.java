@@ -19,12 +19,13 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OrganizationModel;
+
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.DeleteStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OrganizationModel;
 
 /**
  * Custom SQL change to migrate the organization ID and the hide on login page config from the IDP config table to the

@@ -34,18 +34,18 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
-import org.keycloak.models.IdentityProviderQuery;
+
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.IdentityProviderShowInAccountConsole;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -64,6 +64,8 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.Theme;
 import org.keycloak.utils.BrokerUtil;
 import org.keycloak.utils.StreamsUtil;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
 

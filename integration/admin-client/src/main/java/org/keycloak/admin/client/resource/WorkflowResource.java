@@ -1,7 +1,5 @@
 package org.keycloak.admin.client.resource;
 
-import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -12,7 +10,10 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public interface WorkflowResource {
 
@@ -27,14 +28,19 @@ public interface WorkflowResource {
     @Produces(APPLICATION_JSON)
     WorkflowRepresentation toRepresentation();
 
-    @Path("bind/{type}/{resourceId}")
+    @Path("activate/{type}/{resourceId}")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void bind(@PathParam("type") String type, @PathParam("resourceId") String resourceId);
+    void activate(@PathParam("type") String type, @PathParam("resourceId") String resourceId);
 
-    @Path("bind/{type}/{resourceId}")
+    @Path("activate/{type}/{resourceId}")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    void bind(@PathParam("type") String type, @PathParam("resourceId") String resourceId, Long milliseconds);
+    void activate(@PathParam("type") String type, @PathParam("resourceId") String resourceId, String notBefore);
+
+    @Path("deactivate/{type}/{resourceId}")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    void deactivate(@PathParam("type") String type, @PathParam("resourceId") String resourceId);
 
 }

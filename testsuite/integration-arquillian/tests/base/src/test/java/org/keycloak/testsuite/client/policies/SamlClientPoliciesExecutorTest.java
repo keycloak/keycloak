@@ -16,20 +16,17 @@
  */
 package org.keycloak.testsuite.client.policies;
 
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
-import org.apache.http.util.EntityUtils;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
+
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.Constants;
@@ -58,6 +55,12 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *

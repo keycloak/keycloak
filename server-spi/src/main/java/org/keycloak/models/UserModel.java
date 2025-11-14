@@ -17,14 +17,14 @@
 
 package org.keycloak.models;
 
-import static org.keycloak.utils.StringUtil.isNotBlank;
-
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.ProviderEvent;
+
+import static org.keycloak.utils.StringUtil.isNotBlank;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

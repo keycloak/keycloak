@@ -19,12 +19,13 @@
 
 package org.keycloak.protocol.oidc.tokenexchange;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.actiontoken.TokenUtils;
@@ -229,7 +230,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
         try {
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession,
-                    !OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)); // create transient session if needed except for refresh
+                    context.getRestrictedScopes(), !OAuth2Constants.REFRESH_TOKEN_TYPE.equals(requestedTokenType)); // create transient session if needed except for refresh
 
             if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
                     && clientSessionCtx.getClientScopesStream().filter(s -> OAuth2Constants.OFFLINE_ACCESS.equals(s.getName())).findAny().isPresent()) {

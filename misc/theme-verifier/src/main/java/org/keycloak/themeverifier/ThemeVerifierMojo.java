@@ -16,6 +16,12 @@
  */
 package org.keycloak.themeverifier;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.maven.model.Resource;
@@ -26,12 +32,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Mojo(name = "verify-theme", defaultPhase = LifecyclePhase.INSTALL, threadSafe = true)
 public class ThemeVerifierMojo extends AbstractMojo {

@@ -16,11 +16,12 @@
  */
 package org.keycloak.testsuite.util.saml;
 
+import java.net.URI;
+import java.util.function.Supplier;
+
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.net.URI;
-import java.util.function.Supplier;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;

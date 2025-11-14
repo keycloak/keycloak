@@ -17,14 +17,14 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @Command(name = Start.NAME,
         header = "Start the server.",

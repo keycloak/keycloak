@@ -17,8 +17,14 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.mappers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper;
@@ -31,18 +37,14 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCTest;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
 public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 

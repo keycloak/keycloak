@@ -17,8 +17,8 @@
 
 package org.keycloak.theme;
 
-import java.util.regex.Pattern;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;

@@ -16,9 +16,6 @@
  */
 package org.keycloak.authorization.admin;
 
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
-import static org.keycloak.models.utils.RepresentationToModel.toModel;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,16 +42,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -78,6 +68,17 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.resteasy.reactive.NoCache;
+
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

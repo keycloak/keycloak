@@ -20,6 +20,7 @@ package org.keycloak.models.utils;
 import java.nio.ByteBuffer;
 import java.util.Base64;
 import java.util.UUID;
+
 import org.junit.Assert;
 import org.junit.Test;
 

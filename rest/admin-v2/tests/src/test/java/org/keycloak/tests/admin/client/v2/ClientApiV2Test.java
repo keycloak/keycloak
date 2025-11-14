@@ -17,18 +17,9 @@
 
 package org.keycloak.tests.admin.client.v2;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import org.apache.http.HttpMessage;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
@@ -44,8 +35,20 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.HttpMessage;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -123,6 +126,51 @@ public class ClientApiV2Test {
 
             ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
             assertEquals("I'm also a description", client.getDescription());
+        }
+    }
+
+    @Test
+    public void putFailsWithDifferentClientId() throws Exception {
+        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("other");
+
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void putCreateOrUpdates() throws Exception {
+        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/other");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("other");
+        rep.setDescription("I'm new");
+
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertEquals("I'm new", client.getDescription());
+        }
+
+        rep.setDescription("I'm updated");
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
+            assertEquals("I'm updated", client.getDescription());
         }
     }
 

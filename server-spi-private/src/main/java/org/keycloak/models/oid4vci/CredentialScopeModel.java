@@ -18,18 +18,18 @@
 
 package org.keycloak.models.oid4vci;
 
-import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 
 import static org.keycloak.constants.Oid4VciConstants.OID4VC_PROTOCOL;
 

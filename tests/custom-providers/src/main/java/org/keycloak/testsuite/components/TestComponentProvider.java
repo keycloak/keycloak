@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.components;
 
-import org.keycloak.provider.Provider;
-
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

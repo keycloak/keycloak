@@ -28,12 +28,12 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.quarkus.runtime.LaunchMode;
-import io.smallrye.config.SmallRyeConfig;
-
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.NetworkUtils;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+
+import io.quarkus.runtime.LaunchMode;
+import io.smallrye.config.SmallRyeConfig;
 
 public final class Environment {
 
@@ -178,8 +178,8 @@ public final class Environment {
         return Boolean.getBoolean(KC_CONFIG_REBUILD_CHECK);
     }
 
-    public static void setRebuildCheck() {
-        System.setProperty(KC_CONFIG_REBUILD_CHECK, "true");
+    public static void setRebuildCheck(boolean check) {
+        System.setProperty(KC_CONFIG_REBUILD_CHECK, Boolean.toString(check));
     }
 
     public static boolean isRebuilt() {
@@ -201,7 +201,7 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver());
+            profile = Profile.configure(new QuarkusSingleProfileConfigResolver(), new QuarkusProfileConfigResolver());
         }
 
         return profile;

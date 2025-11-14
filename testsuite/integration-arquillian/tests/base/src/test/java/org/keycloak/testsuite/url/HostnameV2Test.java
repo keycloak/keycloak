@@ -17,13 +17,9 @@
 
 package org.keycloak.testsuite.url;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -32,15 +28,21 @@ import org.keycloak.testsuite.arquillian.containers.RemoteContainer;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 
 /**
  * This is testing just the V2 implementation of Hostname SPI. It is NOT testing if the Hostname SPI as such is used correctly.
