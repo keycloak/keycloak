@@ -51,7 +51,7 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.commons.lang3.RandomStringUtils;

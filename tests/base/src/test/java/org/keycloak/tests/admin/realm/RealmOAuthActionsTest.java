@@ -30,8 +30,9 @@ import org.keycloak.testframework.oauth.annotations.InjectTestApp;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -81,7 +82,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
         assertEquals(time, adminPushNotBefore.getNotBefore());
 
         managedRealm.admin().clients().get("test-app-new").remove();
-        managedRealm.admin().users().get(ApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
+        managedRealm.admin().users().get(AdminApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
     }
 
     @Test
@@ -107,7 +108,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
 
         managedRealm.admin().clients().get("test-saml-app").remove();
         managedRealm.admin().clients().get("test-app-new").remove();
-        managedRealm.admin().users().get(ApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
+        managedRealm.admin().users().get(AdminApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
     }
 
     @Test
@@ -138,7 +139,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
         assertNotNull(testApp.kcAdmin().getAdminLogoutAction());
 
         managedRealm.admin().clients().get("test-app-new").remove();
-        managedRealm.admin().users().get(ApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
+        managedRealm.admin().users().get(AdminApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
     }
 
     @Test
@@ -167,7 +168,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
         assertEquals("Session not active", tokenResponse.getErrorDescription());
 
         managedRealm.admin().clients().get("test-app-new").remove();
-        managedRealm.admin().users().get(ApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
+        managedRealm.admin().users().get(AdminApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
     }
 
     @Test
@@ -194,7 +195,7 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
 
         assertEquals(0, sessionStats.size());
 
-        managedRealm.admin().users().get(ApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
+        managedRealm.admin().users().get(AdminApiUtil.findUserByUsername(managedRealm.admin(), "testuser").getId()).remove();
     }
 
     private void setupTestAppAndUser() {

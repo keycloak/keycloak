@@ -38,8 +38,9 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -180,7 +181,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     public void test08EffectiveMappers() {
-        ClientScopeResource rolesScope = ApiUtil.findClientScopeByName(managedRealm.admin(), "roles");
+        ClientScopeResource rolesScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "roles");
         Assertions.assertNotNull(rolesScope);
         List<ProtocolMapperRepresentation> mappers = rolesScope.getProtocolMappers().getMappers();
         ProtocolMapperRepresentation audienceMapper = mappers.stream()

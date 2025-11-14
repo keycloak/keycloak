@@ -38,7 +38,7 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
             if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
                 throw new IllegalStateException("Client already exist with client id: " + clientRepresentation.getClientId());
             }
-            clientRepresentation.setId(ApiUtil.handleCreatedResponse(response));
+            clientRepresentation.setId(ApiUtil.getCreatedId(response));
         } else {
             List<ClientRepresentation> clients = realm.admin().clients().findByClientId(attachTo);
             if (clients.isEmpty()) {

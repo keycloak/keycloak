@@ -33,7 +33,7 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
             if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
                 throw new IllegalStateException("User already exist with username: " + userRepresentation.getUsername());
             }
-            String uuid = ApiUtil.handleCreatedResponse(response);
+            String uuid = ApiUtil.getCreatedId(response);
 
             instanceContext.addNote(USER_UUID_KEY, uuid);
 

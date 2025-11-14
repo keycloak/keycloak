@@ -72,7 +72,7 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         clientScope.setProtocol("openid-connect");
         try (Response response = realm.admin().clientScopes().create(clientScope)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            clientScope.setId(ApiUtil.handleCreatedResponse(response));
+            clientScope.setId(ApiUtil.getCreatedId(response));
             realm.cleanup().add(r -> r.clientScopes().get(clientScope.getId()).remove());
         }
 

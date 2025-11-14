@@ -70,7 +70,7 @@ import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import static org.keycloak.tests.utils.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.findClientByClientId;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

@@ -43,7 +43,7 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
         String clientId = testAppClient.getClientId();
         String clientSecret = testAppClient.getSecret();
 
-        ApiUtil.handleCreatedResponse(realm.admin().clients().create(testAppClient));
+        ApiUtil.getCreatedId(realm.admin().clients().create(testAppClient));
 
         OAuthClient oAuthClient = new OAuthClient(keycloakUrls.getBase(), httpClient, webDriver);
         oAuthClient.config().realm(realm.getName()).client(clientId, clientSecret).redirectUri(redirectUri);

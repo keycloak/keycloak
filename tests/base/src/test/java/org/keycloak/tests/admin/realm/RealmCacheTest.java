@@ -12,8 +12,8 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 
 import org.infinispan.Cache;
 import org.junit.jupiter.api.Test;

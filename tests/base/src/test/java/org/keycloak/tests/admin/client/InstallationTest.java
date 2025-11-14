@@ -174,7 +174,7 @@ public class InstallationTest {
         clientScopeRepresentation.setProtocolMappers(List.of(mapper));
 
         Response response = realm.admin().clientScopes().create(clientScopeRepresentation);
-        String id = ApiUtil.handleCreatedResponse(response);
+        String id = ApiUtil.getCreatedId(response);
         response.close();
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeResourcePath(id), ResourceType.CLIENT_SCOPE);

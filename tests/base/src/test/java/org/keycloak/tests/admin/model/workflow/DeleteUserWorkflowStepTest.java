@@ -49,8 +49,8 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.model.workflow.DeleteUserWorkflowStepTest.DeleteUserWorkflowServerConf;
-import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 

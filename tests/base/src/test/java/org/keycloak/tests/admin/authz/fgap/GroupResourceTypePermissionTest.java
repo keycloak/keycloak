@@ -88,14 +88,14 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         topGroup.setName("topGroup");
         try (Response response = realm.admin().groups().add(topGroup)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            topGroup.setId(ApiUtil.handleCreatedResponse(response));
+            topGroup.setId(ApiUtil.getCreatedId(response));
             realm.cleanup().add(r -> r.groups().group(topGroup.getId()).remove());
         }
         GroupRepresentation topGroup1 = new GroupRepresentation();
         topGroup1.setName("topGroup1");
         try (Response response = realm.admin().groups().add(topGroup1)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            topGroup1.setId(ApiUtil.handleCreatedResponse(response));
+            topGroup1.setId(ApiUtil.getCreatedId(response));
         }
 
         //create group policies

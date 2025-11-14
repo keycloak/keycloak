@@ -82,7 +82,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         topGroup.setName(groupName);
         try (Response response = realm.admin().groups().add(topGroup)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            topGroup.setId(ApiUtil.handleCreatedResponse(response));
+            topGroup.setId(ApiUtil.getCreatedId(response));
             realm.cleanup().add(r -> r.groups().group(topGroup.getId()).remove());
         }
         realm.admin().users().get(userAlice.getId()).joinGroup(topGroup.getId());
@@ -163,7 +163,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         // creating group requires manage scope
         GroupRepresentation group = new GroupRepresentation();
         group.setName("testGroup");
-        String testGroupId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).groups().add(group));
+        String testGroupId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).groups().add(group));
         group.setId(testGroupId);
 
         // it should be possible to update the group due to fallback to all-groups permission
@@ -195,7 +195,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         try (Response response = realm.admin().groups().add(myGroup)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            myGroup.setId(ApiUtil.handleCreatedResponse(response));
+            myGroup.setId(ApiUtil.getCreatedId(response));
             realm.cleanup().add(r -> r.groups().group(myGroup.getId()).remove());
         }
 
@@ -261,7 +261,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         try (Response response = realm.admin().groups().add(myGroup)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            myGroup.setId(ApiUtil.handleCreatedResponse(response));
+            myGroup.setId(ApiUtil.getCreatedId(response));
             realm.cleanup().add(r -> r.groups().group(myGroup.getId()).remove());
         }
 
@@ -300,7 +300,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         
         //create new user
-        String bobId = ApiUtil.handleCreatedResponse(realm.admin().users().create(UserConfigBuilder.create().username("bob").build()));
+        String bobId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("bob").build()));
         realm.cleanup().add(r -> r.users().delete(bobId));
 
         //check myadmin can manage membership
@@ -322,7 +322,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
             assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
         }
 
-        String bobId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").groups("/" + groupName).build()));
+        String bobId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").groups("/" + groupName).build()));
         realm.cleanup().add(r -> r.users().delete(bobId));
     }
 
@@ -410,7 +410,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         GroupRepresentation subGroup = new GroupRepresentation();
         subGroup.setName("testSubGroup");
-        String testGroupId = ApiUtil.handleCreatedResponse(realm.admin().groups().add(subGroup));
+        String testGroupId = ApiUtil.getCreatedId(realm.admin().groups().add(subGroup));
         subGroup.setId(testGroupId);
         realm.admin().groups().group(topGroup.getId()).subGroup(subGroup).close();
         realm.admin().users().get(userJdoe.getId()).joinGroup(subGroup.getId());

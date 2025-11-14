@@ -434,7 +434,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
         // create users
         for (int i = 0; i < 4; i++) {
-            String userId = ApiUtil.handleCreatedResponse(realm.admin().users().create(UserConfigBuilder.create()
+            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create()
                     .username("user" + i)
                     .password("password")
                     .firstName("user")
@@ -503,7 +503,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
         // assign role to users
         for (String username : List.of("user_x", "user_y", "user_z")) {
-            String userId = ApiUtil.handleCreatedResponse(realm.admin().users().create(UserConfigBuilder.create()
+            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create()
                     .username(username)
                     .password("password")
                     .firstName("user")
