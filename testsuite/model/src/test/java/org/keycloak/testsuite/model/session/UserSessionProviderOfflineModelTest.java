@@ -326,14 +326,14 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 if (!MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan()) {
                     // This does not work with persistent user sessions because we currently have two transactions and the one that creates the offline user sessions is not committing the changes
                     // try to load user session from persister
-                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "").count());
                 }
             });
 
             if (MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan()) {
                 inComittedTransaction(session -> {
                     persister = session.getProvider(UserSessionPersisterProvider.class);
-                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "").count());
                 });
             }
 
