@@ -550,7 +550,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     public void testNoSessions() {
         inComittedTransaction(session -> {
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, "00000000-0000-0000-0000-000000000000");
+            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, "");
             Assert.assertEquals(0, sessions.count());
         });
     }
