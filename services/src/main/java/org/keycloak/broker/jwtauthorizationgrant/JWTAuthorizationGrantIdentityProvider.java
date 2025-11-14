@@ -1,6 +1,9 @@
 package org.keycloak.broker.jwtauthorizationgrant;
 
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
@@ -16,9 +19,7 @@ import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.services.Urls;
 import org.keycloak.utils.StringUtil;
 
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import org.jboss.logging.Logger;
 
 public class JWTAuthorizationGrantIdentityProvider implements JWTAuthorizationGrantProvider<JWTAuthorizationGrantIdentityProviderConfig> {
     private static final Logger LOGGER = Logger.getLogger(JWTAuthorizationGrantIdentityProvider.class);
@@ -45,7 +46,7 @@ public class JWTAuthorizationGrantIdentityProvider implements JWTAuthorizationGr
 
     @Override
     public int getAllowedClockSkew() {
-        return config.getJWTAuthorizationGrantAllowedClockSkewAllowedClockSkew();
+        return config.getJWTAuthorizationGrantAllowedClockSkew();
     }
 
     @Override

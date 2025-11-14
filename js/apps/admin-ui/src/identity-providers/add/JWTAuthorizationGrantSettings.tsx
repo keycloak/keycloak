@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { TextControl, NumberControl } from "@keycloak/keycloak-ui-shared";
 import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
 import { Divider } from "@patternfly/react-core";
 export default function JWTAuthorizationGrantSettings() {
@@ -30,8 +30,14 @@ export default function JWTAuthorizationGrantSettings() {
           required: t("required"),
         }}
       />
+      <JWTAuthorizationGrantAssertionSettings />
+      <NumberControl
+        name="config.jwtAuthorizationGrantAllowedClockSkew"
+        label={t("allowedClockSkew")}
+        labelIcon={t("allowedClockSkewHelp")}
+        controller={{ defaultValue: 0, rules: { min: 0, max: 2147483 } }}
+      />
       <Divider />
-      <JWTAuthorizationGrantAssertionSettings alwaysEnabled={true} />
     </>
   );
 }

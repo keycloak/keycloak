@@ -17,7 +17,6 @@
 package org.keycloak.broker.oidc;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1096,7 +1095,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public boolean isAssertionReuseAllowed() {
-        return new JWTAuthorizationGrantIdentityProvider(session, getConfig()).isAssertionReuseAllowed();
+        return getConfig().getJWTAuthorizationGrantAssertionReuseAllowed();
     }
 
     @Override
@@ -1106,11 +1105,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public int getMaxAllowedExpiration() {
-        return new JWTAuthorizationGrantIdentityProvider(session, getConfig()).getMaxAllowedExpiration();
+        return getConfig().getJWTAuthorizationGrantMaxAllowedAssertionExpiration();
     }
 
     @Override
     public String getAssertionSignatureAlg() {
-        return new JWTAuthorizationGrantIdentityProvider(session, getConfig()).getAssertionSignatureAlg();
+        return getConfig().getJWTAuthorizationGrantAssertionSignatureAlg();
     }
 }

@@ -22,11 +22,7 @@ public class JWTAuthorizationGrantJWKSEndpointLoader implements PublicKeyLoader 
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
         JSONWebKeySet jwks = SimpleHttp.create(session).doGet(jwksUrl).asJson(JSONWebKeySet.class);
-        PublicKeysWrapper keysWrapper = JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.JWT_SVID, true);
-        if (keysWrapper.getKeys().isEmpty()) {
-            keysWrapper = JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
-        }
-        return keysWrapper;
+        return JWKSUtils.getKeyWrappersForUse(jwks, JWK.Use.SIG, true);
     }
 
 }

@@ -21,6 +21,7 @@ import {
   PageSection,
   Tab,
   TabTitleText,
+  Text,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useMemo, useState } from "react";
@@ -74,6 +75,7 @@ import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
 import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
 import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -264,7 +266,7 @@ export default function DetailSettings() {
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, getValues, reset } = form;
+  const { handleSubmit, getValues, reset, control } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
@@ -410,6 +412,10 @@ export default function DetailSettings() {
       }
     },
   });
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
 
   if (!provider) {
     return <KeycloakSpinner />;
@@ -506,13 +512,27 @@ export default function DetailSettings() {
       title: t("authorizationGrantSettings"),
       isHidden: !isJWTAuthorizationGrantSupported,
       panel: (
-        <Form
-          isHorizontal
-          className="pf-v5-u-py-lg"
-          onSubmit={handleSubmit(save)}
-        >
-          <JWTAuthorizationGrantAssertionSettings />
-        </Form>
+        <>
+          <Text className="pf-v5-u-pb-lg">
+            {t("authorizationGrantSettingsHelp")}
+          </Text>
+          <Form
+            isHorizontal
+            className="pf-v5-u-py-lg"
+            onSubmit={handleSubmit(save)}
+          >
+            <DefaultSwitchControl
+              name="config.jwtAuthorizationGrantEnabled"
+              label={t("jwtAuthorizationGrantIdpEnabled")}
+              labelIcon={t("jwtAuthorizationGrantIdpEnabledHelp")}
+              stringify
+            />
+
+            {jwtAuthorizationGrantEnabled === "true" && (
+              <JWTAuthorizationGrantAssertionSettings />
+            )}
+          </Form>
+        </>
       ),
     },
     {

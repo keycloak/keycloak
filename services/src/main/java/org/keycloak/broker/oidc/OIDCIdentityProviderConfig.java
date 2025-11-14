@@ -16,10 +16,7 @@
  */
 package org.keycloak.broker.oidc;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
-
 import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
-import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
@@ -191,31 +188,6 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
 
     public boolean isSupportsClientAssertionReuse() {
         return Boolean.parseBoolean(getConfig().get(SUPPORTS_CLIENT_ASSERTION_REUSE));
-    }
-
-    @Override
-    public boolean getJWTAuthorizationGrantEnabled() {
-        return new JWTAuthorizationGrantIdentityProviderConfig(getConfig()).getJWTAuthorizationGrantEnabled();
-    }
-
-    @Override
-    public boolean getJWTAuthorizationGrantAssertionReuseAllowed() {
-        return new JWTAuthorizationGrantIdentityProviderConfig(getConfig()).getJWTAuthorizationGrantAssertionReuseAllowed();
-    }
-
-    @Override
-    public int getJWTAuthorizationGrantMaxAllowedAssertionExpiration() {
-        return new JWTAuthorizationGrantIdentityProviderConfig(getConfig()).getJWTAuthorizationGrantMaxAllowedAssertionExpiration();
-    }
-
-    @Override
-    public String getJWTAuthorizationGrantAssertionSignatureAlg() {
-        return new JWTAuthorizationGrantIdentityProviderConfig(getConfig()).getJWTAuthorizationGrantAssertionSignatureAlg();
-    }
-
-    @Override
-    public int getJWTAuthorizationGrantAllowedClockSkewAllowedClockSkew() {
-        return new JWTAuthorizationGrantIdentityProviderConfig(getConfig()).getJWTAuthorizationGrantAllowedClockSkewAllowedClockSkew();
     }
 
     @Override

@@ -1,6 +1,10 @@
 package org.keycloak.broker.jwtauthorizationgrant;
 
 
+import java.util.Map;
+
+import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.JWKS_URL;
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ISSUER;
 
 public interface JWTAuthorizationGrantConfig {
 
@@ -14,19 +18,44 @@ public interface JWTAuthorizationGrantConfig {
 
     public static final String JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW = "jwtAuthorizationGrantAllowedClockSkew";
 
-    boolean getJWTAuthorizationGrantEnabled();
+    Map<String, String> getConfig();
 
-    boolean getJWTAuthorizationGrantAssertionReuseAllowed();
+    default boolean getJWTAuthorizationGrantEnabled() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_ENABLED, "false"));
+    }
 
-    int getJWTAuthorizationGrantMaxAllowedAssertionExpiration();
+    default boolean getJWTAuthorizationGrantAssertionReuseAllowed() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "false"));
+    }
 
-    String getJWTAuthorizationGrantAssertionSignatureAlg();
+    default int getJWTAuthorizationGrantMaxAllowedAssertionExpiration() {
+        return Integer.parseInt(getConfig().getOrDefault(JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "300"));
+    }
 
-    int getJWTAuthorizationGrantAllowedClockSkewAllowedClockSkew();
+    default String getJWTAuthorizationGrantAssertionSignatureAlg() {
+        return getConfig().get(JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG);
+    }
 
-    String getIssuer();
+    default int getJWTAuthorizationGrantAllowedClockSkew() {
+        String allowedClockSkew = getConfig().get(JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW);
+        if (allowedClockSkew == null || allowedClockSkew.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(getConfig().get(JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW));
+        } catch (NumberFormatException e) {
+            // ignore it and use default
+            return 0;
+        }
+    }
 
-    String getJwksUrl();
+    default String getIssuer() {
+        return getConfig().get(ISSUER);
+    }
+
+    default String getJwksUrl() {
+        return getConfig().get(JWKS_URL);
+    }
 
     String getInternalId();
 }
