@@ -47,7 +47,6 @@
     <properties>
         <central.publishing.plugin.version>0.7.0</central.publishing.plugin.version>
         <nexus3.staging.plugin.version>1.0.7</nexus3.staging.plugin.version>
-        <spotless-plugin.version>3.0.0</spotless-plugin.version>
     </properties>
 
     <distributionManagement>
@@ -81,7 +80,16 @@
                 <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
-                    <version>${spotless-plugin.version}</version>
+                    <version>3.0.0</version>
+                    <configuration>
+                        <java>
+                            <removeUnusedImports />
+                            <forbidWildcardImports />
+                            <importOrder>
+                                <order>java|javax,jakarta,org.keycloak,,\#java|javax,\#jakarta,\#org.keycloak,\#</order>
+                            </importOrder>
+                        </java>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
