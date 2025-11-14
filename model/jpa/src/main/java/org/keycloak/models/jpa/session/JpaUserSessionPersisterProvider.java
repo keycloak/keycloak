@@ -95,6 +95,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         entity.setLastSessionRefresh(model.getLastSessionRefresh());
         entity.setData(model.getData());
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
+        entity.setRememberMe(userSession.isRememberMe());
         em.persist(entity);
     }
 
@@ -590,6 +591,16 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             @Override
             public void setBrokerSessionId(String brokerSessionId) {
                 entity.setBrokerSessionId(brokerSessionId);
+            }
+
+            @Override
+            public boolean isRememberMe() {
+                return entity.isRememberMe();
+            }
+
+            @Override
+            public void setRememberMe(boolean rememberMe) {
+                entity.setRememberMe(rememberMe);
             }
         };
 

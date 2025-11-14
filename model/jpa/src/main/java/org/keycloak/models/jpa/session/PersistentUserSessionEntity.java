@@ -104,6 +104,9 @@ public class PersistentUserSessionEntity {
     @Column(name="DATA")
     protected String data;
 
+    @Column(name="REMEMBER_ME")
+    protected Boolean rememberMe;
+
     public String getUserSessionId() {
         return userSessionId;
     }
@@ -167,6 +170,14 @@ public class PersistentUserSessionEntity {
 
     public void setData(String data) {
         this.data = data;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe == Boolean.TRUE;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 
     public static class Key implements Serializable {

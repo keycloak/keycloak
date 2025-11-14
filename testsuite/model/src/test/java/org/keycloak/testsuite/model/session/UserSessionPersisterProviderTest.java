@@ -35,11 +35,14 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -56,6 +59,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProvider;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
+import org.keycloak.models.jpa.session.PersistentUserSessionEntity;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -84,6 +88,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -812,6 +817,52 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             }
         });
     }
+
+    @Deprecated(since = "26.5", forRemoval = true)
+    @Test
+    public void testUserSessionRememberMeMigration() {
+        Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
+        // It tests if the "remember_me" value is applied from the data to the new column.
+        // To be removed when the field is removed from PersistentUserSessionData.
+
+        List<String> userSessionIds = Arrays.stream((UserSessionModel[]) withRealm(realmId, (session, realm) -> createSessions(session, realmId)))
+                .map(UserSessionModel::getId)
+                .toList();
+
+        // let ensure it has remember_me set to true
+        withRealmConsumer(realmId, (session, realm) -> assertTrue(loadUserSessionDirectlyDatabase(session, userSessionIds.get(0)).isRememberMe()));
+
+        // set the remember_me to false in the database, to simulate a migration.
+        withRealmConsumer(realmId, (session, realm) -> {
+            loadUserSessionDirectlyDatabase(session, userSessionIds.get(0)).setRememberMe(false);
+
+            //no cache with remote infinispan, but we have to clear the embedded cache.
+            if (InfinispanUtils.isEmbeddedInfinispan()) {
+                session.getProvider(InfinispanConnectionProvider.class).getCache(USER_SESSION_CACHE_NAME).clear();
+            }
+        });
+
+        // double-check if the column value is false now.
+        withRealmConsumer(realmId, (session, realm) -> assertFalse(loadUserSessionDirectlyDatabase(session, userSessionIds.get(0)).isRememberMe()));
+
+        // loading the session via UserSessionProvider should update the column
+        withRealmConsumer(realmId, (session, realm) -> assertTrue(session.sessions().getUserSession(realm, userSessionIds.get(0)).isRememberMe()));
+
+        // ensure the column is updated.
+        withRealmConsumer(realmId, (session, realm) -> assertTrue(loadUserSessionDirectlyDatabase(session, userSessionIds.get(0)).isRememberMe()));
+    }
+
+    private PersistentUserSessionEntity loadUserSessionDirectlyDatabase(KeycloakSession session, String userSessionId) {
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        return  em.createNamedQuery("findUserSession", PersistentUserSessionEntity.class)
+                .setParameter("realmId", realmId)
+                .setParameter("offline", "0")
+                .setParameter("userSessionId", userSessionId)
+                .setParameter("lastSessionRefresh", 0)
+                .setMaxResults(1)
+                .getSingleResult();
+    }
+
 
     private UserSessionCount getUserSessionCount() {
         if (InfinispanUtils.isEmbeddedInfinispan()) {

@@ -88,4 +88,22 @@
         <dropColumn tableName="WORKFLOW_STATE" columnName="WORKFLOW_PROVIDER_ID"/>
     </changeSet>
 
+    <changeSet id="26.5.0-add-remember-me" author="keycloak">
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+        </addColumn>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="CREATED_ON" type="INT"/>
+        </createIndex>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="LAST_SESSION_REFRESH" type="INT"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

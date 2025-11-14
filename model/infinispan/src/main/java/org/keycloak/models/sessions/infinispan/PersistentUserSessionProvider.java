@@ -49,6 +49,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.JpaChangesPerformer;
@@ -688,6 +689,11 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             return existingSession;
         }
 
+        // importing here when the transaction has the changelog available.
+        if (!offline) {
+            migrateRememberMe(persistentUserSession);
+        }
+
         // Import client sessions
         clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
         clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
@@ -793,6 +799,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
 
         sessionTx.addTask(userSessionEntity.getId(), null, userSessionEntity, UserSessionModel.SessionPersistenceState.PERSISTENT);
+        if (!offline) {
+            migrateRememberMe(persistentUserSession);
+        }
 
         for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
             String clientUUID = entry.getKey();
@@ -820,6 +829,29 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         return sessionTx.get(userSessionEntity.getId(), offline);
 
+    }
+
+    private void migrateRememberMe(UserSessionModel persistentUserSession) {
+        if (persistentUserSession instanceof PersistentUserSessionAdapter pusa && pusa.requiresRememberMeMigration()) {
+            final boolean rememberMe = pusa.isRememberMe();
+            sessionTx.addTask(persistentUserSession.getId(), new PersistentSessionUpdateTask<>() {
+                @Override
+                public boolean isOffline() {
+                    return false;
+                }
+
+                @Override
+                public void runUpdate(UserSessionEntity entity) {
+                    // update database column
+                    entity.setRememberMe(rememberMe);
+                }
+
+                @Override
+                public CacheOperation getOperation() {
+                    return CacheOperation.REPLACE;
+                }
+            });
+        }
     }
 
     private boolean isClientSessionExpired(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {
