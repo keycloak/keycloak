@@ -1,21 +1,22 @@
 package org.keycloak.testsuite.cli.admin;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.File;
+import java.io.IOException;
+
 import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import java.io.File;
-import java.io.IOException;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.client.admin.cli.KcAdmMain.DEFAULT_CONFIG_FILE_PATH;
 import static org.keycloak.client.cli.util.OsUtil.EOL;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

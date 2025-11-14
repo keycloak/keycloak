@@ -17,15 +17,15 @@
 
 package org.keycloak.theme.beans;
 
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Properties;
+
 import freemarker.template.SimpleNumber;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateModelException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Properties;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

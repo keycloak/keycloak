@@ -17,16 +17,8 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.keycloak.http.HttpRequest;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.adapters.action.LogoutAction;
-import org.keycloak.representations.adapters.action.PushNotBeforeAction;
-import org.keycloak.representations.adapters.action.TestAvailabilityAction;
-import org.keycloak.services.resource.RealmResourceProvider;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.utils.MediaType;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -37,8 +29,17 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+
+import org.keycloak.http.HttpRequest;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.adapters.action.LogoutAction;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.TestAvailabilityAction;
+import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.utils.MediaType;
 
 /**
  * Copied from {@link TestApplicationResourceProvider} 

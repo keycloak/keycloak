@@ -16,11 +16,11 @@
  */
 package org.keycloak.storage.group;
 
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.RealmModel;
-
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
 
 public interface GroupLookupProvider {
 

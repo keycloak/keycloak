@@ -17,14 +17,15 @@
 
 package org.keycloak.testsuite.oauth.par;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
-
-
 import java.util.HashMap;
 import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedHashMap;
+
+import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
 

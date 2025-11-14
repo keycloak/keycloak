@@ -17,17 +17,17 @@
 
 package org.keycloak.connections.httpclient;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.StringEntity;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Alexander Schwartz

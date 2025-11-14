@@ -1,14 +1,15 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.common.net.Inet;
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import java.util.List;
+
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import io.smallrye.common.net.Inet;
+import io.smallrye.config.ConfigSourceInterceptorContext;
 
-import java.util.List;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class ProxyPropertyMappers implements PropertyMapperGrouping{
 

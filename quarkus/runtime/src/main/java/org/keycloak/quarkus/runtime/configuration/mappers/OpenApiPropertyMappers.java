@@ -1,9 +1,9 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.util.List;
+
 import org.keycloak.common.Profile;
 import org.keycloak.config.OpenApiOptions;
-
-import java.util.List;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;

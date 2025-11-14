@@ -17,15 +17,17 @@
 
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Test;
 import org.keycloak.common.VerificationException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.Test;
+
 import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_EXP;
 import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_IAT;
 import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

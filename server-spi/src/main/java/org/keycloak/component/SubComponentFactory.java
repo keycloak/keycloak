@@ -16,12 +16,12 @@
  */
 package org.keycloak.component;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Useful when you want to describe config properties that are effected by the parent ComponentModel

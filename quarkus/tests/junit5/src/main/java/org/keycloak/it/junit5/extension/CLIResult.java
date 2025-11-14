@@ -17,6 +17,14 @@
 
 package org.keycloak.it.junit5.extension;
 
+import java.util.List;
+import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.test.junit.main.LaunchResult;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -25,14 +33,6 @@ import static org.testcontainers.shaded.org.hamcrest.Matchers.containsString;
 import static org.testcontainers.shaded.org.hamcrest.Matchers.equalTo;
 import static org.testcontainers.shaded.org.hamcrest.Matchers.is;
 import static org.testcontainers.shaded.org.hamcrest.Matchers.not;
-
-import java.util.List;
-import java.util.regex.Pattern;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkus.test.junit.main.LaunchResult;
 
 public interface CLIResult extends LaunchResult {
 

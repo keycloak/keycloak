@@ -17,7 +17,18 @@
 package org.keycloak.services.managers;
 
 
-import org.jboss.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.concurrent.ExecutorService;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -36,16 +47,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ReadOnlyException;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.NewCookie;
-import jakarta.ws.rs.core.UriInfo;
-import java.security.cert.X509Certificate;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.concurrent.ExecutorService;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.UserModel.DISABLED_REASON;
 

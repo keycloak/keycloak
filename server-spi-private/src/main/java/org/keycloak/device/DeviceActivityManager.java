@@ -17,9 +17,10 @@
 
 package org.keycloak.device;
 
-import jakarta.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.util.Base64;
+
+import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;

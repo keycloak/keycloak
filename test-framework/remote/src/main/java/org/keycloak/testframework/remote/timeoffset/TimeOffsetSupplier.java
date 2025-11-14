@@ -1,6 +1,5 @@
 package org.keycloak.testframework.remote.timeoffset;
 
-import org.apache.http.client.HttpClient;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
@@ -8,6 +7,8 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.remote.RemoteProviders;
 import org.keycloak.testframework.server.KeycloakUrls;
+
+import org.apache.http.client.HttpClient;
 
 public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet> {
 

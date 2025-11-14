@@ -21,10 +21,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import org.infinispan.protostream.annotations.Proto;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
+
+import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 import static org.keycloak.marshalling.Marshalling.CLIENT_SESSION_USER_FILTER;
 

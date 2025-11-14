@@ -16,6 +16,18 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import java.io.OutputStream;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
+
+import jakarta.xml.bind.JAXBException;
+
 import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
@@ -27,17 +39,6 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.processing.core.constants.PicketLinkFederationConstants;
 
 import org.xml.sax.SAXException;
-
-import jakarta.xml.bind.JAXBException;
-import java.io.OutputStream;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.Base64;
 
 /**
  * Signature utility for signing content

@@ -1,8 +1,5 @@
 package org.keycloak.representations.workflows;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -10,8 +7,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class WorkflowDefinitionTest {
 

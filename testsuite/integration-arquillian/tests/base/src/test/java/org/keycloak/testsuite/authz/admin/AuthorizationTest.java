@@ -18,8 +18,8 @@
 
 package org.keycloak.testsuite.authz.admin;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -31,7 +31,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
-import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

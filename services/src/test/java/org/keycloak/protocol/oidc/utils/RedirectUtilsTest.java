@@ -20,10 +20,7 @@ import java.net.URI;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jboss.resteasy.mock.MockHttpRequest;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
@@ -32,6 +29,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resteasy.HttpRequestImpl;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
+
+import org.jboss.resteasy.mock.MockHttpRequest;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * <p>Little test class for RedirectUtils methods.</p>

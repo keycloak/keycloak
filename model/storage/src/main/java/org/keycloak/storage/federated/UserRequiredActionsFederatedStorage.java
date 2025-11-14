@@ -16,9 +16,9 @@
  */
 package org.keycloak.storage.federated;
 
-import org.keycloak.models.RealmModel;
-
 import java.util.stream.Stream;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

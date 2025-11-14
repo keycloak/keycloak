@@ -1,13 +1,14 @@
 package org.keycloak.models.workflow.conditions.expression;
 
-import static org.keycloak.models.workflow.Workflows.getConditionProvider;
-
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
+
+import static org.keycloak.models.workflow.Workflows.getConditionProvider;
 
 public class PredicateEvaluator extends BooleanConditionParserBaseVisitor<Predicate> {
 

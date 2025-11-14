@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Test;
 import org.keycloak.testsuite.Assert;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.Assert.assertEquals;
 
 public class KcSamlBrokerLoginHintWithOptionEnabledTest extends AbstractSamlLoginHintTest {
 

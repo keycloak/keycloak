@@ -17,7 +17,9 @@
 
 package org.keycloak.keys.loader;
 
-import org.jboss.logging.Logger;
+import java.security.PublicKey;
+import java.util.Collections;
+
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -33,8 +35,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.util.JWKSUtils;
 
-import java.security.PublicKey;
-import java.util.Collections;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

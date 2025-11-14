@@ -19,6 +19,7 @@ package org.keycloak.utils;
 
 import java.net.IDN;
 import java.util.Map;
+
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.KeycloakSession;

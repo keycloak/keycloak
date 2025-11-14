@@ -1,9 +1,5 @@
 package org.keycloak.tests.suites;
 
-import org.junit.platform.suite.api.AfterSuite;
-import org.junit.platform.suite.api.BeforeSuite;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.KeystoreUtil;
@@ -15,6 +11,11 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.ServerInfoTest;
 import org.keycloak.tests.admin.client.CredentialsTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
+
+import org.junit.platform.suite.api.AfterSuite;
+import org.junit.platform.suite.api.BeforeSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({

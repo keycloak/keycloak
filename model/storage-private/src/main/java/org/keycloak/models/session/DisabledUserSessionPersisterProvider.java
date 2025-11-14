@@ -17,6 +17,11 @@
 
 package org.keycloak.models.session;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.Config;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -25,11 +30,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Persistence of userSessions is disabled . Useful just if you never need survive of userSessions/clientSessions

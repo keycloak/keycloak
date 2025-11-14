@@ -1,9 +1,5 @@
 package org.freedesktop.dbus.connections.config;
 
-import org.freedesktop.dbus.connections.BusAddress;
-import org.freedesktop.dbus.connections.transports.AbstractTransport;
-import org.freedesktop.dbus.utils.Util;
-
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -12,6 +8,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import org.freedesktop.dbus.connections.BusAddress;
+import org.freedesktop.dbus.connections.transports.AbstractTransport;
+import org.freedesktop.dbus.utils.Util;
 
 /**
  * Configuration used to setup a transport.

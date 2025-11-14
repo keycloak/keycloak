@@ -16,9 +16,9 @@
  */
 package org.keycloak.connections.jpa;
 
-import org.keycloak.provider.ExceptionConverter;
-
 import jakarta.persistence.PersistenceException;
+
+import org.keycloak.provider.ExceptionConverter;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

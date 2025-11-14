@@ -17,8 +17,9 @@
 
 package org.keycloak.util;
 
-import org.junit.Test;
 import org.keycloak.common.util.UriUtils;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

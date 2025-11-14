@@ -17,21 +17,20 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Parameters;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.List;
 
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.List;
+import com.fasterxml.jackson.core.type.TypeReference;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
 import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
 import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;

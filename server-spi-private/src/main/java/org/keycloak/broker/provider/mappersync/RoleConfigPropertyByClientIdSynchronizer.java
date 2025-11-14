@@ -17,11 +17,11 @@
 
 package org.keycloak.broker.provider.mappersync;
 
+import java.util.Map;
+
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-
-import java.util.Map;
 
 /**
  * Updates a role reference in a mapper config, when a client ID changes.

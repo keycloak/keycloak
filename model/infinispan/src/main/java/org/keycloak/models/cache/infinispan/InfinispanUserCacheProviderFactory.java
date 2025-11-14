@@ -17,8 +17,6 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
@@ -29,6 +27,9 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.UserCacheProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

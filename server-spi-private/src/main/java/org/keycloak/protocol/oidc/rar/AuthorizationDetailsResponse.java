@@ -16,12 +16,12 @@
  */
 package org.keycloak.protocol.oidc.rar;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Generic response object for authorization details processing.

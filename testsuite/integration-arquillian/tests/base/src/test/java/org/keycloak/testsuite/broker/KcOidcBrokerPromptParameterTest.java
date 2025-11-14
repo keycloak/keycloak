@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 

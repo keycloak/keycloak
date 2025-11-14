@@ -3,12 +3,13 @@ package org.keycloak.infinispan.compatibility;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.infinispan.commons.util.Version;
 import org.keycloak.Config;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
+
+import org.infinispan.commons.util.Version;
 
 public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetadataProvider {
 

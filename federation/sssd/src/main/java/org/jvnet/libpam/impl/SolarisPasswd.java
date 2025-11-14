@@ -25,11 +25,11 @@
 
 package org.jvnet.libpam.impl;
 
-import org.jvnet.libpam.impl.CLibrary.passwd;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.jvnet.libpam.impl.CLibrary.passwd;
 
 /**
  * Solaris passwd

@@ -35,10 +35,11 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.common.util.PemException;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jboss.logging.Logger;
 
 /**
  * Fork of the PemUtils from common module to avoid dependency on keycloak-crypto-default

@@ -1,9 +1,9 @@
 package org.keycloak.testframework.logging;
 
+import java.util.function.Consumer;
+
 import org.jboss.logging.Logger;
 import org.testcontainers.containers.output.OutputFrame;
-
-import java.util.function.Consumer;
 
 public class JBossLogConsumer implements Consumer<OutputFrame> {
 

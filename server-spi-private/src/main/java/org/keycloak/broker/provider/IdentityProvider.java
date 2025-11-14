@@ -16,15 +16,15 @@
  */
 package org.keycloak.broker.provider;
 
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.Provider;
+import java.util.Arrays;
+import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
-import java.util.Arrays;
-import java.util.List;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.Provider;
 
 /**
  * @author Pedro Igor

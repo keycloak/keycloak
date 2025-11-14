@@ -1,10 +1,11 @@
 package org.keycloak.crypto.fips.test;
 
+import org.keycloak.common.util.Environment;
+import org.keycloak.jose.JWETest;
+
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.common.util.Environment;
-import org.keycloak.jose.JWETest;
 
 /**
  * Test with fips1402 security provider and bouncycastle-fips

@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.account.custom;
 
-import org.junit.Before;
 import org.keycloak.testsuite.AbstractAuthTest;
+
+import org.junit.Before;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 

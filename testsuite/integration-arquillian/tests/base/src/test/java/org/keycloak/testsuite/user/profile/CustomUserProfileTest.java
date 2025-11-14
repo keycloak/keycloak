@@ -19,11 +19,10 @@
 
 package org.keycloak.testsuite.user.profile;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -34,9 +33,11 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:joerg.matysiak@bosch.io">Jörg Matysiak</a>

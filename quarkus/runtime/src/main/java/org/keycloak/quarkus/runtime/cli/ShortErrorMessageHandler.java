@@ -1,8 +1,5 @@
 package org.keycloak.quarkus.runtime.cli;
 
-import static java.lang.String.format;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 import java.io.PrintWriter;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -22,6 +19,10 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.UnmatchedArgumentException;
+
+import static java.lang.String.format;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 

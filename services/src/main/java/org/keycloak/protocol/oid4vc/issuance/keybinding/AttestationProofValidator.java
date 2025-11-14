@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
@@ -25,10 +28,6 @@ import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
-
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Validates attestation proofs as per OID4VCI specification.

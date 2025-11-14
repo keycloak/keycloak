@@ -16,14 +16,15 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import org.jboss.arquillian.graphene.page.Page;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.auth.page.PasswordFields;
+
+import org.jboss.arquillian.graphene.page.Page;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import jakarta.ws.rs.core.UriBuilder;
 
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;

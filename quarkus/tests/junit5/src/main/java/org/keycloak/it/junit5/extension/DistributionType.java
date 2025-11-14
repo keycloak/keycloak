@@ -19,6 +19,7 @@ package org.keycloak.it.junit5.extension;
 
 import java.util.Optional;
 import java.util.function.Function;
+
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;

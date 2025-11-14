@@ -17,13 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan.listeners;
 
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryExpired;
 import org.infinispan.notifications.cachelistener.event.CacheEntryExpiredEvent;
 import org.infinispan.util.concurrent.BlockingManager;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
  * A listener for embedded Infinispan caches.

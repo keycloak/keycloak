@@ -17,17 +17,18 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.Map;
+import java.util.Optional;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.util.JsonSerialization;
-
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Represents a CredentialRequest according to OID4VCI

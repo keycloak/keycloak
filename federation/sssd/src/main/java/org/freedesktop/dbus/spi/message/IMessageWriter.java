@@ -1,9 +1,9 @@
 package org.freedesktop.dbus.spi.message;
 
-import org.freedesktop.dbus.messages.Message;
-
 import java.io.Closeable;
 import java.io.IOException;
+
+import org.freedesktop.dbus.messages.Message;
 
 /**
  * Interface that lets you write a message to the currently used transport.

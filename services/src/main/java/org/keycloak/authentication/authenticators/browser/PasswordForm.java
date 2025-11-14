@@ -17,6 +17,9 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.credential.CredentialProvider;
@@ -26,9 +29,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 
 public class PasswordForm extends UsernamePasswordForm implements CredentialValidator<PasswordCredentialProvider> {
 

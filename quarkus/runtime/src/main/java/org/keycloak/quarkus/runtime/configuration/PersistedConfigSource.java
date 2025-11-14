@@ -35,11 +35,12 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.PropertiesConfigSource;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} based on the configuration properties persisted into the server

@@ -16,7 +16,6 @@
  */
 package org.keycloak.locale;
 
-import org.jboss.logging.Logger;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
@@ -25,6 +24,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ReadOnlyException;
+
+import org.jboss.logging.Logger;
 
 public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
 

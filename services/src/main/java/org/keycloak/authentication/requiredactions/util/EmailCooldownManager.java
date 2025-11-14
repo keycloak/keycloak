@@ -19,12 +19,13 @@ package org.keycloak.authentication.requiredactions.util;
 
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import org.jboss.logging.Logger;
 
 public class EmailCooldownManager {
 

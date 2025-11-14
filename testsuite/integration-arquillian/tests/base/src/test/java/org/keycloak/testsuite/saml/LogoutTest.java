@@ -16,6 +16,18 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
+import javax.xml.transform.dom.DOMSource;
+
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.xml.ws.soap.SOAPFaultException;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
@@ -46,38 +58,28 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-
 import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
-import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriBuilderException;
-import javax.xml.transform.dom.DOMSource;
-import jakarta.xml.ws.soap.SOAPFaultException;
+import org.keycloak.testsuite.util.saml.SamlBackchannelLogoutReceiver;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.testsuite.util.saml.SamlBackchannelLogoutReceiver;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.Matchers.isSamlLogoutRequest;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
 import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *

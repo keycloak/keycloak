@@ -1,7 +1,14 @@
 package org.keycloak.protocol.docker;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -23,13 +30,8 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.atomic.AtomicReference;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
 
 public class DockerAuthV2Protocol implements LoginProtocol {
     protected static final Logger logger = Logger.getLogger(DockerEndpoint.class);

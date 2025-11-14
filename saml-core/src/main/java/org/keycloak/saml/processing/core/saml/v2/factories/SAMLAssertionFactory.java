@@ -16,6 +16,10 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.factories;
 
+import java.net.URI;
+import java.util.List;
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.assertion.ConditionAbstractType;
@@ -26,10 +30,6 @@ import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
-
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.net.URI;
-import java.util.List;
 
 /**
  * Deal with {@code AssertionType}

@@ -1,5 +1,12 @@
 package org.freedesktop.dbus;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
 import org.freedesktop.dbus.errors.Error;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
@@ -10,13 +17,6 @@ import org.freedesktop.dbus.messages.MethodCall;
 import org.freedesktop.dbus.messages.MethodReturn;
 import org.freedesktop.dbus.utils.DBusNamingUtil;
 import org.freedesktop.dbus.utils.Util;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.regex.Pattern;
 
 /**
  * Defined a rule to match a message.<br>

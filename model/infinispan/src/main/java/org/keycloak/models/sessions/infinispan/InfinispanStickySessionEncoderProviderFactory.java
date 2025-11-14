@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import org.infinispan.Cache;
-import org.infinispan.remoting.transport.jgroups.JGroupsAddress;
-import org.jboss.logging.Logger;
-import org.jgroups.util.NameCache;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -36,6 +32,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
+
+import org.infinispan.Cache;
+import org.infinispan.remoting.transport.jgroups.JGroupsAddress;
+import org.jboss.logging.Logger;
+import org.jgroups.util.NameCache;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 

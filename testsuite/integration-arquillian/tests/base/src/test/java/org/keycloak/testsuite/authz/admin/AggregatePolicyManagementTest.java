@@ -16,15 +16,11 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import java.util.Collections;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Test;
 import org.keycloak.admin.client.resource.AggregatePoliciesResource;
 import org.keycloak.admin.client.resource.AggregatePolicyResource;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -39,6 +35,11 @@ import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

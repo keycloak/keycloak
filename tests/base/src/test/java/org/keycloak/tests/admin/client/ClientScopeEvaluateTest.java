@@ -17,7 +17,9 @@
 
 package org.keycloak.tests.admin.client;
 
-import org.junit.jupiter.api.Test;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.UserSessionRepresentation;
@@ -32,8 +34,7 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.admin.ApiUtil;
 
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

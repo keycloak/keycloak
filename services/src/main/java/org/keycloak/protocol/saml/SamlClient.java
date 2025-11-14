@@ -17,13 +17,14 @@
 
 package org.keycloak.protocol.saml;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
+
+import org.jboss.logging.Logger;
 
 /**
  * Configuration of a SAML-enabled client.

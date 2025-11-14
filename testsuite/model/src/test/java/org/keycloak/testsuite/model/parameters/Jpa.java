@@ -18,7 +18,6 @@ package org.keycloak.testsuite.model.parameters;
 
 import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
 import org.keycloak.authorization.jpa.store.JPAAuthorizationStoreFactory;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderSpi;
@@ -55,6 +54,8 @@ import org.keycloak.storage.DatastoreSpi;
 import org.keycloak.storage.datastore.DefaultDatastoreProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  *

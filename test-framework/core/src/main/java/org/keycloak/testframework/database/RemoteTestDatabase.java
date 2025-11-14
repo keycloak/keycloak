@@ -1,10 +1,10 @@
 package org.keycloak.testframework.database;
 
-import org.keycloak.testframework.config.Config;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import org.keycloak.testframework.config.Config;
 
 public class RemoteTestDatabase implements TestDatabase {
 

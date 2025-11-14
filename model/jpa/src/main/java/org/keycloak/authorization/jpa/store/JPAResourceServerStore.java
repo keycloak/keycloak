@@ -16,6 +16,11 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import java.util.List;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
@@ -24,13 +29,9 @@ import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.StorageId;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-import java.util.List;
-import org.keycloak.models.ClientModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -18,12 +18,14 @@
 package org.keycloak.migration.migrators;
 
 import java.util.UUID;
-import org.jboss.logging.Logger;
+
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.jboss.logging.Logger;
 
 public class MigrateTo9_0_4 implements Migration {
 

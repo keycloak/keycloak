@@ -17,6 +17,7 @@
 package org.keycloak.models.utils;
 
 import java.util.concurrent.TimeUnit;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;

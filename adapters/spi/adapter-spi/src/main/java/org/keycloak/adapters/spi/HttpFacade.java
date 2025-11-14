@@ -17,10 +17,10 @@
 
 package org.keycloak.adapters.spi;
 
-import javax.security.cert.X509Certificate;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import javax.security.cert.X509Certificate;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

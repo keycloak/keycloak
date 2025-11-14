@@ -20,7 +20,6 @@ package org.keycloak.migration.migrators;
 import java.util.List;
 import java.util.Objects;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
@@ -31,6 +30,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.DefaultClientScopes;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

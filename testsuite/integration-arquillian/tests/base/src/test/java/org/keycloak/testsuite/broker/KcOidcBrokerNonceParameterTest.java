@@ -1,7 +1,10 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.jose.jws.JWSInput;
@@ -19,10 +22,8 @@ import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 

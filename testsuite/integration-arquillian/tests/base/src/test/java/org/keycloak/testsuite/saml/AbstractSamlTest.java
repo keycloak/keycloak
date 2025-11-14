@@ -1,26 +1,5 @@
 package org.keycloak.testsuite.saml;
 
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.dom.saml.v2.SAML2Object;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
-import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.util.SamlClient;
-
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriBuilderException;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.testsuite.util.saml.SamlConstants;
-
 import java.net.URI;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -33,13 +12,35 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.saml.SamlConstants;
+
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author mhajas

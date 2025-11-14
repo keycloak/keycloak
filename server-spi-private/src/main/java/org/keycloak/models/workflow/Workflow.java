@@ -17,11 +17,6 @@
 
 package org.keycloak.models.workflow;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +30,12 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.utils.StringUtil;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 
 public class Workflow {
 

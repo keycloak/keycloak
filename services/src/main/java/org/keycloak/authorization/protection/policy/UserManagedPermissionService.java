@@ -32,7 +32,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.PermissionService;
@@ -47,6 +46,8 @@ import org.keycloak.representations.idm.authorization.UmaPermissionRepresentatio
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:federico@martel-innovate.com">Federico M. Facca</a>

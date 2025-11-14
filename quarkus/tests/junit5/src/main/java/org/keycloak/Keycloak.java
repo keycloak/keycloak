@@ -17,8 +17,6 @@
 
 package org.keycloak;
 
-import static java.util.Optional.ofNullable;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.common.Version;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
@@ -39,12 +35,14 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 
 import io.quarkus.bootstrap.app.AugmentAction;
 import io.quarkus.bootstrap.app.CuratedApplication;
 import io.quarkus.bootstrap.app.QuarkusBootstrap;
 import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.bootstrap.app.StartupAction;
+import io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory;
 import io.quarkus.bootstrap.model.ApplicationModel;
 import io.quarkus.bootstrap.resolver.AppModelResolverException;
 import io.quarkus.bootstrap.resolver.BootstrapAppModelResolver;
@@ -55,7 +53,9 @@ import io.quarkus.bootstrap.workspace.WorkspaceModuleId;
 import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
-import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+
+import static java.util.Optional.ofNullable;
 
 public class Keycloak {
 

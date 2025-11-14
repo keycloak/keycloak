@@ -1,23 +1,23 @@
 package org.keycloak.broker.provider.util;
 
-import org.keycloak.models.IdentityProviderCapability;
-import org.keycloak.models.IdentityProviderType;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.models.IdentityProviderCapability;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class IdentityProviderTypeUtil {
 

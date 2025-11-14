@@ -16,11 +16,11 @@
  */
 package org.keycloak.crypto;
 
-import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import javax.crypto.SecretKey;
 
 public class KeyWrapper {
 

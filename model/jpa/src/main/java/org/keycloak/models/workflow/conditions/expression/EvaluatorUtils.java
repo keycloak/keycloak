@@ -1,11 +1,12 @@
 package org.keycloak.models.workflow.conditions.expression;
 
+import java.util.stream.Collectors;
+
+import org.keycloak.models.workflow.WorkflowInvalidStateException;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.keycloak.models.workflow.WorkflowInvalidStateException;
-
-import java.util.stream.Collectors;
 
 public class EvaluatorUtils {
 

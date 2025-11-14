@@ -16,14 +16,15 @@
  */
 package org.keycloak.adapters.saml.elytron.infinispan;
 
-import org.keycloak.adapters.spi.SessionIdMapper;
-
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.keycloak.adapters.spi.SessionIdMapper;
+
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;

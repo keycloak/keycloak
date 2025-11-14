@@ -17,6 +17,7 @@
 package org.keycloak.component;
 
 import java.util.Set;
+
 import org.keycloak.Config.Scope;
 
 /**

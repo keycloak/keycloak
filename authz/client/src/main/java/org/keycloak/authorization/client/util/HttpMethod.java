@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.keycloak.authorization.client.Configuration;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -35,8 +38,6 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.keycloak.authorization.client.Configuration;
-import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

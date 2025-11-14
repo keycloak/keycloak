@@ -20,11 +20,6 @@ package org.keycloak.testsuite.oauth;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -41,8 +36,15 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import static org.junit.Assert.assertEquals;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test for scenarios when 'scope=openid' is missing. Which means we have pure OAuth2 request (not OpenID Connect)

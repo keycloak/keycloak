@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.PROVIDER_ID;
-
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -9,6 +7,8 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import com.google.common.collect.ImmutableMap;
+
+import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.PROVIDER_ID;
 
 /**
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>

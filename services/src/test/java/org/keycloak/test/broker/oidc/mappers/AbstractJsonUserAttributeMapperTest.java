@@ -16,14 +16,15 @@
  */
 package org.keycloak.test.broker.oidc.mappers;
 
+import java.io.IOException;
+import java.util.Arrays;
+
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-
-import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * Unit test for {@link org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper}

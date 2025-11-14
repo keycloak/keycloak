@@ -21,13 +21,14 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

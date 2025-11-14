@@ -17,8 +17,12 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.KeyWrapper;
@@ -37,11 +41,8 @@ import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

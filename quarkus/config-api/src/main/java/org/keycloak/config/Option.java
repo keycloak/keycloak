@@ -1,11 +1,11 @@
 package org.keycloak.config;
 
-import com.google.common.base.CaseFormat;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.google.common.base.CaseFormat;
 
 public class Option<T> {
     private final Class<T> type;

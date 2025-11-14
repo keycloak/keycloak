@@ -17,20 +17,12 @@
 
 package org.keycloak.tests.admin.model.workflow;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.models.workflow.DeleteUserStepProvider.PROPAGATE_TO_SP;
-
-import jakarta.ws.rs.core.Response;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -61,7 +53,19 @@ import org.keycloak.tests.admin.model.workflow.DeleteUserWorkflowStepTest.Delete
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.openqa.selenium.WebDriver;
+
+import static org.keycloak.models.workflow.DeleteUserStepProvider.PROPAGATE_TO_SP;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  */

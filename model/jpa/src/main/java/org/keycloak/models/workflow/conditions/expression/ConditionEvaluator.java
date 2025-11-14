@@ -1,10 +1,10 @@
 package org.keycloak.models.workflow.conditions.expression;
 
-import static org.keycloak.models.workflow.Workflows.getConditionProvider;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowEvent;
+
+import static org.keycloak.models.workflow.Workflows.getConditionProvider;
 
 public class ConditionEvaluator extends BooleanConditionParserBaseVisitor<Boolean> {
 

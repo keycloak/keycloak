@@ -21,10 +21,10 @@ import org.keycloak.Config.Scope;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProviderFactory;
 
 public class InfinispanOrganizationProviderFactory implements OrganizationProviderFactory {

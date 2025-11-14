@@ -17,11 +17,11 @@
 
 package org.keycloak.sdjwt.sdjwtvp;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
@@ -33,18 +33,20 @@ import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_EXP;
+import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_IAT;
+import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_EXP;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_IAT;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

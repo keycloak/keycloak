@@ -1,12 +1,12 @@
 package org.keycloak.services.error;
 
+import java.util.stream.Collectors;
+
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-
-import java.util.stream.Collectors;
 
 @Provider
 public class ValidationExceptionHandler implements ExceptionMapper<ConstraintViolationException> {

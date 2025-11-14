@@ -1,8 +1,9 @@
 package org.keycloak.testsuite.cluster;
 
-import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+
+import org.junit.Before;
 
 /**
  *

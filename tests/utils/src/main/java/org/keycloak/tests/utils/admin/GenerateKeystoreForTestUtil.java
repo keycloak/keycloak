@@ -1,11 +1,5 @@
 package org.keycloak.tests.utils.admin;
 
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.representations.idm.CertificateRepresentation;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
@@ -14,6 +8,12 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.representations.idm.CertificateRepresentation;
 
 public class GenerateKeystoreForTestUtil {
 

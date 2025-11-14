@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -42,8 +44,6 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-
-import jakarta.ws.rs.core.Response;
 
 public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 

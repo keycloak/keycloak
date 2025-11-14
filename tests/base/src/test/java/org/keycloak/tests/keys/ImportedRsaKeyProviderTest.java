@@ -17,7 +17,15 @@
 
 package org.keycloak.tests.keys;
 
-import org.junit.jupiter.api.Test;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.cert.Certificate;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -43,14 +51,7 @@ import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.saml.SamlConstants;
 
-import jakarta.ws.rs.core.Response;
-
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.cert.Certificate;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -338,4 +339,3 @@ public class ImportedRsaKeyProviderTest {
         return rep;
     }
 }
-

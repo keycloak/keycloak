@@ -16,13 +16,8 @@
  */
 package org.keycloak.saml.common.util;
 
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
-import org.keycloak.saml.processing.core.parsers.util.HasQName;
-
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
-
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
@@ -31,6 +26,11 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartDocument;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
+import org.keycloak.saml.processing.core.parsers.util.HasQName;
+
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matcher;
 import org.junit.Assert;
@@ -39,10 +39,11 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
-import static org.hamcrest.MatcherAssert.assertThat;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *

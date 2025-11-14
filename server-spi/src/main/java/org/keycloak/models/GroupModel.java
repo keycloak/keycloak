@@ -17,12 +17,12 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.ProviderEvent;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

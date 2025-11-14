@@ -21,10 +21,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.infinispan.commons.util.ByRef;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
@@ -37,6 +33,11 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.util.ByRef;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 

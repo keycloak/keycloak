@@ -18,9 +18,11 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Optional;
+
 import jakarta.ws.rs.HttpMethod;
-import org.keycloak.http.HttpRequest;
+
 import org.keycloak.events.Errors;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -29,6 +31,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.utils.StringUtil;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SecureLogoutExecutor implements ClientPolicyExecutorProvider<SecureLogoutExecutor.Configuration> {

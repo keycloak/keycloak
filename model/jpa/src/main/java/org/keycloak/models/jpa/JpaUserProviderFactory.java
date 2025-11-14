@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa;
 
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -24,7 +26,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserProviderFactory;
 
-import jakarta.persistence.EntityManager;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 

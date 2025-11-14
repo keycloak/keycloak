@@ -1,19 +1,20 @@
 package org.keycloak.representations.workflows;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
-
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
+
+import org.keycloak.common.util.MultivaluedHashMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.keycloak.common.util.MultivaluedHashMap;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 @JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
 @JsonInclude(JsonInclude.Include.NON_EMPTY)

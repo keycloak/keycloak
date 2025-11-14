@@ -17,10 +17,10 @@
 
 package org.keycloak.broker.provider.mappersync;
 
+import java.util.Map;
+
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.GroupModel;
-
-import java.util.Map;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
 

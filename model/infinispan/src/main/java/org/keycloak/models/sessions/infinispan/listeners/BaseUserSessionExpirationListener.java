@@ -19,14 +19,15 @@ package org.keycloak.models.sessions.infinispan.listeners;
 
 import java.lang.invoke.MethodHandles;
 
-import org.infinispan.util.concurrent.BlockingManager;
-import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import org.infinispan.util.concurrent.BlockingManager;
+import org.jboss.logging.Logger;
 
 /**
  * Base class to handle expired user session.

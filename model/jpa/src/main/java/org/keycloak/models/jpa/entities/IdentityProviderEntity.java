@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import java.util.Map;
+
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.CollectionTable;
@@ -27,7 +29,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
-import java.util.Map;
 
 /**
  * @author Pedro Igor

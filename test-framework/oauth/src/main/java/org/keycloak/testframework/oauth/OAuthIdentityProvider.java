@@ -1,8 +1,14 @@
 package org.keycloak.testframework.oauth;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.spec.ECGenParameterSpec;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
@@ -15,14 +21,9 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.spec.ECGenParameterSpec;
-import java.util.HashMap;
-import java.util.Map;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 public class OAuthIdentityProvider {
 

@@ -3,7 +3,6 @@ package org.keycloak.workflow.admin.resource;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -15,7 +14,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakSession;
@@ -26,6 +25,9 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowSetRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class WorkflowsResource {
 

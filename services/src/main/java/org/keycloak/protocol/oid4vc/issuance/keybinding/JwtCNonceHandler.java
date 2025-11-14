@@ -18,27 +18,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import jakarta.annotation.Nullable;
-import org.keycloak.TokenVerifier;
-import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.crypto.SignatureProvider;
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
-import org.keycloak.protocol.oid4vc.model.JwtCNonce;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.saml.RandomSecret;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -50,6 +29,29 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+
+import jakarta.annotation.Nullable;
+
+import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
+import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.model.JwtCNonce;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.saml.RandomSecret;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Pascal Knüppel

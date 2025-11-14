@@ -17,15 +17,16 @@
 
 package org.keycloak.exportimport;
 
-import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
+
 import org.keycloak.common.util.StringPropertyReplacer;
+
+import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
 
 public abstract class AbstractFileBasedImportProvider implements ImportProvider {
 

@@ -17,14 +17,18 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
-import org.jboss.logging.Logger;
-import org.junit.Test;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyUse;
@@ -46,19 +50,18 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.util.List;
-import java.util.Map;
+import org.apache.http.HttpStatus;
+import org.jboss.logging.Logger;
+import org.junit.Test;
+
+import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_ENCRYPTION_PARAMETERS;
+import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
-import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_ENCRYPTION_PARAMETERS;
-import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 /**
  * Test class for Credential Request and Response Encryption
@@ -532,4 +535,3 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         });
     }
 }
-

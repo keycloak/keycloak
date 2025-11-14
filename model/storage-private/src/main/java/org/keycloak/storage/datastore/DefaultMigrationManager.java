@@ -17,14 +17,16 @@
 
 package org.keycloak.storage.datastore;
 
-import org.jboss.logging.Logger;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 import org.keycloak.common.Version;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.migration.migrators.MigrateTo12_0_0;
 import org.keycloak.migration.migrators.MigrateTo14_0_0;
 import org.keycloak.migration.migrators.MigrateTo18_0_0;
-import org.keycloak.migration.migrators.MigrateTo20_0_0;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
@@ -34,6 +36,7 @@ import org.keycloak.migration.migrators.MigrateTo1_7_0;
 import org.keycloak.migration.migrators.MigrateTo1_8_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_2;
+import org.keycloak.migration.migrators.MigrateTo20_0_0;
 import org.keycloak.migration.migrators.MigrateTo21_0_0;
 import org.keycloak.migration.migrators.MigrateTo22_0_0;
 import org.keycloak.migration.migrators.MigrateTo23_0_0;
@@ -74,9 +77,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.MigrationManager;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
+import org.jboss.logging.Logger;
 
 /**
  * This wraps the functionality for migrations of the storage.

@@ -1,12 +1,13 @@
 package org.keycloak.testsuite.organization.admin;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
 

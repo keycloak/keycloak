@@ -17,17 +17,27 @@
 
 package org.keycloak.authentication;
 
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -41,20 +51,11 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.services.managers.AuthenticationManager.FORCED_REAUTHENTICATION;
-import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
 import static org.keycloak.services.managers.AuthenticationManager.PASSWORD_VALIDATED;
+import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
 
 public class AuthenticatorUtil {
 

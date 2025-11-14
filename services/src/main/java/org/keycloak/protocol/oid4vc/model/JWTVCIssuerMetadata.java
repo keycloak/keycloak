@@ -16,9 +16,10 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
+import org.keycloak.jose.jwk.JSONWebKeySet;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 
 /**
  * JWT VC Issuer metadata for endpoint /.well-known/jwt-vc-issuer

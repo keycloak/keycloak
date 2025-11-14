@@ -17,10 +17,11 @@
 
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.time.Instant;
+
 import org.keycloak.common.VerificationException;
 
-import java.time.Instant;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Module for checking the validity of JWT time claims.

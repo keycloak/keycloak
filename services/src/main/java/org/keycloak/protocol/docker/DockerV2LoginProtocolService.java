@@ -1,15 +1,15 @@
 package org.keycloak.protocol.docker;
 
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.utils.ProfileHelper;
-
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 
 public class DockerV2LoginProtocolService {
 

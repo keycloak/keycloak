@@ -1,5 +1,11 @@
 package org.keycloak.protocol.docker;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventBuilder;
@@ -12,12 +18,6 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.docker.mapper.AllowAllDockerProtocolMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class DockerAuthV2ProtocolFactory extends AbstractLoginProtocolFactory implements EnvironmentDependentProviderFactory {
 

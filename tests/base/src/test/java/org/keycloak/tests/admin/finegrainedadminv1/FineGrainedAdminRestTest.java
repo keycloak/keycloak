@@ -16,11 +16,13 @@
  */
 package org.keycloak.tests.admin.finegrainedadminv1;
 
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
+import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -32,11 +34,10 @@ import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.admin.ApiUtil;
 
-import jakarta.ws.rs.ClientErrorException;
-
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

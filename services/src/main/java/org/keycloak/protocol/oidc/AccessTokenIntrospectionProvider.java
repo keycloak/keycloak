@@ -17,9 +17,10 @@
  */
 package org.keycloak.protocol.oidc;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.core.HttpHeaders;
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -45,8 +46,8 @@ import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.util.JsonSerialization;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

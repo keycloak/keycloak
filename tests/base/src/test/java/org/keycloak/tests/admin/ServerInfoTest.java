@@ -17,8 +17,8 @@
 
 package org.keycloak.tests.admin;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.Map;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Version;
 import org.keycloak.crypto.Algorithm;
@@ -35,7 +35,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.crypto.CryptoHelper;
 import org.keycloak.tests.utils.Assert;
 
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

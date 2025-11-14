@@ -17,8 +17,9 @@
 
 package org.keycloak.tests.keys;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -34,8 +35,8 @@ import org.keycloak.tests.utils.Assert;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.util.LinkedList;
-import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -113,4 +114,3 @@ public class FallbackKeyProviderTest {
     }
 
 }
-

@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.cli;
 
 import org.keycloak.utils.StringUtil;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi.Text;
 import picocli.CommandLine.Help.ColorScheme;
@@ -26,6 +27,7 @@ import picocli.CommandLine.Model.OptionSpec;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 import static org.keycloak.utils.StringUtil.removeSuffix;
+
 import static picocli.CommandLine.Help.Ansi.OFF;
 
 public class OptionRenderer implements CommandLine.Help.IOptionRenderer {

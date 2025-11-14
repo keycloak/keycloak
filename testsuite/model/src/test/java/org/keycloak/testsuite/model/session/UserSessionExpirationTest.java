@@ -22,10 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.awaitility.Awaitility;
-import org.infinispan.Cache;
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Details;
@@ -45,6 +41,11 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.awaitility.Awaitility;
+import org.infinispan.Cache;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;

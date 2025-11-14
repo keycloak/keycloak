@@ -17,11 +17,11 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>

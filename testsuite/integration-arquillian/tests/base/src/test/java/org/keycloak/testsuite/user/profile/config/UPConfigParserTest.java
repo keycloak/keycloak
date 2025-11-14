@@ -16,9 +16,6 @@
  */
 package org.keycloak.testsuite.user.profile.config;
 
-import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
-import static org.keycloak.userprofile.config.UPConfigUtils.validate;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -28,21 +25,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.runonserver.RunOnServer;
-
-import com.fasterxml.jackson.databind.JsonMappingException;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.util.ClientScopeBuilder;
+import org.keycloak.userprofile.config.UPConfigUtils;
+
+import com.fasterxml.jackson.databind.JsonMappingException;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
+import static org.keycloak.userprofile.config.UPConfigUtils.validate;
 
 /**
  * Unit test for {@link UPConfigUtils} functionality

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -43,6 +43,8 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 public abstract class AbstractRegistrationRecaptcha implements FormAction, FormActionFactory {
 
