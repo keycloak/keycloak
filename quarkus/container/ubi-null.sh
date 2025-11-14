@@ -3,6 +3,12 @@
 set -euo pipefail
 #set -x
 
+# Workaround around slow docker buildx when running for example against minikube
+# https://github.com/keycloak/keycloak/issues/38801#issuecomment-2815350773
+# https://github.com/docker/buildx/issues/379#issuecomment-1052980242
+# As this option is not allowed when running in podman, ignore if this fails
+ulimit -n 1024000 || true
+
 dir="/tmp/null"
 rm -rf "$dir"
 mkdir "$dir"
