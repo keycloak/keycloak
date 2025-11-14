@@ -336,5 +336,11 @@ public class CRSerializationTest {
             fail();
         }
     }
-
+    @Test
+    public void testNoAutoMountServiceAccountToken() {
+        var keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-without-automount.yml"), Keycloak.class);
+        var keycloakSpec = keycloak.getSpec();
+        assertNotNull(keycloakSpec);
+        assertFalse(keycloakSpec.getAutomountServiceAccountToken());
+    }
 }

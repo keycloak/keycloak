@@ -327,6 +327,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!specBuilder.hasDnsPolicy()) {
             specBuilder.withDnsPolicy("ClusterFirst");
         }
+        boolean automount = keycloakCR.getSpec().getAutomountServiceAccountToken();
+        specBuilder.withAutomountServiceAccountToken(automount);
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
@@ -463,14 +465,17 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
-        String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
 
-        if (useServiceCaCrt) {
-            truststores += "," + SERVICE_CA_CRT;
+        if (!Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
+            String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
+
+            if (useServiceCaCrt) {
+                truststores += "," + SERVICE_CA_CRT;
+            }
+        
+            // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
+            varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
         }
-
-        // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
-        varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
 
         setTracingEnvVars(keycloakCR, varMap);
 
