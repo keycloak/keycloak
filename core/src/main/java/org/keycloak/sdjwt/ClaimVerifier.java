@@ -20,6 +20,7 @@ package org.keycloak.sdjwt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -80,7 +81,7 @@ public class ClaimVerifier {
         boolean test(T t) throws VerificationException;
 
         default Instant getCurrentTimestamp() {
-            return Instant.now();
+            return Instant.ofEpochSecond(Time.currentTime());
         }
     }
 

@@ -45,7 +45,6 @@ public class TimeClaimVerifierTest {
     private static final int DEFAULT_CLOCK_SKEW_SECONDS = 20;
 
     private final ClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, false);
-    private final ClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, true);
 
     static class FixedTimeClaimVerifier extends ClaimVerifier {
 
