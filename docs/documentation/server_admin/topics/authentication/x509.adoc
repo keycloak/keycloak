@@ -206,7 +206,7 @@ curl \
   -d "grant_type=password" \
   --cacert /tmp/truststore.pem \
   --cert /tmp/keystore.pem:kssecret \
-  "https://localhost:8543/realms/test/protocol/openid-connect/token"
+  "https://localhost:8543/realms/{realm-name}/protocol/openid-connect/token"
 ----
 
 The file `/tmp/truststore.pem` points to the file with the truststore containing the certificate of the {project_name} server. The file `/tmp/keystore.pem` contains
