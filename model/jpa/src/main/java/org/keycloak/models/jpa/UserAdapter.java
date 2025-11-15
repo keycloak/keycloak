@@ -474,7 +474,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             em.remove(entity);
         }
         em.flush();
-        GroupMemberLeaveEvent.fire(group, session);
+        GroupMemberLeaveEvent.fire(group, this, session);
     }
 
     @Override
