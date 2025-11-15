@@ -28,7 +28,7 @@ public class ConditionalRoleAuthenticator implements ConditionalAuthenticator {
                 return false;
             }
 
-            return negateOutput != user.hasRole(role);
+            return negateOutput ? !user.hasRole(role) : user.hasRole(role);
         }
         return false;
     }
