@@ -16,8 +16,10 @@
  */
 package org.keycloak.sdjwt.vp;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.security.cert.Certificate;
+import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.representations.IDToken;
@@ -25,9 +27,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sdjwt.ClaimVerifier;
 import org.keycloak.sdjwt.JwsToken;
 
-import java.security.cert.Certificate;
-import java.util.List;
-import java.util.Optional;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  *

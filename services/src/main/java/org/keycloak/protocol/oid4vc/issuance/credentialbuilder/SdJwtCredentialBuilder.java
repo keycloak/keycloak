@@ -17,8 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -32,6 +30,8 @@ import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class SdJwtCredentialBuilder implements CredentialBuilder {
 

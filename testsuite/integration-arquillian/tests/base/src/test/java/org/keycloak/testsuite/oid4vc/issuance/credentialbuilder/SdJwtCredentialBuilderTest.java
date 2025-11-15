@@ -28,6 +28,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
+import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -129,7 +130,8 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         List<String> disclosed = sdJwt.getDisclosures().values().stream().toList();
         assertEquals("All undisclosed claims and decoys should be provided.",
-                disclosed.size() + decoys, sdArrayNode == null ? 0 : sdArrayNode.size());
+                disclosed.size() + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+                     sdArrayNode == null ? 0 : sdArrayNode.size());
 
         visibleClaims.forEach(vc ->
                 assertTrue("The visible claims should be present within the token.",

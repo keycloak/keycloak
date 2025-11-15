@@ -17,13 +17,6 @@
 
 package org.keycloak.sdjwt.sdjwtvp;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.MatcherAssert;
-import org.junit.ClassRule;
-import org.junit.Test;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,6 +37,8 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.ClassRule;
 import org.junit.Test;
 

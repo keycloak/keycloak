@@ -16,15 +16,14 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.util.List;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 
 /**
  * Simplified service for creating and managing SD-JWTs with easy-to-use methods.

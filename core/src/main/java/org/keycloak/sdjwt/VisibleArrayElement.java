@@ -16,9 +16,9 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import java.util.Objects;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  *

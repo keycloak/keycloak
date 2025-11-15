@@ -17,12 +17,13 @@
 
 package org.keycloak.sdjwt.vp;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.List;
+
 import org.keycloak.representations.IDToken;
 import org.keycloak.sdjwt.ClaimVerifier;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 
-import java.util.List;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE;
 

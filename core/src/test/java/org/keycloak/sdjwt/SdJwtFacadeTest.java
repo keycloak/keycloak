@@ -16,11 +16,7 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,7 +25,10 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 
-import java.util.ArrayList;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

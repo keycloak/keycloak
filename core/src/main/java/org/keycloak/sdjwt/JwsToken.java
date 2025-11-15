@@ -16,8 +16,10 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -27,9 +29,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.util.JsonSerialization;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-import java.util.Optional;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Handle jws, either the issuer jwt or the holder key binding jwt.

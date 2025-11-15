@@ -16,8 +16,13 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -25,12 +30,8 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 
@@ -40,6 +41,8 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwt {
+
+    public static final int DEFAULT_NUMBER_OF_DECOYS = 5;
 
     private final IssuerSignedJWT issuerSignedJWT;
     private final List<SdJwtClaim> claims;
@@ -250,9 +253,10 @@ public class SdJwt {
                            SignatureSignerContext keybindingSigningContext,
                            String sdHashAlgorithm,
                            boolean useDefaultDecoys) {
-            if (useDefaultDecoys && issuerSignedJwt.getDecoyClaims().isEmpty()) {
+            int numberOfDecoys = Optional.ofNullable(issuerSignedJwt.getDecoyClaims()).map(List::size).orElse(0);
+            if (useDefaultDecoys && numberOfDecoys == 0) {
                 List<DecoyClaim> decoyClaims = new ArrayList<>();
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < DEFAULT_NUMBER_OF_DECOYS; i++) {
                     decoyClaims.add(DecoyClaim.builder().build());
                 }
                 issuerSignedJwt.setDisclosureClaims(issuerSignedJwt.getDisclosureSpec(),

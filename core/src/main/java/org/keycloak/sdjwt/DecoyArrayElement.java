@@ -16,9 +16,9 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import java.util.Objects;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
 

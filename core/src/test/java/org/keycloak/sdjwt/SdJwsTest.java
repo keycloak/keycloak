@@ -17,18 +17,19 @@
 
 package org.keycloak.sdjwt;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.rule.CryptoInitRule;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.VerificationException;
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.rule.CryptoInitRule;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

@@ -16,12 +16,11 @@
  */
 package org.keycloak.sdjwt;
 
-import static org.junit.Assert.assertEquals;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
@@ -43,7 +42,7 @@ public class ArrayElementDisclosureTest {
                 IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(disclosureSpec, claimSet);
                 SdJwt sdJwt = SdJwt.builder()
                                 .withIssuerSignedJwt(issuerSignedJWT)
-                                .build();
+                                .build(false);
 
                 IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
@@ -69,7 +68,7 @@ public class ArrayElementDisclosureTest {
                 IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(disclosureSpec, claimSet);
                 SdJwt sdJwt = SdJwt.builder()
                                 .withIssuerSignedJwt(issuerSignedJWT)
-                                .build();
+                                .build(false);
                 IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
                 JsonNode expected = TestUtils.readClaimSet(getClass(),

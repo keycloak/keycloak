@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -32,7 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
-import java.util.function.Function;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
@@ -412,24 +412,22 @@ public abstract class SdJwtVerificationTest {
         claimSet.put("family_name", "Doe");
 
         String salt = "eluV5Og3gSNII8EYnsxA_A";
-        SdJwt sdJwt = SdJwt.builder()
-                           .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet,
-                                           DisclosureSpec.builder()
-                                                         .withUndisclosedClaim("given_name", salt)
-                                                         // We are reusing the same salt value, and that is the problem
-                                                         .withUndisclosedClaim("family_name", salt)
-                                            .build()).build())
-                           .build(testSettings.issuerSigContext);
-
-        VerificationException exception = assertThrows(
-                VerificationException.class,
-                () -> sdJwt.verify(
-                    defaultIssuerVerifyingKeys(),
-                    optionalTimeClaimVerificationOpts().build()
-                )
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                DisclosureSpec disclosureSpec = DisclosureSpec.builder()
+                                                              .withUndisclosedClaim("given_name", salt)
+                                                              // We are reusing the same salt value, and that is the problem
+                                                              .withUndisclosedClaim("family_name", salt)
+                                                              .build();
+                SdJwt.builder()
+                     .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet, disclosureSpec).build())
+                     .build(testSettings.issuerSigContext);
+            }
         );
 
-        assertEquals("A salt value was reused: " + salt, exception.getMessage());
+        assertEquals(String.format("Salt value '%s' was reused for claims 'family_name' and 'given_name'", salt),
+                     exception.getMessage());
     }
 
     private List<SignatureVerifierContext> defaultIssuerVerifyingKeys() {

@@ -16,22 +16,11 @@
  */
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.sdjwt.vp.KeyBindingJWT;
-import org.keycloak.util.JsonSerialization;
-
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,13 +29,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.sdjwt.vp.KeyBindingJWT;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.OID4VCConstants;
 import org.keycloak.jose.jws.JWSInput;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
@@ -221,16 +216,29 @@ public class IssuerSignedJWT extends JwsToken {
         // first filter all UndisclosedClaim
         // then sort by salt
         // then push digest into the sdArray
-        List<String> digests = claimsInternal.stream()
-                                             .filter(claim -> claim instanceof UndisclosedClaim)
-                                             .map(claim -> (UndisclosedClaim) claim)
-                                             .collect(Collectors.toMap(UndisclosedClaim::getSalt, claim -> claim))
-                                             .entrySet().stream()
-                                             .sorted(Map.Entry.comparingByKey())
-                                             .map(Map.Entry::getValue)
-                                             .filter(Objects::nonNull)
-                                             .map(od -> od.getDisclosureDigest(hashAlg))
-                                             .collect(Collectors.toList());
+        Map<SdJwtSalt, UndisclosedClaim> undisclosedClaimMap = new HashMap<>();
+        claimsInternal.stream()
+                      .filter(claim -> claim instanceof UndisclosedClaim)
+                      .map(claim -> (UndisclosedClaim) claim)
+                      .forEach(undisclosedClaim -> {
+                          if (undisclosedClaimMap.containsKey(undisclosedClaim.getSalt())) {
+                              String errorMessage = String.format("Salt value '%s' was reused for claims "
+                                                                      + "'%s' and '%s'",
+                                                                  undisclosedClaim.getSalt(),
+                                                                  undisclosedClaim.getClaimName(),
+                                                                  undisclosedClaimMap.get(undisclosedClaim.getSalt())
+                                                                                     .getClaimName());
+                              throw new IllegalArgumentException(errorMessage);
+                          }
+                          undisclosedClaimMap.put(undisclosedClaim.getSalt(), undisclosedClaim);
+                      });
+
+        List<String> digests = undisclosedClaimMap.entrySet().stream()
+                                                  .sorted(Map.Entry.comparingByKey())
+                                                  .map(Map.Entry::getValue)
+                                                  .filter(Objects::nonNull)
+                                                  .map(od -> od.getDisclosureDigest(hashAlg))
+                                                  .collect(Collectors.toList());
 
         // add decoy claims
         decoyClaimsInternal.stream().map(claim -> claim.getDisclosureDigest(hashAlg)).forEach(digests::add);
@@ -490,6 +498,7 @@ public class IssuerSignedJWT extends JwsToken {
             disclosureSpec = Optional.ofNullable(disclosureSpec).orElseGet(() -> DisclosureSpec.builder().build());
             // send an empty lise if claims not set.
             decoyClaims = decoyClaims == null ? disclosureSpec.createDecoyClaims() : decoyClaims;
+
             if (signer != null) {
                 return new IssuerSignedJWT(disclosureSpec,
                                            jwsHeader,

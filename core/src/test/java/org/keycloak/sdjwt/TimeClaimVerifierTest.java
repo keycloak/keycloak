@@ -17,24 +17,24 @@
 
 package org.keycloak.sdjwt;
 
+import java.time.Instant;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.VerificationException;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.time.Instant;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

@@ -44,6 +44,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.JsonSerialization;
@@ -271,7 +272,9 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
             }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
-            assertEquals("All undisclosed claims and decoys should be provided.", disclosed.size() + decoys, numSds);
+            assertEquals("All undisclosed claims and decoys should be provided.",
+                         disclosed.size() + (decoys == 0 ? decoys + SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+                         numSds);
             verifyDisclosures(sds, disclosed);
 
             visibleClaims

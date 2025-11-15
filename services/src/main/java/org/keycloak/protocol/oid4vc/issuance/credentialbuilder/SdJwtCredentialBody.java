@@ -17,13 +17,13 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;

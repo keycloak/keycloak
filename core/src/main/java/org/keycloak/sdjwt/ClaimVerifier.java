@@ -17,11 +17,6 @@
 
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Time;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,6 +24,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Module for checking the validity of JWT time claims. All checks account for a leeway window to accommodate clock

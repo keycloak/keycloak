@@ -16,9 +16,6 @@
  */
 package org.keycloak.sdjwt;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +26,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
@@ -95,7 +91,7 @@ public class IssuerSignedJWTTest {
 
         SdJwt sdJwt = SdJwt.builder()
                            .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(claimSet, disclosureSpec).build())
-                           .build();
+                           .build(false);
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
@@ -127,7 +123,7 @@ public class IssuerSignedJWTTest {
 
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder().withClaims(holderClaimSet, disclosureSpec).build())
-                .build();
+                .build(false);
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
         JsonNode expected = TestUtils.readClaimSet(getClass(), "sdjwt/s3.3-issuer-payload.json");

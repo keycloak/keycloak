@@ -73,7 +73,7 @@ public abstract class SdJwtVPTest {
         IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder().withClaims(holderClaimSet, disclosureSpec).build();
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(issuerSignedJWT)
-                .build(TestSettings.getInstance().getIssuerSignerContext());
+                .build(TestSettings.getInstance().getIssuerSignerContext(), false);
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
