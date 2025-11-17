@@ -42,7 +42,8 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
         // The query "deleteExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="deleteExpiredUserSessions", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
-        @NamedQuery(name="deleteUserSessions", query="delete from PersistentUserSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (:userSessionId)"),
+        @NamedQuery(name="deleteUserSessions", query="delete from PersistentUserSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
+        // The query "findExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="findExpiredUserSessions", query="select sess.userSessionId, sess.userId from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
         @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh where sess.realmId = :realmId" +
                 " AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
@@ -65,7 +66,23 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(name="findClientSessionsClientIds", query="SELECT clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider, count(clientSess)" +
                 " FROM PersistentClientSessionEntity clientSess INNER JOIN PersistentUserSessionEntity sess ON clientSess.userSessionId = sess.userSessionId AND sess.offline = clientSess.offline" +
                 " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh" +
-                " GROUP BY clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider")
+                " GROUP BY clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider"),
+        @NamedQuery(name = "findUserSessionAndDataWithNullRememberMe",
+                query = "SELECT sess.userSessionId, sess.data" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe IS NULL AND (sess.lastSessionRefresh < :lastSessionRefresh OR sess.createdOn < :createdOn)"),
+        @NamedQuery(name = "updateUserSessionRememberMeColumn",
+                query = "UPDATE PersistentUserSessionEntity sess" +
+                        " SET sess.rememberMe = :rememberMe" +
+                        " WHERE sess.userSessionId IN (:userSessionIds)"),
+        @NamedQuery(name = "findExpiredOfflineUserSessions",
+                query = "SELECT sess.userSessionId, sess.userId" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND (sess.lastSessionRefresh < :lastSessionRefresh OR sess.createdOn < :createdOn)"),
+        @NamedQuery(name = "findExpiredRegularUserSessions",
+                query = "SELECT sess.userSessionId, sess.userId" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND (sess.lastSessionRefresh < :lastSessionRefresh OR sess.createdOn < :createdOn)"),
 
 })
 @Table(name="OFFLINE_USER_SESSION")
@@ -81,7 +98,7 @@ public class PersistentUserSessionEntity {
     @Column(name = "REALM_ID", length = 36)
     protected String realmId;
 
-    @Column(name="USER_ID", length = 255)
+    @Column(name="USER_ID")
     protected String userId;
 
     @Column(name = "CREATED_ON")

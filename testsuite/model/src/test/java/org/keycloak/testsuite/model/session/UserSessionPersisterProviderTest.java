@@ -32,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -65,8 +66,8 @@ import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
+import org.keycloak.models.utils.RealmExpiration;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
-import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.services.managers.ClientManager;
@@ -85,6 +86,7 @@ import org.junit.Test;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.keycloak.models.utils.SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -852,6 +854,64 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         withRealmConsumer(realmId, (session, realm) -> assertTrue(loadUserSessionDirectlyDatabase(session, userSessionIds.get(0)).isRememberMe()));
     }
 
+    @Deprecated(since = "26.5", forRemoval = true) // to be removed when remember_me is removed from the data column
+    @Test
+    public void testUserSessionRememberMeMigrationWithExpiration() {
+        Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
+
+        RealmExpiration realmExpiration = withRealm(realmId, (session, realm) -> {
+            // enable remember me
+            realm.setRememberMe(true);
+            RealmExpiration expiration = RealmExpiration.fromRealm(realm);
+
+            // double max-idle and lifespan for remember me
+            realm.setSsoSessionIdleTimeoutRememberMe(expiration.maxIdle() * 2);
+            realm.setSsoSessionMaxLifespanRememberMe(expiration.lifespan() * 2);
+            return expiration;
+        });
+
+        final int initialCount = getPersistedUserSessionsCount();
+        final int sessionCount = JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2;
+        createSessions(sessionCount, value -> value % 2 == 0);
+
+        assertEquals(initialCount + sessionCount, getPersistedUserSessionsCount());
+
+        // se the column to null.
+        withRealmConsumer(realmId, (session, realm) -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            int count = em.createQuery("UPDATE PersistentUserSessionEntity sess SET sess.rememberMe = NULL WHERE sess.realmId = :realmId")
+                    .setParameter("realmId", realmId)
+                    .executeUpdate();
+            assertEquals(sessionCount, count);
+        });
+
+        // trigger expiration, it should perform the migration
+        // because PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS, nothing should be removed but all session should be migrated and the remember me column must be updated.
+        triggerExpiration(realmExpiration.maxIdle() + 10);
+
+        assertEquals(initialCount + sessionCount, getPersistedUserSessionsCount());
+
+        // check if everything worked as expected.
+        withRealmConsumer(realmId, (session, realm) -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            long count = em.createQuery("SELECT count(*) FROM PersistentUserSessionEntity sess WHERE sess.rememberMe IS NOT NULL AND sess.realmId = :realmId", Number.class)
+                    .setParameter("realmId", realmId)
+                    .getSingleResult()
+                    .longValue();
+            assertEquals(sessionCount, count);
+        });
+
+        // lets expire regular sessions
+        triggerExpiration(realmExpiration.maxIdle() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
+
+        assertEquals(initialCount + (sessionCount / 2), getPersistedUserSessionsCount());
+
+        // lets expire regular sessions with remember me
+        triggerExpiration((realmExpiration.maxIdle() * 2) + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
+
+        assertEquals(initialCount, getPersistedUserSessionsCount());
+    }
+
     private PersistentUserSessionEntity loadUserSessionDirectlyDatabase(KeycloakSession session, String userSessionId) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         return  em.createNamedQuery("findUserSession", PersistentUserSessionEntity.class)
@@ -862,7 +922,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 .setMaxResults(1)
                 .getSingleResult();
     }
-
 
     private UserSessionCount getUserSessionCount() {
         if (InfinispanUtils.isEmbeddedInfinispan()) {
@@ -929,8 +988,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     private long doExpirationWithSessions(int count, int initialSessionCount, long currentEventCount) {
         String userId = withRealm(realmId, (session, realm) -> session.users().getUserByUsername(realm, "user1").getId());
-        int offset = withRealm(realmId, (session, realm) -> realm.getSsoSessionMaxLifespan() + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
-        createSessions(count);
+        int offset = withRealm(realmId, (session, realm) -> realm.getSsoSessionMaxLifespan() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
+        createSessions(count, value -> false);
         assertEquals(count + initialSessionCount, getPersistedUserSessionsCount());
         triggerExpiration(offset);
         assertEquals(initialSessionCount, getPersistedUserSessionsCount());
@@ -939,13 +998,13 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         return eventCount;
     }
 
-    private void createSessions(int count) {
+    private void createSessions(int count, IntFunction<Boolean> rememberMeFunction) {
         withRealmConsumer(realmId, (session, realm) -> {
             UserModel user = session.users().getUserByUsername(realm, "user1");
             ClientModel client = realm.getClientByClientId("test-app");
             IntStream.range(0, count)
                     .forEach(value -> {
-                        var us = session.sessions().createUserSession(null, realm, user, "user1", "127.0.0." + value, "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                        var us = session.sessions().createUserSession(null, realm, user, "user1", "127.0.0." + value, "form", rememberMeFunction.apply(value), null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
                         createClientSession(session, realmId, client, us, "http://redirect", "state");
                     });
         });
