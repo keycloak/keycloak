@@ -313,23 +313,6 @@ export default function ClientDetails() {
   const setupForm = (client: ClientRepresentation) => {
     convertToFormValues(client, form.setValue);
 
-    // Convert empty/null request object attributes to "any" for display
-    if (client.attributes) {
-      const requestObjectAttrs = [
-        "request.object.signature.alg",
-        "request.object.encryption.alg",
-        "request.object.encryption.enc",
-      ];
-      requestObjectAttrs.forEach((attr) => {
-        if (!client.attributes![attr] || client.attributes![attr] === "") {
-          form.setValue(
-            convertAttributeNameToForm<FormFields>(`attributes.${attr}`),
-            "any",
-          );
-        }
-      });
-    }
-
     if (client.attributes?.["acr.loa.map"]) {
       form.setValue(
         convertAttributeNameToForm("attributes.acr.loa.map"),
@@ -387,20 +370,6 @@ export default function ClientDetails() {
             .map(({ key, value }) => [key, value]),
         ),
       );
-    }
-
-    // Convert "any" to empty string for request object attributes
-    if (submittedClient.attributes) {
-      const requestObjectAttrs = [
-        "request.object.signature.alg",
-        "request.object.encryption.alg",
-        "request.object.encryption.enc",
-      ];
-      requestObjectAttrs.forEach((attr) => {
-        if (submittedClient.attributes![attr] === "any") {
-          submittedClient.attributes![attr] = "";
-        }
-      });
     }
 
     try {
