@@ -27,7 +27,7 @@ import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 public class ParEndpointTest {
 
@@ -35,12 +35,12 @@ public class ParEndpointTest {
     public void testFlattenDecodedFormParametersRetainAuthorizationDetails() {
         var decodedFormParameters = new MultivaluedHashMap<String, String>();
         String authorizationDetails = "[{\"type\": \"urn:openfinanceuae:account-access-consent:v1.0\",\"foo\":\"bar\"},{\"type\": \"urn:openfinanceuae:account-access-consent:v1.0\",\"gugu\":\"gaga\"}]";
-        decodedFormParameters.put(AUTHORIZATION_DETAILS_PARAM, List.of(authorizationDetails));
+        decodedFormParameters.put(AUTHORIZATION_DETAILS, List.of(authorizationDetails));
         var params = new HashMap<String, String>();
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals(authorizationDetails, params.get(AUTHORIZATION_DETAILS_PARAM));
+        Assert.assertEquals(authorizationDetails, params.get(AUTHORIZATION_DETAILS));
     }
 
     @Test

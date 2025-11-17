@@ -38,7 +38,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 public class PassThroughClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "testsuite-client-passthrough";
+
     public static String clientId = "test-app";
+    public static String namedClientId = "named-test-app";
 
     // If this parameter is present in the HTTP request, the error will be thrown during authentication
     public static final String TEST_ERROR_PARAM = "test_error_param";

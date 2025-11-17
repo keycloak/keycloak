@@ -23,7 +23,6 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -34,7 +33,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE;
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -74,7 +73,7 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
             // Verify that it contains openid_credential
             List<String> supportedTypes = oauthConfig.getAuthorizationDetailsTypesSupported();
             assertTrue("authorization_details_types_supported should contain openid_credential",
-                    supportedTypes.contains(OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE));
+                    supportedTypes.contains(OPENID_CREDENTIAL));
 
         }
     }
@@ -94,7 +93,7 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
             assertNotNull("Authorization server should support authorization_details_types_supported",
                     authServerConfig.getAuthorizationDetailsTypesSupported());
             assertTrue("Authorization server should support openid_credential",
-                    authServerConfig.getAuthorizationDetailsTypesSupported().contains(OPENID_CREDENTIAL_TYPE));
+                    authServerConfig.getAuthorizationDetailsTypesSupported().contains(OPENID_CREDENTIAL));
         }
     }
 

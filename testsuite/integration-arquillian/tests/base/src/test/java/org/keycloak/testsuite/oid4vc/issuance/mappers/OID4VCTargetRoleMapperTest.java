@@ -115,15 +115,12 @@ public class OID4VCTargetRoleMapperTest extends OID4VCTest {
 						return mergedRoles;
 					}
 			);
-		} else {
-			testRealm.getRoles()
-					.setClient(Map.of(existingClient.getClientId(),
-							List.of(getRoleRepresentation("testRole", existingClient.getClientId()))));
 		}
 
 		List<UserRepresentation> realmUsers = Optional.ofNullable(testRealm.getUsers()).map(ArrayList::new)
 				.orElse(new ArrayList<>());
-		realmUsers.add(getUserRepresentation(Map.of(existingClient.getClientId(), List.of("testRole"), "newClient", List.of("newRole"))));
+		realmUsers.add(getUserRepresentation("John Doe", List.of(),
+                Map.of(clientId, List.of("testRole"), "newClient", List.of("newRole"))));
 		testRealm.setUsers(realmUsers);
 	}
 }

@@ -77,6 +77,8 @@ import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SMTPUtil;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+
 /**
  * Per request object
  *
@@ -97,7 +99,7 @@ public class RealmManager {
         return session;
     }
 
-    public RealmModel getKeycloakAdminstrationRealm() {
+    public RealmModel getKeycloakAdministrationRealm() {
         return getRealmByName(Config.getAdminRealm());
     }
 
@@ -246,7 +248,6 @@ public class RealmManager {
         viewUsers.addCompositeRole(queryGroups);
     }
 
-
     public String getRealmAdminClientId(RealmModel realm) {
         return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
@@ -254,8 +255,6 @@ public class RealmManager {
     public String getRealmAdminClientId(RealmRepresentation realm) {
         return Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
-
-
 
     protected void setupRealmDefaults(RealmModel realm) {
         realm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
@@ -275,6 +274,13 @@ public class RealmManager {
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+            if (realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
+                RoleModel roleModel = realm.addRole(CREDENTIAL_OFFER_CREATE.getName());
+                roleModel.setDescription(CREDENTIAL_OFFER_CREATE.getDescription());
+            }
+        }
+
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
     }
 
@@ -284,7 +290,7 @@ public class RealmManager {
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
             if (masterAdminClient != null) {
-                session.clients().removeClient(getKeycloakAdminstrationRealm(), masterAdminClient.getId());
+                session.clients().removeClient(getKeycloakAdministrationRealm(), masterAdminClient.getId());
             }
 
             UserSessionProvider sessions = session.sessions();

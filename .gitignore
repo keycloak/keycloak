@@ -5,6 +5,7 @@
 # Intellij
 ###################
 .idea
+.run
 *.iml
 !.idea/icon.png
 

@@ -67,7 +67,7 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 /**
  * Base class for OAuth 2.0 grant types
@@ -278,7 +278,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @return the authorization details response if processing was successful, null otherwise
      */
     protected List<AuthorizationDetailsResponse> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS_PARAM);
+        String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
                 return session.getKeycloakSessionFactory()
@@ -312,7 +312,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
-            return session.getKeycloakSessionFactory()
+            var result = session.getKeycloakSessionFactory()
                     .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
                     .sorted((f1, f2) -> f2.order() - f1.order())
                     .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
@@ -320,6 +320,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     .filter(authzDetailsResponse -> authzDetailsResponse != null)
                     .findFirst()
                     .orElse(null);
+            return result;
         } catch (RuntimeException e) {
             logger.warnf(e, "Error when handling missing authorization_details");
             return null;
@@ -337,7 +338,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
         // Check if authorization_details was stored during authorization request (e.g., from PAR)
-        String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS_PARAM);
+        String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS);
         if (storedAuthDetails != null) {
             logger.debugf("Found authorization_details in client session, processing it");
             try {

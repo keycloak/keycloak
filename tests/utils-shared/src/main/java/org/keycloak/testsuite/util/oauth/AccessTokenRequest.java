@@ -1,8 +1,11 @@
 package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -37,6 +40,11 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
 
     public AccessTokenRequest codeVerifier(String codeVerifier) {
         parameter(OAuth2Constants.CODE_VERIFIER, codeVerifier);
+        return this;
+    }
+
+    public AccessTokenRequest authorizationDetails(List<AuthorizationDetail> authDetails) {
+        parameter(OAuth2Constants.AUTHORIZATION_DETAILS, JsonSerialization.valueAsString(authDetails));
         return this;
     }
 

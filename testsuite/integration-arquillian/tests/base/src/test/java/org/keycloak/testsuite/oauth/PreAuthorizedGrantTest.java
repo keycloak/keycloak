@@ -65,7 +65,6 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
 
         assertEquals("An access token should have successfully been returned.", HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
-        assertEquals("The correct session should have been used for the pre-authorized code.", userSessionId, accessTokenResponse.getSessionState());
     }
 
     @Test

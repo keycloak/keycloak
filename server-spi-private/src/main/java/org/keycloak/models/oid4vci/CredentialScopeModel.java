@@ -25,14 +25,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
 import static org.keycloak.OID4VCConstants.SD_JWT_VC_FORMAT;
-import static org.keycloak.constants.Oid4VciConstants.OID4VC_PROTOCOL;
+import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 
 /**
  * This class acts as delegate for a {@link ClientScopeModel} implementation and adds additional functionality for
@@ -424,7 +424,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public Stream<Oid4vcProtocolMapperModel> getOid4vcProtocolMappersStream() {
         return clientScope.getProtocolMappersStream().filter(pm -> {
-            return Oid4VciConstants.OID4VC_PROTOCOL.equals(pm.getProtocol());
+            return OID4VCIConstants.OID4VC_PROTOCOL.equals(pm.getProtocol());
         }).map(Oid4vcProtocolMapperModel::new);
     }
 
