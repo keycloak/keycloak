@@ -5,8 +5,8 @@ import { KeycloakAdminClient } from "../src/client.js";
 import type ClientRepresentation from "../src/defs/clientRepresentation.js";
 import type GroupRepresentation from "../src/defs/groupRepresentation.js";
 import type RoleRepresentation from "../src/defs/roleRepresentation.js";
+import type { SubGroupQuery } from "../src/resources/groups.js";
 import { credentials } from "./constants.js";
-import { SubGroupQuery } from "../src/resources/groups.js";
 
 const expect = chai.expect;
 
