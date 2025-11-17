@@ -20,6 +20,7 @@ package org.keycloak.sdjwt;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.keycloak.common.VerificationException;
 
 /**
  * Options for Issuer-signed JWT verification.
@@ -29,8 +30,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class IssuerSignedJwtVerificationOpts extends ClaimVerifier {
 
 
-    public IssuerSignedJwtVerificationOpts(List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
-        super(contentVerifiers);
+    public IssuerSignedJwtVerificationOpts(List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers,
+                                           List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+        super(headerVerifiers, contentVerifiers);
+    }
+
+    public void verify(JwsToken tokenToVerify) throws VerificationException {
+        super.verifyClaims(tokenToVerify.getJwsHeaderAsNode(), tokenToVerify.getPayload());
     }
 
     public static IssuerSignedJwtVerificationOpts.Builder builder() {
@@ -115,7 +121,7 @@ public class IssuerSignedJwtVerificationOpts extends ClaimVerifier {
 
         public IssuerSignedJwtVerificationOpts build() {
 
-            return new IssuerSignedJwtVerificationOpts(contentVerifiers);
+            return new IssuerSignedJwtVerificationOpts(headerVerifiers, contentVerifiers);
         }
     }
 }

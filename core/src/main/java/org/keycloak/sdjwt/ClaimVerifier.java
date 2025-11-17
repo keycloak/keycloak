@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.VerificationException;
@@ -46,20 +47,38 @@ public class ClaimVerifier {
     public static final String CLAIM_NAME_EXP = "exp";
     public static final String CLAIM_NAME_NBF = "nbf";
 
-    private final List<Predicate<ObjectNode>> verifiers;
+    private final List<Predicate<ObjectNode>> headerVerifiers;
+    private final List<Predicate<ObjectNode>> contentVerifiers;
 
-    public ClaimVerifier(List<Predicate<ObjectNode>> verifiers) {
-        this.verifiers = verifiers;
+    public ClaimVerifier(List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers,
+                         List<Predicate<ObjectNode>> contentVerifiers) {
+        this.headerVerifiers = headerVerifiers;
+        this.contentVerifiers = contentVerifiers;
     }
 
-    public void verifyClaims(ObjectNode jsonNode) throws VerificationException {
-        for (Predicate<ObjectNode> verifier : verifiers) {
-            verifier.test(jsonNode);
+    public void verifyClaims(ObjectNode header, ObjectNode body) throws VerificationException {
+        for (Predicate<ObjectNode> verifier : headerVerifiers) {
+            verifier.test(header);
+        }
+        for (Predicate<ObjectNode> verifier : contentVerifiers) {
+            verifier.test(body);
         }
     }
 
-    public List<ClaimVerifier.Predicate<ObjectNode>> getVerifiers() {
-        return verifiers;
+    public void verifyHeaderClaims(ObjectNode header) throws VerificationException {
+        for (Predicate<ObjectNode> verifier : headerVerifiers) {
+            verifier.test(header);
+        }
+    }
+
+    public void verifyBodyClaims(ObjectNode body) throws VerificationException {
+        for (Predicate<ObjectNode> verifier : contentVerifiers) {
+            verifier.test(body);
+        }
+    }
+
+    public List<ClaimVerifier.Predicate<ObjectNode>> getContentVerifiers() {
+        return contentVerifiers;
     }
 
     public static ClaimVerifier.Builder builder() {
@@ -109,16 +128,56 @@ public class ClaimVerifier {
 
         private final String expectedClaimValue;
 
+        private final BiFunction<String, String, Boolean> stringComparator;
+
+        /**
+         * can be used to make sure that the given claim does NOT have the expected given value
+         */
+        private final boolean invertCheck;
+
         private final boolean isOptional;
 
-        public ClaimCheck(String claimName, String expectedClaimValue) {
-            this(claimName, expectedClaimValue, false);
+        public ClaimCheck(String claimName,
+                          String expectedClaimValue) {
+            this(claimName, expectedClaimValue, false, false);
         }
 
         public ClaimCheck(String claimName, String expectedClaimValue, boolean isOptional) {
+            this(claimName, expectedClaimValue, false, isOptional);
+        }
+
+        public ClaimCheck(String claimName,
+                          String expectedClaimValue,
+                          BiFunction<String, String, Boolean> stringComparator) {
+            this(claimName, expectedClaimValue, stringComparator, false, false);
+        }
+
+        public ClaimCheck(String claimName,
+                          String expectedClaimValue,
+                          BiFunction<String, String, Boolean> stringComparator,
+                          boolean isOptional) {
+            this(claimName, expectedClaimValue, stringComparator, false, isOptional);
+        }
+
+        public ClaimCheck(String claimName, String expectedClaimValue, boolean invertCheck, boolean isOptional) {
+            this(claimName, expectedClaimValue, getDefaultComparator(), invertCheck, isOptional);
+        }
+
+        public ClaimCheck(String claimName,
+                          String expectedClaimValue,
+                          BiFunction<String, String, Boolean> stringComparator,
+                          boolean invertCheck,
+                          boolean isOptional) {
             this.claimName = claimName;
             this.expectedClaimValue = expectedClaimValue;
+            this.stringComparator = Optional.ofNullable(stringComparator).orElseGet(ClaimCheck::getDefaultComparator);
+            this.invertCheck = invertCheck;
             this.isOptional = isOptional;
+        }
+
+        protected static BiFunction<String, String, Boolean> getDefaultComparator() {
+            return (s, s2) -> (s == null && s2 == null)
+                || (s != null && s.equals(s2));
         }
 
         @Override
@@ -133,12 +192,27 @@ public class ClaimVerifier {
                 throw new VerificationException(String.format("Missing claim '%s' in token", claimName));
             }
 
-            if (!expectedClaimValue.equals(claimValue)) {
-                throw new VerificationException(String.format("Expected value '%s' in token for claim '%s' does " +
-                                                                  "not match actual value '%s'",
-                                                              expectedClaimValue,
-                                                              claimName,
-                                                              claimValue));
+            boolean checkSuccessful;
+            if (invertCheck) {
+                checkSuccessful = !stringComparator.apply(expectedClaimValue, claimValue);
+            } else {
+                checkSuccessful = stringComparator.apply(expectedClaimValue, claimValue);
+            }
+
+            if (!checkSuccessful) {
+                String errorMessage;
+                if (invertCheck) {
+                    errorMessage = String.format("Value '%s' is not allowed for claim '%s'!",
+                                                 claimValue,
+                                                 claimName);
+                } else {
+                    errorMessage = String.format("Expected value '%s' in token for claim '%s' does " +
+                                                     "not match actual value '%s'",
+                                                 expectedClaimValue,
+                                                 claimName,
+                                                 claimValue);
+                }
+                throw new VerificationException(errorMessage);
             }
 
             return true;
@@ -146,6 +220,18 @@ public class ClaimVerifier {
 
         public String getClaimName() {
             return claimName;
+        }
+
+        public String getExpectedClaimValue() {
+            return expectedClaimValue;
+        }
+
+        public boolean isInvertCheck() {
+            return invertCheck;
+        }
+
+        public boolean isOptional() {
+            return isOptional;
         }
     }
 
@@ -321,6 +407,7 @@ public class ClaimVerifier {
 
         protected Integer clockSkew = DEFAULT_CLOCK_SKEW;
         protected Integer allowedMaxAge = DEFAULT_ALLOWED_MAX_AGE;
+        protected List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers = new ArrayList<>();
         protected List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers = new ArrayList<>();
 
         public Builder() {
@@ -329,19 +416,18 @@ public class ClaimVerifier {
 
         public Builder(Integer clockSkew) {
             this.withClockSkew(Optional.ofNullable(clockSkew).orElse(DEFAULT_CLOCK_SKEW));
-            Set<Class> timeVerifierTypes = contentVerifiers.stream()
-                                                           .filter(verifier -> {
-                                                               return verifier instanceof TimeCheck;
-                                                           }).map(Object::getClass)
-                                                           .collect(Collectors.toSet());
-            if (!timeVerifierTypes.contains(IatLifetimeCheck.class)) {
-                this.withIatCheck(allowedMaxAge, false);
-            }
-            if (!timeVerifierTypes.contains(ExpCheck.class)) {
-                this.withExpCheck(false);
-            }
-            if (!timeVerifierTypes.contains(NbfCheck.class)) {
-                this.withNbfCheck(false);
+            this.withIatCheck(allowedMaxAge, false);
+            this.withExpCheck(false);
+            this.withNbfCheck(false);
+
+            // add algorithm not "none"-check
+            {
+                boolean invertCheck = true;
+                boolean isOptional = false;
+                headerVerifiers.add(new ClaimCheck("alg", "none", (s1, s2) -> {
+                    // ignore upper and lowercase for comparison
+                    return s1 != null && s1.equalsIgnoreCase(s2);
+                }, invertCheck, isOptional));
             }
         }
 
@@ -436,7 +522,7 @@ public class ClaimVerifier {
 
         public ClaimVerifier build() {
 
-            return new ClaimVerifier(contentVerifiers);
+            return new ClaimVerifier(headerVerifiers, contentVerifiers);
         }
     }
 }

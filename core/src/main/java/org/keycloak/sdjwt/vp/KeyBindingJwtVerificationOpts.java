@@ -32,7 +32,7 @@ import static org.keycloak.OID4VCConstants.SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MA
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOpts{
+public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOpts {
 
     /**
      * Specifies the Verifier's policy whether to check Key Binding
@@ -52,8 +52,9 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
                                          int allowedMaxAge,
                                          String nonce,
                                          String aud,
+                                         List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers,
                                          List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
-        super(contentVerifiers);
+        super(headerVerifiers, contentVerifiers);
         this.keyBindingRequired = keyBindingRequired;
         this.allowedMaxAge = allowedMaxAge;
         this.nonce = nonce;
@@ -192,6 +193,7 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
                                                      allowedMaxAge,
                                                      nonce,
                                                      aud,
+                                                     headerVerifiers,
                                                      contentVerifiers);
         }
     }

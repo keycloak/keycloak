@@ -142,11 +142,13 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
         // make sure default ClaimVerifiers succeed
         {
             ClaimVerifier claimVerifier = ClaimVerifier.builder().build();
-            Assert.assertEquals(3, claimVerifier.getVerifiers().size());
+            Assert.assertEquals(3, claimVerifier.getContentVerifiers().size());
             try {
-                claimVerifier.verifyClaims(sdJwt.getIssuerSignedJWT().getPayload());
+                claimVerifier.verifyClaims(sdJwt.getIssuerSignedJWT().getJwsHeaderAsNode(),
+                                           sdJwt.getIssuerSignedJWT().getPayload());
+                Assert.fail("Verification must fail due to missing 'alg' header");
             } catch (VerificationException e) {
-                throw new RuntimeException("Verification should have succeeded", e);
+                Assert.assertEquals("Missing claim 'alg' in token", e.getMessage());
             }
         }
 
@@ -312,14 +314,16 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
         // make sure default ClaimVerifiers succeed
         {
             ClaimVerifier claimVerifier = ClaimVerifier.builder().build();
-            Assert.assertEquals(3, claimVerifier.getVerifiers().size());
+            Assert.assertEquals(3, claimVerifier.getContentVerifiers().size());
             try {
-                claimVerifier.verifyClaims(sdJwt.getIssuerSignedJWT().getPayload());
+                claimVerifier.verifyClaims(sdJwt.getIssuerSignedJWT().getJwsHeaderAsNode(),
+                                           sdJwt.getIssuerSignedJWT().getPayload());
             } catch (VerificationException e) {
                 throw new RuntimeException("Verification should have succeeded", e);
             }
             try {
-                claimVerifier.verifyClaims(sdJwt.getKeybindingJwt().getPayload());
+                claimVerifier.verifyClaims(sdJwt.getKeybindingJwt().getJwsHeaderAsNode(),
+                                           sdJwt.getKeybindingJwt().getPayload());
             } catch (VerificationException e) {
                 throw new RuntimeException("Verification should have succeeded", e);
             }

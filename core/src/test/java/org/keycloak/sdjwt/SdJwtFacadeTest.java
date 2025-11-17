@@ -141,7 +141,8 @@ public abstract class SdJwtFacadeTest {
     }
 
     private IssuerSignedJwtVerificationOpts createVerificationOptions() {
-        List<ClaimVerifier.Predicate<ObjectNode>> verifierList = new ArrayList<>();
-        return new IssuerSignedJwtVerificationOpts(verifierList);
+        List<ClaimVerifier.Predicate<ObjectNode>> headerVerifierList = new ArrayList<>();
+        List<ClaimVerifier.Predicate<ObjectNode>> bodyVerifierList = new ArrayList<>();
+        return new IssuerSignedJwtVerificationOpts(headerVerifierList, bodyVerifierList);
     }
 }

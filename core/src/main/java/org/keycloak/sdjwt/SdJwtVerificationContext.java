@@ -120,11 +120,11 @@ public class SdJwtVerificationContext {
         // Validate disclosures.
         JsonNode disclosedPayload = validateDisclosuresDigests();
 
-        // Validate time claims.
+        // Validate time claims and algorithm header claim.
         // Issuers will typically include claims controlling the validity of the SD-JWT in plaintext in the
         // SD-JWT payload, but there is no guarantee they would do so. Therefore, Verifiers cannot reliably
         // depend on that and need to operate as though security-critical claims might be selectively disclosable.
-        issuerSignedJwtVerificationOpts.verifyClaims(issuerSignedJwt.getPayload());
+        issuerSignedJwtVerificationOpts.verify(issuerSignedJwt);
 
         // Enforce presentation requirements.
         if (presentationRequirements != null) {
@@ -235,8 +235,8 @@ public class SdJwtVerificationContext {
             throw new VerificationException("Key binding JWT invalid", e);
         }
 
-        // Check that the creation time of the Key Binding JWT is within an acceptable window.
-        keyBindingJwtVerificationOpts.verifyClaims(keyBindingJwt.getPayload());
+        // Check timestamps of the keybinding-jwt and the header algorithm
+        keyBindingJwtVerificationOpts.verify(keyBindingJwt);
 
         // The same hash algorithm as for the Disclosures MUST be used (defined by the _sd_alg element
         // in the Issuer-signed JWT or the default value, as defined in Section 5.1.1).

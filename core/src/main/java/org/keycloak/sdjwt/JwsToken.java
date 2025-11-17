@@ -122,6 +122,10 @@ public abstract class JwsToken {
         return jwsHeader;
     }
 
+    public ObjectNode getJwsHeaderAsNode() {
+        return JsonSerialization.mapper.convertValue(jwsHeader, ObjectNode.class);
+    }
+
     public void setJwsHeader(JWSHeader jwsHeader) {
         this.jwsHeader = jwsHeader;
     }
