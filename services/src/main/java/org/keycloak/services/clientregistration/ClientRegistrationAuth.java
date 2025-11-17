@@ -34,6 +34,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
@@ -164,6 +165,7 @@ public class ClientRegistrationAuth {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+			event.event(EventType.CLIENT_REGISTER_ERROR);
             event.error(cpe.getError());
             throw forbidden(cpe.getMessage());
         }
@@ -217,6 +219,7 @@ public class ClientRegistrationAuth {
                 event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
                 event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
                 event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+				event.event(EventType.CLIENT_INFO_ERROR);
                 event.error(cpe.getError());
                 throw forbidden(cpe.getMessage());
             }
@@ -242,6 +245,7 @@ public class ClientRegistrationAuth {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+			event.event(EventType.CLIENT_UPDATE_ERROR);
             event.error(cpe.getError());
             throw forbidden(cpe.getMessage());
         }
@@ -261,6 +265,7 @@ public class ClientRegistrationAuth {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+			event.event(EventType.CLIENT_DELETE_ERROR);
             event.error(cpe.getError());
             throw forbidden(cpe.getMessage());
         }
