@@ -313,9 +313,9 @@ While the preceding sections fully detail standard and legacy token exchange, th
 [cols="3*", options="header"]
 |===
 |Capability |Standard token exchange V2 |Legacy token exchange V1
-s|Internal-internal token exchange | Supported. Implemented as per rfc8693 | Preview support. Loose implementation of rfc8693. It is recommended to use V2 instead
+s|Internal-internal token exchange | Supported. Implemented as per RFC 8693 | Preview support. Loose implementation of RFC 8693. It is recommended to use V2 instead
 s|Allowed `subject_token_type`     | Access token type only   | Access token type only for internal-internal, JWT for external-internal scenarios
-s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML2 assertion
+s|Allowed `requested_token_type`   | Access token (default), Refresh token, ID token | Access token, Refresh token (default), SAML 2.0 assertion
 s|Behavior of `scope` parameter   | Aligned with other grants. Scope parameter means requesting optional scopes of the client, which sent the token exchange request  | Scope parameter based on the scopes of
 the "target" client specified by audience parameter. Downscoping support only
 s|Behavior of `audience` parameter   | Support for more values as per the specification. It can be used to narrow down the available audiences and keep only the requested audiences. Effectively downscoping the token per
@@ -324,8 +324,8 @@ s|Public clients  | Not available. Downscoping implemented by V1 can be replaced
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
 s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
-s|Delegation per rfc8693|Not supported yet|Not supported
-s|Resource parameter per rfc8693|Not supported yet|Not supported
+s|Delegation per RFC 8693|Not supported yet|Not supported
+s|Resource parameter per RFC 8693|Not supported yet|Not supported
 s|Federated token exchange | Not implemented yet | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===

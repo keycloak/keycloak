@@ -14,7 +14,7 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 
 === Corrected encoding when sending OpenID Connect client secrets when acting as a broker
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
 You are not affected if you configured {project_name} to send the credentials in the request body.
 
 This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
@@ -36,7 +36,7 @@ not need these configurations.
 
 === Accepting only normalized paths in requests
 
-Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986.
+Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC 3986.
 As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
 
 To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
@@ -69,7 +69,7 @@ User sessions created without selecting "Remember Me" are not affected.
 
 === Correct encoding for OpenID Connect client credentials when acting as a broker
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
 
 This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
 
@@ -135,7 +135,7 @@ The following sections provide details on deprecated features.
 
 === Sending OpenID Connect client secret via basic authentication without URL encoding
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC6749, it can be used to keep the default behavior of earlier versions of {project_name}.
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC 6749, it can be used to keep the default behavior of earlier versions of {project_name}.
 
 This behavior is deprecated and will be removed in a future version of Keycloak.
 
