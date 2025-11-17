@@ -37,11 +37,21 @@ It depends on the preview feature `client-auth-federated`.
 |===
 +
 . When you create a new realm with the preview feature `client-auth-federated` enabled, the client authentication flow is already configured correctly. For existing realms, add to the client authentication flow the execution of *Signed JWT - Federated* as an alternative step. As built-in flows can not be updated, and if the default flow is your default, you will first need to duplicate the existing clients
-. For each confidential OIDC client that should authenticate via this provider:
+. For each confidential OpenID Connect client that should authenticate via this provider:
 .. Change in the *Credentials* tab the *Client Authenticator* to *Signed JWT - Federated*.
 .. As *Identity provider*, enter the alias of the Kubernetes identity provider added in step 3.
 .. As *Federated Subject*, enter the subject identifier as issued by Kubernetes. This is usually `system:serviceaccount:<namespace>:<serviceaccount>`.
-. For the Pod in Kubernetes add a service account :
++
+[NOTE]
+====
+Each client must have a unique subject identifier within a realm.
+As the subject identifier is built from the namespace and service account name, each client must have its own service account if multiple clients share a namespace.
+
+As a security best practice, do not use the `default` service account in a namespace, as it is shared with all Pods in a namespace.
+Instead, create an individual service account for each client.
+====
+
+. For the Pod in Kubernetes add a service account:
 +
 --
 [source]
@@ -63,8 +73,14 @@ spec:
           path: my-aud-token
 ----
 . Issuer URL of the {project_name} realm.
-. Maximum time allowed by Kubernetes and {project_name} is 3600
+. Maximum time allowed by Kubernetes and {project_name} is 3600 seconds
 --
++
+[NOTE]
+====
+Kubernetes service account tokens can be reused multiple times.
+As a security best practice, reduce the expiration time.
+====
 
 To verify your setup, assuming the client has a service account configured:
 
@@ -98,5 +114,7 @@ curl -k https://example.com:8443/realms/<realm>/protocol/openid-connect/token \
   "scope": "profile email"
 }
 ----
+
+NOTE: While the service account functionality is helpful to test that the setup is working, disabled this feature after the test if it is not needed for the client to follow the least-privileges security best practice.
 
 endif::[]
