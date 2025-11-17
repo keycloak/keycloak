@@ -312,7 +312,6 @@ export default function ClientDetails() {
 
   const setupForm = (client: ClientRepresentation) => {
     convertToFormValues(client, form.setValue);
-
     if (client.attributes?.["acr.loa.map"]) {
       form.setValue(
         convertAttributeNameToForm("attributes.acr.loa.map"),
