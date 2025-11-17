@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -55,6 +56,7 @@ public class OID4VCTimeNormalizationTest extends OID4VCJWTIssuerEndpointTest {
         });
 
         final String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
         String token = getBearerToken(oauth, client, scopeName);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -64,7 +66,7 @@ public class OID4VCTimeNormalizationTest extends OID4VCJWTIssuerEndpointTest {
                 OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialIdentifier(scopeName);
+                        .setCredentialConfigurationId(credConfigId);
 
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                 Response response = issuerEndpoint.requestCredential(requestPayload);

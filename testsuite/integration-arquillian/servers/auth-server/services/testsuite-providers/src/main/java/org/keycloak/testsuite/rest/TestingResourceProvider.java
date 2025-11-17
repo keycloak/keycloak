@@ -72,7 +72,6 @@ import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -85,9 +84,14 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -1121,18 +1125,24 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration) {
         RealmModel realm = getRealmByName(realmName);
-        AuthenticatedClientSessionModel ascm = session.sessions()
-                .getUserSession(realm, userSessionId)
-                .getAuthenticatedClientSessions()
-                .values()
-                .stream().filter(acsm -> acsm.getClient().getClientId().equals(clientId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No authenticatedClientSession found."));
-        return PreAuthorizedCodeGrantType.getPreAuthorizedCode(session, ascm, expiration);
+        UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+
+        String code = "urn:oid4vci:code:" + UUID.randomUUID();
+        CredentialsOffer credOffer = new CredentialsOffer()
+                .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
+                .setCredentialConfigurationIds(List.of("dummy-credential-config-id"))
+                .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
+                    new PreAuthorizedCode().setPreAuthorizedCode(code)));
+
+        String userId = userSession.getUser().getUsername();
+        var offerStorage = session.getProvider(CredentialOfferStorage.class);
+        offerStorage.putOfferState(session, new CredentialOfferState(credOffer, clientId, userId, expiration));
+
+        return code;
     }
 
     @POST
-    @Path("/email-event-litener-provide/add-events")
+    @Path("/email-event-listener-provide/add-events")
     @Consumes(MediaType.APPLICATION_JSON)
     public void addEventsToEmailEventListenerProvider(List<EventType> events) {
         if (events != null && !events.isEmpty()) {
@@ -1143,7 +1153,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @POST
-    @Path("/email-event-litener-provide/remove-events")
+    @Path("/email-event-listener-provide/remove-events")
     @Consumes(MediaType.APPLICATION_JSON)
     public void removeEventsToEmailEventListenerProvider(List<EventType> events) {
         if (events != null && !events.isEmpty()) {

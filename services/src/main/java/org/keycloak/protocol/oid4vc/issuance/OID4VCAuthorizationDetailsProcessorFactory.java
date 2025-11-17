@@ -23,6 +23,8 @@ import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
 
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+
 /**
  * Factory for creating OID4VCI-specific authorization details processors.
  * This factory is only enabled when the OID4VCI feature is available.
@@ -31,7 +33,7 @@ import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
  */
 public class OID4VCAuthorizationDetailsProcessorFactory implements AuthorizationDetailsProcessorFactory, OID4VCEnvironmentProviderFactory {
 
-    public static final String PROVIDER_ID = OID4VCAuthorizationDetailsProcessor.OPENID_CREDENTIAL_TYPE;
+    public static final String PROVIDER_ID = OPENID_CREDENTIAL;
 
     @Override
     public AuthorizationDetailsProcessor create(KeycloakSession session) {

@@ -34,7 +34,7 @@ import jakarta.annotation.Nullable;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -58,7 +58,7 @@ import org.slf4j.LoggerFactory;
  */
 public class JwtCNonceHandler implements CNonceHandler {
 
-    public static final String SOURCE_ENDPOINT = Oid4VciConstants.SOURCE_ENDPOINT;
+    public static final String SOURCE_ENDPOINT = OID4VCIConstants.SOURCE_ENDPOINT;
 
     public static final int NONCE_DEFAULT_LENGTH = 50;
 
@@ -80,7 +80,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         RealmModel realm = keycloakSession.getContext().getRealm();
         final String issuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         // TODO discussion about the attribute name to use
-        final Integer nonceLifetimeMillis = realm.getAttribute(Oid4VciConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
+        final Integer nonceLifetimeMillis = realm.getAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
         final Instant now = Instant.now();
         final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
