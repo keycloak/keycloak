@@ -33,7 +33,7 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.MatcherAssert;
@@ -60,7 +60,7 @@ public class ServiceAccountClientTest {
 
     @Test
     public void testServiceAccountEnableDisable() {
-        ClientScopeResource serviceAccountScopeRsc = ApiUtil.findClientScopeByName(
+        ClientScopeResource serviceAccountScopeRsc = AdminApiUtil.findClientScopeByName(
                 managedRealm.admin(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
         Assertions.assertNotNull(serviceAccountScopeRsc);
         ClientScopeRepresentation serviceAccountScope = serviceAccountScopeRsc.toRepresentation();

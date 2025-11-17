@@ -233,7 +233,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
         String workflowOneId = workflows.stream().filter(w -> w.getName().equals("One")).findFirst().orElseThrow(IllegalStateException::new).getId();
 
         // create a new user - should bind the user to the workflow and set up the first step in both workflows
-        String id = ApiUtil.handleCreatedResponse(managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org")));
+        String id = ApiUtil.getCreatedId(managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org")));
 
         runScheduledSteps(Duration.ofDays(6));
 

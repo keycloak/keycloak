@@ -150,7 +150,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
 
         // it should be possible to update the user due to fallback to all-users permission
         realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("new@test.com").build());
@@ -164,7 +164,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.handleCreatedResponse(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
 
         // remove all-users permissions to test user-permission
         allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
@@ -490,7 +490,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         // Create group 'test_admins'
         GroupRepresentation testAdminsGroup = new GroupRepresentation();
         testAdminsGroup.setName("test_admins");
-        testAdminsGroup.setId(ApiUtil.handleCreatedResponse(realm.admin().groups().add(testAdminsGroup)));
+        testAdminsGroup.setId(ApiUtil.getCreatedId(realm.admin().groups().add(testAdminsGroup)));
 
         // Add user 'myadmin' as a member of 'test_admins'
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);

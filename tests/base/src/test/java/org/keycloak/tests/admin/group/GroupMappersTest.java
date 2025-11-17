@@ -46,7 +46,8 @@ import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
 import org.hamcrest.MatcherAssert;
@@ -77,7 +78,7 @@ public class GroupMappersTest extends AbstractGroupTest {
     @SuppressWarnings("unchecked")
     public void testGroupMappers() {
         {
-            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), TOP_GROUP_USER);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), TOP_GROUP_USER);
 
             AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
             Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
@@ -87,7 +88,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             Assertions.assertEquals("true", token.getOtherClaims().get(TOP_ATTRIBUTE));
         }
         {
-            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
 
             AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
             Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
@@ -112,10 +113,10 @@ public class GroupMappersTest extends AbstractGroupTest {
         Response response = realm.groups().group(topGroup.getId()).subGroup(childSlash);
         childSlash.setId(ApiUtil.getCreatedId(response));
 
-        UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+        UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
         realm.users().get(user.getId()).joinGroup(childSlash.getId());
 
-        ClientResource client = ApiUtil.findClientByClientId(realm, CLIENT_ID);
+        ClientResource client = AdminApiUtil.findClientByClientId(realm, CLIENT_ID);
         ProtocolMappersResource protocolMappers = client.getProtocolMappers();
         ProtocolMapperRepresentation groupsMapper = ProtocolMapperUtil.getMapperByNameAndProtocol(
                 protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "groups");

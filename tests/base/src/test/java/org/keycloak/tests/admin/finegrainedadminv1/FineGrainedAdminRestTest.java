@@ -32,7 +32,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -300,7 +301,7 @@ public class FineGrainedAdminRestTest extends AbstractFineGrainedAdminTest {
 
                 UserRepresentation newGroupMember = UserConfigBuilder.create()
                         .username("new-group-member").email("new-group-member@keycloak.org").name("New", "Member").groups("top").build();
-                ApiUtil.createUserWithAdminClient(realmClient.realm(REALM_NAME), newGroupMember);
+                AdminApiUtil.createUserWithAdminClient(realmClient.realm(REALM_NAME), newGroupMember);
 
                 // Should only return the list of users that belong to "top" group + the new one
                 queryUsers = realmClient.realm(REALM_NAME).users().list();
