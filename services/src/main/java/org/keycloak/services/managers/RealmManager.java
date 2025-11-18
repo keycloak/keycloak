@@ -297,8 +297,18 @@ public class RealmManager {
                 authSessions.onRealmRemoved(realm);
             }
 
-          // Refresh periodic sync tasks for configured storageProviders
-          StoreSyncEvent.fire(session, realm, true);
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    // Refresh periodic sync tasks for configured storageProviders
+                    StoreSyncEvent.fire(session, realm, true);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // nothing to rollback
+                }
+            });
         }
         return removed;
     }
