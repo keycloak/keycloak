@@ -23,9 +23,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.Details;
@@ -67,16 +68,30 @@ final class UserSessionExpirationLogic {
     public static void expireOfflineSessions(KeycloakSessionFactory sessionFactory, RealmModel realm, int currentTime, RealmExpiration expiration, int batchSize) {
         long start = System.nanoTime();
         logger.tracef("Removing expired offline user sessions for realm '%s'", realm.getName());
-        int oldestCreatedOn = realm.isOfflineSessionMaxLifespanEnabled() ?
+
+        final int oldestCreatedOn = realm.isOfflineSessionMaxLifespanEnabled() ?
                 currentTime - expiration.offlineLifespan() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS :
                 0;
-        int oldestLastSessionRefresh = currentTime - expiration.offlineMaxIdle() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        Consumer<TypedQuery<Object[]>> setCreatedOn = setCreatedOn(oldestCreatedOn);
+
+        final int oldestLastSessionRefresh = currentTime - expiration.offlineMaxIdle() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        Consumer<TypedQuery<Object[]>> setLastSessionRefresh = setLastSessionRefresh(oldestLastSessionRefresh);
+
         String realmId = realm.getId();
+        final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
         boolean hasMore = true;
         while (hasMore) {
             hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> executeOfflineSessionExpirationRemoval(s, realmId, oldestCreatedOn, oldestLastSessionRefresh, batchSize));
+                    s -> removeExpiredOfflineSessionsInTransaction(s, realmId, batchSize, "findExpiredOfflineUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions));
+            expiredSessions.clear();
+        }
+
+        hasMore = true;
+        while (hasMore) {
+            hasMore = runJobInTransactionWithResult(sessionFactory,
+                    s -> removeExpiredOfflineSessionsInTransaction(s, realmId, batchSize, "findExpiredOfflineUserSessionsCreatedOn", setCreatedOn, expiredSessions));
+            expiredSessions.clear();
         }
 
         long duration = System.nanoTime() - start;
@@ -97,14 +112,28 @@ final class UserSessionExpirationLogic {
     public static void expireRegularSessions(KeycloakSessionFactory sessionFactory, RealmModel realm, int currentTime, RealmExpiration expiration, boolean rememberMe, int batchSize) {
         long start = System.nanoTime();
         logger.tracef("Removing expired regular user sessions for realm '%s'", realm.getName());
+
         int oldestCreatedOn = currentTime - expiration.getLifespan(rememberMe) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        Consumer<TypedQuery<Object[]>> setCreatedOn = setCreatedOn(oldestCreatedOn);
+
         int oldestLastSessionRefresh = currentTime - expiration.getMaxIdle(rememberMe) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        Consumer<TypedQuery<Object[]>> setLastSessionRefresh = setLastSessionRefresh(oldestLastSessionRefresh);
+
         String realmId = realm.getId();
+        final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
         boolean hasMore = true;
         while (hasMore) {
             hasMore = runJobInTransactionWithResult(sessionFactory,
-                    s -> executeRegularSessionExpirationRemoval(s, realmId, oldestCreatedOn, oldestLastSessionRefresh, rememberMe, batchSize));
+                    s -> removeExpiredRegularSessionInTransaction(s, realmId, rememberMe, batchSize, "findExpiredRegularUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions));
+            expiredSessions.clear();
+        }
+
+        hasMore = true;
+        while (hasMore) {
+            hasMore = runJobInTransactionWithResult(sessionFactory,
+                    s -> removeExpiredRegularSessionInTransaction(s, realmId, rememberMe, batchSize, "findExpiredRegularUserSessionsCreatedOn", setCreatedOn, expiredSessions));
+            expiredSessions.clear();
         }
 
         long duration = System.nanoTime() - start;
@@ -133,13 +162,24 @@ final class UserSessionExpirationLogic {
 
         // migrating session, they don't need to be accurate.
         final int expireMaxIdle = currentTime - Math.min(expiration.maxIdle(), expiration.rememberMeMaxIdle());
+        Consumer<TypedQuery<Object[]>> setLastSessionRefresh = setLastSessionRefresh(expireMaxIdle);
         final int expireLifespan = currentTime - Math.min(expiration.lifespan(), expiration.rememberMeLifespan());
+        Consumer<TypedQuery<Object[]>> setCreatedOn = setCreatedOn(expireLifespan);
 
         final List<String> sessionsWithRememberMe = new ArrayList<>(batchSize);
         final List<String> sessionsWithoutRememberMe = new ArrayList<>(batchSize);
         boolean hasMore = true;
         while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory, innerSession -> migrateRememberMeInTransaction(innerSession, realmId, realmName, expireMaxIdle, expireLifespan, batchSize, rememberMeEnabledInRealm, sessionsWithRememberMe, sessionsWithoutRememberMe));
+            hasMore = runJobInTransactionWithResult(sessionFactory,
+                    s -> handleRememberMeColumnValue(s, realmId, realmName, batchSize, rememberMeEnabledInRealm, "findUserSessionAndDataWithNullRememberMeLastRefresh", setLastSessionRefresh, sessionsWithRememberMe, sessionsWithoutRememberMe));
+            sessionsWithRememberMe.clear();
+            sessionsWithoutRememberMe.clear();
+        }
+
+        hasMore = true;
+        while (hasMore) {
+            hasMore = runJobInTransactionWithResult(sessionFactory,
+                    s -> handleRememberMeColumnValue(s, realmId, realmName, batchSize, rememberMeEnabledInRealm, "findUserSessionAndDataWithNullRememberMeCreatedOn", setCreatedOn, sessionsWithRememberMe, sessionsWithoutRememberMe));
             sessionsWithRememberMe.clear();
             sessionsWithoutRememberMe.clear();
         }
@@ -174,10 +214,16 @@ final class UserSessionExpirationLogic {
         logger.debugf("%d invalid session removed for realm '%s'. Took %dms", (Object) count, realmName, TimeUnit.NANOSECONDS.toMillis(duration));
     }
 
-    private static boolean migrateRememberMeInTransaction(KeycloakSession session, String realmId, String realmName, int maxIdle, int lifespan, int batchSize, boolean rememberMeEnabled, List<String> sessionsWithRememberMeCollector, List<String> sessionsWithoutRememberMeCollector) {
+    private static boolean handleRememberMeColumnValue(KeycloakSession session, String realmId, String realmName, int batchSize, boolean rememberMeEnabled, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<String> sessionsWithRememberMeCollector, List<String> sessionsWithoutRememberMeCollector) {
         final EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
-        findSessionWithNullRememberMe(em, realmId, maxIdle, lifespan, batchSize)
+        TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
+        setParameters.accept(query);
+        query.setParameter("realmId", realmId)
+                .setHint(AvailableHints.HINT_READ_ONLY, true)
+                .setMaxResults(batchSize)
+                .getResultStream()
+                .map(UserSessionIdAndRememberMe::fromQueryProjection)
                 .forEach(userSession -> (userSession.rememberMe() ? sessionsWithRememberMeCollector : sessionsWithoutRememberMeCollector).add(userSession.id()));
 
         int updateCount = updateRememberMeColumn(em, false, sessionsWithoutRememberMeCollector);
@@ -202,18 +248,17 @@ final class UserSessionExpirationLogic {
     }
 
     // returns true if it has more rows to check
-    private static boolean executeOfflineSessionExpirationRemoval(KeycloakSession session, String realmId, int createdOn, int lastSessionRefresh, int batchSize) {
+    private static boolean removeExpiredOfflineSessionsInTransaction(KeycloakSession session, String realmId, int batchSize, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<UserSessionAndUser> expiredSessions) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
-        List<UserSessionAndUser> expiredSessions = em.createNamedQuery("findExpiredOfflineUserSessions", Object[].class)
-                .setParameter("realmId", realmId)
-                .setParameter("lastSessionRefresh", lastSessionRefresh)
-                .setParameter("createdOn", createdOn)
+        TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
+        setParameters.accept(query);
+        query.setParameter("realmId", realmId)
                 .setHint(AvailableHints.HINT_READ_ONLY, true)
                 .setMaxResults(batchSize)
                 .getResultStream()
                 .map(UserSessionAndUser::fromQueryProjection)
-                .toList();
+                .forEach(expiredSessions::add);
 
         handleExpirationQueryResults(session, em, realmId, expiredSessions, true);
 
@@ -223,19 +268,18 @@ final class UserSessionExpirationLogic {
     }
 
     // returns true if it has more rows to check
-    private static boolean executeRegularSessionExpirationRemoval(KeycloakSession session, String realmId, int createdOn, int lastSessionRefresh, boolean rememberMe, int batchSize) {
+    private static boolean removeExpiredRegularSessionInTransaction(KeycloakSession session, String realmId, boolean rememberMe, int batchSize, String queryName, Consumer<TypedQuery<Object[]>> setParameters, List<UserSessionAndUser> expiredSessions) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
-        List<UserSessionAndUser> expiredSessions = em.createNamedQuery("findExpiredRegularUserSessions", Object[].class)
-                .setParameter("realmId", realmId)
+        TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
+        setParameters.accept(query);
+        query.setParameter("realmId", realmId)
                 .setParameter("rememberMe", rememberMe)
-                .setParameter("lastSessionRefresh", lastSessionRefresh)
-                .setParameter("createdOn", createdOn)
                 .setHint(AvailableHints.HINT_READ_ONLY, true)
                 .setMaxResults(batchSize)
                 .getResultStream()
                 .map(UserSessionAndUser::fromQueryProjection)
-                .toList();
+                .forEach(expiredSessions::add);
 
         handleExpirationQueryResults(session, em, realmId, expiredSessions, false);
 
@@ -289,15 +333,11 @@ final class UserSessionExpirationLogic {
                 .executeUpdate();
     }
 
-    private static Stream<UserSessionIdAndRememberMe> findSessionWithNullRememberMe(EntityManager em, String realmId, int lastSessionRefresh, int createdOn, int batchSize) {
-        return em.createNamedQuery("findUserSessionAndDataWithNullRememberMe", Object[].class)
-                .setParameter("realmId", realmId)
-                .setParameter("lastSessionRefresh", lastSessionRefresh)
-                .setParameter("createdOn", createdOn)
-                .setHint(AvailableHints.HINT_READ_ONLY, true)
-                .setMaxResults(batchSize)
-                .getResultStream()
-                .map(UserSessionIdAndRememberMe::fromQueryProjection);
+    private static <T> Consumer<TypedQuery<T>> setLastSessionRefresh(int value) {
+        return query -> query.setParameter("lastSessionRefresh", value);
     }
 
+    private static <T> Consumer<TypedQuery<T>> setCreatedOn(int value) {
+        return query -> query.setParameter("createdOn", value);
+    }
 }
