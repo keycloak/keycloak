@@ -872,8 +872,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         final int initialCount = getPersistedUserSessionsCount();
         final int sessionCount = JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2;
-        createSessions(sessionCount, value -> value % 2 == 0);
 
+        createSessions(sessionCount, value -> value % 2 == 0);
         assertEquals(initialCount + sessionCount, getPersistedUserSessionsCount());
 
         // se the column to null.
@@ -888,7 +888,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         // trigger expiration, it should perform the migration
         // because PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS, nothing should be removed but all session should be migrated and the remember me column must be updated.
         triggerExpiration(realmExpiration.maxIdle() + 10);
-
         assertEquals(initialCount + sessionCount, getPersistedUserSessionsCount());
 
         // check if everything worked as expected.
@@ -903,12 +902,74 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         // lets expire regular sessions
         triggerExpiration(realmExpiration.maxIdle() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
-
         assertEquals(initialCount + (sessionCount / 2), getPersistedUserSessionsCount());
 
         // lets expire regular sessions with remember me
         triggerExpiration((realmExpiration.maxIdle() * 2) + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
+        assertEquals(initialCount, getPersistedUserSessionsCount());
+    }
 
+    @Test
+    public void testUserSessionWithRememberMeRemovedAfterRememberMeDisabled() {
+        Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
+
+        RealmExpiration realmExpiration = withRealm(realmId, (session, realm) -> {
+            // enable remember me
+            realm.setRememberMe(true);
+            RealmExpiration expiration = RealmExpiration.fromRealm(realm);
+
+            // double max-idle and lifespan for remember me
+            realm.setSsoSessionIdleTimeoutRememberMe(expiration.maxIdle() * 2);
+            realm.setSsoSessionMaxLifespanRememberMe(expiration.lifespan() * 2);
+            return expiration;
+        });
+
+        final int initialCount = getPersistedUserSessionsCount();
+        final int sessionCount = JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2;
+
+        createSessions(sessionCount, value -> value % 2 == 0);
+        assertEquals(initialCount + sessionCount, getPersistedUserSessionsCount());
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            // se the column to null.
+            int count = em.createQuery("UPDATE PersistentUserSessionEntity sess SET sess.rememberMe = NULL WHERE sess.realmId = :realmId")
+                    .setParameter("realmId", realmId)
+                    .executeUpdate();
+            assertEquals(sessionCount, count);
+            // disable remember me
+            realm.setRememberMe(false);
+        });
+
+        // trigger expiration, it should perform the migration
+        // realm has remember me disabled, so half of the session should be deleted by the expiration job.
+        triggerExpiration(realmExpiration.maxIdle() + 10);
+        assertEquals(initialCount + (sessionCount / 2), getPersistedUserSessionsCount());
+
+        // check if everything worked as expected.
+        withRealmConsumer(realmId, (session, realm) -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            long count = em.createQuery("SELECT count(*) FROM PersistentUserSessionEntity sess WHERE sess.rememberMe IS NOT NULL AND sess.realmId = :realmId", Number.class)
+                    .setParameter("realmId", realmId)
+                    .getSingleResult()
+                    .longValue();
+            assertEquals((sessionCount / 2), count);
+        });
+
+        // lets expire regular sessions
+        triggerExpiration(realmExpiration.maxIdle() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
+        assertEquals(initialCount, getPersistedUserSessionsCount());
+
+        // these sessions have remember me column not null.
+        // ensure those are deleted too.
+        createSessions(sessionCount, value -> value % 2 == 0);
+        assertEquals(initialCount + sessionCount, getPersistedUserSessionsCount());
+
+        // realm has remember me disabled, so half of the session should be deleted by the expiration job.
+        triggerExpiration(realmExpiration.maxIdle() + 10);
+        assertEquals(initialCount + (sessionCount / 2), getPersistedUserSessionsCount());
+
+        triggerExpiration(realmExpiration.maxIdle() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
         assertEquals(initialCount, getPersistedUserSessionsCount());
     }
 

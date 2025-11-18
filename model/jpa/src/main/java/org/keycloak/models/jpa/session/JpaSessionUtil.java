@@ -20,9 +20,9 @@ package org.keycloak.models.jpa.session;
 import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.storage.StorageId;
 
-public final class Util {
+public final class JpaSessionUtil {
 
-    private Util() {}
+    private JpaSessionUtil() {}
 
     public static String offlineToString(boolean offline) {
         return offline ? "1" : "0";

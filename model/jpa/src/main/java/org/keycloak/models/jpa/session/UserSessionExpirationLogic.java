@@ -40,7 +40,7 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.hibernate.jpa.AvailableHints;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.models.jpa.session.Util.offlineToString;
+import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineToString;
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransactionWithResult;
 
 
@@ -115,7 +115,7 @@ final class UserSessionExpirationLogic {
      * Migrates the remember me flag into to its own column, for an efficient query.
      * <p>
      * It only affects regular user sessions since offline sessions do not have remember me, and only migrates sessions
-     * closer to the expiration time.
+     * close to the expiration time to avoid concurrency issues on existing sessions.
      *
      * @param sessionFactory The {@link KeycloakSessionFactory}, used to start transactions.
      * @param realm          The {@link RealmModel} with the user session to be migrated.
@@ -131,38 +131,65 @@ final class UserSessionExpirationLogic {
         final String realmName = realm.getName();
         logger.tracef("Migrating remember me value for regular user sessions, for realm '%s'", realmName);
 
-
         // migrating session, they don't need to be accurate.
         final int expireMaxIdle = currentTime - Math.min(expiration.maxIdle(), expiration.rememberMeMaxIdle());
         final int expireLifespan = currentTime - Math.min(expiration.lifespan(), expiration.rememberMeLifespan());
 
+        final List<String> sessionsWithRememberMe = new ArrayList<>(batchSize);
+        final List<String> sessionsWithoutRememberMe = new ArrayList<>(batchSize);
         boolean hasMore = true;
         while (hasMore) {
-            hasMore = runJobInTransactionWithResult(sessionFactory, innerSession -> migrateRememberMeInTransaction(innerSession, realmId, realmName, expireMaxIdle, expireLifespan, batchSize, rememberMeEnabledInRealm));
+            hasMore = runJobInTransactionWithResult(sessionFactory, innerSession -> migrateRememberMeInTransaction(innerSession, realmId, realmName, expireMaxIdle, expireLifespan, batchSize, rememberMeEnabledInRealm, sessionsWithRememberMe, sessionsWithoutRememberMe));
+            sessionsWithRememberMe.clear();
+            sessionsWithoutRememberMe.clear();
         }
 
         long duration = System.nanoTime() - start;
         logger.debugf("Migration task completed for realm '%s'. Took %dms", realmName, TimeUnit.NANOSECONDS.toMillis(duration));
     }
 
-    private static boolean migrateRememberMeInTransaction(KeycloakSession session, String realmId, String realmName, int maxIdle, int lifespan, int batchSize, boolean rememberMeEnabled) {
+    /**
+     * Removes invalid regular user sessions from the database.
+     * <p>
+     * An invalid user session is a regular session with remember me column set to true, but with the remember me
+     * disabled in the realm settings.
+     *
+     * @param sessionFactory The {@link KeycloakSessionFactory}, used to start transactions.
+     * @param realm          The {@link RealmModel} to check and remove invalid user sessions.
+     */
+    public static void deleteInvalidSessions(KeycloakSessionFactory sessionFactory, RealmModel realm) {
+        long start = System.nanoTime();
+        final String realmId = realm.getId();
+        final String realmName = realm.getName();
+
+        logger.tracef("Removing invalid user sessions for realm '%s'", realmName);
+
+        int count = runJobInTransactionWithResult(sessionFactory, session -> {
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            return em.createNamedQuery("deleteInvalidSessions")
+                    .setParameter("realmId", realmId)
+                    .executeUpdate();
+        });
+        long duration = System.nanoTime() - start;
+        logger.debugf("%d invalid session removed for realm '%s'. Took %dms", (Object) count, realmName, TimeUnit.NANOSECONDS.toMillis(duration));
+    }
+
+    private static boolean migrateRememberMeInTransaction(KeycloakSession session, String realmId, String realmName, int maxIdle, int lifespan, int batchSize, boolean rememberMeEnabled, List<String> sessionsWithRememberMeCollector, List<String> sessionsWithoutRememberMeCollector) {
         final EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        final List<String> sessionsWithRememberMe = new ArrayList<>(batchSize);
-        final List<String> sessionsWithoutRememberMe = new ArrayList<>(batchSize);
 
         findSessionWithNullRememberMe(em, realmId, maxIdle, lifespan, batchSize)
-                .forEach(userSession -> (userSession.rememberMe() ? sessionsWithRememberMe : sessionsWithoutRememberMe).add(userSession.id()));
+                .forEach(userSession -> (userSession.rememberMe() ? sessionsWithRememberMeCollector : sessionsWithoutRememberMeCollector).add(userSession.id()));
 
-        int updateCount = updateRememberMeColumn(em, false, sessionsWithoutRememberMe);
+        int updateCount = updateRememberMeColumn(em, false, sessionsWithoutRememberMeCollector);
         if (rememberMeEnabled) {
-            int rememberMeUpdateCount = updateRememberMeColumn(em, true, sessionsWithRememberMe);
+            int rememberMeUpdateCount = updateRememberMeColumn(em, true, sessionsWithRememberMeCollector);
             logger.debugf("%d sessions with remember me, and %d sessions without remember updated, for realm '%s'", rememberMeUpdateCount, updateCount, realmName);
         } else {
-            int deletedCount = deleteUserSessions(em, offlineToString(false), sessionsWithRememberMe);
+            int deletedCount = deleteUserSessions(em, offlineToString(false), sessionsWithRememberMeCollector);
             logger.debugf("%d sessions without remember me updated, and %d invalid sessions deleted, for realm '%s'", updateCount, deletedCount, realmName);
         }
 
-        return sessionsWithRememberMe.size() + sessionsWithoutRememberMe.size() >= batchSize;
+        return sessionsWithRememberMeCollector.size() + sessionsWithoutRememberMeCollector.size() >= batchSize;
     }
 
     private static void createExpirationEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser userSessionAndUser) {

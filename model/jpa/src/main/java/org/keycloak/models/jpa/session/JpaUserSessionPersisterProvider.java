@@ -57,8 +57,8 @@ import org.keycloak.utils.StreamsUtil;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.models.jpa.session.Util.offlineFromString;
-import static org.keycloak.models.jpa.session.Util.offlineToString;
+import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineFromString;
+import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineToString;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -261,6 +261,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         UserSessionExpirationLogic.expireRegularSessions(sessionFactory, realm, currentTime, expiration, false, expirationBatch);
         if (realm.isRememberMe()) {
             UserSessionExpirationLogic.expireRegularSessions(sessionFactory, realm, currentTime, expiration, true, expirationBatch);
+        } else {
+            UserSessionExpirationLogic.deleteInvalidSessions(sessionFactory, realm);
         }
     }
 
@@ -506,7 +508,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         logger.tracef("Adding client session %s / %s", userSession, clientSessAdapter);
 
-        userSession.getAuthenticatedClientSessions().put(Util.getClientId(clientSessionEntity), clientSessAdapter);
+        userSession.getAuthenticatedClientSessions().put(JpaSessionUtil.getClientId(clientSessionEntity), clientSessAdapter);
         return true;
     }
 
@@ -603,7 +605,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, ClientModel client, UserSessionModel userSession, PersistentClientSessionEntity entity) {
         if (client == null) {
             // can be null if client is not found anymore
-            client = realm.getClientById(Util.getClientId(entity));
+            client = realm.getClientById(JpaSessionUtil.getClientId(entity));
             if (client == null) {
                 logger.debugf("Client not found for clientId %s clientStorageProvider %s externalClientId %s",
                         entity.getClientId(), entity.getClientStorageProvider(), entity.getExternalClientId());
@@ -623,7 +625,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
             @Override
             public String getClientId() {
-                return Util.getClientId(entity);
+                return JpaSessionUtil.getClientId(entity);
             }
 
             @Override
@@ -720,7 +722,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         return closing(clientSessionQuery.getResultStream()
                 .map(entity -> toAdapter(userSession.getRealm(), null, userSession, entity))
-                .filter(Util::hasClient)
+                .filter(JpaSessionUtil::hasClient)
         );
     }
 }
