@@ -105,16 +105,14 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
     @Test
     public void testExpirationEvents() {
         UserSessionModel[] userSessions = inComittedTransaction(session -> {
-            return createSessions(session, realmId);
+            return createSessions(session, realmId, false);
         });
         Map<String, String> sessionIdAndUsers = Arrays.stream(userSessions)
                 .collect(Collectors.toUnmodifiableMap(UserSessionModel::getId, s -> s.getUser().getId()));
 
-        inComittedTransaction(session -> {
+        withRealmConsumer(realmId, (session, realm) -> {
             // Time offset is automatically cleaned up in KeycloakModelTest.cleanEnvironment()
             Time.setOffset(IDLE_TIMEOUT + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
-            RealmModel realm = session.realms().getRealm(realmId);
-            session.getContext().setRealm(realm);
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
             var hotRodServer = getParameters(HotRodServerRule.class).findFirst();
@@ -134,9 +132,7 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
             Awaitility.await().until(() -> eventsCount(session) == sessionIdAndUsers.size());
         });
 
-        inComittedTransaction(session -> {
-            RealmModel realm = session.realms().getRealm(realmId);
-            session.getContext().setRealm(realm);
+        withRealmConsumer(realmId, (session, realm) -> {
             // user session id -> user id
             Map<String, String> eventsData = events(session);
             Assert.assertEquals(sessionIdAndUsers, eventsData);
