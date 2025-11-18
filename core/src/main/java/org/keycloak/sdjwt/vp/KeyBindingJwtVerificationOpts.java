@@ -25,8 +25,6 @@ import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import static org.keycloak.OID4VCConstants.SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE;
-
 /**
  * Options for Key Binding JWT verification.
  *

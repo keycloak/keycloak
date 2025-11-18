@@ -24,7 +24,6 @@ import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
@@ -45,8 +44,8 @@ public class SdJwtCredentialBody implements CredentialBody {
     public void addKeyBinding(JWK jwk) throws CredentialBuilderException {
         ObjectNode jwkNode = JsonSerialization.mapper.convertValue(jwk, ObjectNode.class);
         ObjectNode keyBindingNode = JsonSerialization.mapper.createObjectNode();
-        keyBindingNode.set(JWK_CLAIM, jwkNode);
-        issuerSignedJWT.getPayload().set(CNF_CLAIM, keyBindingNode);
+        keyBindingNode.set(CLAIM_NAME_JWK, jwkNode);
+        issuerSignedJWT.getPayload().set(CLAIM_NAME_CNF, keyBindingNode);
     }
 
     public IssuerSignedJWT getIssuerSignedJWT() {

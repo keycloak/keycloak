@@ -20,11 +20,10 @@ import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Optional;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.sdjwt.ClaimVerifier;
 import org.keycloak.sdjwt.JwsToken;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -36,8 +35,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  *
  */
 public class KeyBindingJWT extends JwsToken {
-
-    public static final String TYP = "kb+jwt";
 
     public KeyBindingJWT(String jwsString) {
         super(jwsString);
@@ -57,7 +54,7 @@ public class KeyBindingJWT extends JwsToken {
 
     public KeyBindingJWT(JWSHeader jwsHeader, ObjectNode payload, SignatureSignerContext signer) {
         super(jwsHeader, payload);
-        getJwsHeader().setType(TYP);
+        getJwsHeader().setType(OID4VCConstants.KEYBINDING_JWT_TYP);
         Optional.ofNullable(signer).ifPresent(this::sign);
     }
 
@@ -102,19 +99,19 @@ public class KeyBindingJWT extends JwsToken {
 
         public Builder withIat(long iat)
         {
-            getPayload().put(ClaimVerifier.CLAIM_NAME_IAT, iat);
+            getPayload().put(OID4VCConstants.CLAIM_NAME_IAT, iat);
             return this;
         }
 
         public Builder withNbf(long nbf)
         {
-            getPayload().put(ClaimVerifier.CLAIM_NAME_NBF, nbf);
+            getPayload().put(OID4VCConstants.CLAIM_NAME_NBF, nbf);
             return this;
         }
 
         public Builder withExp(long exp)
         {
-            getPayload().put(ClaimVerifier.CLAIM_NAME_EXP, exp);
+            getPayload().put(OID4VCConstants.CLAIM_NAME_EXP, exp);
             return this;
         }
 
@@ -126,7 +123,7 @@ public class KeyBindingJWT extends JwsToken {
 
         public Builder withAudience(String aud)
         {
-            getPayload().put(JsonWebToken.AUD, aud);
+            getPayload().put(IDToken.AUD, aud);
             return this;
         }
 

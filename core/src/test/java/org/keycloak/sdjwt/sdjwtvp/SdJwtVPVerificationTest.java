@@ -26,7 +26,6 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
-import org.keycloak.sdjwt.ClaimVerifier;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.TestSettings;
 import org.keycloak.sdjwt.TestUtils;
@@ -34,7 +33,6 @@ import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.hamcrest.CoreMatchers;
@@ -42,9 +40,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -272,7 +268,7 @@ public abstract class SdJwtVPVerificationTest {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(ClaimVerifier.CLAIM_NAME_IAT, mapper.valueToTree(now + 1000));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_IAT, mapper.valueToTree(now + 1000));
 
         testShouldFailGenericMatchText(
                 kbPayload,
@@ -288,7 +284,7 @@ public abstract class SdJwtVPVerificationTest {
 
         ObjectNode kbPayload = exampleKbPayload();
         // Issued just 5 seconds in the future. Should pass with a clock skew of 10 seconds.
-        kbPayload.set(ClaimVerifier.CLAIM_NAME_IAT, mapper.valueToTree(now + 5));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_IAT, mapper.valueToTree(now + 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
         sdJwtVP.verify(
@@ -307,7 +303,7 @@ public abstract class SdJwtVPVerificationTest {
 
         ObjectNode kbPayload = exampleKbPayload();
         // This KB-JWT is then issued more than 60s ago
-        kbPayload.set(ClaimVerifier.CLAIM_NAME_IAT, mapper.valueToTree(issuerSignedJwtIat - 120));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_IAT, mapper.valueToTree(issuerSignedJwtIat - 120));
 
         testShouldFailGenericMatchText(
                 kbPayload,
@@ -324,7 +320,7 @@ public abstract class SdJwtVPVerificationTest {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(ClaimVerifier.CLAIM_NAME_EXP, mapper.valueToTree(now - 1000));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_EXP, mapper.valueToTree(now - 1000));
 
         testShouldFailGenericMatchText(
                 kbPayload,
@@ -340,7 +336,7 @@ public abstract class SdJwtVPVerificationTest {
 
         ObjectNode kbPayload = exampleKbPayload();
         // Expires just 5 seconds ago. Should pass with a clock skew of 10 seconds.
-        kbPayload.set(ClaimVerifier.CLAIM_NAME_EXP, mapper.valueToTree(now - 5));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_EXP, mapper.valueToTree(now - 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
         sdJwtVP.verify(
@@ -358,7 +354,7 @@ public abstract class SdJwtVPVerificationTest {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(ClaimVerifier.CLAIM_NAME_NBF, mapper.valueToTree(now + 1000));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_NBF, mapper.valueToTree(now + 1000));
 
         testShouldFailGenericMatchText(
                 kbPayload,

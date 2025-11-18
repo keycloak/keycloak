@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -270,7 +271,7 @@ public class SdJwt {
             Optional.ofNullable(keyBindingJWT).ifPresent(keyBindJwt -> {
                 // get the hash-algorithm to use for keyBinding and set it if not present
                 String hashAlgorithm = getEffectiveHashAlgorithm(sdHashAlgorithm);
-                issuerSignedJwt.getPayload().put(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM,
+                issuerSignedJwt.getPayload().put(OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM,
                                                  hashAlgorithm);
                 if (issuerSigningContext != null) {
                     issuerSignedJwt.sign(issuerSigningContext);
@@ -283,10 +284,10 @@ public class SdJwt {
                     parts.add(sdJwt.getIssuerSignedJWT().getJws());
                     parts.addAll(sdJwt.getDisclosures());
                     parts.add("");
-                    sdHashString = String.join(DELIMITER, parts);
+                    sdHashString = String.join(OID4VCConstants.SDJWT_DELIMITER, parts);
                 }
                 String sdHash = SdJwtUtils.hashAndBase64EncodeNoPad(sdHashString.getBytes(), hashAlgorithm);
-                keyBindJwt.getPayload().put(IssuerSignedJWT.CLAIM_NAME_SD_HASH, sdHash);
+                keyBindJwt.getPayload().put(OID4VCConstants.SD_HASH, sdHash);
                 Optional.ofNullable(keybindingSigningContext).ifPresent(keyBindJwt::sign);
             });
             // if issuerSignedJwt was not signed yet

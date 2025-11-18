@@ -36,7 +36,6 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.OID4VCConstants;
-import org.keycloak.jose.jws.JWSInput;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -466,11 +465,11 @@ public class IssuerSignedJWT extends JwsToken {
          */
         public Builder withKeyBinding(KeyBindingJWT keyBinding) {
             ObjectNode cnf = JsonNodeFactory.instance.objectNode();
-            Optional.ofNullable(keyBinding.getJwsHeader().getOtherClaims().get(OID4VCConstants.JWK))
+            Optional.ofNullable(keyBinding.getJwsHeader().getOtherClaims().get(OID4VCConstants.CLAIM_NAME_JWK))
                     .map(map -> JsonSerialization.mapper.convertValue(map, ObjectNode.class))
                     .ifPresent(jwkNode -> cnf.set("jwk", jwkNode));
             if (!cnf.isEmpty()) {
-                getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(OID4VCConstants.CNF), cnf));
+                getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
             }
             return this;
         }
@@ -482,7 +481,7 @@ public class IssuerSignedJWT extends JwsToken {
         public Builder withKeyBinding(ObjectNode keyBinding) {
             ObjectNode cnf = JsonNodeFactory.instance.objectNode();
             cnf.set("jwk", keyBinding);
-            getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(OID4VCConstants.CNF), cnf));
+            getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
             return this;
         }
 

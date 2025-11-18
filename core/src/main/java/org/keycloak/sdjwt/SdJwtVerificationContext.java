@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.consumer.PresentationRequirements;
@@ -254,8 +255,8 @@ public class SdJwtVerificationContext {
      */
     private void validateKeyBindingJwtTyp() throws VerificationException {
         String typ = keyBindingJwt.getJwsHeader().getType();
-        if (!KeyBindingJWT.TYP.equals(typ)) {
-            throw new VerificationException("Key Binding JWT is not of declared typ " + KeyBindingJWT.TYP);
+        if (!OID4VCConstants.KEYBINDING_JWT_TYP.equals(typ)) {
+            throw new VerificationException("Key Binding JWT is not of declared typ " + OID4VCConstants.KEYBINDING_JWT_TYP);
         }
     }
 

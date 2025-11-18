@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 
@@ -39,13 +39,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class ClaimVerifier {
-
-    public static final int DEFAULT_CLOCK_SKEW = 10;
-    public static final int DEFAULT_ALLOWED_MAX_AGE = 5 * 60; // 5 minutes
-
-    public static final String CLAIM_NAME_IAT = "iat";
-    public static final String CLAIM_NAME_EXP = "exp";
-    public static final String CLAIM_NAME_NBF = "nbf";
 
     private final List<Predicate<ObjectNode>> headerVerifiers;
     private final List<Predicate<ObjectNode>> contentVerifiers;
@@ -253,7 +246,7 @@ public class ClaimVerifier {
 
         @Override
         public boolean test(ObjectNode jsonWebToken) throws VerificationException {
-            Long iat = Optional.ofNullable(jsonWebToken.get(ClaimVerifier.CLAIM_NAME_IAT))
+            Long iat = Optional.ofNullable(jsonWebToken.get(OID4VCConstants.CLAIM_NAME_IAT))
                                .filter(node -> !node.isNull())
                                .map(JsonNode::asLong)
                                .orElse(null);
@@ -303,7 +296,7 @@ public class ClaimVerifier {
 
         @Override
         public boolean test(ObjectNode jsonWebToken) throws VerificationException {
-            Long notBefore = Optional.ofNullable(jsonWebToken.get(ClaimVerifier.CLAIM_NAME_NBF))
+            Long notBefore = Optional.ofNullable(jsonWebToken.get(OID4VCConstants.CLAIM_NAME_NBF))
                                      .filter(node -> !node.isNull())
                                      .map(JsonNode::asLong)
                                      .orElse(null);
@@ -341,7 +334,7 @@ public class ClaimVerifier {
 
         @Override
         public boolean test(ObjectNode jsonWebToken) throws VerificationException {
-            Long expiration = Optional.ofNullable(jsonWebToken.get(ClaimVerifier.CLAIM_NAME_EXP))
+            Long expiration = Optional.ofNullable(jsonWebToken.get(OID4VCConstants.CLAIM_NAME_EXP))
                                       .filter(node -> !node.isNull())
                                       .map(JsonNode::asLong)
                                       .orElse(null);
@@ -405,17 +398,17 @@ public class ClaimVerifier {
 
     public static class Builder {
 
-        protected Integer clockSkew = DEFAULT_CLOCK_SKEW;
-        protected Integer allowedMaxAge = DEFAULT_ALLOWED_MAX_AGE;
+        protected Integer clockSkew = OID4VCConstants.SD_JWT_DEFAULT_CLOCK_SKEW_SECONDS;
+        protected Integer allowedMaxAge = OID4VCConstants.SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE;
         protected List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers = new ArrayList<>();
         protected List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers = new ArrayList<>();
 
         public Builder() {
-            this(DEFAULT_CLOCK_SKEW);
+            this(OID4VCConstants.SD_JWT_DEFAULT_CLOCK_SKEW_SECONDS);
         }
 
         public Builder(Integer clockSkew) {
-            this.withClockSkew(Optional.ofNullable(clockSkew).orElse(DEFAULT_CLOCK_SKEW));
+            this.withClockSkew(Optional.ofNullable(clockSkew).orElse(OID4VCConstants.SD_JWT_DEFAULT_CLOCK_SKEW_SECONDS));
             this.withIatCheck(allowedMaxAge, false);
             this.withExpCheck(false);
             this.withNbfCheck(false);

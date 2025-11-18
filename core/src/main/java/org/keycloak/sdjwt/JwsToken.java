@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -39,8 +40,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  *
  */
 public abstract class JwsToken {
-
-    public static final String CLAIM_NAME_ISSUER = "iss";
 
     protected JWSHeader jwsHeader;
 
@@ -90,7 +89,7 @@ public abstract class JwsToken {
     }
 
     public Optional<String> getSdHashAlgorithm() {
-        return Optional.ofNullable(payload.get(IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM))
+        return Optional.ofNullable(payload.get(OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM))
                        .map(JsonNode::textValue);
     }
 
