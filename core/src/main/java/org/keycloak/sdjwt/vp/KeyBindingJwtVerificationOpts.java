@@ -19,14 +19,14 @@ package org.keycloak.sdjwt.vp;
 
 import org.keycloak.sdjwt.TimeClaimVerificationOpts;
 
+import static org.keycloak.OID4VCConstants.SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE;
+
 /**
  * Options for Key Binding JWT verification.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
-
-    public static final int DEFAULT_ALLOWED_MAX_AGE = 5 * 60; // 5 minutes
 
     /**
      * Specifies the Verifier's policy whether to check Key Binding
@@ -48,9 +48,9 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
             String aud,
             boolean validateExpirationClaim,
             boolean validateNotBeforeClaim,
-            int leewaySeconds
+            int allowClockSkewSeconds
     ) {
-        super(true, validateExpirationClaim, validateNotBeforeClaim, leewaySeconds);
+        super(true, validateExpirationClaim, validateNotBeforeClaim, allowClockSkewSeconds);
         this.keyBindingRequired = keyBindingRequired;
         this.allowedMaxAge = allowedMaxAge;
         this.nonce = nonce;
@@ -81,7 +81,7 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
 
         private boolean keyBindingRequired = true;
         protected boolean validateIssuedAtClaim = true;
-        private int allowedMaxAge = DEFAULT_ALLOWED_MAX_AGE;
+        private int allowedMaxAge = SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE;
         private String nonce;
         private String aud;
 
@@ -126,7 +126,7 @@ public class KeyBindingJwtVerificationOpts extends TimeClaimVerificationOpts {
                     aud,
                     requireExpirationClaim,
                     requireNotBeforeClaim,
-                    leewaySeconds
+                    allowedClockSkewSeconds
             );
         }
     }

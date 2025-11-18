@@ -46,6 +46,11 @@ public class SigningInPage extends AbstractLoggedInPage {
         return ACCOUNT_SECURITY_ID;
     }
 
+    @Override
+    public String getTranslatedPageTitle() {
+        return "Signing in";
+    }
+
     public CredentialType getCredentialType(String type) {
         return new CredentialType(type);
     }
@@ -149,6 +154,10 @@ public class SigningInPage extends AbstractLoggedInPage {
 
         public String getHelpText() {
             return getTextFromElement(getItemElementByTestId(HELP));
+        }
+
+        public void navigateToUsingSidebar() {
+            SigningInPage.this.navigateToUsingSidebar();
         }
     }
 

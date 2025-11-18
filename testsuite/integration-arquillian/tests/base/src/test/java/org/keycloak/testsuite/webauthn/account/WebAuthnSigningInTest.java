@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
+import org.keycloak.testsuite.webauthn.pages.DeviceActivityPage;
 import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
@@ -46,6 +47,7 @@ import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
 import org.keycloak.theme.DateTimeFormatterUtil;
 
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -66,6 +68,9 @@ import static org.hamcrest.Matchers.hasSize;
 
 public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
+    @Page
+    protected DeviceActivityPage deviceActivityPage;
+
     @Test
     public void categoriesTest() {
         testContext.setTestRealmReps(emptyList()); // reimport realm after this test
@@ -77,7 +82,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
         // Delete WebAuthn flow ==> Passwordless category should disappear
         testRealmResource().flows().deleteFlow(WEBAUTHN_FLOW_ID);
-        refreshPageAndWaitForLoad();
+        deviceActivityPage.navigateToUsingSidebar();
+        signingInPage.navigateToUsingSidebar();
 
         assertThat(signingInPage.getCategoriesCount(), is(2));
     }
@@ -190,8 +196,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
     @Test
     public void setUpLinksTest() {
-        testSetUpLink(testRealmResource(), webAuthnCredentialType, WebAuthnRegisterFactory.PROVIDER_ID);
-        testSetUpLink(testRealmResource(), webAuthnPwdlessCredentialType, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        testSetUpLink(testRealmResource(), webAuthnCredentialType, WebAuthnRegisterFactory.PROVIDER_ID, deviceActivityPage);
+        testSetUpLink(testRealmResource(), webAuthnPwdlessCredentialType, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, deviceActivityPage);
     }
 
     @Test
@@ -275,7 +281,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         assertThat(credentialId, notNullValue());
         testUserResource().removeCredential(credentialId);
 
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
 
         webAuthnLoginPage.assertCurrent();
         authenticators = webAuthnLoginPage.getAuthenticators();
@@ -478,11 +484,12 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         assertThat(credentialType.getUserCredentialsCount(), is(2));
         assertUserCredential(label2, true, webAuthn2);
 
-        RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
+        RequiredActionProviderRepresentation requiredAction = testRealmResource().flows().getRequiredAction(providerId);
         requiredAction.setEnabled(false);
         testRealmResource().flows().updateRequiredAction(providerId, requiredAction);
 
-        refreshPageAndWaitForLoad();
+        deviceActivityPage.navigateToUsingSidebar();
+        signingInPage.navigateToUsingSidebar();
 
         assertThat("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isSetUpLinkVisible(), is(false));
         assertThat("Not set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible(), is(false));
@@ -490,5 +497,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         assertThat(credentialType.getUserCredentialsCount(), is(2));
 
         testRemoveCredential(webAuthn1);
+        requiredAction.setEnabled(true);
+        testRealmResource().flows().updateRequiredAction(providerId, requiredAction);
     }
 }

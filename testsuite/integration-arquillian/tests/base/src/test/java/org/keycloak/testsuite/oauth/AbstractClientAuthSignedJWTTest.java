@@ -435,6 +435,12 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
         final String certOld = client.getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
 
+        int expectedValidity = validity == null ? 3 : validity;
+
+        Calendar beforeCreateCalendar = Calendar.getInstance();
+        beforeCreateCalendar.add(Calendar.YEAR, expectedValidity);
+        long beforeCertCreateTime = beforeCreateCalendar.getTime().getTime();
+
         // Generate the keystore and save the new certificate in client (in KC)
         byte[] keyStoreBytes = getClientAttributeCertificateResource(testRealm.getRealm(), client.getId())
                 .generateAndGetKeystore(keyStoreConfig);
@@ -450,10 +456,14 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 KeycloakModelUtils.getPemFromCertificate(x509Cert));
         MatcherAssert.assertThat(x509Cert.getPublicKey(), Matchers.instanceOf(RSAKey.class));
         Assert.assertEquals(keySize == null ? 4096 : keySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, validity == null ? 3 : validity);
+
+        Calendar afterCreateCalendar = Calendar.getInstance();
+        afterCreateCalendar.add(Calendar.YEAR, expectedValidity);
+        long afterCertCreateTime = afterCreateCalendar.getTime().getTime();
+
+        // Assert expected "not after" time on certificate. Need some tollerance as "not after" time on certificate is rounded to seconds
         MatcherAssert.assertThat(x509Cert.getNotAfter().getTime(), Matchers.allOf(
-                Matchers.greaterThan(calendar.getTime().getTime() - 5000), Matchers.lessThan(calendar.getTime().getTime() + 5000)));
+                Matchers.greaterThan(beforeCertCreateTime - 1000), Matchers.lessThan(afterCertCreateTime + 1000)));
 
 
         // Try to login with the new keys

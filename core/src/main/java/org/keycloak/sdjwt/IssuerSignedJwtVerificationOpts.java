@@ -28,9 +28,9 @@ public class IssuerSignedJwtVerificationOpts extends TimeClaimVerificationOpts {
             boolean validateIssuedAtClaim,
             boolean validateExpirationClaim,
             boolean validateNotBeforeClaim,
-            int leewaySeconds
+            int allowedClockSkewSeconds
     ) {
-        super(validateIssuedAtClaim, validateExpirationClaim, validateNotBeforeClaim, leewaySeconds);
+        super(validateIssuedAtClaim, validateExpirationClaim, validateNotBeforeClaim, allowedClockSkewSeconds);
     }
 
     public static Builder builder() {
@@ -45,7 +45,7 @@ public class IssuerSignedJwtVerificationOpts extends TimeClaimVerificationOpts {
                     requireIssuedAtClaim,
                     requireExpirationClaim,
                     requireNotBeforeClaim,
-                    leewaySeconds
+                    allowedClockSkewSeconds
             );
         }
     }

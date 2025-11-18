@@ -21,10 +21,10 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
-import io.quarkus.logging.Log;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -34,17 +34,17 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public final class Utils {
+    private static final String MEMORY = "memory";
+
     public static boolean isOpenShift(KubernetesClient client) {
         return client.supports("operator.openshift.io/v1", "OpenShiftAPIServer");
     }
@@ -81,29 +81,19 @@ public final class Utils {
      * If not specified in the Keycloak CR, set default values from operator config
      */
     public static void addResources(ResourceRequirements resource, Config config, Container kcContainer) {
-        final ResourceRequirements resourcesSpec = Optional.ofNullable(resource).orElseGet(ResourceRequirements::new);
+        final ResourceRequirementsBuilder resourcesBuilder = new ResourceRequirementsBuilder(resource);
 
-        // sets the min boundary when the spec is not present
-        final var requests = Optional.ofNullable(resourcesSpec.getRequests()).orElseGet(HashMap::new);
+        final var defaultMemoryRequest = config.keycloak().resources().requests().memory();
+        final var defaultMemoryLimit = config.keycloak().resources().limits().memory();
 
-        final var requestsMemory = requests.get("memory");
-        final var defaultRequestsMemory = config.keycloak().resources().requests().memory();
-
-        // Validate 'requests' memory
-        if (requestsMemory != null) {
-            var specifiedMemoryIsLessThanDefault = requestsMemory.getNumericalAmount().intValue() < defaultRequestsMemory.getNumericalAmount().intValue();
-            if (specifiedMemoryIsLessThanDefault) {
-                Log.debugf("Provided 'requests' memory ('%s') is less than used default value ('%s'). Use it in your risk, as Keycloak performance might be degraded.", requestsMemory, defaultRequestsMemory);
-            }
-        } else {
-            requests.put("memory", defaultRequestsMemory);
+        if (resourcesBuilder.getRequests() == null || resourcesBuilder.getRequests().get(MEMORY) == null) {
+            resourcesBuilder.addToRequests(MEMORY, defaultMemoryRequest);
+        }
+        if (resourcesBuilder.getLimits() == null || resourcesBuilder.getLimits().get(MEMORY) == null) {
+            resourcesBuilder.addToLimits(MEMORY, defaultMemoryLimit);
         }
 
-        // sets the max boundary when the spec is not present
-        final var limits = Optional.ofNullable(resourcesSpec.getLimits()).orElseGet(HashMap::new);
-        limits.putIfAbsent("memory", config.keycloak().resources().limits().memory());
-
-        kcContainer.setResources(resourcesSpec);
+        kcContainer.setResources(resourcesBuilder.build());
     }
 
     public static <T> String hash(List<T> current) {

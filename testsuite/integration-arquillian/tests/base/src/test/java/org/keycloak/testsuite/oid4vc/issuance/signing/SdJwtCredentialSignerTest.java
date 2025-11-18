@@ -51,6 +51,10 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Test;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -235,7 +239,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         }
         // the sd-jwt is dot-concatenated header.payload.signature~disclosure1~___~disclosureN
         // we first split the disclosuers
-        String[] splittedSdToken = sdJwt.split("~");
+        String[] splittedSdToken = sdJwt.split(SDJWT_DELIMITER);
         // and then split the actual token part
         String[] splittedToken = splittedSdToken[0].split("\\.");
 
@@ -261,9 +265,9 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
 
             assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
             assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
-            List<String> sds = (List<String>) theToken.getOtherClaims().get("_sd");
+            List<String> sds = (List<String>) theToken.getOtherClaims().get(CLAIM_NAME_SD);
             if (sds != null && !sds.isEmpty()) {
-                assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get("_sd_alg"));
+                assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get(CLAIM_NAME_SD_HASH_ALGORITHM));
             }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
