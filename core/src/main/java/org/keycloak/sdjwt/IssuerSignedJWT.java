@@ -84,7 +84,7 @@ public class IssuerSignedJWT extends SdJws {
                 : Collections.unmodifiableList(decoyClaims);
 
         try {
-            // Check no dupplicate claim names
+            // Check no duplicate claim names
             claimsInternal.stream()
                     .filter(Objects::nonNull)
                     // is any duplicate, toMap will throw IllegalStateException
