@@ -29,7 +29,7 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 /**
  * Module for checking the validity of JWT time claims.
- * All checks account for a leeway window to accommodate clock skew.
+ * All checks account for a small window to accommodate allowed clock skew.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */

@@ -46,9 +46,6 @@ public class OID4VCConstants {
     public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
     public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = "credential-offer";
 
-    // --- Keybinding/Credential Builder ---
-    public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "batch_credential_issuance.batch_size";
-
     private OID4VCConstants() {
     }
 }

@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -45,6 +44,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
+import static org.keycloak.OID4VCConstants.SD_HASH;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
@@ -116,11 +117,11 @@ public class SdJwtVP {
     }
 
     public static SdJwtVP of(String sdJwtString) {
-        int disclosureStart = sdJwtString.indexOf(OID4VCConstants.SDJWT_DELIMITER);
-        int disclosureEnd = sdJwtString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER);
+        int disclosureStart = sdJwtString.indexOf(SDJWT_DELIMITER);
+        int disclosureEnd = sdJwtString.lastIndexOf(SDJWT_DELIMITER);
 
         if (disclosureStart == -1) {
-            throw new IllegalArgumentException("SD-JWT is malformed, expected to contain a '" + OID4VCConstants.SDJWT_DELIMITER + "'");
+            throw new IllegalArgumentException("SD-JWT is malformed, expected to contain a '" + SDJWT_DELIMITER + "'");
         }
 
         String issuerSignedJWTString = sdJwtString.substring(0, disclosureStart);
@@ -140,7 +141,7 @@ public class SdJwtVP {
         Map<String, ArrayNode> claims = new HashMap<>();
         Map<String, String> disclosures = new HashMap<>();
 
-        List<String> split = Arrays.stream(disclosuresString.split(OID4VCConstants.SDJWT_DELIMITER))
+        List<String> split = Arrays.stream(disclosuresString.split(SDJWT_DELIMITER))
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
 
@@ -217,10 +218,10 @@ public class SdJwtVP {
             sb.append(sdJwtVpString);
         } else {
             sb.append(issuerSignedJWT.toJws());
-            sb.append(OID4VCConstants.SDJWT_DELIMITER);
+            sb.append(SDJWT_DELIMITER);
             for (String disclosureDigest : disclosureDigests) {
                 sb.append(disclosures.get(disclosureDigest));
-                sb.append(OID4VCConstants.SDJWT_DELIMITER);
+                sb.append(SDJWT_DELIMITER);
             }
         }
         String unboundPresentation = sb.toString();
@@ -228,7 +229,7 @@ public class SdJwtVP {
             return unboundPresentation;
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
-        keyBindingClaims = ((ObjectNode) keyBindingClaims).put(OID4VCConstants.SD_HASH, sd_hash);
+        keyBindingClaims = ((ObjectNode) keyBindingClaims).put(SD_HASH, sd_hash);
         KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext, jwsType);
         sb.append(keyBindingJWT.toJws());
         return sb.toString();

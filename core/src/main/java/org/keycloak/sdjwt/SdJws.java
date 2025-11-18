@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -31,6 +30,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
 
 /**
  * Handle jws, either the issuer jwt or the holder key binding jwt.
@@ -118,7 +119,7 @@ public abstract class SdJws {
      * @param issuers List of trusted issuers
      */
     public void verifyIssClaim(List<String> issuers) throws VerificationException {
-        verifyClaimAgainstTrustedValues(issuers, OID4VCConstants.CLAIM_NAME_ISSUER);
+        verifyClaimAgainstTrustedValues(issuers, CLAIM_NAME_ISSUER);
     }
 
     /**

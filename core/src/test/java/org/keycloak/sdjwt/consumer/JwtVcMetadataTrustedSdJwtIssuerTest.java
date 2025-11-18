@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
@@ -36,6 +35,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
+import static org.keycloak.OID4VCConstants.JWT_VC_ISSUER_END_POINT;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -342,7 +344,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
             String causeErrorMessage
     ) {
         TrustedSdJwtIssuer trustedIssuer = new JwtVcMetadataTrustedSdJwtIssuer(
-                issuerSignedJWT.getPayload().get(OID4VCConstants.CLAIM_NAME_ISSUER).asText(),
+                issuerSignedJWT.getPayload().get(CLAIM_NAME_ISSUER).asText(),
                 mockFetcher
         );
 
@@ -408,7 +410,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
                 throw new UnknownHostException("Unavailable URI");
             }
 
-            if (uri.endsWith(OID4VCConstants.JWT_VC_ISSUER_END_POINT)) {
+            if (uri.endsWith(JWT_VC_ISSUER_END_POINT)) {
                 return metadata;
             } else if (uri.endsWith("/api/vci/jwks")) {
                 return jwks;

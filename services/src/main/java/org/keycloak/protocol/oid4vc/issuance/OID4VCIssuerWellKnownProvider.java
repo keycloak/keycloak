@@ -62,9 +62,9 @@ import org.keycloak.wellknown.WellKnownProvider;
 import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.OID4VCConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
 import static org.keycloak.OID4VCConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER;
+import static org.keycloak.constants.Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.crypto.KeyType.RSA;
 import static org.keycloak.jose.jwk.RSAPublicJWK.RS256;
 

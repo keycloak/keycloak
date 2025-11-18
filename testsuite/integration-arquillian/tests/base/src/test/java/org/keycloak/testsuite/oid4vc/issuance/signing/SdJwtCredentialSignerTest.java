@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -54,6 +53,7 @@ import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -239,7 +239,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         }
         // the sd-jwt is dot-concatenated header.payload.signature~disclosure1~___~disclosureN
         // we first split the disclosuers
-        String[] splittedSdToken = sdJwt.split(OID4VCConstants.SDJWT_DELIMITER);
+        String[] splittedSdToken = sdJwt.split(SDJWT_DELIMITER);
         // and then split the actual token part
         String[] splittedToken = splittedSdToken[0].split("\\.");
 

@@ -18,7 +18,6 @@ package org.keycloak.sdjwt.sdjwtvp;
 
 import java.util.Arrays;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.rule.CryptoInitRule;
@@ -33,6 +32,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.SD_JWT_VC_FORMAT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -150,7 +151,7 @@ public abstract class SdJwtVPTest {
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
         String presentation = sdJwtVP.present(null, keyBindingClaims,
-                TestSettings.getInstance().getHolderSignerContext(), OID4VCConstants.SD_JWT_VC_FORMAT);
+                TestSettings.getInstance().getHolderSignerContext(), SD_JWT_VC_FORMAT);
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
@@ -169,7 +170,7 @@ public abstract class SdJwtVPTest {
         SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtVPString);
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
         String presentation = sdJwtVP.present(null, keyBindingClaims,
-                TestSettings.getInstance().getHolderSignerContext(), OID4VCConstants.SD_JWT_VC_FORMAT);
+                TestSettings.getInstance().getHolderSignerContext(), SD_JWT_VC_FORMAT);
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());
@@ -188,7 +189,7 @@ public abstract class SdJwtVPTest {
         JsonNode keyBindingClaims = TestUtils.readClaimSet(getClass(), "sdjwt/s6.2-key-binding-claims.json");
         // disclose only the given_name
         String presentation = sdJwtVP.present(Arrays.asList("jsu9yVulwQQlhFlM_3JlzMaSFzglhQG0DpfayQwLUK4"),
-                keyBindingClaims, TestSettings.getInstance().getHolderSignerContext(), OID4VCConstants.SD_JWT_VC_FORMAT);
+                keyBindingClaims, TestSettings.getInstance().getHolderSignerContext(), SD_JWT_VC_FORMAT);
 
         SdJwtVP presenteSdJwtVP = SdJwtVP.of(presentation);
         assertTrue(presenteSdJwtVP.getKeyBindingJWT().isPresent());

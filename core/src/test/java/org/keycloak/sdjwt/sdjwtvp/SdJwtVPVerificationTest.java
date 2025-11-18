@@ -279,11 +279,11 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
-    public void testShouldTolerateKbIssuedInTheFutureWithinLeeway() throws VerificationException {
+    public void testShouldTolerateKbIssuedInTheFutureWithinClockSkew() throws VerificationException {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        // Issued just 5 seconds in the future. Should pass with a leeway of 10 seconds.
+        // Issued just 5 seconds in the future. Should pass with a clock skew of 10 seconds.
         kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(now + 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
@@ -330,11 +330,11 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
-    public void testShouldTolerateExpiredKbWithinLeeway() throws VerificationException {
+    public void testShouldTolerateExpiredKbWithinClockSkew() throws VerificationException {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        // Expires just 5 seconds ago. Should pass with a leeway of 10 seconds.
+        // Expires just 5 seconds ago. Should pass with a clock skew of 10 seconds.
         kbPayload.set(CLAIM_NAME_EXP, mapper.valueToTree(now - 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
@@ -479,7 +479,7 @@ public abstract class SdJwtVPVerificationTest {
         payload.put("nonce", "1234567890");
         payload.put("aud", "https://verifier.example.org");
         payload.put(OID4VCConstants.SD_HASH, "X9RrrfWt_70gHzOcovGSIt4Fms9Tf2g2hjlWVI_cxZg");
-        payload.set("iat", mapper.valueToTree(1702315679));
+        payload.set(CLAIM_NAME_IAT, mapper.valueToTree(1702315679));
 
         return payload;
     }

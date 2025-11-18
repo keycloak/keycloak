@@ -42,8 +42,8 @@ public class TimeClaimVerifierTest {
 
     static class FixedTimeClaimVerifier extends TimeClaimVerifier {
 
-        public FixedTimeClaimVerifier(int leewaySeconds, boolean requireClaims) {
-            super(createOptsWithAllowedClockSkew(leewaySeconds, requireClaims));
+        public FixedTimeClaimVerifier(int allowedClockSkewSeconds, boolean requireClaims) {
+            super(createOptsWithAllowedClockSkew(allowedClockSkewSeconds, requireClaims));
         }
 
         @Override
@@ -74,7 +74,7 @@ public class TimeClaimVerifierTest {
     @Test
     public void testVerifyIatClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second leeway
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second clock skew
 
         timeClaimVerifier.verifyIssuedAtClaim(payload);
     }
@@ -101,9 +101,9 @@ public class TimeClaimVerifierTest {
     @Test
     public void testVerifyExpClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second leeway
+        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second clock skew
 
-        // No exception expected for JWT expiring within leeway
+        // No exception expected for JWT expiring within clock skew
         timeClaimVerifier.verifyExpirationClaim(payload);
     }
 
@@ -126,13 +126,13 @@ public class TimeClaimVerifierTest {
         timeClaimVerifier.verifyNotBeforeClaim(payload);
     }
 
-    // Test for verifyNotBeforeClaim (edge case: valid exactly at current time with leeway)
+    // Test for verifyNotBeforeClaim (edge case: valid exactly at current time with clock skew)
     @Test
     public void testVerifyNotBeforeClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second leeway
+        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second clock skew
 
-        // No exception expected for JWT becoming valid within leeway
+        // No exception expected for JWT becoming valid within clock skew
         timeClaimVerifier.verifyNotBeforeClaim(payload);
     }
 
@@ -164,7 +164,7 @@ public class TimeClaimVerifierTest {
         int maxAgeAllowed = 300; // 5 minutes
 
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 320); // 320 seconds old, within the 20 second leeway
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 320); // 320 seconds old, within the 20 second clock skew
 
         timeClaimVerifier.verifyAge(payload, maxAgeAllowed);
     }
