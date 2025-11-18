@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import type { KeyValueType } from "../components/key-value-form/key-value-convert";
+import type { RealmLoAMappingType } from "../components/realm-loa-mapping/RealmLoAMapping";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -227,11 +227,20 @@ export const RealmSettingsTabs = () => {
       r.attributes?.["acr.loa.map"] &&
       typeof r.attributes["acr.loa.map"] !== "string"
     ) {
+      if (isFeatureEnabled(Feature.StepUpAuthenticationSaml)) {
+        r.attributes["acr.uri.map"] = JSON.stringify(
+          Object.fromEntries(
+            (r.attributes["acr.loa.map"] as RealmLoAMappingType[])
+              .filter(({ acr, uri }) => acr !== "" && uri && uri !== "")
+              .map(({ acr, uri }) => [acr, uri]),
+          ),
+        );
+      }
       r.attributes["acr.loa.map"] = JSON.stringify(
         Object.fromEntries(
-          (r.attributes["acr.loa.map"] as KeyValueType[])
-            .filter(({ key }) => key !== "")
-            .map(({ key, value }) => [key, value]),
+          (r.attributes["acr.loa.map"] as RealmLoAMappingType[])
+            .filter(({ acr }) => acr !== "")
+            .map(({ acr, loa }) => [acr, loa]),
         ),
       );
     }

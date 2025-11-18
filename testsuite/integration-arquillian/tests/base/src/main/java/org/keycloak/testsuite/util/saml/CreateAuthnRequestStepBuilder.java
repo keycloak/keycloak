@@ -25,10 +25,10 @@ import java.util.function.Supplier;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
