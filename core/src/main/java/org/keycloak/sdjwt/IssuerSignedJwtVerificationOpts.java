@@ -19,8 +19,9 @@ package org.keycloak.sdjwt;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.keycloak.common.VerificationException;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Options for Issuer-signed JWT verification.

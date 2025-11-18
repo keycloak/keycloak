@@ -33,7 +33,6 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.JwkParsingUtils;
-import org.keycloak.sdjwt.JwsToken;
 import org.keycloak.sdjwt.SdJwtUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

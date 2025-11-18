@@ -26,7 +26,6 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJWT;
-import org.keycloak.sdjwt.JwsToken;
 import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;

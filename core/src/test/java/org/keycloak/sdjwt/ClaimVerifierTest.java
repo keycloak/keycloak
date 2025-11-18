@@ -18,11 +18,12 @@
 
 package org.keycloak.sdjwt;
 
+import org.keycloak.common.VerificationException;
+
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.VerificationException;
 
 /**
  * @author Pascal Knueppel
