@@ -39,3 +39,11 @@ This provides a more fine-grained way to manage features and eliminates the need
 The `feature-<name>` option takes precedence over both `features` and `features-disabled`.
 
 For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+
+= Cloudflare Turnstile support
+
+{project_name} has integration with Cloudflare Turnstile as a CAPTCHA provider.
+
+Turnstile can be configured to protect registration forms, login flows, and password reset pages.
+
+For more details, see the link:{adminguide_link}#proc-enabling-turnstile_server_administration_guide[{adminguide_name}].

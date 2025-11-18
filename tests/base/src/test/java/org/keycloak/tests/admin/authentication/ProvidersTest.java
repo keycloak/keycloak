@@ -70,6 +70,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(expected, RegistrationRecaptchaEnterprise.PROVIDER_ID, "reCAPTCHA Enterprise", "Adds Google reCAPTCHA Enterprise to the form.");
         addProviderInfo(expected, "registration-password-action", "Password Validation",
                 "Validates that password matches password confirmation field.  It also will store password in user's credential store.");
+        addProviderInfo(expected, "registration-turnstile-action", "Turnstile",
+                "Adds Cloudflare Turnstile to the form.");
         addProviderInfo(expected, "registration-user-creation", "Registration User Profile Creation",
                 "This action must always be first! Validates the username and user profile of the user in validation phase.  " +
                         "In success phase, this will create the user in the database including his user profile.");
@@ -144,6 +146,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "auth-spnego", "Kerberos", kerberosHelpMessage);
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
+        addProviderInfo(result, "auth-userpass-form-turnstile", "Username Password Form with Turnstile",
+                "Validates a username and password with Cloudflare Turnstile CAPTCHA.");
         addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
@@ -170,6 +174,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a password from login form. Username may be already known from identity provider authentication");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
+        addProviderInfo(result, "reset-choose-user-turnstile", "Choose User with Turnstile", "Choose a user to reset credentials for with Cloudflare Turnstile CAPTCHA protection");
         addProviderInfo(result, "reset-otp", "Reset OTP", "Removes existing OTP configurations (if chosen) and sets the 'Configure OTP' required action.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");

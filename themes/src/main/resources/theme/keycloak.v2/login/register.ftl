@@ -3,6 +3,7 @@
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
 <#import "password-validation.ftl" as validator>
+<#import "turnstile.ftl" as turnstile>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
 <!-- template: register.ftl -->
 
@@ -33,6 +34,8 @@
                     </div>
                 </div>
             </#if>
+
+            <@turnstile.turnstileWidget />
 
             <#if recaptchaRequired?? && !(recaptchaVisible!false)>
                 <script>

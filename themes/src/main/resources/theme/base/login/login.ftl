@@ -1,5 +1,6 @@
 <#import "template.ftl" as layout>
 <#import "passkeys.ftl" as passkeys>
+<#import "turnstile.ftl" as turnstile>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
     <#if section = "header">
         ${msg("loginAccountTitle")}
@@ -71,6 +72,8 @@
                             </div>
 
                       </div>
+
+                      <@turnstile.turnstileWidget />
 
                       <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
                           <input type="hidden" id="id-hidden-input" name="credentialId" <#if auth.selectedCredential?has_content>value="${auth.selectedCredential}"</#if>/>
