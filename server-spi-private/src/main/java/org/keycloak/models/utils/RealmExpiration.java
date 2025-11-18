@@ -108,7 +108,7 @@ public record RealmExpiration(int lifespan,
      */
     public static RealmExpiration fromRealm(RealmModel realm) {
         int offlineMaxIdle = SessionExpirationUtils.getOfflineSessionIdleTimeout(realm);
-        int offlineLifespan = realm.isOfflineSessionMaxLifespanEnabled() ? -1 : SessionExpirationUtils.getOfflineSessionMaxLifespan(realm);
+        int offlineLifespan = realm.isOfflineSessionMaxLifespanEnabled() ? SessionExpirationUtils.getOfflineSessionMaxLifespan(realm) : -1;
         int maxIdle = SessionExpirationUtils.getSsoSessionIdleTimeout(realm);
         int lifespan = SessionExpirationUtils.getSsoSessionMaxLifespan(realm);
         int maxIdleRememberMe = Math.max(maxIdle, realm.getSsoSessionIdleTimeoutRememberMe());
