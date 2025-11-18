@@ -111,6 +111,12 @@ class VerifyMessagePropertiesTest {
     }
 
     @Test
+    void verifyNoHtmlEntities() throws MojoExecutionException {
+        List<String> verify = getFile("htmlEntities_en.properties").withValidateMessageFormatQuotes(false).verify();
+        MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("HTML entities should not be used")));
+    }
+
+    @Test
     void verifyNoExtraBlanks() throws MojoExecutionException {
         List<String> verify = getFile("blanks_en.properties").verify();
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("Duplicate blanks")));
