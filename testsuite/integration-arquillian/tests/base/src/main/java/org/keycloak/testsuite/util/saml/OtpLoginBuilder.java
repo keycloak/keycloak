@@ -16,11 +16,16 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.testsuite.util.SamlClient.Step;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -30,12 +35,12 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import static org.hamcrest.MatcherAssert.assertThat;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
+
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import org.keycloak.testsuite.util.SamlClient.Step;
-import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *

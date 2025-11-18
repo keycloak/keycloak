@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.common.Profile;
@@ -32,6 +32,7 @@ import org.keycloak.dom.saml.v2.assertion.AuthnContextType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
@@ -39,6 +40,9 @@ import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * <p>Mapper to assign the used AuthnContextClassRef in the AunthContext response.</p>
@@ -63,7 +67,7 @@ public class AuthnContextClassRefMapper extends AbstractSAMLProtocolMapper imple
 
     @Override
     public String getDisplayType() {
-        return "Audience";
+        return AUTHN_CONTEXT_CLASS_REF_CATEGORY;
     }
 
     @Override
@@ -77,15 +81,29 @@ public class AuthnContextClassRefMapper extends AbstractSAMLProtocolMapper imple
     }
 
     @Override
-    public ResponseType transformLoginResponse(ResponseType response, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    public ResponseType transformLoginResponse(ResponseType response, ProtocolMapperModel mappingModel,
+            KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         int loa = LoAUtil.getCurrentLevelOfAuthentication(clientSessionCtx.getClientSession());
-        String acrValue = clientSessionCtx.getClientSession().getNote(SamlProtocol.SAML_AUTHN_CONTEXT_CLASS_REF);
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+        String acrValue = authSession != null? authSession.getClientNote(SamlProtocol.SAML_AUTHN_CONTEXT_CLASS_REF) : null;
+        logger.tracef("Current level of authentication %d, requested level %s", loa, acrValue);
+        if (loa < Constants.MINIMUM_LOA) {
+            // if the authentication was not using a step-up flow, just return as before
+            return response;
+        }
 
+        Map<String, Integer> acrLoaMap = AcrUtils.getUriLoaMap(clientSessionCtx.getClientSession().getClient());
         if (acrValue == null) {
             // no acr explicitly request in SAML, check if we have a specific name for this loa level
-            Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(clientSessionCtx.getClientSession().getClient());
-            // get the first name for this level of authentication
             acrValue = acrLoaMap.entrySet().stream().filter(e -> loa == e.getValue()).map(Map.Entry::getKey).findAny().orElse(null);
+        } else {
+            // check the requested level was indeed achieved by the authentication flow, if not unspecified
+            Integer requestedLevel = acrLoaMap.get(acrValue);
+            if (requestedLevel == null || requestedLevel != loa) {
+                logger.warnf("Requested level '%s' (%d) was not reached after authentication flow, current level %d",
+                        acrValue, requestedLevel, loa);
+                acrValue = null;
+            }
         }
 
         URI authnContextClassRef = createUri(acrValue);
@@ -103,6 +121,7 @@ public class AuthnContextClassRefMapper extends AbstractSAMLProtocolMapper imple
                 .findAny();
 
         if (authStatementOptional.isPresent()) {
+            logger.tracef("Setting the authentication context to '%s'", acrValue);
             AuthnStatementType authStatement = authStatementOptional.get();
             AuthnContextType authContext = new AuthnContextType();
             AuthnContextType.AuthnContextTypeSequence sequence = new AuthnContextType.AuthnContextTypeSequence();
