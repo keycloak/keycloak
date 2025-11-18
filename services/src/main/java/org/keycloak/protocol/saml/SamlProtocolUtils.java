@@ -413,7 +413,8 @@ public class SamlProtocolUtils {
     public static String getSelectedLoA(RequestedAuthnContextType requestedAuthnContext, Map<String, Integer> acrLoaMap, String minLoa) {
         Integer minLevel = minLoa != null ? acrLoaMap.get(minLoa) : null;
         return requestedAuthnContext.getAuthnContextClassRef().stream()
-                .map(current -> checkLoa(requestedAuthnContext.getComparison(), current, acrLoaMap, minLoa, minLevel != null ? minLevel : Integer.MIN_VALUE))
+                .map(current -> checkLoa(requestedAuthnContext.getComparison(), current, acrLoaMap,
+                        minLoa, minLevel != null ? minLevel : Integer.MIN_VALUE))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);

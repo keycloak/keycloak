@@ -536,27 +536,31 @@ public class SamlService extends AuthorizationEndpointBase {
 
             if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
                 // step-up level of authentication
-                Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authSession.getClient());
+                Map<String, Integer> acrLoaMap = AcrUtils.getUriLoaMap(authSession.getClient());
 
-                String acrValue = null;
-                if (requestAbstractType.getRequestedAuthnContext() != null && !requestAbstractType.getRequestedAuthnContext().getAuthnContextClassRef().isEmpty()) {
-                    acrValue = SamlProtocolUtils.getSelectedLoA(requestAbstractType.getRequestedAuthnContext(), acrLoaMap, AcrUtils.getMinimumAcrValue(client));
-                    if (acrValue == null) {
-                        logger.debug("No AuthnContextClassRef is valid for the requested context.");
-                        event.detail(Details.REASON, "Invalid RequestedAuthnContext");
-                        event.error(Errors.INVALID_REQUEST);
-                        return sendProtocolError(authSession, LoginProtocol.Error.LOA_INVALID, null);
+                if (!acrLoaMap.isEmpty()) {
+                    // only process the requested authn context if LoA defined
+                    String acrValue;
+                    if (requestAbstractType.getRequestedAuthnContext() != null
+                            && !requestAbstractType.getRequestedAuthnContext().getAuthnContextClassRef().isEmpty()) {
+                        acrValue = SamlProtocolUtils.getSelectedLoA(requestAbstractType.getRequestedAuthnContext(),
+                                acrLoaMap, AcrUtils.getMinimumAcrValue(client));
+                        if (acrValue == null) {
+                            logger.debug("No AuthnContextClassRef is valid for the requested context.");
+                            event.detail(Details.REASON, "Invalid RequestedAuthnContext");
+                            event.error(Errors.INVALID_REQUEST);
+                            return sendProtocolError(authSession, LoginProtocol.Error.LOA_INVALID, null);
+                        }
+                    } else {
+                        acrValue = AcrUtils.getMinimumAcrValue(client);
                     }
-                }
 
-                if (acrValue == null) {
-                    acrValue = AcrUtils.getMinimumAcrValue(client);
-                }
-
-                if (acrValue != null) {
-                    authSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
-                    authSession.setClientNote(SamlProtocol.SAML_AUTHN_CONTEXT_CLASS_REF, acrValue);
-                    authSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(acrLoaMap.get(acrValue)));
+                    if (acrValue != null) {
+                        logger.tracef("SAML step-up authentication set to force using context '%s'", acrValue);
+                        authSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
+                        authSession.setClientNote(SamlProtocol.SAML_AUTHN_CONTEXT_CLASS_REF, acrValue);
+                        authSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(acrLoaMap.get(acrValue)));
+                    }
                 }
             }
 

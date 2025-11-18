@@ -3,7 +3,12 @@ import {
   TextControl,
   SelectControl,
 } from "@keycloak/keycloak-ui-shared";
-import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
+import {
+  ActionGroup,
+  Button,
+  FormGroup,
+  TextInput,
+} from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
@@ -34,10 +39,10 @@ export const AdvancedSettings = ({
 
   const { realmRepresentation: realm } = useRealm();
 
-  const { control, watch } = useFormContext();
+  const { control, watch, register } = useFormContext();
 
-  const acrLoAMapRealm = realm?.attributes?.["acr.loa.map"]
-    ? Object.keys(JSON.parse(realm.attributes["acr.loa.map"]))
+  const acrUriMapRealm = realm?.attributes?.["acr.uri.map"]
+    ? Object.values(JSON.parse(realm.attributes["acr.uri.map"]))
     : [];
 
   const acrLoAMapClient = watch(
@@ -48,7 +53,7 @@ export const AdvancedSettings = ({
   const validAcrLoAOptions = () =>
     acrLoAMapClient.length > 0
       ? acrLoAMapClient.map((i: any) => i?.key).filter((i: any) => i !== "")
-      : acrLoAMapRealm;
+      : acrUriMapRealm;
 
   const acrLoAMapNamesOptions = () => [
     { key: "", value: t("choose") },
@@ -97,7 +102,7 @@ export const AdvancedSettings = ({
                 fieldId="acrToLoAMapping"
                 labelIcon={
                   <HelpItem
-                    helpText={t("acrToLoAMappingHelp")}
+                    helpText={t("acrToLoAMappingSamlHelp")}
                     fieldLabelId="acrToLoAMapping"
                   />
                 }
@@ -105,6 +110,19 @@ export const AdvancedSettings = ({
                 <KeyValueInput
                   label={t("acrToLoAMapping")}
                   name={convertAttributeNameToForm("attributes.acr.loa.map")}
+                  keyLabel="uri"
+                  valueLabel="loa"
+                  ValueComponent={(props) => (
+                    <TextInput
+                      placeholder={t("loaPlaceholder")}
+                      aria-label={t("loa")}
+                      validated={props.error ? "error" : "default"}
+                      {...register(props.name, {
+                        required: true,
+                        validate: (v: string) => Number.isInteger(parseInt(v)),
+                      })}
+                    />
+                  )}
                 />
               </FormGroup>
               <SelectControl
@@ -221,6 +239,19 @@ export const AdvancedSettings = ({
             <KeyValueInput
               label={t("acrToLoAMapping")}
               name={convertAttributeNameToForm("attributes.acr.loa.map")}
+              keyLabel="acr"
+              valueLabel="loa"
+              ValueComponent={(props) => (
+                <TextInput
+                  placeholder={t("loaPlaceholder")}
+                  aria-label={t("loa")}
+                  validated={props.error ? "error" : "default"}
+                  {...register(props.name, {
+                    required: true,
+                    validate: (v: string) => Number.isInteger(parseInt(v)),
+                  })}
+                />
+              )}
             />
           </FormGroup>
           <FormGroup

@@ -18,6 +18,10 @@
     "eventsEnabled" : true,
     "eventsListeners" : [ "jboss-logging" ],
     "enabledEventTypes" : [ ],
+    "attributes": {
+      "acr.loa.map": "{\"copper\":\"1\",\"silver\":\"2\",\"gold\":\"3\"}",
+      "acr.uri.map": "{\"copper\":\"urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\",\"silver\":\"urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken\",\"gold\":\"urn:custom:authentication:pushbutton\"}"
+    },
     "users" : [
         {
             "username" : "bburke",

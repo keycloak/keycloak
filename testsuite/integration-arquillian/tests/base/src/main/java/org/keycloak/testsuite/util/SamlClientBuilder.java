@@ -37,8 +37,8 @@ import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
 import org.keycloak.testsuite.util.saml.HandleArtifactStepBuilder;
 import org.keycloak.testsuite.util.saml.IdPInitiatedLoginBuilder;
 import org.keycloak.testsuite.util.saml.LoginBuilder;
-import org.keycloak.testsuite.util.saml.OtpLoginBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
+import org.keycloak.testsuite.util.saml.OtpLoginBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
 import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
 
