@@ -528,8 +528,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
 
-        setForwardParameters(authenticationSession, uriBuilder);
-
         if (getConfig().isPkceEnabled()) {
             String codeVerifier = PkceUtils.generateCodeVerifier();
             String codeChallengeMethod = getConfig().getPkceMethod();
@@ -541,26 +539,35 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }
 
+        appendForwardedParameters(authenticationSession, uriBuilder);
+
         return uriBuilder;
     }
 
-    private void setForwardParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
+    private void appendForwardedParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
         C config = getConfig();
         String forwardParameterConfig = config.getForwardParameters() != null ? config.getForwardParameters(): OAuth2Constants.ACR_VALUES;
+        List<String> parameterNames = List.of(forwardParameterConfig.split("\\s*,\\s*"));
+        StringBuilder query = new StringBuilder(uriBuilder.build().getRawQuery());
 
-        for (String forwardParameter: List.of(forwardParameterConfig.split("\\s*,\\s*"))) {
-            String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
-            String parameter = authenticationSession.getClientNote(name);
+        for (String name: parameterNames) {
+            String noteKey = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + name.trim();
+            String value = authenticationSession.getClientNote(noteKey);
 
-            if (parameter == null) {
+            if (value == null) {
                 // try a value set as a client note
-                parameter = authenticationSession.getClientNote(forwardParameter);
+                value = authenticationSession.getClientNote(name);
             }
 
-            if (parameter != null && !parameter.isEmpty()) {
-                uriBuilder.queryParam(forwardParameter, URLEncoder.encode(parameter, StandardCharsets.UTF_8));
+            if (value != null && !value.isEmpty()) {
+                if (!query.isEmpty()) {
+                    query.append("&");
+                }
+                query.append(name).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
             }
         }
+
+        uriBuilder.replaceQuery(query.toString());
     }
 
     /**
