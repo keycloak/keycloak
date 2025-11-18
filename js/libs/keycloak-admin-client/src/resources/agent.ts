@@ -1,4 +1,3 @@
-import urlJoin from "url-join";
 import { parseTemplate } from "url-template";
 import type { KeycloakAdminClient } from "../client.js";
 import {
@@ -6,6 +5,7 @@ import {
   NetworkError,
   parseResponse,
 } from "../utils/fetchWithError.js";
+import { joinPath } from "../utils/joinPath.js";
 import { stringifyQueryParams } from "../utils/stringifyQueryParams.js";
 
 // constants
@@ -53,7 +53,7 @@ export class Agent {
   #client: KeycloakAdminClient;
   #basePath: string;
   #getBaseParams?: () => Record<string, any>;
-  #getBaseUrl?: () => string;
+  #getBaseUrl: () => string;
 
   constructor({
     client,
@@ -199,12 +199,6 @@ export class Agent {
     returnResourceIdInLocationHeader?: { field: string };
     headers?: [string, string][] | Record<string, string> | Headers;
   }) {
-    const newPath = urlJoin(this.#basePath, path);
-
-    // Parse template and replace with values from urlParams
-    const pathTemplate = parseTemplate(newPath);
-    const parsedPath = pathTemplate.expand(urlParams);
-    const url = new URL(`${this.#getBaseUrl?.() ?? ""}${parsedPath}`);
     const requestOptions = { ...this.#client.getRequestOptions() };
     const requestHeaders = new Headers([
       ...new Headers(requestOptions.headers).entries(),
@@ -243,6 +237,10 @@ export class Agent {
       Object.assign(searchParams, queryParams);
     }
 
+    const url = new URL(this.#getBaseUrl());
+    const pathTemplate = parseTemplate(joinPath(this.#basePath, path));
+
+    url.pathname = joinPath(url.pathname, pathTemplate.expand(urlParams));
     url.search = stringifyQueryParams(searchParams);
 
     try {
