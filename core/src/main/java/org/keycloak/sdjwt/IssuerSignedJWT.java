@@ -467,7 +467,7 @@ public class IssuerSignedJWT extends JwsToken {
             ObjectNode cnf = JsonNodeFactory.instance.objectNode();
             Optional.ofNullable(keyBinding.getJwsHeader().getOtherClaims().get(OID4VCConstants.CLAIM_NAME_JWK))
                     .map(map -> JsonSerialization.mapper.convertValue(map, ObjectNode.class))
-                    .ifPresent(jwkNode -> cnf.set("jwk", jwkNode));
+                    .ifPresent(jwkNode -> cnf.set(OID4VCConstants.CLAIM_NAME_JWK, jwkNode));
             if (!cnf.isEmpty()) {
                 getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
             }
