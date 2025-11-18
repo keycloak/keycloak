@@ -30,6 +30,10 @@ public final class Oid4VciConstants {
 
     public static final String C_NONCE_LIFETIME_IN_SECONDS = "vc.c-nonce-lifetime-seconds";
 
+    public static final String TIME_CLAIMS_STRATEGY = "oid4vci.time.claims.strategy";
+    public static final String TIME_RANDOMIZE_WINDOW_SECONDS = "oid4vci.time.randomize.window.seconds";
+    public static final String TIME_ROUND_UNIT = "oid4vci.time.round.unit";
+
     // --- Keybinding/Credential Builder ---
     public static final String SOURCE_ENDPOINT = "source_endpoint";
     public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "batch_credential_issuance.batch_size";

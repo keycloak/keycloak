@@ -23,6 +23,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
+import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
@@ -43,10 +44,6 @@ import org.jboss.logging.Logger;
 public class TimeClaimNormalizer {
 
     private static final Logger logger = Logger.getLogger(TimeClaimNormalizer.class);
-
-    public static final String ATTR_STRATEGY = "oid4vci.time.claims.strategy";
-    public static final String ATTR_RANDOM_WINDOW = "oid4vci.time.randomize.window.seconds";
-    public static final String ATTR_ROUND_UNIT = "oid4vci.time.round.unit";
 
     public enum Strategy {
         OFF,
@@ -74,9 +71,9 @@ public class TimeClaimNormalizer {
     }
 
     public TimeClaimNormalizer(RealmModel realm) {
-        this.strategy = parseStrategy(realm.getAttribute(ATTR_STRATEGY));
-        this.randomizeWindowSeconds = parseRandomizeWindow(realm.getAttribute(ATTR_RANDOM_WINDOW));
-        this.roundUnit = parseRoundUnit(realm.getAttribute(ATTR_ROUND_UNIT));
+        this.strategy = parseStrategy(realm.getAttribute(Oid4VciConstants.TIME_CLAIMS_STRATEGY));
+        this.randomizeWindowSeconds = parseRandomizeWindow(realm.getAttribute(Oid4VciConstants.TIME_RANDOMIZE_WINDOW_SECONDS));
+        this.roundUnit = parseRoundUnit(realm.getAttribute(Oid4VciConstants.TIME_ROUND_UNIT));
     }
 
     TimeClaimNormalizer(Strategy strategy, Long randomizeWindowSeconds, RoundUnit roundUnit) {
