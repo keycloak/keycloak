@@ -26,13 +26,13 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
+
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class SdJwtCredentialBody implements CredentialBody {
-
-    private static final String CNF_CLAIM = "cnf";
-    private static final String JWK_CLAIM = "jwk";
 
     private final SdJwt.Builder sdJwtBuilder;
     private final Map<String, Object> claimSet;
@@ -43,7 +43,7 @@ public class SdJwtCredentialBody implements CredentialBody {
     }
 
     public void addKeyBinding(JWK jwk) throws CredentialBuilderException {
-        claimSet.put(CNF_CLAIM, Map.of(JWK_CLAIM, jwk));
+        claimSet.put(CLAIM_NAME_CNF, Map.of(CLAIM_NAME_JWK, jwk));
     }
 
     public Map<String, Object> getClaimSet() {
