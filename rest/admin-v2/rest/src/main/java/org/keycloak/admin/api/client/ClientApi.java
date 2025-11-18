@@ -27,7 +27,7 @@ public interface ClientApi {
     ClientRepresentation createOrUpdateClient(@Valid ClientRepresentation client);
 
     @PATCH
-    @Consumes({MediaType.APPLICATION_JSON_PATCH_JSON, CONTENT_TYPE_MERGE_PATCH})
+    @Consumes(CONTENT_TYPE_MERGE_PATCH)
     @Produces(MediaType.APPLICATION_JSON)
     ClientRepresentation patchClient(JsonNode patch);
 

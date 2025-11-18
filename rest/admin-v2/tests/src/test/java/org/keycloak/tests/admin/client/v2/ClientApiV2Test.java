@@ -90,23 +90,10 @@ public class ClientApiV2Test {
     public void jsonPatchClient() throws Exception {
         HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/realms/master/clients/account");
         setAuthHeader(request);
-        request.setEntity(new StringEntity("not json"));
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
         try (var response = client.execute(request)) {
             EntityUtils.consumeQuietly(response.getEntity());
-            assertEquals(400, response.getStatusLine().getStatusCode());
-        }
-
-        request.setEntity(new StringEntity(
-                """
-                [{"op": "add", "path": "/description", "value": "I'm a description"}]
-                """));
-
-        try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-
-            ClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(ClientRepresentation.class);
-            assertEquals("I'm a description", client.getDescription());
+            assertEquals(415, response.getStatusLine().getStatusCode());
         }
     }
 
