@@ -33,7 +33,7 @@ import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
  */
 public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
 
-    // LDAP DN where are groups of this tree saved.
+    // LDAP DN where groups of this tree are saved.
     public static final String GROUPS_DN = "groups.dn";
     public static final String GROUPS_RELATIVE_CREATE_DN = "groups.relative.create.dn";
 
