@@ -36,13 +36,10 @@ import jakarta.persistence.TypedQuery;
 
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -52,16 +49,16 @@ import org.keycloak.models.session.PersistentClientSessionModel;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmExpiration;
 import org.keycloak.models.utils.SessionExpirationUtils;
-import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.storage.StorageId;
 import org.keycloak.utils.StreamsUtil;
 
-import org.hibernate.jpa.AvailableHints;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineFromString;
+import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineToString;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -248,32 +245,29 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void removeExpired(RealmModel realm) {
-        int expiredOffline = calculateOldestSessionTime(realm, true) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        final RealmExpiration expiration = RealmExpiration.fromRealm(realm);
+        final int currentTime = Time.currentTime();
+        final KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
 
-        expire(realm, expiredOffline, true);
+        UserSessionExpirationLogic.expireOfflineSessions(sessionFactory, realm, currentTime, expiration, expirationBatch);
 
-        if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+            return;
+        }
 
-            int expired = calculateOldestSessionTime(realm, false) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        // The offline sessions do not have remember_me flag. We do not waste time migrating them.
+        UserSessionExpirationLogic.migrateRememberMe(sessionFactory, realm, expiration, currentTime, expirationBatch);
 
-            expire(realm, expired, false);
+        UserSessionExpirationLogic.expireRegularSessions(sessionFactory, realm, currentTime, expiration, false, expirationBatch);
+        if (realm.isRememberMe()) {
+            UserSessionExpirationLogic.expireRegularSessions(sessionFactory, realm, currentTime, expiration, true, expirationBatch);
+        } else {
+            UserSessionExpirationLogic.deleteInvalidSessions(sessionFactory, realm);
         }
     }
 
     private static int calculateOldestSessionTime(RealmModel realm, boolean offline) {
         return Time.currentTime() - (int) TimeUnit.MILLISECONDS.toSeconds(SessionExpirationUtils.calculateUserSessionIdleTimestamp(offline, realm.isRememberMe(), 0, realm));
-    }
-
-    private void expire(RealmModel realm, int expired, boolean offline) {
-        logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
-        String realmId = realm.getId();
-
-        boolean hasMore = true;
-        while (hasMore) {
-            hasMore = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
-                    s -> executeExpirationRemoval(s, realmId, expirationBatch, offline, expired));
-        }
-        logger.tracef("Finished expiration check for realm '%s'", realm.getName());
     }
 
     @Override
@@ -514,7 +508,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         logger.tracef("Adding client session %s / %s", userSession, clientSessAdapter);
 
-        userSession.getAuthenticatedClientSessions().put(getClientId(clientSessionEntity), clientSessAdapter);
+        userSession.getAuthenticatedClientSessions().put(JpaSessionUtil.getClientId(clientSessionEntity), clientSessAdapter);
         return true;
     }
 
@@ -611,7 +605,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, ClientModel client, UserSessionModel userSession, PersistentClientSessionEntity entity) {
         if (client == null) {
             // can be null if client is not found anymore
-            client = realm.getClientById(getClientId(entity));
+            client = realm.getClientById(JpaSessionUtil.getClientId(entity));
             if (client == null) {
                 logger.debugf("Client not found for clientId %s clientStorageProvider %s externalClientId %s",
                         entity.getClientId(), entity.getClientStorageProvider(), entity.getExternalClientId());
@@ -631,7 +625,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
             @Override
             public String getClientId() {
-                return JpaUserSessionPersisterProvider.getClientId(entity);
+                return JpaSessionUtil.getClientId(entity);
             }
 
             @Override
@@ -721,26 +715,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         // NOOP
     }
 
-    private static String offlineToString(boolean offline) {
-        return offline ? "1" : "0";
-    }
-
-    private static boolean offlineFromString(String offlineStr) {
-        return "1".equals(offlineStr);
-    }
-
-    private static boolean isExternalClient(PersistentClientSessionEntity entity) {
-        return !entity.getExternalClientId().equals(PersistentClientSessionEntity.LOCAL);
-    }
-
-    private static String getExternalClientId(PersistentClientSessionEntity entity) {
-        return new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId()).getId();
-    }
-
-    private static String getClientId(PersistentClientSessionEntity entity) {
-        return isExternalClient(entity) ? getExternalClientId(entity) : entity.getClientId();
-    }
-
     private Stream<PersistentAuthenticatedClientSessionAdapter> fetchClientSessions(PersistentUserSessionAdapter userSession, String offlineStr) {
         TypedQuery<PersistentClientSessionEntity> clientSessionQuery = em.createNamedQuery("findClientSessionsByUserSession", PersistentClientSessionEntity.class);
         clientSessionQuery.setParameter("userSessionId", userSession.getId());
@@ -748,74 +722,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         return closing(clientSessionQuery.getResultStream()
                 .map(entity -> toAdapter(userSession.getRealm(), null, userSession, entity))
-                .filter(JpaUserSessionPersisterProvider::hasClient)
+                .filter(JpaSessionUtil::hasClient)
         );
-    }
-
-    private static void createExpirationEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser userSessionAndUser) {
-        new EventBuilder(realm, session)
-                .user(userSessionAndUser.userId())
-                .session(userSessionAndUser.userSessionId())
-                .event(EventType.USER_SESSION_DELETED)
-                .detail(Details.REASON, Details.EXPIRED_DETAIL)
-                .success();
-    }
-
-    private static boolean hasClient(PersistentAuthenticatedClientSessionAdapter clientSession) {
-        return clientSession.getClient() != null;
-    }
-
-    private record UserSessionAndUser(String userSessionId, String userId) {
-    }
-
-    private static UserSessionAndUser userSessionAndUserProjection(Object[] projection) {
-        assert projection.length == 2;
-        assert projection[0] != null;
-        assert projection[1] != null;
-        return new UserSessionAndUser(String.valueOf(projection[0]), String.valueOf(projection[1]));
-    }
-
-    // returns true if it has more rows to check
-    private static boolean executeExpirationRemoval(KeycloakSession session, String realmId, int batchSize, boolean offline, int expired) {
-        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        RealmModel realm = session.realms().getRealm(realmId);
-        session.getContext().setRealm(realm);
-        String offlineStr = offlineToString(offline);
-        TypedQuery<Object[]> query = em.createNamedQuery("findExpiredUserSessions", Object[].class)
-                .setParameter("realmId", realmId)
-                .setParameter("lastSessionRefresh", expired)
-                .setParameter("offline", offlineStr)
-                .setHint(AvailableHints.HINT_READ_ONLY, true)
-                .setMaxResults(batchSize);
-
-        var expiredSessions = query.getResultStream()
-                .map(JpaUserSessionPersisterProvider::userSessionAndUserProjection)
-                .toList();
-
-        if (expiredSessions.isEmpty()) {
-            return false;
-        }
-
-        // creates the expiration events and extracts the user session IDs for the delete statement.
-        var sessionIds = expiredSessions.stream()
-                .peek(sessionAndUser -> createExpirationEvent(session, realm, sessionAndUser))
-                .map(UserSessionAndUser::userSessionId)
-                .toList();
-
-
-        int cs = em.createNamedQuery("deleteClientSessionsByUserSessions")
-                .setParameter("userSessionId", sessionIds)
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
-
-        int us = em.createNamedQuery("deleteUserSessions")
-                .setParameter("userSessionId", sessionIds)
-                .setParameter("offline", offlineStr)
-                .executeUpdate();
-        logger.debugf("Removed %d expired user sessions and %d expired client sessions in realm '%s'", us, cs, realm.getName());
-
-        // This should be safe.
-        // If the hits are less than the desired batch size, we should not have expired sessions.
-        return expiredSessions.size() >= batchSize;
     }
 }
