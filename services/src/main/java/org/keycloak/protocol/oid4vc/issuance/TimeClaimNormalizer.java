@@ -62,9 +62,9 @@ public class TimeClaimNormalizer {
     private final long randomizeWindowSeconds;
     private final RoundUnit roundUnit;
 
-    private static final long DEFAULT_RANDOMIZE_WINDOW = 86400; // 24h default
-    private static final Strategy DEFAULT_STRATEGY = Strategy.OFF;
-    private static final RoundUnit DEFAULT_ROUND_UNIT = RoundUnit.SECOND;
+    public static final long DEFAULT_RANDOMIZE_WINDOW = 86400; // 24h default
+    public static final Strategy DEFAULT_STRATEGY = Strategy.OFF;
+    public static final RoundUnit DEFAULT_ROUND_UNIT = RoundUnit.SECOND;
 
     public TimeClaimNormalizer(KeycloakSession session) {
         this(session.getContext().getRealm());

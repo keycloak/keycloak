@@ -75,7 +75,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         ProviderConfigProperty truncateToTimeUnit = new ProviderConfigProperty();
         truncateToTimeUnit.setName(TRUNCATE_TO_TIME_UNIT_KEY);
         truncateToTimeUnit.setLabel("Truncate To Time Unit");
-        truncateToTimeUnit.setHelpText("Truncate time to the start of the selected unit. Supported: MINUTES, HOURS, HALF_DAYS, DAYS, WEEKS, MONTHS, YEARS. Such as to prevent correlation of credentials based on this time value.");
+        truncateToTimeUnit.setHelpText("Truncate time to the start of the selected unit. Supported: SECONDS, MINUTES, HOURS, HALF_DAYS, DAYS, WEEKS, MONTHS, YEARS. Such as to prevent correlation of credentials based on this time value.");
         truncateToTimeUnit.setType(ProviderConfigProperty.LIST_TYPE);
         truncateToTimeUnit.setOptions(List.of("MINUTES", "HOURS", "HALF_DAYS", "DAYS", "WEEKS", "MONTHS", "YEARS"));
         CONFIG_PROPERTIES.add(truncateToTimeUnit);
@@ -130,8 +130,8 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
 
         // truncate is possible. Return iat if not.
         Instant iatTrunc = Optional.ofNullable(mapperModel.getConfig())
-                .flatMap(config -> Optional.ofNullable(config.get(TRUNCATE_TO_TIME_UNIT_KEY)))
-                .filter(val -> !val.isEmpty())
+                .map(config -> config.get(TRUNCATE_TO_TIME_UNIT_KEY))
+                .filter(val -> val != null && !val.isEmpty())
                 .map(ChronoUnit::valueOf)
                 .map(normalizedIat::truncatedTo)
                 .orElse(normalizedIat);
