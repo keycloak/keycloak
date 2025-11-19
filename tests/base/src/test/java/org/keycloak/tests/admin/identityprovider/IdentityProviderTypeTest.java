@@ -68,7 +68,7 @@ public class IdentityProviderTypeTest {
                     .identityProvider(IdentityProviderBuilder.create()
                         .providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                         .alias("myspiffe")
-                        .setAttribute(IdentityProviderModel.ISSUER, "spiffe://mytrust")
+                        .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "spiffe://mytrust")
                         .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, "https://myendpoint")
                         .build())
                     .identityProvider(IdentityProviderBuilder.create()

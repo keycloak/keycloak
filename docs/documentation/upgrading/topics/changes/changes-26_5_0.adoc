@@ -48,6 +48,12 @@ To revert to the previoius behavior and to accept non-normalized URLs, set the o
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 
+=== SPIFFE Identity Provider configuration changed
+
+The SPIFFE Identity Provider preview feature now uses the `trustDomain` configuration instead of `issuer`. This change
+was done to make it more explicit that a `trustDomain` is configured and not the `iss` of the token, which is
+usually not set in SPIFFE JWT SVIDs.
+
 === `session_state` and `sid` are no longer UUIDs
 
 In OpenID connect, there are several places where the protocol shares a `session_state` and a `sid`.

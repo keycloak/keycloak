@@ -1,23 +1,25 @@
 package org.keycloak.authentication.authenticators.client;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
-import org.keycloak.broker.spiffe.SpiffeConstants;
-import org.keycloak.cache.AlternativeLookupProvider;
+import org.keycloak.broker.provider.ClientAssertionIdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -51,11 +53,23 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
                     .add()
                     .build();
 
-    private static final Set<String> SUPPORTED_ASSERTION_TYPES = Set.of(OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT, SpiffeConstants.CLIENT_ASSERTION_TYPE);
+    private final List<ClientAssertionIdentityProviderFactory.ClientAssertionStrategy> strategies = new LinkedList<>();
 
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        factory.getProviderFactoriesStream(IdentityProvider.class)
+                .filter(ClientAssertionIdentityProviderFactory.class::isInstance)
+                .map(ClientAssertionIdentityProviderFactory.class::cast)
+                .map(ClientAssertionIdentityProviderFactory::getClientAssertionStrategy)
+                .filter(Objects::nonNull)
+                .forEach(strategies::add);
+
+        strategies.add(new DefaultClientAssertionStrategy());
     }
 
     @Override
@@ -70,25 +84,18 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
                 return;
             }
 
-            if (!SUPPORTED_ASSERTION_TYPES.contains(clientAssertionState.getClientAssertionType())) {
+            ClientAssertionIdentityProviderFactory.ClientAssertionStrategy strategy = findStrategy(clientAssertionState.getClientAssertionType());
+            if (strategy == null) {
                 return;
             }
 
-            AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
+            ClientAssertionIdentityProviderFactory.LookupResult lookup = strategy.lookup(context);
+            if (lookup == null || lookup.identityProviderModel() == null || lookup.clientModel() == null) {
+                return;
+            }
 
-            String federatedClientId = clientAssertionState.getToken().getSubject();
-
-            ClientModel client = lookupProvider.lookupClientFromClientAttributes(
-                    context.getSession(),
-                    Map.of(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, federatedClientId));
-            if (client == null) return;
-
-            String idpAlias = client.getAttribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY);
-
-            IdentityProviderModel identityProviderModel = context.getSession().identityProviders().getByAlias(idpAlias);
-            ClientAssertionIdentityProvider identityProvider = getClientAssertionIdentityProvider(context.getSession(), identityProviderModel);
-            if (identityProvider == null) return;
-
+            ClientAssertionIdentityProvider<?> identityProvider = getClientAssertionIdentityProvider(context.getSession(), lookup.identityProviderModel());
+            ClientModel client = lookup.clientModel();
             clientAssertionState.setClient(client);
 
             if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) return;
@@ -104,7 +111,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
         }
     }
 
-    private ClientAssertionIdentityProvider getClientAssertionIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel) {
+    private ClientAssertionIdentityProviderFactory.ClientAssertionStrategy findStrategy(String assertionType) {
+        return strategies.stream().filter(c -> c.isSupportedAssertionType(assertionType)).findFirst().orElse(null);
+    }
+
+    private ClientAssertionIdentityProvider<?> getClientAssertionIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel) {
         if (identityProviderModel == null) {
             return null;
         }

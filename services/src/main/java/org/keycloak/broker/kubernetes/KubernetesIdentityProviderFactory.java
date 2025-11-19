@@ -9,14 +9,9 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-import static org.keycloak.broker.kubernetes.KubernetesConstants.KUBERNETES_SERVICE_HOST_KEY;
-import static org.keycloak.broker.kubernetes.KubernetesConstants.KUBERNETES_SERVICE_PORT_HTTPS_KEY;
-
 public class KubernetesIdentityProviderFactory extends AbstractIdentityProviderFactory<KubernetesIdentityProvider> implements EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "kubernetes";
-
-    private String globalJwksUrl;
 
     @Override
     public String getName() {
@@ -25,16 +20,7 @@ public class KubernetesIdentityProviderFactory extends AbstractIdentityProviderF
 
     @Override
     public KubernetesIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new KubernetesIdentityProvider(session, new KubernetesIdentityProviderConfig(model), globalJwksUrl);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-        String kubernetesServiceHost = System.getenv(KUBERNETES_SERVICE_HOST_KEY);
-        String kubernetesServicePortHttps = System.getenv(KUBERNETES_SERVICE_PORT_HTTPS_KEY);
-        if (kubernetesServiceHost != null && kubernetesServicePortHttps != null) {
-            globalJwksUrl = "https://" + kubernetesServiceHost + ":" + kubernetesServicePortHttps + "/openid/v1/jwks";
-        }
+        return new KubernetesIdentityProvider(session, new KubernetesIdentityProviderConfig(model));
     }
 
     @Override
