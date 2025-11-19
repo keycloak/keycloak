@@ -54,6 +54,8 @@ import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProvi
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
+import static org.junit.Assert.assertFalse;
+
 public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
@@ -424,6 +426,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         System.setProperty("kc.prop3", "val3");
         config = createConfig();
         Assert.assertEquals("foo-val3", config.getConfigValue("quarkus.datasource.bar").getValue());
+    }
+
+    @Test
+    public void testDevThemeProperties() {
+        assertNull(initConfig("theme").getBoolean("cacheThemes"));
+
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
+        assertFalse(initConfig("theme").getBoolean("cacheThemes"));
     }
 
     @Test
