@@ -95,7 +95,7 @@ public class SdJwtVerificationContext {
     }
 
     /**
-     * Verifies SD-JWT as to whether the Issuer-signed JWT's signature and disclosures are valid.
+     * Verifies SD-JWT whether the Issuer-signed JWT's signature and disclosures are valid.
      *
      * <p>Upon receiving an SD-JWT, a Holder or a Verifier needs to ensure that:</p>
      * - the Issuer-signed JWT is valid, i.e., it is signed by the Issuer and the signature is valid, and

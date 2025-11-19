@@ -17,6 +17,7 @@
 
 package org.keycloak.representations;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,7 +36,6 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -303,6 +303,10 @@ public class JsonWebToken implements Serializable, Token {
 
     @Override
     public String toString() {
-        return JsonSerialization.mapper.convertValue(this, JsonNode.class).toPrettyString();
+        try {
+            return JsonSerialization.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -105,7 +105,7 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
             Assert.assertEquals(iat, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
             Assert.assertEquals(nbf, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
             Assert.assertEquals(exp, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
-            Assert.assertEquals("sha-256",
+            Assert.assertEquals(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM,
                                 sdJwt.getIssuerSignedJWT()
                                      .getPayload()
                                      .get(OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM)
@@ -253,7 +253,7 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
             Assert.assertEquals(iat, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
             Assert.assertEquals(nbf, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
             Assert.assertEquals(exp, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
-            Assert.assertEquals("sha-256",
+            Assert.assertEquals(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM,
                                 sdJwt.getIssuerSignedJWT()
                                      .getPayload()
                                      .get(OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM)

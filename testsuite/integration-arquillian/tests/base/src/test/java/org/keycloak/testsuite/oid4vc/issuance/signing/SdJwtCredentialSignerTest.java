@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -208,7 +209,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                 .setCredentialIssuer(TEST_DID.toString())
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
-                .setHashAlgorithm("sha-256")
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                 .setNumberOfDecoys(decoys)
                 .setSdJwtVisibleClaims(visibleClaims)
                 .setSigningKeyId(signingKeyId)
@@ -268,7 +269,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
             assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
             List<String> sds = (List<String>) theToken.getOtherClaims().get(CLAIM_NAME_SD);
             if (sds != null && !sds.isEmpty()) {
-                assertEquals("The algorithm should be included", "sha-256", theToken.getOtherClaims().get(CLAIM_NAME_SD_HASH_ALGORITHM));
+                assertEquals("The algorithm should be included", OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, theToken.getOtherClaims().get(CLAIM_NAME_SD_HASH_ALGORITHM));
             }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
@@ -325,7 +326,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         private String createHash(String salt, String key, Object value) {
             try {
                 return SdJwtUtils.encodeNoPad(
-                        HashUtils.hash("sha-256",
+                        HashUtils.hash(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM,
                                 SdJwtUtils.encodeNoPad(
                                         SdJwtUtils.printJsonArray(List.of(salt, key, value).toArray()).getBytes()).getBytes()));
             } catch (JsonProcessingException e) {

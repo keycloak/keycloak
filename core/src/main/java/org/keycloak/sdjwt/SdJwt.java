@@ -301,7 +301,7 @@ public class SdJwt {
         private String getEffectiveHashAlgorithm(String sdHashAlgorithm) {
             return Optional.ofNullable(sdHashAlgorithm).orElseGet(() -> {
                 // if not given as parameter, try to find the algorithm in the issuerSignedJwt payload
-                return issuerSignedJwt.getSdHashAlgorithm().orElse("sha-256");
+                return issuerSignedJwt.getSdHashAlgorithm().orElse(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM);
             });
         }
     }

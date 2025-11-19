@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -28,13 +29,14 @@ import java.util.function.BiFunction;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.JsonWebToken;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Module for checking the validity of JWT time claims. All checks account for a leeway window to accommodate clock
- * skew.
+ * Module for validating JWT based claims. <br/>
+ * Time-checks include a small tolerance to account for clock skew.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
@@ -50,12 +52,8 @@ public class ClaimVerifier {
     }
 
     public void verifyClaims(ObjectNode header, ObjectNode body) throws VerificationException {
-        for (Predicate<ObjectNode> verifier : headerVerifiers) {
-            verifier.test(header);
-        }
-        for (Predicate<ObjectNode> verifier : contentVerifiers) {
-            verifier.test(body);
-        }
+        verifyHeaderClaims(header);
+        verifyBodyClaims(body);
     }
 
     public void verifyHeaderClaims(ObjectNode header) throws VerificationException {
@@ -168,9 +166,11 @@ public class ClaimVerifier {
             this.isOptional = isOptional;
         }
 
+        /**
+         * @return a simple equals-check for two strings
+         */
         protected static BiFunction<String, String, Boolean> getDefaultComparator() {
-            return (s, s2) -> (s == null && s2 == null)
-                || (s != null && s.equals(s2));
+            return Objects::equals;
         }
 
         @Override
@@ -444,7 +444,11 @@ public class ClaimVerifier {
 
         public Builder withIatCheck(Integer allowedMaxAge, boolean isCheckOptional) {
             this.allowedMaxAge = Optional.ofNullable(allowedMaxAge).orElse(0);
-            contentVerifiers.removeIf(verifier -> verifier instanceof ClaimVerifier.IatLifetimeCheck);
+            contentVerifiers.removeIf(verifier -> {
+                return verifier instanceof ClaimVerifier.IatLifetimeCheck ||
+                    (verifier instanceof ClaimVerifier.ClaimCheck
+                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(OID4VCConstants.CLAIM_NAME_IAT));
+            });
             if (allowedMaxAge != null) {
                 contentVerifiers.add(new ClaimVerifier.IatLifetimeCheck(Optional.ofNullable(clockSkew).orElse(0),
                                                                         allowedMaxAge,
@@ -459,7 +463,11 @@ public class ClaimVerifier {
         }
 
         public Builder withNbfCheck(boolean isCheckOptional) {
-            contentVerifiers.removeIf(verifier -> verifier instanceof ClaimVerifier.NbfCheck);
+            contentVerifiers.removeIf(verifier -> {
+                return verifier instanceof ClaimVerifier.NbfCheck ||
+                    (verifier instanceof ClaimVerifier.ClaimCheck
+                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(OID4VCConstants.CLAIM_NAME_NBF));
+            });
             if (clockSkew != null) {
                 contentVerifiers.add(new ClaimVerifier.NbfCheck(clockSkew, isCheckOptional));
             }
@@ -472,7 +480,11 @@ public class ClaimVerifier {
         }
 
         public Builder withExpCheck(boolean isCheckOptional) {
-            contentVerifiers.removeIf(verifier -> verifier instanceof ClaimVerifier.ExpCheck);
+            contentVerifiers.removeIf(verifier -> {
+                return verifier instanceof ClaimVerifier.ExpCheck ||
+                    (verifier instanceof ClaimVerifier.ClaimCheck
+                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(OID4VCConstants.CLAIM_NAME_EXP));
+            });
             if (clockSkew != null) {
                 contentVerifiers.add(new ClaimVerifier.ExpCheck(clockSkew, isCheckOptional));
             }
@@ -480,7 +492,11 @@ public class ClaimVerifier {
         }
 
         public Builder withAudCheck(String expectedAud) {
-            contentVerifiers.removeIf(verifier -> verifier instanceof ClaimVerifier.AudienceCheck);
+            contentVerifiers.removeIf(verifier -> {
+                return verifier instanceof ClaimVerifier.AudienceCheck ||
+                    (verifier instanceof ClaimVerifier.ClaimCheck
+                        && ((ClaimCheck) verifier).getClaimName().equalsIgnoreCase(JsonWebToken.AUD));
+            });
             if (expectedAud != null) {
                 contentVerifiers.add(new ClaimVerifier.AudienceCheck(expectedAud));
             }

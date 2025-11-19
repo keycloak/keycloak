@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -46,7 +47,7 @@ public abstract class SdJwtFacadeTest {
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
-    private static final String HASH_ALGORITHM = "sha-256";
+    private static final String HASH_ALGORITHM = OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM;
     private static final String JWS_TYPE = "JWS_TYPE";
 
     private SdJwtFacade sdJwtFacade;

@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -64,7 +65,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void testSdJwtVerification_FlatSdJwt() throws VerificationException {
-        for (String hashAlg : Arrays.asList("sha-256", "sha-384", "sha-512")) {
+        for (String hashAlg : Arrays.asList(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, "sha-384", "sha-512")) {
             IssuerSignedJWT issuerSignedJWT = exampleFlatSdJwtV1().withHashAlg(hashAlg).build();
             SdJwt sdJwt = SdJwt.builder()
                                .withIssuerSignedJwt(issuerSignedJWT)

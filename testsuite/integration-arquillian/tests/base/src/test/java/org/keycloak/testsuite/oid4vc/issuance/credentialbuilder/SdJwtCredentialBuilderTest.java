@@ -96,7 +96,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
                 .setCredentialIssuer(issuerDid)
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
-                .setHashAlgorithm("sha-256")
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                 .setNumberOfDecoys(decoys)
                 .setSdJwtVisibleClaims(visibleClaims);
 

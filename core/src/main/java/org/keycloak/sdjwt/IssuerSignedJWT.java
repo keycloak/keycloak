@@ -88,7 +88,7 @@ public class IssuerSignedJWT extends JwsToken {
 
     public IssuerSignedJWT(DisclosureSpec disclosureSpec,
                            ObjectNode disclosureClaims) {
-        this(disclosureSpec, disclosureClaims, "sha-256");
+        this(disclosureSpec, disclosureClaims, OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM);
     }
 
     public IssuerSignedJWT(DisclosureSpec disclosureSpec,
@@ -267,11 +267,7 @@ public class IssuerSignedJWT extends JwsToken {
                       });
 
 
-        try {
-            return payload;
-        } catch (Exception ex) {
-            throw new IllegalArgumentException("Got illegal content in claims", ex);
-        }
+        return payload;
     }
 
     /**
@@ -289,7 +285,7 @@ public class IssuerSignedJWT extends JwsToken {
         ObjectNode payload = getPayload();
         return Optional.ofNullable(payload.get(CLAIM_NAME_SD_HASH_ALGORITHM))
                        .map(JsonNode::textValue)
-                       .orElse("sha-256");
+                       .orElse(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM);
     }
 
     /**
@@ -300,7 +296,7 @@ public class IssuerSignedJWT extends JwsToken {
     public void verifySdHashAlgorithm() throws VerificationException {
         // Known secure algorithms
         final Set<String> secureAlgorithms = new HashSet<>(Arrays.asList(
-            "sha-256", "sha-384", "sha-512",
+            OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, "sha-384", "sha-512",
             "sha3-256", "sha3-384", "sha3-512"
         ));
 
@@ -421,7 +417,12 @@ public class IssuerSignedJWT extends JwsToken {
         }
 
         public Builder withJwsHeader(JWSHeader jwsHeader) {
+            // preserve the type in case that the method 'withJwsType' was called before this method.
+            String jwsType = Optional.ofNullable(this.jwsHeader).map(JWSHeader::getType).orElse(null);
             this.jwsHeader = jwsHeader;
+            if (this.jwsHeader != null) {
+                this.jwsHeader.setType(jwsType);
+            }
             return this;
         }
 

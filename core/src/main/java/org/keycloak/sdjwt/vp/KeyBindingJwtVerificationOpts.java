@@ -85,7 +85,6 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
 
     public static class Builder extends IssuerSignedJwtVerificationOpts.Builder {
         private boolean keyBindingRequired = true;
-        protected boolean validateIssuedAtClaim = true;
         private String nonce;
         private String aud;
 
@@ -175,12 +174,6 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
 
         @Override
         public KeyBindingJwtVerificationOpts build() {
-            if (!validateIssuedAtClaim) {
-                throw new IllegalArgumentException(
-                    "Validating `iat` claim cannot be disabled for KB-JWT verification because mandated"
-                );
-            }
-
             if (keyBindingRequired && (aud == null || nonce == null || nonce.isEmpty())) {
                 throw new IllegalArgumentException(
                     "Missing `nonce` and `aud` claims for replay protection"

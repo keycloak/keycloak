@@ -16,6 +16,8 @@
  */
 package org.keycloak.sdjwt;
 
+import org.keycloak.OID4VCConstants;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
@@ -79,7 +81,7 @@ public class SdJWTSamplesTest {
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(IssuerSignedJWT.builder()
                                                     .withClaims(holderClaimSet, disclosureSpec)
-                                                    .withHashAlg("sha-256")
+                                                    .withHashAlg(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                                                     .build())
                 .withNestedSdJwt(addrSdJWT)
                 .build(false);
