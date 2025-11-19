@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
