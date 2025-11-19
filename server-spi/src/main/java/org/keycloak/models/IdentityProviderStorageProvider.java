@@ -215,7 +215,7 @@ public interface IdentityProviderStorageProvider extends Provider {
      * otherwise.
      */
     default boolean isIdentityFederationEnabled() {
-        return getAllStream(IdentityProviderQuery.userAuthentication(), 0, 1).findFirst().isPresent();
+        return getAllStream(IdentityProviderQuery.capability(IdentityProviderCapability.USER_LINKING), 0, 1).findFirst().isPresent();
     }
 
     /**

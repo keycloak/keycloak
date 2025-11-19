@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
+import org.keycloak.models.IdentityProviderCapability;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderQuery;
@@ -183,7 +184,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
-            long count = idpDelegate.getAllStream(IdentityProviderQuery.userAuthentication(), 0, 1).count();
+            long count = idpDelegate.getAllStream(IdentityProviderQuery.capability(IdentityProviderCapability.USER_LINKING), 0, 1).count();
             cached = new CachedCount(loaded, getRealm(), cacheKey, count);
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         }
