@@ -327,7 +327,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (!specBuilder.hasDnsPolicy()) {
             specBuilder.withDnsPolicy("ClusterFirst");
         }
-        boolean automount = keycloakCR.getSpec().getAutomountServiceAccountToken();
+        boolean automount = !Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken());
         specBuilder.withAutomountServiceAccountToken(automount);
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
@@ -472,7 +472,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             if (useServiceCaCrt) {
                 truststores += "," + SERVICE_CA_CRT;
             }
-        
+
             // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
             varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
         }
