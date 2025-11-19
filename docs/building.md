@@ -14,17 +14,21 @@ environment variable (this should be the directory containing `/bin/` or `/jre/`
 Instead of using a locally installed Maven, call the Maven wrapper script `mvnw` in the main folder of the project.
 This will use the Maven version which is supported by this project.
 
----    
+---                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 First clone the Keycloak repository:
     
     git clone https://github.com/keycloak/keycloak.git
     cd keycloak
-    
-To build Keycloak run:
+
+To build Keycloak:
 
     ./mvnw clean install
-    
+
 This will build all modules and run the testsuite.
+
+To build Keycloak without the tests:
+
+    ./mvnw clean install -DskipTests
 
 To build Keycloak with adapters run:
 
