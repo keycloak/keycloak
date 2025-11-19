@@ -66,6 +66,9 @@ public class GrantTypeConditionFactory extends AbstractClientPolicyConditionProv
         if (Profile.isFeatureEnabled(Profile.Feature.DEVICE_FLOW)) {
             DEFAULT_GRANT_TYPES_SUPPORTED.add(OAuth2Constants.DEVICE_CODE_GRANT_TYPE);
         }
+        if (Profile.isFeatureEnabled(Profile.Feature.JWT_AUTHORIZATION_GRANT)) {
+            DEFAULT_GRANT_TYPES_SUPPORTED.add(OAuth2Constants.JWT_AUTHORIZATION_GRANT);
+        }
 
         property.setOptions(DEFAULT_GRANT_TYPES_SUPPORTED);
         configProperties.add(property);
