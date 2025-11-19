@@ -101,9 +101,10 @@ Valid values:
 
 Configuration:
 
-| Value                                             | Description                                                            |
-|---------------------------------------------------|------------------------------------------------------------------------|
-| `kc.test.server.config` / `KC_TEST_SERVER_CONFIG` | The name of a KeycloakServerConfig class to use when running the tests |
+| Value                                             | Description                                                                            |
+|---------------------------------------------------|----------------------------------------------------------------------------------------|
+| `kc.test.server.config` / `KC_TEST_SERVER_CONFIG` | The name of a KeycloakServerConfig class to use when running the tests                 |
+| `kc.test.server.kcw` / `KC_TEST_SERVER_KCW`       | Set to a kcw command to use kcw with remote server (see `kcw help` for valid commands) |
 
 
 ### Database
