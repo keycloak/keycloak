@@ -125,6 +125,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
     }
 
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
     /**
      * KEYCLOAK-3986
      *
