@@ -17,6 +17,35 @@ updates:
         patterns:
           - "*"
 
+  # SECURITY FIX: Added Maven dependency scanning for Java dependencies
+  # This addresses the gap in vulnerability detection for Maven/Java dependencies
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: "tuesday"
+      time: "03:00"
+      timezone: Etc/GMT
+    open-pull-requests-limit: 10
+    rebase-strategy: disabled
+    labels:
+      - area/dependencies
+      - area/security
+      - team/platform
+    # Exclude log4j 1.x from updates (we're removing it entirely)
+    ignore:
+      - dependency-name: "log4j:log4j"
+        update-types: ["version-update:*"]
+      - dependency-name: "org.slf4j:slf4j-log4j12"
+        update-types: ["version-update:*"]
+    groups:
+      maven-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "log4j:log4j"
+          - "org.slf4j:slf4j-log4j12"
+
   - package-ecosystem: npm
     directory: js
     schedule:

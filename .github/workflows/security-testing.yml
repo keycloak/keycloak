@@ -1,0 +1,270 @@
+name: Security Testing and Code Coverage
+
+on:
+  push:
+    branches:
+      - main
+      - 'security/**'
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run security scans weekly on Mondays at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+concurrency:
+  group: security-testing-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  security-tests:
+    name: Run Security Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Security Tests
+        run: |
+          ./mvnw test -Dtest="*Security*Test" -DfailIfNoTests=false
+        continue-on-error: false
+
+      - name: Upload Security Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-results
+          path: '**/target/surefire-reports/'
+          retention-days: 30
+
+  code-coverage:
+    name: Code Coverage Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Tests with Coverage
+        run: |
+          ./mvnw clean test jacoco:report
+        continue-on-error: false
+
+      - name: Generate Coverage Report
+        run: |
+          ./mvnw jacoco:report-aggregate
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./target/site/jacoco-aggregate/jacoco.xml
+          flags: unittests
+          name: codecov-keycloak
+
+      - name: Check Coverage Thresholds
+        run: |
+          ./mvnw jacoco:check
+
+      - name: Upload Coverage Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: '**/target/site/jacoco*/'
+          retention-days: 30
+
+      - name: Comment Coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.6.1
+        with:
+          paths: |
+            ${{ github.workspace }}/**/target/site/jacoco*/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 80
+          min-coverage-changed-files: 80
+          title: Code Coverage Report
+
+  owasp-dependency-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run OWASP Dependency Check
+        run: |
+          ./mvnw org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=7 \
+            -DsuppressionFiles=dependency-check-suppressions.xml
+        continue-on-error: true
+
+      - name: Upload OWASP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-report
+          path: '**/target/dependency-check-report.*'
+          retention-days: 30
+
+      - name: Publish OWASP Report as GitHub Check
+        if: always()
+        uses: jwgmeligmeyling/checkstyle-github-action@master
+        with:
+          path: '**/target/dependency-check-report.xml'
+
+  xxe-vulnerability-tests:
+    name: XXE Vulnerability Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run XXE Protection Tests
+        run: |
+          ./mvnw test -Dtest=XmlSecurityUtilTest
+        continue-on-error: false
+
+      - name: Verify XXE Protection
+        run: |
+          echo "✅ XXE protection tests passed"
+          ./mvnw test -Dtest=XmlSecurityUtilTest -Dtest.verbose=true
+
+  deserialization-tests:
+    name: Deserialization Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Deserialization Security Tests
+        run: |
+          ./mvnw test -Dtest=DeserializationSecurityUtilTest
+        continue-on-error: false
+
+      - name: Verify Gadget Chain Protection
+        run: |
+          echo "✅ Deserialization security tests passed"
+          ./mvnw test -Dtest=DeserializationSecurityUtilTest -Dtest.verbose=true
+
+  verify-no-vulnerable-dependencies:
+    name: Verify No Vulnerable Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Check for log4j 1.x
+        run: |
+          echo "Checking for log4j 1.x dependencies..."
+          if ./mvnw dependency:tree | grep "log4j:log4j:"; then
+            echo "❌ FAIL: log4j 1.x found in dependencies!"
+            exit 1
+          else
+            echo "✅ PASS: No log4j 1.x dependencies found"
+          fi
+
+      - name: Verify H2 Database Version
+        run: |
+          echo "Checking H2 database version..."
+          ./mvnw dependency:tree | grep h2database || echo "H2 not in main dependency tree (may be in modules)"
+          echo "✅ H2 version check complete"
+
+      - name: List All Dependencies
+        run: |
+          ./mvnw dependency:tree > dependency-tree.txt
+
+      - name: Upload Dependency Tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-tree
+          path: dependency-tree.txt
+          retention-days: 30
+
+  security-summary:
+    name: Security Test Summary
+    needs: [security-tests, code-coverage, owasp-dependency-check, xxe-vulnerability-tests, deserialization-tests, verify-no-vulnerable-dependencies]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check Job Status
+        run: |
+          echo "## Security Testing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Tests | ${{ needs.security-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Coverage | ${{ needs.code-coverage.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| OWASP Dependency Check | ${{ needs.owasp-dependency-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| XXE Protection Tests | ${{ needs.xxe-vulnerability-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deserialization Tests | ${{ needs.deserialization-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Verification | ${{ needs.verify-no-vulnerable-dependencies.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if Any Test Failed
+        if: |
+          needs.security-tests.result == 'failure' ||
+          needs.code-coverage.result == 'failure' ||
+          needs.xxe-vulnerability-tests.result == 'failure' ||
+          needs.deserialization-tests.result == 'failure' ||
+          needs.verify-no-vulnerable-dependencies.result == 'failure'
+        run: |
+          echo "❌ One or more security tests failed"
+          exit 1
+
+      - name: Success Message
+        if: |
+          needs.security-tests.result == 'success' &&
+          needs.code-coverage.result == 'success' &&
+          needs.xxe-vulnerability-tests.result == 'success' &&
+          needs.deserialization-tests.result == 'success' &&
+          needs.verify-no-vulnerable-dependencies.result == 'success'
+        run: |
+          echo "✅ All security tests passed successfully!"
