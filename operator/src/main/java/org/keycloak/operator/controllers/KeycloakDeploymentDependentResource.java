@@ -150,6 +150,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
         // default to the new revision - will be overriden to the old one if needed
         UpdateSpec.getRevision(primary).ifPresent(rev -> addUpdateRevisionAnnotation(rev, baseDeployment));
+        addUpdateHashAnnotation(ContextUtils.getUpdateHash(context), baseDeployment);
 
         var existingDeployment = ContextUtils.getCurrentStatefulSet(context).orElse(null);
 
@@ -466,7 +467,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
 
-        if (!Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
+        if (keycloakCR.getSpec().getAutomountServiceAccountToken()) {
             String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
 
             if (useServiceCaCrt) {
@@ -628,7 +629,11 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
             Log.debug("Performing a recreate update - scaling down the stateful set");
 
             // keep the old revision and image, mark as migrating, and scale down
-            CRDUtils.getRevision(actual).ifPresent(rev -> addUpdateRevisionAnnotation(rev, desired));
+            addOrRemoveAnnotation(CRDUtils.getRevision(actual), Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, desired);
+
+            // remove or keep the old update hash
+            addOrRemoveAnnotation(CRDUtils.getUpdateHash(actual), Constants.KEYCLOAK_UPDATE_HASH_ANNOTATION, desired);
+
             desired.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MIGRATING_ANNOTATION, Boolean.TRUE.toString());
             desired.getSpec().setReplicas(0);
             var currentImage = RecreateOnImageChangeUpdateLogic.extractImage(actual);
@@ -639,6 +644,19 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private static void addUpdateRevisionAnnotation(String revision, StatefulSet toUpdate) {
         toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_REVISION_ANNOTATION, revision);
+    }
+
+    private static void addUpdateHashAnnotation(String hash, StatefulSet toUpdate) {
+        toUpdate.getMetadata().getAnnotations().put(Constants.KEYCLOAK_UPDATE_HASH_ANNOTATION, hash);
+    }
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static void addOrRemoveAnnotation(Optional<String> value, String annotation, StatefulSet toUpdate) {
+        if (value.isEmpty()) {
+            toUpdate.getMetadata().getAnnotations().remove(annotation);
+            return;
+        }
+        toUpdate.getMetadata().getAnnotations().put(annotation, value.get());
     }
 
     record ManagementEndpoint(String relativePath, String protocol, int port, String portName) {}

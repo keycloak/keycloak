@@ -139,6 +139,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
         ContextUtils.storeWatchedResources(context, watchedResources);
         ContextUtils.storeDistConfigurator(context, distConfigurator);
         ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
+        ContextUtils.storeUpdateHash(context, KeycloakUpdateJobDependentResource.keycloakHash(kc)); // the desired stateful set requires the update hash
         ContextUtils.storeDesiredStatefulSet(context, new KeycloakDeploymentDependentResource().desired(kc, context));
 
         var updateLogic = updateLogicFactory.create(kc, context);

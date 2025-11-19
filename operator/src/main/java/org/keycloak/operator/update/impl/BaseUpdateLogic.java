@@ -24,12 +24,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.quarkus.logging.Log;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
@@ -37,6 +31,13 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.update.UpdateLogic;
 import org.keycloak.operator.update.UpdateType;
+
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.quarkus.logging.Log;
 
 /**
  * Common {@link UpdateLogic} implementation that checks if the update logic needs to be run.
@@ -65,17 +66,13 @@ abstract class BaseUpdateLogic implements UpdateLogic {
         }
         copyStatusFromExistStatefulSet(existing.get());
 
-        var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
-        var desiredContainer = CRDUtils.firstContainerOf(desiredStatefulSet).orElseThrow(BaseUpdateLogic::containerNotFound);
-        var actualContainer = CRDUtils.firstContainerOf(existing.get()).orElseThrow(BaseUpdateLogic::containerNotFound);
+        Optional<String> storedHash = CRDUtils.getUpdateHash(existing.get());
 
-        if (isContainerEquals(actualContainer, desiredContainer)) {
-            // container is equals, no update required
-            Log.debug("No changes detected in the container - skipping update logic");
-            return Optional.empty();
+        if (storedHash.isPresent()) {
+            return hashEqualityCheck(ContextUtils.getUpdateHash(context), storedHash.get());
         }
 
-        return onUpdate();
+        return containerEqualityCheck();
     }
 
     @Override
@@ -97,6 +94,37 @@ abstract class BaseUpdateLogic implements UpdateLogic {
      * {@link StatefulSet}.
      */
     abstract Optional<UpdateControl<Keycloak>> onUpdate();
+
+    /**
+     * @return {@code true} if the actual and the desired {@link Container} are the same.
+     */
+    boolean isContainerEquals() {
+        var existing = ContextUtils.getCurrentStatefulSet(context).orElseThrow();
+        var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
+        var desiredContainer = CRDUtils.firstContainerOf(desiredStatefulSet).orElseThrow(BaseUpdateLogic::containerNotFound);
+        var actualContainer = CRDUtils.firstContainerOf(existing).orElseThrow(BaseUpdateLogic::containerNotFound);
+
+        return isContainerEquals(actualContainer, desiredContainer);
+    }
+
+    private Optional<UpdateControl<Keycloak>> hashEqualityCheck(String currentHash, String storedHash) {
+        if (Objects.equals(currentHash, storedHash)) {
+            Log.debug("Hash is equals - skipping update logic");
+            return Optional.empty();
+        }
+        Log.debugf("Hash changed detected - current: %s, stored: %s", currentHash, storedHash);
+        return onUpdate();
+    }
+
+    private Optional<UpdateControl<Keycloak>> containerEqualityCheck() {
+        if (isContainerEquals()) {
+            // container is equals, no update required
+            Log.debug("No changes detected in the container - skipping update logic");
+            return Optional.empty();
+        }
+
+        return onUpdate();
+    }
 
     private void copyStatusFromExistStatefulSet(StatefulSet current) {
         var maybeRecreate = CRDUtils.fetchIsRecreateUpdate(current);
