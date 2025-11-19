@@ -38,7 +38,6 @@ public final class ContextUtils {
     public static final String OPERATOR_CONFIG_KEY = "operator_config";
     public static final String WATCHED_RESOURCES_KEY = "watched_resources";
     public static final String DIST_CONFIGURATOR_KEY = "dist_configurator";
-    public static final String UPDATE_HASH_KEY = "update_hash";
 
     private ContextUtils() {}
 
@@ -102,13 +101,5 @@ public final class ContextUtils {
 
     public static Keycloak getKeycloak(Context<?> context) {
         return context.managedWorkflowAndDependentResourceContext().getMandatory(KEYCLOAK, Keycloak.class);
-    }
-
-    public static void storeUpdateHash(Context<?> context, String hash) {
-        context.managedWorkflowAndDependentResourceContext().put(UPDATE_HASH_KEY, hash);
-    }
-
-    public static String getUpdateHash(Context<?> context) {
-        return context.managedWorkflowAndDependentResourceContext().getMandatory(UPDATE_HASH_KEY, String.class);
     }
 }

@@ -90,6 +90,8 @@ public class KeycloakController implements Reconciler<Keycloak> {
     @Inject
     KeycloakUpdateJobDependentResource updateJobDependentResource;
 
+    KeycloakDeploymentDependentResource keycloakDeploymentDependentResource = new KeycloakDeploymentDependentResource();
+
     @Override
     public List<EventSource<?, Keycloak>> prepareEventSources(EventSourceContext<Keycloak> context) {
         return EventSourceUtils.dependentEventSources(context, updateJobDependentResource);
@@ -139,8 +141,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
         ContextUtils.storeWatchedResources(context, watchedResources);
         ContextUtils.storeDistConfigurator(context, distConfigurator);
         ContextUtils.storeCurrentStatefulSet(context, existingDeployment);
-        ContextUtils.storeUpdateHash(context, KeycloakUpdateJobDependentResource.keycloakHash(kc)); // the desired stateful set requires the update hash
-        ContextUtils.storeDesiredStatefulSet(context, new KeycloakDeploymentDependentResource().desired(kc, context));
+        ContextUtils.storeDesiredStatefulSet(context, keycloakDeploymentDependentResource.initialDesired(kc, context));
 
         var updateLogic = updateLogicFactory.create(kc, context);
         var updateLogicControl = updateLogic.decideUpdate();

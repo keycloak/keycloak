@@ -123,7 +123,7 @@ public class PodTemplateTest {
 
         //noinspection unchecked
         Context context = mockContext(null);
-        return deployment.desired(kc, context);
+        return deployment.initialDesired(kc, context);
     }
 
     private Keycloak createKeycloak(PodTemplateSpec podTemplate, Consumer<KeycloakSpecBuilder> additionalSpec) {

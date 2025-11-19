@@ -47,12 +47,6 @@ public class AutoUpdateLogic extends BaseUpdateLogic {
 
     @Override
     Optional<UpdateControl<Keycloak>> onUpdate() {
-        // The hash may be missing, but let us double-check the container.
-        // The users upgrading to this version has a missing hash, and we may skip the update job if the container is the same.
-        if (isContainerEquals()) {
-            Log.debug("No changes detected in the container - skipping update logic");
-            return Optional.empty();
-        }
         var existingJob = context.getSecondaryResource(Job.class);
         if (existingJob.isEmpty()) {
             updateJobResource.reconcile(keycloak, context);
