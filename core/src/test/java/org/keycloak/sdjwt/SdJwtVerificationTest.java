@@ -33,6 +33,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_UNDISCLOSED_ARRAY;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -275,7 +278,7 @@ public abstract class SdJwtVerificationTest {
     public void sdJwtVerificationShouldFail_IfSdArrayElementIsNotString() throws JsonProcessingException {
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
-        claimSet.set("_sd", mapper.readTree("[123]"));
+        claimSet.set(CLAIM_NAME_SD, mapper.readTree("[123]"));
 
         SdJwt sdJwt = exampleFlatSdJwtV2(claimSet, DisclosureSpec.builder().build()).build();
 
@@ -292,7 +295,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfForbiddenClaimNames() {
-        for (String forbiddenClaimName : Arrays.asList("_sd", "...")) {
+        for (String forbiddenClaimName : Arrays.asList(CLAIM_NAME_SD, CLAIM_NAME_SD_UNDISCLOSED_ARRAY)) {
             ObjectNode claimSet = mapper.createObjectNode();
             claimSet.put(forbiddenClaimName, "Value");
 

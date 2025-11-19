@@ -123,7 +123,7 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         signingInPage.navigateTo();
         waitForPageToLoad();
         loginToAccount();
-        signingInPage.assertCurrent();
+        signingInPage.waitForPageTitle();
     }
 
     @Override

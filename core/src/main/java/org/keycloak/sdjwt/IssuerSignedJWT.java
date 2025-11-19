@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSInput;
@@ -33,6 +34,10 @@ import org.keycloak.jose.jws.JWSInput;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 
 /**
  * Handle verifiable credentials (SD-JWT VC), enabling the parsing
@@ -117,7 +122,7 @@ public class IssuerSignedJWT extends SdJws {
 
         if (sdArray.size() > 0) {
             // drop _sd claim if empty
-            payload.set(CLAIM_NAME_SELECTIVE_DISCLOSURE, sdArray);
+            payload.set(CLAIM_NAME_SD, sdArray);
         }
         if (sdArray.size() > 0 || nestedDisclosures) {
             // add sd alg only if ay disclosure.
@@ -142,7 +147,7 @@ public class IssuerSignedJWT extends SdJws {
      * Returns `cnf` claim (establishing key binding)
      */
     public Optional<JsonNode> getCnfClaim() {
-        JsonNode cnf = getPayload().get("cnf");
+        JsonNode cnf = getPayload().get(CLAIM_NAME_CNF);
         return Optional.ofNullable(cnf);
     }
 
@@ -174,10 +179,6 @@ public class IssuerSignedJWT extends SdJws {
             throw new VerificationException("Unexpected or insecure hash algorithm: " + hashAlg);
         }
     }
-
-    // SD-JWT Claims
-    public static final String CLAIM_NAME_SELECTIVE_DISCLOSURE = "_sd";
-    public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
 
     // Builder
     public static Builder builder() {
@@ -224,8 +225,8 @@ public class IssuerSignedJWT extends SdJws {
 
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
-            hashAlg = hashAlg == null ? "sha-256" : hashAlg;
-            jwsType = jwsType == null ? "dc+sd-jwt" : jwsType;
+            hashAlg = hashAlg == null ? OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM : hashAlg;
+            jwsType = jwsType == null ? OID4VCConstants.SD_JWT_VC_FORMAT : jwsType;
             // send an empty lise if claims not set.
             claims = claims == null ? Collections.emptyList() : claims;
             decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;

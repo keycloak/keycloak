@@ -62,7 +62,9 @@ import org.keycloak.wellknown.WellKnownProvider;
 import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.constants.Oid4VciConstants.SIGNED_METADATA_JWT_TYPE;
+import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
+import static org.keycloak.OID4VCConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER;
+import static org.keycloak.constants.Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.crypto.KeyType.RSA;
 import static org.keycloak.jose.jwk.RSAPublicJWK.RS256;
 
@@ -183,18 +185,18 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * @return The batch credential issuance configuration or null if not configured or invalid
      */
     public static CredentialIssuer.BatchCredentialIssuance getBatchCredentialIssuance(RealmModel realm) {
-        String batchSize = realm.getAttribute(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE);
+        String batchSize = realm.getAttribute(BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE);
         if (batchSize != null) {
             try {
                 int parsedBatchSize = Integer.parseInt(batchSize);
                 if (parsedBatchSize < 2) {
-                    LOGGER.warnf("%s must be 2 or greater, but was %d. Skipping batch_credential_issuance.", Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, parsedBatchSize);
+                    LOGGER.warnf("%s must be 2 or greater, but was %d. Skipping batch_credential_issuance.", BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, parsedBatchSize);
                     return null;
                 }
                 return new CredentialIssuer.BatchCredentialIssuance()
                         .setBatchSize(parsedBatchSize);
             } catch (Exception e) {
-                LOGGER.warnf(e, "Failed to parse %s from realm attributes.", Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE);
+                LOGGER.warnf(e, "Failed to parse %s from realm attributes.", BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE);
             }
         }
         return null;
@@ -549,7 +551,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         UriBuilder base = session.getContext().getUri().getBaseUriBuilder();
         String logKey = session.getContext().getRealm().getName();
         URI successor = ServerMetadataResource.wellKnownOAuthProviderUrl(base)
-                .build(Oid4VciConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER, logKey);
+                .build(WELL_KNOWN_OPENID_CREDENTIAL_ISSUER, logKey);
 
         HttpResponse httpResponse = session.getContext().getHttpResponse();
         httpResponse.setHeader("Warning", "299 - \"Deprecated endpoint; use " + successor + "\"");
