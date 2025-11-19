@@ -102,6 +102,14 @@ public class DefaultClientApi implements ClientApi {
         }
     }
 
+    @Override
+    public void deleteClient() {
+        if (clientResource == null) {
+            throw new NotFoundException("Cannot find the specified client");
+        }
+        clientResource.deleteClient();
+    }
+
     static void validateUnknownFields(ClientRepresentation rep, HttpResponse response) {
         if (!rep.getAdditionalFields().isEmpty()) {
             throw new WebApplicationException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
