@@ -106,11 +106,6 @@ public final class Build extends AbstractCommand {
                 .ifPresent(s -> System.setProperty(QUARKUS_REMOVED_ARTIFACTS_PROPERTY, s));
     }
 
-    @Override
-    public boolean includeBuildTime() {
-        return true;
-    }
-
     private void checkProfileAndDb() {
         if (Environment.isDevProfile()) {
             String cmd = picocli.getParsedCommand().map(AbstractCommand::getName).orElse(getName());
@@ -149,4 +144,10 @@ public final class Build extends AbstractCommand {
     public String getName() {
         return NAME;
     }
+
+    @Override
+    public boolean isHelpAll() {
+        return helpAllMixin != null ? helpAllMixin.allOptions : false;
+    }
+
 }
