@@ -158,7 +158,7 @@
         <mysql.version>8.4</mysql.version>
         <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
         <mysql-jdbc.version>8.3.0</mysql-jdbc.version>
-        <postgresql.version>17</postgresql.version>
+        <postgresql.version>18</postgresql.version>
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
