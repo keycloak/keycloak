@@ -8,10 +8,10 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
-import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.user.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.user.SetUserAttributeStepProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;

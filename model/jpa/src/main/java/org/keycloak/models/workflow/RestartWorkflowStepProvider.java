@@ -4,8 +4,8 @@ public class RestartWorkflowStepProvider implements WorkflowStepProvider {
 
     @Override
     public void run(WorkflowExecutionContext context) {
-        if (context instanceof DefaultWorkflowExecutionContext) {
-            ((DefaultWorkflowExecutionContext) context).restart();
+        if (context instanceof DefaultWorkflowExecutionContext dwec) {
+            dwec.restart();
         } else {
             throw new IllegalArgumentException("Context must be DefaultWorkflowExecutionContext");
         }
