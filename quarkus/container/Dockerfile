@@ -17,7 +17,12 @@ RUN mv /tmp/keycloak/keycloak-* /opt/keycloak && mkdir -p /opt/keycloak/data
 RUN chmod -R g+rwX /opt/keycloak
 
 ADD ubi-null.sh /tmp/
-RUN bash /tmp/ubi-null.sh java-21-openjdk-headless glibc-langpack-en findutils
+
+# Workaround around slow docker buildx when executing yum/dnf when running for example against minikube
+# https://github.com/keycloak/keycloak/issues/38801#issuecomment-2815350773
+# https://github.com/docker/buildx/issues/379#issuecomment-1052980242
+# As this option is not allowed when running in podman, ignore if this fails
+RUN (ulimit -n 1024000 || true) && bash /tmp/ubi-null.sh java-21-openjdk-headless glibc-langpack-en findutils
 
 FROM registry.access.redhat.com/ubi9-micro
 ENV LANG=en_US.UTF-8
