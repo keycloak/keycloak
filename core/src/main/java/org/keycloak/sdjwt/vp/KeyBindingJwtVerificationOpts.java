@@ -185,7 +185,7 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
                     && Optional.ofNullable(((ClaimCheck) verifier).getExpectedClaimValue()).map(s -> !s.isEmpty())
                                .orElse(false);
             });
-            if (keyBindingRequired && isAudCheckPresent && isNonceCheckPresent) {
+            if (keyBindingRequired && (!isAudCheckPresent || !isNonceCheckPresent)) {
                 throw new IllegalArgumentException("Missing `nonce` and `aud` claims for replay protection");
             }
 

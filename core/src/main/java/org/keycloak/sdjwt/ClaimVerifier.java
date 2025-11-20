@@ -229,7 +229,18 @@ public class ClaimVerifier {
                 // if optional and not present we do not want to execute the check of the parent.
                 return true;
             }
-            return !super.test(t);
+            boolean isParentCheckSuccessful;
+            try {
+                isParentCheckSuccessful = super.test(t);
+            } catch(VerificationException ve) {
+                return true; // parent-check failed so the negation is successful
+            }
+            if (isParentCheckSuccessful)
+            {
+                throw new VerificationException(String.format("Value '%s' is not allowed for claim '%s'!",
+                                                              claimValue, getClaimName()));
+            }
+            return true;
         }
     }
 
