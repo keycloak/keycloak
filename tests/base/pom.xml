@@ -85,6 +85,11 @@
             <artifactId>keycloak-test-framework-db-tidb</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.jdbc</groupId>
+            <artifactId>aws-advanced-jdbc-wrapper</artifactId>
+            <version>${aws-jdbc-wrapper.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-email-server</artifactId>
         </dependency>
@@ -153,18 +158,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>aurora</id>
-            <dependencies>
-                <dependency>
-                    <groupId>software.amazon.jdbc</groupId>
-                    <artifactId>aws-advanced-jdbc-wrapper</artifactId>
-                    <version>${aws-jdbc-wrapper.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 
 </project>
