@@ -20,9 +20,6 @@ package org.keycloak.sdjwt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -54,6 +51,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
 
 /**
  * @author Pascal Knueppel
@@ -185,10 +184,10 @@ public abstract class SdJwtCreationAndSigningTest {
     public void testCreateSdJwtWithKeybindingJwt() throws Exception {
         final String authorizationServerUrl = "https://example.com";
 
-        KeyWrapper issuerKeyPair = toKeyWrapper(createEcKey());
+        KeyWrapper issuerKeyPair = toKeyWrapper(KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1));
         JWK issuerJwk = JWKBuilder.create().ec(issuerKeyPair.getPublicKey());
 
-        KeyWrapper holderKeyPair = toKeyWrapper(createEcKey());
+        KeyWrapper holderKeyPair = toKeyWrapper(KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1));
         JWK holderKeybindingKey = JWKBuilder.create().ec(holderKeyPair.getPublicKey());
 
         SignatureSignerContext issuerSignerContext = new ECDSASignatureSignerContext(issuerKeyPair);
@@ -225,7 +224,7 @@ public abstract class SdJwtCreationAndSigningTest {
                                                          .withKid(issuerJwk.getKeyId())
                                                          /* body */
                                                          .withClaims(disclosures, disclosureSpec)
-                                                         .withKeyBinding(holderKeybindingKey)
+                                                         .withKeyBindingKey(holderKeybindingKey)
                                                          .withIat(iat)
                                                          .withNbf(nbf)
                                                          .withExp(exp)
@@ -381,16 +380,6 @@ public abstract class SdJwtCreationAndSigningTest {
                 holderVerifier.verify(keybindingToken.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8),
                                       keybindingToken.getSignature());
             }
-        }
-    }
-
-    public KeyPair createEcKey() {
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-            kpg.initialize(new ECGenParameterSpec("secp521r1"), new SecureRandom());
-            return kpg.generateKeyPair();
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
         }
     }
 

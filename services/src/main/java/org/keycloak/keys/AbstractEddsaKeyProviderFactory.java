@@ -16,9 +16,6 @@
  */
 package org.keycloak.keys;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.crypto.Algorithm;
@@ -57,15 +54,6 @@ public abstract class AbstractEddsaKeyProviderFactory implements KeyProviderFact
                 .checkLong(Attributes.PRIORITY_PROPERTY, false)
                 .checkBoolean(Attributes.ENABLED_PROPERTY, false)
                 .checkBoolean(Attributes.ACTIVE_PROPERTY, false);
-    }
-
-    public static KeyPair generateEddsaKeyPair(String curveName) {
-        try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(curveName);
-            return keyGen.generateKeyPair();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

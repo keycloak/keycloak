@@ -25,7 +25,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.RSAPublicKeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -67,6 +69,27 @@ public class KeyUtils {
             RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return keyFactory.generatePublic(publicKeySpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static KeyPair generateEddsaKeyPair(String curveName) {
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(curveName);
+            return keyGen.generateKeyPair();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static KeyPair generateEcKeyPair(String keySpecName) {
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+            SecureRandom randomGen = new SecureRandom();
+            ECGenParameterSpec ecSpec = new ECGenParameterSpec(keySpecName);
+            keyGen.initialize(ecSpec, randomGen);
+            return keyGen.generateKeyPair();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
