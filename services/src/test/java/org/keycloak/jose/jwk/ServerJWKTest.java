@@ -19,7 +19,6 @@ package org.keycloak.jose.jwk;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -51,8 +50,7 @@ public class ServerJWKTest {
 
     @Test
     public void publicEd25519() throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(Algorithm.Ed25519);
-        KeyPair keyPair = keyGen.generateKeyPair();
+        KeyPair keyPair = KeyUtils.generateEddsaKeyPair(Algorithm.Ed25519);
 
         PublicKey publicKey = keyPair.getPublic();
         JWK jwk = JWKBuilder.create().kid(KeyUtils.createKeyId(keyPair.getPublic())).algorithm(Algorithm.EdDSA).okp(publicKey);
@@ -82,8 +80,7 @@ public class ServerJWKTest {
 
     @Test
     public void publicEd448() throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(Algorithm.Ed448);
-        KeyPair keyPair = keyGen.generateKeyPair();
+        KeyPair keyPair = KeyUtils.generateEddsaKeyPair(Algorithm.Ed448);
 
         PublicKey publicKey = keyPair.getPublic();
         JWK jwk = JWKBuilder.create().kid(KeyUtils.createKeyId(keyPair.getPublic())).algorithm(Algorithm.EdDSA).okp(publicKey);
