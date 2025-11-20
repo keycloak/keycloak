@@ -16,7 +16,7 @@
  *
  */
 
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.sdjwt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -28,6 +28,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
@@ -42,14 +43,8 @@ import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.representations.IDToken;
-import org.keycloak.sdjwt.ClaimVerifier;
-import org.keycloak.sdjwt.DisclosureSpec;
-import org.keycloak.sdjwt.IssuerSignedJWT;
-import org.keycloak.sdjwt.SdJwt;
-import org.keycloak.sdjwt.SdJwtUtils;
-import org.keycloak.sdjwt.UndisclosedClaim;
+import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.util.JsonSerialization;
 
@@ -57,13 +52,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
  * @author Pascal Knueppel
  * @since 13.11.2025
  */
-public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
+public abstract class SdJwtCreationAndSigningTest {
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @Test
     public void testCreateSdJwtWithoutKeybindingAndNoSignature() throws Exception {
@@ -72,12 +71,10 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
         final long nbf = Instant.now().minus(5, ChronoUnit.SECONDS).getEpochSecond();
         final long exp = Instant.now().plus(60, ChronoUnit.SECONDS).getEpochSecond();
 
-        String disclosurePayload = """
-            {
-              "given_name": "Carlos",
-              "family_name": "Norris"
-            }
-            """;
+        String disclosurePayload = "{\n" +
+            "  \"given_name\": \"Carlos\",\n" +
+            "  \"family_name\": \"Norris\"\n" +
+            "}";
         ObjectNode disclosures = JsonSerialization.readValue(disclosurePayload, ObjectNode.class);
         DisclosureSpec disclosureSpec = DisclosureSpec.builder()
                                                       .withUndisclosedClaim("given_name", "123456789")
@@ -97,14 +94,17 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
 
         // validate object content
         {
-            Assert.assertEquals(Format.SD_JWT_VC, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
+            Assert.assertEquals(OID4VCConstants.SD_JWT_VC_FORMAT, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
             Assert.assertEquals(1,
                                 JsonSerialization.mapper.convertValue(sdJwt.getIssuerSignedJWT().getJwsHeader(),
                                                                       ObjectNode.class).size());
 
-            Assert.assertEquals(iat, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
-            Assert.assertEquals(nbf, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
-            Assert.assertEquals(exp, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
+            Assert.assertEquals(iat,
+                                sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
+            Assert.assertEquals(nbf,
+                                sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
+            Assert.assertEquals(exp,
+                                sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
             Assert.assertEquals(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM,
                                 sdJwt.getIssuerSignedJWT()
                                      .getPayload()
@@ -120,15 +120,15 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
                                                      return SdJwtUtils.hashAndBase64EncodeNoPad(b64String,
                                                                                                 JavaAlgorithm.SHA256);
                                                  })
-                                                 .toList();
+                                                 .collect(Collectors.toList());
             List<String> decoyHashes = sdJwt.getIssuerSignedJWT()
                                             .getDecoyClaims()
                                             .stream()
                                             .map(decoy -> decoy.getDisclosureDigest(JavaAlgorithm.SHA256))
-                                            .toList();
+                                            .collect(Collectors.toList());
             List<String> expectedSdHashes = new ArrayList<>(disclosureHashes);
             expectedSdHashes.addAll(decoyHashes);
-            expectedSdHashes = expectedSdHashes.stream().sorted().toList();
+            expectedSdHashes = expectedSdHashes.stream().sorted().collect(Collectors.toList());
             JsonNode actualSdHashNode = sdJwt.getIssuerSignedJWT()
                                              .getPayload()
                                              .get(OID4VCConstants.CLAIM_NAME_SD);
@@ -136,7 +136,7 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
             for (JsonNode jsonNode : actualSdHashNode) {
                 actualSdHashes.add(jsonNode.textValue());
             }
-            actualSdHashes = actualSdHashes.stream().sorted().toList();
+            actualSdHashes = actualSdHashes.stream().sorted().collect(Collectors.toList());
             Assert.assertEquals(expectedSdHashes, actualSdHashes);
             Assert.assertEquals(5, sdJwt.getIssuerSignedJWT().getPayload().size());
         }
@@ -174,8 +174,9 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
                                                               return disclosure.getDisclosureStrings().stream();
                                                           })
                                                           .sorted(String::compareTo)
-                                                          .toList();
-            List<String> sortedActualDisclosures = Arrays.stream(disclosureParts).sorted(String::compareTo).toList();
+                                                          .collect(Collectors.toList());
+            List<String> sortedActualDisclosures = Arrays.stream(disclosureParts).sorted(String::compareTo).collect(
+                Collectors.toList());
             Assert.assertEquals(sortedExpectedDisclosures, sortedActualDisclosures);
         }
     }
@@ -210,12 +211,10 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
                                                    .withAudience(audience)
                                                    .build();
 
-        String disclosurePayload = """
-            {
-              "given_name": "Carlos",
-              "family_name": "Norris"
-            }
-            """;
+        String disclosurePayload = "{\n" +
+            "  \"given_name\": \"Carlos\",\n" +
+            "  \"family_name\": \"Norris\"\n" +
+            "}";
         ObjectNode disclosures = JsonSerialization.readValue(disclosurePayload, ObjectNode.class);
         DisclosureSpec disclosureSpec = DisclosureSpec.builder()
                                                       .withUndisclosedClaim("given_name", "123456789")
@@ -240,7 +239,7 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
         // validate object content
         {
             Assert.assertEquals(Algorithm.ES256, sdJwt.getIssuerSignedJWT().getJwsHeader().getAlgorithm().name());
-            Assert.assertEquals(Format.SD_JWT_VC, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
+            Assert.assertEquals(OID4VCConstants.SD_JWT_VC_FORMAT, sdJwt.getIssuerSignedJWT().getJwsHeader().getType());
             Assert.assertEquals(issuerKeyPair.getKid(), sdJwt.getIssuerSignedJWT().getJwsHeader().getKeyId());
             Assert.assertEquals(3,
                                 JsonSerialization.mapper.convertValue(sdJwt.getIssuerSignedJWT().getJwsHeader(),
@@ -250,9 +249,12 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
             expectedCnf.set("jwk", JsonSerialization.mapper.convertValue(holderKeybindingKey, ObjectNode.class));
             Assert.assertEquals(expectedCnf,
                                 sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_CNF));
-            Assert.assertEquals(iat, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
-            Assert.assertEquals(nbf, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
-            Assert.assertEquals(exp, sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
+            Assert.assertEquals(iat,
+                                sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
+            Assert.assertEquals(nbf,
+                                sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
+            Assert.assertEquals(exp,
+                                sdJwt.getIssuerSignedJWT().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
             Assert.assertEquals(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM,
                                 sdJwt.getIssuerSignedJWT()
                                      .getPayload()
@@ -268,15 +270,15 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
                                                      return SdJwtUtils.hashAndBase64EncodeNoPad(b64String,
                                                                                                 JavaAlgorithm.SHA256);
                                                  })
-                                                 .toList();
+                                                 .collect(Collectors.toList());
             List<String> decoyHashes = sdJwt.getIssuerSignedJWT()
                                             .getDecoyClaims()
                                             .stream()
                                             .map(decoy -> decoy.getDisclosureDigest(JavaAlgorithm.SHA256))
-                                            .toList();
+                                            .collect(Collectors.toList());
             List<String> expectedSdHashes = new ArrayList<>(disclosureHashes);
             expectedSdHashes.addAll(decoyHashes);
-            expectedSdHashes = expectedSdHashes.stream().sorted().toList();
+            expectedSdHashes = expectedSdHashes.stream().sorted().collect(Collectors.toList());
             JsonNode actualSdHashNode = sdJwt.getIssuerSignedJWT()
                                              .getPayload()
                                              .get(OID4VCConstants.CLAIM_NAME_SD);
@@ -284,7 +286,7 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
             for (JsonNode jsonNode : actualSdHashNode) {
                 actualSdHashes.add(jsonNode.textValue());
             }
-            actualSdHashes = actualSdHashes.stream().sorted().toList();
+            actualSdHashes = actualSdHashes.stream().sorted().collect(Collectors.toList());
             Assert.assertEquals(expectedSdHashes, actualSdHashes);
             Assert.assertEquals(6, sdJwt.getIssuerSignedJWT().getPayload().size());
 
@@ -295,9 +297,12 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
                                 JsonSerialization.mapper.convertValue(sdJwt.getKeybindingJwt().getJwsHeader(),
                                                                       ObjectNode.class).size());
 
-            Assert.assertEquals(iat, sdJwt.getKeybindingJwt().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
-            Assert.assertEquals(nbf, sdJwt.getKeybindingJwt().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
-            Assert.assertEquals(exp, sdJwt.getKeybindingJwt().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
+            Assert.assertEquals(iat,
+                                sdJwt.getKeybindingJwt().getPayload().get(OID4VCConstants.CLAIM_NAME_IAT).longValue());
+            Assert.assertEquals(nbf,
+                                sdJwt.getKeybindingJwt().getPayload().get(OID4VCConstants.CLAIM_NAME_NBF).longValue());
+            Assert.assertEquals(exp,
+                                sdJwt.getKeybindingJwt().getPayload().get(OID4VCConstants.CLAIM_NAME_EXP).longValue());
             Assert.assertEquals(nonce, sdJwt.getKeybindingJwt().getPayload().get(IDToken.NONCE).textValue());
             Assert.assertEquals(audience, sdJwt.getKeybindingJwt().getPayload().get(IDToken.AUD).textValue());
             // check sd_hash
@@ -352,8 +357,9 @@ public class SdJwtCreationAndSigningTest extends OID4VCIssuerEndpointTest {
                                                               return disclosure.getDisclosureStrings().stream();
                                                           })
                                                           .sorted(String::compareTo)
-                                                          .toList();
-            List<String> sortedActualDisclosures = Arrays.stream(disclosureParts).sorted(String::compareTo).toList();
+                                                          .collect(Collectors.toList());
+            List<String> sortedActualDisclosures = Arrays.stream(disclosureParts).sorted(String::compareTo).collect(
+                Collectors.toList());
             Assert.assertEquals(sortedExpectedDisclosures, sortedActualDisclosures);
         }
 
