@@ -19,15 +19,11 @@ package org.keycloak.sdjwt;
 
 import java.util.Objects;
 
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
-import org.keycloak.crypto.ECCurve;
-import org.keycloak.crypto.ECDSASignatureVerifierContext;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.KeyWrapperUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -50,7 +46,6 @@ public class JwkParsingUtils {
 
     public static SignatureVerifierContext convertJwkToVerifierContext(JWK jwk) {
         // Wrap JWK
-
         KeyWrapper keyWrapper;
 
         try {
@@ -61,39 +56,6 @@ public class JwkParsingUtils {
         }
 
         // Build verifier
-
-        // KeyType.EC
-        if (keyWrapper.getType().equals(KeyType.EC)) {
-            if (keyWrapper.getAlgorithm() == null) {
-                Objects.requireNonNull(keyWrapper.getCurve());
-
-                String alg = null;
-                switch (ECCurve.fromStdCrv(keyWrapper.getCurve())) {
-                    case P256:
-                        alg = Algorithm.ES256;
-                        break;
-                    case P384:
-                        alg = Algorithm.ES384;
-                        break;
-                    case P521:
-                        alg = Algorithm.ES512;
-                        break;
-                }
-
-                keyWrapper.setAlgorithm(alg);
-            }
-
-            return new ECDSASignatureVerifierContext(keyWrapper);
-        }
-
-        // KeyType.RSA
-        if (keyWrapper.getType().equals(KeyType.RSA)) {
-            return new AsymmetricSignatureVerifierContext(keyWrapper);
-        }
-
-        // KeyType is not supported
-        // This is unreachable as of now given that `JWKSUtils.getKeyWrapper` will fail
-        // on JWKs with key type not equal to EC or RSA.
-        throw new IllegalArgumentException("Unexpected key type: " + keyWrapper.getType());
+        return KeyWrapperUtil.createSignatureVerifierContext(keyWrapper);
     }
 }

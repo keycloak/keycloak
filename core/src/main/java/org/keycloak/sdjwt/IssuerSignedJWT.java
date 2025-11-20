@@ -34,7 +34,6 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,6 +43,7 @@ import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 
@@ -461,27 +461,10 @@ public class IssuerSignedJWT extends JwsToken {
             return this;
         }
 
-        /**
-         * this method requires the public key to be present in the keybindingJwts header as "jwk" claim
-         */
-        public Builder withKeyBinding(KeyBindingJWT keyBinding) {
+        public Builder withKeyBindingKey(JWK keyBinding) {
+            ObjectNode jwkNode = JsonSerialization.mapper.convertValue(keyBinding, ObjectNode.class);
             ObjectNode cnf = JsonNodeFactory.instance.objectNode();
-            Optional.ofNullable(keyBinding.getJwsHeader().getOtherClaims().get(OID4VCConstants.CLAIM_NAME_JWK))
-                    .map(map -> JsonSerialization.mapper.convertValue(map, ObjectNode.class))
-                    .ifPresent(jwkNode -> cnf.set(OID4VCConstants.CLAIM_NAME_JWK, jwkNode));
-            if (!cnf.isEmpty()) {
-                getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
-            }
-            return this;
-        }
-
-        public Builder withKeyBinding(JWK keyBinding) {
-            return withKeyBinding(JsonSerialization.mapper.convertValue(keyBinding, ObjectNode.class));
-        }
-
-        public Builder withKeyBinding(ObjectNode keyBinding) {
-            ObjectNode cnf = JsonNodeFactory.instance.objectNode();
-            cnf.set("jwk", keyBinding);
+            cnf.set(CLAIM_NAME_JWK, jwkNode);
             getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
             return this;
         }

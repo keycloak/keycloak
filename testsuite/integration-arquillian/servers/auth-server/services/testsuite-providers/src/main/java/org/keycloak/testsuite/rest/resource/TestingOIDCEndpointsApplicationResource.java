@@ -19,13 +19,8 @@ package org.keycloak.testsuite.rest.resource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -90,6 +85,10 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.resteasy.reactive.NoCache;
 
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP384R1;
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP521R1;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -139,22 +138,22 @@ public class TestingOIDCEndpointsApplicationResource {
                     break;
                 case Algorithm.ES256:
                     keyType = KeyType.EC;
-                    keyPair = generateEcdsaKey("secp256r1");
+                    keyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1);
                     break;
                 case Algorithm.ES384:
                     keyType = KeyType.EC;
-                    keyPair = generateEcdsaKey("secp384r1");
+                    keyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP384R1);
                     break;
                 case Algorithm.ES512:
                     keyType = KeyType.EC;
-                    keyPair = generateEcdsaKey("secp521r1");
+                    keyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP521R1);
                     break;
                 case Algorithm.EdDSA:
                     if (curve == null) {
                         curve = Algorithm.Ed25519;
                     }
                     keyType = KeyType.OKP;
-                    keyPair = generateEddsaKey(curve);
+                    keyPair = KeyUtils.generateEddsaKeyPair(curve);
                     break;
                 case JWEConstants.RSA1_5:
                 case JWEConstants.RSA_OAEP:
@@ -184,21 +183,6 @@ public class TestingOIDCEndpointsApplicationResource {
             throw new BadRequestException("Error generating signing keypair", e);
         }
         return getKeysAsPem();
-    }
-
-    private KeyPair generateEcdsaKey(String ecDomainParamName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-        SecureRandom randomGen = new SecureRandom();
-        ECGenParameterSpec ecSpec = new ECGenParameterSpec(ecDomainParamName);
-        keyGen.initialize(ecSpec, randomGen);
-        KeyPair keyPair = keyGen.generateKeyPair();
-        return keyPair;
-    }
-
-    private KeyPair generateEddsaKey(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(curveName);
-        KeyPair keyPair = keyGen.generateKeyPair();
-        return keyPair;
     }
 
     @GET
