@@ -691,33 +691,51 @@ public class OID4VCIssuerEndpoint {
                 throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
             }
 
+            // Get the credential_configuration_id from AuthorizationDetails
+            //
             var authDetails = offerState.getAuthorizationDetails();
             String credConfigId = (String) authDetails.getOtherClaims().get("credential_configuration_id");
-
             if (credConfigId == null) {
-                var errorMessage = "Cannot credential configuration mapping for: " + credId;
+                var errorMessage = "No credential_configuration_id in AuthorizationDetails";
                 throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
             }
 
-            // Use the mapped credential configuration ID to find the credential scope
-            Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
-            if (supportedCredentials.containsKey(credConfigId)) {
-                SupportedCredentialConfiguration config = supportedCredentials.get(credConfigId);
-                ClientModel client = session.getContext().getClient();
-                Map<String, ClientScopeModel> clientScopes = client.getClientScopes(false);
-                ClientScopeModel clientScope = clientScopes.get(config.getScope());
-                if (clientScope != null) {
-                    requestedCredential = new CredentialScopeModel(clientScope);
-                    LOGGER.debugf("Successfully mapped credential identifier %s to configuration %s",
-                            credentialRequestVO.getCredentialIdentifier(), credConfigId);
-                } else {
-                    LOGGER.errorf("Client scope not found for mapped credential configuration: %s", config.getScope());
-                    throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
-                }
-            } else {
+            // Find the credential configuration in the Issuer's metadata
+            //
+            var credConfig = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session).get(credConfigId);
+            if (credConfig == null) {
                 LOGGER.errorf("Mapped credential configuration not found: %s", credConfigId);
                 throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
             }
+
+            // Verify the user login session
+            //
+            var userSession = authResult.session();
+            var userModel = userSession.getUser();
+            if (!userModel.getUsername().equals(offerState.getUserId())) {
+                LOGGER.errorf("Unexpected login user: %s != %s", userModel.getUsername(), offerState.getUserId());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+            }
+
+            // Verify the login client
+            //
+            ClientModel clientModel = session.getContext().getClient();
+            if (offerState.getClientId() != null && !clientModel.getClientId().equals(offerState.getClientId())) {
+                LOGGER.errorf("Unexpected login client: %s != %s", clientModel.getClientId(), offerState.getClientId());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+            }
+
+            // Find the configured scope in the login client
+            //
+            ClientScopeModel clientScope = clientModel.getClientScopes(false).get(credConfig.getScope());
+            if (clientScope == null) {
+                LOGGER.errorf("Client scope not found: %s", credConfig.getScope());
+                throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+            }
+
+            requestedCredential = new CredentialScopeModel(clientScope);
+            LOGGER.debugf("Successfully mapped credential identifier %s to scope %s", credId, clientScope.getName());
+
         } else if (credentialRequestVO.getCredentialConfigurationId() != null) {
             // Use credential_configuration_id for direct lookup
             requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
