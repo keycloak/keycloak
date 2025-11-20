@@ -164,7 +164,7 @@ public class KeycloakSpec {
 
     @JsonProperty("automountServiceAccountToken")
     @JsonPropertyDescription("Set this to to false to disable automounting the default ServiceAccount Token and Service CA. This is enabled by default.")
-    private boolean automountServiceAccountToken = true;
+    private Boolean automountServiceAccountToken;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -391,10 +391,11 @@ public class KeycloakSpec {
         this.serviceMonitorSpec = serviceMonitorSpec;
     }
 
-    public boolean getAutomountServiceAccountToken() {
+    public Boolean getAutomountServiceAccountToken() {
         return automountServiceAccountToken;
     }
-    public void setAutomountServiceAccountToken(boolean automountServiceAccountToken) {
+
+    public void setAutomountServiceAccountToken(Boolean automountServiceAccountToken) {
         this.automountServiceAccountToken = automountServiceAccountToken;
     }
 }
