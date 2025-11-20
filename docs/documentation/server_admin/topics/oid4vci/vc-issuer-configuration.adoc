@@ -182,7 +182,7 @@ To reduce unintended correlation across multiple issuances or presentations, you
 
 | `oid4vci.time.randomize.window.seconds`
 | `86400`
-| When strategy is `randomize`, subtract a random number of seconds (0 to N) from the original timestamp to mitigate correlation attacks.
+| When strategy is `randomize`, subtract a random number of seconds between 0 and the value of this attribute from the original timestamp to mitigate correlation attacks.
 
 | `oid4vci.time.round.unit`
 | `SECOND`

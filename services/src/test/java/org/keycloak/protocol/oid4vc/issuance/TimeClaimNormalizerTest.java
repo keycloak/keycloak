@@ -24,6 +24,7 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /*
  *  @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
@@ -95,7 +96,7 @@ public class TimeClaimNormalizerTest {
         assertFalse("Normalized time should not be after original time", normalized.isAfter(orig));
         // should be within the randomization window
         long diffSeconds = orig.getEpochSecond() - normalized.getEpochSecond();
-        assertFalse("Randomized time should be within window", diffSeconds > 3600);
+        assertTrue("Randomized time should be within window", diffSeconds <= 3600);
     }
 
     @Test
@@ -109,7 +110,7 @@ public class TimeClaimNormalizerTest {
         // So normalized should be <= original and within the window
         assertFalse("Normalized time should not be after original time", normalized.isAfter(orig));
         long diffSeconds = orig.getEpochSecond() - normalized.getEpochSecond();
-        assertFalse("Randomized time should be within window", diffSeconds > 3600);
+        assertTrue("Randomized time should be within window", diffSeconds <= 3600);
     }
 
 }
