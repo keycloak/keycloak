@@ -18,8 +18,10 @@
 package org.keycloak.sdjwt.vp;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sdjwt.ClaimVerifier;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 
@@ -174,10 +176,17 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
 
         @Override
         public KeyBindingJwtVerificationOpts build() {
-            if (keyBindingRequired && (aud == null || nonce == null || nonce.isEmpty())) {
-                throw new IllegalArgumentException(
-                    "Missing `nonce` and `aud` claims for replay protection"
-                );
+            boolean isAudCheckPresent = contentVerifiers.stream().anyMatch(verifier -> {
+                return verifier instanceof AudienceCheck ||
+                    (verifier instanceof ClaimCheck && ((ClaimCheck) verifier).getClaimName().equals(JsonWebToken.AUD));
+            });
+            boolean isNonceCheckPresent = contentVerifiers.stream().anyMatch(verifier -> {
+                return verifier instanceof ClaimCheck && ((ClaimCheck) verifier).getClaimName().equals(IDToken.NONCE)
+                    && Optional.ofNullable(((ClaimCheck) verifier).getExpectedClaimValue()).map(s -> !s.isEmpty())
+                               .orElse(false);
+            });
+            if (keyBindingRequired && isAudCheckPresent && isNonceCheckPresent) {
+                throw new IllegalArgumentException("Missing `nonce` and `aud` claims for replay protection");
             }
 
             return new KeyBindingJwtVerificationOpts(keyBindingRequired,

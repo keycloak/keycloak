@@ -121,48 +121,31 @@ public class ClaimVerifier {
 
         private final BiFunction<String, String, Boolean> stringComparator;
 
-        /**
-         * can be used to make sure that the given claim does NOT have the expected given value
-         */
-        private final boolean invertCheck;
 
         private final boolean isOptional;
 
         public ClaimCheck(String claimName,
                           String expectedClaimValue) {
-            this(claimName, expectedClaimValue, false, false);
+            this(claimName, expectedClaimValue, false);
         }
 
         public ClaimCheck(String claimName, String expectedClaimValue, boolean isOptional) {
-            this(claimName, expectedClaimValue, false, isOptional);
+            this(claimName, expectedClaimValue, getDefaultComparator(), isOptional);
         }
 
         public ClaimCheck(String claimName,
                           String expectedClaimValue,
                           BiFunction<String, String, Boolean> stringComparator) {
-            this(claimName, expectedClaimValue, stringComparator, false, false);
+            this(claimName, expectedClaimValue, stringComparator, false);
         }
 
         public ClaimCheck(String claimName,
                           String expectedClaimValue,
                           BiFunction<String, String, Boolean> stringComparator,
-                          boolean isOptional) {
-            this(claimName, expectedClaimValue, stringComparator, false, isOptional);
-        }
-
-        public ClaimCheck(String claimName, String expectedClaimValue, boolean invertCheck, boolean isOptional) {
-            this(claimName, expectedClaimValue, getDefaultComparator(), invertCheck, isOptional);
-        }
-
-        public ClaimCheck(String claimName,
-                          String expectedClaimValue,
-                          BiFunction<String, String, Boolean> stringComparator,
-                          boolean invertCheck,
                           boolean isOptional) {
             this.claimName = claimName;
             this.expectedClaimValue = expectedClaimValue;
             this.stringComparator = Optional.ofNullable(stringComparator).orElseGet(ClaimCheck::getDefaultComparator);
-            this.invertCheck = invertCheck;
             this.isOptional = isOptional;
         }
 
@@ -185,26 +168,14 @@ public class ClaimVerifier {
                 throw new VerificationException(String.format("Missing claim '%s' in token", claimName));
             }
 
-            boolean checkSuccessful;
-            if (invertCheck) {
-                checkSuccessful = !stringComparator.apply(expectedClaimValue, claimValue);
-            } else {
-                checkSuccessful = stringComparator.apply(expectedClaimValue, claimValue);
-            }
+            boolean checkSuccessful = stringComparator.apply(expectedClaimValue, claimValue);
 
             if (!checkSuccessful) {
-                String errorMessage;
-                if (invertCheck) {
-                    errorMessage = String.format("Value '%s' is not allowed for claim '%s'!",
-                                                 claimValue,
-                                                 claimName);
-                } else {
-                    errorMessage = String.format("Expected value '%s' in token for claim '%s' does " +
-                                                     "not match actual value '%s'",
-                                                 expectedClaimValue,
-                                                 claimName,
-                                                 claimValue);
-                }
+                String errorMessage = String.format("Expected value '%s' in token for claim '%s' does " +
+                                                        "not match actual value '%s'",
+                                                    expectedClaimValue,
+                                                    claimName,
+                                                    claimValue);
                 throw new VerificationException(errorMessage);
             }
 
@@ -219,12 +190,46 @@ public class ClaimVerifier {
             return expectedClaimValue;
         }
 
-        public boolean isInvertCheck() {
-            return invertCheck;
-        }
-
         public boolean isOptional() {
             return isOptional;
+        }
+    }
+
+    public static class NegatedClaimCheck extends ClaimCheck {
+
+        public NegatedClaimCheck(String claimName, String expectedClaimValue) {
+            super(claimName, expectedClaimValue);
+        }
+
+        public NegatedClaimCheck(String claimName, String expectedClaimValue, boolean isOptional) {
+            super(claimName, expectedClaimValue, isOptional);
+        }
+
+        public NegatedClaimCheck(String claimName,
+                                 String expectedClaimValue,
+                                 BiFunction<String, String, Boolean> stringComparator) {
+            super(claimName, expectedClaimValue, stringComparator);
+        }
+
+        public NegatedClaimCheck(String claimName,
+                                 String expectedClaimValue,
+                                 BiFunction<String, String, Boolean> stringComparator,
+                                 boolean isOptional) {
+            super(claimName, expectedClaimValue, stringComparator, isOptional);
+        }
+
+        @Override
+        public boolean test(ObjectNode t) throws VerificationException {
+            String claimValue = Optional.ofNullable(t.get(getClaimName())).map(JsonNode::asText).map(String::valueOf)
+                                        .orElse(null);
+            if (claimValue == null && !isOptional()) {
+                throw new VerificationException(String.format("Missing claim '%s' in token", getClaimName()));
+            }
+            if (claimValue == null && isOptional()) {
+                // if optional and not present we do not want to execute the check of the parent.
+                return true;
+            }
+            return !super.test(t);
         }
     }
 
@@ -415,12 +420,11 @@ public class ClaimVerifier {
 
             // add algorithm not "none"-check
             {
-                boolean invertCheck = true;
                 boolean isOptional = false;
-                headerVerifiers.add(new ClaimCheck("alg", "none", (s1, s2) -> {
+                headerVerifiers.add(new NegatedClaimCheck("alg", "none", (s1, s2) -> {
                     // ignore upper and lowercase for comparison
                     return s1 != null && s1.equalsIgnoreCase(s2);
-                }, invertCheck, isOptional));
+                }, isOptional));
             }
         }
 
