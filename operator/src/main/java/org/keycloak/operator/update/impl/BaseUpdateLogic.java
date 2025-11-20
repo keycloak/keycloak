@@ -65,8 +65,15 @@ abstract class BaseUpdateLogic implements UpdateLogic {
         }
         copyStatusFromExistStatefulSet(existing.get());
 
+        Optional<String> storedHash = CRDUtils.getUpdateHash(existing.get());
         var desiredStatefulSet = ContextUtils.getDesiredStatefulSet(context);
         var desiredContainer = CRDUtils.firstContainerOf(desiredStatefulSet).orElseThrow(BaseUpdateLogic::containerNotFound);
+
+        if (Objects.equals(CRDUtils.getUpdateHash(desiredStatefulSet).orElseThrow(), storedHash.orElse(null))) {
+            Log.debug("Hash is equals - skipping update logic");
+            return Optional.empty();
+        }
+
         var actualContainer = CRDUtils.firstContainerOf(existing.get()).orElseThrow(BaseUpdateLogic::containerNotFound);
 
         if (isContainerEquals(actualContainer, desiredContainer)) {
