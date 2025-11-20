@@ -240,7 +240,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     // Update user in LDAP if "updateInLDAP" is true. Otherwise it is assumed that LDAP update will be called at the end of transaction
     protected void updateUserAccountControl(boolean updateInLDAP, LDAPObject ldapUser, UserAccountControl accountControl) {
         String userAccountControlValue = String.valueOf(accountControl.getValue());
-        logger.debugf("Updating userAccountControl of user '%s' to value '%s'. Realm is '%s'", ldapUser.getDn().toString(), userAccountControlValue, getRealmName());
+        logger.debugf("Updating userAccountControl %s of user '%s' to value '%s'. Realm is '%s'", updateInLDAP ? "in LDAP" : "locally", ldapUser.getDn().toString(), userAccountControlValue, getRealmName());
 
         ldapUser.setSingleAttribute(LDAPConstants.USER_ACCOUNT_CONTROL, userAccountControlValue);
 
