@@ -41,6 +41,7 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -139,13 +140,13 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
         var ctx = newTestContext(false, null, namedUserId);
 
-        var authDetail = new AuthorizationDetail();
+        AuthorizationDetail authDetail = new AuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credConfigId);
         authDetail.setLocations(List.of(ctx.issuerMetadata.getCredentialIssuer()));
 
         // [TODO] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
-        // https://github.com/tdiesler/nessus-identity/issues/264
+        // https://github.com/keycloak/keycloak/issues/44320
         String accessToken = getBearerToken(issClientId, ctx.appUser, credScopeName, authDetail);
 
         CredentialResponse credResponse = getCredentialByAuthDetail(ctx, accessToken, authDetail);
@@ -247,7 +248,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 //  4. does not reflect anything from the credential offer
                 //
                 AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(ctx, credOffer);
-                var authDetails = accessToken.getAuthorizationDetails();
+                List<AuthorizationDetail> authDetails = accessToken.getAuthorizationDetails();
                 if (authDetails == null)
                     throw new IllegalStateException("No authorization_details in token response");
                 if (authDetails.size() > 1)
@@ -284,7 +285,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     // Private ---------------------------------------------------------------------------------------------------------
 
     private String getBearerToken(String clientId, String username, String scope) {
-        var client = testRealm().clients().findByClientId(clientId).get(0);
+        ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
         if (client.isDirectAccessGrantsEnabled()) {
             return getBearerTokenDirectAccess(oauth, client, username, scope).getAccessToken();
         } else {
@@ -293,8 +294,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private String getBearerToken(String clientId, String username, String scope, AuthorizationDetail... authDetail) {
-        var client = testRealm().clients().findByClientId(clientId).get(0);
-        var authCode = getAuthorizationCode(oauth, client, username, scope);
+        ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
+        String authCode = getAuthorizationCode(oauth, client, username, scope);
         return getBearerToken(oauth, authCode, authDetail).getAccessToken();
     }
 
@@ -309,17 +310,17 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private String getCredentialOfferUriUrl(OfferTestContext ctx, String token) throws Exception {
-        var offerURI = getCredentialOfferUri(ctx, token);
+        CredentialOfferURI offerURI = getCredentialOfferUri(ctx, token);
         return offerURI.getIssuer() + offerURI.getNonce();
     }
 
     private CredentialOfferURI getCredentialOfferUri(OfferTestContext ctx, String token) throws Exception {
-        var credConfigId = ctx.supportedCredentialConfiguration.getId();
+        String credConfigId = ctx.supportedCredentialConfiguration.getId();
         String credOfferUriUrl = getCredentialOfferUriUrl(credConfigId, ctx.preAuthorized, ctx.appUser, ctx.appClient);
         HttpGet getCredentialOfferURI = new HttpGet(credOfferUriUrl);
         getCredentialOfferURI.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         CloseableHttpResponse credentialOfferURIResponse = httpClient.execute(getCredentialOfferURI);
-        var statusCode = credentialOfferURIResponse.getStatusLine().getStatusCode();
+        int statusCode = credentialOfferURIResponse.getStatusLine().getStatusCode();
         if (HttpStatus.SC_OK != statusCode) {
             HttpEntity entity = credentialOfferURIResponse.getEntity();
             throw new IllegalStateException(EntityUtils.toString(entity));
@@ -334,7 +335,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     private CredentialsOffer getCredentialsOffer(OfferTestContext ctx, String offerUri) throws Exception {
         HttpGet getCredentialOffer = new HttpGet(offerUri);
         CloseableHttpResponse credentialOfferResponse = httpClient.execute(getCredentialOffer);
-        var statusCode = credentialOfferResponse.getStatusLine().getStatusCode();
+        int statusCode = credentialOfferResponse.getStatusLine().getStatusCode();
         if (HttpStatus.SC_OK != statusCode) {
             HttpEntity entity = credentialOfferResponse.getEntity();
             throw new IllegalStateException(EntityUtils.toString(entity));
@@ -354,7 +355,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         postPreAuthorizedCode.setEntity(formEntity);
         CloseableHttpResponse accessTokenResponse = httpClient.execute(postPreAuthorizedCode);
-        var statusCode = accessTokenResponse.getStatusLine().getStatusCode();
+        int statusCode = accessTokenResponse.getStatusLine().getStatusCode();
         if (HttpStatus.SC_OK != statusCode) {
             HttpEntity entity = accessTokenResponse.getEntity();
             throw new IllegalStateException(EntityUtils.toString(entity));
@@ -394,7 +395,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         postCredential.setEntity(stringEntity);
 
         CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential);
-        var statusCode = credentialRequestResponse.getStatusLine().getStatusCode();
+        int statusCode = credentialRequestResponse.getStatusLine().getStatusCode();
         if (HttpStatus.SC_OK != statusCode) {
             HttpEntity entity = credentialRequestResponse.getEntity();
             throw new IllegalStateException(EntityUtils.toString(entity));
@@ -410,7 +411,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     private void verifyCredentialResponse(OfferTestContext ctx, CredentialResponse credResponse) throws Exception {
 
-        var scope = ctx.supportedCredentialConfiguration.getScope();
+        String scope = ctx.supportedCredentialConfiguration.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null.");
 
@@ -434,18 +435,18 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
             List<String> excludeRoles
     ) throws Exception {
         JsonWebToken jwt = JsonSerialization.readValue(new JWSInput(token).getContent(), JsonWebToken.class);
-        var wasScopes = Arrays.stream(((String) jwt.getOtherClaims().get("scope")).split("\\s")).toList();
+        List<String> wasScopes = Arrays.stream(((String) jwt.getOtherClaims().get("scope")).split("\\s")).toList();
         includeScopes.forEach(it -> assertTrue(wasScopes.contains(it), "Missing scope: " + it));
         excludeScopes.forEach(it -> assertFalse(wasScopes.contains(it), "Invalid scope: " + it));
 
-        var allRoles = new ArrayList<String>();
-        var realmAccess = jwt.getOtherClaims().get("realm_access");
+        List<String> allRoles = new ArrayList<>();
+        Object realmAccess = jwt.getOtherClaims().get("realm_access");
         if (realmAccess != null) {
             @SuppressWarnings("unchecked")
             var realmRoles = ((Map<String, List<String>>) realmAccess).get("roles");
             allRoles.addAll(realmRoles);
         }
-        var resourceAccess = jwt.getOtherClaims().get("resource_access");
+        Object resourceAccess = jwt.getOtherClaims().get("resource_access");
         if (resourceAccess != null) {
             @SuppressWarnings("unchecked")
             var resourceAccessMapping = (Map<String, Map<String, List<String>>>) resourceAccess;

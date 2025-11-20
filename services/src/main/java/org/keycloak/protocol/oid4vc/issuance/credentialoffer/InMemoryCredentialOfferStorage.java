@@ -13,7 +13,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
 
     @Override
     public synchronized void putOfferState(KeycloakSession session, CredentialOfferState entry) {
-        var entryJson = JsonSerialization.valueAsString(entry);
+        String entryJson = JsonSerialization.valueAsString(entry);
         session.singleUseObjects().put(entry.getNonce(), entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
         entry.getPreAuthorizedCode().ifPresent(it -> {
             session.singleUseObjects().put(it, entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
@@ -28,7 +28,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
     @Override
     public synchronized CredentialOfferState findOfferStateByNonce(KeycloakSession session, String nonce) {
         if (session.singleUseObjects().contains(nonce)) {
-            var entryJson = session.singleUseObjects().get(nonce).get(ENTRY_KEY);
+            String entryJson = session.singleUseObjects().get(nonce).get(ENTRY_KEY);
             return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
         }
         return null;
@@ -37,7 +37,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
     @Override
     public synchronized CredentialOfferState findOfferStateByCode(KeycloakSession session, String code) {
         if (session.singleUseObjects().contains(code)) {
-            var entryJson = session.singleUseObjects().get(code).get(ENTRY_KEY);
+            String entryJson = session.singleUseObjects().get(code).get(ENTRY_KEY);
             return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
         }
         return null;
@@ -46,14 +46,14 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
     @Override
     public CredentialOfferState findOfferStateByCredentialId(KeycloakSession session, String credId) {
         if (session.singleUseObjects().contains(credId)) {
-            var entryJson = session.singleUseObjects().get(credId).get(ENTRY_KEY);
+            String entryJson = session.singleUseObjects().get(credId).get(ENTRY_KEY);
             return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
         }
         return null;
     }
 
     public synchronized void replaceOfferState(KeycloakSession session, CredentialOfferState entry) {
-        var entryJson = JsonSerialization.valueAsString(entry);
+        String entryJson = JsonSerialization.valueAsString(entry);
         session.singleUseObjects().replace(entry.getNonce(), Map.of(ENTRY_KEY, entryJson));
         entry.getPreAuthorizedCode().ifPresent(it -> {
             session.singleUseObjects().replace(it, Map.of(ENTRY_KEY, entryJson));
