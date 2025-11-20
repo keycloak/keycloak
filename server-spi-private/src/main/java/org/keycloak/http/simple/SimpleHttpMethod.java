@@ -1,6 +1,6 @@
 package org.keycloak.http.simple;
 
-enum SimpleHttpMethod {
+public enum SimpleHttpMethod {
 
     GET, DELETE, HEAD, PUT, PATCH, POST, OPTIONS
 
