@@ -108,6 +108,7 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
@@ -389,7 +390,7 @@ public class OID4VCIssuerEndpoint {
 
         // Check required role to create a credential offer
         //
-        var hasCredentialOfferRole = userModel.getRoleMappingsStream().anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
+        boolean hasCredentialOfferRole = userModel.getRoleMappingsStream().anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
         if (!hasCredentialOfferRole) {
             var errorMessage = "Credential offer creation requires role: " + CREDENTIAL_OFFER_CREATE.getName();
             throw new CorsErrorResponseException(cors,
@@ -400,7 +401,7 @@ public class OID4VCIssuerEndpoint {
 
         // Check whether the credential configuration exists in available client scopes
         //
-        var availableInClientScopes = session.clientScopes()
+        List<String> availableInClientScopes = session.clientScopes()
                 .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
                 .map(it -> it.getAttribute(CredentialScopeModel.CONFIGURATION_ID))
                 .toList();
@@ -441,7 +442,7 @@ public class OID4VCIssuerEndpoint {
                 .setCredentialConfigurationIds(List.of(credConfigId));
 
         int expiration = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
-        var offerState = new CredentialOfferState(credOffer, appClientId, appUserId, expiration);
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, appUserId, expiration);
 
         if (preAuthorized) {
             String code = "urn:oid4vci:code:" + UUID.randomUUID();
@@ -449,7 +450,7 @@ public class OID4VCIssuerEndpoint {
                     new PreAuthorizedCode().setPreAuthorizedCode(code)));
         }
 
-        var offerStorage = session.getProvider(CredentialOfferStorage.class);
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(session, offerState);
 
         LOGGER.debugf("Stored credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
@@ -536,8 +537,8 @@ public class OID4VCIssuerEndpoint {
 
         // Retrieve the associated credential offer state
         //
-        var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.findOfferStateByNonce(session, nonce);
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+        CredentialOfferState offerState = offerStorage.findOfferStateByNonce(session, nonce);
         if (offerState == null) {
             var errorMessage = "No credential offer state for nonce: " + nonce;
             eventBuilder.event(INTROSPECT_TOKEN_ERROR).detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
@@ -547,7 +548,7 @@ public class OID4VCIssuerEndpoint {
         // We treat the credential offer URI as an unprotected capability URL and rely solely on the later authorization step
         // i.e. an authenticated client/user session is not required nor checked against the offer state
 
-        var credOffer = offerState.getCredentialsOffer();
+        CredentialsOffer credOffer = offerState.getCredentialsOffer();
         LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
                 credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
 
@@ -680,12 +681,12 @@ public class OID4VCIssuerEndpoint {
         // CredentialOffer process or otherwise have set up a valid CredentialOfferState
 
         if (credentialRequestVO.getCredentialIdentifier() != null) {
-            var credId = credentialRequestVO.getCredentialIdentifier();
+            String credId = credentialRequestVO.getCredentialIdentifier();
 
             // Retrieve the associated credential offer state
             //
-            var offerStorage = session.getProvider(CredentialOfferStorage.class);
-            var offerState = offerStorage.findOfferStateByCredentialId(session, credId);
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            CredentialOfferState offerState = offerStorage.findOfferStateByCredentialId(session, credId);
             if (offerState == null) {
                 var errorMessage = "No credential offer state for credential id: " + credId;
                 throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
@@ -693,7 +694,7 @@ public class OID4VCIssuerEndpoint {
 
             // Get the credential_configuration_id from AuthorizationDetails
             //
-            var authDetails = offerState.getAuthorizationDetails();
+            AuthorizationDetailsResponse authDetails = offerState.getAuthorizationDetails();
             String credConfigId = (String) authDetails.getOtherClaims().get("credential_configuration_id");
             if (credConfigId == null) {
                 var errorMessage = "No credential_configuration_id in AuthorizationDetails";
@@ -702,7 +703,7 @@ public class OID4VCIssuerEndpoint {
 
             // Find the credential configuration in the Issuer's metadata
             //
-            var credConfig = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session).get(credConfigId);
+            SupportedCredentialConfiguration credConfig = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session).get(credConfigId);
             if (credConfig == null) {
                 LOGGER.errorf("Mapped credential configuration not found: %s", credConfigId);
                 throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
@@ -710,8 +711,8 @@ public class OID4VCIssuerEndpoint {
 
             // Verify the user login session
             //
-            var userSession = authResult.session();
-            var userModel = userSession.getUser();
+            UserSessionModel userSession = authResult.session();
+            UserModel userModel = userSession.getUser();
             if (!userModel.getUsername().equals(offerState.getUserId())) {
                 LOGGER.errorf("Unexpected login user: %s != %s", userModel.getUsername(), offerState.getUserId());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));

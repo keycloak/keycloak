@@ -167,7 +167,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 CREDENTIAL_OFFER_URI_CODE_SCOPE,
                 authenticatedClientSessionModel.getUserSession().getId());
 
-        var nonce = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oauth2Code);
+        String nonce = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oauth2Code);
         authenticatedClientSessionModel.setNote(nonce, note);
         return new OAuth2CodeEntry(nonce, oauth2Code);
     }
@@ -234,7 +234,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 null);
 
         List.of(client, namedClient).forEach(client -> {
-            var clientId = client.getClientId();
+            String clientId = client.getClientId();
 
             // Assign the registered optional client scopes to the client
             assignOptionalClientScopeToClient(sdJwtTypeNaturalPersonClientScope.getId(), clientId);
@@ -619,7 +619,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     public SupportedCredentialConfiguration getSupportedCredentialConfigurationByScope(CredentialIssuer metadata, String scope) {
-        var result = metadata.getCredentialsSupported().values().stream()
+        SupportedCredentialConfiguration result = metadata.getCredentialsSupported().values().stream()
                 .filter(it -> it.getScope().equals(scope))
                 .findFirst().orElse(null);
         return result;
