@@ -20,8 +20,6 @@ package org.keycloak.testsuite.client;
 
 import java.util.Collections;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -31,6 +29,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+
+import org.junit.Before;
+import org.junit.Test;
 
 public class OIDCClientRegistrationDefaultSignatureTest extends AbstractClientRegistrationTest {
     @Before

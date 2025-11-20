@@ -16,14 +16,14 @@
  */
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.SynchronizationResultRepresentation;
-
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+
+import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

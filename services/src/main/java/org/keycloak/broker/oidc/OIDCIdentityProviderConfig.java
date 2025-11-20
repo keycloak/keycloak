@@ -16,16 +16,17 @@
  */
 package org.keycloak.broker.oidc;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
-
+import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 
+import static org.keycloak.common.util.UriUtils.checkUrl;
+
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
+public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig implements JWTAuthorizationGrantConfig {
 
     public static final String JWKS_URL = "jwksUrl";
 

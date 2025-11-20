@@ -1,11 +1,5 @@
 package org.keycloak.models.workflow;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
-
-import java.util.List;
-
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionProvider;
@@ -13,6 +7,10 @@ import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser
 import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
 import org.keycloak.models.workflow.conditions.expression.EventEvaluator;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
 
 final class EventBasedWorkflow {
 
@@ -28,45 +26,50 @@ final class EventBasedWorkflow {
         return ResourceType.USERS.equals(type);
     }
 
-    boolean activateOnEvent(WorkflowEvent event) {
-        if (!supports(event.getResourceType())) {
+    /**
+     * Evaluates the specified context to determine whether the workflow should be activated or not. Activation will happen
+     * if the context's event matches the configured activation events and the resource conditions evaluate to true.
+     *
+     * @param executionContext
+     * @return
+     * @throws WorkflowInvalidStateException
+     */
+    boolean activate(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
+        WorkflowEvent event = executionContext.getEvent();
+        if (event == null) {
             return false;
         }
-        return isActivationEvent(event) && evaluateConditions(event);
+        return supports(event.getResourceType()) && activateOnEvent(event) && validateResourceConditions(executionContext);
     }
 
-    boolean deactivateOnEvent(WorkflowEvent event) {
+    boolean deactivate(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
         // TODO: rework this once we support concurrency/restart-if-running and concurrency/cancel-if-running to use expressions just like activation conditions
-        if (!supports(event.getResourceType())) {
-            return false;
-        }
-
-        List<String> events = model.getConfig().getOrDefault(CONFIG_ON_EVENT, List.of());
-
-        for (String activationEvent : events) {
-            ResourceOperationType a = ResourceOperationType.valueOf(activationEvent.toUpperCase());
-
-            if (a.isDeactivationEvent(event.getEvent().getClass())) {
-                return !evaluateConditions(event);
-            }
-        }
-
         return false;
     }
 
-    boolean resetOnEvent(WorkflowEvent event) {
-        return isCancelIfRunning() && evaluateConditions(event);
+    boolean reset(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
+        WorkflowEvent event = executionContext.getEvent();
+        if (event == null) {
+            return false;
+        }
+        return supports(event.getResourceType()) && isCancelIfRunning() && validateResourceConditions(executionContext);
     }
 
-    private boolean evaluateConditions(WorkflowEvent event) {
+    public boolean validateResourceConditions(WorkflowExecutionContext context) {
         String conditions = getModel().getConfig().getFirst(CONFIG_CONDITIONS);
         if (StringUtil.isBlank(conditions)) {
             return true;
         }
-        return new ExpressionWorkflowConditionProvider(getSession(), conditions).evaluate(event);
+        return new ExpressionWorkflowConditionProvider(getSession(), conditions).evaluate(context);
     }
 
-    private boolean isActivationEvent(WorkflowEvent event) {
+    /**
+     * Determins whether the workflow should be activated based on the given event or not.
+     *
+     * @param event a reference to the workflow event.
+     * @return {@code true} if the workflow should be activated, {@code false} otherwise.
+     */
+    private boolean activateOnEvent(WorkflowEvent event) {
         // AD_HOC is a special case that always triggers the workflow regardless of the configured activation events
         if (ResourceOperationType.AD_HOC.equals(event.getOperation())) {
             return true;

@@ -17,27 +17,17 @@
 
 package org.keycloak.tests.admin.model.workflow;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
-import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
-
 import java.time.Duration;
 import java.util.List;
 
 import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -46,6 +36,19 @@ import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+import static org.keycloak.models.workflow.ResourceOperationType.USER_LOGGED_IN;
+import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailByRecipient;
+import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.findEmailsByRecipient;
+import static org.keycloak.tests.admin.model.workflow.WorkflowManagementTest.verifyEmailContent;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
@@ -140,9 +143,9 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
                                 .after(Duration.ofDays(5))
                                 .withConfig("custom_subject_key", "notifier1_subject")
                                 .withConfig("custom_message", "notifier1_message")
-                                .build()
-                )
-                .withName("myworkflow_2")
+                                .build())
+                .build()).close();
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow_2")
                 .onEvent(USER_ADDED.toString(), USER_LOGGED_IN.toString())
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)

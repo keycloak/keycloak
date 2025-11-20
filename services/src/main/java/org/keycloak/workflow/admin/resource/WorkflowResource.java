@@ -1,6 +1,5 @@
 package org.keycloak.workflow.admin.resource;
 
-import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -10,14 +9,19 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
+
+import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 public class WorkflowResource {
 
@@ -52,12 +56,18 @@ public class WorkflowResource {
 
     @GET
     @Produces({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
-    public WorkflowRepresentation toRepresentation() {
-        return provider.toRepresentation(workflow);
+    public WorkflowRepresentation toRepresentation(
+            @Parameter(description = "Indicates whether the workflow id should be included in the representation or not - defaults to true") @QueryParam("includeId") Boolean includeId
+    ) {
+        WorkflowRepresentation rep = provider.toRepresentation(workflow);
+        if (Boolean.FALSE.equals(includeId)) {
+            rep.setId(null);
+        }
+        return rep;
     }
 
     /**
-     * Bind the workflow to the resource.
+     * Activate the workflow for the resource.
      *
      * @param type the resource type
      * @param resourceId the resource id
@@ -67,8 +77,8 @@ public class WorkflowResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("bind/{type}/{resourceId}")
-    public void bind(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, String notBefore) {
+    @Path("activate/{type}/{resourceId}")
+    public void activate(@PathParam("type") ResourceType type, @PathParam("resourceId") String resourceId, String notBefore) {
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
@@ -79,7 +89,7 @@ public class WorkflowResource {
             workflow.setNotBefore(notBefore);
         }
 
-        provider.bind(workflow, type, resourceId);
+        provider.activate(workflow, type, resourceId);
     }
 
     /**

@@ -17,13 +17,13 @@
 
 package org.keycloak.quarkus.runtime.themes;
 
-import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
+
+import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
 
 public class FlatClasspathThemeResourceProviderFactory extends ClasspathThemeResourceProviderFactory {
 

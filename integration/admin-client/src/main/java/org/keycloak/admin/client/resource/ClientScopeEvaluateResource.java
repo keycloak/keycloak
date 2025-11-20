@@ -17,13 +17,14 @@
 
 package org.keycloak.admin.client.resource;
 
+import java.util.Map;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
+
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>

@@ -57,7 +57,7 @@ public interface WorkflowProvider extends Provider {
 
     void updateWorkflow(Workflow workflow, WorkflowRepresentation rep);
 
-    void bind(Workflow workflow, ResourceType type, String resourceId);
+    void activate(Workflow workflow, ResourceType type, String resourceId);
 
     void deactivate(Workflow workflow, String resourceId);
 
@@ -65,5 +65,5 @@ public interface WorkflowProvider extends Provider {
 
     void runScheduledSteps();
 
-    void bindToAllEligibleResources(Workflow workflow);
+    void activateForAllEligibleResources(Workflow workflow);
 }

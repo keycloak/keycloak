@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.authentication;
 
 import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;

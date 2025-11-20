@@ -17,15 +17,15 @@
 
 package org.keycloak.sdjwt.consumer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A component for consuming (verifying) SD-JWT presentations.

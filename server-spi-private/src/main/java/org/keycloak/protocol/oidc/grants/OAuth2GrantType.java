@@ -17,14 +17,14 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
@@ -36,9 +36,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.protocol.LoginProtocol;
 
 /**
  * Provider interface for OAuth 2.0 grant types

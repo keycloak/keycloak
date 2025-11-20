@@ -16,10 +16,6 @@
  */
 package org.keycloak.testsuite.actions;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -28,6 +24,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.EmailUpdatePage;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public abstract class AbstractAppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionTest {
 

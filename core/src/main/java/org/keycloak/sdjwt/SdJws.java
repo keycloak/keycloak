@@ -31,6 +31,8 @@ import org.keycloak.jose.jws.JWSInputException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
+
 /**
  * Handle jws, either the issuer jwt or the holder key binding jwt.
  *
@@ -38,8 +40,6 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  */
 public abstract class SdJws {
-
-    public static final String CLAIM_NAME_ISSUER = "iss";
 
     private final JWSInput jwsInput;
     private final JsonNode payload;

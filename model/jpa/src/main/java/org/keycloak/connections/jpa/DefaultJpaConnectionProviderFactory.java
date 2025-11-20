@@ -17,13 +17,25 @@
 
 package org.keycloak.connections.jpa;
 
-import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
-import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
-import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
 
-import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
-import org.jboss.logging.Logger;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.SynchronizationType;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.UserTransaction;
+
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.util.StackUtil;
@@ -43,24 +55,14 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-import javax.naming.InitialContext;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.SynchronizationType;
-import javax.sql.DataSource;
-import jakarta.transaction.TransactionManager;
-import jakarta.transaction.UserTransaction;
-import java.io.File;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import liquibase.GlobalConfiguration;
+import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
+import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

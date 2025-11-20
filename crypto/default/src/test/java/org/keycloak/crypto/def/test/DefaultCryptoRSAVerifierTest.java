@@ -1,9 +1,10 @@
 package org.keycloak.crypto.def.test;
 
-import org.junit.Assume;
-import org.junit.Before;
 import org.keycloak.RSAVerifierTest;
 import org.keycloak.common.util.Environment;
+
+import org.junit.Assume;
+import org.junit.Before;
 
 /**
  * Test with bouncycastle security provider

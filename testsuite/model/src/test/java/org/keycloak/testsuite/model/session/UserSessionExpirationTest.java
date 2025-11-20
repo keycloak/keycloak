@@ -22,10 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.awaitility.Awaitility;
-import org.infinispan.Cache;
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Details;
@@ -45,6 +41,11 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.awaitility.Awaitility;
+import org.infinispan.Cache;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
@@ -104,16 +105,14 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
     @Test
     public void testExpirationEvents() {
         UserSessionModel[] userSessions = inComittedTransaction(session -> {
-            return createSessions(session, realmId);
+            return createSessions(session, realmId, false);
         });
         Map<String, String> sessionIdAndUsers = Arrays.stream(userSessions)
                 .collect(Collectors.toUnmodifiableMap(UserSessionModel::getId, s -> s.getUser().getId()));
 
-        inComittedTransaction(session -> {
+        withRealmConsumer(realmId, (session, realm) -> {
             // Time offset is automatically cleaned up in KeycloakModelTest.cleanEnvironment()
             Time.setOffset(IDLE_TIMEOUT + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
-            RealmModel realm = session.realms().getRealm(realmId);
-            session.getContext().setRealm(realm);
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
             var hotRodServer = getParameters(HotRodServerRule.class).findFirst();
@@ -133,9 +132,7 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
             Awaitility.await().until(() -> eventsCount(session) == sessionIdAndUsers.size());
         });
 
-        inComittedTransaction(session -> {
-            RealmModel realm = session.realms().getRealm(realmId);
-            session.getContext().setRealm(realm);
+        withRealmConsumer(realmId, (session, realm) -> {
             // user session id -> user id
             Map<String, String> eventsData = events(session);
             Assert.assertEquals(sessionIdAndUsers, eventsData);

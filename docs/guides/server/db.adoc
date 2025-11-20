@@ -22,7 +22,7 @@ The server has built-in support for different databases. You can query the avail
 |Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
 |MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS)
 |Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note:* Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
-|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 17.x, 16.x, 15.x, 14.x
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 18.x, 17.x, 16.x, 15.x, 14.x
 |EnterpriseDB Advanced | `postgres` | ${properties["edb.version"]} | 17
 |Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
 |Azure SQL Database | `mssql` | latest | latest

@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.broker.oidc;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.models.KeycloakSession;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author Daniel Fesenmeyer <daniel.fesenmeyer@bosch.com>

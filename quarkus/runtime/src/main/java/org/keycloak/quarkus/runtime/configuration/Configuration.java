@@ -17,19 +17,18 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+
+import org.keycloak.config.Option;
+import org.keycloak.utils.StringUtil;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 
-import org.keycloak.config.Option;
-import org.keycloak.utils.StringUtil;
-
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 /**

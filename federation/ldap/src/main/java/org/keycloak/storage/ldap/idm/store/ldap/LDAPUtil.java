@@ -18,13 +18,13 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
 import java.io.ByteArrayOutputStream;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelException;
-import org.keycloak.storage.ldap.LDAPConfig;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
+import org.keycloak.storage.ldap.LDAPConfig;
 
 /**
  * <p>Utility class for working with LDAP.</p>

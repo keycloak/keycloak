@@ -23,8 +23,9 @@ import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
-import org.jboss.logging.Logger;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

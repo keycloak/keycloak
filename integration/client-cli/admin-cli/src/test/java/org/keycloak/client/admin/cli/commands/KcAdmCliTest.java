@@ -1,14 +1,14 @@
 package org.keycloak.client.admin.cli.commands;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 
-import org.junit.Test;
 import org.keycloak.client.cli.common.Globals;
 
+import org.junit.Test;
 import picocli.CommandLine;
+
+import static org.junit.Assert.assertEquals;
 
 public class KcAdmCliTest {
 

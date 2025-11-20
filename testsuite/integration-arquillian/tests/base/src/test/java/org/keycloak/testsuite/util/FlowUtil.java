@@ -1,15 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import org.keycloak.authentication.AuthenticationFlow;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.services.resources.admin.AuthenticationManagementResource;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +11,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.resources.admin.AuthenticationManagementResource;
 
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.BROWSER_FLOW;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.DIRECT_GRANT_FLOW;

@@ -17,12 +17,12 @@
 
 package org.keycloak.partialimport;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class manages the PartialImport handlers.

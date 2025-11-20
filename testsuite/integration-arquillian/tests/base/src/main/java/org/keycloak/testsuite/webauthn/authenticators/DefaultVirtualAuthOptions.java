@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.webauthn.authenticators;
 
-import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
-
 import java.util.function.Supplier;
+
+import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Protocol.U2F;
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.BLE;

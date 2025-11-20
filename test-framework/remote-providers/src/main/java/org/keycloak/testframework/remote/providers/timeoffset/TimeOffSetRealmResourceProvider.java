@@ -1,5 +1,7 @@
 package org.keycloak.testframework.remote.providers.timeoffset;
 
+import java.util.Map;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
@@ -7,11 +9,10 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resource.RealmResourceProvider;
-
-import java.util.Map;
 
 public class TimeOffSetRealmResourceProvider implements RealmResourceProvider {
 

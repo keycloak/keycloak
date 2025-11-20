@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.components;
 
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -26,8 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.util.List;
 
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 

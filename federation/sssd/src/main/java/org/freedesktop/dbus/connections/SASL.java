@@ -1,29 +1,5 @@
 package org.freedesktop.dbus.connections;
 
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.AGREE_UNIX_FD;
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.AUTH;
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.BEGIN;
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.CANCEL;
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.DATA;
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.ERROR;
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.NEGOTIATE_UNIX_FD;
-import static org.freedesktop.dbus.connections.SASL.SaslCommand.REJECTED;
-
-import com.sun.security.auth.module.UnixSystem;
-import org.freedesktop.dbus.config.DBusSysProps;
-import org.freedesktop.dbus.connections.config.SaslConfig;
-import org.freedesktop.dbus.connections.transports.AbstractTransport;
-import org.freedesktop.dbus.connections.transports.AbstractUnixTransport;
-import org.freedesktop.dbus.exceptions.AuthenticationException;
-import org.freedesktop.dbus.exceptions.SocketClosedException;
-import org.freedesktop.dbus.messages.Message;
-import org.freedesktop.dbus.utils.Hexdump;
-import org.freedesktop.dbus.utils.LoggingHelper;
-import org.freedesktop.dbus.utils.TimeMeasure;
-import org.freedesktop.dbus.utils.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,6 +24,30 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+
+import com.sun.security.auth.module.UnixSystem;
+import org.freedesktop.dbus.config.DBusSysProps;
+import org.freedesktop.dbus.connections.config.SaslConfig;
+import org.freedesktop.dbus.connections.transports.AbstractTransport;
+import org.freedesktop.dbus.connections.transports.AbstractUnixTransport;
+import org.freedesktop.dbus.exceptions.AuthenticationException;
+import org.freedesktop.dbus.exceptions.SocketClosedException;
+import org.freedesktop.dbus.messages.Message;
+import org.freedesktop.dbus.utils.Hexdump;
+import org.freedesktop.dbus.utils.LoggingHelper;
+import org.freedesktop.dbus.utils.TimeMeasure;
+import org.freedesktop.dbus.utils.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.AGREE_UNIX_FD;
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.AUTH;
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.BEGIN;
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.CANCEL;
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.DATA;
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.ERROR;
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.NEGOTIATE_UNIX_FD;
+import static org.freedesktop.dbus.connections.SASL.SaslCommand.REJECTED;
 
 public class SASL {
     public static final int       AUTH_NONE                   = 0;

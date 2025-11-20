@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.webauthn.updaters;
 
+import java.util.List;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

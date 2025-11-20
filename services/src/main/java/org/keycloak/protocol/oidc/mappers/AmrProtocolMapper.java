@@ -18,7 +18,11 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -33,10 +37,7 @@ import org.keycloak.protocol.oidc.utils.AmrUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
+import org.jboss.logging.Logger;
 
 /**
  * @author Ben Cresitello-Dittmar

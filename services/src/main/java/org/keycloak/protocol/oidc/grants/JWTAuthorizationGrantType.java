@@ -17,11 +17,12 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
-import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -42,8 +43,6 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-
-import jakarta.ws.rs.core.Response;
 
 public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
@@ -77,8 +76,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
             }
 
-            UserAuthenticationIdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
-            if (!(identityProvider instanceof JWTAuthorizationGrantProvider jwtAuthorizationGrantProvider)) {
+            JWTAuthorizationGrantProvider jwtAuthorizationGrantProvider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel, JWTAuthorizationGrantProvider.class);
+            if (jwtAuthorizationGrantProvider == null) {
                 throw new RuntimeException("Identity Provider is not configured for JWT Authorization Grant");
             }
 

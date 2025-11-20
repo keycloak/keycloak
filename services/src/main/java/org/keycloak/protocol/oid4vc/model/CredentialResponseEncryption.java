@@ -17,8 +17,9 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import org.keycloak.jose.jwk.JWK;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Represents the credential_response_encryption object in a Credential Request.

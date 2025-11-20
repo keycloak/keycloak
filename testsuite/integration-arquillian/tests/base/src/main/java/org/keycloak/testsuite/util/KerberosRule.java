@@ -21,10 +21,11 @@ import java.io.File;
 import java.net.URL;
 import java.util.Properties;
 
-import org.jboss.logging.Logger;
-import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
+import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

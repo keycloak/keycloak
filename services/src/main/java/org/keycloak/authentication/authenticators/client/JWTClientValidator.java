@@ -1,5 +1,9 @@
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -9,10 +13,6 @@ import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.services.Urls;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class JWTClientValidator extends AbstractJWTClientValidator {
 

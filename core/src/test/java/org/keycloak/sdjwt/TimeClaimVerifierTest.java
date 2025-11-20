@@ -17,15 +17,17 @@
 
 package org.keycloak.sdjwt;
 
+import org.keycloak.common.VerificationException;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
-import org.keycloak.common.VerificationException;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_EXP;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_IAT;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -33,15 +35,15 @@ import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
 public class TimeClaimVerifierTest {
 
     private static final long CURRENT_TIMESTAMP = 1609459200L; // Fixed timestamp: 2021-01-01 00:00:00 UTC
-    private static final int DEFAULT_LEEWAY_SECONDS = 20;
+    private static final int DEFAULT_CLOCK_SKEW_SECONDS = 20;
 
-    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, false);
-    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_LEEWAY_SECONDS, true);
+    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, false);
+    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, true);
 
     static class FixedTimeClaimVerifier extends TimeClaimVerifier {
 
-        public FixedTimeClaimVerifier(int leewaySeconds, boolean requireClaims) {
-            super(createOptsWithLeeway(leewaySeconds, requireClaims));
+        public FixedTimeClaimVerifier(int allowedClockSkewSeconds, boolean requireClaims) {
+            super(createOptsWithAllowedClockSkew(allowedClockSkewSeconds, requireClaims));
         }
 
         @Override
@@ -72,7 +74,7 @@ public class TimeClaimVerifierTest {
     @Test
     public void testVerifyIatClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second leeway
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second clock skew
 
         timeClaimVerifier.verifyIssuedAtClaim(payload);
     }
@@ -99,9 +101,9 @@ public class TimeClaimVerifierTest {
     @Test
     public void testVerifyExpClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second leeway
+        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second clock skew
 
-        // No exception expected for JWT expiring within leeway
+        // No exception expected for JWT expiring within clock skew
         timeClaimVerifier.verifyExpirationClaim(payload);
     }
 
@@ -124,13 +126,13 @@ public class TimeClaimVerifierTest {
         timeClaimVerifier.verifyNotBeforeClaim(payload);
     }
 
-    // Test for verifyNotBeforeClaim (edge case: valid exactly at current time with leeway)
+    // Test for verifyNotBeforeClaim (edge case: valid exactly at current time with clock skew)
     @Test
     public void testVerifyNotBeforeClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second leeway
+        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second clock skew
 
-        // No exception expected for JWT becoming valid within leeway
+        // No exception expected for JWT becoming valid within clock skew
         timeClaimVerifier.verifyNotBeforeClaim(payload);
     }
 
@@ -162,17 +164,17 @@ public class TimeClaimVerifierTest {
         int maxAgeAllowed = 300; // 5 minutes
 
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 320); // 320 seconds old, within the 20 second leeway
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 320); // 320 seconds old, within the 20 second clock skew
 
         timeClaimVerifier.verifyAge(payload, maxAgeAllowed);
     }
 
     @Test
-    public void instantiationShouldFailIfLeewayNegative() {
+    public void instantiationShouldFailIfClockSkewNegative() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new TimeClaimVerifier(createOptsWithLeeway(-1, false)));
+                () -> new TimeClaimVerifier(createOptsWithAllowedClockSkew(-1, false)));
 
-        assertEquals("Leeway seconds cannot be negative", exception.getMessage());
+        assertEquals("Allowed clock skew seconds cannot be negative", exception.getMessage());
     }
 
     @Test
@@ -204,9 +206,9 @@ public class TimeClaimVerifierTest {
         assertEquals("Missing 'nbf' claim or null", exceptionNbf.getMessage());
     }
 
-    private static TimeClaimVerificationOpts createOptsWithLeeway(int leewaySeconds, boolean requireClaims) {
+    private static TimeClaimVerificationOpts createOptsWithAllowedClockSkew(int allowedClockSkewSeconds, boolean requireClaims) {
         return TimeClaimVerificationOpts.builder()
-                .withLeewaySeconds(leewaySeconds)
+                .withAllowedClockSkew(allowedClockSkewSeconds)
                 .withRequireIssuedAtClaim(requireClaims)
                 .withRequireExpirationClaim(requireClaims)
                 .withRequireNotBeforeClaim(requireClaims)

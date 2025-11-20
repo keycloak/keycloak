@@ -6,9 +6,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
-import org.keycloak.models.workflow.WorkflowEvent;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
-import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.utils.StringUtil;
 
 public class GroupMembershipWorkflowConditionProvider implements WorkflowConditionProvider {
@@ -22,16 +21,11 @@ public class GroupMembershipWorkflowConditionProvider implements WorkflowConditi
     }
 
     @Override
-    public boolean evaluate(WorkflowEvent event) {
-        if (!ResourceType.USERS.equals(event.getResourceType())) {
-            return false;
-        }
-
+    public boolean evaluate(WorkflowExecutionContext context) {
         validate();
 
-        String userId = event.getResourceId();
         RealmModel realm = session.getContext().getRealm();
-        UserModel user = session.users().getUserById(realm, userId);
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
         if (user == null) {
             return false;
         }

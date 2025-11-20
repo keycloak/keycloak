@@ -19,7 +19,6 @@ package org.keycloak.testsuite.cluster;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.commons.lang.RandomStringUtils;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -27,6 +26,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+
+import org.apache.commons.lang.RandomStringUtils;
 
 import static org.junit.Assert.assertEquals;
 

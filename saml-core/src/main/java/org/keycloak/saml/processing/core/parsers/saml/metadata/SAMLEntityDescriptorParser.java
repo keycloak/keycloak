@@ -16,6 +16,9 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.metadata.AttributeAuthorityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.AuthnAuthorityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
@@ -24,9 +27,6 @@ import org.keycloak.dom.saml.v2.metadata.PDPDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 
 import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ENTITY_DESCRIPTOR;
 

@@ -2,9 +2,10 @@ package org.keycloak.models.workflow;
 
 import java.util.UUID;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
+
+import org.jboss.logging.Logger;
 
 final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext {
 
@@ -71,16 +72,17 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
         return resourceId;
     }
 
+    @Override
+    public WorkflowEvent getEvent() {
+        return event;
+    }
+
     String getExecutionId() {
         return this.executionId;
     }
 
     Workflow getWorkflow() {
         return workflow;
-    }
-
-    WorkflowEvent getEvent() {
-        return event;
     }
 
     WorkflowStep getCurrentStep() {
@@ -107,4 +109,3 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
         return session;
     }
 }
-

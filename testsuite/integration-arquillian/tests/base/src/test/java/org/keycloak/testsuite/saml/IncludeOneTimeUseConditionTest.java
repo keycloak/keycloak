@@ -16,8 +16,11 @@
  */
 package org.keycloak.testsuite.saml;
 
-import com.google.common.collect.Collections2;
-import org.junit.Test;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.ConditionAbstractType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
@@ -27,18 +30,16 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.io.Closeable;
-import java.io.IOException;
 
-import java.util.Collection;
-import java.util.List;
+import com.google.common.collect.Collections2;
+import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * KEYCLOAK-4360

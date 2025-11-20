@@ -18,6 +18,7 @@ package org.keycloak.models;
 
 import java.util.Map;
 import java.util.stream.Stream;
+
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.clientscope.ClientScopeLookupProvider;
 

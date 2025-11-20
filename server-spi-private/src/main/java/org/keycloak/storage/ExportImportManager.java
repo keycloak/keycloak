@@ -17,6 +17,8 @@
 
 package org.keycloak.storage;
 
+import java.io.InputStream;
+
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.RealmModel;
@@ -24,8 +26,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.io.InputStream;
 
 /**
  * Manage importing and updating of realms for the store.

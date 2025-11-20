@@ -42,10 +42,10 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 
-
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.OCSPProvider;
+
+import org.jboss.logging.Logger;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
 import org.wildfly.security.x500.X500;

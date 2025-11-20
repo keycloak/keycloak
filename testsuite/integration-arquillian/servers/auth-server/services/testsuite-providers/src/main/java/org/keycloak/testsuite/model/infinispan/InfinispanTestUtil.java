@@ -18,10 +18,11 @@
 
 package org.keycloak.testsuite.model.infinispan;
 
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
 

@@ -17,19 +17,19 @@
 
 package org.keycloak.tests.admin;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -77,19 +77,22 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -153,11 +156,11 @@ public class ImpersonationTest {
         UserResource user = masterRealm.admin().users().get(userId);
         user.resetPassword(CredentialBuilder.create().password("password").build());
 
-        ClientResource testRealmClient = ApiUtil.findClientByClientId(masterRealm.admin(), managedRealm.getName() + "-realm");
+        ClientResource testRealmClient = AdminApiUtil.findClientByClientId(masterRealm.admin(), managedRealm.getName() + "-realm");
 
         List<RoleRepresentation> roles = new LinkedList<>();
-        roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.VIEW_USERS).toRepresentation());
-        roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.IMPERSONATION).toRepresentation());
+        roles.add(AdminApiUtil.findClientRoleByName(testRealmClient, AdminRoles.VIEW_USERS).toRepresentation());
+        roles.add(AdminApiUtil.findClientRoleByName(testRealmClient, AdminRoles.IMPERSONATION).toRepresentation());
 
         user.roles().clientLevel(testRealmClient.toRepresentation().getId()).add(roles);
 
@@ -241,11 +244,11 @@ public class ImpersonationTest {
         clientApp.setServiceAccountsEnabled(true);
         managedRealm.admin().clients().create(clientApp);
 
-        UserRepresentation user = ApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").getServiceAccountUser();
+        UserRepresentation user = AdminApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").getServiceAccountUser();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
-        ApiUtil.assignClientRoles(managedRealm.admin(), user.getId(), Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION);
+        AdminApiUtil.assignClientRoles(managedRealm.admin(), user.getId(), Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION);
 
         // Impersonation
         testSuccessfulServiceAccountImpersonation(user, managedRealm.getName());
@@ -254,7 +257,7 @@ public class ImpersonationTest {
         testBadRequestImpersonation("impersonator", managedRealm.getName(), user.getId(), managedRealm.getName(), "Service accounts cannot be impersonated");
 
         // Remove test client
-        ApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").remove();
+        AdminApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").remove();
     }
     @Test
     public void testImpersonationByMasterRealmServiceAccount() throws Exception {
@@ -266,17 +269,17 @@ public class ImpersonationTest {
                 .build();
         masterRealm.admin().clients().create(clientApp);
 
-        UserRepresentation user = ApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").getServiceAccountUser();
+        UserRepresentation user = AdminApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").getServiceAccountUser();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
-        ApiUtil.assignRealmRoles(masterRealm.admin(), user.getId(), "admin");
+        AdminApiUtil.assignRealmRoles(masterRealm.admin(), user.getId(), "admin");
 
         // Impersonation
         testSuccessfulServiceAccountImpersonation(user, masterRealm.getName());
 
         // Remove test client
-        ApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").remove();
+        AdminApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").remove();
     }
 
     // Return the SSO cookie from the impersonated session

@@ -1,8 +1,9 @@
 package org.keycloak.testframework.database;
 
+import org.keycloak.testframework.util.ContainerImages;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
-import org.keycloak.testframework.util.ContainerImages;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.tidb.TiDBContainer;
 import org.testcontainers.utility.DockerImageName;

@@ -16,12 +16,13 @@
  */
 package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.RoleScopeResource;
-import org.keycloak.representations.idm.RoleRepresentation;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.representations.idm.RoleRepresentation;
 
 /**
  * Updater for role scope attributes. See {@link ServerResourceUpdater} for further details.

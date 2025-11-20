@@ -17,10 +17,10 @@
 
 package org.keycloak.quarkus.runtime.policy;
 
+import java.io.File;
+
 import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
-
-import java.io.File;
 
 /**
  * <p>Quarkus implementation of the BlacklistPasswordPolicyProviderFactory. The

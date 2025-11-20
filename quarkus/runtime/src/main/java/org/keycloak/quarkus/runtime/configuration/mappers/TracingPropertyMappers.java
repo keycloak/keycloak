@@ -17,15 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import org.keycloak.common.Profile;
-import org.keycloak.config.TracingOptions;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.utils.StringUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -33,6 +24,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.keycloak.common.Profile;
+import org.keycloak.config.TracingOptions;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.utils.StringUtil;
+
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.keycloak.config.TracingOptions.TRACING_COMPRESSION;
 import static org.keycloak.config.TracingOptions.TRACING_ENABLED;
@@ -46,8 +47,8 @@ import static org.keycloak.config.TracingOptions.TRACING_RESOURCE_ATTRIBUTES;
 import static org.keycloak.config.TracingOptions.TRACING_SAMPLER_RATIO;
 import static org.keycloak.config.TracingOptions.TRACING_SAMPLER_TYPE;
 import static org.keycloak.config.TracingOptions.TRACING_SERVICE_NAME;
-import static org.keycloak.config.WildcardOptionsUtil.getWildcardValue;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
+import static org.keycloak.config.WildcardOptionsUtil.getWildcardValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 

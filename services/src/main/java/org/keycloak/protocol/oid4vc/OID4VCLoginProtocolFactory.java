@@ -20,7 +20,6 @@ package org.keycloak.protocol.oid4vc;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.events.EventBuilder;
@@ -41,6 +40,8 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.constants.Oid4VciConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;

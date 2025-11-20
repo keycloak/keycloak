@@ -17,10 +17,11 @@
 
 package org.keycloak.social.facebook;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
@@ -35,7 +36,7 @@ import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponseException;
 
-import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

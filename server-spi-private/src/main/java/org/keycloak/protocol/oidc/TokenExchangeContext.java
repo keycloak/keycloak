@@ -17,6 +17,13 @@
  */
 package org.keycloak.protocol.oidc;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
@@ -24,13 +31,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.cors.Cors;
-
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MultivaluedMap;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Token exchange context

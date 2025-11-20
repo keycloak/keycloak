@@ -16,26 +16,25 @@
  */
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Assert;
-import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.constants.Oid4VciConstants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -50,10 +49,10 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -66,14 +65,18 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -754,7 +757,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     {
                         Claim claim = jwtVcClaims.get(0);
                         assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
-                                Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                CREDENTIAL_SUBJECT,
                                 claim.getPath().get(0));
                         assertEquals("The jwt_vc-credential claim credentialSubject.given_name is present.",
                                 "given_name",
@@ -772,7 +775,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     {
                         Claim claim = jwtVcClaims.get(1);
                         assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
-                                Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                CREDENTIAL_SUBJECT,
                                 claim.getPath().get(0));
                         assertEquals("The jwt_vc-credential claim credentialSubject.family_name is present.",
                                 "family_name",
@@ -790,7 +793,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     {
                         Claim claim = jwtVcClaims.get(2);
                         assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
-                                Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                CREDENTIAL_SUBJECT,
                                 claim.getPath().get(0));
                         assertEquals("The jwt_vc-credential claim credentialSubject.birthdate is present.",
                                 "birthdate",
@@ -808,7 +811,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     {
                         Claim claim = jwtVcClaims.get(3);
                         assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
-                                Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                CREDENTIAL_SUBJECT,
                                 claim.getPath().get(0));
                         assertEquals("The jwt_vc-credential claim credentialSubject.email is present.",
                                 "email",
@@ -826,7 +829,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     {
                         Claim claim = jwtVcClaims.get(4);
                         assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
-                                Oid4VciConstants.CREDENTIAL_SUBJECT,
+                                CREDENTIAL_SUBJECT,
                                 claim.getPath().get(0));
                         assertEquals("The jwt_vc-credential claim credentialSubject.scope-name is present.",
                                 "scope-name",

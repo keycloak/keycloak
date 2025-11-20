@@ -16,25 +16,27 @@
  */
 package org.keycloak.testsuite.webauthn.registration;
 
-import com.webauthn4j.data.AuthenticatorAttachment;
-import com.webauthn4j.data.UserVerificationRequirement;
-import org.junit.Test;
-import org.junit.Ignore;
+import java.io.Closeable;
+import java.io.IOException;
+
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+
+import com.webauthn4j.data.AuthenticatorAttachment;
+import com.webauthn4j.data.UserVerificationRequirement;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import java.io.Closeable;
-import java.io.IOException;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

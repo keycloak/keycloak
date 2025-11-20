@@ -31,17 +31,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.reactivex.rxjava3.core.Flowable;
-import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.infinispan.commons.api.AsyncCache;
-import org.infinispan.commons.api.BasicCache;
-import org.infinispan.commons.util.ByRef;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.factories.ComponentRegistry;
-import org.infinispan.persistence.manager.PersistenceManager;
-import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -60,6 +49,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.JpaChangesPerformer;
@@ -88,6 +78,18 @@ import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+
+import io.reactivex.rxjava3.core.Flowable;
+import org.infinispan.Cache;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.api.AsyncCache;
+import org.infinispan.commons.api.BasicCache;
+import org.infinispan.commons.util.ByRef;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.factories.ComponentRegistry;
+import org.infinispan.persistence.manager.PersistenceManager;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
@@ -687,6 +689,11 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             return existingSession;
         }
 
+        // importing here when the transaction has the changelog available.
+        if (!offline) {
+            migrateRememberMe(persistentUserSession);
+        }
+
         // Import client sessions
         clientSessionTx.importSessionsConcurrently(realm, clientSessionsById, offline);
         clientSessionTx.setUserSessionId(clientSessionsById.keySet(), sessionId, offline);
@@ -792,6 +799,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         }
 
         sessionTx.addTask(userSessionEntity.getId(), null, userSessionEntity, UserSessionModel.SessionPersistenceState.PERSISTENT);
+        if (!offline) {
+            migrateRememberMe(persistentUserSession);
+        }
 
         for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
             String clientUUID = entry.getKey();
@@ -819,6 +829,29 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
         return sessionTx.get(userSessionEntity.getId(), offline);
 
+    }
+
+    private void migrateRememberMe(UserSessionModel persistentUserSession) {
+        if (persistentUserSession instanceof PersistentUserSessionAdapter pusa && pusa.requiresRememberMeMigration()) {
+            final boolean rememberMe = pusa.isRememberMe();
+            sessionTx.addTask(persistentUserSession.getId(), new PersistentSessionUpdateTask<>() {
+                @Override
+                public boolean isOffline() {
+                    return false;
+                }
+
+                @Override
+                public void runUpdate(UserSessionEntity entity) {
+                    // update database column
+                    entity.setRememberMe(rememberMe);
+                }
+
+                @Override
+                public CacheOperation getOperation() {
+                    return CacheOperation.REPLACE;
+                }
+            });
+        }
     }
 
     private boolean isClientSessionExpired(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {

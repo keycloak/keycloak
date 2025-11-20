@@ -4,11 +4,12 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+
 import org.keycloak.provider.Provider;
 
 public interface WorkflowConditionProvider extends Provider {
 
-    boolean evaluate(WorkflowEvent event);
+    boolean evaluate(WorkflowExecutionContext context);
 
     default Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> resourceRoot) {
         return null;

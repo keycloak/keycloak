@@ -17,14 +17,15 @@
 
 package org.keycloak.testsuite.events;
 
-import org.junit.Before;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.client.resources.TestingResource;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.junit.Before;
 
 /**
  *

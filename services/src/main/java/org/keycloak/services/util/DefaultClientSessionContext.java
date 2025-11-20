@@ -26,7 +26,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -46,6 +45,8 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.util.TokenUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * Not thread safe. It's per-request object

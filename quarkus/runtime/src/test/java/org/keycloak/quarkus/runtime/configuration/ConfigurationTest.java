@@ -17,11 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.nio.file.FileSystems;
 import java.util.Arrays;
@@ -32,27 +27,34 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import io.smallrye.config.SmallRyeConfig;
-import org.hibernate.dialect.H2Dialect;
-import org.hibernate.dialect.PostgreSQLDialect;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.Expressions;
-import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.config.SmallRyeConfigBuilder;
-import org.h2.Driver;
-import org.hibernate.dialect.MariaDBDialect;
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
-import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
+
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.Expressions;
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import org.h2.Driver;
+import org.hibernate.dialect.H2Dialect;
+import org.hibernate.dialect.MariaDBDialect;
+import org.hibernate.dialect.PostgreSQLDialect;
+import org.junit.Assert;
+import org.junit.Test;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ConfigurationTest extends AbstractConfigurationTest {
 
@@ -424,6 +426,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         System.setProperty("kc.prop3", "val3");
         config = createConfig();
         Assert.assertEquals("foo-val3", config.getConfigValue("quarkus.datasource.bar").getValue());
+    }
+
+    @Test
+    public void testDevThemeProperties() {
+        assertNull(initConfig("theme").getBoolean("cacheThemes"));
+
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
+        assertFalse(initConfig("theme").getBoolean("cacheThemes"));
     }
 
     @Test

@@ -1,17 +1,19 @@
 package org.keycloak.services.resources.account;
 
 import java.io.IOException;
+
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resource.AccountResourceProviderFactory;
 import org.keycloak.theme.Theme;
-import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.NotFoundException;
-import org.keycloak.models.Constants;
 
 /**
  * Provides the {@code default} {@link AccountConsole} implementation backed by the

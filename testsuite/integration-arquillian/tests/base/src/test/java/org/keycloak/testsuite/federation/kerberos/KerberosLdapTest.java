@@ -21,9 +21,6 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -40,15 +37,19 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.keycloak.common.constants.KerberosConstants.KERBEROS_PRINCIPAL;
 

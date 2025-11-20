@@ -17,9 +17,11 @@
 
 package org.keycloak.models.workflow;
 
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.email.EmailException;
@@ -28,10 +30,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 
 public class NotifyUserStepProvider implements WorkflowStepProvider {
 

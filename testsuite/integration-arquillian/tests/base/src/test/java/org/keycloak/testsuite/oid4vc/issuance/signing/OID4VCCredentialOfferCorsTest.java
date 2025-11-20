@@ -17,7 +17,24 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.core.HttpHeaders;
+
+import org.keycloak.common.Profile;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.cors.Cors;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.TokenUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.JsonSerialization;
+
 import org.apache.http.Header;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -25,28 +42,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.cors.Cors;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.forms.PassThroughClientAuthenticator.clientId;
-
-import org.keycloak.common.Profile;
 
 /**
  * Test class for CORS functionality on OID4VCI credential offer endpoints.

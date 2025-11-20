@@ -16,14 +16,14 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
+import java.util.List;
+
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.services.managers.AuthenticationManager;
-
-import java.util.List;
 
 /**
  * Holds the verifiable credential to sign and additional context information.

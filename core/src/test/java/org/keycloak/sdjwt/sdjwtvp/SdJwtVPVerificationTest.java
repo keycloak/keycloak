@@ -17,34 +17,36 @@
 
 package org.keycloak.sdjwt.sdjwtvp;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
-import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.TestSettings;
 import org.keycloak.sdjwt.TestUtils;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_EXP;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_IAT;
-import static org.keycloak.sdjwt.TimeClaimVerifier.CLAIM_NAME_NBF;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -236,7 +238,7 @@ public abstract class SdJwtVPVerificationTest {
         ObjectNode kbPayload = exampleKbPayload();
 
         // This hash is not a string
-        kbPayload.set("sd_hash", mapper.valueToTree(1234));
+        kbPayload.set(OID4VCConstants.SD_HASH, mapper.valueToTree(1234));
 
         testShouldFailGeneric2(
                 kbPayload,
@@ -251,7 +253,7 @@ public abstract class SdJwtVPVerificationTest {
         ObjectNode kbPayload = exampleKbPayload();
 
         // This hash makes no sense
-        kbPayload.put("sd_hash", "c3FmZHFmZGZlZXNkZmZi");
+        kbPayload.put(OID4VCConstants.SD_HASH, "c3FmZHFmZGZlZXNkZmZi");
 
         testShouldFailGeneric2(
                 kbPayload,
@@ -277,11 +279,11 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
-    public void testShouldTolerateKbIssuedInTheFutureWithinLeeway() throws VerificationException {
+    public void testShouldTolerateKbIssuedInTheFutureWithinClockSkew() throws VerificationException {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        // Issued just 5 seconds in the future. Should pass with a leeway of 10 seconds.
+        // Issued just 5 seconds in the future. Should pass with a clock skew of 10 seconds.
         kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(now + 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
@@ -289,7 +291,7 @@ public abstract class SdJwtVPVerificationTest {
                 defaultIssuerVerifyingKeys(),
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
-                        .withLeewaySeconds(10)
+                        .withAllowedClockSkew(10)
                         .build()
         );
     }
@@ -328,11 +330,11 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
-    public void testShouldTolerateExpiredKbWithinLeeway() throws VerificationException {
+    public void testShouldTolerateExpiredKbWithinClockSkew() throws VerificationException {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        // Expires just 5 seconds ago. Should pass with a leeway of 10 seconds.
+        // Expires just 5 seconds ago. Should pass with a clock skew of 10 seconds.
         kbPayload.set(CLAIM_NAME_EXP, mapper.valueToTree(now - 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
@@ -341,7 +343,7 @@ public abstract class SdJwtVPVerificationTest {
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
                         .withRequireExpirationClaim(true)
-                        .withLeewaySeconds(10)
+                        .withAllowedClockSkew(10)
                         .build()
         );
     }
@@ -476,8 +478,8 @@ public abstract class SdJwtVPVerificationTest {
         ObjectNode payload = mapper.createObjectNode();
         payload.put("nonce", "1234567890");
         payload.put("aud", "https://verifier.example.org");
-        payload.put("sd_hash", "X9RrrfWt_70gHzOcovGSIt4Fms9Tf2g2hjlWVI_cxZg");
-        payload.set("iat", mapper.valueToTree(1702315679));
+        payload.put(OID4VCConstants.SD_HASH, "X9RrrfWt_70gHzOcovGSIt4Fms9Tf2g2hjlWVI_cxZg");
+        payload.set(CLAIM_NAME_IAT, mapper.valueToTree(1702315679));
 
         return payload;
     }
@@ -490,7 +492,7 @@ public abstract class SdJwtVPVerificationTest {
         );
 
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");
-        String sdJwtWithoutKb = sdJwtVPString.substring(0, sdJwtVPString.lastIndexOf(SdJwt.DELIMITER) + 1);
+        String sdJwtWithoutKb = sdJwtVPString.substring(0, sdJwtVPString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER) + 1);
 
         return SdJwtVP.of(sdJwtWithoutKb + keyBindingJWT.toJws());
     }

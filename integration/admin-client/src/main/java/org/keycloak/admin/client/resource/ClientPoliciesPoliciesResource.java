@@ -32,4 +32,3 @@ public interface ClientPoliciesPoliciesResource {
     @Consumes(MediaType.APPLICATION_JSON)
     void updatePolicies(final ClientPoliciesRepresentation clientPolicies);
 }
-

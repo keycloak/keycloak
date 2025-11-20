@@ -17,12 +17,11 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
-import liquibase.exception.CustomChangeException;
-import liquibase.structure.core.Table;
-
 import liquibase.database.core.MSSQLDatabase;
+import liquibase.exception.CustomChangeException;
 import liquibase.statement.SqlStatement;
 import liquibase.statement.core.RawSqlStatement;
+import liquibase.structure.core.Table;
 
 public class JpaUpdateAuthz_3_4_0_CR1 extends CustomKeycloakTask {
 

@@ -1,9 +1,5 @@
 package org.keycloak.tests.client.authentication.external;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.spiffe.SpiffeConstants;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
@@ -25,6 +21,11 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 @KeycloakIntegrationTest(config = SpiffeClientAuthTest.SpiffeServerConfig.class)
 @TestMethodOrder(MethodOrderer.MethodName.class)

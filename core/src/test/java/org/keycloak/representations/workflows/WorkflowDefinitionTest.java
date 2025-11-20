@@ -1,8 +1,5 @@
 package org.keycloak.representations.workflows;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -10,8 +7,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class WorkflowDefinitionTest {
 
@@ -31,18 +32,15 @@ public class WorkflowDefinitionTest {
         expected.setSteps(Arrays.asList(
                 WorkflowStepRepresentation.create()
                         .of("step-1")
-                        .id("1")
                         .withConfig("key1", "v1")
                         .after(Duration.ofSeconds(10))
                         .build(),
                 WorkflowStepRepresentation.create()
                         .of("step-2")
-                        .id("2")
                         .withConfig("key1", "v1", "v2")
                         .build(),
                 WorkflowStepRepresentation.create()
                         .of("step-1")
-                        .id("3")
                         .withConfig("key1", "v1")
                         .build()));
 

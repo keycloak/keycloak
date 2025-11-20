@@ -17,11 +17,11 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
-
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

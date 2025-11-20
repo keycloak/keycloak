@@ -1,5 +1,16 @@
 package org.keycloak.representations.workflows;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IF_RUNNING;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONCURRENCY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
@@ -9,22 +20,8 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NA
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.keycloak.common.util.MultivaluedHashMap;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 @JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
 @JsonIgnoreProperties(CONFIG_WITH)
@@ -146,16 +143,10 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     public static class Builder {
 
-        private final Map<WorkflowRepresentation, List<WorkflowStepRepresentation>> steps = new HashMap<>();
-        private List<Builder> builders = new ArrayList<>();
         private WorkflowRepresentation representation;
 
         private Builder() {
-        }
-
-        private Builder(WorkflowRepresentation representation, List<Builder> builders) {
-            this.representation = representation;
-            this.builders = builders;
+            this.representation = new WorkflowRepresentation();
         }
 
         public Builder onEvent(String operation) {
@@ -187,7 +178,7 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder withSteps(WorkflowStepRepresentation... steps) {
-            this.steps.computeIfAbsent(representation, (k) -> new ArrayList<>()).addAll(Arrays.asList(steps));
+            representation.setSteps(Arrays.asList(steps));
             return this;
         }
 
@@ -202,30 +193,12 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder withName(String name) {
-            WorkflowRepresentation representation = new WorkflowRepresentation();
             representation.setName(name);
-            Builder builder = new Builder(representation, builders);
-            builders.add(builder);
-            return builder;
+            return this;
         }
 
-        public WorkflowSetRepresentation build() {
-            List<WorkflowRepresentation> workflows = new ArrayList<>();
-
-            for (Builder builder : builders) {
-                if (builder.steps.isEmpty()) {
-                    continue;
-                }
-                for (Entry<WorkflowRepresentation, List<WorkflowStepRepresentation>> entry : builder.steps.entrySet()) {
-                    WorkflowRepresentation workflow = entry.getKey();
-
-                    workflow.setSteps(entry.getValue());
-
-                    workflows.add(workflow);
-                }
-            }
-
-            return new WorkflowSetRepresentation(workflows);
+        public WorkflowRepresentation build() {
+            return representation;
         }
     }
 }

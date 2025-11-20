@@ -16,14 +16,15 @@
  */
 package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.ProtocolMappersResource;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 /**
  * Updater for mappers. See {@link ServerResourceUpdater} for further details.

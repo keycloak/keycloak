@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.domainextension.rest;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.AuthenticationManager;
-
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.Path;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
 
 public class ExampleRestResource {
 

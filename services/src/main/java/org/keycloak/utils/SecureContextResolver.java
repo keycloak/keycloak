@@ -1,15 +1,15 @@
 package org.keycloak.utils;
 
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.function.Supplier;
+
 import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.account.DeviceRepresentation;
 
 import io.netty.util.NetUtil;
-
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.function.Supplier;
 
 public class SecureContextResolver {
 

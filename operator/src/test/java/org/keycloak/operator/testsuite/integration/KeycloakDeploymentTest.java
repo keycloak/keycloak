@@ -747,7 +747,16 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         assertThat(limits).isNotNull();
         assertThat(limits.get("memory")).isEqualTo(config.keycloak().resources().limits().memory());
     }
-
+    @Test
+    public void testNoAutoMountServiceAccount() {
+        var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setAutomountServiceAccountToken(Boolean.FALSE);
+        deployKeycloak(k8sclient, kc, true);
+        var pods = k8sclient.pods().inNamespace(namespace).withLabels(Constants.DEFAULT_LABELS).list().getItems();
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+        assertThat(pods.get(0).getSpec().getAutomountServiceAccountToken()).isEqualTo(Boolean.FALSE);
+    }
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,
                                                    String secretDescriptorFilename) {
 

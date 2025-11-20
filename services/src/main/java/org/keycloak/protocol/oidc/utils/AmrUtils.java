@@ -17,14 +17,15 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.Constants;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author Ben Cresitello-Dittmar

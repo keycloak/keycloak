@@ -32,13 +32,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.hamcrest.Matchers;
-import org.infinispan.AdvancedCache;
-import org.infinispan.Cache;
-import org.infinispan.context.Flag;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
@@ -63,6 +56,14 @@ import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
+
+import org.hamcrest.Matchers;
+import org.infinispan.AdvancedCache;
+import org.infinispan.Cache;
+import org.infinispan.context.Flag;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeFalse;
@@ -325,14 +326,14 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 if (!MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan()) {
                     // This does not work with persistent user sessions because we currently have two transactions and the one that creates the offline user sessions is not committing the changes
                     // try to load user session from persister
-                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "").count());
                 }
             });
 
             if (MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan()) {
                 inComittedTransaction(session -> {
                     persister = session.getProvider(UserSessionPersisterProvider.class);
-                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
+                    Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "").count());
                 });
             }
 

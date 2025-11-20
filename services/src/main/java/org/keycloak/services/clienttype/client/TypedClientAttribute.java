@@ -1,9 +1,5 @@
 package org.keycloak.services.clienttype.client;
 
-import org.jboss.logging.Logger;
-import org.keycloak.client.clienttype.ClientType;
-import org.keycloak.client.clienttype.ClientTypeException;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +7,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+
+import org.jboss.logging.Logger;
 
 enum TypedClientSimpleAttribute implements TypedClientAttribute {
     // Top Level client attributes

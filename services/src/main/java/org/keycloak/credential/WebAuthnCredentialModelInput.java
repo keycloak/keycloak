@@ -16,19 +16,19 @@
 
 package org.keycloak.credential;
 
-import com.webauthn4j.server.ServerProperty;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.keycloak.common.util.CollectionUtil;
 
 import com.webauthn4j.data.AuthenticationRequest;
 import com.webauthn4j.data.AuthenticatorTransport;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
-import org.keycloak.common.util.CollectionUtil;
-
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.webauthn4j.server.ServerProperty;
 
 public class WebAuthnCredentialModelInput implements CredentialInput {
 

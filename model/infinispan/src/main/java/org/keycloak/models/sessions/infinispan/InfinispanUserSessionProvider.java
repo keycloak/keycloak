@@ -34,11 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.infinispan.Cache;
-import org.infinispan.commons.api.AsyncCache;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.stream.CacheCollectors;
-import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -77,6 +72,12 @@ import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.utils.StreamsUtil;
+
+import org.infinispan.Cache;
+import org.infinispan.commons.api.AsyncCache;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.stream.CacheCollectors;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;

@@ -34,6 +34,11 @@ public class SuiteSupport {
             return this;
         }
 
+        public SuiteConfig registerSupplierConfig(String supplierValueType, String supplierConfigKey, String supplierConfigValue) {
+            SuiteConfigSource.set("kc.test." + supplierValueType + "." + supplierConfigKey, supplierConfigValue);
+            return this;
+        }
+
         public SuiteConfig supplier(String name, String supplier) {
             SuiteConfigSource.set("kc.test." + name, supplier);
             return this;

@@ -17,8 +17,25 @@
 
 package org.keycloak.models.jpa;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+
 import org.keycloak.Config;
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.enums.SslRequired;
@@ -35,6 +52,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.GroupUpdatedEvent;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderQuery;
@@ -54,7 +72,6 @@ import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.WebAuthnPolicyPasswordlessDefaults;
 import org.keycloak.models.WebAuthnPolicyTwoFactorDefaults;
-import org.keycloak.models.GroupModel.GroupUpdatedEvent;
 import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
@@ -72,27 +89,12 @@ import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.TypedQuery;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Arrays;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 import static java.util.Objects.nonNull;
+
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**

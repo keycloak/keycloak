@@ -13,6 +13,7 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import yaml from "yaml";
 import { useAdminClient } from "../admin-client";
 import {
   HelpItem,
@@ -33,7 +34,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import WorkflowRepresentation from "libs/keycloak-admin-client/lib/defs/workflowRepresentation";
 
 type AttributeForm = {
-  workflowJSON: string;
+  workflowYAML: string;
 };
 
 export default function WorkflowDetailForm() {
@@ -47,7 +48,7 @@ export default function WorkflowDetailForm() {
   const form = useForm<AttributeForm>({
     mode: "onChange",
     defaultValues: {
-      workflowJSON: "",
+      workflowYAML: "",
     },
   });
   const { control, handleSubmit, setValue } = form;
@@ -59,6 +60,7 @@ export default function WorkflowDetailForm() {
       }
       return adminClient.workflows.findOne({
         id: id!,
+        includeId: false,
       });
     },
     (workflow) => {
@@ -72,13 +74,13 @@ export default function WorkflowDetailForm() {
         workflowToSet.name = `${workflow.name} -- ${t("copy")}`;
       }
 
-      setValue("workflowJSON", JSON.stringify(workflowToSet, null, 2));
+      setValue("workflowYAML", yaml.stringify(workflowToSet));
     },
     [mode, id, setValue, t],
   );
 
-  const validateWorkflowJSON = (jsonStr: string): WorkflowRepresentation => {
-    const json = JSON.parse(jsonStr);
+  const validateworkflowYAML = (yamlStr: string): WorkflowRepresentation => {
+    const json: WorkflowRepresentation = yaml.parse(yamlStr);
     if (!json.name) {
       throw new Error(t("workflowNameRequired"));
     }
@@ -87,8 +89,8 @@ export default function WorkflowDetailForm() {
 
   const onUpdate: SubmitHandler<AttributeForm> = async (data) => {
     try {
-      const json = validateWorkflowJSON(data.workflowJSON);
-      await adminClient.workflows.update({ id: json.id! }, json);
+      const json = validateworkflowYAML(data.workflowYAML);
+      await adminClient.workflows.update({ id }, json);
       addAlert(t("workflowUpdated"), AlertVariant.success);
     } catch (error) {
       addError("workflowUpdateError", error);
@@ -97,8 +99,10 @@ export default function WorkflowDetailForm() {
 
   const onCreate: SubmitHandler<AttributeForm> = async (data) => {
     try {
-      const json = validateWorkflowJSON(data.workflowJSON);
-      await adminClient.workflows.create(json);
+      await adminClient.workflows.createAsYaml({
+        realm,
+        yaml: data.workflowYAML,
+      });
       addAlert(t("workflowCreated"), AlertVariant.success);
       navigate(toWorkflows({ realm }));
     } catch (error) {
@@ -136,10 +140,10 @@ export default function WorkflowDetailForm() {
             fineGrainedAccess={true}
           >
             <FormGroup
-              label={t("workflowJSON")}
+              label={t("workflowYAML")}
               labelIcon={
                 <HelpItem
-                  helpText={t("workflowJsonHelp")}
+                  helpText={t("workflowYAMLHelp")}
                   fieldLabelId="code"
                 />
               }
@@ -147,15 +151,15 @@ export default function WorkflowDetailForm() {
               isRequired
             >
               <Controller
-                name="workflowJSON"
+                name="workflowYAML"
                 control={control}
                 render={({ field }) => (
                   <CodeEditor
-                    id="workflowJSON"
-                    data-testid="workflowJSON"
+                    id="workflowYAML"
+                    data-testid="workflowYAML"
                     value={field.value}
                     onChange={field.onChange}
-                    language="json"
+                    language="yaml"
                     height={600}
                   />
                 )}

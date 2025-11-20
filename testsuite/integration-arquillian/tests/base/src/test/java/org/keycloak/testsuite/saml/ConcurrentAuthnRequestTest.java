@@ -16,6 +16,16 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -29,16 +39,6 @@ import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.saml.LoginBuilder;
 import org.keycloak.testsuite.utils.io.IOUtil;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -49,11 +49,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.keycloak.testsuite.util.SamlClient.createLoginRequestDocument;
 import static org.keycloak.testsuite.util.SamlClient.Binding;
 import static org.keycloak.testsuite.util.SamlClient.RedirectStrategyWithSwitchableFollowRedirect;
+import static org.keycloak.testsuite.util.SamlClient.createLoginRequestDocument;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  *

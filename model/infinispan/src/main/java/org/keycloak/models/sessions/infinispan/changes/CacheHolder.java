@@ -19,10 +19,11 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.function.Supplier;
 
-import org.infinispan.Cache;
-import org.infinispan.util.concurrent.ActionSequencer;
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
+import org.infinispan.Cache;
+import org.infinispan.util.concurrent.ActionSequencer;
 
 /**
  * Groups the {@link Cache}, the {@link ActionSequencer} (used by replace method) and the {@link SessionFunction} to

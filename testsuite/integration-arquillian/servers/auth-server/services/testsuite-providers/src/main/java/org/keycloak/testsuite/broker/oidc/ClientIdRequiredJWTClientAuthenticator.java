@@ -17,15 +17,16 @@
 
 package org.keycloak.testsuite.broker.oidc;
 
+import java.util.Collections;
+import java.util.Set;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * A {@link JWTClientAuthenticator} that requires the optional client_id parameter.

@@ -2,14 +2,15 @@ package org.keycloak.device;
 
 import java.util.List;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 import ua_parser.Client;
 import ua_parser.Parser;
 

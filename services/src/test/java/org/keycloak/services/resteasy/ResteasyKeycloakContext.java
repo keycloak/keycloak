@@ -17,11 +17,12 @@
 
 package org.keycloak.services.resteasy;
 
-import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakContext;
+
+import org.jboss.resteasy.core.ResteasyContext;
 
 public class ResteasyKeycloakContext extends DefaultKeycloakContext {
 

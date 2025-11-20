@@ -14,7 +14,7 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 
 === Corrected encoding when sending OpenID Connect client secrets when acting as a broker
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
 You are not affected if you configured {project_name} to send the credentials in the request body.
 
 This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
@@ -36,7 +36,7 @@ not need these configurations.
 
 === Accepting only normalized paths in requests
 
-Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC3986.
+Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC 3986.
 As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
 
 To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
@@ -69,7 +69,7 @@ User sessions created without selecting "Remember Me" are not affected.
 
 === Correct encoding for OpenID Connect client credentials when acting as a broker
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC6749.
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
 
 This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
 
@@ -107,12 +107,26 @@ make sure the users granted with the `realm-admin` role are expected to have thi
 The documentation is also updated with additional information about the different types of realm administrators.
 For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
 
+=== OCSP request timeouts follow HTTP client configuration
+
+In previous versions, OCSP requests used hardcoded connection and socket timeouts of 10 seconds.
+In this release, OCSP requests inherit timeouts from the outgoing HTTP client configuration (SPI `connections-http-client`, provider `default`).
+
+- **Socket timeout property**: `socket-timeout-millis` (default: `5000`)
+- **Establish connection timeout property**: `establish-connection-timeout-millis` (default: not set / `-1`)
+
+If you relied on the previous 10-second behavior, explicitly set the HTTP client timeouts.
+
 === Added database indexes on `OFFLINE_CLIENT_SESSION` table
 
 This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
 
 If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Default authorization policies and resources are no longer auto-created
+
+When enabling authorization on a new client (creating a Resource Server), Keycloak no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -121,7 +135,7 @@ The following sections provide details on deprecated features.
 
 === Sending OpenID Connect client secret via basic authentication without URL encoding
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC6749, it can be used to keep the default behavior of earlier versions of {project_name}.
+In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC 6749, it can be used to keep the default behavior of earlier versions of {project_name}.
 
 This behavior is deprecated and will be removed in a future version of Keycloak.
 

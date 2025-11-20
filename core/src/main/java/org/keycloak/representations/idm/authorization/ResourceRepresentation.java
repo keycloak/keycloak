@@ -24,12 +24,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.json.StringListMapDeserializer;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.

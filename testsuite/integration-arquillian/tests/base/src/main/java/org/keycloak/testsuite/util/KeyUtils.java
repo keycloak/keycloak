@@ -1,22 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import jakarta.ws.rs.core.Response;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.crypto.KeyStatus;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.keys.AbstractEcKeyProviderFactory;
-import org.keycloak.keys.GeneratedEcdhKeyProviderFactory;
-import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
-import org.keycloak.keys.KeyProvider;
-import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -34,6 +17,24 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.AbstractEcKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdhKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.credentialbuilder;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.junit.Test;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
@@ -28,16 +30,16 @@ import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.junit.Test;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
+import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.ISSUER_CLAIM;
+import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.VERIFIABLE_CREDENTIAL_TYPE_CLAIM;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.ISSUER_CLAIM;
-import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.VERIFIABLE_CREDENTIAL_TYPE_CLAIM;
-import static org.keycloak.sdjwt.IssuerSignedJWT.CLAIM_NAME_SD_HASH_ALGORITHM;
-import static org.keycloak.sdjwt.IssuerSignedJWT.CLAIM_NAME_SELECTIVE_DISCLOSURE;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -118,7 +120,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
                 credentialBuildConfig.getTokenJwsType(),
                 jwt.getHeader().getType());
 
-        ArrayNode sdArrayNode = (ArrayNode) jwt.getPayload().get(CLAIM_NAME_SELECTIVE_DISCLOSURE);
+        ArrayNode sdArrayNode = (ArrayNode) jwt.getPayload().get(CLAIM_NAME_SD);
         if (sdArrayNode != null) {
             assertEquals("The algorithm should be included",
                     credentialBuildConfig.getHashAlgorithm(),

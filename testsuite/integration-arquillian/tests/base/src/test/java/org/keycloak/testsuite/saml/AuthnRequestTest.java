@@ -17,12 +17,14 @@
 package org.keycloak.testsuite.saml;
 
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.keycloak.testsuite.util.SamlClient.Binding;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 /**
  *

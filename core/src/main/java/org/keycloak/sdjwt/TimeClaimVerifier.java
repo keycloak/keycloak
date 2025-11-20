@@ -17,28 +17,29 @@
 
 package org.keycloak.sdjwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.time.Instant;
+
 import org.keycloak.common.VerificationException;
 
-import java.time.Instant;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 /**
  * Module for checking the validity of JWT time claims.
- * All checks account for a leeway window to accommodate clock skew.
+ * All checks account for a small window to accommodate allowed clock skew.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class TimeClaimVerifier {
 
-    public static final String CLAIM_NAME_IAT = "iat";
-    public static final String CLAIM_NAME_EXP = "exp";
-    public static final String CLAIM_NAME_NBF = "nbf";
-
     private final TimeClaimVerificationOpts opts;
 
     public TimeClaimVerifier(TimeClaimVerificationOpts opts) {
-        if (opts.getLeewaySeconds() < 0) {
-            throw new IllegalArgumentException("Leeway seconds cannot be negative");
+        if (opts.getAllowedClockSkewSeconds() < 0) {
+            throw new IllegalArgumentException("Allowed clock skew seconds cannot be negative");
         }
 
         this.opts = opts;
@@ -60,7 +61,7 @@ public class TimeClaimVerifier {
 
         long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
 
-        if ((currentTimestamp() + opts.getLeewaySeconds()) < iat) {
+        if ((currentTimestamp() + opts.getAllowedClockSkewSeconds()) < iat) {
             throw new VerificationException("JWT was issued in the future");
         }
     }
@@ -81,7 +82,7 @@ public class TimeClaimVerifier {
 
         long exp = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_EXP);
 
-        if ((currentTimestamp() - opts.getLeewaySeconds()) >= exp) {
+        if ((currentTimestamp() - opts.getAllowedClockSkewSeconds()) >= exp) {
             throw new VerificationException("JWT has expired");
         }
     }
@@ -102,7 +103,7 @@ public class TimeClaimVerifier {
 
         long nbf = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_NBF);
 
-        if ((currentTimestamp() + opts.getLeewaySeconds()) < nbf) {
+        if ((currentTimestamp() + opts.getAllowedClockSkewSeconds()) < nbf) {
             throw new VerificationException("JWT is not yet valid");
         }
     }
@@ -116,7 +117,7 @@ public class TimeClaimVerifier {
     public void verifyAge(JsonNode jwtPayload, int maxAge) throws VerificationException {
         long iat = SdJwtUtils.readTimeClaim(jwtPayload, CLAIM_NAME_IAT);
 
-        if ((currentTimestamp() - iat - opts.getLeewaySeconds()) > maxAge) {
+        if ((currentTimestamp() - iat - opts.getAllowedClockSkewSeconds()) > maxAge) {
             throw new VerificationException("JWT is too old");
         }
     }

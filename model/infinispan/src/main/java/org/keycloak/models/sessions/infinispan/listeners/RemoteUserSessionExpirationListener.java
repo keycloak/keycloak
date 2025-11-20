@@ -20,14 +20,15 @@ package org.keycloak.models.sessions.infinispan.listeners;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
+
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryExpired;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCustomEvent;
 import org.infinispan.commons.io.UnsignedNumeric;
 import org.infinispan.commons.marshall.Marshaller;
 import org.infinispan.util.concurrent.BlockingManager;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 
 /**
  * A listener for remote Infinispan caches.

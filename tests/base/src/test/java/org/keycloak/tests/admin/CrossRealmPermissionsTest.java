@@ -17,10 +17,11 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AdminRoles;
@@ -32,9 +33,10 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
 
-import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

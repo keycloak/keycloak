@@ -22,11 +22,11 @@ package org.keycloak.userprofile;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
-import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
-
 import org.keycloak.models.UserModel;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
+import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
 
 /**
  * <p>This interface represents the different contexts from where user profiles are managed. The core contexts are already

@@ -19,13 +19,13 @@ package org.keycloak.utils;
 
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.NullNode;
-
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

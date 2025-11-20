@@ -2,8 +2,6 @@ AccountRestServiceTest
 AuthorizationCodeTest
 DeployedScriptAuthenticatorTest
 ExportImportTest
-GeneratedRsaKeyProviderTest
-JavaKeystoreKeyProviderTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest

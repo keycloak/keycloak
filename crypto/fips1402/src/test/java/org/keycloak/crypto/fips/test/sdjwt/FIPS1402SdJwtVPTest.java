@@ -1,9 +1,10 @@
 package org.keycloak.crypto.fips.test.sdjwt;
 
-import org.junit.Assume;
-import org.junit.Before;
 import org.keycloak.common.util.Environment;
 import org.keycloak.sdjwt.sdjwtvp.SdJwtVPTest;
+
+import org.junit.Assume;
+import org.junit.Before;
 
 public class FIPS1402SdJwtVPTest extends SdJwtVPTest {
 

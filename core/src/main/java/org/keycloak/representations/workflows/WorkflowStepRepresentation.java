@@ -1,21 +1,23 @@
 package org.keycloak.representations.workflows;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Objects;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.keycloak.common.util.MultivaluedHashMap;
-
-@JsonPropertyOrder({"id", CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
+@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
@@ -36,6 +38,11 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
     public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
         super(id, config);
         this.uses = uses;
+    }
+
+    @JsonIgnore
+    public String getId() {
+        return super.getId();
     }
 
     public String getUses() {
@@ -91,11 +98,6 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
 
         public Builder after(String after) {
             step.setAfter(after);
-            return this;
-        }
-
-        public Builder id(String id) {
-            step.setId(id);
             return this;
         }
 

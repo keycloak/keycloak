@@ -24,6 +24,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import org.keycloak.Config;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.cluster.ClusterProviderFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.context.Flag;
@@ -35,19 +47,8 @@ import org.infinispan.notifications.cachemanagerlistener.event.MergeEvent;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.cluster.ClusterProviderFactory;
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.connections.infinispan.TopologyInfo;
-import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
 /**
  * This impl is aware of Cross-Data-Center scenario too
@@ -82,14 +83,13 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             if (clusterProvider != null)
                 return clusterProvider;
             InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
-            this.workCache = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+            this.workCache = ispnConnections.getCache(WORK_CACHE_NAME);
 
             workCacheListener = new ViewChangeListener();
             workCache.getCacheManager().addListener(workCacheListener);
 
             var clusterStartupTime = initClusterStartupTime(session);
-            TopologyInfo topologyInfo = InfinispanUtil.getTopologyInfo(session);
-            var cp = new InfinispanClusterProvider(clusterStartupTime, topologyInfo, workCache, localExecutor);
+            var cp = new InfinispanClusterProvider(clusterStartupTime, ispnConnections.getNodeInfo(), workCache, localExecutor);
 
             // We need CacheEntryListener for communication within current DC
             workCache.addListener(cp.new CacheEntryListener());

@@ -17,12 +17,13 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-
 import java.util.Set;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * Parse the parameters from request queryString

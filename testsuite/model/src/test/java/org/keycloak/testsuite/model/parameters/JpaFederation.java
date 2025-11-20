@@ -16,22 +16,24 @@
  */
 package org.keycloak.testsuite.model.parameters;
 
-import org.keycloak.testsuite.model.KeycloakModelParameters;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
-import org.keycloak.storage.UserStorageProviderSpi;
-import org.keycloak.storage.federated.UserFederatedStorageProviderSpi;
-import org.keycloak.storage.jpa.JpaUserFederatedStorageProviderFactory;
-import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
+import org.keycloak.storage.UserStorageProviderSpi;
 import org.keycloak.storage.clientscope.ClientScopeStorageProvider;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderFactory;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderModel;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi;
+import org.keycloak.storage.federated.UserFederatedStorageProviderSpi;
+import org.keycloak.storage.jpa.JpaUserFederatedStorageProviderFactory;
 import org.keycloak.testsuite.federation.HardcodedClientScopeStorageProviderFactory;
 import org.keycloak.testsuite.model.Config;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  *

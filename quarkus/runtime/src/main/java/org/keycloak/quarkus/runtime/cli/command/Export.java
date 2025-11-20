@@ -17,13 +17,14 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
+import java.util.EnumSet;
 
 import org.keycloak.config.OptionCategory;
 import org.keycloak.exportimport.ExportImportConfig;
+
 import picocli.CommandLine.Command;
 
-import java.util.EnumSet;
+import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 
 @Command(name = Export.NAME,
         header = "Export data from realms to a file or directory.",

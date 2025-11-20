@@ -16,12 +16,12 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
-
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

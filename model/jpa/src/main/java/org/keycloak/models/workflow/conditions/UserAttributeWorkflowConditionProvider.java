@@ -1,7 +1,5 @@
 package org.keycloak.models.workflow.conditions;
 
-import static org.keycloak.common.util.CollectionUtil.collectionEquals;
-
 import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
@@ -10,9 +8,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
-import org.keycloak.models.workflow.WorkflowEvent;
-import org.keycloak.models.workflow.ResourceType;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
+
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 
 public class UserAttributeWorkflowConditionProvider implements WorkflowConditionProvider {
 
@@ -25,16 +24,11 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
     }
 
     @Override
-    public boolean evaluate(WorkflowEvent event) {
-        if (!ResourceType.USERS.equals(event.getResourceType())) {
-            return false;
-        }
-
+    public boolean evaluate(WorkflowExecutionContext context) {
         validate();
 
-        String userId = event.getResourceId();
         RealmModel realm = session.getContext().getRealm();
-        UserModel user = session.users().getUserById(realm, userId);
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
         if (user == null) {
             return false;

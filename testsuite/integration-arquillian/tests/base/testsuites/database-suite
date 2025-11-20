@@ -4,7 +4,6 @@ AuthorizationTest
 ClientRegistrationTest
 EventStoreProviderTest
 ExportImportTest
-GeneratedRsaKeyProviderTest
 KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest

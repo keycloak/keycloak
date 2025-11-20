@@ -17,19 +17,20 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.apache.commons.collections4.ListUtils;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.provider.ProviderConfigProperty;
+
+import org.apache.commons.collections4.ListUtils;
 
 /**
  * Adds a generated ID to the credential (as a configurable property).

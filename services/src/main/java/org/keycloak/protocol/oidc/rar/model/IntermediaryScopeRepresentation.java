@@ -16,9 +16,9 @@
  */
 package org.keycloak.protocol.oidc.rar.model;
 
-import org.keycloak.models.ClientScopeModel;
-
 import java.util.Objects;
+
+import org.keycloak.models.ClientScopeModel;
 
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>

@@ -22,10 +22,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -35,6 +33,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
+
+import org.jboss.logging.Logger;
 
 public class RemoteStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory, StickySessionEncoderProvider {
 
@@ -57,7 +57,7 @@ public class RemoteStickySessionEncoderProviderFactory implements StickySessionE
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         try (var session = factory.create()) {
-            route = InfinispanUtil.getTopologyInfo(session).getMyNodeName();
+            route = session.getProvider(InfinispanConnectionProvider.class).getNodeInfo().nodeName();
         }
     }
 

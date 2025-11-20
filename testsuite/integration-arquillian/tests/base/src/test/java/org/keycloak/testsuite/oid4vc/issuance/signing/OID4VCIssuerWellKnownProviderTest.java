@@ -17,23 +17,22 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
-import org.apache.http.Header;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -45,10 +44,10 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -77,31 +76,35 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.StringUtil;
-import org.keycloak.constants.Oid4VciConstants;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.constants.Oid4VciConstants.SIGNED_METADATA_JWT_TYPE;
+import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
+import static org.keycloak.constants.Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest {
 
@@ -110,7 +113,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         Map<String, String> attributes = Optional.ofNullable(testRealm.getAttributes()).orElseGet(HashMap::new);
         attributes.put("credential_response_encryption.encryption_required", "true");
         attributes.put(ATTR_ENCRYPTION_REQUIRED, "true");
-        attributes.put(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
+        attributes.put(BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
         attributes.put(ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION);
         testRealm.setAttributes(attributes);
 
@@ -444,7 +447,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         realm.setAttribute(ATTR_ENCRYPTION_REQUIRED, "true");
         realm.setAttribute(ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION);
-        realm.setAttribute(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
+        realm.setAttribute(BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10");
 
         OID4VCIssuerWellKnownProvider provider = new OID4VCIssuerWellKnownProvider(session);
         return provider.getIssuerMetadata();
@@ -770,7 +773,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                     RealmModel testRealm = session.realms().createRealm("test-batch-validation-" + batchSize);
 
                     try {
-                        testRealm.setAttribute(Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, batchSize);
+                        testRealm.setAttribute(BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, batchSize);
 
                         CredentialIssuer.BatchCredentialIssuance result = OID4VCIssuerWellKnownProvider.getBatchCredentialIssuance(testRealm);
 

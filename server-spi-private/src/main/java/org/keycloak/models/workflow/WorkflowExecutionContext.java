@@ -11,4 +11,12 @@ public interface WorkflowExecutionContext {
      * @return the id of the resource
      */
     String getResourceId();
+
+    /**
+     * Returns the workflow event that activated the current workflow execution. Can be null if the execution is being
+     * resumed from a scheduled step.
+     *
+     * @return the event bound to the current execution.
+     */
+    WorkflowEvent getEvent();
 }

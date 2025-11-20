@@ -17,11 +17,12 @@
 
 package org.keycloak.models.sessions.infinispan.query;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.query.Query;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.api.query.Query;
 
 /**
  * Util class with Infinispan Ickle Queries for {@link RemoteAuthenticatedClientSessionEntity}.

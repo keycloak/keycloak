@@ -16,11 +16,22 @@
  */
 package org.keycloak.broker.oidc;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
@@ -30,7 +41,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
@@ -95,21 +106,12 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
 
 /**
  * @author Pedro Igor
@@ -529,8 +531,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
 
-        setForwardParameters(authenticationSession, uriBuilder);
-
         if (getConfig().isPkceEnabled()) {
             String codeVerifier = PkceUtils.generateCodeVerifier();
             String codeChallengeMethod = getConfig().getPkceMethod();
@@ -542,26 +542,35 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }
 
+        appendForwardedParameters(authenticationSession, uriBuilder);
+
         return uriBuilder;
     }
 
-    private void setForwardParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
+    private void appendForwardedParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
         C config = getConfig();
         String forwardParameterConfig = config.getForwardParameters() != null ? config.getForwardParameters(): OAuth2Constants.ACR_VALUES;
+        List<String> parameterNames = List.of(forwardParameterConfig.split("\\s*,\\s*"));
+        StringBuilder query = new StringBuilder(uriBuilder.build().getRawQuery());
 
-        for (String forwardParameter: List.of(forwardParameterConfig.split("\\s*,\\s*"))) {
-            String name = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + forwardParameter.trim();
-            String parameter = authenticationSession.getClientNote(name);
+        for (String name: parameterNames) {
+            String noteKey = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + name.trim();
+            String value = authenticationSession.getClientNote(noteKey);
 
-            if (parameter == null) {
+            if (value == null) {
                 // try a value set as a client note
-                parameter = authenticationSession.getClientNote(forwardParameter);
+                value = authenticationSession.getClientNote(name);
             }
 
-            if (parameter != null && !parameter.isEmpty()) {
-                uriBuilder.queryParam(forwardParameter, URLEncoder.encode(parameter, StandardCharsets.UTF_8));
+            if (value != null && !value.isEmpty()) {
+                if (!query.isEmpty()) {
+                    query.append("&");
+                }
+                query.append(name).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
             }
         }
+
+        uriBuilder.replaceQuery(query.toString());
     }
 
     /**

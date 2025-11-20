@@ -1,13 +1,13 @@
 package org.keycloak.quarkus.runtime;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.common.profile.SingleProfileConfigResolver;
 import org.keycloak.config.FeatureOptions;
 import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 

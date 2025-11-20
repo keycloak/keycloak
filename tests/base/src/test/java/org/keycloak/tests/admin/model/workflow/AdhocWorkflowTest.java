@@ -1,20 +1,11 @@
 package org.keycloak.tests.admin.model.workflow;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
-
 import java.time.Duration;
 import java.util.List;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
@@ -27,6 +18,18 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
+
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class AdhocWorkflowTest extends AbstractWorkflowTest {
@@ -51,21 +54,23 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
     @Test
     public void testBindAdHocScheduledWithImmediateWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+        String workflowId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
                         .build())
-                .build()).close();
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
-        WorkflowRepresentation workflow = workflows.get(0);
 
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
             String id = ApiUtil.getCreatedId(response);
             try {
-                managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, "5D");
+                managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.USERS.name(), id, "5D");
             } catch (Exception e) {
                 assertThat(e, instanceOf(BadRequestException.class));
             }
@@ -74,40 +79,44 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
     @Test
     public void testRunAdHocScheduledWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+        String workflowId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .after(Duration.ofDays(5))
                         .withConfig("message", "message")
                         .build())
-                .build()).close();
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
-        WorkflowRepresentation workflow = workflows.get(0);
 
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
             String id = ApiUtil.getCreatedId(response);
-            managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id);
+            managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.USERS.name(), id);
         }
     }
 
     @Test
     public void testRunAdHocImmediateWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+        String workflowId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
                         .build())
-                .build()).close();
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
-        WorkflowRepresentation workflow = workflows.get(0);
 
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
             String id = ApiUtil.getCreatedId(response);
-            managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id);
+            managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.USERS.name(), id);
         }
 
         runScheduledSteps(Duration.ZERO);
@@ -121,21 +130,23 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
 
     @Test
     public void testRunAdHocTimedWorkflow() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+        String workflowId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .withSteps(WorkflowStepRepresentation.create()
                         .of(SetUserAttributeStepProviderFactory.ID)
                         .withConfig("message", "message")
                         .build())
-                .build()).close();
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
 
         List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
         assertThat(workflows, hasSize(1));
-        WorkflowRepresentation workflow = workflows.get(0);
-        String id;
+        String resourceId;
 
         try (Response response = managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org"))) {
-            id = ApiUtil.getCreatedId(response);
-            managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, "5D");
+            resourceId = ApiUtil.getCreatedId(response);
+            managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.USERS.name(), resourceId, "5D");
         }
 
         runScheduledSteps(Duration.ZERO);
@@ -159,7 +170,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
         }));
 
         // using seconds as the notBefore parameter just to check if this format is also working properly
-        managedRealm.admin().workflows().workflow(workflow.getId()).bind(ResourceType.USERS.name(), id, String.valueOf(Duration.ofDays(10).toSeconds()));
+        managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.USERS.name(), resourceId, String.valueOf(Duration.ofDays(10).toSeconds()));
 
         runScheduledSteps(Duration.ZERO);
 
@@ -201,7 +212,8 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
                             .after(Duration.ofDays(5))
                             .build()
                 )
-                .withName("Two")
+                .build()).close();
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("Two")
                 .onEvent(USER_ADDED.name())
                 .withSteps(
                         WorkflowStepRepresentation.create()
@@ -221,7 +233,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
         String workflowOneId = workflows.stream().filter(w -> w.getName().equals("One")).findFirst().orElseThrow(IllegalStateException::new).getId();
 
         // create a new user - should bind the user to the workflow and set up the first step in both workflows
-        String id = ApiUtil.handleCreatedResponse(managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org")));
+        String id = ApiUtil.getCreatedId(managedRealm.admin().users().create(getUserRepresentation("alice", "Alice", "Wonderland", "alice@wornderland.org")));
 
         runScheduledSteps(Duration.ofDays(6));
 

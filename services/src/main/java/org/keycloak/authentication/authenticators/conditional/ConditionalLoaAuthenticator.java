@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.authenticators.conditional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowCallback;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -31,6 +30,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+
+import org.jboss.logging.Logger;
 
 public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, AuthenticationFlowCallback {
     public static final String LEVEL = "loa-condition-level";

@@ -1,16 +1,18 @@
 package org.keycloak.testframework.remote.timeoffset;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.Map;
+
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.common.util.Time;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
-import org.keycloak.common.util.Time;
-
-import java.io.IOException;
-import java.util.Map;
 
 public class TimeOffSet {
     private int currentOffset;

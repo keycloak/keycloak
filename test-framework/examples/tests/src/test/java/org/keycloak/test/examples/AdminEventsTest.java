@@ -1,7 +1,8 @@
 package org.keycloak.test.examples;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -17,8 +18,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
-import java.util.LinkedList;
-import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class AdminEventsTest {
@@ -46,7 +47,7 @@ public class AdminEventsTest {
         userRep.setUsername(userName);
         userRep.setEnabled(true);
 
-        String userId = ApiUtil.handleCreatedResponse(adminClient.realm(realm.getName()).users().create(userRep));
+        String userId = ApiUtil.getCreatedId(adminClient.realm(realm.getName()).users().create(userRep));
 
         AdminEventAssertion.assertSuccess(adminEvents.poll())
                 .operationType(OperationType.CREATE)
@@ -114,7 +115,7 @@ public class AdminEventsTest {
     private List<String> createUsers(String prefix, int n) {
         List<String> userIds = new LinkedList<>();
         for (int i = 0; i < n; i++) {
-            String userId = ApiUtil.handleCreatedResponse(realm.admin().users().create(UserConfigBuilder.create().username(prefix + i).build()));
+            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username(prefix + i).build()));
             userIds.add(userId);
         }
         return userIds;

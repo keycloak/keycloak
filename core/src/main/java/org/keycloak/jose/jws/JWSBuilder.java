@@ -17,15 +17,6 @@
 
 package org.keycloak.jose.jws;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jws.crypto.HMACProvider;
-import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.util.JsonSerialization;
-
-import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
@@ -34,6 +25,16 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.crypto.SecretKey;
+
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.crypto.HMACProvider;
+import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

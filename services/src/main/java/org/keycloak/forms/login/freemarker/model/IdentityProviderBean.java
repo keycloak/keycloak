@@ -16,24 +16,6 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
-import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.common.Profile;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderStorageProvider;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OrderedModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.Urls;
-import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.theme.Theme;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
@@ -45,6 +27,24 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.common.Profile;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrderedModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.Urls;
+import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.theme.Theme;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

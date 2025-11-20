@@ -1,11 +1,15 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.Map;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+
 import org.keycloak.admin.ui.rest.model.ClientIdSessionType;
 import org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType;
 import org.keycloak.admin.ui.rest.model.SessionRepresentation;
@@ -17,16 +21,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import org.keycloak.utils.StringUtil;
 
-import java.util.Map;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.ALL;
 import static org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType.OFFLINE;

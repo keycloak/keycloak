@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
@@ -25,6 +24,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

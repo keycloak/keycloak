@@ -1,10 +1,10 @@
 package org.keycloak.authentication.authenticators.client;
 
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.services.Urls;
-
 import java.util.Collections;
 import java.util.List;
+
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.services.Urls;
 
 public class FederatedJWTClientValidator extends AbstractJWTClientValidator {
 

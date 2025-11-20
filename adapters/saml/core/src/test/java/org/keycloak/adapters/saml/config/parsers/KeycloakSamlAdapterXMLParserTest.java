@@ -17,28 +17,28 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import org.keycloak.adapters.saml.config.IDP;
+import org.keycloak.adapters.saml.config.Key;
+import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
+import org.keycloak.adapters.saml.config.SP;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.StaxParserUtil;
+
+import org.hamcrest.Matchers;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-
-import org.junit.Test;
-import org.keycloak.adapters.saml.config.IDP;
-import org.keycloak.adapters.saml.config.Key;
-import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
-import org.keycloak.adapters.saml.config.SP;
-import org.keycloak.saml.common.util.StaxParserUtil;
-
-import java.io.InputStream;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import java.io.IOException;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
-import org.hamcrest.Matchers;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

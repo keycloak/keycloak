@@ -17,9 +17,9 @@
 
 package org.keycloak.timer;
 
-import org.keycloak.provider.Provider;
-
 import java.util.Map;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -17,14 +17,14 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.Arrays;
-import java.util.List;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.getDefaultClientAuthenticatorType;
 

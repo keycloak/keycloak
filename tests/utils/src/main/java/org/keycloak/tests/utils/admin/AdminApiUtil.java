@@ -16,8 +16,13 @@
  */
 package org.keycloak.tests.utils.admin;
 
-import org.jboss.logging.Logger;
-import org.junit.jupiter.api.Assertions;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
@@ -34,29 +39,18 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.util.ApiUtil;
 
-import jakarta.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ApiUtil {
+public class AdminApiUtil {
 
-    private static final Logger log = Logger.getLogger(ApiUtil.class);
-
-    public static String getCreatedId(Response response) {
-        Assertions.assertEquals(201, response.getStatus());
-        String path = response.getLocation().getPath();
-        String createdId = path.substring(path.lastIndexOf('/') + 1);
-        response.close();
-        return createdId;
-    }
+    private static final Logger log = Logger.getLogger(AdminApiUtil.class);
 
     public static ClientResource findClientResourceById(RealmResource realm, String id) {
         for (ClientRepresentation c : realm.clients().findAll()) {
@@ -150,7 +144,7 @@ public class ApiUtil {
      */
     public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
         Response response = realm.users().create(user);
-        String createdId = getCreatedId(response);
+        String createdId = ApiUtil.getCreatedId(response);
         response.close();
         return createdId;
     }

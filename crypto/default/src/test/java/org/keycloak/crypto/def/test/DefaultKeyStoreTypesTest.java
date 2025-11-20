@@ -3,13 +3,14 @@ package org.keycloak.crypto.def.test;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.rule.CryptoInitRule;
+
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.rule.CryptoInitRule;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 

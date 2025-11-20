@@ -1,5 +1,14 @@
 package org.freedesktop.dbus.connections.transports;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.channels.SocketChannel;
+import java.util.Objects;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+
 import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.connections.SASL;
 import org.freedesktop.dbus.connections.config.SaslConfig;
@@ -15,15 +24,6 @@ import org.freedesktop.dbus.spi.message.InputStreamMessageReader;
 import org.freedesktop.dbus.spi.message.OutputStreamMessageWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.channels.SocketChannel;
-import java.util.Objects;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 /**
  * Base class for all transport types.

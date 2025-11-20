@@ -16,11 +16,12 @@
  */
 package org.keycloak.validate;
 
-import jakarta.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiFunction;
+
+import jakarta.ws.rs.core.Response;
 
 /**
  * Denotes an error found during validation.

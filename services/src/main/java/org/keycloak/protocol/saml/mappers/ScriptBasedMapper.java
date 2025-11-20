@@ -1,6 +1,10 @@
 package org.keycloak.protocol.saml.mappers;
 
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -20,10 +24,7 @@ import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptCompilationException;
 import org.keycloak.scripting.ScriptingProvider;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 
 /**

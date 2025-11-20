@@ -16,12 +16,12 @@
  */
 package org.keycloak.protocol.oidc.rar;
 
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.ClientSessionContext;
-import org.keycloak.provider.Provider;
-import org.keycloak.OAuthErrorException;
-
 import java.util.List;
+
+import org.keycloak.OAuthErrorException;
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.provider.Provider;
 
 /**
  * Provider interface for processing authorization_details parameter in OAuth2/OIDC authorization and token requests.

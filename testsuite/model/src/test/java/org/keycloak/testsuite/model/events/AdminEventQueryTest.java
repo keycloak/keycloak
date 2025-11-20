@@ -16,13 +16,9 @@
  */
 package org.keycloak.testsuite.model.events;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Test;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
@@ -40,8 +36,13 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
 @RequireProvider(EventStoreProvider.class)
 public class AdminEventQueryTest extends KeycloakModelTest {

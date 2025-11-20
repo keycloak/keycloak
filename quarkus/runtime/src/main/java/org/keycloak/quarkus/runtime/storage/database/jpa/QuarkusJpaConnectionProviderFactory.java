@@ -17,10 +17,6 @@
 
 package org.keycloak.quarkus.runtime.storage.database.jpa;
 
-import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
-import static org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
-import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -31,14 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.quarkus.runtime.configuration.DurationConverter;
 import jakarta.enterprise.inject.Instance;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
-import io.quarkus.arc.Arc;
-
-import org.jboss.logging.Logger;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.config.DatabaseOptions;
@@ -56,6 +48,14 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+
+import io.quarkus.arc.Arc;
+import io.quarkus.runtime.configuration.DurationConverter;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+import static org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

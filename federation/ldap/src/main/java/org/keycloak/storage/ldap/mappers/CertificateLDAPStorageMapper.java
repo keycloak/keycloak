@@ -36,4 +36,3 @@ public class CertificateLDAPStorageMapper extends UserAttributeLDAPStorageMapper
     return mapperModel.get(IS_DER_FORMATTED, false);
   }
 }
-

@@ -85,4 +85,3 @@ public class TypedPropertyCriteria implements PropertyCriteria {
         return false;
     }
 }
-

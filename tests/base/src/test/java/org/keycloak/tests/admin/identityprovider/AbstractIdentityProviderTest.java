@@ -1,6 +1,7 @@
 package org.keycloak.tests.admin.identityprovider;
 
-import org.junit.jupiter.api.Assertions;
+import java.util.Map;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderModel;
@@ -13,10 +14,10 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 
 public class AbstractIdentityProviderTest {
 

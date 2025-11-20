@@ -17,11 +17,14 @@
 
 package org.keycloak.tests.admin.group;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -43,14 +46,14 @@ import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -75,7 +78,7 @@ public class GroupMappersTest extends AbstractGroupTest {
     @SuppressWarnings("unchecked")
     public void testGroupMappers() {
         {
-            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), TOP_GROUP_USER);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), TOP_GROUP_USER);
 
             AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
             Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
@@ -85,7 +88,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             Assertions.assertEquals("true", token.getOtherClaims().get(TOP_ATTRIBUTE));
         }
         {
-            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
 
             AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
             Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
@@ -110,10 +113,10 @@ public class GroupMappersTest extends AbstractGroupTest {
         Response response = realm.groups().group(topGroup.getId()).subGroup(childSlash);
         childSlash.setId(ApiUtil.getCreatedId(response));
 
-        UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+        UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
         realm.users().get(user.getId()).joinGroup(childSlash.getId());
 
-        ClientResource client = ApiUtil.findClientByClientId(realm, CLIENT_ID);
+        ClientResource client = AdminApiUtil.findClientByClientId(realm, CLIENT_ID);
         ProtocolMappersResource protocolMappers = client.getProtocolMappers();
         ProtocolMapperRepresentation groupsMapper = ProtocolMapperUtil.getMapperByNameAndProtocol(
                 protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "groups");

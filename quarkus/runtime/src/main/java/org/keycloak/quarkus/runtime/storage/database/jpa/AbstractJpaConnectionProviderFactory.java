@@ -21,12 +21,13 @@ import java.lang.annotation.Annotation;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
+
 import jakarta.enterprise.inject.Instance;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.FlushModeType;
 import jakarta.persistence.SynchronizationType;
-import org.hibernate.internal.SessionFactoryImpl;
+
 import org.keycloak.Config;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
@@ -40,6 +41,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import io.quarkus.arc.Arc;
 import io.quarkus.hibernate.orm.PersistenceUnit;
 import liquibase.GlobalConfiguration;
+import org.hibernate.internal.SessionFactoryImpl;
 import org.jboss.logging.Logger;
 
 public abstract class AbstractJpaConnectionProviderFactory implements JpaConnectionProviderFactory {
