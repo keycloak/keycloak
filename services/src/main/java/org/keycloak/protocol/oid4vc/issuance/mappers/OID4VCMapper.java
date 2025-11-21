@@ -25,11 +25,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
