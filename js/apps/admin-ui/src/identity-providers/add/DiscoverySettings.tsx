@@ -23,10 +23,6 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext<IdentityProviderRepresentation>();
 
-  const validateSignature = useWatch({
-    control,
-    name: "config.validateSignature",
-  });
   const useJwks = useWatch({
     control,
     name: "config.useJwksUrl",
@@ -89,39 +85,38 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
           <DefaultSwitchControl
             name="config.validateSignature"
             label={t("validateSignature")}
+            labelIcon={t("validateSignatureHelp")}
             isDisabled={readOnly}
             stringify
           />
-          {validateSignature === "true" && (
-            <>
-              <DefaultSwitchControl
-                name="config.useJwksUrl"
-                label={t("useJwksUrl")}
-                labelIcon={t("useJwksUrlHelp")}
-                isDisabled={readOnly}
-                stringify
+          <>
+            <DefaultSwitchControl
+              name="config.useJwksUrl"
+              label={t("useJwksUrl")}
+              labelIcon={t("useJwksUrlHelp")}
+              isDisabled={readOnly}
+              stringify
+            />
+            {useJwks === "true" ? (
+              <TextAreaControl
+                name="config.jwksUrl"
+                label={t("jwksUrl")}
+                readOnly={readOnly}
               />
-              {useJwks === "true" ? (
+            ) : (
+              <>
                 <TextAreaControl
-                  name="config.jwksUrl"
-                  label={t("jwksUrl")}
+                  name="config.publicKeySignatureVerifier"
+                  label={t("validatingPublicKey")}
+                />
+                <TextControl
+                  name="config.publicKeySignatureVerifierKeyId"
+                  label={t("validatingPublicKeyId")}
                   readOnly={readOnly}
                 />
-              ) : (
-                <>
-                  <TextAreaControl
-                    name="config.publicKeySignatureVerifier"
-                    label={t("validatingPublicKey")}
-                  />
-                  <TextControl
-                    name="config.publicKeySignatureVerifierKeyId"
-                    label={t("validatingPublicKeyId")}
-                    readOnly={readOnly}
-                  />
-                </>
-              )}
-            </>
-          )}
+              </>
+            )}
+          </>
         </>
       )}
       <DefaultSwitchControl
