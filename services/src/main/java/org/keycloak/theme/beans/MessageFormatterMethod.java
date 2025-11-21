@@ -26,6 +26,7 @@ import java.util.Properties;
 
 import org.keycloak.theme.TemplatingUtil;
 
+import freemarker.template.SimpleDate;
 import freemarker.template.SimpleNumber;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateMethodModelEx;
@@ -73,6 +74,8 @@ public class MessageFormatterMethod implements TemplateMethodModelEx {
                 item = scalar.getAsString();
             } else if (item instanceof SimpleNumber number) {
                 item = number.getAsNumber();
+            } else if (item instanceof SimpleDate date) {
+                item = date.getAsDate();
             }
 
             if (item instanceof String string) {
