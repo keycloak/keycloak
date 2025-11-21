@@ -1,9 +1,16 @@
 package org.keycloak.models.workflow.conditions;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
@@ -32,6 +39,29 @@ public class GroupMembershipWorkflowConditionProvider implements WorkflowConditi
 
         GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, expectedGroup);
         return user.isMemberOf(group);
+    }
+
+    @Override
+    public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> path) {
+        validate();
+
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, session.getContext().getRealm(), expectedGroup);
+        if (group == null) {
+            return cb.disjunction(); // always false
+        }
+
+        Subquery<Integer> subquery = query.subquery(Integer.class);
+        Root<UserGroupMembershipEntity> from = subquery.from(UserGroupMembershipEntity.class);
+
+        subquery.select(cb.literal(1));
+        subquery.where(
+                cb.and(
+                        cb.equal(from.get("user").get("id"), path.get("id")),
+                        cb.equal(from.get("groupId"), group.getId())
+                )
+        );
+
+        return cb.exists(subquery);
     }
 
     @Override

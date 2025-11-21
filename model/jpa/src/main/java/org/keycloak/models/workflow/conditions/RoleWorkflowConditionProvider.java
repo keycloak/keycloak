@@ -3,11 +3,18 @@ package org.keycloak.models.workflow.conditions;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
@@ -38,6 +45,29 @@ public class RoleWorkflowConditionProvider implements WorkflowConditionProvider 
         Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
         RoleModel role = getRole(expectedRole, realm);
         return role != null && RoleUtils.hasRole(roles, role);
+    }
+
+    @Override
+    public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> path) {
+        validate();
+
+        RoleModel role = getRole(expectedRole, session.getContext().getRealm());
+        if (role == null) {
+            return cb.disjunction(); // always false
+        }
+
+        Subquery<Integer> subquery = query.subquery(Integer.class);
+        Root<UserRoleMappingEntity> from = subquery.from(UserRoleMappingEntity.class);
+
+        subquery.select(cb.literal(1));
+        subquery.where(
+                cb.and(
+                        cb.equal(from.get("user").get("id"), path.get("id")),
+                        cb.equal(from.get("roleId"), role.getId())
+                )
+        );
+
+        return cb.exists(subquery);
     }
 
     @Override
