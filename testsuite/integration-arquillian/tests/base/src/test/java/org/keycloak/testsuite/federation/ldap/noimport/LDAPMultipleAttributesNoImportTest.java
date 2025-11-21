@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap.noimport;
 
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -28,6 +24,11 @@ import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPMultipleAttributesTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
+
+import org.junit.Assert;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -59,5 +60,3 @@ public class LDAPMultipleAttributesNoImportTest extends LDAPMultipleAttributesTe
 
 
 }
-
-

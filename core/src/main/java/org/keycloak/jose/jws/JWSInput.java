@@ -17,12 +17,12 @@
 
 package org.keycloak.jose.jws;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

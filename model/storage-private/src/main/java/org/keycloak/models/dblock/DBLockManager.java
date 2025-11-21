@@ -17,8 +17,9 @@
 
 package org.keycloak.models.dblock;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

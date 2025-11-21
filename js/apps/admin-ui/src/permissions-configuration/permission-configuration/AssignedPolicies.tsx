@@ -68,7 +68,7 @@ export const AssignedPolicies = ({
       if (values && values.length > 0)
         return Promise.all(
           values.map((p) =>
-            adminClient.clients.findOnePolicy({
+            adminClient.clients.findOnePolicyWithType({
               id: permissionClientId,
               type: p.type!,
               policyId: p.id,

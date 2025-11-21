@@ -23,9 +23,10 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.ScriptModel;
 import org.keycloak.services.ServicesLogger;
+
+import org.jboss.logging.Logger;
 
 /**
  * A {@link ScriptingProvider} that uses a {@link ScriptEngineManager} to evaluate scripts with a {@link ScriptEngine}.

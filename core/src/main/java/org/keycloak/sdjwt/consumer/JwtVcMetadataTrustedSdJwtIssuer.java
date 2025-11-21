@@ -17,17 +17,6 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.sdjwt.IssuerSignedJWT;
-import org.keycloak.sdjwt.JwkParsingUtils;
-import org.keycloak.sdjwt.SdJws;
-import org.keycloak.sdjwt.SdJwtUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +26,20 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.sdjwt.IssuerSignedJWT;
+import org.keycloak.sdjwt.JwkParsingUtils;
+import org.keycloak.sdjwt.SdJwtUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
+import static org.keycloak.OID4VCConstants.JWT_VC_ISSUER_END_POINT;
 
 /**
  * A trusted Issuer for running SD-JWT VP verification.
@@ -51,8 +54,6 @@ import java.util.stream.Collectors;
  * </a>
  */
 public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
-
-    private static final String JWT_VC_ISSUER_END_POINT = "/.well-known/jwt-vc-issuer";
 
     private final Pattern issuerUriPattern;
     private final HttpDataFetcher httpDataFetcher;
@@ -86,7 +87,7 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
     public List<SignatureVerifierContext> resolveIssuerVerifyingKeys(IssuerSignedJWT issuerSignedJWT)
             throws VerificationException {
         // Read iss (claim) and kid (header)
-        String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get(SdJws.CLAIM_NAME_ISSUER))
+        String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get(CLAIM_NAME_ISSUER))
                 .map(JsonNode::asText)
                 .orElse("");
         String kid = issuerSignedJWT.getHeader().getKeyId();

@@ -22,5 +22,6 @@ public interface KeyType {
     String RSA = "RSA";
     String OCT = "OCT";
     String OKP = "OKP";
+    String AKP = "AKP";
 
 }

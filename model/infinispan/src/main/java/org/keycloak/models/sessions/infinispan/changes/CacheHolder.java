@@ -17,10 +17,13 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.infinispan.Cache;
-import org.infinispan.util.concurrent.ActionSequencer;
+import java.util.function.Supplier;
+
 import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
+import org.infinispan.Cache;
+import org.infinispan.util.concurrent.ActionSequencer;
 
 /**
  * Groups the {@link Cache}, the {@link ActionSequencer} (used by replace method) and the {@link SessionFunction} to
@@ -29,5 +32,6 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 public record CacheHolder<K, V extends SessionEntity>(Cache<K, SessionEntityWrapper<V>> cache,
                                                       ActionSequencer sequencer,
                                                       SessionFunction<V> lifespanFunction,
-                                                      SessionFunction<V> maxIdleFunction) {
+                                                      SessionFunction<V> maxIdleFunction,
+                                                      Supplier<K> keyGenerator) {
 }

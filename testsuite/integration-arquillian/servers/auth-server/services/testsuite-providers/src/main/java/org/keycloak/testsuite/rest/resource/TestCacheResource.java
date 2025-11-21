@@ -17,22 +17,24 @@
 
 package org.keycloak.testsuite.rest.resource;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import org.infinispan.Cache;
-import org.infinispan.stream.CacheCollectors;
+
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.MediaType;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import org.infinispan.Cache;
+import org.infinispan.stream.CacheCollectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

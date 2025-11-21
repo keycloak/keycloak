@@ -100,7 +100,7 @@
                 </#if>
 
             <@buttons.actionGroup>
-                <@buttons.button id="authenticateWebAuthnButton" label="webauthn-doAuthenticate" class=["kcButtonPrimaryClass","kcButtonBlockClass"]/>
+                <@buttons.button id="authenticateWebAuthnButton" label="webauthn-doAuthenticate" class=["kcButtonPrimaryClass","kcButtonBlockClass"] autofocus="autofocus"/>
             </@buttons.actionGroup>
         </div>
     <script type="module">

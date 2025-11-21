@@ -1,32 +1,31 @@
 package org.keycloak.representations.workflows;
 
-import static org.keycloak.common.util.reflections.Reflections.isArrayType;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.reflections.Reflections;
+
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.reflections.Reflections;
+
+import static org.keycloak.common.util.reflections.Reflections.isArrayType;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 public abstract class AbstractWorkflowComponentRepresentation {
 
     private String id;
-    private String uses;
 
     @JsonProperty(CONFIG_WITH)
     private MultivaluedHashMap<String, String> config;
 
-    public AbstractWorkflowComponentRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
+    public AbstractWorkflowComponentRepresentation(String id, MultivaluedHashMap<String, String> config) {
         this.id = id;
-        this.uses = uses;
-        this.config = config;
+        this.setConfig(config);
     }
 
     public String getId() {
@@ -37,23 +36,17 @@ public abstract class AbstractWorkflowComponentRepresentation {
         this.id = id;
     }
 
-    public String getUses() {
-        return this.uses;
-    }
-
-    public void setUses(String uses) {
-        this.uses = uses;
-    }
-
     public MultivaluedHashMap<String, String> getConfig() {
         return config;
     }
 
     public void setConfig(MultivaluedHashMap<String, String> config) {
-        if (this.config == null) {
-            this.config = config;
+        if (config != null) {
+            if (this.config == null) {
+                this.config = new MultivaluedHashMap<>();
+            }
+            this.config.putAll(config);
         }
-        this.config.putAll(config);
     }
 
     public void setConfig(String key, String value) {
@@ -89,24 +82,6 @@ public abstract class AbstractWorkflowComponentRepresentation {
         }
     }
 
-    protected <T> T getConfigValuesOrSingle(String key) {
-        if (config == null) {
-            return null;
-        }
-
-        List<String> values = config.get(key);
-
-        if (values == null || values.isEmpty()) {
-            return null;
-        }
-
-        if (values.size() == 1) {
-            return (T) values.get(0);
-        }
-
-        return (T) values;
-    }
-
     protected void setConfigValue(String key, Object... values) {
         if (values == null || values.length == 0) {
             return;
@@ -124,6 +99,9 @@ public abstract class AbstractWorkflowComponentRepresentation {
     }
 
     protected void setConfigValue(String key, List<String> values) {
+        if (values == null) {
+            return;
+        }
         if (this.config == null) {
             this.config = new MultivaluedHashMap<>();
         }
@@ -131,6 +109,9 @@ public abstract class AbstractWorkflowComponentRepresentation {
     }
 
     protected void addConfigValue(String key, String value) {
+        if (value == null) {
+            return;
+        }
         if (this.config == null) {
             this.config = new MultivaluedHashMap<>();
         }

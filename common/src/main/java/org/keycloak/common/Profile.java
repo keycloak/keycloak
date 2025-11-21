@@ -17,13 +17,6 @@
 
 package org.keycloak.common;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.Profile.Feature.Type;
-import org.keycloak.common.profile.ProfileConfigResolver;
-import org.keycloak.common.profile.ProfileConfigResolver.FeatureConfig;
-import org.keycloak.common.profile.ProfileException;
-import org.keycloak.common.util.KerberosJdkProvider;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,6 +30,14 @@ import java.util.TreeSet;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.common.Profile.Feature.Type;
+import org.keycloak.common.profile.ProfileConfigResolver;
+import org.keycloak.common.profile.ProfileConfigResolver.FeatureConfig;
+import org.keycloak.common.profile.ProfileException;
+import org.keycloak.common.util.KerberosJdkProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,6 +59,8 @@ public class Profile {
         ADMIN_FINE_GRAINED_AUTHZ_V2("Fine-Grained Admin Permissions version 2", Type.DEFAULT, 2, Feature.AUTHORIZATION),
 
         ADMIN_API("Admin API", Type.DEFAULT),
+
+        CLIENT_ADMIN_API_V2("Client Admin API v2", Type.EXPERIMENTAL, 2, Feature.ADMIN_API),
 
         ADMIN_V2("New Admin Console", Type.DEFAULT, 2, Feature.ADMIN_API),
 
@@ -151,6 +154,8 @@ public class Profile {
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
 
         HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
+
+        OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.

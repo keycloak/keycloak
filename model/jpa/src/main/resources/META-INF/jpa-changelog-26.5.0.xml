@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!-- These indexes IDX_OFFLINE_CSS_BY_CLIENT and IDX_OFFLINE_CSS_BY_CLIENT_STORAGE_PROVIDER are used to retrieve
+    sessions by client and to count sessions by client. They are also used to remove client sessions for no-longer
+    existing clients from the table. -->
+
+    <changeSet author="keycloak" id="26.5.0-index-offline-css-by-client">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_CLIENT" />
+            </not>
+        </preConditions>
+        <createIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_CLIENT">
+            <column name="CLIENT_ID" type="VARCHAR(255)" />
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value="WHERE CLIENT_ID != 'external'" />
+        </modifySql>
+        <modifySql dbms="mssql">
+            <append value="WHERE CLIENT_ID != 'external'" />
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.5.0-index-offline-css-by-client-storage-provider">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_CLIENT_STORAGE_PROVIDER" />
+            </not>
+        </preConditions>
+        <createIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_CLIENT_STORAGE_PROVIDER">
+            <column name="CLIENT_STORAGE_PROVIDER" type="VARCHAR(36)" />
+            <column name="EXTERNAL_CLIENT_ID" type="VARCHAR(255)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value="WHERE CLIENT_STORAGE_PROVIDER != 'internal'" />
+        </modifySql>
+        <modifySql dbms="mssql">
+            <append value="WHERE CLIENT_STORAGE_PROVIDER != 'internal'" />
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.5.0-idp-config-allow-null">
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="TRUST_EMAIL"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="TRUST_EMAIL" columnDataType="BOOLEAN"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="STORE_TOKEN" columnDataType="BOOLEAN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="STORE_TOKEN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="ADD_TOKEN_ROLE"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="ADD_TOKEN_ROLE" columnDataType="BOOLEAN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="AUTHENTICATE_BY_DEFAULT"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="AUTHENTICATE_BY_DEFAULT" columnDataType="BOOLEAN"/>
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="LINK_ONLY"/>
+        <dropNotNullConstraint tableName="IDENTITY_PROVIDER" columnName="LINK_ONLY" columnDataType="BOOLEAN"/>
+        <!-- HIDE_ON_LOGIN did not have a non-null constraint -->
+        <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="HIDE_ON_LOGIN"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.5.0-remove-workflow-provider-id-column">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <columnExists tableName="WORKFLOW_STATE" columnName="WORKFLOW_PROVIDER_ID" />
+                <indexExists tableName="WORKFLOW_STATE" indexName="IDX_WORKFLOW_STATE_PROVIDER"/>
+            </and>
+        </preConditions>
+        <dropIndex tableName="WORKFLOW_STATE" indexName="IDX_WORKFLOW_STATE_PROVIDER"/>
+        <createIndex indexName="IDX_WORKFLOW_STATE_PROVIDER"
+                     tableName="WORKFLOW_STATE">
+            <column name="RESOURCE_ID" />
+        </createIndex>
+        <dropColumn tableName="WORKFLOW_STATE" columnName="WORKFLOW_PROVIDER_ID"/>
+    </changeSet>
+
+    <changeSet id="26.5.0-add-remember-me" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="OFFLINE_USER_SESSION" columnName="REMEMBER_ME"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="26.5.0-add-sess-refresh-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="CREATED_ON" type="INT"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="26.5.0-add-sess-create-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="LAST_SESSION_REFRESH" type="INT"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="26.5.0-drop-sess-refresh-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH"/>
+        </preConditions>
+        <!-- replaced by the 2 indexes above -->
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH"/>
+    </changeSet>
+
+</databaseChangeLog>

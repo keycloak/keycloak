@@ -27,6 +27,7 @@ import static org.keycloak.operator.testsuite.utils.CRAssert.eventuallyRollingUp
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -237,6 +238,7 @@ public class UpdateTest extends BaseOperatorTest {
                 .map(ObjectMeta::getName)
                 .toList();
         assertFalse(servicePods.contains(jobPodName), "pods: " + servicePods + " / job pod: " + jobPodName);
+        assertEquals("test", keycloak.getSpec().getUpdateSpec().getLabels().get("example"));
         return job;
     }
 
@@ -267,6 +269,9 @@ public class UpdateTest extends BaseOperatorTest {
         kc.getSpec().setInstances(2);
         var updateSpec = new UpdateSpec();
         updateSpec.setStrategy(updateStrategy);
+        Map<String, String> labels = new java.util.HashMap<>(Map.of());
+        labels.put("example", "test");
+        updateSpec.setLabels(labels);
         if (updateStrategy == UpdateStrategy.EXPLICIT) {
             updateSpec.setRevision("0");
         }

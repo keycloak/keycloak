@@ -18,13 +18,14 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.events.Errors;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Check that switch "fullScopeAllowed" is not enabled for the clients

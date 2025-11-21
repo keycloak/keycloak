@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.vault;
 
-import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.vault.VaultTranscriber;
+
+import org.junit.Test;
 
 /**
  * Tests the usage of the {@link VaultTranscriber} on the server side. The tests attempt to obtain the transcriber from

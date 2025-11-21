@@ -23,10 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
-import org.ietf.jgss.GSSCredential;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.KerberosSerializationUtils;
@@ -44,9 +40,13 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.TestAppHelper;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.ietf.jgss.GSSCredential;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assume;
+import org.junit.Test;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 

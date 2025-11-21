@@ -1,6 +1,5 @@
 package org.keycloak.models.workflow.conditions;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -8,42 +7,41 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
-import org.keycloak.models.workflow.WorkflowEvent;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
-import org.keycloak.models.workflow.ResourceType;
+import org.keycloak.utils.StringUtil;
 
 public class IdentityProviderWorkflowConditionProvider implements WorkflowConditionProvider {
 
-    private final List<String> expectedAliases;
+    private final String expectedAlias;
     private final KeycloakSession session;
 
-    public IdentityProviderWorkflowConditionProvider(KeycloakSession session, List<String> expectedAliases) {
+    public IdentityProviderWorkflowConditionProvider(KeycloakSession session, String expectedAlias) {
         this.session = session;
-        this.expectedAliases = expectedAliases;;
+        this.expectedAlias = expectedAlias;
     }
 
     @Override
-    public boolean evaluate(WorkflowEvent event) {
-        if (!ResourceType.USERS.equals(event.getResourceType())) {
+    public boolean evaluate(WorkflowExecutionContext context) {
+        validate();
+
+        RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
+        if (user == null) {
             return false;
         }
 
-        validate();
-
-        String userId = event.getResourceId();
-        RealmModel realm = session.getContext().getRealm();
-        UserModel user = session.users().getUserById(realm, userId);
         Stream<FederatedIdentityModel> federatedIdentities = session.users().getFederatedIdentitiesStream(realm, user);
-
         return federatedIdentities
                 .map(FederatedIdentityModel::getIdentityProvider)
-                .anyMatch(expectedAliases::contains);
+                .anyMatch(expectedAlias::equals);
     }
 
     @Override
@@ -55,7 +53,7 @@ public class IdentityProviderWorkflowConditionProvider implements WorkflowCondit
         subquery.where(
                 cb.and(
                         cb.equal(from.get("user").get("id"), path.get("id")),
-                        from.get("identityProvider").in(expectedAliases)
+                        cb.equal(from.get("identityProvider"), expectedAlias)
                 )
         );
 
@@ -64,11 +62,12 @@ public class IdentityProviderWorkflowConditionProvider implements WorkflowCondit
 
     @Override
     public void validate() {
-        expectedAliases.forEach(alias -> {
-            if (session.identityProviders().getByAlias(alias) == null) {
-                throw new WorkflowInvalidStateException(String.format("Identity provider %s does not exist.", alias));
-            }
-        });
+        if (StringUtil.isBlank(expectedAlias)) {
+            throw new WorkflowInvalidStateException("Expected identity provider alias is not set.");
+        }
+        if (session.identityProviders().getByAlias(expectedAlias) == null) {
+            throw new WorkflowInvalidStateException(String.format("Identity provider %s does not exist.", expectedAlias));
+        }
     }
 
     @Override

@@ -17,20 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
-import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
-import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
-import org.keycloak.protocol.oid4vc.model.Claim;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +24,22 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuthErrorException;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Claim;
+import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 
@@ -50,6 +51,11 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
     public OID4VCAuthorizationDetailsProcessor(KeycloakSession session) {
         this.session = session;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return session.getContext().getRealm().isVerifiableCredentialsEnabled();
     }
 
     @Override
@@ -334,6 +340,24 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     public List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
         return generateAuthorizationDetailsFromCredentialOffer(clientSession);
+    }
+
+    @Override
+    public List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx, String storedAuthDetails) throws OAuthErrorException {
+        if (storedAuthDetails == null) {
+            return null;
+        }
+
+        logger.debugf("Processing stored authorization_details from authorization request: %s", storedAuthDetails);
+
+        try {
+            return process(userSession, clientSessionCtx, storedAuthDetails);
+        } catch (RuntimeException e) {
+            logger.warnf(e, "Error when processing stored authorization_details, cannot fulfill OID4VC requirement");
+            // According to OID4VC spec, if authorization_details was used in authorization request,
+            // it is required to be returned in token response. If it cannot be processed, return invalid_request error
+            throw new OAuthErrorException(OAuthErrorException.INVALID_REQUEST, "authorization_details was used in authorization request but cannot be processed for token response: " + e.getMessage());
+        }
     }
 
     @Override

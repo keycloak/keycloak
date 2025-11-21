@@ -64,6 +64,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
 
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
   const isOid4vcEnabled = isFeatureEnabled(Feature.OpenId4VCI);
+  const isNotSaml = selectedProtocol != "saml";
 
   const setDynamicRegex = (value: string, append: boolean) =>
     setValue(
@@ -190,6 +191,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           labelIcon={t("includeInTokenScopeHelp")}
           stringify
         />
+        {isNotSaml && (
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+              "attributes.include.in.openid.provider.metadata",
+            )}
+            defaultValue="true"
+            label={t("includeInOpenIdProviderMetadata")}
+            labelIcon={t("includeInOpenIdProviderMetadataHelp")}
+            stringify
+          />
+        )}
         <TextControl
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
             "attributes.gui.order",

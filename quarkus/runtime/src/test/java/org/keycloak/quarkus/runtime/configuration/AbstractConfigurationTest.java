@@ -17,21 +17,11 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.Environment;
@@ -41,6 +31,15 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.SmallRyeConfig;
+import org.junit.After;
+import org.junit.BeforeClass;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractConfigurationTest {
 
@@ -88,11 +87,6 @@ public abstract class AbstractConfigurationTest {
     @After
     public void onAfter() {
         resetConfiguration();
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        Environment.removeHomeDir();
     }
 
     protected static Config.Scope initConfig(String... scope) {

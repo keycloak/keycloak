@@ -1,11 +1,11 @@
 package org.keycloak.testframework.realm;
 
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 public class ClientConfigBuilder {
 

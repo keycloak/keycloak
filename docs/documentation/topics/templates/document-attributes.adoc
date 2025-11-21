@@ -87,7 +87,7 @@
 :observablitycategory_link: https://www.keycloak.org/guides#observability
 :operatorguide_name: Operator  Guide
 :operatorguide_link: https://www.keycloak.org/guides#operator
-:tracingguide_name: Enabling Tracing
+:tracingguide_name: Root cause analysis with tracing
 :tracingguide_link: https://www.keycloak.org/observability/tracing
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading

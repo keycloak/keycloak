@@ -1,14 +1,15 @@
 package org.keycloak.config;
 
-import org.keycloak.config.database.Database;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import org.keycloak.config.database.Database;
+
 import static org.keycloak.config.OptionsUtil.DURATION_DESCRIPTION;
+import static org.keycloak.config.WildcardOptionsUtil.getWildcardNamedKey;
 
 public class DatabaseOptions {
 
@@ -238,9 +239,7 @@ public class DatabaseOptions {
          * Result: {@code db-driver-my-store}
          */
         public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
-            return getKeyForDatasource(option)
-                    .map(key -> key.substring(0, key.indexOf("<")))
-                    .map(key -> key.concat(namedProperty));
+            return getKeyForDatasource(option).map(key -> getWildcardNamedKey(key, namedProperty));
         }
     }
 }

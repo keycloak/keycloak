@@ -17,17 +17,17 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.keycloak.representations.LogoutToken;
-import org.keycloak.representations.adapters.action.LogoutAction;
-import org.keycloak.representations.adapters.action.PushNotBeforeAction;
-import org.keycloak.representations.adapters.action.TestAvailabilityAction;
-import org.keycloak.utils.MediaType;
-
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+
+import org.keycloak.representations.LogoutToken;
+import org.keycloak.representations.adapters.action.LogoutAction;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.TestAvailabilityAction;
+import org.keycloak.utils.MediaType;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -1,8 +1,13 @@
 package org.keycloak.testsuite.federation.storage;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.io.Closeable;
+import java.io.File;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
+import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
@@ -14,20 +19,17 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import java.io.Closeable;
-import jakarta.ws.rs.NotFoundException;
-import java.io.File;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
 import static org.junit.Assert.fail;
-import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
 /**
  *

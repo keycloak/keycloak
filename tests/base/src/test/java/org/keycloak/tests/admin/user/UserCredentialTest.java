@@ -1,11 +1,16 @@
 package org.keycloak.tests.admin.user;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
@@ -21,16 +26,13 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -216,7 +218,7 @@ public class UserCredentialTest extends AbstractUserTest {
                 .get();
 
         // Test that when admin operates on user "user2", he can't update, move or remove credentials of different user "user1"
-        UserResource user2 = ApiUtil.findUserByUsernameId(managedRealm.admin(), testUser.getUsername());
+        UserResource user2 = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), testUser.getUsername());
         try {
             user2.setCredentialUserLabel(otpCredential.getId(), "new-label");
             Assertions.fail("Not expected to successfully update user label");

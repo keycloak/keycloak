@@ -17,14 +17,14 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
 import picocli.CommandLine;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 public abstract class AbstractNonServerCommand extends AbstractAutoBuildCommand {
 

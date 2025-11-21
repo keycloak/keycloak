@@ -16,10 +16,14 @@
  */
 package org.keycloak.authentication.actiontoken.inviteorg;
 
+import java.net.URI;
+import java.util.Objects;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
@@ -42,9 +46,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import java.net.URI;
-import java.util.Objects;
 
 /**
  * Action token handler for handling invitation of an existing user to an organization. A new user is handled in registration {@link org.keycloak.services.resources.LoginActionsService}.
@@ -115,7 +116,8 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             event.user(user).error(Errors.USER_ORG_MEMBER_ALREADY);
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
-                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername())
+                    .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                    .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername(), organization.getName())
                     .setAttribute("pageRedirectUri", organization.getRedirectUrl())
                     .createInfoPage();
         }

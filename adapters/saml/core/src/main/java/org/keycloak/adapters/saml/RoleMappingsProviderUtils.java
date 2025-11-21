@@ -22,9 +22,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+
+import org.jboss.logging.Logger;
 
 /**
  * Utility class that allows for the instantiation and configuration of role mappings providers.

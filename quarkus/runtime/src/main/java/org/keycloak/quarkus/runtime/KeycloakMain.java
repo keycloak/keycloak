@@ -17,38 +17,34 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
-import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
-import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import picocli.CommandLine;
 
+import org.keycloak.common.Version;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
+import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
-import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.arc.Arc;
+import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
-
-import org.jboss.logging.Logger;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.common.Version;
-import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
-import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
-import org.keycloak.quarkus.runtime.cli.command.Start;
-
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
+import org.jboss.logging.Logger;
+import picocli.CommandLine;
+
+import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
+import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
+import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
@@ -100,9 +96,6 @@ public class KeycloakMain implements QuarkusApplication {
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
-        } else if (isFastStart(cliArgs)) { // fast path for starting the server without bootstrapping CLI
-            Start.fastStart(picocli, Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)));
-            return;
         }
 
         // parse arguments and execute any of the configured commands
@@ -126,11 +119,6 @@ public class KeycloakMain implements QuarkusApplication {
                     sf);
             throw new RuntimeException("The ForkJoinPool has been initialized with the wrong thread factory");
         }
-    }
-
-    private static boolean isFastStart(List<String> cliArgs) {
-        // 'start --optimized' should start the server without parsing CLI
-        return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
     }
 
     public static void start(Picocli picocli, AbstractNonServerCommand command, ExecutionExceptionHandler errorHandler) {

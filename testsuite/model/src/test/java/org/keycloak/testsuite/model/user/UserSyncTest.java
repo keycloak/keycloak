@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.model.user;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+import javax.naming.directory.BasicAttribute;
+
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
@@ -48,10 +51,11 @@ import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import javax.naming.directory.BasicAttribute;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.IntStream;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import static org.keycloak.models.LDAPConstants.LDAP_ID;
+import static org.keycloak.storage.UserStorageProviderModel.REMOVE_INVALID_USERS_ENABLED;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -60,8 +64,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeThat;
-import static org.keycloak.models.LDAPConstants.LDAP_ID;
-import static org.keycloak.storage.UserStorageProviderModel.REMOVE_INVALID_USERS_ENABLED;
 
 @RequireProvider(UserProvider.class)
 @RequireProvider(ClusterProvider.class)
@@ -398,4 +400,3 @@ public class UserSyncTest extends KeycloakModelTest {
         });
     }
 }
-

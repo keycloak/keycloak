@@ -17,10 +17,10 @@
 
 package org.keycloak.common.enums;
 
-import org.keycloak.common.ClientConnection;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import org.keycloak.common.ClientConnection;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

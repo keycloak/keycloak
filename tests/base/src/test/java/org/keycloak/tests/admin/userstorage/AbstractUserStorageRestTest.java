@@ -1,7 +1,7 @@
 package org.keycloak.tests.admin.userstorage;
 
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -10,7 +10,9 @@ import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+
+import org.junit.jupiter.api.Assertions;
 
 public class AbstractUserStorageRestTest {
 

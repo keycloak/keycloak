@@ -16,13 +16,13 @@
  */
 package org.keycloak.broker.provider;
 
-import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.broker.provider.util.IdentityBrokerState;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author Pedro Igor

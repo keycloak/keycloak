@@ -18,6 +18,7 @@
 package org.keycloak.migration.migrators;
 
 import java.util.stream.Collectors;
+
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;

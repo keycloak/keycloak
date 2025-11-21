@@ -17,11 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.nio.file.FileSystems;
 import java.util.Arrays;
@@ -32,27 +27,34 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import io.smallrye.config.SmallRyeConfig;
-import org.hibernate.dialect.H2Dialect;
-import org.hibernate.dialect.PostgreSQLDialect;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.Expressions;
-import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.config.SmallRyeConfigBuilder;
-import org.h2.Driver;
-import org.hibernate.dialect.MariaDBDialect;
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
-import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
+
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.Expressions;
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import org.h2.Driver;
+import org.hibernate.dialect.H2Dialect;
+import org.hibernate.dialect.MariaDBDialect;
+import org.hibernate.dialect.PostgreSQLDialect;
+import org.junit.Assert;
+import org.junit.Test;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ConfigurationTest extends AbstractConfigurationTest {
 
@@ -84,6 +86,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testEnvVarPriorityOverPropertiesFile() {
         putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.unittest");
         assertEquals("http://envvar.unittest", initConfig("hostname", "default").get("frontendUrl"));
+    }
+
+    @Test
+    public void testEnvVarPriorityOverPropertiesFileMixedSpiNamingConventions() {
+        putEnvVar("KC_SPI_HOSTNAME_OTHER_FRONTEND_URL", "http://envvar.unittest");
+        assertEquals("http://envvar.unittest", initConfig("hostname", "other").get("frontendUrl"));
     }
 
     @Test
@@ -270,7 +278,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals(H2Dialect.class.getName(), config.getConfigValue("kc.db-dialect").getValue());
         assertEquals(Driver.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
-        assertEquals("jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2/keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=dev-mem");
         config = createConfig();
@@ -403,7 +411,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testNestedDatabaseProperties() {
         SmallRyeConfig config = createConfig();
-        assertEquals("jdbc:h2:file:"+Environment.getHomeDir()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
+        assertEquals("jdbc:h2:file:"+Environment.getHomeDir().orElseThrow()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
 
         Assert.assertEquals("foo-def-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
 
@@ -421,9 +429,17 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testDevThemeProperties() {
+        assertNull(initConfig("theme").getBoolean("cacheThemes"));
+
+        System.setProperty(org.keycloak.common.util.Environment.PROFILE, "dev");
+        assertFalse(initConfig("theme").getBoolean("cacheThemes"));
+    }
+
+    @Test
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
-        String conf = Environment.getHomeDir() + File.separator + "conf" + File.separator;
+        String conf = Environment.getHomeDir().orElseThrow() + File.separator + "conf" + File.separator;
         Assert.assertEquals(conf + "cache-ispn.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
 
         // If explicitly set, then it is always used regardless of the profile
@@ -631,7 +647,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testQuarkusLogPropDependentUponKeycloak() {
-        Environment.setRebuildCheck(); // will be reset by the system properties logic
+        Environment.setRebuildCheck(true); // will be reset by the system properties logic
         ConfigArgsConfigSource.setCliArgs("--log-level=something:debug");
         SmallRyeConfig config = createConfig();
         assertEquals("DEBUG", config.getConfigValue("quarkus.log.category.\"something\".level").getValue());

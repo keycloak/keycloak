@@ -17,26 +17,31 @@
 
 package org.keycloak.testsuite.webauthn.registration;
 
-import com.webauthn4j.data.AttestationConveyancePreference;
-import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
-import com.webauthn4j.data.attestation.statement.PackedAttestationStatement;
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+
+import com.webauthn4j.data.AttestationConveyancePreference;
+import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
+import com.webauthn4j.data.attestation.statement.PackedAttestationStatement;
+import org.junit.Test;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.Credential;
 
-import java.io.IOException;
+import static org.keycloak.models.Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.models.Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -87,6 +92,39 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
             // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
             testingClient.testing().disableTruststoreSpi();
             assertAttestationConveyance(true, AttestationConveyancePreference.DIRECT);
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    public void attestationConveyancePreferenceNoneToDirect() throws IOException {
+        oauth.openLoginForm();
+        waitForPageToLoad();
+        loginPage.assertCurrent();
+        loginPage.clickRegister();
+
+        waitForPageToLoad();
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", EMAIL, USERNAME, generatePassword(USERNAME));
+
+        // User was registered. Now he needs to register WebAuthn credential
+        waitForPageToLoad();
+        webAuthnRegisterPage.assertCurrent();
+        webAuthnRegisterPage.clickRegister();
+
+        try (AbstractWebAuthnRealmUpdater updater = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyAttestationConveyancePreference(AttestationConveyancePreference.DIRECT.getValue())
+                .update()) {
+
+            testingClient.testing().disableTruststoreSpi();
+
+            assertTrue(webAuthnRegisterPage.isRegisterAlertPresent());
+            webAuthnRegisterPage.registerWebAuthnCredential("new webauth credential");
+
+            // should fail because none is not allowed
+            webAuthnErrorPage.isCurrent();
+            assertThat(webAuthnErrorPage.getError(), containsString("AttestationVerifier is not configured to handle the supplied AttestationStatement format 'none'."));
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }

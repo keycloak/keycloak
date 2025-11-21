@@ -357,7 +357,7 @@ export type DataListProps<T> = Omit<
  * @param {DataListProps} props - The properties.
  * @param {string} props.ariaLabelKey - The aria label key i18n key to lookup the label
  * @param {string} props.searchPlaceholderKey - The i18n key to lookup the placeholder for the search box
- * @param {boolean} props.isPaginated - if true the the loader will be called with first, max and search and a pager will be added in the header
+ * @param {boolean} props.isPaginated - if true, the loader will be called with first, max and search and a pager will be added in the header
  * @param {(first?: number, max?: number, search?: string) => Promise<T[]>} props.loader - loader function that will fetch the data to display first, max and search are only applicable when isPaginated = true
  * @param {Field<T>} props.columns - definition of the columns
  * @param {Field<T>} props.detailColumns - definition of the columns expandable columns

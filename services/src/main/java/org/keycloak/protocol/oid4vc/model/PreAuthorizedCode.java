@@ -17,10 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Objects;
 
 /**
  * Represents a pre-authorized grant, as used by the Credential Offer in OID4VCI

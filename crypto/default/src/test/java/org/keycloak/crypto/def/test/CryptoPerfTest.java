@@ -24,11 +24,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 
-import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
@@ -42,6 +37,12 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.TokenUtil;
+
+import org.jboss.logging.Logger;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Simple test just to test how long it takes to generate keys of specific size, Sign+Verify with keys of specific size etc.

@@ -1,10 +1,7 @@
 package org.keycloak.testframework.injection;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.util.List;
+
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.mocks.MockChildAnnotation;
 import org.keycloak.testframework.injection.mocks.MockChildSupplier;
@@ -15,7 +12,11 @@ import org.keycloak.testframework.injection.mocks.MockParentAnnotation;
 import org.keycloak.testframework.injection.mocks.MockParentSupplier;
 import org.keycloak.testframework.injection.mocks.MockParentValue;
 
-import java.util.List;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RegistryTest {
 

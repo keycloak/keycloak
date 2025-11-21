@@ -1,8 +1,9 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.core.Response;
-import org.junit.Test;
+
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.OfferUriType;
@@ -11,7 +12,8 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.function.Consumer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

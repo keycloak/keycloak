@@ -16,7 +16,6 @@
  */
 package org.keycloak.broker.saml.mappers;
 
-import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
@@ -26,6 +25,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import org.jboss.logging.Logger;
 
 /**
  * Abstract class that handles the logic for importing and updating brokered users for all mappers that map a SAML
@@ -62,9 +63,15 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
         if (!context.hasMapperGrantedRole(roleName)) {
             if (this.applies(mapperModel, context)) {
                 context.addMapperGrantedRole(roleName);
-                user.grantRole(role);
+                if ((!role.isClientRole() && user.getRealmRoleMappingsStream().noneMatch(r -> r.equals(role)))
+                    || (role.isClientRole() && user.getClientRoleMappingsStream(session.clients().getClientById(realm, role.getContainerId())).noneMatch(r -> r.equals(role)))) {
+                    user.grantRole(role);
+                }
             } else {
-                user.deleteRoleMapping(role);
+                if ((!role.isClientRole() && user.getRealmRoleMappingsStream().anyMatch(r -> r.equals(role)))
+                    || (role.isClientRole() && user.getClientRoleMappingsStream(session.clients().getClientById(realm, role.getContainerId())).anyMatch(r -> r.equals(role)))) {
+                    user.deleteRoleMapping(role);
+                }
             }
         }
     }

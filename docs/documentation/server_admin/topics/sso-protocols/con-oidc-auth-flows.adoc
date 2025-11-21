@@ -2,7 +2,7 @@
 [id="con-oidc-auth-flows_{context}"]
 ==== OIDC auth flows
 [role="_abstract"]
-OIDC has several methods, or flows, that clients or applications can use to authenticate users and receive _identity_ and _access_ tokens.  The method depends on the type of application or client requesting access.
+OIDC has several methods, or flows, that clients or applications can use to authenticate users and receive _identity_ and _access_ tokens. The method depends on the type of application or client requesting access.
 
 [[_oidc-auth-flows-authorization]]
 
@@ -16,7 +16,7 @@ The Authorization Code Flow is a browser-based protocol and suits authenticating
 . {project_name} authenticates the user and creates a one-time, short-lived, temporary code.
 . {project_name} redirects to the application using the callback URL and adds the temporary code as a query parameter in the callback URL.
 . The application extracts the temporary code and makes a background REST invocation to {project_name}
-to exchange the code for an _identity_ and _access_ and _refresh_ token.  To prevent replay attacks, the temporary code cannot be used more than once.
+to exchange the code for an _identity_ and _access_ and _refresh_ token. To prevent replay attacks, the temporary code cannot be used more than once.
 
 [NOTE]
 ====
@@ -25,7 +25,7 @@ A system is vulnerable to a stolen token for the lifetime of that token. For sec
 
 [[_confidential-clients]]
 _Confidential_ clients provide client secrets when they exchange the temporary codes for tokens. _Public_ clients are not required to provide client secrets.
-_Public_ clients are secure when HTTPS is strictly enforced and redirect URIs registered for the client are strictly controlled.  HTML5/JavaScript clients have to be _public_ clients because there is no way to securely transmit the client secret to HTML5/JavaScript clients. For more details, see the xref:assembly-managing-clients_{context}[Managing Clients] chapter.
+_Public_ clients are secure when HTTPS is strictly enforced and redirect URIs registered for the client are strictly controlled. HTML5/JavaScript clients have to be _public_ clients because there is no way to securely transmit the client secret to HTML5/JavaScript clients. For more details, see the xref:assembly-managing-clients_{context}[Managing Clients] chapter.
 
 {project_name} also supports the https://datatracker.ietf.org/doc/html/rfc7636[Proof Key for Code Exchange] specification.
 
@@ -39,7 +39,7 @@ The Implicit Flow is a browser-based protocol. It is similar to the Authorizatio
 ====
 The possibility exists of _access_ tokens leaking in the browser history when tokens are transmitted via redirect URIs (see below).
 
-Also, this flow does not provide clients with refresh tokens. Therefore, access tokens have to be long-lived or users  have to re-authenticate when they expire.
+Also, this flow does not provide clients with refresh tokens. Therefore, access tokens have to be long-lived or users have to re-authenticate when they expire.
 
 We do not advise using this flow. This flow is supported because it is in the OIDC and OAuth 2.0 specification.
 ====
@@ -57,7 +57,7 @@ redirects to the application using the callback URL and additionally adds the _i
 
 ===== Resource owner password credentials grant (Direct Access Grants)
 
-_Direct Access Grants_ are used by REST clients to obtain tokens on behalf of users.  It is a HTTP POST request that contains:
+_Direct Access Grants_ are used by REST clients to obtain tokens on behalf of users. It is a HTTP POST request that contains:
 
 * The credentials of the user. The credentials are sent within form parameters.
 * The id of the client.
@@ -98,7 +98,7 @@ profile and configure client policy to specify for which clients would be the pr
 This is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser. Here's a brief summary of the protocol:
 
 . The application requests {project_name} a device code and a user code. {project_name} creates a device code and a user code. {project_name} returns a response including the device code and the user code to the application.
-. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. You could define a short verification_uri that will be redirected to {project_name} verification URI (/realms/realm_name/device)outside {project_name} - fe in a proxy.
+. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. You could define a short verification_uri that will be redirected to {project_name} verification URI (/realms/realm_name/device) outside {project_name} - for example in a proxy.
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
 
 [[_client_initiated_backchannel_authentication_grant]]
@@ -138,7 +138,7 @@ The configurable items and their description follow.
  For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#successful_authentication_request_acknowdlegment[CIBA Specification].
 
 |Authentication Requested User Hint
-|The way of identifying the end-user for whom authentication is being requested. The default setting is "login_hint".  There are three modes, "login_hint", "login_hint_token" and "id_token_hint". {project_name} only supports "login_hint". This configuration is required.
+|The way of identifying the end-user for whom authentication is being requested. The default setting is "login_hint". There are three modes, "login_hint", "login_hint_token" and "id_token_hint". {project_name} only supports "login_hint". This configuration is required.
  For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA Specification].
 
 |===
@@ -175,7 +175,7 @@ Its implementation of {project_name} assumes that the authentication entity is u
 
 Authentication Channel Provider is provided as SPI provider so that users of {project_name} can implement their own provider in order to meet their environment. {project_name} provides its default provider called HTTP Authentication Channel Provider that uses HTTP to communicate with the authentication entity.
 
-If a user of {project_name} user want to use the HTTP Authentication Channel Provider, they need to know its contract between {project_name} and the authentication entity consisting of the following two parts.
+If a user of {project_name} wants to use the HTTP Authentication Channel Provider, they need to know its contract between {project_name} and the authentication entity consisting of the following two parts.
 
 Authentication Delegation Request/Response::
 {project_name} sends an authentication request to the authentication entity.
@@ -339,7 +339,7 @@ This redirect usually happens when the user clicks the `Log Out` link on the pag
 
 Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
 clients attached to the current browser SSO session to let them invalidate their local user sessions, and potentially redirect the user to some URL
-once the logout process is finished. The user might be optionally requested to confirm the logout in case the  `id_token_hint` parameter was not used.
+once the logout process is finished. The user might be optionally requested to confirm the logout in case the `id_token_hint` parameter was not used.
 After logout, the user is automatically redirected to the specified `post_logout_redirect_uri` as long as it is provided as a parameter.
 Note that you need to include either the `client_id` or `id_token_hint` parameter in case the `post_logout_redirect_uri` is included. Also the `post_logout_redirect_uri` parameter
 needs to match one of the `Valid Post Logout Redirect URIs` specified in the client configuration.

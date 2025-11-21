@@ -1,30 +1,32 @@
 package org.keycloak.testsuite.cli.admin;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.util.TempFileResource;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
-import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.util.JsonSerialization;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
+import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

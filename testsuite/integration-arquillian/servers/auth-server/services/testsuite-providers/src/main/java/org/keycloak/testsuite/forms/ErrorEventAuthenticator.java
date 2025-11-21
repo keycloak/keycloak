@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.forms;
 
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
@@ -27,8 +29,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.List;
 
 public class ErrorEventAuthenticator implements Authenticator, AuthenticatorFactory {
     public static final String PROVIDER_ID = "test-suite-fire-error-event";

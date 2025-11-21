@@ -17,7 +17,13 @@
 
 package org.keycloak.models.session;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
+
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -29,12 +35,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
 
@@ -71,6 +72,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             private int lastSessionRefresh;
             private boolean offline;
             private String data;
+            private boolean rememberMe;
 
             @Override
             public String getUserSessionId() {
@@ -136,10 +138,21 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             public void setBrokerSessionId(String brokerSessionId) {
                 /* ignored */
             }
+
+            @Override
+            public boolean isRememberMe() {
+                return rememberMe;
+            }
+
+            @Override
+            public void setRememberMe(boolean rememberMe) {
+                this.rememberMe = rememberMe;
+            }
         };
         this.model.setStarted(other.getStarted());
         this.model.setUserSessionId(other.getId());
         this.model.setLastSessionRefresh(other.getLastSessionRefresh());
+        this.model.setRememberMe(other.isRememberMe());
 
         this.user = other.getUser();
         this.userId = this.user.getId();
@@ -241,7 +254,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     @Override
     public boolean isRememberMe() {
-        return getData().isRememberMe();
+        return model.isRememberMe() || getData().isRememberMe();
     }
 
     @Override
@@ -377,6 +390,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     public void setRememberMe(boolean rememberMe) {
         getData().setRememberMe(rememberMe);
+        model.setRememberMe(rememberMe);
     }
 
     public void setStarted(int started) {
@@ -395,6 +409,10 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     public void setClientSessionsLoader(Consumer<Map<String, AuthenticatedClientSessionModel>> clientSessionsLoader) {
         this.clientSessionsLoader = Objects.requireNonNullElse(clientSessionsLoader, this.clientSessionsLoader);
+    }
+
+    public boolean requiresRememberMeMigration() {
+        return model.isRememberMe() != getData().isRememberMe();
     }
 
     protected static class PersistentUserSessionData {
@@ -459,10 +477,12 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             this.authMethod = authMethod;
         }
 
+        @Deprecated(since = "26.5", forRemoval = true)
         public boolean isRememberMe() {
             return rememberMe;
         }
 
+        @Deprecated(since = "26.5", forRemoval = true)
         public void setRememberMe(boolean rememberMe) {
             this.rememberMe = rememberMe;
         }

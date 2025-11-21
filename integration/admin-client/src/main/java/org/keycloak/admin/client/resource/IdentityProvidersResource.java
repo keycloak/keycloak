@@ -17,7 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -28,8 +29,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.Map;
+
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  * @author pedroigor
@@ -43,6 +44,13 @@ public interface IdentityProvidersResource {
     @Path("instances")
     @Produces(MediaType.APPLICATION_JSON)
     List<IdentityProviderRepresentation> findAll();
+
+    @GET
+    @Path("instances")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<IdentityProviderRepresentation> find(@QueryParam("type") String type, @QueryParam("capability") String capability,
+                                              @QueryParam("search") String search, @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                              @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
 
     @GET
     @Path("instances")

@@ -20,6 +20,7 @@ package org.keycloak.storage.configuration.jpa;
 import java.util.Set;
 
 import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;

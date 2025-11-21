@@ -17,14 +17,15 @@
 
 package org.keycloak.sessions;
 
-import org.infinispan.protostream.annotations.Proto;
-import org.infinispan.protostream.annotations.ProtoTypeId;
+import java.util.Map;
+import java.util.Objects;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.util.EnumWithStableIndex;
 
-import java.util.Map;
-import java.util.Objects;
+import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * Predecessor of AuthenticationSessionModel, ClientLoginSessionModel and ClientSessionModel (then action tickets). Maybe we will remove it later...

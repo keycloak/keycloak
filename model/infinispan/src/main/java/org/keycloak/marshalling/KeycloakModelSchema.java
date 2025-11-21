@@ -20,15 +20,6 @@ package org.keycloak.marshalling;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.infinispan.protostream.FileDescriptorSource;
-import org.infinispan.protostream.GeneratedSchema;
-import org.infinispan.protostream.annotations.ProtoSchema;
-import org.infinispan.protostream.annotations.ProtoSyntax;
-import org.infinispan.protostream.config.Configuration;
-import org.infinispan.protostream.descriptors.Descriptor;
-import org.infinispan.protostream.descriptors.FileDescriptor;
-import org.infinispan.protostream.impl.parser.ProtostreamProtoParser;
-import org.infinispan.protostream.types.java.CommonTypes;
 import org.keycloak.cluster.infinispan.LockEntry;
 import org.keycloak.cluster.infinispan.LockEntryPredicate;
 import org.keycloak.cluster.infinispan.WrapperClusterEvent;
@@ -97,9 +88,11 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.stream.AuthClientSessionSetMapper;
+import org.keycloak.models.sessions.infinispan.stream.ClientSessionFilterByUser;
 import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
 import org.keycloak.models.sessions.infinispan.stream.MapEntryToKeyMapper;
+import org.keycloak.models.sessions.infinispan.stream.RemoveKeyConsumer;
 import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.SessionUnwrapMapper;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
@@ -107,6 +100,16 @@ import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.managers.UserStorageSyncManager;
+
+import org.infinispan.protostream.FileDescriptorSource;
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.ProtoSchema;
+import org.infinispan.protostream.annotations.ProtoSyntax;
+import org.infinispan.protostream.config.Configuration;
+import org.infinispan.protostream.descriptors.Descriptor;
+import org.infinispan.protostream.descriptors.FileDescriptor;
+import org.infinispan.protostream.impl.parser.ProtostreamProtoParser;
+import org.infinispan.protostream.types.java.CommonTypes;
 
 @ProtoSchema(
         syntax = ProtoSyntax.PROTO3,
@@ -223,6 +226,8 @@ import org.keycloak.storage.managers.UserStorageSyncManager;
                 GroupAndCountCollectorSupplier.class,
                 MapEntryToKeyMapper.class,
                 SessionUnwrapMapper.class,
+                ClientSessionFilterByUser.class,
+                RemoveKeyConsumer.class,
 
                 // infinispan.module.certificates
                 ReloadCertificateFunction.class,

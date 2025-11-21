@@ -18,8 +18,6 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.AccessToken;
@@ -31,9 +29,13 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.junit.Rule;
+import org.junit.Test;
+
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 
 /**
  * Test for transient user session

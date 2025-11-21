@@ -18,8 +18,6 @@
 package org.keycloak.authentication.requiredactions;
 
 import java.util.ArrayList;
-import static org.keycloak.services.messages.Messages.EMAIL_VERIFICATION_PENDING;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +27,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorUtil;
@@ -38,6 +36,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
@@ -70,12 +69,17 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 
+import org.jboss.logging.Logger;
+
+import static org.keycloak.services.messages.Messages.EMAIL_VERIFICATION_PENDING;
+
 public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(UpdateEmail.class);
 
     public static final String CONFIG_VERIFY_EMAIL = "verifyEmail";
     private static final String FORCE_EMAIL_VERIFICATION = "forceEmailVerification";
+    public static final String EMAIL_RESEND_COOLDOWN_KEY_PREFIX = "update-email-cooldown-";
 
     public static boolean isEnabled(RealmModel realm) {
         if (realm == null) {
@@ -212,6 +216,22 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     private void sendEmailUpdateConfirmation(RequiredActionContext context, boolean logoutSessions) {
+        // Check rate limiting cooldown
+        Long remaining = EmailCooldownManager.retrieveCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
+        if (remaining != null) {
+            // Pre-fill form with pending email during cooldown
+            String pendingEmail = getPendingEmailVerification(context);
+            MultivaluedMap<String, String> formDataWithPendingEmail = new MultivaluedHashMap<>();
+            if (pendingEmail != null) {
+                formDataWithPendingEmail.putSingle(UserModel.EMAIL, pendingEmail);
+            }
+            context.challenge(context.form()
+                    .setError(Messages.COOLDOWN_VERIFICATION_EMAIL, remaining)
+                    .setFormData(formDataWithPendingEmail)
+                    .createResponse(UserModel.RequiredAction.UPDATE_EMAIL));
+            return;
+        }
+
         UserModel user = context.getUser();
         String oldEmail = user.getEmail();
         String newEmail = context.getHttpRequest().getDecodedFormParameters().getFirst(UserModel.EMAIL);
@@ -246,6 +266,9 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             return;
         }
         context.getEvent().success();
+
+        // Add cooldown entry after successful email send
+        EmailCooldownManager.addCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
 
         setPendingEmailVerification(context, newEmail);
 
@@ -319,7 +342,9 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
                 .helpText("If enabled, the user will be forced to verify the email regardless if email verification is enabled at the realm level or not. Otherwise, verification will be based on the realm level setting.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue(Boolean.FALSE)
-                .add().build());
+                .add()
+                .build());
+        config.add(EmailCooldownManager.createCooldownConfigProperty());
 
         return config;
     }
@@ -332,7 +357,6 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     private void setPendingEmailVerification(RequiredActionContext context, String email) {
         UserModel user = context.getUser();
         user.setSingleAttribute(UserModel.EMAIL_PENDING, email);
-        user.setEmailVerified(false);
     }
 
     private String getPendingEmailVerification(RequiredActionContext context) {

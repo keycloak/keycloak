@@ -16,9 +16,9 @@
  */
 package org.keycloak.dom.saml.v2.assertion;
 
-import org.w3c.dom.Element;
-
 import java.io.Serializable;
+
+import org.w3c.dom.Element;
 
 /**
  * Represents an element that is encrypted

@@ -1,6 +1,9 @@
 package org.keycloak.credential;
 
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.authentication.requiredactions.RecoveryAuthnCodesAction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -13,11 +16,11 @@ import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.RequiredActionHelper;
 
-import java.io.IOException;
-import java.util.Objects;
-import java.util.Optional;
+import org.jboss.logging.Logger;
 
-import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.*;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_GENERATE_NEW_CODES;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_NUMBER_REMAINING;
+import static org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel.RECOVERY_CODES_NUMBER_USED;
 
 public class RecoveryAuthnCodesCredentialProvider
         implements CredentialProvider<RecoveryAuthnCodesCredentialModel>, CredentialInputValidator {

@@ -1,10 +1,11 @@
 package org.keycloak.testframework.events;
 
+import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-import org.keycloak.events.EventType;
-import org.keycloak.representations.idm.EventRepresentation;
 
 public class EventAssertion {
 

@@ -30,6 +30,7 @@ import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
@@ -48,12 +49,12 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         Awaitility.await().ignoreExceptions().untilAsserted(() -> {
             StatefulSet statefulSet = stsResource.get();
             assertEquals("true",
-                    statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_SECRETS_ANNOTATION));
-            assertTrue(statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION)
+                    statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_ANNOTATION));
+            assertTrue(statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_SECRETS_ANNOTATION)
                     .contains("xyz"));
             assertEquals("true",
-                    statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_CONFIGMAPS_ANNOTATION));
-            assertTrue(statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_CONFIGMAPS_ANNOTATION)
+                    statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_WATCHING_CONFIGMAPS_ANNOTATION));
+            assertTrue(statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_CONFIGMAPS_ANNOTATION)
                     .contains("abc"));
         });
     }
@@ -72,13 +73,11 @@ public class KeycloakTruststoresTests extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
         Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
         StatefulSet statefulSet = stsResource.get();
-        assertEquals("false",
-                statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_SECRETS_ANNOTATION));
+        assertNull(statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_SECRETS_ANNOTATION));
         assertTrue(statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream()
                 .anyMatch(v -> v.getMountPath()
                         .equals("/opt/keycloak/conf/truststores/secret-example-truststore-secret")));
-        assertEquals("false",
-                statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_CONFIGMAPS_ANNOTATION));
+        assertNull(statefulSet.getMetadata().getAnnotations().get(WatchedResourcesTest.KEYCLOAK_MISSING_CONFIGMAPS_ANNOTATION));
         assertTrue(statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream()
                 .anyMatch(v -> v.getMountPath()
                         .equals("/opt/keycloak/conf/truststores/configmap-abc")));

@@ -662,13 +662,23 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "type"],
   });
 
-  public findOnePolicy = this.makeRequest<
+  public findOnePolicyWithType = this.makeRequest<
     { id: string; type: string; policyId: string },
     void
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{type}/{policyId}",
     urlParamKeys: ["id", "type", "policyId"],
+    catchNotFound: true,
+  });
+
+  public findOnePolicy = this.makeRequest<
+    { id: string; policyId: string },
+    void
+  >({
+    method: "GET",
+    path: "/{id}/authz/resource-server/policy/{policyId}",
+    urlParamKeys: ["id", "policyId"],
     catchNotFound: true,
   });
 

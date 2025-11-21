@@ -19,9 +19,11 @@ package org.keycloak.saml.processing.core.util;
 
 import java.util.Objects;
 import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
+
 import org.w3c.dom.Element;
 
 /**

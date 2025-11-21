@@ -17,21 +17,11 @@
 
 package org.keycloak.tests.admin.identityprovider;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.util.UUID;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.events.admin.OperationType;
@@ -46,10 +36,21 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.core.Response;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -93,8 +94,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
         assertNull(representation.getFirstBrokerLoginFlowAlias());
 
         assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("new-identity-provider").getConfig().get("clientSecret"), String.class));
@@ -211,8 +212,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, representation.getConfig().get("clientAuthMethod"));
 
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
 
         assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("new-identity-provider").getConfig().get("clientSecret"), String.class));
 
@@ -249,8 +250,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
         assertNull(representation.getConfig().get("jwtX509HeadersEnabled"));
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
     }
@@ -283,8 +284,8 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
         assertEquals("true", representation.getConfig().get("jwtX509HeadersEnabled"));
         assertTrue(representation.isEnabled());
-        assertFalse(representation.isStoreToken());
-        assertFalse(representation.isTrustEmail());
+        assertNull(representation.isStoreToken());
+        assertNull(representation.isTrustEmail());
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
     }

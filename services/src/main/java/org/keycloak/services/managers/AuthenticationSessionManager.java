@@ -19,9 +19,7 @@ package org.keycloak.services.managers;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Objects;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
@@ -37,12 +35,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
 
@@ -53,6 +52,7 @@ import static org.keycloak.services.managers.AuthenticationManager.authenticateI
 public class AuthenticationSessionManager {
 
     private static final Logger log = Logger.getLogger(AuthenticationSessionManager.class);
+    private static final Base64.Encoder BASE_64_ENCODER_NO_PADDING = Base64.getEncoder().withoutPadding();
 
     private final KeycloakSession session;
 
@@ -60,13 +60,10 @@ public class AuthenticationSessionManager {
         this.session = session;
     }
 
-
     /**
      * Creates a fresh authentication session for the given realm . Optionally sets the browser
      * authentication session cookie with the ID of the new session.
-     * @param realm
      * @param browserCookie Set the cookie in the browser for the
-     * @return
      */
     public RootAuthenticationSessionModel createAuthenticationSession(RealmModel realm, boolean browserCookie) {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
@@ -80,46 +77,29 @@ public class AuthenticationSessionManager {
     }
 
     public RootAuthenticationSessionModel getCurrentRootAuthenticationSession(RealmModel realm) {
-        String oldEncodedId = getAuthSessionCookies(realm);
-        if (oldEncodedId == null) {
+        AuthSessionCookie authSession = getAuthSessionCookies(realm);
+        if (authSession == null) {
             return null;
         }
 
-        AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
-        String sessionId = authSessionId.getDecodedId();
-
-        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, sessionId);
-
-        if (rootAuthSession != null) {
-            reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
-            return rootAuthSession;
-        } else {
-            return null;
-        }
+        reEncodeAuthSessionCookie(authSession);
+        return authSession.rootSession();
     }
 
     /**
-     * Returns current authentication session if it exists, otherwise returns {@code null}.
-     * @param realm
-     * @return
+     * @return The current authentication session if it exists, otherwise returns {@code null}.
      */
     public AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm, ClientModel client, String tabId) {
-        String oldEncodedId = getAuthSessionCookies(realm);
-        if (oldEncodedId == null) {
+        AuthSessionCookie rootAuth = getAuthSessionCookies(realm);
+        if (rootAuth == null) {
             return null;
         }
 
-        AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
-        String sessionId = authSessionId.getDecodedId();
-
-        AuthenticationSessionModel authSession = getAuthenticationSessionByIdAndClient(realm, sessionId, client, tabId);
-
+        AuthenticationSessionModel authSession = rootAuth.rootSession().getAuthenticationSession(client, tabId);
         if (authSession != null) {
-            reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
-            return authSession;
-        } else {
-            return null;
+            reEncodeAuthSessionCookie(rootAuth);
         }
+        return authSession;
     }
 
     /**
@@ -128,7 +108,7 @@ public class AuthenticationSessionManager {
     public void setAuthSessionCookie(String authSessionId) {
         StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
         String signedAuthSessionId = signAndEncodeToBase64AuthSessionId(authSessionId);
-        String encodedWithRoute = encoder.encodeSessionId(signedAuthSessionId);
+        String encodedWithRoute = encoder.encodeSessionId(signedAuthSessionId, authSessionId);
 
         session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID, encodedWithRoute);
 
@@ -139,48 +119,30 @@ public class AuthenticationSessionManager {
      * @param authSessionId decoded authSessionId (without route info attached)
      */
     public void setAuthSessionIdHashCookie(String authSessionId) {
-        String authSessionIdHash = Base64.getEncoder().withoutPadding().encodeToString(HashUtils.hash(JavaAlgorithm.SHA256, authSessionId.getBytes(StandardCharsets.UTF_8)));
+        String authSessionIdHash = BASE_64_ENCODER_NO_PADDING.encodeToString(HashUtils.hash(JavaAlgorithm.SHA256, authSessionId.getBytes(StandardCharsets.UTF_8)));
 
         session.getProvider(CookieProvider.class).set(CookieType.AUTH_SESSION_ID_HASH, authSessionIdHash);
 
         log.debugf("Set KC_AUTH_SESSION_HASH cookie with value %s", authSessionIdHash);
     }
 
-
-    /**
-     *
-     * @param encodedAuthSessionId encoded ID with attached route in cluster environment (EG. "NWUxNjFlMDAtZDQyNi00ZWE2LTk4ZTktNTJlYjk4NDRlMmQ3L.node1" )
-     * @return object with decoded and actually encoded authSessionId
-     */
-    AuthSessionId decodeAuthSessionId(String encodedAuthSessionId) {
-        log.debugf("Found AUTH_SESSION_ID cookie with value %s", encodedAuthSessionId);
-        StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
-        String decodedAuthSessionId = encoder.decodeSessionId(encodedAuthSessionId);
-        String reencoded = encoder.encodeSessionId(decodedAuthSessionId);
-
-        if (!KeycloakModelUtils.isValidUUID(decodedAuthSessionId)) {
-            decodedAuthSessionId = decodeBase64AndValidateSignature(decodedAuthSessionId, false);
-        }
-
-        return new AuthSessionId(decodedAuthSessionId, reencoded);
-    }
-
-    void reencodeAuthSessionCookie(String oldEncodedAuthSessionId, AuthSessionId newAuthSessionId, RealmModel realm) {
-        if (!oldEncodedAuthSessionId.equals(newAuthSessionId.getEncodedId())) {
-            log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", oldEncodedAuthSessionId,
-                    newAuthSessionId.getEncodedId());
-            setAuthSessionCookie(newAuthSessionId.getDecodedId());
+    private void reEncodeAuthSessionCookie(AuthSessionCookie authSessionCookie) {
+        if (authSessionCookie.routeChanged()) {
+            setAuthSessionCookie(authSessionCookie.sessionId());
         }
     }
 
-    public String decodeBase64AndValidateSignature(String encodedBase64AuthSessionId, boolean validate) {
+    public String decodeBase64AndValidateSignature(String encodedBase64AuthSessionId) {
         try {
             String decodedAuthSessionId = new String(Base64Url.decode(encodedBase64AuthSessionId), StandardCharsets.UTF_8);
-            if (decodedAuthSessionId.lastIndexOf(".") != -1) {
-                String authSessionId = decodedAuthSessionId.substring(0, decodedAuthSessionId.indexOf("."));
-                String signature = decodedAuthSessionId.substring(decodedAuthSessionId.indexOf(".") + 1);
-                return validate ? validateAuthSessionIdSignature(authSessionId, signature) : authSessionId;
+            int dotIndex = decodedAuthSessionId.lastIndexOf('.');
+            if (dotIndex == -1) {
+                //not found / invalid
+                return null;
             }
+            String authSessionId = decodedAuthSessionId.substring(0, dotIndex);
+            String signature = decodedAuthSessionId.substring(dotIndex + 1);
+            return validateAuthSessionIdSignature(authSessionId, signature);
         } catch (Exception e) {
             log.errorf("Error decoding auth session id with value: %s", encodedBase64AuthSessionId, e);
         }
@@ -223,10 +185,9 @@ public class AuthenticationSessionManager {
     }
 
     /**
-     * @param realm
      * @return the value of the AUTH_SESSION_ID cookie. It is assumed that values could be encoded with signature and with route added (EG. "NWUxNjFlMDAtZDQyNi00ZWE2LTk4ZTktNTJlYjk4NDRlMmQ3L.node1" )
      */
-    String getAuthSessionCookies(RealmModel realm) {
+    AuthSessionCookie getAuthSessionCookies(RealmModel realm) {
         String oldEncodedId = session.getProvider(CookieProvider.class).get(CookieType.AUTH_SESSION_ID);
         if (oldEncodedId == null || oldEncodedId.isEmpty()) {
             return null;
@@ -234,9 +195,9 @@ public class AuthenticationSessionManager {
 
         StickySessionEncoderProvider routeEncoder = session.getProvider(StickySessionEncoderProvider.class);
         // in case the id is encoded with a route when running in a cluster
-        String decodedAuthSessionId = routeEncoder.decodeSessionId(oldEncodedId);
+        var sessionIdAndRoute = routeEncoder.decodeSessionIdAndRoute(oldEncodedId);
 
-        decodedAuthSessionId = decodeBase64AndValidateSignature(decodedAuthSessionId, true);
+        String decodedAuthSessionId = decodeBase64AndValidateSignature(sessionIdAndRoute.sessionId());
         if(decodedAuthSessionId == null) {
             return null;
         }
@@ -245,7 +206,15 @@ public class AuthenticationSessionManager {
         // but make sure the root authentication session actually exists
         // without this check there is a risk of resolving user sessions from invalid root authentication sessions as they share the same id
         RootAuthenticationSessionModel rootAuthenticationSession = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
-        return rootAuthenticationSession != null ? oldEncodedId : null;
+        if (rootAuthenticationSession == null) {
+            return null;
+        }
+        String newRoute = routeEncoder.sessionIdRoute(decodedAuthSessionId);
+        boolean routeChanged = !sessionIdAndRoute.isSameRoute(newRoute);
+        if (routeChanged) {
+            log.debugf("Route changed. Will update authentication session cookie. Old: '%s', New: '%s'", sessionIdAndRoute.route(), newRoute);
+        }
+        return new AuthSessionCookie(rootAuthenticationSession, routeChanged);
     }
 
     public void removeAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession, boolean expireRestartCookie) {
@@ -265,8 +234,7 @@ public class AuthenticationSessionManager {
 
     /**
      * Remove authentication session from root session. Possibly remove whole root authentication session if there are no other browser tabs
-     * @param realm
-     * @param authSession
+     *
      * @return true if whole root authentication session was removed. False just if single tab was removed
      */
     public boolean removeTabIdInAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession) {
@@ -285,31 +253,28 @@ public class AuthenticationSessionManager {
      * This happens when one browser tab successfully finished authentication (including required actions and consent screen if applicable)
      * Just authenticationSession of the current browser tab is removed from "root authentication session" and other tabs are kept, so
      * authentication can be automatically finished in other browser tabs (typically with authChecker.js javascript)
-     *
-     * @param realm
-     * @param authSession
      */
     public void updateAuthenticationSessionAfterSuccessfulAuthentication(RealmModel realm, AuthenticationSessionModel authSession) {
         boolean removedRootAuthSession = removeTabIdInAuthenticationSession(realm, authSession);
-        if (!removedRootAuthSession) {
-            if(realm.getSsoSessionIdleTimeout() < SessionExpiration.getAuthSessionLifespan(realm) && realm.getSsoSessionMaxLifespan() < SessionExpiration.getAuthSessionLifespan(realm)) {
-                removeAuthenticationSession(realm, authSession, true);
-            }
-            else {
-                RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
-
-                // 1 minute by default. Same timeout, which is used for client to complete "authorization code" flow
-                // Very short timeout should be OK as when this cookie is set, other existing browser tabs are supposed to be refreshed immediately by JS script authChecker.js
-                // and login user automatically. No need to have authenticationSession and cookie living any longer
-                int authSessionExpiresIn = realm.getAccessCodeLifespan();
-
-                // Set timestamp to the past to make sure that authSession is scheduled for expiration in "authSessionExpiresIn" seconds
-                int authSessionExpirationTime = Time.currentTime() - SessionExpiration.getAuthSessionLifespan(realm) + authSessionExpiresIn;
-                rootAuthSession.setTimestamp(authSessionExpirationTime);
-
-                log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session. Root authentication session will expire in %d seconds", rootAuthSession.getId(), authSession.getTabId(), authSessionExpiresIn);
-            }
+        if (removedRootAuthSession) {
+            return;
         }
+        if (realm.getSsoSessionIdleTimeout() < SessionExpiration.getAuthSessionLifespan(realm) && realm.getSsoSessionMaxLifespan() < SessionExpiration.getAuthSessionLifespan(realm)) {
+            removeAuthenticationSession(realm, authSession, true);
+            return;
+        }
+        RootAuthenticationSessionModel rootAuthSession = authSession.getParentSession();
+
+        // 1 minute by default. Same timeout, which is used for client to complete "authorization code" flow
+        // Very short timeout should be OK as when this cookie is set, other existing browser tabs are supposed to be refreshed immediately by JS script authChecker.js
+        // and login user automatically. No need to have authenticationSession and cookie living any longer
+        int authSessionExpiresIn = realm.getAccessCodeLifespan();
+
+        // Set timestamp to the past to make sure that authSession is scheduled for expiration in "authSessionExpiresIn" seconds
+        int authSessionExpirationTime = Time.currentTime() - SessionExpiration.getAuthSessionLifespan(realm) + authSessionExpiresIn;
+        rootAuthSession.setTimestamp(authSessionExpirationTime);
+
+        log.tracef("Removed authentication session of root session '%s' with tabId '%s'. But there are remaining tabs in the root session. Root authentication session will expire in %d seconds", rootAuthSession.getId(), authSession.getTabId(), authSessionExpiresIn);
     }
 
     // Check to see if we already have authenticationSession with same ID
@@ -324,47 +289,53 @@ public class AuthenticationSessionManager {
         return rootAuthSession==null ? null : rootAuthSession.getAuthenticationSession(client, tabId);
     }
 
-    public AuthenticationSessionModel getAuthenticationSessionByEncodedIdAndClient(RealmModel realm, String encodedAuthSesionId, ClientModel client, String tabId) {
-        String decodedAuthSessionId = decodeBase64AndValidateSignature(encodedAuthSesionId, true);
+    public AuthenticationSessionModel getAuthenticationSessionByEncodedIdAndClient(RealmModel realm, String encodedAuthSessionId, ClientModel client, String tabId) {
+        String decodedAuthSessionId = decodeBase64AndValidateSignature(encodedAuthSessionId);
         return decodedAuthSessionId==null ? null : getAuthenticationSessionByIdAndClient(realm, decodedAuthSessionId, client, tabId);
     }
 
     public UserSessionModel getUserSessionFromAuthenticationCookie(RealmModel realm) {
-        String oldEncodedId = getAuthSessionCookies(realm);
+        AuthSessionCookie rootAuth = getAuthSessionCookies(realm);
 
-        if (oldEncodedId == null) {
+        if (rootAuth == null) {
             // ideally, we should not rely on auth session id to retrieve user sessions
             // in case the auth session was removed, we fall back to the identity cookie
             // we are here doing the user session lookup twice, however the second lookup is going to make sure the
             // session exists in remote caches
-            AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, true);
-
-            if (authResult != null && authResult.getSession() != null) {
-                oldEncodedId = authResult.getSession().getId();
-            } else {
-                return null;
-            }
+            return getUserSessionFromIdentityCookie(realm);
         }
 
-        AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
-        String sessionId = authSessionId.getDecodedId();
-
-        // TODO: remove this code once InfinispanUserSessionProvider is removed or no longer using any remote caches, as other implementations don't need this call.
         // This will remove userSession "locally" if it doesn't exist on remoteCache
-        var userSessionProvider = getUserSessionProvider();
-        userSessionProvider.getUserSessionWithPredicate(realm, sessionId, false, Objects::isNull);
-
-        UserSessionModel userSession = userSessionProvider.getUserSession(realm, sessionId);
+        UserSessionModel userSession = getUserSessionProvider().getUserSession(realm, rootAuth.sessionId());
 
         if (userSession != null) {
-            reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
-            return userSession;
-        } else {
+            reEncodeAuthSessionCookie(rootAuth);
+        }
+        return userSession;
+    }
+
+    private UserSessionModel getUserSessionFromIdentityCookie(RealmModel realm) {
+        AuthenticationManager.AuthResult authResult = authenticateIdentityCookie(session, realm, true);
+        if (authResult == null) {
             return null;
         }
+
+        assert authResult.session() != null;
+
+        // if we reach this point, the cookie is not found. Set it.
+        setAuthSessionCookie(authResult.session().getId());
+        return authResult.session();
     }
 
     private UserSessionProvider getUserSessionProvider() {
         return session.sessions();
+    }
+
+    record AuthSessionCookie(RootAuthenticationSessionModel rootSession, boolean routeChanged) {
+
+        public String sessionId() {
+            return rootSession.getId();
+        }
+
     }
 }

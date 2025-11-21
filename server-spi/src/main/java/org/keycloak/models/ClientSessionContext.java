@@ -17,10 +17,10 @@
 
 package org.keycloak.models;
 
-import org.keycloak.rar.AuthorizationRequestContext;
-
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.keycloak.rar.AuthorizationRequestContext;
 
 /**
  * Request-scoped context object

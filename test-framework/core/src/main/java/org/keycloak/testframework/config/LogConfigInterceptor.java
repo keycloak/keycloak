@@ -1,12 +1,12 @@
 package org.keycloak.testframework.config;
 
-import io.smallrye.config.ConfigSourceInterceptor;
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import io.smallrye.config.ConfigSourceInterceptor;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
 
 public class LogConfigInterceptor implements ConfigSourceInterceptor {
 

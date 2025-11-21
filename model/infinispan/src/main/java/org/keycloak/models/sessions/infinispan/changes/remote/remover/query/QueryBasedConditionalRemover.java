@@ -21,11 +21,12 @@ import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.impl.query.RemoteQuery;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.jboss.logging.Logger;
-import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
 
 /**
  * An implementation of {@link ConditionalRemover} that uses the delete statement to remove entries from a

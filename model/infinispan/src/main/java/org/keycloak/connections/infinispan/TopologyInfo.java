@@ -21,6 +21,8 @@ import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import java.util.Objects;
 
+import org.keycloak.Config;
+
 import org.infinispan.Cache;
 import org.infinispan.distribution.DistributionManager;
 import org.infinispan.factories.GlobalComponentRegistry;
@@ -33,11 +35,12 @@ import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.jboss.logging.Logger;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.util.NameCache;
-import org.keycloak.Config;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @deprecated For removal. To get the node or site name, use {@link NodeInfo} from {@link InfinispanConnectionProvider#getNodeInfo()}.
  */
+@Deprecated(since = "26.5", forRemoval = true)
 public class TopologyInfo {
 
     private static final Logger logger = Logger.getLogger(TopologyInfo.class);
@@ -60,6 +63,7 @@ public class TopologyInfo {
         this(cacheManager);
     }
 
+    @Deprecated(since = "26.5", forRemoval = true)
     public TopologyInfo(EmbeddedCacheManager cacheManager) {
         var transportConfig = cacheManager.getCacheManagerConfiguration().transport();
         var transport = GlobalComponentRegistry.componentOf(cacheManager, Transport.class);
@@ -83,10 +87,18 @@ public class TopologyInfo {
         return InfinispanConnectionProvider.NODE_PREFIX + new SecureRandom().nextInt(1000000);
     }
 
+    /**
+     * @deprecated Use {@link NodeInfo#nodeName()} instead.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
     public String getMyNodeName() {
         return myNodeName;
     }
 
+    /**
+     * @deprecated Use {@link NodeInfo#siteName()} instead.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
     public String getMySiteName() {
         return mySiteName;
     }
@@ -98,7 +110,9 @@ public class TopologyInfo {
 
     /**
      * True if I am primary owner of the key in case of distributed caches. In case of local caches, always return true
+     * @deprecated Removed without replacement.
      */
+    @Deprecated(since = "26.5", forRemoval = true)
     public boolean amIOwner(Cache<?, ?> cache, Object key) {
         Address myAddress = cache.getCacheManager().getAddress();
         Address objectOwnerAddress = getOwnerAddress(cache, key);
@@ -110,7 +124,9 @@ public class TopologyInfo {
 
     /**
      * Get route to be used as the identifier for sticky session. Return null if I am not able to find the appropriate route (or in case of local mode)
+     * @deprecated Use {@link org.keycloak.sessions.StickySessionEncoderProvider#sessionIdRoute(String)} instead.
      */
+    @Deprecated(since = "26.5", forRemoval = true)
     public String getRouteName(Cache<?, ?> cache, Object key) {
         if (cache.getCacheConfiguration().clustering().cacheMode().isClustered() && isGeneratedNodeName) {
             logger.warn("Clustered configuration used, but node name is not properly set. Make sure to start server with jboss.node.name property identifying cluster node");

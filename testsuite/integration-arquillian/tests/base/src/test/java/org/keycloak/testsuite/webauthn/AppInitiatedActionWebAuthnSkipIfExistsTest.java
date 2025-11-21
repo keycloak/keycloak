@@ -17,11 +17,13 @@
 package org.keycloak.testsuite.webauthn;
 
 import java.io.IOException;
-import org.junit.Test;
+
 import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+
+import org.junit.Test;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;

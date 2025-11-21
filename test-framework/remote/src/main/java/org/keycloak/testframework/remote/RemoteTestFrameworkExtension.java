@@ -1,12 +1,12 @@
 package org.keycloak.testframework.remote;
 
+import java.util.List;
+
 import org.keycloak.testframework.TestFrameworkExtension;
 import org.keycloak.testframework.injection.Supplier;
-import org.keycloak.testframework.remote.timeoffset.TimeOffsetSupplier;
 import org.keycloak.testframework.remote.runonserver.RunOnServerSupplier;
 import org.keycloak.testframework.remote.runonserver.TestClassServerSupplier;
-
-import java.util.List;
+import org.keycloak.testframework.remote.timeoffset.TimeOffsetSupplier;
 
 public class RemoteTestFrameworkExtension implements TestFrameworkExtension {
     @Override

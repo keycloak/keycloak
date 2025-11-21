@@ -1,13 +1,14 @@
 package org.keycloak.crypto.def.test;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.def.AesKeyWrapAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.rule.CryptoInitRule;
+
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

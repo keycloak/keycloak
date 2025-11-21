@@ -17,17 +17,17 @@
 
 package org.keycloak.models.utils;
 
-import org.keycloak.common.Profile;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.UserModel;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import org.keycloak.common.Profile;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserModel;
 
 import static org.keycloak.common.Profile.isFeatureEnabled;
 

@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.util;
 
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
-import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
 
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancer;
+
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getHttpAuthServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
 public class ReverseProxy implements TestRule {
 

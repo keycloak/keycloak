@@ -17,18 +17,19 @@
 
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
+
+import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
 
 public abstract class AbstractGroupBrokerMapperTest extends AbstractGroupMapperTest {
 

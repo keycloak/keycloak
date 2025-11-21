@@ -26,13 +26,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
+import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
+import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.jboss.logging.Logger;
-import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
-import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
-import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 
 class RemoteInfinispanKeycloakTransaction<K, V, R extends ConditionalRemover<K, V>> implements NonBlockingTransaction {
 

@@ -16,6 +16,10 @@
  */
 package org.keycloak.saml.processing.core.saml.v1.writers;
 
+import java.net.URI;
+import java.util.List;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v1.assertion.SAML11ActionType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AttributeDesignatorType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AttributeType;
@@ -30,10 +34,6 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
-
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.List;
 
 /**
  * Write the {@link org.keycloak.dom.saml.v1.protocol.SAML11RequestType} to stream

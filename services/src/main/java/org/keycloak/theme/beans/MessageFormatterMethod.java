@@ -17,19 +17,21 @@
 
 package org.keycloak.theme.beans;
 
-import static java.util.Optional.ofNullable;
-
-import freemarker.template.SimpleScalar;
-import freemarker.template.TemplateMethodModelEx;
-import freemarker.template.TemplateModelException;
-import org.keycloak.theme.TemplatingUtil;
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+
+import org.keycloak.theme.TemplatingUtil;
+
+import freemarker.template.SimpleNumber;
+import freemarker.template.SimpleScalar;
+import freemarker.template.TemplateMethodModelEx;
+import freemarker.template.TemplateModelException;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -67,11 +69,14 @@ public class MessageFormatterMethod implements TemplateMethodModelEx {
     private List<Object> resolve(List<Object> list) {
         ArrayList<Object> result = new ArrayList<>();
         for (Object item: list) {
-            if (item instanceof SimpleScalar) {
-                item = ((SimpleScalar) item).getAsString();
+            if (item instanceof SimpleScalar scalar) {
+                item = scalar.getAsString();
+            } else if (item instanceof SimpleNumber number) {
+                item = number.getAsNumber();
             }
-            if (item instanceof String) {
-                result.add(TemplatingUtil.resolveVariables((String) item, messages));
+
+            if (item instanceof String string) {
+                result.add(TemplatingUtil.resolveVariables(string, messages));
             } else {
                 result.add(item);
             }

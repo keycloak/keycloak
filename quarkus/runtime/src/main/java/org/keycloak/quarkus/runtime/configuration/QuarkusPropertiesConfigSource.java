@@ -17,24 +17,23 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
+
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 
 /**
  * A configuration source for {@code quarkus.properties}.
@@ -43,20 +42,6 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
 
     private static final String FILE_NAME = "quarkus.properties";
     public static final String NAME = "KcQuarkusPropertiesConfigSource";
-
-    public static Path getConfigurationFile() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", FILE_NAME).toFile();
-
-            if (file.exists()) {
-                return file.toPath();
-            }
-        }
-
-        return null;
-    }
 
     @Override
     protected String[] getFileExtensions() {
@@ -74,11 +59,9 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
     public synchronized List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
         List<ConfigSource> configSources = new ArrayList<>();
 
-        Path configFile = getConfigurationFile();
-
-        if (configFile != null) {
-            configSources.addAll(loadConfigSources(configFile.toUri().toString(), KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader));
-        }
+        Environment.getHomeDir().map(p -> Paths.get(p, "conf", FILE_NAME).toFile()).filter(File::exists)
+                .ifPresent(configFile -> configSources.addAll(loadConfigSources(configFile.toPath().toUri().toString(),
+                        KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL, classLoader)));
 
         return configSources;
     }

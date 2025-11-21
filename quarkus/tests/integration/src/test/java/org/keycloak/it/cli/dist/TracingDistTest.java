@@ -17,15 +17,16 @@
 
 package org.keycloak.it.cli.dist;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
@@ -214,6 +215,15 @@ public class TracingDistTest {
         cliResult.assertMessage("some.key1=\"some.val1\"");
         cliResult.assertMessage("some.key2=\"some.val2\"");
 
+        cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({"start", "--hostname-strict=false", "--http-enabled=true", "--optimized", "--log-level=io.opentelemetry:fine", "--tracing-header-Authorization=\"Bearer asdlkfjadsflkj\"", "--tracing-header-Host=localhost:8080"})
+    void headers(CLIResult cliResult) {
+        assertTracingEnabled(cliResult);
+
+        // There is no message in the attributes about headers
         cliResult.assertStarted();
     }
 }

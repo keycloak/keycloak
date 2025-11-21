@@ -17,9 +17,6 @@
 
 package org.keycloak.crypto;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderFactory;
-
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -27,6 +24,9 @@ import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * Utility class for common cryptographic operations and algorithm discovery.

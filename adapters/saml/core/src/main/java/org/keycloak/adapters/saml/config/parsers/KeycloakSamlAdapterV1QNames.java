@@ -16,8 +16,9 @@
  */
 package org.keycloak.adapters.saml.config.parsers;
 
-import org.keycloak.saml.processing.core.parsers.util.HasQName;
 import javax.xml.namespace.QName;
+
+import org.keycloak.saml.processing.core.parsers.util.HasQName;
 
 /**
  *

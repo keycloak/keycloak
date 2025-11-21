@@ -1,11 +1,12 @@
 package org.keycloak.testframework.http;
 
-import org.apache.http.client.HttpClient;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+
+import org.apache.http.client.HttpClient;
 
 public class SimpleHttpSupplier implements Supplier<SimpleHttp, InjectSimpleHttp> {
 

@@ -16,7 +16,6 @@
  */
 package org.keycloak.broker.saml.mappers;
 
-import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
@@ -26,6 +25,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import org.jboss.logging.Logger;
 
 /**
  * Abstract class that handles the logic for importing and updating brokered users for all mappers that map a SAML

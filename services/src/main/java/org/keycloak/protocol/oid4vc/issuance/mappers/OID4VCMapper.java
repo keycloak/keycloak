@@ -17,13 +17,18 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.apache.commons.collections4.ListUtils;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.keycloak.Config;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
@@ -31,12 +36,9 @@ import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
+import org.apache.commons.collections4.ListUtils;
+
+import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
 /**
  * Base class for OID4VC Mappers, to provide common configuration and functionality for all of them
@@ -90,7 +92,7 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
 
     protected List<String> getAttributePrefix() {
         return switch (Optional.ofNullable(format).orElse("")) {
-            case Format.JWT_VC, Format.LDP_VC -> List.of(Oid4VciConstants.CREDENTIAL_SUBJECT);
+            case Format.JWT_VC, Format.LDP_VC -> List.of(CREDENTIAL_SUBJECT);
             default -> Collections.emptyList();
         };
     }

@@ -1,12 +1,12 @@
 package org.keycloak.testsuite.arquillian.h2;
 
+import java.sql.SQLException;
+
 import org.h2.tools.Server;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
-
-import java.sql.SQLException;
 
 /**
  * Starts H2 before suite and stops it after.

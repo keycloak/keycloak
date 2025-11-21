@@ -29,6 +29,7 @@ import io.quarkus.logging.Log;
 )
 public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDependentResource<ServiceMonitor, Keycloak> {
 
+    public static final String OPEN_METRICS_PROTOCOL = "OpenMetricsText1.0.0";
     public static final String WARN_METRICS_NOT_ENABLED = "A ServiceMonitor will not be created because `metrics-enabled` is not true.";
     public static final String WARN_CRD_NOT_INSTALLED = "A ServiceMonitor will not be created because the ServiceMonitor CRD is not installed.";
 
@@ -51,7 +52,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 return false;
             }
 
-            if (!isCRDInstalled(dependentResource, context, (KeycloakServiceMonitorDependentResource)dependentResource)) {
+            if (!isCRDInstalled(dependentResource, context, (KeycloakServiceMonitorDependentResource)dependentResource, primary.getMetadata().getNamespace())) {
                 context.managedWorkflowAndDependentResourceContext().put(SERVICE_MONITOR_WARNING, WARN_CRD_NOT_INSTALLED);
                 return false;
             }
@@ -60,7 +61,8 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
         }
 
         private boolean isCRDInstalled(DependentResource<ServiceMonitor, Keycloak> dependentResource,
-                Context<Keycloak> context, KeycloakServiceMonitorDependentResource serviceMonitorDependentResource) {
+                Context<Keycloak> context, KeycloakServiceMonitorDependentResource serviceMonitorDependentResource,
+                String namespace) {
             if (serviceMonitorDependentResource.crdInstalled != null) {
                 return serviceMonitorDependentResource.crdInstalled;
             }
@@ -74,7 +76,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 public void onClose(WatcherException cause) {
                 }
             };
-            try (var watch = context.getClient().resources(dependentResource.resourceType()).watch(dummyWatcher)) {
+            try (var watch = context.getClient().resources(dependentResource.resourceType()).inNamespace(namespace).watch(dummyWatcher)) {
                 serviceMonitorDependentResource.crdInstalled = true;
                 return true;
             } catch (KubernetesClientException e) {
@@ -106,7 +108,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                 .withNewSelector()
                   .addToMatchLabels(Utils.allInstanceLabels(primary))
                 .endSelector()
-                .withScrapeProtocols("OpenMetricsText1.0.0")
+                .withScrapeProtocols(OPEN_METRICS_PROTOCOL)
                 .addNewEndpoint()
                   .withInterval(spec.getInterval())
                   .withPath(endpoint.relativePath() + "metrics")

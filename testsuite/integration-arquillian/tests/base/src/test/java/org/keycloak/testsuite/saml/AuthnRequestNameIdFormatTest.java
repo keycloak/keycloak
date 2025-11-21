@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.util.List;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -26,13 +28,20 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.util.List;
+
 import org.hamcrest.Matcher;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.*;
-import static org.keycloak.testsuite.util.SamlClient.*;
+import static org.keycloak.testsuite.util.SamlClient.Binding;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 
 /**
  *

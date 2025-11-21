@@ -21,17 +21,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoReserved;
-import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoReserved;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  *
@@ -43,8 +43,6 @@ import org.keycloak.models.UserSessionModel;
         names = {"id"}
 )
 public class AuthenticatedClientSessionEntity extends SessionEntity {
-
-    public static final Logger logger = Logger.getLogger(AuthenticatedClientSessionEntity.class);
 
     // Metadata attribute, which contains the last timestamp available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
     @Deprecated(since = "26.4", forRemoval = true)
@@ -62,6 +60,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
     // TODO [pruivo] [KC27] make these fields final. They are the client session identity.
     private volatile String userSessionId;
     private volatile String clientId;
+    private volatile String userId;
 
     public AuthenticatedClientSessionEntity() {
     }
@@ -117,7 +116,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.clientId = clientId;
     }
 
-    @ProtoField(value = 5)
+    @ProtoField(5)
     public String getAction() {
         return action;
     }
@@ -133,6 +132,15 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     public void setNotes(Map<String, String> notes) {
         this.notes = notes;
+    }
+
+    @ProtoField(10)
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     @Override
@@ -152,7 +160,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     // factory method required because of final fields
     @ProtoFactory
-    AuthenticatedClientSessionEntity(String realmId, String authMethod, String redirectUri, int timestamp, String action, Map<String, String> notes, String userSessionId, String clientId) {
+    AuthenticatedClientSessionEntity(String realmId, String authMethod, String redirectUri, int timestamp, String action, Map<String, String> notes, String userSessionId, String clientId, String userId) {
         super(realmId);
         this.authMethod = authMethod;
         this.redirectUri = redirectUri;
@@ -161,6 +169,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.notes = notes;
         this.userSessionId = userSessionId;
         this.clientId = clientId;
+        this.userId = userId;
     }
 
     @ProtoField(8)
@@ -182,6 +191,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         if (userSession.isRememberMe()) {
             entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
         }
+        entity.setUserId(userSession.getUser().getId());
         return entity;
     }
 
@@ -190,5 +200,4 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         entity.setNotes(model.getNotes() == null ? new ConcurrentHashMap<>() : model.getNotes());
         return entity;
     }
-
 }

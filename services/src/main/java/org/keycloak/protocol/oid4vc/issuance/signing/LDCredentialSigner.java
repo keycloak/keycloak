@@ -17,8 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -30,11 +34,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Date;
-import java.util.Objects;
-import java.util.Optional;
+import org.jboss.logging.Logger;
 
 /**
  * {@link CredentialSigner} implementing the JWT_VC format. It returns the signed JWT-Credential as a String.
@@ -97,11 +97,11 @@ public class LDCredentialSigner extends AbstractCredentialSigner<VerifiableCrede
         ldProof.setVerificationMethod(keyId);
 
         try {
-            var proofValue = Base64.encodeBytes(signature, Base64.URL_SAFE);
+            var proofValue = Base64.getUrlEncoder().encodeToString(signature);
             ldProof.setProofValue(proofValue);
             verifiableCredential.setAdditionalProperties(PROOF_KEY, ldProof);
             return verifiableCredential;
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             throw new CredentialSignerException("Was not able to encode the signature.", e);
         }
     }

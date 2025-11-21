@@ -17,12 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
-import static org.keycloak.config.DatabaseOptions.DB;
-import static org.keycloak.quarkus.runtime.Environment.getHomePath;
-import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
-
-import io.quarkus.runtime.LaunchMode;
+import java.util.Optional;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -30,12 +25,15 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
-
+import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-import java.util.Optional;
+import static org.keycloak.config.ClassLoaderOptions.QUARKUS_REMOVED_ARTIFACTS_PROPERTY;
+import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.quarkus.runtime.Environment.getHomePath;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -143,7 +141,7 @@ public final class Build extends AbstractCommand {
     private void cleanTempResources() {
         if (!LaunchMode.current().isDevOrTest()) {
             // only needed for dev/testing purposes
-            Optional.ofNullable(getHomePath()).ifPresent(path -> path.resolve("quarkus-artifact.properties").toFile().delete());
+            getHomePath().ifPresent(path -> path.resolve("quarkus-artifact.properties").toFile().delete());
         }
     }
 

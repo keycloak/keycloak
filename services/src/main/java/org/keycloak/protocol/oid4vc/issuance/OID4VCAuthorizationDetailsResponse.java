@@ -16,12 +16,12 @@
  */
 package org.keycloak.protocol.oid4vc.issuance;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * OID4VCI-specific authorization details response that extends the generic response

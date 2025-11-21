@@ -28,12 +28,12 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.quarkus.runtime.LaunchMode;
-import io.smallrye.config.SmallRyeConfig;
-
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.NetworkUtils;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+
+import io.quarkus.runtime.LaunchMode;
+import io.smallrye.config.SmallRyeConfig;
 
 public final class Environment {
 
@@ -54,36 +54,24 @@ public final class Environment {
         return Boolean.getBoolean("quarkus.launch.rebuild");
     }
 
-    public static String getHomeDir() {
-        return System.getProperty(KC_HOME_DIR);
+    public static Optional<String> getHomeDir() {
+        return Optional.ofNullable(System.getProperty(KC_HOME_DIR));
     }
 
-    public static Path getHomePath() {
-        String homeDir = getHomeDir();
-
-        if (homeDir != null) {
-            return Paths.get(homeDir);
-        }
-
-        return null;
+    public static Optional<Path> getHomePath() {
+        return getHomeDir().map(Paths::get);
     }
 
-    public static String getDataDir() {
-        return getHomeDir() + DATA_PATH;
+    public static Optional<String> getDataDir() {
+        return getHomeDir().map(p -> p.concat(DATA_PATH));
     }
 
-    public static String getDefaultThemeRootDir() {
-        return getHomeDir() + DEFAULT_THEMES_PATH;
+    public static Optional<String> getDefaultThemeRootDir() {
+        return getHomeDir().map(p -> p.concat(DEFAULT_THEMES_PATH));
     }
 
-    public static Path getProvidersPath() {
-        Path homePath = Environment.getHomePath();
-
-        if (homePath != null) {
-            return homePath.resolve("providers");
-        }
-
-        return null;
+    public static Optional<Path> getProvidersPath() {
+        return Environment.getHomePath().map(p -> p.resolve("providers"));
     }
 
     public static String getCommand() {
@@ -128,7 +116,7 @@ public final class Environment {
     }
 
     public static Map<String, File> getProviderFiles() {
-        Path providersPath = Environment.getProvidersPath();
+        Path providersPath = Environment.getProvidersPath().orElse(null);
 
         if (providersPath == null) {
             return Collections.emptyMap();
@@ -186,19 +174,12 @@ public final class Environment {
         return profile;
     }
 
-    public static boolean isDistribution() {
-        if (LaunchMode.current().isDevOrTest()) {
-            return false;
-        }
-        return getHomeDir() != null;
-    }
-
     public static boolean isRebuildCheck() {
         return Boolean.getBoolean(KC_CONFIG_REBUILD_CHECK);
     }
 
-    public static void setRebuildCheck() {
-        System.setProperty(KC_CONFIG_REBUILD_CHECK, "true");
+    public static void setRebuildCheck(boolean check) {
+        System.setProperty(KC_CONFIG_REBUILD_CHECK, Boolean.toString(check));
     }
 
     public static boolean isRebuilt() {
@@ -220,14 +201,10 @@ public final class Environment {
         Profile profile = Profile.getInstance();
 
         if (profile == null) {
-            profile = Profile.configure(new QuarkusProfileConfigResolver());
+            profile = Profile.configure(new QuarkusSingleProfileConfigResolver(), new QuarkusProfileConfigResolver());
         }
 
         return profile;
-    }
-
-    public static void removeHomeDir() {
-        System.getProperties().remove(KC_HOME_DIR);
     }
 
     public static void setRebuild() {

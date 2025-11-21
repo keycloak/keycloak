@@ -40,8 +40,10 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.ImportSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportSpec;
 import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -118,13 +120,17 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
     private Job buildJob(PodTemplateSpec keycloakPodTemplate, KeycloakRealmImport primary) {
         keycloakPodTemplate.getSpec().setRestartPolicy("Never");
+        var labels = new HashMap<String, String>();
+        var optionalSpec = Optional.ofNullable(primary.getSpec());
+        optionalSpec.map(KeycloakRealmImportSpec::getLabels).ifPresent(labels::putAll);
 
         return new JobBuilder()
                 .withNewMetadata()
                 .withName(primary.getMetadata().getName())
                 .withNamespace(primary.getMetadata().getNamespace())
                 // this is labeling the instance as the realm import, not the keycloak
-                .withLabels(Utils.allInstanceLabels(primary))
+                .addToLabels(labels)
+                .addToLabels(Utils.allInstanceLabels(primary))
                 .endMetadata()
                 .withNewSpec()
                 .withTemplate(keycloakPodTemplate)

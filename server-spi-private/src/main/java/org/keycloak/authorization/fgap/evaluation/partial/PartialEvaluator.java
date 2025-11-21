@@ -17,8 +17,6 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +28,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
@@ -44,6 +43,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
 
 public final class PartialEvaluator {
 

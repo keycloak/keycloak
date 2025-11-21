@@ -1,16 +1,17 @@
 package org.keycloak.authentication.authenticators.client;
 
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.services.Urls;
-
 import java.util.Collections;
 import java.util.List;
+
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.services.Urls;
 
 public class FederatedJWTClientValidator extends AbstractJWTClientValidator {
 
     private final String expectedTokenIssuer;
     private final int allowedClockSkew;
     private final boolean reusePermitted;
+    private int maximumExpirationTime = 300;
 
     public FederatedJWTClientValidator(ClientAuthenticationFlowContext context, SignatureValidator signatureValidator, String expectedTokenIssuer, int allowedClockSkew, boolean reusePermitted) throws Exception {
         super(context, signatureValidator, null);
@@ -41,7 +42,11 @@ public class FederatedJWTClientValidator extends AbstractJWTClientValidator {
 
     @Override
     protected int getMaximumExpirationTime() {
-        return 300; // TODO Hard-coded for now, but should be configurable
+        return maximumExpirationTime;
+    }
+
+    public void setMaximumExpirationTime(int maximumExpirationTime) {
+        this.maximumExpirationTime = maximumExpirationTime;
     }
 
     @Override

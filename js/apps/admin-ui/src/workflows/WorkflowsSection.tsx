@@ -3,6 +3,7 @@ import {
   Button,
   ButtonVariant,
   PageSection,
+  Switch,
 } from "@patternfly/react-core";
 import {
   Action,
@@ -16,11 +17,10 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-//import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
-import { toAddWorkflow } from "./routes/AddWorkflow";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { toWorkflowDetail } from "./routes/WorkflowDetail";
 
 export default function WorkflowsSection() {
   const { adminClient } = useAdminClient();
@@ -29,10 +29,6 @@ export default function WorkflowsSection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
-
-  // TODO: handle role-based access
-  //const { hasAccess } = useAccess();
-  //const isManager = hasAccess("manage-realm");
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -49,6 +45,25 @@ export default function WorkflowsSection() {
         return nameA.localeCompare(nameB);
       },
     );
+  };
+
+  const toggleEnabled = async (workflow: WorkflowRepresentation) => {
+    const enabled = !(workflow.enabled ?? true);
+    const workflowToUpdate = { ...workflow, enabled };
+    try {
+      await adminClient.workflows.update(
+        { id: workflow.id! },
+        workflowToUpdate,
+      );
+
+      addAlert(
+        workflowToUpdate.enabled ? t("workflowEnabled") : t("workflowDisabled"),
+        AlertVariant.success,
+      );
+      refresh();
+    } catch (error) {
+      addError("workflowUpdateError", error);
+    }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -85,7 +100,10 @@ export default function WorkflowsSection() {
             <Button
               data-testid="create-workflow"
               component={(props) => (
-                <Link {...props} to={toAddWorkflow({ realm })} />
+                <Link
+                  {...props}
+                  to={toWorkflowDetail({ realm, mode: "create", id: "new" })}
+                />
               )}
             >
               {t("createWorkflow")}
@@ -95,17 +113,29 @@ export default function WorkflowsSection() {
             {
               name: "name",
               displayKey: "name",
+              cellRenderer: (row: WorkflowRepresentation) => (
+                <Link
+                  to={toWorkflowDetail({ realm, mode: "update", id: row.id! })}
+                >
+                  {row.name}
+                </Link>
+              ),
             },
             {
               name: "id",
               displayKey: "id",
             },
             {
-              name: "enabled",
-              displayKey: "enabled",
-              cellRenderer: (row: WorkflowRepresentation) => {
-                return (row.enabled ?? true) ? t("enabled") : t("disabled");
-              },
+              name: "status",
+              displayKey: "status",
+              cellRenderer: (workflow: WorkflowRepresentation) => (
+                <Switch
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
+                  isChecked={workflow.enabled ?? true}
+                  onChange={() => toggleEnabled(workflow)}
+                />
+              ),
             },
           ]}
           actions={[
@@ -116,6 +146,15 @@ export default function WorkflowsSection() {
                 toggleDeleteDialog();
               },
             } as Action<WorkflowRepresentation>,
+            {
+              title: t("copy"),
+              onRowClick: (workflow) => {
+                setSelectedWorkflow(workflow);
+                navigate(
+                  toWorkflowDetail({ realm, mode: "copy", id: workflow.id! }),
+                );
+              },
+            } as Action<WorkflowRepresentation>,
           ]}
           loader={loader}
           ariaLabelKey="workflows"
@@ -124,7 +163,9 @@ export default function WorkflowsSection() {
               message={t("emptyWorkflows")}
               instructions={t("emptyWorkflowsInstructions")}
               primaryActionText={t("createWorkflow")}
-              onPrimaryAction={() => navigate(toAddWorkflow({ realm }))}
+              onPrimaryAction={() =>
+                navigate(toWorkflowDetail({ realm, mode: "create", id: "new" }))
+              }
             />
           }
         />
