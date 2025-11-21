@@ -117,6 +117,17 @@ export const ExtendedHeader = ({
     }
   };
 
+  const testConnection = async () => {
+    try {
+      if (id) {
+        await adminClient.userStorageProvider.testConnection({ id });
+      }
+      addAlert(t("testConnectionSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("testConnectionError", error);
+    }
+  };
+
   return (
     <>
       <UnlinkUsersDialog />
@@ -149,6 +160,9 @@ export const ExtendedHeader = ({
           </DropdownItem>,
           <DropdownItem key="remove" onClick={toggleRemoveUsersDialog}>
             {t("removeImported")}
+          </DropdownItem>,
+          <DropdownItem key="testConnection" onClick={testConnection}>
+            {t("testConnection")}
           </DropdownItem>,
           <Divider key="separator" />,
         ]}
