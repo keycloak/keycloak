@@ -47,6 +47,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
+import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -72,6 +74,7 @@ import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMappe
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.storage.user.UserStorageConnectionTest;
 import org.keycloak.utils.CredentialHelper;
 
 import org.jboss.logging.Logger;
@@ -81,7 +84,7 @@ import org.jboss.logging.Logger;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LDAPStorageProvider>, ImportSynchronization {
+public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LDAPStorageProvider>, ImportSynchronization, UserStorageConnectionTest {
 
 
     private static final Logger logger = Logger.getLogger(LDAPStorageProviderFactory.class);
@@ -766,4 +769,17 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             throw new RuntimeException("Failed to set the server JNDI ObjectFactoryBuilder", e);
         }
     }
- }
+
+    @Override
+    public Result testConnection(KeycloakSession session, RealmModel realm, ComponentModel model) throws Exception {
+        String componentId = model.getId();
+        LDAPConfig cfg = new LDAPConfig(model.getConfig());
+
+        TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(
+                LDAPServerCapabilitiesManager.TEST_CONNECTION,
+                cfg.getConnectionUrl(), cfg.getBindDN(), cfg.getBindCredential(), cfg.getUseTruststoreSpi(),
+                cfg.getConnectionTimeout(), String.valueOf(cfg.isStartTls()), cfg.getAuthType(), componentId);
+        LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
+        return Result.success();
+    }
+}
