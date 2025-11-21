@@ -6,6 +6,7 @@ on:
       - main
       - dependabot/**
       - quarkus-next
+      - issue*
   pull_request:
   workflow_dispatch:
 
