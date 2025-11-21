@@ -32,7 +32,7 @@ public class DisclosureRedListTest {
     public void testDefaultRedListedInArrayClaim() {
         DisclosureSpec.builder()
                 .withUndisclosedClaim("given_name", "2GLC42sKQveCfGfryNRN9w")
-                .withUndisclosedArrayElt("exp", 0, "2GLC42sKQveCfGfryNRN9w")
+                .withUndisclosedArrayElt("exp", 0, "some_salt4exp")
                 .build();
     }
 
@@ -40,7 +40,7 @@ public class DisclosureRedListTest {
     public void testDefaultRedListedInDecoyArrayClaim() {
         DisclosureSpec.builder()
                 .withUndisclosedClaim("given_name", "2GLC42sKQveCfGfryNRN9w")
-                .withDecoyArrayElt("exp", 0, "2GLC42sKQveCfGfryNRN9w")
+                .withDecoyArrayElt("exp", 0, "some_salt4exp")
                 .build();
     }
 

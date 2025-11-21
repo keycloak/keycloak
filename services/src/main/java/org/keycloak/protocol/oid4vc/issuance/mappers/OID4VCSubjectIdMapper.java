@@ -35,6 +35,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import org.apache.commons.collections4.ListUtils;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.USER_ATTRIBUTE_NAME_DID;
+
 /**
  * Sets an ID for the credential, either randomly generated or statically configured
  *
@@ -43,9 +46,6 @@ import org.apache.commons.collections4.ListUtils;
 public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-subject-id-mapper";
-
-    public static final String CLAIM_NAME_ID = "id";
-    public static final String USER_ATTRIBUTE_DID = "did";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
@@ -72,8 +72,8 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         var mapperModel = new ProtocolMapperModel();
         mapperModel.setName(name);
         Map<String, String> configMap = new HashMap<>();
-        configMap.put(CLAIM_NAME, CLAIM_NAME_ID);
-        configMap.put(USER_ATTRIBUTE_KEY, USER_ATTRIBUTE_DID);
+        configMap.put(CLAIM_NAME, CLAIM_NAME_SUBJECT_ID);
+        configMap.put(USER_ATTRIBUTE_KEY, USER_ATTRIBUTE_NAME_DID);
         mapperModel.setConfig(configMap);
         mapperModel.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
         mapperModel.setProtocolMapper(MAPPER_ID);
@@ -94,7 +94,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
         UserModel userModel = userSessionModel.getUser();
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);
-        var userAttr = KeycloakModelUtils.resolveAttribute(userModel, USER_ATTRIBUTE_DID,false).stream()
+        var userAttr = KeycloakModelUtils.resolveAttribute(userModel, USER_ATTRIBUTE_NAME_DID,false).stream()
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
@@ -105,7 +105,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     @Override
     public List<String> getMetadataAttributePath() {
-        return ListUtils.union(getAttributePrefix(), List.of(CLAIM_NAME_ID));
+        return ListUtils.union(getAttributePrefix(), List.of(CLAIM_NAME_SUBJECT_ID));
     }
 
     @Override
