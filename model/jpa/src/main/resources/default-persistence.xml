@@ -88,6 +88,10 @@
         <!-- Organization -->
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>
         <class>org.keycloak.models.jpa.entities.OrganizationDomainEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationRoleEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationRoleAttributeEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationRoleCompositeEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserOrganizationRoleMappingEntity</class>
 
         <!-- Server Configuration -->
         <class>org.keycloak.storage.configuration.jpa.entity.ServerConfigEntity</class>

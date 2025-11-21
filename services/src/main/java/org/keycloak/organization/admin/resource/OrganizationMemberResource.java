@@ -268,6 +268,15 @@ public class OrganizationMemberResource {
         return provider.getMembersCount(organization);
     }
 
+    @Path("{member-id}/role-mappings/organization")
+    public OrganizationRoleMappingResource memberRoleMappings(@PathParam("member-id") String memberId) {
+        UserModel user = getUser(memberId);
+        if (!provider.isMember(organization, user)) {
+            throw ErrorResponse.error("User is not a member of this organization", Response.Status.NOT_FOUND);
+        }
+        return new OrganizationRoleMappingResource(session, organization, user, adminEvent);
+    }
+
     private UserModel getMember(String id) {
         UserModel member = provider.getMemberById(organization, id);
 

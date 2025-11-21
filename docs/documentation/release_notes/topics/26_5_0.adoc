@@ -39,3 +39,29 @@ This provides a more fine-grained way to manage features and eliminates the need
 The `feature-<name>` option takes precedence over both `features` and `features-disabled`.
 
 For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+
+= Organization Roles Management
+
+Organizations now support role-based access control through organization-specific roles. Administrators can create, manage, and assign roles within organizations to control member permissions and access levels.
+
+Key features include:
+
+* Create and manage organization-specific roles through the Admin Console
+* Assign roles to organization members for fine-grained access control
+* Organization roles can be used in authorization policies
+* Full REST API support for organization role management
+* Support for search and pagination when managing large numbers of roles
+
+For more information, see the link:{adminguide_link}#_managing_organization_roles[Managing Organization Roles] chapter in the {adminguide_name}.
+
+= Enhanced Organization Authorization Policies
+
+A new authorization policy provider has been added to support organization role-based authorization. The Organization Role Policy allows administrators to create policies that grant access based on organization membership and assigned roles.
+
+This enhancement provides:
+
+* Fine-grained authorization based on organization roles
+* Integration with existing Keycloak authorization services
+* Support for complex organization-based access control scenarios
+
+For more information about authorization policies, see the link:{authzguide_link}[Authorization Services Guide].
