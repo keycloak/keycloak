@@ -44,21 +44,13 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
      */
     private final int allowedMaxAge;
 
-    private final String nonce;
-
-    private final String aud;
-
     public KeyBindingJwtVerificationOpts(boolean keyBindingRequired,
                                          int allowedMaxAge,
-                                         String nonce,
-                                         String aud,
                                          List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers,
                                          List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
         super(headerVerifiers, contentVerifiers);
         this.keyBindingRequired = keyBindingRequired;
         this.allowedMaxAge = allowedMaxAge;
-        this.nonce = nonce;
-        this.aud = aud;
     }
 
     public boolean isKeyBindingRequired() {
@@ -67,14 +59,6 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
 
     public int getAllowedMaxAge() {
         return allowedMaxAge;
-    }
-
-    public String getNonce() {
-        return nonce;
-    }
-
-    public String getAud() {
-        return aud;
     }
 
     public static KeyBindingJwtVerificationOpts.Builder builder() {
@@ -87,8 +71,6 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
 
     public static class Builder extends IssuerSignedJwtVerificationOpts.Builder {
         private boolean keyBindingRequired = true;
-        private String nonce;
-        private String aud;
 
         public Builder() {
             super();
@@ -104,13 +86,11 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
         }
 
         public KeyBindingJwtVerificationOpts.Builder withNonceCheck(String expectedNonce) {
-            this.nonce = expectedNonce;
             return withClaimCheck(IDToken.NONCE, expectedNonce, true);
         }
 
         @Override
         public KeyBindingJwtVerificationOpts.Builder withAudCheck(String expectedAud) {
-            this.aud = expectedAud;
             return (Builder) super.withAudCheck(expectedAud);
         }
 
@@ -191,8 +171,6 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
 
             return new KeyBindingJwtVerificationOpts(keyBindingRequired,
                                                      allowedMaxAge,
-                                                     nonce,
-                                                     aud,
                                                      headerVerifiers,
                                                      contentVerifiers);
         }
