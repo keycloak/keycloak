@@ -28,6 +28,10 @@ public class LoginPage extends AbstractPage {
         passwordInput.sendKeys(password);
     }
 
+    public void fillLoginWithUsernameOnly(String username) {
+        usernameInput.sendKeys(username);
+    }
+
     public void submit() {
         submitButton.click();
     }

@@ -39,6 +39,7 @@
         <module>custom-providers</module>
         <module>custom-scripts</module>
         <module>clustering</module>
+        <module>webauthn</module>
     </modules>
 
     <profiles>

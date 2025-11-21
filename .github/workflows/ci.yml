@@ -795,6 +795,10 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
+      - name: Run new WebAuthn IT
+        run: |
+          ./mvnw package -f tests/webauthn/pom.xml -Dkc.test.browser=${{ matrix.browser }} -Dtest=WebAuthnTestSuite
+
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
