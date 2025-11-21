@@ -28,6 +28,13 @@ To change the threshold, set the `index-creation-threshold` property, value for 
 kc.[sh|bat] start --spi-connections-liquibase--quarkus--index-creation-threshold=300000
 ----
 
+You can disable this feature by setting it to zero or a negative number:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-connections-liquibase--quarkus--index-creation-threshold=0
+----
+
 === Manual relational database migration
 
 To enable manual upgrading of the database schema, set the `migration-strategy` property value to "manual" for the
