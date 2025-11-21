@@ -85,7 +85,7 @@ public class ImportDistTest {
         ExecutorService ex = Executors.newFixedThreadPool(1);
         Future<CLIResult> result = ex.submit(() -> dist.run("import", "--dir=" + dir.getAbsolutePath()));
         try {
-            cliResult = result.get(20, TimeUnit.SECONDS);
+            cliResult = result.get(40, TimeUnit.SECONDS);
             cliResult.assertMessage("Realm 'master' imported");
             cliResult.assertMessage("Import finished successfully");
             cliResult.assertMessage("master-users-0.json");

@@ -1,0 +1,9 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release adds filtering of LDAP referrals by default.
+This change enhances security and aligns with best practices for LDAP configurations.
+
+If you can not upgrade to this release yet, we recommend disabling LDAP referrals in all LDAP providers in all of your realms.
+
+For detailed upgrade instructions, https://www.keycloak.org/docs/latest/upgrading/index.html[review the upgrading guide].

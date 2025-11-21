@@ -1,0 +1,21 @@
+// ------------------------ Breaking changes ------------------------  //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== LDAP referrals filtered to allow only LDAP referrals
+
+LDAP referrals now by default are only allowed to include LDAP URLs.
+This change enhances security and aligns with best practices for LDAP configurations.
+
+This also prevents other JDNI references from being used in case you have written custom extensions.
+To restore the original behavior, set the option `spi-storage--ldap--secure-referral` to `false`.
+When doing this, we recommend to disable LDAP referrals in all LDAP providers.
+
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== Disabling filtering of LDAP referrals
+
+The option `spi-storage--ldap--secure-referral` to disable filtering referrals is deprecated. It will be removed in a future release and filtering will then be enforced.
