@@ -206,6 +206,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "conditional-sub-flow-executed", "Condition - sub-flow executed", "Condition to evaluate if a sub-flow was executed successfully during the authentication process");
         addProviderInfo(result, "conditional-client-scope", "Condition - client scope", "Condition to evaluate if a configured client scope is present as a client scope of the client requesting authentication");
         addProviderInfo(result, "conditional-credential", "Condition - credential", "Condition to evaluate if a specific credential type has been used (or not used) by the user during the authentication process");
+        addProviderInfo(result, "conditional-prompt", "Condition - prompt param","Condition to check the 'prompt' parameter in authentication requests");
 
         return result;
     }
