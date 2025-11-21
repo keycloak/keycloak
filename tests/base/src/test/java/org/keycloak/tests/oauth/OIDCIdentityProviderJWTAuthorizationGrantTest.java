@@ -32,6 +32,17 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
         assertFailure("JWT Authorization Granted is not enabled for the identity provider", response, events.poll());
     }
 
+    @Test
+    public void testValidateSignatureDisabled() {
+        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Signature validation not enabled for issuer", response, events.poll());
+    }
+
     public static class JWTAuthorizationGrantRealmConfig extends AbstractJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
 
         @Override

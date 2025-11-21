@@ -1077,6 +1077,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw new IdentityBrokerException("JWT Authorization Granted is not enabled for the identity provider");
         }
 
+        if (!getConfig().isValidateSignature()) {
+            throw new IdentityBrokerException("Signature validation not enabled for issuer");
+        }
+
         // verify signature
         if (!verify(context.getJws())) {
             throw new IdentityBrokerException("Invalid signature");
