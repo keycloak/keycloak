@@ -496,7 +496,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
     protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(KeycloakSession session,
                                                                 AppAuthManager.BearerTokenAuthenticator authenticator) {
-        JwtCredentialBuilder testJwtCredentialBuilder = new JwtCredentialBuilder(new StaticTimeProvider(5));
+        JwtCredentialBuilder testJwtCredentialBuilder = new JwtCredentialBuilder(new StaticTimeProvider(5), session);
         SdJwtCredentialBuilder testSdJwtCredentialBuilder = new SdJwtCredentialBuilder();
 
         return new OID4VCIssuerEndpoint(
