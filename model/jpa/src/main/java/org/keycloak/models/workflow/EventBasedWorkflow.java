@@ -47,12 +47,12 @@ final class EventBasedWorkflow {
         return false;
     }
 
-    boolean reset(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
+    boolean restart(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
         WorkflowEvent event = executionContext.getEvent();
         if (event == null) {
             return false;
         }
-        return supports(event.getResourceType()) && isCancelIfRunning() && validateResourceConditions(executionContext);
+        return isCancelIfRunning() && activate(executionContext);
     }
 
     public boolean validateResourceConditions(WorkflowExecutionContext context) {
