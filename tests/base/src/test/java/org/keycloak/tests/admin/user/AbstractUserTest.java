@@ -210,7 +210,10 @@ public class AbstractUserTest {
         try (Response response = managedRealm.admin().users().delete(id)) {
             assertEquals(204, response.getStatus());
         }
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertEvent(event, OperationType.DELETE, AdminEventPaths.userResourcePath(id), ResourceType.USER);
+        Assertions.assertNotNull(event.getRepresentation());
+        Assertions.assertTrue(event.getRepresentation().contains(id));
     }
 
     protected void addFederatedIdentity(String keycloakUserId, String identityProviderAlias1,

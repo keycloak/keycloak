@@ -257,6 +257,10 @@ public class ClientResource {
 
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
+        ClientRepresentation clientRepresentation = new ClientRepresentation();
+        clientRepresentation.setId(client.getId());
+        clientRepresentation.setClientId(client.getClientId());
+
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
@@ -264,7 +268,7 @@ public class ClientResource {
         }
 
         if (new ClientManager(new RealmManager(session)).removeClient(realm, client)) {
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+            adminEvent.operation(OperationType.DELETE).representation(clientRepresentation).resourcePath(session.getContext().getUri()).success();
         }
         else {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Could not delete client",

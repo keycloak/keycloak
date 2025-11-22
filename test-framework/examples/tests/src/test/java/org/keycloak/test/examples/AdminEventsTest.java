@@ -57,11 +57,15 @@ public class AdminEventsTest {
 
         adminClient.realm(realm.getName()).users().delete(userId);
 
+        UserRepresentation extectedRep = new UserRepresentation();
+        extectedRep.setId(userRep.getId());
+        extectedRep.setUsername(userName);
+
         AdminEventAssertion.assertSuccess(adminEvents.poll())
                 .operationType(OperationType.DELETE)
                 .resourceType(ResourceType.USER)
                 .resourcePath("users", userId)
-                .representation(null);
+                .representation(extectedRep);
     }
 
     @Test
