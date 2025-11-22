@@ -40,6 +40,15 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
       />
       <DefaultSwitchControl
         name={convertAttributeNameToForm<FormFields>(
+          "attributes.allow.user.deselect.optional.scopes",
+        )}
+        label={t("allowUserDeselectOptionalScopes")}
+        labelIcon={t("allowUserDeselectOptionalScopesHelp")}
+        isDisabled={!consentRequired}
+        stringify
+      />
+      <DefaultSwitchControl
+        name={convertAttributeNameToForm<FormFields>(
           "attributes.display.on.consent.screen",
         )}
         label={t("displayOnClient")}

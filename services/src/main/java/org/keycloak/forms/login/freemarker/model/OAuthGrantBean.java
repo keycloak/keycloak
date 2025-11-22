@@ -18,12 +18,13 @@ package org.keycloak.forms.login.freemarker.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OrderedModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.rar.AuthorizationDetails;
-
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
@@ -34,14 +35,22 @@ public class OAuthGrantBean {
     private List<ClientScopeEntry> clientScopesRequested = new ArrayList<>();
     private String code;
     private ClientModel client;
+    private boolean allowUserDeselectOptionalScopes;
 
     public OAuthGrantBean(String code, ClientModel client, List<AuthorizationDetails> clientScopesRequested) {
+        this(code, client, clientScopesRequested, null);
+    }
+
+    public OAuthGrantBean(String code, ClientModel client, List<AuthorizationDetails> clientScopesRequested, Set<String> defaultScopeIds) {
         this.code = code;
         this.client = client;
+        this.allowUserDeselectOptionalScopes = OIDCAdvancedConfigWrapper.fromClientModel(client)
+                .isAllowUserDeselectOptionalScopes();
 
         for (AuthorizationDetails authDetails : clientScopesRequested) {
             ClientScopeModel clientScope = authDetails.getClientScope();
-            this.clientScopesRequested.add(new ClientScopeEntry(clientScope.getConsentScreenText(), clientScope.getGuiOrder(), authDetails));
+            boolean isRequired = defaultScopeIds != null && defaultScopeIds.contains(clientScope.getId());
+            this.clientScopesRequested.add(new ClientScopeEntry(clientScope.getId(), clientScope.getConsentScreenText(), clientScope.getGuiOrder(), authDetails, isRequired));
         }
         this.clientScopesRequested.sort(COMPARATOR_INSTANCE);
     }
@@ -60,18 +69,38 @@ public class OAuthGrantBean {
         return clientScopesRequested;
     }
 
+    public boolean isAllowUserDeselectOptionalScopes() {
+        return allowUserDeselectOptionalScopes;
+    }
+
 
     // Converting ClientScopeModel due the freemarker limitations. It's not able to read "getConsentScreenText" default method defined on interface
     public static class ClientScopeEntry implements OrderedModel {
 
+        private final String id;
         private final String consentScreenText;
         private final String guiOrder;
         private final String dynamicScopeParameter;
+        private final boolean required;
 
         public ClientScopeEntry(String consentScreenText, String guiOrder, AuthorizationDetails authorizationDetails) {
+            this(null, consentScreenText, guiOrder, authorizationDetails, false);
+        }
+
+        public ClientScopeEntry(String consentScreenText, String guiOrder, AuthorizationDetails authorizationDetails, boolean required) {
+            this(null, consentScreenText, guiOrder, authorizationDetails, required);
+        }
+
+        public ClientScopeEntry(String id, String consentScreenText, String guiOrder, AuthorizationDetails authorizationDetails, boolean required) {
+            this.id = id;
             this.consentScreenText = consentScreenText;
             this.guiOrder = guiOrder;
             this.dynamicScopeParameter = authorizationDetails.getDynamicScopeParam();
+            this.required = required;
+        }
+
+        public String getId() {
+            return id;
         }
 
         public String getConsentScreenText() {
@@ -85,6 +114,10 @@ public class OAuthGrantBean {
 
         public String getDynamicScopeParameter() {
             return dynamicScopeParameter;
+        }
+
+        public boolean isRequired() {
+            return required;
         }
     }
 }

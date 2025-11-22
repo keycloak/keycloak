@@ -28,7 +28,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -79,6 +81,7 @@ import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
@@ -104,7 +107,6 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
-
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
@@ -313,8 +315,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("profile", rb);
                 break;
             case OAUTH_GRANT:
+                Set<String> defaultScopeIds = client.getClientScopes(true).values().stream()
+                        .map(ClientScopeModel::getId)
+                        .collect(Collectors.toSet());
                 attributes.put("oauth",
-                        new OAuthGrantBean(accessCode, client, clientScopesRequested));
+                        new OAuthGrantBean(accessCode, client, clientScopesRequested, defaultScopeIds));
                 break;
             case CODE:
                 attributes.remove("message"); // No need to include "message" attribute as error is included in separate field anyway
