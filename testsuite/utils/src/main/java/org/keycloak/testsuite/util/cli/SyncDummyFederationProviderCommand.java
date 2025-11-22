@@ -23,8 +23,8 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.StorageProviderRealmModel;
+import org.keycloak.storage.StoreSyncEvent;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -57,7 +57,7 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
             realm.updateComponent(fedProviderModel);
         }
 
-        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, fedProviderModel, false);
+        StoreSyncEvent.fire(session, realm, fedProviderModel, false);
 
         log.infof("User federation provider created and sync was started", waitTime);
     }

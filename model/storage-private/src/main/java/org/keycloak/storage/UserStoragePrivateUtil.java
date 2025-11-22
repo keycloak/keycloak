@@ -18,14 +18,36 @@
 package org.keycloak.storage;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.UserStorageProviderModel.SyncMode;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
+import org.keycloak.storage.user.SynchronizationResult;
 
 /**
  * @author Alexander Schwartz
  */
 public class UserStoragePrivateUtil {
+
     public static UserProvider userLocalStorage(KeycloakSession session) {
         return ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
+    }
+
+    public static SynchronizationResult runFullSync(KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider) {
+        return KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
+            RealmModel realm = session.realms().getRealm(provider.getParentId());
+            session.getContext().setRealm(realm);
+            return new UserStorageSyncTask(provider, SyncMode.FULL).runWithResult(session);
+        });
+    }
+
+    public static SynchronizationResult runPeriodicSync(KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider) {
+        return KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
+            RealmModel realm = session.realms().getRealm(provider.getParentId());
+            session.getContext().setRealm(realm);
+            return new UserStorageSyncTask(provider, SyncMode.CHANGED).runWithResult(session);
+        });
     }
 }

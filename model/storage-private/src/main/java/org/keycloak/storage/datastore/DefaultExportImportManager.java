@@ -1242,7 +1242,6 @@ public class DefaultExportImportManager implements ExportImportManager {
         model.setFullSyncPeriod(fedModel.getFullSyncPeriod());
         model.setPriority(fedModel.getPriority());
         model.setChangedSyncPeriod(fedModel.getChangedSyncPeriod());
-        model.setLastSync(fedModel.getLastSync());
         if (fedModel.getConfig() != null) {
             for (Map.Entry<String, String> entry : fedModel.getConfig().entrySet()) {
                 model.getConfig().putSingle(entry.getKey(), entry.getValue());
