@@ -19,6 +19,8 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Set;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.AbstractBaseJWTValidator;
 import org.keycloak.authentication.authenticators.client.ClientAssertionState;
@@ -39,7 +41,10 @@ import org.keycloak.representations.JsonWebToken;
  */
 public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator implements JWTAuthorizationGrantValidationContext {
 
-    public static JWTAuthorizationGrantValidator createValidator(KeycloakSession session, ClientModel client, String assertion) {
+    private final String scope;
+    private Set<String> restrictedScopes;
+
+    public static JWTAuthorizationGrantValidator createValidator(KeycloakSession session, ClientModel client, String assertion, String scope) {
         if (assertion == null) {
             throw new RuntimeException("Missing parameter:" + OAuth2Constants.ASSERTION);
         }
@@ -47,14 +52,15 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
             JWSInput jws = new JWSInput(assertion);
             JsonWebToken jwt = jws.readJsonContent(JsonWebToken.class);
             ClientAssertionState clientAssertionState = new ClientAssertionState(client, OAuth2Constants.JWT_AUTHORIZATION_GRANT, assertion, jws, jwt);
-            return new JWTAuthorizationGrantValidator(session, clientAssertionState);
+            return new JWTAuthorizationGrantValidator(session, scope, clientAssertionState);
         } catch (JWSInputException e) {
             throw new RuntimeException("The provided assertion is not a valid JWT");
         }
     }
 
-    private JWTAuthorizationGrantValidator(KeycloakSession session, ClientAssertionState clientAssertionState) {
+    private JWTAuthorizationGrantValidator(KeycloakSession session, String scope, ClientAssertionState clientAssertionState) {
         super(session, clientAssertionState);
+        this.scope = scope;
     }
 
     public void validateClient() {
@@ -88,6 +94,19 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
     @Override
     public String getAssertion() {
         return clientAssertionState.getClientAssertion();
+    }
+
+    @Override
+    public String getScopeParam() {
+        return scope;
+    }
+
+    public Set<String> getRestrictedScopes() {
+        return restrictedScopes;
+    }
+
+    public void setRestrictedScopes(Set<String> restrictedScopes) {
+        this.restrictedScopes = restrictedScopes;
     }
 
     @Override

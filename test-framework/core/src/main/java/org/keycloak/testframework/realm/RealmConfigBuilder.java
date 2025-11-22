@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -233,6 +237,28 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder setRememberMe(boolean enabled) {
         rep.setRememberMe(enabled);
+        return this;
+    }
+
+    public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clienPolicyRep) {
+        ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
+        if (clientPolicies == null) {
+            clientPolicies = new ClientPoliciesRepresentation();
+        }
+        List<ClientPolicyRepresentation> policies = clientPolicies.getPolicies();
+        policies.add(clienPolicyRep);
+        rep.setParsedClientPolicies(clientPolicies);
+        return this;
+    }
+
+    public RealmConfigBuilder clientProfile(ClientProfileRepresentation clienProfileRep) {
+        ClientProfilesRepresentation clientProfiles = rep.getParsedClientProfiles();
+        if (clientProfiles == null) {
+            clientProfiles = new ClientProfilesRepresentation();
+        }
+        List<ClientProfileRepresentation> profiles = clientProfiles.getProfiles();
+        profiles.add(clienProfileRep);
+        rep.setParsedClientProfiles(clientProfiles);
         return this;
     }
 
