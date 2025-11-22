@@ -33,19 +33,19 @@ import org.keycloak.sdjwt.vp.KeyBindingJWT;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
-import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 /**
@@ -214,9 +214,9 @@ public abstract class SdJwtVPVerificationTest {
         testShouldFailGeneric(
                 "sdjwt/s20.1-sdjwt+kb.txt",
                 defaultKeyBindingJwtVerificationOpts()
-                        .withNonce("abcd") // kb's nonce is "1234567890"
+                        .withNonceCheck("abcd") // kb's nonce is "1234567890"
                         .build(),
-                "Key binding JWT: Unexpected `nonce` value",
+                "Expected value 'abcd' in token for claim 'nonce' does not match actual value '1234567890'",
                 null
         );
     }
@@ -226,9 +226,9 @@ public abstract class SdJwtVPVerificationTest {
         testShouldFailGeneric(
                 "sdjwt/s20.1-sdjwt+kb.txt",
                 defaultKeyBindingJwtVerificationOpts()
-                        .withAud("abcd") // kb's aud is "https://verifier.example.org"
+                        .withAudCheck("abcd") // kb's aud is "https://verifier.example.org"
                         .build(),
-                "Key binding JWT: Unexpected `aud` value",
+                "Expected audience 'abcd' not available in the token. Present values are '[https://verifier.example.org]'",
                 null
         );
     }
@@ -268,13 +268,13 @@ public abstract class SdJwtVPVerificationTest {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(now + 1000));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_IAT, mapper.valueToTree(now + 1000));
 
-        testShouldFailGeneric2(
+        testShouldFailGenericMatchText(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts().build(),
-                "Key binding JWT: Invalid `iat` claim",
-                "JWT was issued in the future"
+                "Token was issued in the future: now: '\\d+', iat: '\\d+'",
+                null
         );
     }
 
@@ -284,14 +284,15 @@ public abstract class SdJwtVPVerificationTest {
 
         ObjectNode kbPayload = exampleKbPayload();
         // Issued just 5 seconds in the future. Should pass with a clock skew of 10 seconds.
-        kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(now + 5));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_IAT, mapper.valueToTree(now + 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
         sdJwtVP.verify(
                 defaultIssuerVerifyingKeys(),
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
-                        .withAllowedClockSkew(10)
+                        .withClockSkew(10)
+                        .withIatCheck(Integer.MAX_VALUE, false)
                         .build()
         );
     }
@@ -302,14 +303,14 @@ public abstract class SdJwtVPVerificationTest {
 
         ObjectNode kbPayload = exampleKbPayload();
         // This KB-JWT is then issued more than 60s ago
-        kbPayload.set(CLAIM_NAME_IAT, mapper.valueToTree(issuerSignedJwtIat - 120));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_IAT, mapper.valueToTree(issuerSignedJwtIat - 120));
 
-        testShouldFailGeneric2(
+        testShouldFailGenericMatchText(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts()
-                        .withAllowedMaxAge(60)
+                        .withIatCheck(60)
                         .build(),
-                "Key binding JWT is too old",
+                "Token has expired by iat: now: '\\d+', expired at: '\\d+', iat: '\\d+', maxLifetime: '60'",
                 null
         );
     }
@@ -319,13 +320,13 @@ public abstract class SdJwtVPVerificationTest {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(CLAIM_NAME_EXP, mapper.valueToTree(now - 1000));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_EXP, mapper.valueToTree(now - 1000));
 
-        testShouldFailGeneric2(
+        testShouldFailGenericMatchText(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts().build(),
-                "Key binding JWT: Invalid `exp` claim",
-                "JWT has expired"
+                "Token has expired by exp: now: '\\d+', exp: '\\d+'",
+                null
         );
     }
 
@@ -335,15 +336,15 @@ public abstract class SdJwtVPVerificationTest {
 
         ObjectNode kbPayload = exampleKbPayload();
         // Expires just 5 seconds ago. Should pass with a clock skew of 10 seconds.
-        kbPayload.set(CLAIM_NAME_EXP, mapper.valueToTree(now - 5));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_EXP, mapper.valueToTree(now - 5));
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
 
         sdJwtVP.verify(
                 defaultIssuerVerifyingKeys(),
                 defaultIssuerSignedJwtVerificationOpts().build(),
                 defaultKeyBindingJwtVerificationOpts()
-                        .withRequireExpirationClaim(true)
-                        .withAllowedClockSkew(10)
+                        .withClockSkew(10)
+                        .withExpCheck()
                         .build()
         );
     }
@@ -353,13 +354,13 @@ public abstract class SdJwtVPVerificationTest {
         long now = Instant.now().getEpochSecond();
 
         ObjectNode kbPayload = exampleKbPayload();
-        kbPayload.set(CLAIM_NAME_NBF, mapper.valueToTree(now + 1000));
+        kbPayload.set(OID4VCConstants.CLAIM_NAME_NBF, mapper.valueToTree(now + 1000));
 
-        testShouldFailGeneric2(
+        testShouldFailGenericMatchText(
                 kbPayload,
                 defaultKeyBindingJwtVerificationOpts().build(),
-                "Key binding JWT: Invalid `nbf` claim",
-                "JWT is not yet valid"
+                "Token is not yet valid: now: '\\d+', nbf: '\\d+'",
+                null
         );
     }
 
@@ -431,19 +432,17 @@ public abstract class SdJwtVPVerificationTest {
      * This test helper allows replacing the key binding JWT of base
      * sample `sdjwt/s20.1-sdjwt+kb.txt` to cover different scenarios.
      */
-    private void testShouldFailGeneric2(
-            JsonNode kbPayloadSubstitute,
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
-            String exceptionMessage,
-            String exceptionCauseMessage
-    ) {
+    private void testShouldFailGeneric2(ObjectNode kbPayloadSubstitute,
+                                        KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
+                                        String exceptionMessage,
+                                        String exceptionCauseMessage) {
         SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayloadSubstitute);
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
                 () -> sdJwtVP.verify(
                         defaultIssuerVerifyingKeys(),
-                        defaultIssuerSignedJwtVerificationOpts().build(),
+                        defaultIssuerSignedJwtVerificationOpts().withIatCheck(Integer.MAX_VALUE).build(),
                         keyBindingJwtVerificationOpts
                 )
         );
@@ -454,24 +453,52 @@ public abstract class SdJwtVPVerificationTest {
         }
     }
 
+    /**
+     * This test helper allows replacing the key binding JWT of base
+     * sample `sdjwt/s20.1-sdjwt+kb.txt` to cover different scenarios.
+     */
+    private void testShouldFailGenericMatchText(ObjectNode kbPayloadSubstitute,
+                                                KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
+                                                String exceptionMessage,
+                                                String exceptionCauseMessage) {
+        SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayloadSubstitute);
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwtVP.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().withIatCheck(Integer.MAX_VALUE).build(),
+                        keyBindingJwtVerificationOpts
+                )
+        );
+
+        MatcherAssert.assertThat(exception.getMessage(), CoreMatchers.anything().matches(exceptionMessage));
+        if (exceptionCauseMessage != null) {
+            assertNotNull(exception.getCause());
+            MatcherAssert.assertThat(exception.getCause().getMessage(),
+                                     CoreMatchers.anything().matches(exceptionMessage));
+        }
+    }
+
     private List<SignatureVerifierContext> defaultIssuerVerifyingKeys() {
         return Collections.singletonList(testSettings.issuerVerifierContext);
     }
 
     private IssuerSignedJwtVerificationOpts.Builder defaultIssuerSignedJwtVerificationOpts() {
         return IssuerSignedJwtVerificationOpts.builder()
-                .withRequireIssuedAtClaim(false)
-                .withRequireNotBeforeClaim(false);
+                                              .withClockSkew(0)
+                                              .withIatCheck(Integer.MAX_VALUE, true)
+                                              .withNbfCheck(true);
     }
 
     private KeyBindingJwtVerificationOpts.Builder defaultKeyBindingJwtVerificationOpts() {
         return KeyBindingJwtVerificationOpts.builder()
-                .withKeyBindingRequired(true)
-                .withAllowedMaxAge(Integer.MAX_VALUE)
-                .withNonce("1234567890")
-                .withAud("https://verifier.example.org")
-                .withRequireExpirationClaim(false)
-                .withRequireNotBeforeClaim(false);
+                                            .withKeyBindingRequired(true)
+                                            .withNonceCheck("1234567890")
+                                            .withAudCheck("https://verifier.example.org")
+                                            .withIatCheck(Integer.MAX_VALUE, false)
+                                            .withExpCheck(true)
+                                            .withNbfCheck(true);
     }
 
     private ObjectNode exampleKbPayload() {
@@ -484,16 +511,12 @@ public abstract class SdJwtVPVerificationTest {
         return payload;
     }
 
-    private SdJwtVP exampleSdJwtWithCustomKbPayload(JsonNode kbPayloadSubstitute) {
-        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(
-                kbPayloadSubstitute,
-                testSettings.holderSigContext,
-                KeyBindingJWT.TYP
-        );
+    private SdJwtVP exampleSdJwtWithCustomKbPayload(ObjectNode kbPayloadSubstitute) {
+        KeyBindingJWT keyBindingJWT = new KeyBindingJWT(kbPayloadSubstitute, testSettings.holderSigContext);
 
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");
         String sdJwtWithoutKb = sdJwtVPString.substring(0, sdJwtVPString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER) + 1);
 
-        return SdJwtVP.of(sdJwtWithoutKb + keyBindingJWT.toJws());
+        return SdJwtVP.of(sdJwtWithoutKb + keyBindingJWT.getJws());
     }
 }

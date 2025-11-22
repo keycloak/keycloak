@@ -271,7 +271,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
 
         // This JWT specifies a key ID in its header
         IssuerSignedJWT issuerSignedJWT = exampleIssuerSignedJwt("sdjwt/s20.1-sdjwt+kb--explicit-kid.txt");
-        String kid = issuerSignedJWT.getHeader().getKeyId();
+        String kid = issuerSignedJWT.getJwsHeader().getKeyId();
 
         // Act and assert
         genericTestShouldFail(
@@ -290,7 +290,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
 
         // Set the same kid to all JWKs to publish, which is problematic
 
-        String kid = issuerSignedJWT.getHeader().getKeyId();
+        String kid = issuerSignedJWT.getJwsHeader().getKeyId();
         JsonNode jwks = exampleJwks();
         for (JsonNode jwk : jwks.get("keys")) {
             ((ObjectNode) jwk).put("kid", kid);
@@ -373,7 +373,7 @@ public abstract class JwtVcMetadataTrustedSdJwtIssuerTest {
     private IssuerSignedJWT exampleIssuerSignedJwt(String sdJwtVector, String issuerUri) {
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), sdJwtVector);
         IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(sdJwtVPString).getIssuerSignedJWT();
-        ((ObjectNode) issuerSignedJWT.getPayload()).put("iss", issuerUri);
+        issuerSignedJWT.getPayload().put("iss", issuerUri);
         return issuerSignedJWT;
     }
 

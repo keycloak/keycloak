@@ -107,7 +107,7 @@ public class TestSettings {
         return getSignatureVerifierContext(keyPair.getPublic(), algorithm, kid);
     }
 
-    private static KeyPair readKeyPair(JsonNode keySetting) {
+    public static KeyPair readKeyPair(JsonNode keySetting) {
         String curveName = keySetting.get("crv").asText();
         String base64UrlEncodedD = keySetting.get("d").asText();
         String base64UrlEncodedX = keySetting.get("x").asText();

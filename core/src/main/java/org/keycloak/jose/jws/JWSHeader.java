@@ -18,16 +18,22 @@
 package org.keycloak.jose.jws;
 
 import java.io.IOException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,6 +59,8 @@ public class JWSHeader implements JOSEHeader {
     @JsonProperty("x5c")
     private List<String> x5c;
 
+    private Map<String, Object> otherClaims = new HashMap<>();
+
     public JWSHeader() {
     }
 
@@ -73,6 +81,10 @@ public class JWSHeader implements JOSEHeader {
         return algorithm;
     }
 
+    public void setAlgorithm(Algorithm algorithm) {
+        this.algorithm = algorithm;
+    }
+
     @JsonIgnore
     @Override
     public String getRawAlgorithm() {
@@ -83,37 +95,74 @@ public class JWSHeader implements JOSEHeader {
         return type;
     }
 
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public String getContentType() {
         return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     public String getKeyId() {
         return keyId;
     }
 
+    public void setKeyId(String keyId) {
+        this.keyId = keyId;
+    }
+
     public JWK getKey() {
         return key;
+    }
+
+    public void setKey(JWK key) {
+        this.key = key;
     }
 
     public List<String> getX5c() {
         return x5c;
     }
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    public void setX5c(List<String> x5c) {
+        this.x5c = x5c;
+    }
 
-    static {
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    public void addX5c(String x5c) {
+        this.x5c.add(x5c);
+    }
 
+    public void addX5c(Certificate x5c) {
+        try {
+            this.x5c.add(Base64.getEncoder().encodeToString(x5c.getEncoded()));
+        } catch (CertificateEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * This is a map of any other claims and data that might be in the header. Could be custom claims set up by a custom
+     * implementation or the auth server
+     */
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
     }
 
     public String toString() {
         try {
-            return mapper.writeValueAsString(this);
+            return JsonSerialization.writeValueAsString(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
     }
 
 }

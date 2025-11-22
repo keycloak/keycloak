@@ -16,8 +16,11 @@
  */
 package org.keycloak.sdjwt;
 
+import java.security.cert.Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +32,15 @@ import java.util.stream.Collectors;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.sdjwt.vp.KeyBindingJWT;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
@@ -40,60 +48,165 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 
 /**
- * Handle verifiable credentials (SD-JWT VC), enabling the parsing
- * of existing VCs as well as the creation and signing of new ones.
- * It integrates with Keycloak's SignatureSignerContext to facilitate
- * the generation of issuer signature.
+ * Handle verifiable credentials (SD-JWT VC), enabling the parsing of existing VCs as well as the creation and signing
+ * of new ones. It integrates with Keycloak's SignatureSignerContext to facilitate the generation of issuer signature.
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
-public class IssuerSignedJWT extends SdJws {
+public class IssuerSignedJWT extends JwsToken {
 
-    public IssuerSignedJWT(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        super(payload, signer, jwsType);
+    private DisclosureSpec disclosureSpec;
+
+    private List<SdJwtClaim> disclosureClaims;
+
+    private List<DecoyClaim> decoyClaims;
+
+
+    public IssuerSignedJWT(JWSHeader jwsHeader,
+                           ObjectNode payload) {
+        super(jwsHeader, payload);
+        this.disclosureSpec = null;
+        this.disclosureClaims = new ArrayList<>();
+        this.decoyClaims = new ArrayList<>();
     }
 
-    public static IssuerSignedJWT fromJws(String jwsString) {
-        return new IssuerSignedJWT(jwsString);
+    public IssuerSignedJWT(JWSHeader jwsHeader,
+                           ObjectNode payload,
+                           SignatureSignerContext signer) {
+        super(jwsHeader, payload, signer);
+        this.disclosureSpec = null;
+        this.disclosureClaims = new ArrayList<>();
+        this.decoyClaims = new ArrayList<>();
     }
 
-    private IssuerSignedJWT(String jwsString) {
+    public IssuerSignedJWT(String jwsString) {
         super(jwsString);
+        this.disclosureSpec = null;
+        this.disclosureClaims = new ArrayList<>();
+        this.decoyClaims = new ArrayList<>();
     }
 
-    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
-                            boolean nestedDisclosures) {
-        super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures));
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           ObjectNode disclosureClaims) {
+        this(disclosureSpec, disclosureClaims, OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM);
     }
 
-    private IssuerSignedJWT(JsonNode payload, JWSInput jwsInput) {
-        super(payload, jwsInput);
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           ObjectNode disclosureClaims,
+                           String hashAlg) {
+        this(disclosureSpec, new JWSHeader(), disclosureClaims, null, hashAlg, false);
     }
 
-    private IssuerSignedJWT(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
-                            boolean nestedDisclosures, SignatureSignerContext signer, String jwsType) {
-        super(generatePayloadString(claims, decoyClaims, hashAlg, nestedDisclosures), signer, jwsType);
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           ObjectNode disclosureClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures) {
+        this(disclosureSpec, new JWSHeader(), disclosureClaims, null, hashAlg, nestedDisclosures);
+    }
+
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           ObjectNode disclosureClaims,
+                           List<DecoyClaim> decoyClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures) {
+        this(disclosureSpec, new JWSHeader(), disclosureClaims, decoyClaims, hashAlg, nestedDisclosures);
+    }
+
+    public IssuerSignedJWT(List<SdJwtClaim> disclosureClaims,
+                           List<DecoyClaim> decoyClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures) {
+        this(DisclosureSpec.builder().build(), new JWSHeader(),
+             disclosureClaims, decoyClaims, hashAlg, nestedDisclosures);
+    }
+
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           JWSHeader jwsHeader,
+                           ObjectNode disclosureClaims,
+                           List<DecoyClaim> decoyClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures) {
+        this(disclosureSpec,
+             jwsHeader,
+             SdJwtClaimFactory.parsePayload(disclosureClaims, disclosureSpec),
+             decoyClaims,
+             hashAlg,
+             nestedDisclosures);
+    }
+
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           JWSHeader jwsHeader,
+                           ObjectNode disclosureClaims,
+                           List<DecoyClaim> decoyClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures,
+                           SignatureSignerContext signer) {
+        this(disclosureSpec,
+             jwsHeader,
+             SdJwtClaimFactory.parsePayload(disclosureClaims, disclosureSpec),
+             decoyClaims,
+             hashAlg,
+             nestedDisclosures,
+             signer);
+    }
+
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           JWSHeader jwsHeader,
+                           List<SdJwtClaim> disclosureClaims,
+                           List<DecoyClaim> decoyClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures) {
+        super(jwsHeader, generatePayloadString(disclosureClaims, decoyClaims, hashAlg, nestedDisclosures));
+        this.disclosureSpec = disclosureSpec;
+        this.disclosureClaims = disclosureClaims;
+        this.decoyClaims = decoyClaims;
+    }
+
+    public IssuerSignedJWT(List<SdJwtClaim> disclosureClaims,
+                           List<DecoyClaim> decoyClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures,
+                           SignatureSignerContext signer,
+                           String jwsType) {
+        this(null, new JWSHeader(null, jwsType, null),
+             disclosureClaims, decoyClaims, hashAlg, nestedDisclosures, signer);
+    }
+
+    public IssuerSignedJWT(DisclosureSpec disclosureSpec,
+                           JWSHeader jwsHeader,
+                           List<SdJwtClaim> disclosureClaims,
+                           List<DecoyClaim> decoyClaims,
+                           String hashAlg,
+                           boolean nestedDisclosures,
+                           SignatureSignerContext signer) {
+        super(jwsHeader,
+              generatePayloadString(disclosureClaims, decoyClaims, hashAlg, nestedDisclosures),
+              signer);
+        this.disclosureSpec = disclosureSpec;
+        this.disclosureClaims = disclosureClaims;
+        this.decoyClaims = decoyClaims;
     }
 
     /*
-     * Generates the payload of the issuer signed jwt from the list
-     * of claims.
+     * Generates the payload of the issuer signed jwt from the list of claims.
      */
-    private static JsonNode generatePayloadString(List<SdJwtClaim> claims, List<DecoyClaim> decoyClaims, String hashAlg,
-                                                  boolean nestedDisclosures) {
+    private static ObjectNode generatePayloadString(List<SdJwtClaim> claims,
+                                                    List<DecoyClaim> decoyClaims,
+                                                    String hashAlg,
+                                                    boolean nestedDisclosures) {
 
         SdJwtUtils.requireNonEmpty(hashAlg, "hashAlg must not be null or empty");
         final List<SdJwtClaim> claimsInternal = claims == null ? Collections.emptyList()
-                : Collections.unmodifiableList(claims);
+            : Collections.unmodifiableList(claims);
         final List<DecoyClaim> decoyClaimsInternal = decoyClaims == null ? Collections.emptyList()
-                : Collections.unmodifiableList(decoyClaims);
+            : Collections.unmodifiableList(decoyClaims);
 
         try {
-            // Check no dupplicate claim names
+            // Check no duplicate claim names
             claimsInternal.stream()
-                    .filter(Objects::nonNull)
-                    // is any duplicate, toMap will throw IllegalStateException
-                    .collect(Collectors.toMap(SdJwtClaim::getClaimName, claim -> claim));
+                          .filter(Objects::nonNull)
+                          // is any duplicate, toMap will throw IllegalStateException
+                          .collect(Collectors.toMap(SdJwtClaim::getClaimName, claim -> claim));
         } catch (IllegalStateException e) {
             throw new IllegalArgumentException("claims must not contain duplicate claim names", e);
         }
@@ -102,16 +215,29 @@ public class IssuerSignedJWT extends SdJws {
         // first filter all UndisclosedClaim
         // then sort by salt
         // then push digest into the sdArray
-        List<String> digests = claimsInternal.stream()
-                .filter(claim -> claim instanceof UndisclosedClaim)
-                .map(claim -> (UndisclosedClaim) claim)
-                .collect(Collectors.toMap(UndisclosedClaim::getSalt, claim -> claim))
-                .entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(Map.Entry::getValue)
-                .filter(Objects::nonNull)
-                .map(od -> od.getDisclosureDigest(hashAlg))
-                .collect(Collectors.toList());
+        Map<SdJwtSalt, UndisclosedClaim> undisclosedClaimMap = new HashMap<>();
+        claimsInternal.stream()
+                      .filter(claim -> claim instanceof UndisclosedClaim)
+                      .map(claim -> (UndisclosedClaim) claim)
+                      .forEach(undisclosedClaim -> {
+                          if (undisclosedClaimMap.containsKey(undisclosedClaim.getSalt())) {
+                              String errorMessage = String.format("Salt value '%s' was reused for claims "
+                                                                      + "'%s' and '%s'",
+                                                                  undisclosedClaim.getSalt(),
+                                                                  undisclosedClaim.getClaimName(),
+                                                                  undisclosedClaimMap.get(undisclosedClaim.getSalt())
+                                                                                     .getClaimName());
+                              throw new IllegalArgumentException(errorMessage);
+                          }
+                          undisclosedClaimMap.put(undisclosedClaim.getSalt(), undisclosedClaim);
+                      });
+
+        List<String> digests = undisclosedClaimMap.entrySet().stream()
+                                                  .sorted(Map.Entry.comparingByKey())
+                                                  .map(Map.Entry::getValue)
+                                                  .filter(Objects::nonNull)
+                                                  .map(od -> od.getDisclosureDigest(hashAlg))
+                                                  .collect(Collectors.toList());
 
         // add decoy claims
         decoyClaimsInternal.stream().map(claim -> claim.getDisclosureDigest(hashAlg)).forEach(digests::add);
@@ -133,12 +259,13 @@ public class IssuerSignedJWT extends SdJws {
         // Disclosure of array of elements is handled
         // by the corresponding claim object.
         claimsInternal.stream()
-                .filter(Objects::nonNull)
-                .filter(claim -> !(claim instanceof UndisclosedClaim))
-                .forEach(nullableClaim -> {
-                    SdJwtClaim claim = Objects.requireNonNull(nullableClaim);
-                    payload.set(claim.getClaimNameAsString(), claim.getVisibleClaimValue(hashAlg));
-                });
+                      .filter(Objects::nonNull)
+                      .filter(claim -> !(claim instanceof UndisclosedClaim))
+                      .forEach(nullableClaim -> {
+                          SdJwtClaim claim = Objects.requireNonNull(nullableClaim);
+                          payload.set(claim.getClaimNameAsString(), claim.getVisibleClaimValue(hashAlg));
+                      });
+
 
         return payload;
     }
@@ -155,8 +282,10 @@ public class IssuerSignedJWT extends SdJws {
      * Returns declared hash algorithm from SD hash claim.
      */
     public String getSdHashAlg() {
-        JsonNode hashAlgNode = getPayload().get(CLAIM_NAME_SD_HASH_ALGORITHM);
-        return hashAlgNode == null ? "sha-256" : hashAlgNode.asText();
+        ObjectNode payload = getPayload();
+        return Optional.ofNullable(payload.get(CLAIM_NAME_SD_HASH_ALGORITHM))
+                       .map(JsonNode::textValue)
+                       .orElse(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM);
     }
 
     /**
@@ -167,8 +296,8 @@ public class IssuerSignedJWT extends SdJws {
     public void verifySdHashAlgorithm() throws VerificationException {
         // Known secure algorithms
         final Set<String> secureAlgorithms = new HashSet<>(Arrays.asList(
-                "sha-256", "sha-384", "sha-512",
-                "sha3-256", "sha3-384", "sha3-512"
+            OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, "sha-384", "sha-512",
+            "sha3-256", "sha3-384", "sha3-512"
         ));
 
         // Read SD hash claim
@@ -180,21 +309,82 @@ public class IssuerSignedJWT extends SdJws {
         }
     }
 
+    public DisclosureSpec getDisclosureSpec() {
+        return disclosureSpec;
+    }
+
+    public List<SdJwtClaim> getDisclosureClaims() {
+        return disclosureClaims;
+    }
+
+    public List<DecoyClaim> getDecoyClaims() {
+        return decoyClaims;
+    }
+
+    public void setDisclosureClaims(DisclosureSpec disclosureSpec,
+                                    List<SdJwtClaim> disclosureClaims,
+                                    List<DecoyClaim> decoyClaims) {
+        setDisclosureClaims(disclosureSpec, disclosureClaims, decoyClaims, null);
+    }
+
+    public void setDisclosureClaims(DisclosureSpec disclosureSpec,
+                                    List<SdJwtClaim> disclosureClaims,
+                                    List<DecoyClaim> decoyClaims,
+                                    SignatureSignerContext signatureSignerContext) {
+        this.disclosureSpec = disclosureSpec;
+        this.disclosureClaims = disclosureClaims;
+        this.decoyClaims = decoyClaims;
+        super.setPayload(generatePayloadString(disclosureClaims,
+                                               decoyClaims,
+                                               getSdHashAlg(),
+                                               false/* TODO do we need this flag? */));
+        setJws(null);
+        setJwsInput(null);
+        Optional.ofNullable(signatureSignerContext).ifPresent(super::sign);
+    }
+
     // Builder
     public static Builder builder() {
         return new Builder();
     }
 
     public static class Builder {
+        private DisclosureSpec disclosureSpec;
         private List<SdJwtClaim> claims;
         private String hashAlg;
         private SignatureSignerContext signer;
         private List<DecoyClaim> decoyClaims;
         private boolean nestedDisclosures;
-        private String jwsType;
+        private JWSHeader jwsHeader = new JWSHeader();
+
+        private JWSHeader getJwsHeader() {
+            if (this.jwsHeader == null) {
+                this.jwsHeader = new JWSHeader();
+            }
+            return jwsHeader;
+        }
+
+        private List<SdJwtClaim> getClaims() {
+            if (this.claims == null) {
+                this.claims = new ArrayList<>();
+            }
+            return claims;
+        }
 
         public Builder withClaims(List<SdJwtClaim> claims) {
             this.claims = claims;
+            return this;
+        }
+
+        public Builder withClaims(ObjectNode claimsNode) {
+            this.disclosureSpec = DisclosureSpec.builder().build();
+            this.claims = SdJwtClaimFactory.parsePayload(claimsNode, disclosureSpec);
+            return this;
+        }
+
+        public Builder withClaims(ObjectNode claimsNode, DisclosureSpec disclosureSpec) {
+            this.disclosureSpec = disclosureSpec;
+            this.claims = SdJwtClaimFactory.parsePayload(claimsNode, disclosureSpec);
             return this;
         }
 
@@ -219,21 +409,112 @@ public class IssuerSignedJWT extends SdJws {
         }
 
         public Builder withJwsType(String jwsType) {
-            this.jwsType = jwsType;
+            if (this.jwsHeader == null) {
+                this.jwsHeader = new JWSHeader();
+            }
+            this.jwsHeader.setType(jwsType);
+            return this;
+        }
+
+        public Builder withJwsHeader(JWSHeader jwsHeader) {
+            // preserve the type in case that the method 'withJwsType' was called before this method.
+            String jwsType = Optional.ofNullable(this.jwsHeader).map(JWSHeader::getType).orElse(null);
+            this.jwsHeader = jwsHeader;
+            if (this.jwsHeader != null) {
+                this.jwsHeader.setType(jwsType);
+            }
+            return this;
+        }
+
+        public Builder withKid(String kid) {
+            getJwsHeader().setKeyId(kid);
+            return this;
+        }
+
+        public Builder withX5c(List<String> x5c) {
+            getJwsHeader().setX5c(x5c);
+            return this;
+        }
+
+        public Builder withX5c(String x5c) {
+            getJwsHeader().addX5c(x5c);
+            return this;
+        }
+
+        public Builder withX5c(Certificate x5c) {
+            getJwsHeader().addX5c(x5c);
+            return this;
+        }
+
+        public Builder withIat(long iat) {
+            getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(OID4VCConstants.CLAIM_NAME_IAT), new LongNode(iat)));
+            return this;
+        }
+
+        public Builder withNbf(long nbf) {
+            getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(OID4VCConstants.CLAIM_NAME_NBF), new LongNode(nbf)));
+            return this;
+        }
+
+        public Builder withExp(long exp) {
+            getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(OID4VCConstants.CLAIM_NAME_EXP), new LongNode(exp)));
+            return this;
+        }
+
+        /**
+         * this method requires the public key to be present in the keybindingJwts header as "jwk" claim
+         */
+        public Builder withKeyBinding(KeyBindingJWT keyBinding) {
+            ObjectNode cnf = JsonNodeFactory.instance.objectNode();
+            Optional.ofNullable(keyBinding.getJwsHeader().getOtherClaims().get(OID4VCConstants.CLAIM_NAME_JWK))
+                    .map(map -> JsonSerialization.mapper.convertValue(map, ObjectNode.class))
+                    .ifPresent(jwkNode -> cnf.set(OID4VCConstants.CLAIM_NAME_JWK, jwkNode));
+            if (!cnf.isEmpty()) {
+                getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
+            }
+            return this;
+        }
+
+        public Builder withKeyBinding(JWK keyBinding) {
+            return withKeyBinding(JsonSerialization.mapper.convertValue(keyBinding, ObjectNode.class));
+        }
+
+        public Builder withKeyBinding(ObjectNode keyBinding) {
+            ObjectNode cnf = JsonNodeFactory.instance.objectNode();
+            cnf.set("jwk", keyBinding);
+            getClaims().add(new VisibleSdJwtClaim(SdJwtClaimName.of(CLAIM_NAME_CNF), cnf));
+            return this;
+        }
+
+        public Builder withClaim(SdJwtClaim sdJwtClaim) {
+            getClaims().add(sdJwtClaim);
             return this;
         }
 
         public IssuerSignedJWT build() {
             // Preinitialize hashAlg to sha-256 if not provided
             hashAlg = hashAlg == null ? OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM : hashAlg;
-            jwsType = jwsType == null ? OID4VCConstants.SD_JWT_VC_FORMAT : jwsType;
+            jwsHeader.setType(jwsHeader.getType() == null ? OID4VCConstants.SD_JWT_VC_FORMAT : jwsHeader.getType());
+            disclosureSpec = Optional.ofNullable(disclosureSpec).orElseGet(() -> DisclosureSpec.builder().build());
             // send an empty lise if claims not set.
-            claims = claims == null ? Collections.emptyList() : claims;
-            decoyClaims = decoyClaims == null ? Collections.emptyList() : decoyClaims;
+            decoyClaims = decoyClaims == null ? disclosureSpec.createDecoyClaims() : decoyClaims;
+
             if (signer != null) {
-                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, nestedDisclosures, signer, jwsType);
-            } else {
-                return new IssuerSignedJWT(claims, decoyClaims, hashAlg, nestedDisclosures);
+                return new IssuerSignedJWT(disclosureSpec,
+                                           jwsHeader,
+                                           claims,
+                                           decoyClaims,
+                                           hashAlg,
+                                           nestedDisclosures,
+                                           signer);
+            }
+            else {
+                return new IssuerSignedJWT(disclosureSpec,
+                                           jwsHeader,
+                                           claims,
+                                           decoyClaims,
+                                           hashAlg,
+                                           nestedDisclosures);
             }
         }
     }

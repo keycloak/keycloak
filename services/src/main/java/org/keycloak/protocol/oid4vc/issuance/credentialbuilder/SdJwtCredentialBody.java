@@ -17,14 +17,13 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import java.util.Map;
-
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
@@ -35,27 +34,27 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 public class SdJwtCredentialBody implements CredentialBody {
 
     private final SdJwt.Builder sdJwtBuilder;
-    private final Map<String, Object> claimSet;
+    private final IssuerSignedJWT issuerSignedJWT;
 
-    public SdJwtCredentialBody(SdJwt.Builder sdJwtBuilder, Map<String, Object> claimSet) {
+    public SdJwtCredentialBody(SdJwt.Builder sdJwtBuilder, IssuerSignedJWT issuerSignedJWT) {
         this.sdJwtBuilder = sdJwtBuilder;
-        this.claimSet = claimSet;
+        this.issuerSignedJWT = issuerSignedJWT;
     }
 
     public void addKeyBinding(JWK jwk) throws CredentialBuilderException {
-        claimSet.put(CLAIM_NAME_CNF, Map.of(CLAIM_NAME_JWK, jwk));
+        ObjectNode jwkNode = JsonSerialization.mapper.convertValue(jwk, ObjectNode.class);
+        ObjectNode keyBindingNode = JsonSerialization.mapper.createObjectNode();
+        keyBindingNode.set(CLAIM_NAME_JWK, jwkNode);
+        issuerSignedJWT.getPayload().set(CLAIM_NAME_CNF, keyBindingNode);
     }
 
-    public Map<String, Object> getClaimSet() {
-        return claimSet;
+    public IssuerSignedJWT getIssuerSignedJWT() {
+        return issuerSignedJWT;
     }
 
     public String sign(SignatureSignerContext signatureSignerContext) {
-        JsonNode claimSet = JsonSerialization.mapper.valueToTree(this.claimSet);
-        SdJwt sdJwt = sdJwtBuilder
-                .withClaimSet(claimSet)
-                .withSigner(signatureSignerContext)
-                .build();
+        SdJwt sdJwt = sdJwtBuilder.withIssuerSignedJwt(issuerSignedJWT)
+                                  .build(signatureSignerContext);
 
         return sdJwt.toSdJwtString();
     }

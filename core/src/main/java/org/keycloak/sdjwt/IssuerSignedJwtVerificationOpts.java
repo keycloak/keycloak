@@ -17,36 +17,112 @@
 
 package org.keycloak.sdjwt;
 
+import java.util.List;
+
+import org.keycloak.common.VerificationException;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
  * Options for Issuer-signed JWT verification.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class IssuerSignedJwtVerificationOpts extends TimeClaimVerificationOpts {
+public class IssuerSignedJwtVerificationOpts extends ClaimVerifier {
 
-    private IssuerSignedJwtVerificationOpts(
-            boolean validateIssuedAtClaim,
-            boolean validateExpirationClaim,
-            boolean validateNotBeforeClaim,
-            int allowedClockSkewSeconds
-    ) {
-        super(validateIssuedAtClaim, validateExpirationClaim, validateNotBeforeClaim, allowedClockSkewSeconds);
+
+    public IssuerSignedJwtVerificationOpts(List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers,
+                                           List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+        super(headerVerifiers, contentVerifiers);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public void verify(JwsToken tokenToVerify) throws VerificationException {
+        super.verifyClaims(tokenToVerify.getJwsHeaderAsNode(), tokenToVerify.getPayload());
     }
 
-    public static class Builder extends TimeClaimVerificationOpts.Builder<Builder> {
+    public static IssuerSignedJwtVerificationOpts.Builder builder() {
+        return new IssuerSignedJwtVerificationOpts.Builder();
+    }
+
+    public static class Builder extends ClaimVerifier.Builder {
+
+        public Builder() {
+        }
+
+        public Builder(Integer clockSkew) {
+            super(clockSkew);
+        }
 
         @Override
+        public IssuerSignedJwtVerificationOpts.Builder withIatCheck(Integer allowedMaxAge) {
+            return (Builder) super.withIatCheck(allowedMaxAge);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withIatCheck(boolean isCheckOptional) {
+            return (Builder) super.withIatCheck(isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withIatCheck(Integer allowedMaxAge, boolean isCheckOptional) {
+            return (Builder) super.withIatCheck(allowedMaxAge, isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withNbfCheck() {
+            return (Builder) super.withNbfCheck();
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withNbfCheck(boolean isCheckOptional) {
+            return (Builder) super.withNbfCheck(isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withExpCheck() {
+            return (Builder) super.withExpCheck();
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withExpCheck(boolean isCheckOptional) {
+            return (Builder) super.withExpCheck(isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withClockSkew(int clockSkew) {
+            return (Builder) super.withClockSkew(clockSkew);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withContentVerifiers(List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+            return (Builder) super.withContentVerifiers(contentVerifiers);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder addContentVerifiers(List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+            return (Builder) super.addContentVerifiers(contentVerifiers);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withAudCheck(String expectedAud) {
+            return (Builder) super.withAudCheck(expectedAud);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withClaimCheck(String claimName, String expectedValue) {
+            return (Builder) super.withClaimCheck(claimName, expectedValue);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withClaimCheck(String claimName,
+                                                                      String expectedValue,
+                                                                      boolean isOptionalCheck) {
+            return (Builder) super.withClaimCheck(claimName, expectedValue, isOptionalCheck);
+        }
+
         public IssuerSignedJwtVerificationOpts build() {
-            return new IssuerSignedJwtVerificationOpts(
-                    requireIssuedAtClaim,
-                    requireExpirationClaim,
-                    requireNotBeforeClaim,
-                    allowedClockSkewSeconds
-            );
+
+            return new IssuerSignedJwtVerificationOpts(headerVerifiers, contentVerifiers);
         }
     }
 }

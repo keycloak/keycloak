@@ -16,38 +16,147 @@
  */
 package org.keycloak.sdjwt.vp;
 
-import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.sdjwt.SdJws;
+import java.security.cert.Certificate;
+import java.util.List;
+import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.OID4VCConstants;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.representations.IDToken;
+import org.keycloak.sdjwt.JwsToken;
+
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  *
  */
-public class KeyBindingJWT extends SdJws {
+public class KeyBindingJWT extends JwsToken {
 
-    public static final String TYP = "kb+jwt";
-
-    public KeyBindingJWT(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        super(payload, signer, jwsType);
-    }
-
-    public static KeyBindingJWT of(String jwsString) {
-        return new KeyBindingJWT(jwsString);
-    }
-
-    public static KeyBindingJWT from(JsonNode payload, SignatureSignerContext signer, String jwsType) {
-        return new KeyBindingJWT(payload, signer, jwsType);
-    }
-
-    private KeyBindingJWT(JsonNode payload, JWSInput jwsInput) {
-        super(payload, jwsInput);
-    }
-
-    private KeyBindingJWT(String jwsString) {
+    public KeyBindingJWT(String jwsString) {
         super(jwsString);
+    }
+
+    public KeyBindingJWT(ObjectNode payload, SignatureSignerContext signer) {
+        this(new JWSHeader(), payload, signer);
+    }
+
+    public KeyBindingJWT(ObjectNode payload) {
+        this(new JWSHeader(), payload, null);
+    }
+
+    public KeyBindingJWT(JWSHeader jwsHeader, ObjectNode payload) {
+        this(jwsHeader, payload, null);
+    }
+
+    public KeyBindingJWT(JWSHeader jwsHeader, ObjectNode payload, SignatureSignerContext signer) {
+        super(jwsHeader, payload);
+        getJwsHeader().setType(OID4VCConstants.KEYBINDING_JWT_TYP);
+        Optional.ofNullable(signer).ifPresent(this::sign);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+
+        protected JWSHeader jwsHeader;
+
+        protected ObjectNode payload;
+
+        public Builder() {
+            this.jwsHeader = new JWSHeader();
+            this.payload = JsonNodeFactory.instance.objectNode();
+        }
+
+        private JWSHeader getJwsHeader() {
+            if (jwsHeader == null) {
+                this.jwsHeader = new JWSHeader();
+            }
+            return jwsHeader;
+        }
+
+        private ObjectNode getPayload() {
+            if (payload == null) {
+                this.payload = JsonNodeFactory.instance.objectNode();
+            }
+            return payload;
+        }
+
+        public Builder withJwsHeader(JWSHeader jwsHeader) {
+            this.jwsHeader = jwsHeader;
+            return this;
+        }
+
+        public Builder withPayload(ObjectNode payload) {
+            this.payload = payload;
+            return this;
+        }
+
+        public Builder withIat(long iat)
+        {
+            getPayload().put(OID4VCConstants.CLAIM_NAME_IAT, iat);
+            return this;
+        }
+
+        public Builder withNbf(long nbf)
+        {
+            getPayload().put(OID4VCConstants.CLAIM_NAME_NBF, nbf);
+            return this;
+        }
+
+        public Builder withExp(long exp)
+        {
+            getPayload().put(OID4VCConstants.CLAIM_NAME_EXP, exp);
+            return this;
+        }
+
+        public Builder withNonce(String nonce)
+        {
+            getPayload().put(IDToken.NONCE, nonce);
+            return this;
+        }
+
+        public Builder withAudience(String aud)
+        {
+            getPayload().put(IDToken.AUD, aud);
+            return this;
+        }
+
+        public Builder withKid(String kid)
+        {
+            getJwsHeader().setKeyId(kid);
+            return this;
+        }
+
+        public Builder withX5c(List<String> x5c)
+        {
+            getJwsHeader().setX5c(x5c);
+            return this;
+        }
+
+        public Builder withX5c(String x5c)
+        {
+            getJwsHeader().addX5c(x5c);
+            return this;
+        }
+
+        public Builder withX5c(Certificate x5c)
+        {
+            getJwsHeader().addX5c(x5c);
+            return this;
+        }
+
+        public KeyBindingJWT build() {
+            return new KeyBindingJWT(jwsHeader, payload);
+        }
+
+        public KeyBindingJWT build(SignatureSignerContext signer) {
+            return new KeyBindingJWT(jwsHeader, payload, signer);
+        }
     }
 }
