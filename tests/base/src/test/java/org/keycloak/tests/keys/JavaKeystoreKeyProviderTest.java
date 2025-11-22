@@ -166,6 +166,21 @@ public class JavaKeystoreKeyProviderTest {
         createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
     }
 
+    @Test
+    public void createJksMLDSA65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.ML_DSA, Algorithm.ML_DSA_65, true);
+    }
+
+    @Test
+    public void createPkcs12MLDSA65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.ML_DSA, Algorithm.ML_DSA_65, true);
+    }
+
+    @Test
+    public void createBcfksMLDSA65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.ML_DSA, Algorithm.ML_DSA_65, true);
+    }
+
     private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String keyAlgorithm, boolean vault) throws Exception {
         cryptoHelper.keystore().assumeKeystoreTypeSupported(keystoreType);
         generateKeystore(keystoreType, algorithmType, keyAlgorithm);
@@ -210,6 +225,10 @@ public class JavaKeystoreKeyProviderTest {
             }
             case EDDSA -> {
                 assertEquals(KeyType.OKP, key.getType());
+                assertEquals(keyAlgorithm, key.getAlgorithm());
+            }
+            case ML_DSA -> {
+                assertEquals(KeyType.AKP, key.getType());
                 assertEquals(keyAlgorithm, key.getAlgorithm());
             }
         }
@@ -374,6 +393,10 @@ public class JavaKeystoreKeyProviderTest {
             case EDDSA -> {
                 this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateEdDSAKey(Algorithm.Ed25519));
+            }
+            case ML_DSA -> {
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                        KeyUtils.generateMLDSAKey(keyAlgorithm));
             }
         }
     }
