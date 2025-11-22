@@ -18,7 +18,7 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_US
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 @JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
     private final String uses;
@@ -51,6 +51,7 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
 
     @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
     @JsonDeserialize(using = MultivaluedHashMapValueDeserializer.class)
+    @JsonInclude(value=JsonInclude.Include.NON_EMPTY, content=JsonInclude.Include.NON_NULL)
     public MultivaluedHashMap<String, String> getConfig() {
         return super.getConfig();
     }
