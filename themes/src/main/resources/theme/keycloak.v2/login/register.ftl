@@ -26,26 +26,34 @@
 
             <@registerCommons.termsAcceptance/>
 
-            <#if recaptchaRequired?? && (recaptchaVisible!false)>
+            <#if captchaRequired!false>
+                <#if captchaVisible!false>
                 <div class="form-group">
                     <div class="${properties.kcInputWrapperClass!}">
-                        <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}" data-action="${recaptchaAction}"></div>
+                        <div class="${captchaCssClass!}" data-size="compact" data-sitekey="${captchaSiteKey}"<#if captchaUseCallback!false && captchaAction?has_content> data-action="${captchaAction}"</#if>></div>
                     </div>
                 </div>
+                </#if>
             </#if>
 
-            <#if recaptchaRequired?? && !(recaptchaVisible!false)>
+            <#if captchaRequired!false && !(captchaVisible!false)>
+                <#if captchaUseCallback!false>
                 <script>
                     function onSubmitRecaptcha(token) {
                         document.getElementById("kc-register-form").requestSubmit();
                     }
                 </script>
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} g-recaptcha"
-                            data-sitekey="${recaptchaSiteKey}" data-callback="onSubmitRecaptcha" data-action="${recaptchaAction}" type="submit" id="kc-submit">
+                    <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!} ${captchaCssClass!}"
+                            data-sitekey="${captchaSiteKey}" data-callback="onSubmitRecaptcha"<#if captchaAction?has_content> data-action="${captchaAction}"</#if> type="submit" id="kc-submit">
                         ${msg("doRegister")}
                     </button>
                 </div>
+                <#else>
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}" id="kc-submit"/>
+                </div>
+                </#if>
             <#else>
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>

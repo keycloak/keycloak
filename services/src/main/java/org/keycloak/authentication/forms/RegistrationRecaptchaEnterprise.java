@@ -72,9 +72,38 @@ public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptc
     }
 
     @Override
+    protected String getResponseFieldName() {
+        return G_RECAPTCHA_RESPONSE;
+    }
+
+    @Override
     protected String getScriptUrl(Map<String, String> config, String userLanguageTag) {
         return "https://www." + getRecaptchaDomain(config) + "/recaptcha/enterprise.js?hl=" + userLanguageTag;
 
+    }
+
+    @Override
+    protected String getCaptchaCssClass() {
+        return "g-recaptcha";
+    }
+
+    @Override
+    protected boolean usesCaptchaCallback() {
+        return true;
+    }
+
+    @Override
+    protected void setRecaptchaLegacyAttributes(LoginFormsProvider form, Map<String, String> config) {
+        // Set legacy reCAPTCHA attributes for backwards compatibility with custom themes
+        // TODO: Remove these attributes in a future version
+        boolean invisible = isInvisible(config);
+        String action = resolveAction(config);
+
+        form.setAttribute("recaptchaRequired", true);
+        form.setAttribute("recaptchaSiteKey", config.get(SITE_KEY));
+        form.setAttribute("recaptchaAction", action);
+        form.setAttribute("recaptchaVisible", !invisible);
+        form.setAttribute("recaptchaProviderId", getId());
     }
 
     @Override

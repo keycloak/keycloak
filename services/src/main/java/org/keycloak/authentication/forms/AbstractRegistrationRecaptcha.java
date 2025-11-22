@@ -22,6 +22,7 @@ package org.keycloak.authentication.forms;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.jboss.logging.Logger;
@@ -47,6 +48,8 @@ import org.keycloak.utils.StringUtil;
 public abstract class AbstractRegistrationRecaptcha implements FormAction, FormActionFactory {
 
     public static final String G_RECAPTCHA_RESPONSE = "g-recaptcha-response";
+    public static final String H_CAPTCHA_RESPONSE = "h-captcha-response";
+    public static final Set<String> CAPTCHA_RESPONSE_FIELDS = Set.of(G_RECAPTCHA_RESPONSE, H_CAPTCHA_RESPONSE);
     public static final String RECAPTCHA_REFERENCE_CATEGORY = "recaptcha";
 
     // option keys
@@ -97,24 +100,67 @@ public abstract class AbstractRegistrationRecaptcha implements FormAction, FormA
 
         String userLanguageTag = context.getSession().getContext().resolveLocale(context.getUser())
                 .toLanguageTag();
-        boolean invisible = Boolean.parseBoolean(config.get(INVISIBLE));
-        String action = StringUtil.isNullOrEmpty(config.get(ACTION)) ? "register" : config.get(ACTION);
 
-        form.setAttribute("recaptchaRequired", true);
-        form.setAttribute("recaptchaSiteKey", config.get(SITE_KEY));
-        form.setAttribute("recaptchaAction", action);
-        form.setAttribute("recaptchaVisible", !invisible);
+        setCaptchaAttributes(form, config);
+        setRecaptchaLegacyAttributes(form, config);
+
         form.addScript(getScriptUrl(config, userLanguageTag));
+    }
+
+    /**
+     * Sets generic captcha attributes that are provider-agnostic.
+     * This is the recommended way to set CAPTCHA attributes for templates.
+     */
+    protected void setCaptchaAttributes(LoginFormsProvider form, Map<String, String> config) {
+        boolean invisible = isInvisible(config);
+        String action = resolveAction(config);
+
+        form.setAttribute("captchaRequired", true);
+        form.setAttribute("captchaSiteKey", config.get(SITE_KEY));
+        form.setAttribute("captchaAction", action);
+        form.setAttribute("captchaVisible", !invisible);
+        form.setAttribute("captchaCssClass", getCaptchaCssClass());
+        form.setAttribute("captchaUseCallback", usesCaptchaCallback());
+    }
+
+    /**
+     * Returns whether this CAPTCHA provider uses a callback-based approach for submission.
+     * Google reCAPTCHA (both v2 and Enterprise) use callbacks, hCaptcha does not.
+     */
+    protected boolean usesCaptchaCallback() {
+        return false;
+    }
+
+    /**
+     * Sets legacy reCAPTCHA attributes for backwards compatibility with custom themes.
+     * This method is meant to be overridden by RegistrationRecaptcha to maintain backwards compatibility.
+     * TODO: This should be removed in a future version once custom themes are updated.
+     */
+    protected void setRecaptchaLegacyAttributes(LoginFormsProvider form, Map<String, String> config) {
+        // Base implementation does nothing - only reCAPTCHA-specific implementations should add these
+    }
+
+    protected boolean isInvisible(Map<String, String> config) {
+        return Boolean.parseBoolean(config.get(INVISIBLE));
+    }
+
+    protected String resolveAction(Map<String, String> config) {
+        String action = config.get(ACTION);
+        return StringUtil.isNullOrEmpty(action) ? "register" : action;
     }
 
     protected abstract String getScriptUrl(Map<String, String> config, String userLanguageTag);
 
     protected abstract boolean validateConfig(Map<String, String> config);
 
+    protected abstract String getResponseFieldName();
+
+    protected abstract String getCaptchaCssClass();
+
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
+        String captcha = formData.getFirst(getResponseFieldName());
         LOGGER.trace("Got captcha: " + captcha);
 
         Map<String, String> config = context.getAuthenticatorConfig().getConfig();

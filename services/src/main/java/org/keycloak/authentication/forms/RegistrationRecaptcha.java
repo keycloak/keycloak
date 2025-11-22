@@ -74,6 +74,11 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
     }
 
     @Override
+    protected String getResponseFieldName() {
+        return G_RECAPTCHA_RESPONSE;
+    }
+
+    @Override
     protected boolean validate(ValidationContext context, String captcha, Map<String, String> config) {
         LOGGER.trace("Verifying reCAPTCHA using non-enterprise API");
         CloseableHttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
@@ -119,8 +124,32 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
     }
 
     @Override
+    protected String getCaptchaCssClass() {
+        return "g-recaptcha";
+    }
+
+    @Override
+    protected boolean usesCaptchaCallback() {
+        return true;
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    protected void setRecaptchaLegacyAttributes(LoginFormsProvider form, Map<String, String> config) {
+        // Set legacy reCAPTCHA attributes for backwards compatibility with custom themes
+        // TODO: Remove these attributes in a future version
+        boolean invisible = isInvisible(config);
+        String action = resolveAction(config);
+
+        form.setAttribute("recaptchaRequired", true);
+        form.setAttribute("recaptchaSiteKey", config.get(SITE_KEY));
+        form.setAttribute("recaptchaAction", action);
+        form.setAttribute("recaptchaVisible", !invisible);
+        form.setAttribute("recaptchaProviderId", getId());
     }
 
     @Override

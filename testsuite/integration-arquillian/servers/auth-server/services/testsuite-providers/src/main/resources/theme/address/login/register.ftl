@@ -107,12 +107,14 @@
                     <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.country" name="user.attributes.country" value="${(register.formData['user.attributes.country']!'')}"/>
                 </div>
             </div>
-            <#if recaptchaRequired??>
+            <#if captchaRequired!false>
+                <#if captchaVisible!false>
             <div class="form-group">
                 <div class="${properties.kcInputWrapperClass!}">
-                    <div class="g-recaptcha" data-size="compact" data-sitekey="${recaptchaSiteKey}"></div>
+                    <div class="${captchaCssClass!}" data-size="compact" data-sitekey="${captchaSiteKey}"></div>
                 </div>
             </div>
+                </#if>
             </#if>
 
             <div class="${properties.kcFormGroupClass!}">
