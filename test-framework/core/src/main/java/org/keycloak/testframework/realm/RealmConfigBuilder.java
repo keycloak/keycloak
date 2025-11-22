@@ -41,6 +41,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder client(ClientRepresentation client) {
+        rep.setClients(Collections.combine(rep.getClients(), client));
+        return this;
+    }
+
     public ClientConfigBuilder addClient(String clientId) {
         ClientRepresentation client = new ClientRepresentation();
         rep.setClients(Collections.combine(rep.getClients(), client));

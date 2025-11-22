@@ -28,12 +28,15 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.TrustAllSSLContext;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -117,6 +120,7 @@ public class KeycloakKubernetesJwtTest extends BaseOperatorTest {
             IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
             idp.setAlias("kubernetes");
             idp.setProviderId("kubernetes");
+            idp.getConfig().put("issuer", "https://kubernetes.default.svc.cluster.local");
             keycloak.realm("test").identityProviders().create(idp).close();
 
         }
@@ -142,7 +146,6 @@ public class KeycloakKubernetesJwtTest extends BaseOperatorTest {
                     url,
                     "-H", "Content-Type: application/x-www-form-urlencoded",
                     "--data-urlencode", "grant_type=client_credentials",
-                    "--data-urlencode", "client_id=system:serviceaccount:" + namespace + ":default",
                     "--data-urlencode", "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
                     "--data-urlencode", "client_assertion=" + token
             };

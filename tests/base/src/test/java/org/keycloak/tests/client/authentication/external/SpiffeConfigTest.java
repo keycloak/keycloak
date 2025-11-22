@@ -9,7 +9,6 @@ import org.keycloak.admin.client.resource.IdentityProvidersResource;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
 import org.keycloak.http.simple.SimpleHttp;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
@@ -66,7 +65,7 @@ public class SpiffeConfigTest {
         IdentityProviderRepresentation createdRep = realm.admin().identityProviders().get(rep.getAlias()).toRepresentation();
 
         Assertions.assertTrue(createdRep.isEnabled());
-        MatcherAssert.assertThat(createdRep.getConfig(), Matchers.equalTo(Map.of("bundleEndpoint", "https://localhost", "issuer", "spiffe://test")));
+        MatcherAssert.assertThat(createdRep.getConfig(), Matchers.equalTo(Map.of("bundleEndpoint", "https://localhost", "trustDomain", "spiffe://test")));
 
         Assertions.assertNull(createdRep.getUpdateProfileFirstLoginMode());
         Assertions.assertNull(createdRep.getFirstBrokerLoginFlowAlias());
@@ -112,7 +111,7 @@ public class SpiffeConfigTest {
     private IdentityProviderRepresentation createConfig(String alias, String trustDomain, String bundleEndpoint) {
         return IdentityProviderBuilder.create().providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                 .alias(alias)
-                .setAttribute(IdentityProviderModel.ISSUER, trustDomain)
+                .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, trustDomain)
                 .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, bundleEndpoint).build();
     }
 

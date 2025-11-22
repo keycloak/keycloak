@@ -22,12 +22,10 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
 
     private final KeycloakSession session;
     private final KubernetesIdentityProviderConfig config;
-    private final String globalJwksUrl;
 
-    public KubernetesIdentityProvider(KeycloakSession session, KubernetesIdentityProviderConfig config, String globalJwksUrl) {
+    public KubernetesIdentityProvider(KeycloakSession session, KubernetesIdentityProviderConfig config) {
         this.session = session;
         this.config = config;
-        this.globalJwksUrl = globalJwksUrl;
     }
 
     @Override
@@ -46,7 +44,7 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
 
             String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(validator.getContext().getRealm().getId(), config.getInternalId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, globalJwksUrl, getConfig().getJwksUrl()));
+            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer()));
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
             if (signatureProvider == null) {

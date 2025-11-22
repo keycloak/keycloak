@@ -18,7 +18,7 @@ test.describe.serial("Kubernetes identity provider test", () => {
     await createKubernetesProvider(
       page,
       "kubernetes",
-      "https://kubernetes.myorg.com/openid/v1/jwks",
+      "https://kubernetes.myorg.com",
     );
 
     await assertNotificationMessage(
@@ -30,8 +30,8 @@ test.describe.serial("Kubernetes identity provider test", () => {
     await clickTableRowItem(page, "kubernetes");
 
     await page
-      .getByTestId("config.jwksUrl")
-      .fill("https://kubernetes.myorg2.com/openid/v1/jwks");
+      .getByTestId("config.issuer")
+      .fill("https://kubernetes2.myorg.com");
 
     await clickSaveButton(page);
 

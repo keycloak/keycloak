@@ -3,7 +3,6 @@ package org.keycloak.tests.client.authentication.external;
 import java.util.UUID;
 
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
-import org.keycloak.broker.kubernetes.KubernetesIdentityProviderConfig;
 import org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
@@ -12,12 +11,12 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
+import org.keycloak.testframework.oauth.OAuthIdentityProviderConfig;
+import org.keycloak.testframework.oauth.OAuthIdentityProviderConfigBuilder;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
-import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
@@ -33,16 +32,13 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     static final String INTERNAL_CLIENT_ID = "myclient";
     static final String EXTERNAL_CLIENT_ID = "system:serviceaccount:mynamespace:myserviceaccount";
     static final String IDP_ALIAS = "kubernetes-idp";
-    static final String ISSUER = "https://kubernetes.default.svc.cluster.local";
+    static final String ISSUER = "http://127.0.0.1:8500/idp";
 
     @InjectRealm(config = ExernalClientAuthRealmConfig.class)
     protected ManagedRealm realm;
 
-    @InjectOAuthIdentityProvider
+    @InjectOAuthIdentityProvider(config = KubernetesIdpConfig.class)
     OAuthIdentityProvider identityProvider;
-
-    @InjectTimeOffSet
-    TimeOffSet timeOffSet;
 
     public KubernetesClientAuthTest() {
         super(ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
@@ -116,7 +112,6 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
                             .providerId(KubernetesIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
                             .setAttribute(IdentityProviderModel.ISSUER, ISSUER)
-                            .setAttribute(KubernetesIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
                             .build());
 
             realm.addClient(INTERNAL_CLIENT_ID)
@@ -126,6 +121,14 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
                     .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID);
 
             return realm;
+        }
+    }
+
+    public static class KubernetesIdpConfig implements OAuthIdentityProviderConfig {
+
+        @Override
+        public OAuthIdentityProviderConfigBuilder configure(OAuthIdentityProviderConfigBuilder config) {
+            return config.kubernetes();
         }
     }
 
