@@ -33,10 +33,10 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Test;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
-import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.ISSUER_CLAIM;
-import static org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder.VERIFIABLE_CREDENTIAL_TYPE_CLAIM;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -49,7 +49,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
     @Test
     public void shouldBuildSdJwtCredentialSuccessfully() throws Exception {
         testSignSDJwtCredential(
-                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                Map.of("did", String.format("did:foo:%s", UUID.randomUUID()),
                         "test", "test",
                         "arrayClaim", List.of("a", "b", "c")),
                 0,
@@ -110,11 +110,11 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         assertEquals("The issuer should be set in the token.",
                 issuerDid,
-                jwt.getPayload().get(ISSUER_CLAIM).asText());
+                jwt.getPayload().get(CLAIM_NAME_ISSUER).asText());
 
         assertEquals("The type should be included",
                 credentialBuildConfig.getCredentialType(),
-                jwt.getPayload().get(VERIFIABLE_CREDENTIAL_TYPE_CLAIM).asText());
+                jwt.getPayload().get(CLAIM_NAME_VCT).asText());
 
         assertEquals("The JWS token type should be included",
                 credentialBuildConfig.getTokenJwsType(),

@@ -17,8 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
@@ -29,10 +33,14 @@ import org.keycloak.sdjwt.DisclosureSpec;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
 
-public class SdJwtCredentialBuilder implements CredentialBuilder {
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUB;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 
-    public static final String ISSUER_CLAIM = "iss";
-    public static final String VERIFIABLE_CREDENTIAL_TYPE_CLAIM = "vct";
+public class SdJwtCredentialBuilder implements CredentialBuilder {
 
     public SdJwtCredentialBuilder() {
     }
@@ -47,36 +55,40 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
             VerifiableCredential verifiableCredential,
             CredentialBuildConfig credentialBuildConfig
     ) throws CredentialBuilderException {
-        // Retrieve claims
+
+        Instant issuanceDate = verifiableCredential.getIssuanceDate();
+        Integer expirySeconds = credentialBuildConfig.getExpiryInSeconds();
+
+        // Retrieve subject claims
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
-        Map<String, Object> claimSet = credentialSubject.getClaims();
+        Map<String, Object> claims = new LinkedHashMap<>(credentialSubject.getClaims());
 
-        // Put all claims into the disclosure spec, except the one to be kept visible
+        // Add inner (disclosed) claims iat, sub - the latter being derived from Subject.id
+        Optional.ofNullable(issuanceDate).ifPresent(it -> {
+            claims.put(CLAIM_NAME_IAT, it.getEpochSecond());
+        });
+        Optional.ofNullable(claims.get(CLAIM_NAME_SUBJECT_ID)).ifPresent(it -> {
+            claims.put(CLAIM_NAME_SUB, claims.remove(CLAIM_NAME_SUBJECT_ID));
+        });
+
+        // Put inner claims into the disclosure spec, except the one to be kept visible
         DisclosureSpec.Builder disclosureSpecBuilder = DisclosureSpec.builder();
-        claimSet.entrySet()
-                .stream()
-                .filter(entry -> !credentialBuildConfig.getSdJwtVisibleClaims().contains(entry.getKey()))
-                .forEach(entry -> {
-                    if (entry instanceof List<?> listValue) {
-                        // FIXME: Unreachable branch. The intent was probably to check `entry.getValue()`,
-                        //  but changing just that will expose the array field name and break many tests.
-                        //  Needs further discussion on the wanted behavior.
-
-                        IntStream.range(0, listValue.size())
-                                .forEach(i -> disclosureSpecBuilder
-                                        .withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt())
-                                );
-                    } else {
-                        disclosureSpecBuilder.withUndisclosedClaim(entry.getKey(), SdJwtUtils.randomSalt());
-                    }
+        List<String> outerClaims = credentialBuildConfig.getSdJwtVisibleClaims();
+        claims.keySet().stream()
+                .filter(it -> !outerClaims.contains(it))
+                .forEach(it -> {
+                    disclosureSpecBuilder.withUndisclosedClaim(it, SdJwtUtils.randomSalt());
                 });
 
-        // Populate configured fields (necessarily visible)
-        claimSet.put(ISSUER_CLAIM, credentialBuildConfig.getCredentialIssuer());
-        claimSet.put(VERIFIABLE_CREDENTIAL_TYPE_CLAIM, credentialBuildConfig.getCredentialType());
+        // Add outer (always visible) claims: iss, vct, exp
+        // https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-11.html#section-3.2.2.2
 
-        // jti, nbf, iat and exp are all optional. So need to be set by a protocol mapper if needed.
-        // see: https://www.ietf.org/archive/id/draft-ietf-oauth-sd-jwt-vc-03.html#name-registered-jwt-claims
+        claims.put(CLAIM_NAME_ISSUER, credentialBuildConfig.getCredentialIssuer());
+        claims.put(CLAIM_NAME_VCT, credentialBuildConfig.getCredentialType());
+        if (issuanceDate != null && expirySeconds != null) {
+            Instant exp = issuanceDate.plus(Duration.ofSeconds(expirySeconds));
+            claims.put(CLAIM_NAME_EXP, exp.getEpochSecond());
+        }
 
         // Add the configured number of decoys
         if (credentialBuildConfig.getNumberOfDecoys() > 0) {
@@ -84,11 +96,12 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                     .forEach(i -> disclosureSpecBuilder.withDecoyClaim(SdJwtUtils.randomSalt()));
         }
 
+        DisclosureSpec disclosureSpec = disclosureSpecBuilder.build();
         var sdJwtBuilder = SdJwt.builder()
-                .withDisclosureSpec(disclosureSpecBuilder.build())
+                .withDisclosureSpec(disclosureSpec)
                 .withHashAlgorithm(credentialBuildConfig.getHashAlgorithm())
                 .withJwsType(credentialBuildConfig.getTokenJwsType());
 
-        return new SdJwtCredentialBody(sdJwtBuilder, claimSet);
+        return new SdJwtCredentialBody(sdJwtBuilder, claims);
     }
 }

@@ -149,19 +149,25 @@ public class DisclosureSpec {
             }
 
             // Validate undisclosed claims
-            if (redListedClaimNames.containsRedListedClaimNames(undisclosedClaims.keySet())) {
-                throw new IllegalArgumentException("UndisclosedClaims contains red listed claim names");
-            }
+            undisclosedClaims.keySet().forEach( it -> {
+                if (redListedClaimNames.isRedListedClaimName(it)) {
+                    throw new IllegalArgumentException("UndisclosedClaims contains red listed claim name: " + it);
+                }
+            });
 
             // Validate undisclosed array claims
-            if (redListedClaimNames.containsRedListedClaimNames(undisclosedArrayElts.keySet())) {
-                throw new IllegalArgumentException("UndisclosedArrays with red listed claim names");
-            }
+            undisclosedArrayElts.keySet().forEach(it -> {
+                if (redListedClaimNames.isRedListedClaimName(it)) {
+                    throw new IllegalArgumentException("UndisclosedArrays with red listed claim name: " + it);
+                }
+            });
 
             // Validate undisclosed claims
-            if (redListedClaimNames.containsRedListedClaimNames(decoyArrayElts.keySet())) {
-                throw new IllegalArgumentException("decoyArrayElts contains red listed claim names");
-            }
+            decoyArrayElts.keySet().forEach( it -> {
+                if (redListedClaimNames.isRedListedClaimName(it)) {
+                    throw new IllegalArgumentException("decoyArrayElts contains red listed claim name: " + it);
+                }
+            });
         }
     }
 

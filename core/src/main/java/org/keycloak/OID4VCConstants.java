@@ -22,6 +22,11 @@ public class OID4VCConstants {
     public static final String CLAIM_NAME_ISSUER = "iss";
     public static final String CLAIM_NAME_CNF = "cnf";
     public static final String CLAIM_NAME_JWK = "jwk";
+    public static final String CLAIM_NAME_SUB = "sub";
+    public static final String CLAIM_NAME_VCT = "vct";
+
+    public static final String CLAIM_NAME_SUBJECT_ID = "id";
+    public static final String USER_ATTRIBUTE_NAME_DID = "did";
 
     public static final String SD_HASH_DEFAULT_ALGORITHM = "sha-256";
     public static final int SD_JWT_KEY_BINDING_DEFAULT_ALLOWED_MAX_AGE = 5 * 60; // 5 minutes

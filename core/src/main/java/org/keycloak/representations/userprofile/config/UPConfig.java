@@ -111,6 +111,16 @@ public class UPConfig implements Cloneable {
         return null;
     }
 
+    @JsonIgnore
+    public boolean hasAttribute(String name) {
+        for (UPAttribute attribute : getAttributes()) {
+            if (attribute.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public UnmanagedAttributePolicy getUnmanagedAttributePolicy() {
         return unmanagedAttributePolicy;
     }
