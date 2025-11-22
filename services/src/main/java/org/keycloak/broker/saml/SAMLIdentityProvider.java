@@ -207,6 +207,16 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 destinationUrl = authnRequest.getDestination().toString();
             }
 
+            // Append login_hint as query parameter to destination URL if enabled
+            // Even though SAML 2.0 does not define a login_hint query parameter, it is often used by IdPs such as Entra
+            // see https://learn.microsoft.com/en-us/entra/identity-platform/single-sign-on-saml-protocol
+            if (loginHint != null && !loginHint.isBlank()) {
+                destinationUrl = UriBuilder.fromUri(destinationUrl)
+                        .queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint)
+                        .build()
+                        .toString();
+            }
+
             // Save the current RequestID in the Auth Session as we need to verify it against the ID returned from the IdP
             request.getAuthenticationSession().setClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER, authnRequest.getID());
 
