@@ -261,7 +261,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                     // workflow is active for the resource, check if the provider wants to reset or deactivate it based on the event
                     String executionId = scheduledStep.executionId();
                     String resourceId = scheduledStep.resourceId();
-                    if (provider.reset(context)) {
+                    if (provider.restart(context)) {
                         new DefaultWorkflowExecutionContext(session, workflow, event, scheduledStep).restart();
                     } else if (provider.deactivate(context)) {
                         log.debugf("Workflow '%s' cancelled for resource %s (execution id: %s)", workflow.getName(), resourceId, executionId);
