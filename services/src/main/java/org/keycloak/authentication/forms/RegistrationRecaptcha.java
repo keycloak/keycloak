@@ -75,6 +75,11 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
     }
 
     @Override
+    protected String getResponseFieldName() {
+        return G_RECAPTCHA_RESPONSE;
+    }
+
+    @Override
     protected boolean validate(ValidationContext context, String captcha, Map<String, String> config) {
         LOGGER.trace("Verifying reCAPTCHA using non-enterprise API");
         CloseableHttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();

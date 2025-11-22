@@ -18,5 +18,6 @@
 org.keycloak.authentication.forms.RegistrationPassword
 org.keycloak.authentication.forms.RegistrationUserCreation
 org.keycloak.authentication.forms.RegistrationRecaptcha
+org.keycloak.authentication.forms.RegistrationHCaptcha
 org.keycloak.authentication.forms.RegistrationRecaptchaEnterprise
 org.keycloak.authentication.forms.RegistrationTermsAndConditions

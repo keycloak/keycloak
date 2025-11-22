@@ -73,6 +73,11 @@ public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptc
     }
 
     @Override
+    protected String getResponseFieldName() {
+        return G_RECAPTCHA_RESPONSE;
+    }
+
+    @Override
     protected String getScriptUrl(Map<String, String> config, String userLanguageTag) {
         return "https://www." + getRecaptchaDomain(config) + "/recaptcha/enterprise.js?hl=" + userLanguageTag;
 

@@ -22,6 +22,7 @@ package org.keycloak.authentication.forms;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
@@ -49,6 +50,8 @@ import org.jboss.logging.Logger;
 public abstract class AbstractRegistrationRecaptcha implements FormAction, FormActionFactory {
 
     public static final String G_RECAPTCHA_RESPONSE = "g-recaptcha-response";
+    public static final String H_CAPTCHA_RESPONSE = "h-captcha-response";
+    public static final Set<String> CAPTCHA_RESPONSE_FIELDS = Set.of(G_RECAPTCHA_RESPONSE, H_CAPTCHA_RESPONSE);
     public static final String RECAPTCHA_REFERENCE_CATEGORY = "recaptcha";
 
     // option keys
@@ -99,24 +102,43 @@ public abstract class AbstractRegistrationRecaptcha implements FormAction, FormA
 
         String userLanguageTag = context.getSession().getContext().resolveLocale(context.getUser())
                 .toLanguageTag();
-        boolean invisible = Boolean.parseBoolean(config.get(INVISIBLE));
-        String action = StringUtil.isNullOrEmpty(config.get(ACTION)) ? "register" : config.get(ACTION);
+        boolean invisible = isInvisible(config);
+        String action = resolveAction(config);
 
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", config.get(SITE_KEY));
         form.setAttribute("recaptchaAction", action);
         form.setAttribute("recaptchaVisible", !invisible);
+        form.setAttribute("recaptchaProviderId", getId());
+
+        form.setAttribute("captchaRequired", true);
+        form.setAttribute("captchaSiteKey", config.get(SITE_KEY));
+        form.setAttribute("captchaAction", action);
+        form.setAttribute("captchaVisible", !invisible);
+        form.setAttribute("captchaProviderId", getId());
+
         form.addScript(getScriptUrl(config, userLanguageTag));
+    }
+
+    protected boolean isInvisible(Map<String, String> config) {
+        return Boolean.parseBoolean(config.get(INVISIBLE));
+    }
+
+    protected String resolveAction(Map<String, String> config) {
+        String action = config.get(ACTION);
+        return StringUtil.isNullOrEmpty(action) ? "register" : action;
     }
 
     protected abstract String getScriptUrl(Map<String, String> config, String userLanguageTag);
 
     protected abstract boolean validateConfig(Map<String, String> config);
 
+    protected abstract String getResponseFieldName();
+
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        String captcha = formData.getFirst(G_RECAPTCHA_RESPONSE);
+        String captcha = formData.getFirst(getResponseFieldName());
         LOGGER.trace("Got captcha: " + captcha);
 
         Map<String, String> config = context.getAuthenticatorConfig().getConfig();
