@@ -51,7 +51,7 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 
 import org.jboss.logging.Logger;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 
 /**
@@ -217,12 +217,12 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         // Process authorization_details using provider discovery (if present in request)
         List<AuthorizationDetailsResponse> authorizationDetailsResponse = null;
-        if (formParams.getFirst(AUTHORIZATION_DETAILS_PARAM) != null) {
+        if (formParams.getFirst(AUTHORIZATION_DETAILS) != null) {
             authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
             } else {
-                logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", formParams.getFirst(AUTHORIZATION_DETAILS_PARAM));
+                logger.debugf("No available AuthorizationDetailsProcessor being able to process authorization_details '%s'", formParams.getFirst(AUTHORIZATION_DETAILS));
             }
         }
 
@@ -251,7 +251,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
     protected void addCustomTokenResponseClaims(AccessTokenResponse res, ClientSessionContext clientSessionCtx) {
         List<AuthorizationDetailsResponse> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
         if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
-            res.setOtherClaims(AUTHORIZATION_DETAILS_PARAM, authDetailsResponse);
+            res.setOtherClaims(AUTHORIZATION_DETAILS, authDetailsResponse);
         }
     }
 

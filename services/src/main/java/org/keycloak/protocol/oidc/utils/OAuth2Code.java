@@ -22,9 +22,9 @@ import java.util.Map;
 
 /**
  * Data associated with the oauth2 code.
- *
+ * <p>
  * Those data are typically valid just for the very short time - they're created at the point before we redirect to the application
- * after successful and they're removed when application sends requests to the token endpoint (code-to-token endpoint) to exchange the
+ * and removed when application sends requests to the token endpoint (code-to-token endpoint) to exchange the
  * single-use OAuth2 code parameter for those data.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -59,6 +59,18 @@ public class OAuth2Code {
     private final String userSessionId;
 
 
+    public OAuth2Code(String id, int expiration, String nonce, String scope, String userSessionId) {
+        this.id = id;
+        this.expiration = expiration;
+        this.nonce = nonce;
+        this.scope = scope;
+        this.redirectUriParam = null;
+        this.codeChallenge = null;
+        this.codeChallengeMethod = null;
+        this.dpopJkt = null;
+        this.userSessionId = userSessionId;
+    }
+
     public OAuth2Code(String id, int expiration, String nonce, String scope, String redirectUriParam,
                       String codeChallenge, String codeChallengeMethod, String dpopJkt, String userSessionId) {
         this.id = id;
@@ -85,7 +97,7 @@ public class OAuth2Code {
     }
 
 
-    public static final OAuth2Code deserializeCode(Map<String, String> data) {
+    public static OAuth2Code deserializeCode(Map<String, String> data) {
         return new OAuth2Code(data);
     }
 
@@ -93,7 +105,7 @@ public class OAuth2Code {
     public Map<String, String> serializeCode() {
         Map<String, String> result = new HashMap<>();
 
-        result.put(ID_NOTE, id.toString());
+        result.put(ID_NOTE, id);
         result.put(EXPIRATION_NOTE, String.valueOf(expiration));
         result.put(NONCE_NOTE, nonce);
         result.put(SCOPE_NOTE, scope);
@@ -105,7 +117,6 @@ public class OAuth2Code {
 
         return result;
     }
-
 
     public String getId() {
         return id;

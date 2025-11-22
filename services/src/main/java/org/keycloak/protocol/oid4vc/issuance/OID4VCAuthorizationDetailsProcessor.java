@@ -41,13 +41,12 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 
 public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor {
     private static final Logger logger = Logger.getLogger(OID4VCAuthorizationDetailsProcessor.class);
     private final KeycloakSession session;
-
-    public static final String OPENID_CREDENTIAL_TYPE = "openid_credential";
 
     public OID4VCAuthorizationDetailsProcessor(KeycloakSession session) {
         this.session = session;
@@ -114,9 +113,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         List<ClaimsDescription> claims = detail.getClaims();
 
         // Validate type first
-        if (!OPENID_CREDENTIAL_TYPE.equals(type)) {
+        if (!OPENID_CREDENTIAL.equals(type)) {
             logger.warnf("Invalid authorization_details type: %s", type);
-            throw getInvalidRequestException("type: " + type + ", expected=" + OPENID_CREDENTIAL_TYPE);
+            throw getInvalidRequestException("type: " + type + ", expected=" + OPENID_CREDENTIAL);
         }
 
         // If authorization_servers is present, locations must be set to issuer identifier
@@ -222,18 +221,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         OID4VCAuthorizationDetailsResponse responseDetail = new OID4VCAuthorizationDetailsResponse();
-        responseDetail.setType(OPENID_CREDENTIAL_TYPE);
+        responseDetail.setType(OPENID_CREDENTIAL);
         responseDetail.setCredentialConfigurationId(credentialConfigurationId);
         responseDetail.setCredentialIdentifiers(credentialIdentifiers);
-
-        // Store credential identifier mapping in client session for later use during credential issuance
-        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-        for (String credentialIdentifier : credentialIdentifiers) {
-            // Store the mapping between credential identifier and configuration ID in client session
-            String mappingKey = OID4VCIssuerEndpoint.CREDENTIAL_IDENTIFIER_PREFIX + credentialIdentifier;
-            clientSession.setNote(mappingKey, credentialConfigurationId);
-            logger.debugf("Stored credential identifier mapping: %s -> %s", credentialIdentifier, credentialConfigurationId);
-        }
 
         // Store claims in user session for later use during credential issuance
         if (detail.getClaims() != null) {
@@ -289,17 +279,11 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             }
 
             String credentialIdentifier = UUID.randomUUID().toString();
-
-            // Store the mapping between credential identifier and configuration ID in client session
-            // This will be used later when processing credential requests
-            String mappingKey = OID4VCIssuerEndpoint.CREDENTIAL_IDENTIFIER_PREFIX + credentialIdentifier;
-            clientSession.setNote(mappingKey, credentialConfigurationId);
-
             logger.debugf("Generated credential identifier '%s' for configuration '%s'",
                     credentialIdentifier, credentialConfigurationId);
 
             OID4VCAuthorizationDetailsResponse authDetail = new OID4VCAuthorizationDetailsResponse();
-            authDetail.setType(OPENID_CREDENTIAL_TYPE);
+            authDetail.setType(OPENID_CREDENTIAL);
             authDetail.setCredentialConfigurationId(credentialConfigurationId);
             authDetail.setCredentialIdentifiers(List.of(credentialIdentifier));
 

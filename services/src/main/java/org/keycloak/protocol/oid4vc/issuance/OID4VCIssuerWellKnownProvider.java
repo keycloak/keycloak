@@ -28,7 +28,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.util.Time;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -64,7 +64,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
 import static org.keycloak.OID4VCConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER;
-import static org.keycloak.constants.Oid4VciConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
+import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.crypto.KeyType.RSA;
 import static org.keycloak.jose.jwk.RSAPublicJWK.RS256;
 
@@ -456,7 +456,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = keycloakSession.getContext().getRealm();
         Map<String, SupportedCredentialConfiguration> supportedCredentialConfigurations =
                 keycloakSession.clientScopes()
-                        .getClientScopesByProtocol(realm, Oid4VciConstants.OID4VC_PROTOCOL)
+                        .getClientScopesByProtocol(realm, OID4VCIConstants.OID4VC_PROTOCOL)
                         .map(CredentialScopeModel::new)
                         .map(clientScope -> {
                             return SupportedCredentialConfiguration.parse(keycloakSession,

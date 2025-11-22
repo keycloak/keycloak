@@ -1,10 +1,14 @@
 package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
+import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
@@ -19,6 +23,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     private String refreshToken;
     private String scope;
     private String sessionState;
+    private List<AuthorizationDetail> authorizationDetails;
 
     private Map<String, Object> otherClaims;
 
@@ -60,6 +65,11 @@ public class AccessTokenResponse extends AbstractHttpResponse {
                     break;
                 case OAuth2Constants.REFRESH_TOKEN:
                     refreshToken = (String) entry.getValue();
+                    break;
+                case OAuth2Constants.AUTHORIZATION_DETAILS:
+                    var valJson = JsonSerialization.valueAsString(entry.getValue());
+                    var arr = JsonSerialization.valueFromString(valJson, AuthorizationDetail[].class);
+                    authorizationDetails = Arrays.asList(arr);
                     break;
                 default:
                     otherClaims.put(entry.getKey(), entry.getValue());
@@ -108,4 +118,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
         return otherClaims;
     }
 
+    public List<AuthorizationDetail> getAuthorizationDetails() {
+        return authorizationDetails;
+    }
 }
