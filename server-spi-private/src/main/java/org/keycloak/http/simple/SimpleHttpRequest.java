@@ -183,11 +183,15 @@ public class SimpleHttpRequest {
     }
 
     public String asString() throws IOException {
-        return asResponse().asString();
+        try (SimpleHttpResponse response = makeRequest()) {
+            return response.asString();
+        }
     }
 
     public int asStatus() throws IOException {
-        return asResponse().getStatus();
+        try (SimpleHttpResponse response = asResponse()) {
+            return response.getStatus();
+        }
     }
 
     public SimpleHttpResponse asResponse() throws IOException {

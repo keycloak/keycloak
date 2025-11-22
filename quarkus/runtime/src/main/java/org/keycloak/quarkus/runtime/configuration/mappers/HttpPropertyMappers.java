@@ -64,9 +64,6 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.http.insecure-requests")
                         .transformer(HttpPropertyMappers::getHttpEnabledTransformer)
                         .build(),
-                fromOption(HttpOptions.HTTP_SERVER_ENABLED)
-                        .to("quarkus.http.host-enabled")
-                        .build(),
                 fromOption(HttpOptions.HTTP_HOST)
                         .to("quarkus.http.host")
                         .paramLabel("host")

@@ -31,10 +31,12 @@ import liquibase.change.DatabaseChange;
 import liquibase.change.core.CreateIndexChange;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
+import liquibase.database.core.PostgresDatabase;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
+import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.executor.LoggingExecutor;
 import liquibase.snapshot.InvalidExampleException;
@@ -42,7 +44,7 @@ import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.statement.core.CreateIndexStatement;
-import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
 import org.jboss.logging.Logger;
@@ -54,19 +56,21 @@ import org.jboss.logging.Logger;
     + 1, appliesTo = "index")
 public class CustomCreateIndexChange extends CreateIndexChange {
     private static final Logger logger = Logger.getLogger(CustomCreateIndexChange.class);
-    private int indexCreationThreshold;
+    private long indexCreationThreshold;
+    private Long entriesInTable = null;
+    private boolean logged;
 
     @Override
     public SqlStatement[] generateStatements(Database database) {
         // This check is for manual migration
-        if (Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database) instanceof LoggingExecutor)
+        if (getExecutor(database) instanceof LoggingExecutor)
             return super.generateStatements(database);
 
         Object indexCreationThreshold = ((AbstractJdbcDatabase) database)
             .get(DefaultLiquibaseConnectionProvider.INDEX_CREATION_THRESHOLD_PARAM);
 
-        if (indexCreationThreshold instanceof Integer) {
-            this.indexCreationThreshold = (Integer) indexCreationThreshold;
+        if (indexCreationThreshold instanceof Long) {
+            this.indexCreationThreshold = (Long) indexCreationThreshold;
             if (this.indexCreationThreshold <= 0)
                 return super.generateStatements(database);
         } else {
@@ -75,15 +79,18 @@ public class CustomCreateIndexChange extends CreateIndexChange {
         try {
             // To check that the table already exists or not on which the index will be created.
             if (getTableName() == null || !SnapshotGeneratorFactory.getInstance()
-                .has(new Table().setName(getTableName()).setSchema(new Schema(getCatalogName(), getSchemaName())), database))
+                .has(new Table().setName(getTableName()).setSchema(new Schema(getCatalogName(), getSchemaName())), database)) {
                 return super.generateStatements(database);
+            }
 
-            int result = Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database)
-                    .queryForInt(new RawSqlStatement("SELECT COUNT(*) FROM " + getTableNameForSqlSelects(database, getTableName())));
+            Long entriesInTable = computeEntriesInTable(database);
 
-            if (result > this.indexCreationThreshold) {
+            if (entriesInTable > this.indexCreationThreshold) {
                 String loggingString = createLoggingString(database);
-                logger.warnv("Following index should be created: {0}", loggingString);
+                if (!logged) {
+                    logger.warnv("Following index should be created: {0}", loggingString);
+                    logged = true;
+                }
                 getChangeSet().setComments(loggingString);
                 return new SqlStatement[] {};
             }
@@ -95,6 +102,38 @@ public class CustomCreateIndexChange extends CreateIndexChange {
         return super.generateStatements(database);
     }
 
+    private Long computeEntriesInTable(Database database) throws DatabaseException {
+        if (entriesInTable != null) {
+            return entriesInTable;
+        }
+
+        if (database instanceof PostgresDatabase) {
+            try {
+                // This avoids locking all rows in the database table to get an exact count and instead takes an estimate
+                entriesInTable = getExecutor(database)
+                        .queryForLong(new RawParameterizedSqlStatement("SELECT reltuples::bigint AS estimate FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = current_schema AND UPPER(c.relname) = UPPER(?)", getTableName()));
+                // Check if statistics exist for this table
+                if (entriesInTable > 0) {
+                    return entriesInTable;
+                }
+            } catch (UnexpectedLiquibaseException e) {
+                logger.warn("No permissions to run SELECT on the pg_class and pg_namespace tables, therefore can't estimate row count. Falling back to slower method to count entries with SELECT COUNT(*).", e);
+            }
+            // This avoids selecting all rows in the database table to get an exact count, but instead only establishes a lower bound
+            entriesInTable = getExecutor(database)
+                    .queryForLong(new RawParameterizedSqlStatement(String.format("SELECT COUNT(*) FROM (SELECT 1 FROM %s LIMIT ?) t", getTableNameForSqlSelects(database, getTableName())), this.indexCreationThreshold + 1));
+            return entriesInTable;
+        }
+
+        entriesInTable = getExecutor(database)
+                    .queryForLong(new RawParameterizedSqlStatement(String.format("SELECT COUNT(*) FROM %s", getTableNameForSqlSelects(database, getTableName()))));
+        return entriesInTable;
+    }
+
+    private static Executor getExecutor(Database database) {
+        return Scope.getCurrentScope().getSingleton(ExecutorService.class).getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database);
+    }
+
     private String getTableNameForSqlSelects(Database database, String tableName) {
         String correctedSchemaName = database.escapeObjectName(database.getDefaultSchemaName(), Schema.class);
         return LiquibaseJpaUpdaterProvider.getTable(tableName, correctedSchemaName);
@@ -102,8 +141,7 @@ public class CustomCreateIndexChange extends CreateIndexChange {
 
     private String createLoggingString(Database database) throws DatabaseException {
         StringWriter writer = new StringWriter();
-        LoggingExecutor loggingExecutor = new LoggingExecutor(Scope.getCurrentScope().getSingleton(ExecutorService.class)
-                .getExecutor(LiquibaseConstants.JDBC_EXECUTOR, database), writer, database);
+        LoggingExecutor loggingExecutor = new LoggingExecutor(getExecutor(database), writer, database);
         SqlStatement sqlStatement = new CreateIndexStatement(getIndexName(), getCatalogName(), getSchemaName(), getTableName(),
             this.isUnique(), getAssociatedWith(), getColumns().toArray(new AddColumnConfig[0]))
                 .setTablespace(getTablespace()).setClustered(getClustered());

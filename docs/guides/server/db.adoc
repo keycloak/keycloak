@@ -267,6 +267,8 @@ create database keycloak with encoding 'UTF8';
 
 == Preparing for PostgreSQL
 
+=== Writer and reader instances
+
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
 When using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
 
@@ -277,9 +279,15 @@ You can override this behavior by setting your own value for `targetServerType` 
 The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
 ====
 
-[TIP]
-.Secure Your PostgreSQL Connection
-====
+=== Permissions of the database user
+
+Ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
+
+This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
+If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
+
+=== Secure your connection
+
 To secure your database connection, configure your PostgreSQL server to use TLS and perform full server certificate verification on the client side.
 
 **Server-side Configuration (Prerequisites):**
@@ -295,7 +303,6 @@ db-url=jdbc:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificat
 
 * `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
 * `sslrootcert=/path/to/certificate`: The path to the server's public certificate file on the client machine.
-====
 
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL

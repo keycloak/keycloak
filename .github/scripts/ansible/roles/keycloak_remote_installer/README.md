@@ -1,4 +1,4 @@
-# Ansible Role `keycloak_ec2_installer`
+# Ansible Role `keycloak_remote_installer`
 
 Ansible role for installing Keycloak sources and build dependencies on remote nodes.
 
