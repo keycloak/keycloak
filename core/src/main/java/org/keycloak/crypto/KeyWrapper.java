@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.crypto.SecretKey;
 
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP384R1;
+import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP521R1;
+
 public class KeyWrapper {
 
     private String providerId;
@@ -82,6 +86,8 @@ public class KeyWrapper {
      * <p>For keys of type {@link KeyType#EC}, {@link Algorithm#ES256}, {@link Algorithm#ES384}, or {@link Algorithm#ES512}
      * is returned based on the curve
      *
+     * <p>For keys of type {@link KeyType#OKP}, {@link Algorithm#EdDSA} as that is the only value supported for that key type
+     *
      * @return the algorithm set or a default based on the key type.
      */
     public String getAlgorithmOrDefault() {
@@ -91,15 +97,21 @@ public class KeyWrapper {
                     if (curve != null) {
                         switch (curve) {
                             case "P-256":
+                            case EC_KEY_SECP256R1:
                                 return Algorithm.ES256;
                             case "P-384":
+                            case EC_KEY_SECP384R1:
                                 return Algorithm.ES384;
                             case "P-512":
+                            case "P-521":
+                            case EC_KEY_SECP521R1:
                                 return Algorithm.ES512;
                         }
                     }
                 case KeyType.RSA:
                     return Algorithm.RS256;
+                case KeyType.OKP:
+                    return Algorithm.EdDSA;
             }
         }
         return algorithm;

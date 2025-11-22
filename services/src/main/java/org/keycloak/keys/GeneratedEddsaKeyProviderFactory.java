@@ -23,6 +23,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.List;
 
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -120,7 +121,7 @@ public class GeneratedEddsaKeyProviderFactory extends AbstractEddsaKeyProviderFa
     private void generateKeys(ComponentModel model, String curveName) {
         KeyPair keyPair;
         try {
-            keyPair = generateEddsaKeyPair(curveName);
+            keyPair = KeyUtils.generateEddsaKeyPair(curveName);
             model.put(EDDSA_PRIVATE_KEY_KEY, Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
             model.put(EDDSA_PUBLIC_KEY_KEY, Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(EDDSA_ELLIPTIC_CURVE_KEY, curveName);

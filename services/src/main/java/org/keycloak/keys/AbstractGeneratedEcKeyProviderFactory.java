@@ -22,6 +22,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -102,7 +103,7 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
     protected void generateKeys(ComponentModel model, String ecInNistRep) {
         KeyPair keyPair;
         try {
-            keyPair = generateEcKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));
+            keyPair = KeyUtils.generateEcKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));
             model.put(getEcPrivateKeyKey(), Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
             model.put(getEcPublicKeyKey(), Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(getEcEllipticCurveKey(), ecInNistRep);

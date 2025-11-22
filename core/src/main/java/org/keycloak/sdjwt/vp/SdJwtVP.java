@@ -131,12 +131,12 @@ public class SdJwtVP {
             disclosuresString = sdJwtString.substring(disclosureStart + 1, disclosureEnd);
         }
 
-        IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.fromJws(issuerSignedJWTString);
+        IssuerSignedJWT issuerSignedJWT = new IssuerSignedJWT(issuerSignedJWTString);
 
-        ObjectNode issuerPayload = (ObjectNode) issuerSignedJWT.getPayload();
+        ObjectNode issuerPayload = issuerSignedJWT.getPayload();
         String hashAlgorithm = Optional.ofNullable(issuerPayload.get(CLAIM_NAME_SD_HASH_ALGORITHM))
-                .map(JsonNode::asText)
-                .orElse(JavaAlgorithm.SHA256.toLowerCase());
+                                       .map(JsonNode::asText)
+                                       .orElse(JavaAlgorithm.SHA256.toLowerCase());
 
         Map<String, ArrayNode> claims = new HashMap<>();
         Map<String, String> disclosures = new HashMap<>();
@@ -163,16 +163,15 @@ public class SdJwtVP {
 
         Map<String, String> recursiveDigests = new HashMap<>();
         List<String> ghostDigests = new ArrayList<>();
-        allDigests.stream()
-                .forEach(disclosureDigest -> {
-                    JsonNode node = findNode(issuerPayload, disclosureDigest);
-                    node = processDisclosureDigest(node, disclosureDigest, claims, recursiveDigests, ghostDigests);
-                });
+        allDigests.forEach(disclosureDigest -> {
+            JsonNode node = findNode(issuerPayload, disclosureDigest);
+            processDisclosureDigest(node, disclosureDigest, claims, recursiveDigests, ghostDigests);
+        });
 
         Optional<KeyBindingJWT> keyBindingJWT = Optional.empty();
         if (sdJwtString.length() > disclosureEnd + 1) {
             String keyBindingJWTString = sdJwtString.substring(disclosureEnd + 1);
-            keyBindingJWT = Optional.of(KeyBindingJWT.of(keyBindingJWTString));
+            keyBindingJWT = Optional.of(new KeyBindingJWT(keyBindingJWTString));
         }
 
         // Drop the key binding String if any. As it is held by the keyBindingJwtObject
@@ -210,14 +209,15 @@ public class SdJwtVP {
         return issuerSignedJWT.getCnfClaim().orElse(null);
     }
 
-    public String present(List<String> disclosureDigests, JsonNode keyBindingClaims,
-            SignatureSignerContext holdSignatureSignerContext, String jwsType) {
+    public String present(List<String> disclosureDigests,
+                          ObjectNode keyBindingClaims,
+                          SignatureSignerContext holdSignatureSignerContext) {
         StringBuilder sb = new StringBuilder();
         if (disclosureDigests == null || disclosureDigests.isEmpty()) {
             // disclose everything
             sb.append(sdJwtVpString);
         } else {
-            sb.append(issuerSignedJWT.toJws());
+            sb.append(issuerSignedJWT.getJws());
             sb.append(SDJWT_DELIMITER);
             for (String disclosureDigest : disclosureDigests) {
                 sb.append(disclosures.get(disclosureDigest));
@@ -229,9 +229,9 @@ public class SdJwtVP {
             return unboundPresentation;
         }
         String sd_hash = SdJwtUtils.hashAndBase64EncodeNoPad(unboundPresentation.getBytes(), getHashAlgorithm());
-        keyBindingClaims = ((ObjectNode) keyBindingClaims).put(SD_HASH, sd_hash);
-        KeyBindingJWT keyBindingJWT = KeyBindingJWT.from(keyBindingClaims, holdSignatureSignerContext, jwsType);
-        sb.append(keyBindingJWT.toJws());
+        keyBindingClaims.put(SD_HASH, sd_hash);
+        KeyBindingJWT keyBindingJWT = new KeyBindingJWT(keyBindingClaims, holdSignatureSignerContext);
+        sb.append(keyBindingJWT.getJws());
         return sb.toString();
     }
 
@@ -247,11 +247,11 @@ public class SdJwtVP {
      *                                        to check Key Binding.
      * @throws VerificationException if verification failed
      */
-    public void verify(
-            List<SignatureVerifierContext> issuerVerifyingKeys,
-            IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
-            KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts
-    ) throws VerificationException {
+    public void verify(List<SignatureVerifierContext> issuerVerifyingKeys,
+                       IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
+                       KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts)
+            throws VerificationException
+    {
         sdJwtVerificationContext.verifyPresentation(
                 issuerVerifyingKeys,
                 issuerSignedJwtVerificationOpts,

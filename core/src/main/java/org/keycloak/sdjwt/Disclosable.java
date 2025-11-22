@@ -23,12 +23,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 /**
  * Handles undisclosed claims and array elements, providing functionality
  * to generate disclosure digests from Base64Url encoded strings.
- * 
+ *
  * Hiding claims and array elements occurs by including their digests
  * instead of plaintext in the signed verifiable credential.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
+ *
  */
 public abstract class Disclosable {
     private final SdJwtSalt salt;
@@ -71,5 +71,20 @@ public abstract class Disclosable {
     @Override
     public String toString() {
         return getDisclosureString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Disclosable)) {
+            return false;
+        }
+
+        Disclosable that = (Disclosable) o;
+        return salt.equals(that.salt);
+    }
+
+    @Override
+    public int hashCode() {
+        return salt.hashCode();
     }
 }

@@ -24,9 +24,6 @@ import java.security.PrivateKey;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
-import org.keycloak.crypto.AsymmetricSignatureSignerContext;
-import org.keycloak.crypto.ECDSASignatureSignerContext;
-import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -93,23 +90,11 @@ public class DPoPGenerator {
     }
 
     private String sign(JWSHeader jwsHeader, DPoP dpop, KeyWrapper keyWrapper) {
-        SignatureSignerContext sigCtx = createSignatureSignerContext(keyWrapper);
+        SignatureSignerContext sigCtx = KeyWrapperUtil.createSignatureSignerContext(keyWrapper);
 
         return new JWSBuilder()
                 .header(jwsHeader)
                 .jsonContent(dpop)
                 .sign(sigCtx);
-    }
-
-    private SignatureSignerContext createSignatureSignerContext(KeyWrapper keyWrapper) {
-        switch (keyWrapper.getType()) {
-            case KeyType.EC:
-                return new ECDSASignatureSignerContext(keyWrapper);
-            case KeyType.RSA:
-            case KeyType.OKP:
-                return new AsymmetricSignatureSignerContext(keyWrapper);
-            default:
-                throw new IllegalArgumentException("No signer provider for key algorithm type " + keyWrapper.getType());
-        }
     }
 }

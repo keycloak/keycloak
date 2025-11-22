@@ -18,9 +18,9 @@ package org.keycloak.sdjwt;
 
 /**
  * Strong typing claim name to avoid parameter mismatch.
- * 
+ *
  * Used as map key. Beware of the hashcode and equals implementation.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class SdJwtClaimName {
@@ -32,6 +32,10 @@ public class SdJwtClaimName {
 
     public static SdJwtClaimName of(String claimName) {
         return new SdJwtClaimName(claimName);
+    }
+
+    public String getName() {
+        return claimName;
     }
 
     @Override

@@ -90,7 +90,7 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
         String iss = Optional.ofNullable(issuerSignedJWT.getPayload().get(CLAIM_NAME_ISSUER))
                 .map(JsonNode::asText)
                 .orElse("");
-        String kid = issuerSignedJWT.getHeader().getKeyId();
+        String kid = issuerSignedJWT.getJwsHeader().getKeyId();
 
         // Match the read iss claim against the trusted pattern
         Matcher matcher = issuerUriPattern.matcher(iss);

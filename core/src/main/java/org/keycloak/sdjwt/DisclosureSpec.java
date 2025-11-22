@@ -21,12 +21,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Manages the specification of undisclosed claims and array elements.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
+ *
  */
 public class DisclosureSpec {
 
@@ -45,9 +47,9 @@ public class DisclosureSpec {
     private final Map<SdJwtClaimName, Map<Integer, DisclosureData>> decoyArrayElts;
 
     private DisclosureSpec(Map<SdJwtClaimName, DisclosureData> undisclosedClaims,
-            List<DisclosureData> decoyClaims,
-            Map<SdJwtClaimName, Map<Integer, DisclosureData>> undisclosedArrayElts,
-            Map<SdJwtClaimName, Map<Integer, DisclosureData>> decoyArrayElts) {
+                           List<DisclosureData> decoyClaims,
+                           Map<SdJwtClaimName, Map<Integer, DisclosureData>> undisclosedArrayElts,
+                           Map<SdJwtClaimName, Map<Integer, DisclosureData>> decoyArrayElts) {
         this.undisclosedClaims = undisclosedClaims;
         this.decoyClaims = decoyClaims;
         this.undisclosedArrayElts = undisclosedArrayElts;
@@ -78,6 +80,14 @@ public class DisclosureSpec {
     // test is claim has undisclosed array elements
     public boolean hasUndisclosedArrayElts(SdJwtClaimName claimName) {
         return undisclosedArrayElts.containsKey(claimName);
+    }
+
+    public List<DecoyClaim> createDecoyClaims() {
+        return this.getDecoyClaims().stream()
+                   .map(disclosureData -> {
+                       return DecoyClaim.builder().withSalt(disclosureData.getSalt()).build();
+                   })
+                   .collect(Collectors.toList());
     }
 
     public static class Builder {
@@ -170,14 +180,18 @@ public class DisclosureSpec {
     }
 
     public static class DisclosureData {
-        private final SdJwtSalt salt;
+        protected final SdJwtSalt salt;
 
-        private DisclosureData() {
+        public DisclosureData() {
             this.salt = null;
         }
 
-        private DisclosureData(String salt) {
+        public DisclosureData(String salt) {
             this.salt = salt == null ? null : SdJwtSalt.of(salt);
+        }
+
+        public DisclosureData(SdJwtSalt salt) {
+            this.salt = salt;
         }
 
         public static DisclosureData of(String salt) {
@@ -186,6 +200,21 @@ public class DisclosureSpec {
 
         public SdJwtSalt getSalt() {
             return salt;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof DisclosureData)) {
+                return false;
+            }
+
+            DisclosureData that = (DisclosureData) o;
+            return Objects.equals(salt, that.salt);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(salt);
         }
     }
 }
