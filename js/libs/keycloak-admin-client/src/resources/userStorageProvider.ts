@@ -48,6 +48,12 @@ export class UserStorageProvider extends Resource<{ realm?: string }> {
     queryParamKeys: ["direction"],
   });
 
+  public testConnection = this.makeRequest<{ id: string }, void>({
+    method: "POST",
+    path: "/{id}/test-connection",
+    urlParamKeys: ["id"],
+  });
+
   constructor(client: KeycloakAdminClient) {
     super(client, {
       path: "/admin/realms/{realm}/user-storage",
