@@ -168,7 +168,8 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         realm.removeGroup(group);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        // we won't need to propagate the scim id once the scim user storage provider is implemented
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).detail("SCIM_ID", group.getFirstAttribute("SCIM_ID")).success();
     }
 
     @GET
