@@ -3,6 +3,8 @@ package org.keycloak.services.resources.account;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +19,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -161,7 +164,6 @@ public class AccountCredentialResource {
         }
     }
 
-
     /**
      * Retrieve the stream of credentials available to the current logged in user. It will return only credentials of enabled types,
      * which user can use to authenticate in some authentication flow.
@@ -186,57 +188,137 @@ public class AccountCredentialResource {
         Stream<CredentialModel> modelsStream = includeUserCredentials ? credentialManager.getCredentials() : Stream.empty();
         List<CredentialModel> models = modelsStream.toList();
 
-        Function<CredentialProvider, CredentialContainer> toCredentialContainer = (credentialProvider) -> {
-            CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
-                    .user(user)
-                    .build(session);
-            CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata(ctx);
-
-            List<CredentialMetadataRepresentation> userCredentialMetadataModels = null;
-
-            if (includeUserCredentials) {
-                List<CredentialModel> modelsOfType = models.stream()
-                        .filter(credentialProvider::supportsCredentialType)
-                        .toList();
-
-
-                List<CredentialMetadata> credentialMetadataList = modelsOfType.stream()
-                        .map(m -> {
-                            return credentialProvider.getCredentialMetadata(
-                                    credentialProvider.getCredentialFromModel(m), metadata
-                            );
-                        }).collect(Collectors.toList());
-
-                // Don't return secrets from REST endpoint
-                credentialMetadataList.stream().forEach(md -> md.getCredentialModel().setSecretData(null));
-                userCredentialMetadataModels = credentialMetadataList.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
-
-                if (userCredentialMetadataModels.isEmpty() &&
-                        user.credentialManager().isConfiguredFor(credentialProvider.getType())) {
-                    // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
-                    // creating "dummy" credential representing the credential provided by userStorage
-                    CredentialMetadataRepresentation metadataRepresentation = new CredentialMetadataRepresentation();
-                    CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProvider.getType());
-                    metadataRepresentation.setCredential(credential);
-                    userCredentialMetadataModels = Collections.singletonList(metadataRepresentation);
-                }
-
-                // In case that there are no userCredentials AND there are not required actions for setup new credential,
-                // we won't include credentialType as user won't be able to do anything with it
-                if (userCredentialMetadataModels.isEmpty() && metadata.getCreateAction() == null && metadata.getUpdateAction() == null) {
-                    return null;
-                }
-            }
-
-            return new CredentialContainer(metadata, userCredentialMetadataModels);
-        };
-
-        return AuthenticatorUtil.getCredentialProviders(session)
+        Map<String, CredentialProvider> credentialProviders = AuthenticatorUtil.getCredentialProviders(session)
                 .filter(p -> type == null || p.supportsCredentialType(type))
                 .filter(p -> enabledCredentialTypes.contains(p.getType()))
-                .map(toCredentialContainer)
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(CredentialContainer::getMetadata));
+                .collect(Collectors.toMap(CredentialProvider::getType, Function.identity()));
+
+        List<String> credentialTypesUserHas = models.stream().map(CredentialModel::getType)
+                .filter(c -> credentialProviders.containsKey(c))
+                .distinct()
+                .collect(Collectors.toList());
+        Set<String> credentialTypesUserNotHave = new HashSet<>(credentialProviders.keySet());
+        credentialTypesUserNotHave.removeAll(credentialTypesUserHas);
+
+        return Stream.concat(
+                // first credentials in order of the user
+                credentialTypesUserHas.stream()
+                        .map(c -> credentialProviders.get(c))
+                        .map(c -> toCredentialContainer(c, models, includeUserCredentials))
+                        .filter(Objects::nonNull),
+                // then providers the user does not have in the order of metadata
+                credentialTypesUserNotHave.stream()
+                        .map(c -> credentialProviders.get(c))
+                        .map(c -> toCredentialContainer(c, models, includeUserCredentials))
+                        .filter(Objects::nonNull)
+                        .sorted(Comparator.comparing(CredentialContainer::getMetadata)));
+    }
+
+    private CredentialContainer toCredentialContainer(CredentialProvider credentialProvider, List<CredentialModel> models, boolean includeUserCredentials) {
+        CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
+                .user(user)
+                .build(session);
+        CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata(ctx);
+
+        List<CredentialMetadataRepresentation> userCredentialMetadataModels = null;
+
+        if (includeUserCredentials) {
+            List<CredentialModel> modelsOfType = models.stream()
+                    .filter(credentialProvider::supportsCredentialType)
+                    .toList();
+
+            List<CredentialMetadata> credentialMetadataList = modelsOfType.stream()
+                    .map(m -> credentialProvider.getCredentialMetadata(credentialProvider.getCredentialFromModel(m), metadata))
+                    .collect(Collectors.toList());
+
+            // Don't return secrets from REST endpoint
+            credentialMetadataList.stream().forEach(md -> md.getCredentialModel().setSecretData(null));
+            userCredentialMetadataModels = credentialMetadataList.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+
+            if (userCredentialMetadataModels.isEmpty() &&
+                    user.credentialManager().isConfiguredFor(credentialProvider.getType())) {
+                // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
+                // creating "dummy" credential representing the credential provided by userStorage
+                CredentialMetadataRepresentation metadataRepresentation = new CredentialMetadataRepresentation();
+                CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProvider.getType());
+                metadataRepresentation.setCredential(credential);
+                userCredentialMetadataModels = Collections.singletonList(metadataRepresentation);
+            }
+
+            // In case that there are no userCredentials AND there are not required actions for setup new credential,
+            // we won't include credentialType as user won't be able to do anything with it
+            if (userCredentialMetadataModels.isEmpty() && metadata.getCreateAction() == null && metadata.getUpdateAction() == null) {
+                return null;
+            }
+        }
+
+        return new CredentialContainer(metadata, userCredentialMetadataModels);
+    }
+
+    @POST
+    @Path("moveup/{type}")
+    @NoCache
+    public void moveUp(final @PathParam("type") String type) {
+        List<CredentialModel> credentials = user.credentialManager().getCredentials().collect(Collectors.toList());
+
+        boolean found = false;
+        String previousId = null, currentTypeId = null, previousType = null;
+        for (CredentialModel cred : credentials) {
+            if (type.equals(cred.getType())) {
+                // this is the credential we have to move to previousId
+                found = true;
+                if (!user.credentialManager().moveStoredCredentialTo(cred.getId(), previousId)) {
+                    throw ErrorResponse.error(Messages.INTERNAL_SERVER_ERROR, Response.Status.BAD_REQUEST);
+                }
+                // maintain the current order inside the type
+                previousId = cred.getId();
+            } else if (!found && cred.getType().equals(previousType)) {
+                // same type as before, so increment currentTypeId
+                currentTypeId = cred.getId();
+            } else if (!found) {
+                // different type, set previousId to current and increment current type and id
+                previousId = currentTypeId;
+                previousType = cred.getType();
+                currentTypeId = cred.getId();
+            }
+        }
+    }
+
+    @POST
+    @Path("movedown/{type}")
+    @NoCache
+    public void moveDown(final @PathParam("type") String type) {
+        List<CredentialModel> credentials = user.credentialManager().getCredentials().collect(Collectors.toList());
+        List<String> credsToMove = new LinkedList<>();
+
+        String nextType = null;
+        String previousId = null;
+        for (CredentialModel cred : credentials) {
+            if (type.equals(cred.getType())) {
+                // we have found the type we have to move down
+                credsToMove.add(cred.getId());
+            } else if (!credsToMove.isEmpty() && nextType == null) {
+                // we have creds to move and different type, this is the type we have to move after
+                nextType = cred.getType();
+                previousId = cred.getId();
+            } else if (!credsToMove.isEmpty() && cred.getType().equals(nextType)) {
+                // same next type, get the last credential in this type to move after it
+                previousId = cred.getId();
+            } else if (!credsToMove.isEmpty() && nextType != null && !cred.getType().equals(nextType)) {
+                // the next type is finished, we can break
+                break;
+            }
+        }
+
+        if (previousId != null) {
+            for (String id : credsToMove) {
+                // move and maintain the current credential order inside the type
+                if (!user.credentialManager().moveStoredCredentialTo(id, previousId)) {
+                    throw ErrorResponse.error(Messages.INTERNAL_SERVER_ERROR, Response.Status.BAD_REQUEST);
+                }
+                previousId = id;
+            }
+        }
     }
 
     // Going through all authentication flows and their authentication executions to see if there is any authenticator of the corresponding

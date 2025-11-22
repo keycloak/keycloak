@@ -69,4 +69,129 @@ test.describe("Signing in", () => {
       "Update password",
     );
   });
+
+  test("move recovery codes credentials up and down", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    // enable recovery codes in the realm
+    const executions = await adminClient.authenticationManagement.getExecutions(
+      {
+        flow: "browser",
+        realm: testBed.realm,
+      },
+    );
+    const recoveryCodes = executions.find(
+      (e) => e.providerId === "auth-recovery-authn-code-form",
+    );
+    expect(recoveryCodes).toBeDefined();
+    recoveryCodes!.requirement = "ALTERNATIVE";
+    await adminClient.authenticationManagement.updateExecution(
+      { flow: "browser", realm: testBed.realm },
+      recoveryCodes!,
+    );
+
+    // login and go to signing-in page
+    await login(page, testBed.realm);
+    await page.getByTestId("accountSecurity").click();
+    await page.getByTestId("account-security/signing-in").click();
+
+    // Verify the password credential is configured, and it is not possible to create a new one.
+    await expect(
+      page.getByTestId("password/credential-list").getByRole("listitem"),
+    ).toContainText("My password");
+    await expect(page.getByTestId("password/create")).toBeHidden();
+
+    // Verify the OTP credential not configured
+    await expect(
+      page.getByTestId("otp/credential-list").getByRole("listitem"),
+    ).toContainText("Authenticator application is not set up.");
+
+    // Verify recovery codes not configured
+    await expect(
+      page
+        .getByTestId("recovery-authn-codes/credential-list")
+        .getByRole("listitem"),
+    ).toContainText("Recovery authentication codes is not set up.");
+
+    // check order of credentials
+    await expect(page.locator("span.cred-title")).toContainText([
+      "Password",
+      "Authenticator application",
+      "Recovery authentication codes",
+    ]);
+
+    // verify up/down buttons are disabled
+    await expect(page.getByTestId("password/up")).toBeDisabled();
+    await expect(page.getByTestId("password/down")).toBeDisabled();
+    await expect(page.getByTestId("otp/up")).toHaveCount(0);
+    await expect(page.getByTestId("otp/down")).toHaveCount(0);
+    await expect(page.getByTestId("recovery-authn-codes/up")).toHaveCount(0);
+    await expect(page.getByTestId("recovery-authn-codes/down")).toHaveCount(0);
+
+    // register recovery codes
+    await page.getByTestId("recovery-authn-codes/create").click();
+    await expect(page.locator("#kc-page-title")).toContainText(
+      "Recovery Authentication Codes",
+    );
+    await page.locator("#kcRecoveryCodesConfirmationCheck").click();
+    await page.locator("#saveRecoveryAuthnCodesBtn").click();
+
+    // expect recovery codes has values
+    await expect(
+      page
+        .getByTestId("recovery-authn-codes/credential-list")
+        .getByRole("listitem"),
+    ).toContainText("Recovery codes");
+
+    // expect new order because now recovery codes are configured
+    await expect(page.locator("span.cred-title")).toHaveText([
+      "Password",
+      "Recovery authentication codes",
+      "Authenticator application",
+    ]);
+
+    // expect up/down enabled
+    await expect(page.getByTestId("password/up")).toBeDisabled();
+    await expect(page.getByTestId("password/down")).toBeEnabled();
+    await expect(page.getByTestId("recovery-authn-codes/up")).toBeEnabled();
+    await expect(page.getByTestId("recovery-authn-codes/down")).toBeDisabled();
+    await expect(page.getByTestId("otp/up")).toHaveCount(0);
+    await expect(page.getByTestId("otp/down")).toHaveCount(0);
+
+    // move recovery codes up
+    await page.getByTestId("recovery-authn-codes/up").click();
+
+    // now recovery codes are the first one
+    await expect(page.locator("span.cred-title")).toHaveText([
+      "Recovery authentication codes",
+      "Password",
+      "Authenticator application",
+    ]);
+
+    // expect up/down enabled
+    await expect(page.getByTestId("recovery-authn-codes/up")).toBeDisabled();
+    await expect(page.getByTestId("recovery-authn-codes/down")).toBeEnabled();
+    await expect(page.getByTestId("password/up")).toBeEnabled();
+    await expect(page.getByTestId("password/down")).toBeDisabled();
+    await expect(page.getByTestId("otp/up")).toHaveCount(0);
+    await expect(page.getByTestId("otp/down")).toHaveCount(0);
+
+    // move recovery codes down again
+    await page.getByTestId("recovery-authn-codes/down").click();
+
+    // now password is the first one
+    await expect(page.locator("span.cred-title")).toHaveText([
+      "Password",
+      "Recovery authentication codes",
+      "Authenticator application",
+    ]);
+
+    // expect up/down enabled
+    await expect(page.getByTestId("password/up")).toBeDisabled();
+    await expect(page.getByTestId("password/down")).toBeEnabled();
+    await expect(page.getByTestId("recovery-authn-codes/up")).toBeEnabled();
+    await expect(page.getByTestId("recovery-authn-codes/down")).toBeDisabled();
+    await expect(page.getByTestId("otp/up")).toHaveCount(0);
+    await expect(page.getByTestId("otp/down")).toHaveCount(0);
+  });
 });

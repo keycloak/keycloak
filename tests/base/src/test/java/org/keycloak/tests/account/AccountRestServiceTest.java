@@ -52,6 +52,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -63,6 +64,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
+import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
@@ -86,6 +88,8 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -112,6 +116,9 @@ import static org.hamcrest.Matchers.containsString;
 @KeycloakIntegrationTest
 @DatabaseTest
 public class AccountRestServiceTest extends AbstractRestServiceTest {
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void testEditUsernameAllowed() throws IOException {
@@ -656,6 +663,155 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assertions.assertNull(password.getUserCredentialMetadatas());
     }
 
+    @Test
+    public void testCredentialsMove() throws Exception {
+        configureBrowserFlowWithWebAuthnAuthenticator("browser-webauthn");
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        getCredentials(token);
+
+        runOnServer.run(session -> {
+            // create some fake credentials to move them around
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
+
+            // two otps
+            OTPCredentialModel otp = OTPCredentialModel.createFromPolicy(realm, "secret1", "otp1");
+            user.credentialManager().createStoredCredential(otp);
+            otp = OTPCredentialModel.createFromPolicy(realm, "secret2", "otp2");
+            user.credentialManager().createStoredCredential(otp);
+            // one webauthn
+            WebAuthnCredentialModel webauthn = WebAuthnCredentialModel.create(WebAuthnCredentialModel.TYPE_TWOFACTOR,
+                    "webauthn1", "", "webauthn1", "", "", 0, "");
+            user.credentialManager().createStoredCredential(webauthn);
+            // two webauthn-passwordless
+            webauthn = WebAuthnCredentialModel.create(WebAuthnCredentialModel.TYPE_PASSWORDLESS,
+                    "passkey1", "", "passkey1", "", "", 0, "");
+            user.credentialManager().createStoredCredential(webauthn);
+            webauthn = WebAuthnCredentialModel.create(WebAuthnCredentialModel.TYPE_PASSWORDLESS,
+                    "passkey2", "", "passkey2", "", "", 0, "");
+            user.credentialManager().createStoredCredential(webauthn);
+        });
+
+        try {
+            List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
+            Map<String, List<String>> orderByType = credentials.stream().collect(Collectors.toMap(
+                    AccountCredentialResource.CredentialContainer::getType,
+                    c -> {
+                        if (c.getUserCredentialMetadatas() != null) {
+                            return c.getUserCredentialMetadatas().stream()
+                                    .map(CredentialMetadataRepresentation::getCredential)
+                                    .map(CredentialRepresentation::getId)
+                                    .collect(Collectors.toList());
+                        }
+                        return Collections.emptyList();
+                    }));
+
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move webauthn up
+            moveUp(WebAuthnCredentialModel.TYPE_TWOFACTOR, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move webauthn down
+            moveDown(WebAuthnCredentialModel.TYPE_TWOFACTOR, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move up otp
+            moveUp(OTPCredentialModel.TYPE, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(OTPCredentialModel.TYPE, PasswordCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move down otp
+            moveDown(OTPCredentialModel.TYPE, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move password up first position, should remain same position
+            moveUp(PasswordCredentialModel.TYPE, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move password down
+            moveDown(PasswordCredentialModel.TYPE, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(OTPCredentialModel.TYPE, PasswordCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move password up
+            moveUp(PasswordCredentialModel.TYPE, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move up the last one webauthn-passwordless
+            moveUp(WebAuthnCredentialModel.TYPE_PASSWORDLESS, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS, WebAuthnCredentialModel.TYPE_TWOFACTOR),
+                    orderByType);
+
+            // move down webauthn-passwordless
+            moveDown(WebAuthnCredentialModel.TYPE_PASSWORDLESS, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+
+            // move down the last webauthn-passwordless, should remain the same
+            moveDown(WebAuthnCredentialModel.TYPE_PASSWORDLESS, token);
+            credentials = getCredentials(token);
+            assertCredentialOrder(credentials,
+                    List.of(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE, WebAuthnCredentialModel.TYPE_TWOFACTOR, WebAuthnCredentialModel.TYPE_PASSWORDLESS),
+                    orderByType);
+        } finally {
+            // remove fake credentials
+            for (AccountCredentialResource.CredentialContainer cred : getCredentials(token)) {
+                if (!cred.getType().equals(PasswordCredentialModel.TYPE) && cred.getUserCredentialMetadatas() != null) {
+                    for (CredentialMetadataRepresentation metadata : cred.getUserCredentialMetadatas()) {
+                        simpleHttp.doDelete(getAccountUrl("credentials/" + metadata.getCredential().getId()))
+                            .acceptJson()
+                            .auth(token)
+                            .asResponse();
+                    }
+                }
+            }
+            removeWebAuthnFlow("browser-webauthn");
+        }
+    }
+
+    private void assertCredentialOrder(List<AccountCredentialResource.CredentialContainer> credentials, List<String> typeOrder,
+            Map<String, List<String>> orderByType) {
+        // check the order of the types
+        assertThat(credentials.stream().map(AccountCredentialResource.CredentialContainer::getType).collect(Collectors.toList()),
+                Matchers.contains(typeOrder.toArray()));
+        // check the order of credentials IDs inside the type
+        for (String type : typeOrder) {
+            AccountCredentialResource.CredentialContainer container = credentials.stream().filter(c -> c.getType().equals(type)).findAny().orElse(null);
+            Assertions.assertNotNull(container);
+            Assertions.assertNotNull(container.getUserCredentialMetadatas());
+            assertThat(" Order in " + type, container.getUserCredentialMetadatas().stream()
+                    .map(CredentialMetadataRepresentation::getCredential)
+                    .map(CredentialRepresentation::getId)
+                    .collect(Collectors.toList()),
+                    Matchers.contains(orderByType.get(type).toArray()));
+        }
+    }
 
     @Test
     public void testCRUDCredentialOfDifferentUser() throws IOException {
@@ -793,6 +949,22 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             actualSessionIds.add(event.getSessionId());
         }
         Assertions.assertEquals(expectedSessionIds, actualSessionIds);
+    }
+
+    private void moveUp(String type, String token) throws IOException {
+         Assertions.assertEquals(204,
+                simpleHttp.doPost(getAccountUrl("credentials/moveup/" + type))
+                        .json("")
+                        .auth(token)
+                        .asStatus());
+    }
+
+    private void moveDown(String type, String token) throws IOException {
+         Assertions.assertEquals(204,
+                simpleHttp.doPost(getAccountUrl("credentials/movedown/" + type))
+                        .json("")
+                        .auth(token)
+                        .asStatus());
     }
 
     @Test

@@ -34,8 +34,6 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 public class SigningInPage extends AbstractLoggedInPage {
     public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy 'at' h:mm a", Locale.ENGLISH);
 
-    private static final String CATEG_TITLE = "-categ-title";
-
     @Override
     public String getPageId() {
         return "signing-in";
@@ -55,13 +53,12 @@ public class SigningInPage extends AbstractLoggedInPage {
         return new CredentialType(type);
     }
 
-    public String getCategoryTitle(String categoryId) {
-        return getTextFromElement(driver.findElement(By.id(categoryId + CATEG_TITLE)));
+    public String getCredentialTypeTitle(String credentialType) {
+        return getTextFromElement(driver.findElement(By.xpath("//*[@data-testid='" + credentialType +"/title']")));
     }
 
-    public int getCategoriesCount() {
-        String xpath = String.format("//*[contains(@id,'%s')]", CATEG_TITLE);
-        return driver.findElements(By.xpath(xpath)).size();
+    public int getCredentialTypesCount() {
+        return driver.findElements(By.cssSelector(".cred-title")).size();
     }
 
     public class CredentialType {
@@ -164,7 +161,6 @@ public class SigningInPage extends AbstractLoggedInPage {
     public class UserCredential {
         private static final String LABEL = "label";
         private static final String CREATED_AT = "created-at";
-        private static final String CREDENTIAL_CREATED_AT = "Created ";
         private static final String UPDATE = "update";
         private static final String REMOVE = "remove";
 

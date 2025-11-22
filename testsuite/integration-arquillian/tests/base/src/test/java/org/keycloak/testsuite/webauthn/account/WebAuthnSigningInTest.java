@@ -72,20 +72,26 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     protected DeviceActivityPage deviceActivityPage;
 
     @Test
-    public void categoriesTest() {
+    public void credentialTypesTest() {
         testContext.setTestRealmReps(emptyList()); // reimport realm after this test
 
-        assertThat(signingInPage.getCategoriesCount(), is(3));
-        assertThat(signingInPage.getCategoryTitle("basic-authentication"), is("Basic authentication"));
-        assertThat(signingInPage.getCategoryTitle("two-factor"), is("Two-factor authentication"));
-        assertThat(signingInPage.getCategoryTitle("passwordless"), is("Passwordless"));
+        // delete flows created by other tests if present
+        testRealmResource().flows().getFlows().stream()
+                .filter(f -> f.getAlias().equals("webAuthnFlow") || f.getAlias().equals("passwordlessFlow"))
+                .forEach(f -> testRealmResource().flows().deleteFlow(f.getId()));
+
+        assertThat(signingInPage.getCredentialTypesCount(), is(4));
+        assertThat(signingInPage.getCredentialTypeTitle("password"), is("Password"));
+        assertThat(signingInPage.getCredentialTypeTitle("otp"), is("Authenticator application"));
+        assertThat(signingInPage.getCredentialTypeTitle("webauthn"), is("Passkey"));
+        assertThat(signingInPage.getCredentialTypeTitle("webauthn-passwordless"), is("Passkey"));
 
         // Delete WebAuthn flow ==> Passwordless category should disappear
         testRealmResource().flows().deleteFlow(WEBAUTHN_FLOW_ID);
         deviceActivityPage.navigateToUsingSidebar();
         signingInPage.navigateToUsingSidebar();
 
-        assertThat(signingInPage.getCategoriesCount(), is(2));
+        assertThat(signingInPage.getCredentialTypesCount(), is(2));
     }
 
     @Test
