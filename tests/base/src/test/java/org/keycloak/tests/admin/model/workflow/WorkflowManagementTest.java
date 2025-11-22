@@ -47,6 +47,7 @@ import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.client.DeleteClientStepProviderFactory;
+import org.keycloak.models.workflow.client.DisableClientStepProviderFactory;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
 import org.keycloak.models.workflow.user.DeleteUserStepProviderFactory;
@@ -81,6 +82,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.models.workflow.ResourceOperationType.CLIENT_ADDED;
 import static org.keycloak.models.workflow.ResourceOperationType.USER_ADDED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -155,6 +157,25 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
         try (Response response = managedRealm.admin().workflows().create(expectedWorkflow)) {
             assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testCreateWithIncompatibleConditions() {
+        WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
+                .onEvent(CLIENT_ADDED.name())
+                .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(someidp)")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build();
+
+        WorkflowsResource workflows = managedRealm.admin().workflows();
+
+        try (Response response = workflows.create(expectedWorkflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Provided condition types (USERS) are not compatible with workflow type (CLIENTS)."));
         }
     }
 
@@ -277,6 +298,56 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         assertThat(workflow.getSteps().get(0).getUses(), is(NotifyUserStepProviderFactory.ID));
         assertThat(workflow.getSteps().get(0).getConfig().getFirst("custom_message"), is("Your account will be disabled"));
         assertThat(workflow.getSteps().get(1).getUses(), is(DeleteUserStepProviderFactory.ID));
+    }
+
+    @Test
+    public void testUpdateWorkflowWithIncompatibleData() {
+        WorkflowRepresentation workflowRep = WorkflowRepresentation.withName("test-workflow")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DeleteClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build();
+
+        WorkflowsResource workflows = managedRealm.admin().workflows();
+
+        try (Response response = workflows.create(workflowRep)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        List<WorkflowRepresentation> actualWorkflows = workflows.list();
+        assertThat(actualWorkflows, hasSize(1));
+        WorkflowRepresentation workflow = actualWorkflows.get(0);
+        assertThat(workflow.getName(), is("test-workflow"));
+
+        // updating the condition with an incompatible one should fail
+        workflow.setConditions(IdentityProviderWorkflowConditionFactory.ID + "(someidp)");
+        try(Response response = managedRealm.admin().workflows().workflow(workflow.getId()).update(workflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Provided condition types (USERS) are not compatible with workflow type (CLIENTS)."));
+        }
+
+        // the representation should not have been updated
+        workflow = workflows.workflow(workflow.getId()).toRepresentation();
+        assertNull(workflow.getConditions());
+
+
+        // adding a step with an incompatible one should fail
+        WorkflowStepRepresentation newStep = WorkflowStepRepresentation.create().of(DeleteUserStepProviderFactory.ID)
+                .after(Duration.ofDays(10))
+                .build();
+        workflow.getSteps().add(newStep);  // add a new delete step
+        try(Response response = managedRealm.admin().workflows().workflow(workflow.getId()).update(workflow)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Steps provided are not compatible with each other."));
+        }
+
+        // the representation should not have been updated
+        workflow = workflows.workflow(workflow.getId()).toRepresentation();
+        assertThat(workflow.getSteps(), hasSize(2));
     }
 
     @Test

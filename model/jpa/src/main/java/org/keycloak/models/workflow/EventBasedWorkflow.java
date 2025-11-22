@@ -1,7 +1,5 @@
 package org.keycloak.models.workflow;
 
-import java.util.Set;
-
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionProvider;
@@ -17,17 +15,17 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON
 final class EventBasedWorkflow {
 
     private final KeycloakSession session;
-    private final Set<ResourceType> supportedTypes;
+    private final ResourceType supportedType;
     private final ComponentModel model;
 
-    EventBasedWorkflow(KeycloakSession session, Set<ResourceType> supportedTypes, ComponentModel model) {
-        this.supportedTypes = supportedTypes;
+    EventBasedWorkflow(KeycloakSession session, ResourceType supportedType, ComponentModel model) {
+        this.supportedType = supportedType;
         this.session = session;
         this.model = model;
     }
 
     boolean supports(ResourceType type) {
-        return supportedTypes.contains(type);
+        return supportedType == type;
     }
 
     /**
@@ -81,7 +79,7 @@ final class EventBasedWorkflow {
         String eventConditions = model.getConfig().getFirst(CONFIG_ON_EVENT);
         if (StringUtil.isNotBlank(eventConditions)) {
             BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(eventConditions);
-            EventEvaluator eventEvaluator = new EventEvaluator(getSession(), event);
+            EventEvaluator eventEvaluator = new EventEvaluator(event);
             return eventEvaluator.visit(context);
         } else {
             return false;

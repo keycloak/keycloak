@@ -7,7 +7,11 @@ import jakarta.persistence.criteria.Root;
 
 import org.keycloak.provider.Provider;
 
+import java.util.Set;
+
 public interface WorkflowConditionProvider extends Provider {
+
+    Set<ResourceType> supportedTypes();
 
     boolean evaluate(WorkflowExecutionContext context);
 

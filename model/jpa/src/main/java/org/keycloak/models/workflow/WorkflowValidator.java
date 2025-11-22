@@ -3,11 +3,14 @@ package org.keycloak.models.workflow;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
 import org.keycloak.models.workflow.conditions.expression.ConditionNameCollector;
+import org.keycloak.models.workflow.conditions.expression.ConditionTypeCollector;
 import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -31,7 +34,7 @@ public class WorkflowValidator {
         // if a workflow has a restart step, at least one of the previous steps must be scheduled to prevent an infinite loop of immediate executions
         List<WorkflowStepRepresentation> steps = ofNullable(rep.getSteps()).orElse(List.of());
         if (steps.isEmpty()) {
-            return;
+            throw new WorkflowInvalidStateException("Workflow should have at least one step.");
         }
         steps.forEach(step -> validateStep(session, step));
 
@@ -52,6 +55,33 @@ public class WorkflowValidator {
             if (!hasScheduledStep) {
                 throw new WorkflowInvalidStateException("A workflow with a restart step must have at least one step with a time delay.");
             }
+        }
+
+        if (rep.getSupports() != null) {
+            // supported type is set, we are validating an update of the workflow
+            try {
+                ResourceType type = ResourceType.valueOf(rep.getSupports());
+                validateWorkflowConditionType(session, rep.getConditions(), type);
+            } catch (IllegalArgumentException e) {
+                throw new WorkflowInvalidStateException("Invalid workflow type: " + rep.getSupports());
+            }
+        }
+    }
+
+    public static void validateWorkflowConditionType(KeycloakSession session, String condition, ResourceType workflowType) throws WorkflowInvalidStateException {
+        if (StringUtil.isBlank(condition)) {
+            return;
+        }
+
+        BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(condition);
+        ConditionTypeCollector typeCollector = new ConditionTypeCollector(session);
+        // ConditionTypeCollector.visit(ctx) throws a WorkflowInvalidStateException if a provider is not found
+        typeCollector.visit(context);
+
+        Set<ResourceType> supporteds = typeCollector.getConditionTypes();
+        if (!supporteds.contains(workflowType)) {
+            String formatted = supporteds.stream().map(Enum::name).collect(Collectors.joining(", "));
+            throw new WorkflowInvalidStateException("Provided condition types (%s) are not compatible with workflow type (%s).".formatted(formatted, workflowType));
         }
     }
 

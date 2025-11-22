@@ -72,7 +72,7 @@ public class DeleteClientStepTest extends AbstractWorkflowTest {
     }
 
     @Test
-    public void testDisabledClientAfterInactivityPeriod() throws InterruptedException {
+    public void testDisabledClientAfterInactivityPeriod() {
         WorkflowRepresentation workflowRepresentation = WorkflowRepresentation.withName("myworkflow")
                 .onEvent(CLIENT_ADDED.toString(), CLIENT_LOGGED_IN.toString())
                 .concurrency().cancelIfRunning() // this setting enables restarting the workflow

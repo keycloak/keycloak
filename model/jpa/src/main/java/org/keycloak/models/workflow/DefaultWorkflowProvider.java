@@ -1,6 +1,5 @@
 package org.keycloak.models.workflow;
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +61,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     public void updateWorkflow(Workflow workflow, WorkflowRepresentation representation) {
         // first step - ensure the updated workflow is valid
         WorkflowValidator.validateWorkflow(session, representation);
+        WorkflowValidator.validateWorkflowConditionType(session, representation.getConditions(), workflow.getSupportedType());
 
         // check if there are scheduled steps for this workflow - if there aren't, we can update freely
         if (!stateProvider.hasScheduledSteps(workflow.getId())) {
@@ -74,6 +74,11 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             WorkflowRepresentation currentRepresentation = toRepresentation(workflow);
             if (!Objects.equals(currentRepresentation.getOn(), representation.getOn())) {
                 throw new ModelValidationException("Cannot update 'on' configuration when there are scheduled resources for the workflow.");
+            }
+
+            // we do not allow changing the workflow type
+            if (representation.getSupports() != null && !Objects.equals(representation.getSupports(), currentRepresentation.getSupports())) {
+                throw new ModelValidationException("Cannot update 'supports' configuration.");
             }
 
             // we also need to guarantee the steps remain the same - that is, in the same order with the same 'uses' property.
@@ -92,6 +97,9 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 // set the id of the step to match the existing one, so we can update the config
                 newStep.setId(currentStep.getId());
             }
+
+            // set the workflow's type
+            representation.setSupports(currentRepresentation.getSupports());
 
             // finally, update the workflow's config along with the steps' configs
             workflow.updateConfig(representation.getConfig(), newSteps);
@@ -133,7 +141,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
             for (ScheduledStep scheduled : stateProvider.getDueScheduledSteps(workflow)) {
                 // check if the resource is still passes the workflow's resource conditions
                 DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, scheduled);
-                EventBasedWorkflow provider = new EventBasedWorkflow(session, getWorkflowResourceTypes(workflow), getWorkflowComponent(workflow.getId()));
+                EventBasedWorkflow provider = new EventBasedWorkflow(session, workflow.getSupportedType(), getWorkflowComponent(workflow.getId()));
                 if (!provider.validateResourceConditions(context)) {
                     log.debugf("Resource %s is no longer eligible for workflow %s. Cancelling execution of the workflow.",
                             scheduled.resourceId(), scheduled.workflowId());
@@ -154,10 +162,8 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     @Override
     public void activate(Workflow workflow, ResourceType type, String resourceId) {
-        Set<ResourceType> supportedTypes = getWorkflowResourceTypes(workflow);
-        if (!supportedTypes.contains(type)) {
-            String formatted = supportedTypes.stream().map(ResourceType::name).collect(Collectors.joining(", "));
-            throw new BadRequestException("Resource Type '%s' is not supported for this workflow (supports %s)".formatted(type.name(), formatted));
+        if (type != workflow.getSupportedType()) {
+            throw new BadRequestException("Resource Type '%s' is not supported for this workflow (supports %s)".formatted(type.name(), workflow.getSupportedType()));
         }
 
         processEvent(Stream.of(workflow), new AdhocWorkflowEvent(type, resourceId));
@@ -172,13 +178,11 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     public void activateForAllEligibleResources(Workflow workflow) {
         if (workflow.isEnabled()) {
             WorkflowProvider provider = getWorkflowProvider(workflow);
-            Set<ResourceType> resources = getWorkflowResourceTypes(workflow);
-            for (ResourceType type : resources) {
-                ResourceTypeSelector selector = provider.getResourceTypeSelector(type);
-                selector.getResourceIds(workflow)
-                        .forEach(resourceId -> processEvent(Stream.of(workflow), new AdhocWorkflowEvent(type, resourceId)));
+            ResourceType supportedType = workflow.getSupportedType();
+            ResourceTypeSelector selector = provider.getResourceTypeSelector(supportedType);
+            selector.getResourceIds(workflow)
+                    .forEach(resourceId -> processEvent(Stream.of(workflow), new AdhocWorkflowEvent(supportedType, resourceId)));
             }
-        }
     }
 
     @Override
@@ -198,6 +202,10 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
         Workflow workflow = addWorkflow(new Workflow(session, rep.getId(), config));
         workflow.addSteps(rep.getSteps());
+
+        // After adding steps, validate that the condition type is compatible with the computed workflow type.
+        WorkflowValidator.validateWorkflowConditionType(session, workflow.getCondition(), workflow.getSupportedType());
+
         return workflow;
     }
 
@@ -207,23 +215,6 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     WorkflowStepProvider getStepProvider(WorkflowStep step) {
         return getStepProviderFactory(step).create(session, realm.getComponent(step.getId()));
-    }
-
-    private Set<ResourceType> getWorkflowResourceTypes(Workflow workflow) {
-        DefaultWorkflowProvider provider = (DefaultWorkflowProvider) getWorkflowProvider(workflow);
-        return workflow.getSteps()
-                .map(provider::getStepProviderFactory)
-                .map(WorkflowStepProviderFactory::getTypes)
-                .reduce(EnumSet.allOf(ResourceType.class), (s1, s2) -> {
-                    s1.retainAll(s2);
-                    return s1;
-                });
-    }
-
-    private void updateWorkflowConfig(Workflow workflow, MultivaluedHashMap<String, String> config) {
-        ComponentModel component = getWorkflowComponent(workflow.getId());
-        component.setConfig(config);
-        realm.updateComponent(component);
     }
 
     private ComponentModel getWorkflowComponent(String id) {
@@ -265,7 +256,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 return;
             }
 
-            EventBasedWorkflow provider = new EventBasedWorkflow(session, getWorkflowResourceTypes(workflow), getWorkflowComponent(workflow.getId()));
+            EventBasedWorkflow provider = new EventBasedWorkflow(session, workflow.getSupportedType(), getWorkflowComponent(workflow.getId()));
 
             try {
                 ScheduledStep scheduledStep = scheduledSteps.get(workflow.getId());

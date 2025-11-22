@@ -20,11 +20,12 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NA
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON_EVENT;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATE;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STEPS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SUPPORTS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
 @JsonPropertyOrder({"id", CONFIG_NAME, CONFIG_USES, CONFIG_ENABLED, CONFIG_ON_EVENT, CONFIG_CONCURRENCY, CONFIG_IF, CONFIG_STEPS, CONFIG_STATE})
-@JsonIgnoreProperties(CONFIG_WITH)
+@JsonIgnoreProperties({CONFIG_WITH, CONFIG_SUPPORTS})
 public final class WorkflowRepresentation extends AbstractWorkflowComponentRepresentation {
 
     public static Builder withName(String name) {
@@ -54,6 +55,14 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
 
     public void setOn(String eventConditions) {
         setConfigValue(CONFIG_ON_EVENT, eventConditions);
+    }
+
+    public String getSupports() {
+        return getConfigValue(CONFIG_SUPPORTS, String.class);
+    }
+
+    public void setSupports(String supports) {
+        setConfigValue(CONFIG_SUPPORTS, supports);
     }
 
     public String getName() {

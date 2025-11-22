@@ -3,10 +3,12 @@ package org.keycloak.models.workflow.conditions;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
@@ -21,6 +23,11 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
     public UserAttributeWorkflowConditionProvider(KeycloakSession session, String expectedAttribute) {
         this.session = session;
         this.expectedAttribute = expectedAttribute;
+    }
+
+    @Override
+    public Set<ResourceType> supportedTypes() {
+        return Set.of(ResourceType.USERS);
     }
 
     @Override
