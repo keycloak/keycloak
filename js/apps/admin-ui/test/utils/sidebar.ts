@@ -60,3 +60,7 @@ export async function goToIdentityProviders(page: Page) {
 export async function goToUserFederation(page: Page) {
   await page.getByTestId("nav-item-user-federation").click();
 }
+
+export async function goToWorkflows(page: Page) {
+  await page.getByTestId("nav-item-workflows").click();
+}
