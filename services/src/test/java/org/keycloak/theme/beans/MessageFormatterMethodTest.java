@@ -18,9 +18,11 @@
 package org.keycloak.theme.beans;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Properties;
 
+import freemarker.template.SimpleDate;
 import freemarker.template.SimpleNumber;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateModelException;
@@ -43,6 +45,7 @@ public class MessageFormatterMethodTest {
         properties.setProperty("client_admin-console", "Admin Console");
         properties.setProperty("realm_example-realm", "Example Realm");
         properties.setProperty("key", "foo {0,choice,0#foo|1#bar|1<{0} foobar} bar");
+        properties.setProperty("simpleKey", "{0}");
 
 
         MessageFormatterMethod fmt = new MessageFormatterMethod(locale, properties);
@@ -64,6 +67,20 @@ public class MessageFormatterMethodTest {
 
         msg = (String) fmt.exec(Arrays.asList(new SimpleScalar("key"),new SimpleNumber(2)));
         Assert.assertEquals("foo 2 foobar bar", msg);
+
+        msg = (String) fmt.exec(Arrays.asList(new SimpleScalar("simpleKey"),new SimpleNumber(2.5)));
+        Assert.assertEquals("2.5", msg);
+
+        msg = (String) fmt.exec(Arrays.asList(new SimpleScalar("simpleKey"),new SimpleDate(new Date(1763721018000L), 2)));
+        Assert.assertEquals("11/21/25, 11:30 AM", msg);
+
+        MessageFormatterMethod germanFmt = new MessageFormatterMethod(Locale.GERMANY, properties);
+
+        msg = (String) germanFmt.exec(Arrays.asList(new SimpleScalar("simpleKey"),new SimpleNumber(2.5)));
+        Assert.assertEquals("2,5", msg);
+
+        msg = (String) germanFmt.exec(Arrays.asList(new SimpleScalar("simpleKey"),new SimpleDate(new Date(1763721018000L), 2)));
+        Assert.assertEquals("21.11.25, 11:30", msg);
     }
 
 }
