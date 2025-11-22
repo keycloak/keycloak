@@ -20,6 +20,7 @@ package org.keycloak.partialimport;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -60,6 +61,7 @@ public class PartialImportManager {
 
         for (PartialImport partialImport : partialImports) {
             partialImport.removeOverwrites(realm, session);
+            EntityManagers.flush(session, false);
             results.addAllResults(partialImport.doImport(rep, realm, session));
         }
 

@@ -143,10 +143,10 @@ public class AbstractPartialImportTest {
         piRep.setUsers(users);
     }
 
-    protected void addGroups() {
+    protected void addGroups(int numEntities) {
         List<GroupRepresentation> groups = new ArrayList<>();
 
-        for (int i=0; i < NUM_ENTITIES; i++) {
+        for (int i=0; i < numEntities; i++) {
             GroupRepresentation group = new GroupRepresentation();
             group.setName(GROUP_PREFIX + i);
             group.setPath("/" + GROUP_PREFIX + i);
@@ -154,6 +154,10 @@ public class AbstractPartialImportTest {
         }
 
         piRep.setGroups(groups);
+    }
+
+    protected void addGroups() {
+        addGroups(NUM_ENTITIES);
     }
 
     protected void addClients(boolean withServiceAccounts) {
@@ -294,10 +298,10 @@ public class AbstractPartialImportTest {
     protected void testOverwrite(int numberEntities) {
         setOverwrite();
         PartialImportResults results = doImport();
-        assertEquals(numberEntities, results.getAdded());
+        assertEquals(numberEntities, results.getAdded(), results.getErrorMessage());
 
         results = doImport();
-        assertEquals(numberEntities, results.getOverwritten());
+        assertEquals(numberEntities, results.getOverwritten(), results.getErrorMessage());
     }
 
     private static class PartialImportRealmConfig implements RealmConfig {
