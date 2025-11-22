@@ -37,11 +37,6 @@ export const FineGrainOpenIdConnect = ({
     ...convert(list),
   ];
 
-  const prependAny = (list: { [index: string]: ProviderRepresentation }) => [
-    { key: "any", value: t("any") },
-    ...convert(list),
-  ];
-
   const prependNone = (list: { [index: string]: ProviderRepresentation }) => [
     { key: "none", value: t("none") },
     ...convert(list),
@@ -198,12 +193,9 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectSignatureAlgorithm")}
         labelIcon={t("requestObjectSignatureAlgorithmHelp")}
         controller={{
-          defaultValue: "any",
+          defaultValue: "",
         }}
-        options={[
-          { key: "any", value: t("any") },
-          ...prependNone(clientSignatureProviders!),
-        ]}
+        options={prependNone(clientSignatureProviders!)}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
@@ -212,9 +204,9 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectEncryption")}
         labelIcon={t("requestObjectEncryptionHelp")}
         controller={{
-          defaultValue: "any",
+          defaultValue: "",
         }}
-        options={prependAny(cekManagementProviders!)}
+        options={prependEmpty(cekManagementProviders!)}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
@@ -223,9 +215,9 @@ export const FineGrainOpenIdConnect = ({
         label={t("requestObjectEncoding")}
         labelIcon={t("requestObjectEncodingHelp")}
         controller={{
-          defaultValue: "any",
+          defaultValue: "",
         }}
-        options={prependAny(contentEncryptionProviders!)}
+        options={prependEmpty(contentEncryptionProviders!)}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
