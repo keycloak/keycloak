@@ -30,6 +30,7 @@ include::users/proc-allow-user-to-delete-account.adoc[leveloffset=+2]
 
 include::users/con-user-impersonation.adoc[leveloffset=+2]
 include::users/proc-enabling-recaptcha.adoc[leveloffset=+2]
+include::users/proc-enabling-turnstile.adoc[leveloffset=+2]
 
 include::users/ref-personal-data-collected.adoc[leveloffset=+2]
 

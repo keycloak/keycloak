@@ -1,6 +1,7 @@
 <#import "template.ftl" as layout>
 <#import "user-profile-commons.ftl" as userProfileCommons>
 <#import "register-commons.ftl" as registerCommons>
+<#import "turnstile.ftl" as turnstile>
 <@layout.registrationLayout displayMessage=messagesPerField.exists('global') displayRequiredFields=true; section>
     <#if section = "header">
         <#if messageHeader??>
@@ -80,6 +81,8 @@
                     </div>
                 </div>
             </#if>
+
+            <@turnstile.turnstileWidget />
 
             <div class="${properties.kcFormGroupClass!}">
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
