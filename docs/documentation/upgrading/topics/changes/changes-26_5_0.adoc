@@ -67,6 +67,12 @@ The `log-console-color` previously defaulted to `false`, but it will now instead
 
 You may still explicitly disable color support by setting the option to `false`.
 
+=== Some message keys no longer support HTML entities
+
+The following message keys in translations no longer support HTML entities: `backToLogin`, `backToApplication`, `proceedWithAction`.
+
+The default themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent.
+
 === User sessions created with "Remember Me" are no longer valid if "Remember Me" is disabled for the realm
 
 When the "Remember Me" option is disabled in the realm settings, all user sessions previously created with the "Remember Me" flag are now considered invalid.
