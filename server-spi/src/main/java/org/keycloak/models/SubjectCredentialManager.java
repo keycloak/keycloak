@@ -129,6 +129,22 @@ public interface SubjectCredentialManager {
      */
     Stream<String> getDisableableCredentialTypesStream();
 
+       /**
+     * Returns a stream consisting of the first-factor credentials.
+     *
+     * @return a stream consisting of the first-factor credentials
+     */
+    default Stream<CredentialModel> getFirstFactorCredentialsStream() {
+        return getStoredCredentialsStream();
+    }
+
+    /**
+     * Returns a list of types for first-factor credentials.
+     *
+     * @return a list of first-factor credential types
+     */
+    List<String> getFirstFactorCredentialTypes();
+
     /**
      * Check if the credential type is configured for this entity.
      * @param type credential type to check
