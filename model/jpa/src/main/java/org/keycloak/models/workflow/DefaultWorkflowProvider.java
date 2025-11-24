@@ -117,6 +117,25 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     }
 
     @Override
+    public Stream<WorkflowRepresentation> getScheduledWorkflowsByResource(String resourceId) {
+        return stateProvider.getScheduledStepsByResource(resourceId).map(scheduledStep -> {
+            Workflow workflow = getWorkflow(scheduledStep.workflowId());
+            // get the steps starting from the scheduled step, then add their scheduledAt
+            List<WorkflowStepRepresentation> steps = workflow.getSteps(scheduledStep.stepId()).map(this::toRepresentation).toList();
+            Long scheduledAt = null;
+            for (WorkflowStepRepresentation step : steps) {
+                if (scheduledAt == null) {
+                    scheduledAt = scheduledStep.scheduledAt();
+                } else if (step.getAfter() != null) {
+                    scheduledAt += DurationConverter.parseDuration(step.getAfter()).toMillis();
+                }
+                step.setScheduledAt(scheduledAt);
+            }
+            return new WorkflowRepresentation(workflow.getId(), workflow.getName(), workflow.getConfig(), steps);
+        });
+    }
+
+    @Override
     public void submit(WorkflowEvent event) {
         processEvent(getWorkflows(), event);
     }
@@ -128,7 +147,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 log.debugf("Skipping workflow %s as it is disabled", workflow.getName());
                 return;
             }
-            for (ScheduledStep scheduled : stateProvider.getDueScheduledSteps(workflow)) {
+            stateProvider.getDueScheduledSteps(workflow).forEach((scheduled) -> {
                 // check if the resource is still passes the workflow's resource conditions
                 DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, scheduled);
                 EventBasedWorkflow provider = new EventBasedWorkflow(session, getWorkflowComponent(workflow.getId()));
@@ -146,7 +165,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                         runWorkflow(context);
                     }
                 }
-            }
+            });
         });
     }
 
@@ -229,7 +248,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     private void processEvent(Stream<Workflow> workflows, WorkflowEvent event) {
         Map<String, ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByResource(event.getResourceId())
-                .stream().collect(Collectors.toMap(ScheduledStep::workflowId, Function.identity()));
+                .collect(Collectors.toMap(ScheduledStep::workflowId, Function.identity()));
 
         workflows.forEach(workflow -> {
             if (!workflow.isEnabled()) {

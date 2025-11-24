@@ -97,7 +97,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
         // store the first step id for later comparison
         String firstStepId = runOnServer.fetch(session-> {
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
             assertThat(steps, hasSize(1));
             return steps.get(0).stepId();
         }, String.class);
@@ -112,7 +112,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
             assertTrue(user.isEnabled());
 
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
             assertThat(steps, hasSize(1));
             return steps.get(0).stepId();
         }, String.class);
@@ -128,7 +128,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
 
         runOnServer.run(session -> {
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
             // step id must remain the same as before
             assertThat(steps, hasSize(1));
             assertThat(steps.get(0).stepId(), is(secondStepId));
@@ -140,7 +140,7 @@ public class UserSessionRefreshTimeWorkflowTest extends AbstractWorkflowTest {
         // workflow should be restarted and the first step should be scheduled again
         runOnServer.run(session -> {
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId);
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
             // step id must be the first one now as the workflow was restarted
             assertThat(steps, hasSize(1));
             assertThat(steps.get(0).stepId(), is(firstStepId));

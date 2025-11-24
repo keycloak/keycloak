@@ -31,6 +31,7 @@ import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -253,7 +254,7 @@ public class BrokeredUserSessionRefreshTimeWorkflowTest extends AbstractWorkflow
 
             // alice should be associated with the workflow
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-            WorkflowStateProvider.ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), alice.getId());
+            ScheduledStep scheduledStep = stateProvider.getScheduledStep(workflow.getId(), alice.getId());
             assertNotNull(scheduledStep, "A step should have been scheduled for the user " + alice.getUsername());
         });
 
