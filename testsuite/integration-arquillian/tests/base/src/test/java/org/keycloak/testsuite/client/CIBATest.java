@@ -960,7 +960,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             // user Token Request
             AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
-            assertThat(tokenRes.getStatusCode(), is(equalTo(Status.BAD_REQUEST.getStatusCode())));
+            assertThat(tokenRes.getStatusCode(), is(equalTo(Status.FORBIDDEN.getStatusCode())));
             assertThat(tokenRes.getError(), is(OAuthErrorException.ACCESS_DENIED));
 
         } finally {
@@ -1539,7 +1539,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register policies
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
-                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID,
                         createAnyClientConditionConfig())
                     .addProfile(PROFILE_NAME)
                     .toRepresentation()
@@ -1591,7 +1591,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // register policies
             json = (new ClientPoliciesBuilder()).addPolicy(
                     (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
-                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
                             createAnyClientConditionConfig())
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
@@ -1842,7 +1842,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // register policies
             json = (new ClientPoliciesBuilder()).addPolicy(
                     (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
-                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
                             createAnyClientConditionConfig())
                         .addProfile(PROFILE_NAME)
                         .toRepresentation()
@@ -2417,7 +2417,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register policies
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
-                    .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
+                    .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
                         createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("microprofile-jwt")))
                     .addProfile(PROFILE_NAME)
                     .toRepresentation()
@@ -2448,7 +2448,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
-                    .addCondition(ClientScopesConditionFactory.PROVIDER_ID, 
+                    .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
                         createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("microprofile-jwt")))
                     .addProfile(PROFILE_NAME)
                     .toRepresentation()

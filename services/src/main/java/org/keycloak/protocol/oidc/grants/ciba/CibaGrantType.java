@@ -167,7 +167,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         if (deviceCode.isDenied()) {
             logDebug("denied.", request);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not authorized", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not authorized", Response.Status.FORBIDDEN);
         }
 
         // get corresponding Authentication Channel Result entry
