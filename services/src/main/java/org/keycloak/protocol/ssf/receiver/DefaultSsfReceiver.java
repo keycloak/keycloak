@@ -1,15 +1,16 @@
 package org.keycloak.protocol.ssf.receiver;
 
-import org.jboss.logging.Logger;
+import java.util.UUID;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
+import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 import org.keycloak.protocol.ssf.spi.SsfProvider;
-import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
-import java.util.UUID;
+import org.jboss.logging.Logger;
 
 public class DefaultSsfReceiver implements SsfReceiver {
 

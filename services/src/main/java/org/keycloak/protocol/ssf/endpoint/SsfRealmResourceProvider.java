@@ -1,9 +1,11 @@
 package org.keycloak.protocol.ssf.endpoint;
 
 import jakarta.ws.rs.Path;
-import org.jboss.logging.Logger;
+
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.services.resource.RealmResourceProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * Exposes the realm specific SSF resource endpoints.

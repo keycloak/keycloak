@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.event.processor;
 
-import org.jboss.logging.Logger;
+import java.util.Map;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
@@ -20,7 +21,7 @@ import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStor
 import org.keycloak.protocol.ssf.spi.SsfProvider;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * Default implementation of a {@link SsfSecurityEventProcessor}.
