@@ -59,25 +59,15 @@ public class RemoteUserSessionExpirationListener extends BaseUserSessionExpirati
     }
 
     private RemoteUserSessionEntity extractRemoteUserSessionEntity(ClientCacheEntryCustomEvent<byte[]> event) throws IOException, ClassNotFoundException {
-        ByteBuffer rawData = ByteBuffer.wrap(event.getEventData());
+        byte[] data = event.getEventData();
+        ByteBuffer buffer = ByteBuffer.wrap(data);
 
         // skip the key, we don't need it
-        skipElement(rawData);
-
-        // read the value
-        Object value = marshaller.objectFromByteBuffer(readElement(rawData));
-        return value instanceof RemoteUserSessionEntity ruse ? ruse : null;
-    }
-
-    private static void skipElement(ByteBuffer buffer) {
         int length = UnsignedNumeric.readUnsignedInt(buffer);
         buffer.position(buffer.position() + length);
-    }
 
-    private static byte[] readElement(ByteBuffer buffer) {
-        int length = UnsignedNumeric.readUnsignedInt(buffer);
-        byte[] element = new byte[length];
-        buffer.get(element);
-        return element;
+        // read the value
+        length = UnsignedNumeric.readUnsignedInt(buffer);
+        return (RemoteUserSessionEntity) marshaller.objectFromByteBuffer(data, buffer.position(), length);
     }
 }
