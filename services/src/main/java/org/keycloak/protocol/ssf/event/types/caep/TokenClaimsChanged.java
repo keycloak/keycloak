@@ -1,8 +1,8 @@
 package org.keycloak.protocol.ssf.event.types.caep;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Token Claims Change signals that a claim in a token, identified by the subject claim, has changed.

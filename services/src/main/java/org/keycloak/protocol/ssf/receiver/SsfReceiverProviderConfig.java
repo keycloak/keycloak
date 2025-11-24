@@ -1,9 +1,9 @@
 package org.keycloak.protocol.ssf.receiver;
 
+import java.util.Set;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-
-import java.util.Set;
 
 /**
  * Holds the user configuration of an SSF Receiver.

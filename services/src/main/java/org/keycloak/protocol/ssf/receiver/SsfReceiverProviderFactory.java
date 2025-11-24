@@ -1,5 +1,7 @@
 package org.keycloak.protocol.ssf.receiver;
 
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -8,8 +10,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-
-import java.util.Map;
 
 public class SsfReceiverProviderFactory extends AbstractIdentityProviderFactory<SsfReceiverProvider> implements IdentityProviderFactory<SsfReceiverProvider>, EnvironmentDependentProviderFactory {
 

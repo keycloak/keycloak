@@ -1,9 +1,10 @@
 package org.keycloak.protocol.ssf.endpoint;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * HTTP Push delivery failure response.

@@ -1,14 +1,15 @@
 package org.keycloak.protocol.ssf.event.types;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.keycloak.protocol.ssf.event.subjects.SubjectId;
+import org.keycloak.protocol.ssf.event.subjects.SubjectIdJsonDeserializer;
+
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.protocol.ssf.event.subjects.SubjectId;
-import org.keycloak.protocol.ssf.event.subjects.SubjectIdJsonDeserializer;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Represents a generic SSF event.

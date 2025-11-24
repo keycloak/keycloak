@@ -1,11 +1,12 @@
 package org.keycloak.protocol.ssf.receiver.verification;
 
-import org.jboss.logging.Logger;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
+
+import org.jboss.logging.Logger;
 
 public class DefaultSsfVerificationClient implements SsfVerificationClient {
 

@@ -1,11 +1,11 @@
 package org.keycloak.protocol.ssf.receiver.verification;
 
+import java.util.Map;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
-
-import java.util.Map;
 
 /**
  * Default {@link SsfStreamVerificationStore} implementation that uses the {@link SingleUseObjectProvider} to manage the

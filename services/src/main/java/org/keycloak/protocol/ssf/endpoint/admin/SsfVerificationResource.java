@@ -3,12 +3,14 @@ package org.keycloak.protocol.ssf.endpoint.admin;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.endpoint.SsfSetPushDeliveryFailureResponse;
-import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.receiver.SsfReceiverProviderFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * SsfVerificationResource is used to verify the stream and event delivery setup for a SSF Receiver

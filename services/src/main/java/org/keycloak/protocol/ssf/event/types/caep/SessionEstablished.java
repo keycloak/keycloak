@@ -1,8 +1,8 @@
 package org.keycloak.protocol.ssf.event.types.caep;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * The Session Established event signifies that the Transmitter has established a new session for the subject.

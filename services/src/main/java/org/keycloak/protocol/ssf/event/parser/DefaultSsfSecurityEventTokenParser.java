@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.event.parser;
 
-import org.jboss.logging.Logger;
+import java.nio.charset.StandardCharsets;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -14,7 +15,7 @@ import org.keycloak.protocol.ssf.keys.SsfTransmitterPublicKeyLoader;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 
-import java.nio.charset.StandardCharsets;
+import org.jboss.logging.Logger;
 
 /**
  * Default implementation of a {@link SsfSecurityEventTokenParser}.

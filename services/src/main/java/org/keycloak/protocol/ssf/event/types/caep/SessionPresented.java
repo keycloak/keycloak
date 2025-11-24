@@ -1,8 +1,8 @@
 package org.keycloak.protocol.ssf.event.types.caep;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * The Session Presented event signifies that the Transmitter has observed the session to be present at the Transmitter at the time indicated by the event_timestamp field in the Session Presented event.
