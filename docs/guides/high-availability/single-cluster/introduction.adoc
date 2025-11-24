@@ -106,9 +106,7 @@ See the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {sectio
 [#single-cluster-limitations]
 == Limitations
 
-<@profile.ifCommunity>
 Even with the additional redundancy of three availability-zones, downtime can still occur when:
-</@profile.ifCommunity>
 
 * Simultaneous node failures occur
 * Rolling out {project_name} upgrades
