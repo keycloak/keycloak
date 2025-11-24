@@ -38,20 +38,21 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
-import org.keycloak.models.workflow.DisableUserStepProviderFactory;
-import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
-import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.WorkflowStep;
+import org.keycloak.models.workflow.client.DeleteClientStepProviderFactory;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
+import org.keycloak.models.workflow.user.DeleteUserStepProviderFactory;
+import org.keycloak.models.workflow.user.DisableUserStepProviderFactory;
+import org.keycloak.models.workflow.user.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.user.SetUserAttributeStepProviderFactory;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -813,6 +814,40 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         try (Response response = managedRealm.admin().workflows().create(workflow)) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
             assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Step 'after' configuration cannot be negative."));
+        }
+    }
+
+    @Test
+    public void testFailCreateWorkflowWithIncompatibleSteps() {
+        WorkflowRepresentation workflows = WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.name())
+                .withSteps(
+                    WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                              .after(Duration.ofDays(5))
+                              .build(),
+                    WorkflowStepRepresentation.create().of(DeleteClientStepProviderFactory.ID)
+                              .after(Duration.ofDays(10))
+                              .build())
+                .build();
+        try (Response response = managedRealm.admin().workflows().create(workflows)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Steps provided are not compatible with each other."));
+        }
+
+        WorkflowRepresentation workflowWithRestart = WorkflowRepresentation.withName("myworkflow")
+                .onEvent(USER_ADDED.name())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DeleteClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build())
+                .concurrency().cancelIfRunning()
+                .build();
+        try (Response response = managedRealm.admin().workflows().create(workflowWithRestart)) {
+            assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(), equalTo("Steps provided are not compatible with each other."));
         }
     }
 

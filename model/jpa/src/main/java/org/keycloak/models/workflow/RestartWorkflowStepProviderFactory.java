@@ -1,6 +1,7 @@
 package org.keycloak.models.workflow;
 
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -43,9 +44,9 @@ public class RestartWorkflowStepProviderFactory implements WorkflowStepProviderF
     }
 
     @Override
-    public ResourceType getType() {
-        // TODO: need to revisit this once we support more types as this provider should be usable for all resource types.
-        return ResourceType.USERS;
+    public Set<ResourceType> getTypes() {
+        // Usable for all resource types.
+        return Set.of(ResourceType.values());
     }
 
     @Override

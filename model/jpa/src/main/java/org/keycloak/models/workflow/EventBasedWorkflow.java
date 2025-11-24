@@ -1,5 +1,7 @@
 package org.keycloak.models.workflow;
 
+import java.util.Set;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.conditions.ExpressionWorkflowConditionProvider;
@@ -15,15 +17,17 @@ import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ON
 final class EventBasedWorkflow {
 
     private final KeycloakSession session;
+    private final Set<ResourceType> supportedTypes;
     private final ComponentModel model;
 
-    EventBasedWorkflow(KeycloakSession session, ComponentModel model) {
+    EventBasedWorkflow(KeycloakSession session, Set<ResourceType> supportedTypes, ComponentModel model) {
+        this.supportedTypes = supportedTypes;
         this.session = session;
         this.model = model;
     }
 
     boolean supports(ResourceType type) {
-        return ResourceType.USERS.equals(type);
+        return supportedTypes.contains(type);
     }
 
     /**
@@ -46,7 +50,6 @@ final class EventBasedWorkflow {
         // TODO: rework this once we support concurrency/restart-if-running and concurrency/cancel-if-running to use expressions just like activation conditions
         return false;
     }
-
     boolean reset(WorkflowExecutionContext executionContext) throws WorkflowInvalidStateException {
         WorkflowEvent event = executionContext.getEvent();
         if (event == null) {

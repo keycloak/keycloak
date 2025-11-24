@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.workflow;
+package org.keycloak.models.workflow.user;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -29,6 +29,8 @@ import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
+import org.keycloak.models.workflow.WorkflowStepProvider;
 
 import org.jboss.logging.Logger;
 

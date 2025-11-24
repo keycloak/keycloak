@@ -32,9 +32,9 @@ public class ExpressionWorkflowConditionProvider implements WorkflowConditionPro
     }
 
     @Override
-    public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> userRoot) {
+    public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> root) {
         validate();
-        PredicateEvaluator evaluator = new PredicateEvaluator(session, cb, query, userRoot);
+        PredicateEvaluator evaluator = new PredicateEvaluator(session, cb, query, root);
         return evaluator.visit(this.evaluatorContext);
     }
 

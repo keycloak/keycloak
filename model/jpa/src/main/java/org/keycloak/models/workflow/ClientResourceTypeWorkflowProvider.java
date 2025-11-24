@@ -17,22 +17,20 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.Set;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.component.ComponentFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.jpa.entities.ClientEntity;
 
-public interface WorkflowStepProviderFactory<P extends WorkflowStepProvider> extends ComponentFactory<P, WorkflowStepProvider>, EnvironmentDependentProviderFactory {
+public class ClientResourceTypeWorkflowProvider extends AbstractResourceTypeWorkflowProvider<ClientEntity> {
 
-    /**
-     * Supported types, usually one type but could be more (RestartStep for example)
-     */
-    Set<ResourceType> getTypes();
+    public ClientResourceTypeWorkflowProvider(KeycloakSession session) {
+        super(ClientEntity.class, ResourceType.CLIENTS, session);
+    }
 
     @Override
-    default boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.WORKFLOWS);
+    Path<String> entityId(Root<ClientEntity> root) {
+        return root.get("id");
     }
 }
