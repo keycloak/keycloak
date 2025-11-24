@@ -107,7 +107,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
@@ -694,8 +693,8 @@ public class OID4VCIssuerEndpoint {
 
             // Get the credential_configuration_id from AuthorizationDetails
             //
-            AuthorizationDetailsResponse authDetails = offerState.getAuthorizationDetails();
-            String credConfigId = (String) authDetails.getOtherClaims().get("credential_configuration_id");
+            OID4VCAuthorizationDetailsResponse authDetails = offerState.getAuthorizationDetails();
+            String credConfigId = authDetails.getCredentialConfigurationId();
             if (credConfigId == null) {
                 var errorMessage = "No credential_configuration_id in AuthorizationDetails";
                 throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));

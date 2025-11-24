@@ -31,6 +31,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -165,7 +166,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
             }
 
-            var authorizationDetails = authorizationDetailsResponses.get(0);
+            var authorizationDetails = (OID4VCAuthorizationDetailsResponse) authorizationDetailsResponses.get(0);
             offerState.setAuthorizationDetails(authorizationDetails);
             offerStorage.replaceOfferState(session, offerState);
 

@@ -22,10 +22,10 @@ import java.util.Optional;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
 import org.keycloak.provider.Provider;
 import org.keycloak.saml.RandomSecret;
 
@@ -41,7 +41,7 @@ public interface CredentialOfferStorage extends Provider {
         private String userId;
         private String nonce;
         private int expiration;
-        private AuthorizationDetailsResponse authorizationDetails;
+        private OID4VCAuthorizationDetailsResponse authorizationDetails;
 
         public CredentialOfferState(CredentialsOffer credOffer, String clientId, String userId, int expiration) {
             this.credentialsOffer = credOffer;
@@ -88,11 +88,11 @@ public interface CredentialOfferStorage extends Provider {
             return expiration;
         }
 
-        public AuthorizationDetailsResponse getAuthorizationDetails() {
+        public OID4VCAuthorizationDetailsResponse getAuthorizationDetails() {
             return authorizationDetails;
         }
 
-        public void setAuthorizationDetails(AuthorizationDetailsResponse authorizationDetails) {
+        public void setAuthorizationDetails(OID4VCAuthorizationDetailsResponse authorizationDetails) {
             this.authorizationDetails = authorizationDetails;
         }
 

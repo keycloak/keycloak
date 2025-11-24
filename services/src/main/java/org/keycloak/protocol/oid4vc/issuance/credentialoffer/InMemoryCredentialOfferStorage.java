@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
 import org.keycloak.util.JsonSerialization;
 
 class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
@@ -35,7 +34,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
             session.singleUseObjects().put(it, entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
         });
         Optional.ofNullable(entry.getAuthorizationDetails()).ifPresent(it -> {
-            ((OID4VCAuthorizationDetailsResponse) it).getCredentialIdentifiers().forEach( cid -> {
+            it.getCredentialIdentifiers().forEach( cid -> {
                 session.singleUseObjects().put(cid, entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
             });
         });
@@ -75,7 +74,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
             session.singleUseObjects().replace(it, Map.of(ENTRY_KEY, entryJson));
         });
         Optional.ofNullable(entry.getAuthorizationDetails()).ifPresent(it -> {
-            ((OID4VCAuthorizationDetailsResponse) it).getCredentialIdentifiers().forEach( cid -> {
+            it.getCredentialIdentifiers().forEach( cid -> {
                 if (session.singleUseObjects().contains(cid)) {
                     session.singleUseObjects().replace(cid, Map.of(ENTRY_KEY, entryJson));
                 } else {
@@ -92,7 +91,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
             session.singleUseObjects().remove(it);
         });
         Optional.ofNullable(entry.getAuthorizationDetails()).ifPresent(it -> {
-            ((OID4VCAuthorizationDetailsResponse) it).getCredentialIdentifiers().forEach( cid -> {
+            it.getCredentialIdentifiers().forEach( cid -> {
                 session.singleUseObjects().remove(cid);
             });
         });
