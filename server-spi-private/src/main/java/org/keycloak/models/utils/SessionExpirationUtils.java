@@ -41,19 +41,10 @@ public class SessionExpirationUtils {
      * @return The time when the user session is expired or -1 if does not expire
      */
     public static long calculateUserSessionMaxLifespanTimestamp(boolean offline, boolean isRememberMe, long created, RealmModel realm) {
-        long timestamp = -1;
-        if (offline) {
-            if (realm.isOfflineSessionMaxLifespanEnabled()) {
-                timestamp = created + TimeUnit.SECONDS.toMillis(getOfflineSessionMaxLifespan(realm));
-            }
-        } else {
-            long userSessionMaxLifespan =  TimeUnit.SECONDS.toMillis(getSsoSessionMaxLifespan(realm));
-            if (isRememberMe) {
-                userSessionMaxLifespan = Math.max(userSessionMaxLifespan, TimeUnit.SECONDS.toMillis(realm.getSsoSessionMaxLifespanRememberMe()));
-            }
-            timestamp = created + userSessionMaxLifespan;
-        }
-        return timestamp;
+        RealmExpiration expiration = RealmExpiration.fromRealm(realm);
+        return offline ?
+                expiration.calculateOfflineLifespanTimestamp(created) :
+                expiration.calculateRegularLifespanTimestamp(created, isRememberMe);
     }
 
     /**
@@ -66,17 +57,10 @@ public class SessionExpirationUtils {
      * @return The time in which the user session is expired by idle timeout
      */
     public static long calculateUserSessionIdleTimestamp(boolean offline, boolean isRememberMe, long lastRefreshed, RealmModel realm) {
-        long timestamp;
-        if (offline) {
-            timestamp = lastRefreshed + TimeUnit.SECONDS.toMillis(getOfflineSessionIdleTimeout(realm));
-        } else {
-            long userSessionIdleTimeout = TimeUnit.SECONDS.toMillis(getSsoSessionIdleTimeout(realm));
-            if (isRememberMe) {
-                userSessionIdleTimeout = Math.max(userSessionIdleTimeout, TimeUnit.SECONDS.toMillis(realm.getSsoSessionIdleTimeoutRememberMe()));
-            }
-            timestamp = lastRefreshed + userSessionIdleTimeout;
-        }
-        return timestamp;
+        RealmExpiration expiration = RealmExpiration.fromRealm(realm);
+        return offline ?
+                expiration.calculateOfflineMaxIdleTimestamp(lastRefreshed) :
+                expiration.calculateRegularMaxIdleTimestamp(lastRefreshed, isRememberMe);
     }
 
     /**
@@ -170,7 +154,7 @@ public class SessionExpirationUtils {
         return timestamp;
     }
 
-    private static int getSsoSessionMaxLifespan(RealmModel realm) {
+    public static int getSsoSessionMaxLifespan(RealmModel realm) {
         int lifespan = realm.getSsoSessionMaxLifespan();
         if (lifespan <= 0) {
             lifespan = Constants.DEFAULT_SESSION_MAX_LIFESPAN;
@@ -178,7 +162,7 @@ public class SessionExpirationUtils {
         return lifespan;
     }
 
-    private static int getOfflineSessionMaxLifespan(RealmModel realm) {
+    public static int getOfflineSessionMaxLifespan(RealmModel realm) {
         int lifespan = realm.getOfflineSessionMaxLifespan();
         if (lifespan <= 0) {
             lifespan = Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN;

@@ -16,7 +16,7 @@ export const SpiffeSettings = () => {
       />
 
       <TextControl
-        name="config.issuer"
+        name="config.trustDomain"
         label={t("spiffeTrustDomain")}
         labelIcon={t("spiffeTrustDomainHelp")}
         rules={{

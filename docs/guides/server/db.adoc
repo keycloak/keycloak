@@ -22,7 +22,7 @@ The server has built-in support for different databases. You can query the avail
 |Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
 |MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS)
 |Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note:* Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
-|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 17.x, 16.x, 15.x, 14.x
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 18.x, 17.x, 16.x, 15.x, 14.x
 |EnterpriseDB Advanced | `postgres` | ${properties["edb.version"]} | 17
 |Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
 |Azure SQL Database | `mssql` | latest | latest
@@ -267,6 +267,8 @@ create database keycloak with encoding 'UTF8';
 
 == Preparing for PostgreSQL
 
+=== Writer and reader instances
+
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
 When using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
 
@@ -277,9 +279,15 @@ You can override this behavior by setting your own value for `targetServerType` 
 The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
 ====
 
-[TIP]
-.Secure Your PostgreSQL Connection
-====
+=== Permissions of the database user
+
+Ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
+
+This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
+If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
+
+=== Secure your connection
+
 To secure your database connection, configure your PostgreSQL server to use TLS and perform full server certificate verification on the client side.
 
 **Server-side Configuration (Prerequisites):**
@@ -295,7 +303,6 @@ db-url=jdbc:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificat
 
 * `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
 * `sslrootcert=/path/to/certificate`: The path to the server's public certificate file on the client machine.
-====
 
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL

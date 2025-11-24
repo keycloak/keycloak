@@ -549,6 +549,17 @@
             </properties>
         </profile>
         <profile>
+            <id>db-mssql-azure</id>
+            <properties>
+                <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
+                <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
+                <docker.database.skip>true</docker.database.skip>
+                <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>${mssql-jdbc.version}</jdbc.mvn.version>
+            </properties>
+        </profile>
+        <profile>
             <id>db-oracle</id>
             <properties>
                 <docker.database.image>${oracledb.container}</docker.database.image>

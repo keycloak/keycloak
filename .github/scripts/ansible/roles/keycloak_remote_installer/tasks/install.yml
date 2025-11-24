@@ -4,8 +4,26 @@
     name: "*"
     state: latest
 
-- name: Install Java {{ java_version }} packages on the remote hosts
-  when: install_java
+- name: Update apt cache on Ubuntu/Debian
+  when: ansible_os_family == 'Debian'
+  apt:
+    update_cache: yes
+
+
+- name: Install Java {{ java_version }} packages on Ubuntu/Debian
+  when:
+    - install_java
+    - ansible_os_family == 'Debian'
+  package:
+    name:
+      - "openjdk-{{ java_version }}-jdk"
+      - "openjdk-{{ java_version }}-jre"
+    state: present
+
+- name: Install Java {{ java_version }} packages on RedHat/Amazon
+  when:
+    - install_java
+    - ansible_os_family != 'Debian'
   package:
     name:
       - "java-{{ java_version }}-openjdk"

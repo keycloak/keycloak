@@ -2,6 +2,7 @@ package org.keycloak.admin.api.client;
 
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
@@ -30,5 +31,9 @@ public interface ClientApi {
     @Consumes(CONTENT_TYPE_MERGE_PATCH)
     @Produces(MediaType.APPLICATION_JSON)
     ClientRepresentation patchClient(JsonNode patch);
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    void deleteClient();
 
 }

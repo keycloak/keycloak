@@ -78,12 +78,6 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public ClientRepresentation deleteClient(RealmModel realm, String clientId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions) {
         // TODO Auto-generated method stub
         return null;

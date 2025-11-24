@@ -30,7 +30,7 @@ test.describe.serial("SPIFFE identity provider test", () => {
     await goToIdentityProviders(page);
     await clickTableRowItem(page, "Spiffe");
 
-    await page.getByTestId("config.issuer").fill("spiffe://mytrust2");
+    await page.getByTestId("config.trustDomain").fill("spiffe://mytrust2");
     await page.getByTestId("config.bundleEndpoint").fill("https://mytrust2");
 
     await clickSaveButton(page);

@@ -118,13 +118,6 @@ public class HttpOptions {
                     "If '" + SecurityOptions.FIPS_MODE.getKey() + "' is set to '" + FipsMode.STRICT + "' and no value is set, it defaults to 'BCFKS'.")
             .build();
 
-    public static final Option<Boolean> HTTP_SERVER_ENABLED = new OptionBuilder<>("http-server-enabled", Boolean.class)
-            .category(OptionCategory.HTTP)
-            .hidden()
-            .description("Enables or disables the HTTP/s and Socket serving.")
-            .defaultValue(Boolean.TRUE)
-            .build();
-
     public static final Option<Integer> HTTP_MAX_QUEUED_REQUESTS = new OptionBuilder<>("http-max-queued-requests", Integer.class)
             .category(OptionCategory.HTTP)
             .description("Maximum number of queued HTTP requests. " +

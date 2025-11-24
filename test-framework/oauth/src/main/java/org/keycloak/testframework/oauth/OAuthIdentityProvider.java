@@ -18,6 +18,7 @@ import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
@@ -41,6 +42,7 @@ public class OAuthIdentityProvider {
         }
 
         this.httpServer = httpServer;
+        httpServer.createContext("/idp/.well-known/openid-configuration", new WellKnownHandler());
         httpServer.createContext("/idp/jwks", new JwksHttpHandler());
 
         keys = new OAuthIdentityProviderKeys(config);
@@ -67,14 +69,38 @@ public class OAuthIdentityProvider {
     }
 
     public void close() {
+        httpServer.removeContext("/idp/.well-known/openid-configuration");
         httpServer.removeContext("/idp/jwks");
+    }
+
+    public class WellKnownHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            OIDCConfigurationRepresentation oidcConfig = new OIDCConfigurationRepresentation();
+            oidcConfig.setJwksUri("http://127.0.0.1:8500/idp/jwks");
+            String oidcConfigString = JsonSerialization.writeValueAsString(oidcConfig);
+
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, oidcConfigString.length());
+            OutputStream outputStream = exchange.getResponseBody();
+            outputStream.write(oidcConfigString.getBytes(StandardCharsets.UTF_8));
+            outputStream.close();
+        }
+
     }
 
     public class JwksHttpHandler implements HttpHandler {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            boolean kubernetes = OAuthIdentityProviderConfigBuilder.Mode.KUBERNETES.equals(config.mode());
+
+            if (kubernetes) {
+                exchange.getResponseHeaders().add("Content-Type", "application/jwk-set+json");
+            } else {
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+            }
             exchange.sendResponseHeaders(200, keys.getJwksString().length());
             OutputStream outputStream = exchange.getResponseBody();
             outputStream.write(keys.getJwksString().getBytes(StandardCharsets.UTF_8));
@@ -93,7 +119,9 @@ public class OAuthIdentityProvider {
 
         public OAuthIdentityProviderKeys(OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
             try {
-                KeyUse keyUse = config.spiffe() ? KeyUse.JWT_SVID : KeyUse.SIG;
+                boolean spiffe = OAuthIdentityProviderConfigBuilder.Mode.SPIFFE.equals(config.mode());
+
+                KeyUse keyUse = spiffe ? KeyUse.JWT_SVID : KeyUse.SIG;
 
                 KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
                 ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
@@ -101,7 +129,7 @@ public class OAuthIdentityProvider {
                 KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
                 JWK jwk = JWKBuilder.create().ec(keyPair.getPublic());
-                if (!config.spiffe()) {
+                if (!spiffe) {
                     jwk.setAlgorithm("ES256");
                 }
                 if (config.jwkUse()) {
@@ -113,7 +141,7 @@ public class OAuthIdentityProvider {
                 Map<String, Object> jwks = new HashMap<>();
                 jwks.put("keys", new JWK[] { jwk });
 
-                if (config.spiffe()) {
+                if (spiffe) {
                     jwks.put("spiffe_sequence", 1);
                     jwks.put("spiffe_refresh_hint", 300);
                 }

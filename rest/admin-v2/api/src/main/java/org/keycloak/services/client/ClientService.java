@@ -33,8 +33,6 @@ public interface ClientService extends Service {
 
     Stream<ClientRepresentation> getClients(ClientsResource clientsResource, RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
 
-    ClientRepresentation deleteClient(RealmModel realm, String clientId);
-
     Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions);
 
     CreateOrUpdateResult createOrUpdate(ClientsResource clientsResource, ClientResource clientResource, RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException;

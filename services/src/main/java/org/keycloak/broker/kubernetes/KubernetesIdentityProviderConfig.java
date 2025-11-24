@@ -2,12 +2,14 @@ package org.keycloak.broker.kubernetes;
 
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.util.Strings;
+
+import static org.keycloak.common.util.UriUtils.checkUrl;
 
 public class KubernetesIdentityProviderConfig extends IdentityProviderModel {
 
     public static final String ISSUER = OIDCIdentityProviderConfig.ISSUER;
-
-    public static final String JWKS_URL = OIDCIdentityProviderConfig.JWKS_URL;
 
     public KubernetesIdentityProviderConfig() {
     }
@@ -18,10 +20,6 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel {
 
     public String getIssuer() {
         return getConfig().get(ISSUER);
-    }
-
-    public String getJwksUrl() {
-        return getConfig().get(JWKS_URL);
     }
 
     public int getAllowedClockSkew() {
@@ -42,4 +40,14 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel {
         return true;
     }
 
+    @Override
+    public void validate(RealmModel realm) {
+        super.validate(realm);
+
+        String issuer = getIssuer();
+        if (Strings.isEmpty(issuer)) {
+            throw new IllegalArgumentException(ISSUER + " is required");
+        }
+        checkUrl(realm.getSslRequired(), issuer, ISSUER);
+    }
 }

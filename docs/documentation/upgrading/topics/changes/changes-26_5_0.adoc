@@ -48,6 +48,12 @@ To revert to the previoius behavior and to accept non-normalized URLs, set the o
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 
+=== SPIFFE Identity Provider configuration changed
+
+The SPIFFE Identity Provider preview feature now uses the `trustDomain` configuration instead of `issuer`. This change
+was done to make it more explicit that a `trustDomain` is configured and not the `iss` of the token, which is
+usually not set in SPIFFE JWT SVIDs.
+
 === `session_state` and `sid` are no longer UUIDs
 
 In OpenID connect, there are several places where the protocol shares a `session_state` and a `sid`.
@@ -74,6 +80,13 @@ In a scenario where {project_name} acts as a broker and connects via OpenID Conn
 This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
 
 To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
+
+=== Permissions of the database user for PostgreSQL
+
+If you are running on PostgreSQL as a database for {project_name}, ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
+
+This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
+If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
 
 === Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
 
