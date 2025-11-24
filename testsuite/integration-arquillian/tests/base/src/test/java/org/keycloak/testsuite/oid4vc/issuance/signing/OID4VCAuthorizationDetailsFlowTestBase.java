@@ -748,7 +748,6 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         CredentialRequest credentialRequest = new CredentialRequest();
         credentialRequest.setCredentialIdentifier(credentialIdentifier);
-        credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
 
         String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
         postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
