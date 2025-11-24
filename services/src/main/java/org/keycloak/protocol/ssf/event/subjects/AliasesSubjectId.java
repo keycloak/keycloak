@@ -1,9 +1,9 @@
 package org.keycloak.protocol.ssf.event.subjects;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * See: https://datatracker.ietf.org/doc/html/rfc9493#name-aliases-identifier-format

@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.endpoint.admin;
 
 import jakarta.ws.rs.Path;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.admin.AdminEventBuilder;

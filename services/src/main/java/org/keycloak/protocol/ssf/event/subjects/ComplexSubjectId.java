@@ -1,8 +1,8 @@
 package org.keycloak.protocol.ssf.event.subjects;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * See: https://openid.net/specs/openid-sse-framework-1_0.html#complex-subjects

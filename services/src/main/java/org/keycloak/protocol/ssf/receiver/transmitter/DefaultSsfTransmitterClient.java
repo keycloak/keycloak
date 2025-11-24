@@ -1,6 +1,9 @@
 package org.keycloak.protocol.ssf.receiver.transmitter;
 
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -9,9 +12,7 @@ import org.keycloak.protocol.ssf.SsfException;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import org.jboss.logging.Logger;
 
 public class DefaultSsfTransmitterClient implements SsfTransmitterClient {
 

@@ -1,11 +1,11 @@
 package org.keycloak.protocol.ssf.event.subjects;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A Subject Identifier is structured information that describes a subject related to a security event, using named

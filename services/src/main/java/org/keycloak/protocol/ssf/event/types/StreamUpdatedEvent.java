@@ -1,7 +1,8 @@
 package org.keycloak.protocol.ssf.event.types;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * SSF Stream status updated event.

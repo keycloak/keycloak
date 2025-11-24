@@ -1,13 +1,14 @@
 package org.keycloak.protocol.ssf.event.subjects;
 
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
-import org.keycloak.models.FederatedIdentityModel;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.Urls;
 import org.keycloak.urls.UrlType;
+
+import org.jboss.logging.Logger;
 
 public class SubjectUserLookup {
 

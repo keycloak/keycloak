@@ -1,6 +1,5 @@
 package org.keycloak.protocol.ssf.keys;
 
-import org.jboss.logging.Logger;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -9,6 +8,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 import org.keycloak.util.JWKSUtils;
+
+import org.jboss.logging.Logger;
 
 /**
  * {@link PublicKeyLoader} to fetch the public Keycloak from the SSF Transmitter metadata.

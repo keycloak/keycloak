@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.event.listener;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -12,7 +13,7 @@ import org.keycloak.protocol.ssf.event.subjects.SubjectUserLookup;
 import org.keycloak.protocol.ssf.event.types.SsfEvent;
 import org.keycloak.protocol.ssf.event.types.caep.SessionRevoked;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * Default {@link SsfEventListener} implementation.
