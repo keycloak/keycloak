@@ -17,16 +17,16 @@
 
 package org.keycloak.sdjwt;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_IAT;
@@ -42,7 +42,8 @@ import static org.junit.Assert.fail;
  */
 public class TimeClaimVerifierTest {
 
-    private static final long CURRENT_TIMESTAMP = 1609459200L; // Fixed timestamp: 2021-01-01 00:00:00 UTC
+    private static final int TIMESTAMP2021 = 1609459200; // Fixed timestamp: 2021-01-01 00:00:00 UTC
+    private int CURRENT_TIMESTAMP;
     private static final int DEFAULT_CLOCK_SKEW_SECONDS = 20;
 
     private final ClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, false);
@@ -52,14 +53,20 @@ public class TimeClaimVerifierTest {
         public FixedTimeClaimVerifier(int clockSkew, boolean requireClaims) {
             super(new ArrayList<>(),
                   createOptsWithClockSkew(clockSkew, requireClaims)
-                      .getContentVerifiers()
-                      .stream()
-                      .map(Mockito::spy)
-                      .peek(spy -> {
-                          Mockito.doReturn(Instant.ofEpochSecond(CURRENT_TIMESTAMP)).when(spy).getCurrentTimestamp();
-                      })
-                      .collect(Collectors.toList()));
+                      .getContentVerifiers());
         }
+    }
+
+    @Before
+    public void updateTimeOffset() {
+        int currentTime = Time.currentTime();
+        Time.setOffset(TIMESTAMP2021 - currentTime); // Move time to 2021-01-01 00:00:00 UTC
+        this.CURRENT_TIMESTAMP = Time.currentTime();
+    }
+
+    @After
+    public void revertTimeOffset() {
+        Time.setOffset(0);
     }
 
     @Test
@@ -71,14 +78,13 @@ public class TimeClaimVerifierTest {
                                                        () -> timeClaimVerifier.verifyBodyClaims(payload));
 
         assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
-                   exception.getMessage().matches(String.format("Token was issued in the future: now: '%s', iat: '\\d+'",
-                                                                CURRENT_TIMESTAMP)));
+                   exception.getMessage().matches("Token was issued in the future: now: '\\d+', iat: '\\d+'"));
     }
 
     @Test
     public void testVerifyIatClaimValid() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 1); // Issued 1 second ago, in the past
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 5); // Issued 5 seconds ago, in the past
 
         timeClaimVerifier.verifyBodyClaims(payload);
     }
@@ -87,9 +93,18 @@ public class TimeClaimVerifierTest {
     public void testVerifyIatClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
         payload.put(CLAIM_NAME_IAT,
-                    CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second clock skew
+                    CURRENT_TIMESTAMP + 15); // Issued 15 seconds in the future, within the 20 second clock skew
 
         timeClaimVerifier.verifyBodyClaims(payload);
+
+        payload.put(CLAIM_NAME_IAT,
+                CURRENT_TIMESTAMP + 25); // Issued 25 seconds in the future, which is not within the 20 second clock skew
+
+        VerificationException exception = assertThrows(VerificationException.class,
+                () -> timeClaimVerifier.verifyBodyClaims(payload));
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token was issued in the future: now: '\\d+', iat: '\\d+'"));
     }
 
     @Test
@@ -101,8 +116,7 @@ public class TimeClaimVerifierTest {
                                                        () -> timeClaimVerifier.verifyBodyClaims(payload));
 
         assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
-                   exception.getMessage().matches(String.format("Token has expired by exp: now: '%s', exp: '\\d+'",
-                                                                CURRENT_TIMESTAMP)));
+                   exception.getMessage().matches("Token has expired by exp: now: '\\d+', exp: '\\d+'"));
     }
 
     @Test
@@ -116,7 +130,7 @@ public class TimeClaimVerifierTest {
     @Test
     public void testVerifyExpClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second clock skew
+        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 15); // 15 seconds ago, within the 20 second clock skew
 
         // No exception expected for JWT expiring within clock skew
         timeClaimVerifier.verifyBodyClaims(payload);
@@ -131,8 +145,7 @@ public class TimeClaimVerifierTest {
                                                        () -> timeClaimVerifier.verifyBodyClaims(payload));
 
         assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
-                   exception.getMessage().matches(String.format("Token is not yet valid: now: '%s', nbf: '\\d+'",
-                                                                CURRENT_TIMESTAMP)));
+                   exception.getMessage().matches("Token is not yet valid: now: '\\d+', nbf: '\\d+'"));
     }
 
     @Test
@@ -147,24 +160,31 @@ public class TimeClaimVerifierTest {
     @Test
     public void testVerifyNotBeforeClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second clock skew
+        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 15); // 15 seconds in the future, within the 20 second clock skew
 
         // No exception expected for JWT becoming valid within clock skew
         timeClaimVerifier.verifyBodyClaims(payload);
+
+        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 25); // 25 seconds in the future, not anymore within the 20 second clock skew
+
+        VerificationException exception = assertThrows(VerificationException.class,
+                () -> timeClaimVerifier.verifyBodyClaims(payload));
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token is not yet valid: now: '\\d+', nbf: '\\d+'"));
     }
 
     @Test
     public void testVerifyAgeJwtTooOld() {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 361); // 361 seconds old
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 365); // 365 seconds old
 
         VerificationException exception = assertThrows(VerificationException.class,
                                                        () -> timeClaimVerifier.verifyBodyClaims(payload));
 
         assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
-                   exception.getMessage().matches(String.format("Token has expired by iat: now: '%s', expired at:"
-                                                                    + " '\\d+', iat: '\\d+', maxLifetime: '300'",
-                                                                CURRENT_TIMESTAMP)));
+                   exception.getMessage().matches("Token has expired by iat: now: '\\d+', expired at:"
+                                                                    + " '\\d+', iat: '\\d+', maxLifetime: '300'"));
     }
 
     @Test
@@ -178,9 +198,18 @@ public class TimeClaimVerifierTest {
     @Test
     public void testVerifyAgeValidEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 320); // 320 seconds old, within the 20 second clock skew
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 315); // 315 seconds old, within the 20 second clock skew
 
         timeClaimVerifier.verifyBodyClaims(payload);
+
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 325); // 325 seconds old. not anymore within valid clock skew
+
+        VerificationException exception = assertThrows(VerificationException.class,
+                () -> timeClaimVerifier.verifyBodyClaims(payload));
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token has expired by iat: now: '\\d+', expired at:"
+                        + " '\\d+', iat: '\\d+', maxLifetime: '300'"));
     }
 
     @Test
