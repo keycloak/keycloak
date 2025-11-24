@@ -171,7 +171,8 @@ public class JwtCredentialSignerTest extends OID4VCTest {
 
         VerifiableCredential testCredential = getTestCredential(claims);
         JwtCredentialBuilder builder = new JwtCredentialBuilder(
-                new StaticTimeProvider(1000)
+                new StaticTimeProvider(1000),
+                session
         );
 
         CredentialBody credentialBody = builder.buildCredentialBody(

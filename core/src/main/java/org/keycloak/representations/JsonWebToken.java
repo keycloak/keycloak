@@ -17,17 +17,20 @@
 
 package org.keycloak.representations;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.util.Time;
 import org.keycloak.json.StringOrArrayDeserializer;
 import org.keycloak.json.StringOrArraySerializer;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -262,5 +265,48 @@ public class JsonWebToken implements Serializable, Token {
     @Override
     public TokenCategory getCategory() {
         return TokenCategory.INTERNAL;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof JsonWebToken)) {
+            return false;
+        }
+
+        JsonWebToken that = (JsonWebToken) o;
+        return Objects.equals(id, that.id) && //
+                Objects.equals(exp, that.exp) && //
+                Objects.equals(nbf, that.nbf) && //
+                Objects.equals(iat, that.iat) && //
+                Objects.equals(issuer, that.issuer) && //
+                Arrays.equals(audience, that.audience) && //
+                Objects.equals(subject, that.subject) && //
+                Objects.equals(type, that.type) && //
+                Objects.equals(issuedFor, that.issuedFor) && //
+                Objects.equals(otherClaims, that.otherClaims);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(id);
+        result = 31 * result + Objects.hashCode(exp);
+        result = 31 * result + Objects.hashCode(nbf);
+        result = 31 * result + Objects.hashCode(iat);
+        result = 31 * result + Objects.hashCode(issuer);
+        result = 31 * result + Arrays.hashCode(audience);
+        result = 31 * result + Objects.hashCode(subject);
+        result = 31 * result + Objects.hashCode(type);
+        result = 31 * result + Objects.hashCode(issuedFor);
+        result = 31 * result + Objects.hashCode(otherClaims);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return JsonSerialization.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

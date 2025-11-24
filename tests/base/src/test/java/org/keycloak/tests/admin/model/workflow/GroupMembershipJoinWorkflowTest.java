@@ -8,9 +8,13 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
+import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.Workflow;
+import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -21,6 +25,7 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.awaitility.Awaitility;
@@ -134,5 +139,50 @@ public class GroupMembershipJoinWorkflowTest extends AbstractWorkflowTest {
                     assertThat(status.getErrors(), hasSize(1));
                     assertThat(status.getErrors().get(0), containsString("Group with name %s does not exist.".formatted("generic-group")));
                 });
+    }
+
+    @Test
+    public void testActivateWorkflowForEligibleResources() {
+        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("groupA").build()).close();
+
+        // create some users associated with a group membership
+        for (int i = 0; i < 10; i++) {
+            managedRealm.admin().users().create(UserConfigBuilder.create().username("group-member-" + i)
+                    .groups("groupA").build()).close();
+        }
+
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("groupA-membership-workflow")
+                .onEvent(ResourceOperationType.USER_GROUP_MEMBERSHIP_ADDED.name())
+                .onCondition(GroupMembershipWorkflowConditionFactory.ID + "(groupA)")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build(),
+                        WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                                .after(Duration.ofDays(10))
+                                .build()
+                ).build()).close();
+
+
+        runOnServer.run((RunOnServer) session -> {
+            // check the same users are now scheduled to run the second step.
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+            assertThat(registeredWorkflows, hasSize(1));
+            // activate the workflow for all eligible users
+            provider.activateForAllEligibleResources(registeredWorkflows.get(0));
+        });
+
+        runOnServer.run((RunOnServer) session -> {
+            // check the same users are now scheduled to run the second step.
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<Workflow> registeredWorkflows = provider.getWorkflows().toList();
+            assertThat(registeredWorkflows, hasSize(1));
+            Workflow workflow = registeredWorkflows.get(0);
+            // check workflow was correctly assigned to the users
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            List<WorkflowStateProvider.ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow);
+            assertThat(scheduledSteps, hasSize(10));
+        });
     }
 }

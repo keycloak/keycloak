@@ -18,9 +18,13 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.Format;
@@ -33,9 +37,23 @@ public class JwtCredentialBuilder implements CredentialBuilder {
     private static final String ID_CLAIM_KEY = "id";
 
     private final TimeProvider timeProvider;
+    private final UnaryOperator<Instant> issuanceTimeNormalizer;
 
     public JwtCredentialBuilder(TimeProvider timeProvider) {
-        this.timeProvider = timeProvider;
+        this(timeProvider, instant -> {
+            throw new IllegalStateException("KeycloakSession must not be null when defaulting issuance time");
+        });
+    }
+
+    public JwtCredentialBuilder(TimeProvider timeProvider, KeycloakSession session) {
+        this(timeProvider, new TimeClaimNormalizer(
+                Objects.requireNonNull(session, "KeycloakSession must not be null when defaulting issuance time")
+        )::normalize);
+    }
+
+    public JwtCredentialBuilder(TimeProvider timeProvider, UnaryOperator<Instant> issuanceTimeNormalizer) {
+        this.timeProvider = Objects.requireNonNull(timeProvider, "TimeProvider must not be null");
+        this.issuanceTimeNormalizer = Objects.requireNonNull(issuanceTimeNormalizer, "Issuance time normalizer must not be null");
     }
 
     @Override
@@ -52,10 +70,14 @@ public class JwtCredentialBuilder implements CredentialBuilder {
         verifiableCredential.setIssuer(credentialBuildConfig.getCredentialIssuer());
 
         // Get the issuance date from the credential. Since nbf is mandatory, we set it to the current time if not
-        // provided
-        long iat = Optional.ofNullable(verifiableCredential.getIssuanceDate())
-                .map(Instant::getEpochSecond)
-                .orElse((long) timeProvider.currentTimeSeconds());
+        // provided. Only normalize if we're using the default time, as VC issuanceDate is already normalized.
+        Instant issuanceInstant = Optional.ofNullable(verifiableCredential.getIssuanceDate())
+                .orElseGet(() -> {
+                    Instant defaultTime = Instant.ofEpochSecond(timeProvider.currentTimeSeconds());
+                    return issuanceTimeNormalizer.apply(defaultTime);
+                });
+
+        long iat = issuanceInstant.getEpochSecond();
 
         // set mandatory fields
         JsonWebToken jsonWebToken = new JsonWebToken()

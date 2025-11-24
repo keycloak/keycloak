@@ -16,15 +16,17 @@
  */
 package org.keycloak.sdjwt;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -45,12 +47,12 @@ public abstract class SdJwtFacadeTest {
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
-    private static final String HASH_ALGORITHM = "sha-256";
+    private static final String HASH_ALGORITHM = OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM;
     private static final String JWS_TYPE = "JWS_TYPE";
 
     private SdJwtFacade sdJwtFacade;
 
-    private JsonNode claimSet;
+    private ObjectNode claimSet;
     private DisclosureSpec disclosureSpec;
 
     @Before
@@ -140,10 +142,8 @@ public abstract class SdJwtFacadeTest {
     }
 
     private IssuerSignedJwtVerificationOpts createVerificationOptions() {
-        return IssuerSignedJwtVerificationOpts.builder()
-                .withRequireIssuedAtClaim(false)
-                .withRequireExpirationClaim(false)
-                .withRequireNotBeforeClaim(false)
-                .build();
+        List<ClaimVerifier.Predicate<ObjectNode>> headerVerifierList = new ArrayList<>();
+        List<ClaimVerifier.Predicate<ObjectNode>> bodyVerifierList = new ArrayList<>();
+        return new IssuerSignedJwtVerificationOpts(headerVerifierList, bodyVerifierList);
     }
 }
