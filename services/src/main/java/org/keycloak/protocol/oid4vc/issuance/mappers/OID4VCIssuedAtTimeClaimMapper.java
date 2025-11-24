@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -74,9 +75,9 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         ProviderConfigProperty truncateToTimeUnit = new ProviderConfigProperty();
         truncateToTimeUnit.setName(TRUNCATE_TO_TIME_UNIT_KEY);
         truncateToTimeUnit.setLabel("Truncate To Time Unit");
-        truncateToTimeUnit.setHelpText("Truncate time to the first second of the MINUTES, HOURS, HALF_DAYS, DAYS, WEEKS, MONTHS or YEARS. Such as to prevent correlation of credentials based on this time value.");
+        truncateToTimeUnit.setHelpText("Truncate time to the start of the selected unit. Supported: SECONDS, MINUTES, HOURS, HALF_DAYS, DAYS, WEEKS, MONTHS, YEARS. Such as to prevent correlation of credentials based on this time value.");
         truncateToTimeUnit.setType(ProviderConfigProperty.LIST_TYPE);
-        truncateToTimeUnit.setOptions(List.of("MINUTES", "HOURS", "HALF_DAYS", "DAYS", "WEEKS", "MONTHS", "YEARS"));
+        truncateToTimeUnit.setOptions(List.of("SECONDS", "MINUTES", "HOURS", "HALF_DAYS", "DAYS", "WEEKS", "MONTHS", "YEARS"));
         CONFIG_PROPERTIES.add(truncateToTimeUnit);
 
         ProviderConfigProperty valueSource = new ProviderConfigProperty();
@@ -124,13 +125,16 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
                 .orElseGet(() -> Optional.ofNullable(verifiableCredential.getIssuanceDate())
                         .orElse(Instant.now()));
 
+        Instant normalizedIat = new TimeClaimNormalizer(userSessionModel.getRealm())
+                .normalize(iat);
+
         // truncate is possible. Return iat if not.
         Instant iatTrunc = Optional.ofNullable(mapperModel.getConfig())
-                .flatMap(config -> Optional.ofNullable(config.get(TRUNCATE_TO_TIME_UNIT_KEY)))
-                .filter(String::isEmpty)
+                .map(config -> config.get(TRUNCATE_TO_TIME_UNIT_KEY))
+                .filter(val -> !val.isEmpty())
                 .map(ChronoUnit::valueOf)
-                .map(iat::truncatedTo)
-                .orElse(iat);
+                .map(normalizedIat::truncatedTo)
+                .orElse(normalizedIat);
 
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         credentialSubject.setClaims(propertyName, iatTrunc.getEpochSecond());

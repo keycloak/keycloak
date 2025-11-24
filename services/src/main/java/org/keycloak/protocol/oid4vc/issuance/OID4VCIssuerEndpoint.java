@@ -1210,9 +1210,22 @@ public class OID4VCIssuerEndpoint {
     // builds the unsigned credential by applying all protocol mappers.
     private VCIssuanceContext getVCToSign(List<OID4VCMapper> protocolMappers, SupportedCredentialConfiguration credentialConfig,
                                           AuthenticationManager.AuthResult authResult, CredentialRequest credentialRequestVO) {
+
+        // Compute issuance date and apply correlation-mitigation according to realm configuration
+        Instant issuance = Instant.ofEpochMilli(timeProvider.currentTimeMillis());
+        TimeClaimNormalizer timeClaimNormalizer = new TimeClaimNormalizer(session);
+        Instant normalizedIssuance = timeClaimNormalizer.normalize(issuance);
+
+        // Compute expiration date from client scope configuration and normalize it
+        CredentialScopeModel clientScopeModel = getClientScopeModel(credentialConfig);
+        Integer expiryInSeconds = clientScopeModel.getExpiryInSeconds();
+        Instant expiration = normalizedIssuance.plusSeconds(expiryInSeconds);
+        Instant normalizedExpiration = timeClaimNormalizer.normalize(expiration);
+
         // set the required claims
         VerifiableCredential vc = new VerifiableCredential()
-                .setIssuanceDate(Instant.ofEpochMilli(timeProvider.currentTimeMillis()))
+                .setIssuanceDate(normalizedIssuance)
+                .setExpirationDate(normalizedExpiration)
                 .setType(List.of(credentialConfig.getScope()));
 
         Map<String, Object> subjectClaims = new HashMap<>();

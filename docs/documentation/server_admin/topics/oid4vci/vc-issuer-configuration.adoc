@@ -166,6 +166,61 @@ curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
 - **Avoid using `-k` in production**; instead, configure a **trusted TLS certificate**.
 ====
 
+==== Time-claim correlation mitigation
+
+To reduce unintended correlation across multiple issuances or presentations, you can normalize time-related claims by either randomizing them within a time window or rounding them to a coarse time unit. This behavior is opt-in and controlled by the following realm attributes:
+
+[cols="1,1,2", options="header"]
+|===
+| Attribute
+| Default
+| Description
+
+| `oid4vci.time.claims.strategy`
+| `off`
+| Strategy to apply to time claims. Supported values: `off`, `randomize`, `round`.
+
+| `oid4vci.time.randomize.window.seconds`
+| `86400`
+| When strategy is `randomize`, subtract a random number of seconds between 0 and the value of this attribute from the original timestamp to mitigate correlation attacks.
+
+| `oid4vci.time.round.unit`
+| `SECOND`
+| When strategy is `round`, truncate timestamps to the selected unit boundary (UTC). Supported values: `SECOND`, `MINUTE`, `HOUR`, `DAY`.
+|===
+
+How it is applied during issuance:
+
+- For JWT-VC, the credential `issuanceDate` is normalized at issuance; the JWT `nbf` is derived from the normalized value. If a mapper sets a VC `expirationDate`, it is normalized and emitted as JWT `exp`.
+- For SD-JWT VCs, time-related claims (`iat`, `nbf`, `exp`) are typically set using protocol mappers. Use the available OID4VC mappers, such as the Issued At Time Claim Mapper for `iat`, to populate these claims. Values are automatically normalized according to the realm strategy.
+
+Examples:
+
+[source,bash]
+----
+# Round to start of day (UTC)
+curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "attributes": {
+          "oid4vci.time.claims.strategy": "round",
+          "oid4vci.time.round.unit": "DAY"
+        }
+      }'
+
+# Randomize within the last 24 hours
+curl -X PUT "https://localhost:8443/admin/realms/oid4vc-vci" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "attributes": {
+          "oid4vci.time.claims.strategy": "randomize",
+          "oid4vci.time.randomize.window.seconds": "86400"
+        }
+      }'
+----
+
 === Create Client Scopes with Mappers
 
 Client scopes define **which user attributes** are included in Verifiable Credentials (VCs). Therefore, they are considered the Verifiable Credential configuration itself. These scopes use **protocol mappers** to map specific claims into VCs and the protocol mappers will also contain the corresponding metadata for claims that is displayed at the Credential Issuer Metadata Endpoint.

@@ -50,6 +50,6 @@ public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
     public CredentialBuilder create(KeycloakSession session, ComponentModel model) {
-        return new JwtCredentialBuilder(new OffsetTimeProvider());
+        return new JwtCredentialBuilder(new OffsetTimeProvider(), session);
     }
 }
