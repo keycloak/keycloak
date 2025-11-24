@@ -15,9 +15,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mapper.ClientModelMapper;
-import org.keycloak.models.mapper.MapStructModelMapper;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.admin.v2.ClientRepresentation;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ServiceException;
@@ -30,7 +30,6 @@ import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 // TODO
 public class DefaultClientService implements ClientService {
     private final KeycloakSession session;
-    private final ClientModelMapper mapper;
     private final JakartaValidatorProvider validator;
     private final RealmAdminResource realmAdminResource;
     private final ClientsResource clientsResource;
@@ -42,7 +41,6 @@ public class DefaultClientService implements ClientService {
         this.clientResource = clientResource;
 
         this.clientsResource = realmAdminResource.getClients();
-        this.mapper = new MapStructModelMapper().clients();
         this.validator = new HibernateValidatorProvider();
     }
 
@@ -51,48 +49,58 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public Optional<ClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions) {
+    public Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions) {
         // TODO: is the access map on the representation needed
-        return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel).map(model -> mapper.fromModel(session, model));
+        return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel)
+                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model));
     }
 
     @Override
-    public Stream<ClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions,
+    public Stream<BaseClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions,
                                                    ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions) {
         // TODO: is the access map on the representation needed
-        return clientsResource.getClientModels(null, true, false, null, null, null).map(model -> mapper.fromModel(session, model));
+        return clientsResource.getClientModels(null, true, false, null, null, null)
+                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model));
     }
 
     @Override
-    public CreateOrUpdateResult createOrUpdate(RealmModel realm, ClientRepresentation client, boolean allowUpdate) throws ServiceException {
+    public CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException {
         boolean created = false;
         ClientModel model;
+        ClientModelMapper mapper = session.getProvider(ClientModelMapper.class, client.getProtocol());
+
+        if (mapper == null) {
+            throw new ServiceException("Mapper not found, unsupported client protocol: " + client.getProtocol(), Response.Status.BAD_REQUEST);
+        }
+
         if (clientResource != null) {
             if (!allowUpdate) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
-            model = mapper.toModel(session, realm, clientResource.viewClientModel(), client);
+            model = mapper.toModel(client, clientResource.viewClientModel());
             var rep = ModelToRepresentation.toRepresentation(model, session);
             clientResource.update(rep);
         } else {
             created = true;
             validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
 
-            model = mapper.toModel(session, realm, client);
+            model = mapper.toModel(client);
             var rep = ModelToRepresentation.toRepresentation(model, session);
             model = clientsResource.createClientModel(rep);
             clientResource = clientsResource.getClient(model.getId());
         }
 
         handleRoles(client.getRoles());
-        handleServiceAccount(model, client.getServiceAccount());
-        var updated = mapper.fromModel(session, model);
+        if (client instanceof OIDCClientRepresentation oidcClient) {
+            handleServiceAccount(model, oidcClient);
+        }
+        var updated = mapper.fromModel(model);
 
         return new CreateOrUpdateResult(updated, created);
     }
 
     @Override
-    public Stream<ClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions) {
+    public Stream<BaseClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -128,56 +136,58 @@ public class DefaultClientService implements ClientService {
      * <p>
      * Reuses API v1 logic
      */
-    protected void handleServiceAccount(ClientModel model, ClientRepresentation.ServiceAccount serviceAccount) {
-        if (serviceAccount != null && serviceAccount.getEnabled() != null) {
-            ClientResource.updateClientServiceAccount(session, model, serviceAccount.getEnabled());
+    protected void handleServiceAccount(ClientModel model, OIDCClientRepresentation rep) {
+        boolean serviceAccountEnabled = rep.getLoginFlows().contains(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT);
 
-            if (serviceAccount.getEnabled()) {
-                var clientRoleResource = clientResource.getRoleContainerResource();
-                var realmRoleResource = realmAdminResource.getRoleContainerResource();
+        ClientResource.updateClientServiceAccount(session, model, serviceAccountEnabled);
 
-                var serviceAccountUser = session.users().getServiceAccount(model);
-                var serviceAccountRoleResource = realmAdminResource.users().user(clientResource.getServiceAccountUser().getId()).getRoleMappings();
+        if (!serviceAccountEnabled) {
+            return;
+        }
 
-                Set<String> desiredRoleNames = Optional.ofNullable(serviceAccount.getRoles()).orElse(Collections.emptySet());
-                Set<RoleModel> currentRoles = serviceAccountUser.getRoleMappingsStream().collect(Collectors.toSet());
-                Set<String> currentRoleNames = currentRoles.stream().map(RoleModel::getName).collect(Collectors.toSet());
+        var clientRoleResource = clientResource.getRoleContainerResource();
+        var realmRoleResource = realmAdminResource.getRoleContainerResource();
 
-                // Get missing roles (in desired but not in current)
-                List<RoleRepresentation> missingRoles = desiredRoleNames.stream()
-                        .filter(roleName -> !currentRoleNames.contains(roleName))
-                        .map(roleName -> {
-                            try {
-                                return clientRoleResource.getRole(roleName); // client role
-                            } catch (NotFoundException e) {
-                                try {
-                                    return realmRoleResource.getRole(roleName); // realm role
-                                } catch (NotFoundException e2) {
-                                    throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
-                                }
-                            }
-                        })
-                        .toList();
+        var serviceAccountUser = session.users().getServiceAccount(model);
+        var serviceAccountRoleResource = realmAdminResource.users().user(clientResource.getServiceAccountUser().getId()).getRoleMappings();
 
-                // Add missing roles (in desired but not in current)
-                if (!missingRoles.isEmpty()) {
-                    serviceAccountRoleResource.addRealmRoleMappings(missingRoles);
-                }
+        Set<String> desiredRoleNames = Optional.ofNullable(rep.getServiceAccountRoles()).orElse(Collections.emptySet());
+        Set<RoleModel> currentRoles = serviceAccountUser.getRoleMappingsStream().collect(Collectors.toSet());
+        Set<String> currentRoleNames = currentRoles.stream().map(RoleModel::getName).collect(Collectors.toSet());
 
-                // Get extra roles (in current but not in desired)
-                List<RoleRepresentation> extraRoles = currentRoles.stream()
-                        .filter(role -> !desiredRoleNames.contains(role.getName()))
-                        .map(ModelToRepresentation::toRepresentation)
-                        .toList();
-
-                // Remove extra roles (in current but not in desired)
-                if (!extraRoles.isEmpty()) {
+        // Get missing roles (in desired but not in current)
+        List<RoleRepresentation> missingRoles = desiredRoleNames.stream()
+                .filter(roleName -> !currentRoleNames.contains(roleName))
+                .map(roleName -> {
                     try {
-                        serviceAccountRoleResource.deleteRealmRoleMappings(extraRoles);
+                        return clientRoleResource.getRole(roleName); // client role
                     } catch (NotFoundException e) {
-                        throw new ServiceException("Cannot unassign role from the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
+                        try {
+                            return realmRoleResource.getRole(roleName); // realm role
+                        } catch (NotFoundException e2) {
+                            throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
+                        }
                     }
-                }
+                })
+                .toList();
+
+        // Add missing roles (in desired but not in current)
+        if (!missingRoles.isEmpty()) {
+            serviceAccountRoleResource.addRealmRoleMappings(missingRoles);
+        }
+
+        // Get extra roles (in current but not in desired)
+        List<RoleRepresentation> extraRoles = currentRoles.stream()
+                .filter(role -> !desiredRoleNames.contains(role.getName()))
+                .map(ModelToRepresentation::toRepresentation)
+                .toList();
+
+        // Remove extra roles (in current but not in desired)
+        if (!extraRoles.isEmpty()) {
+            try {
+                serviceAccountRoleResource.deleteRealmRoleMappings(extraRoles);
+            } catch (NotFoundException e) {
+                throw new ServiceException("Cannot unassign role from the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
             }
         }
     }
