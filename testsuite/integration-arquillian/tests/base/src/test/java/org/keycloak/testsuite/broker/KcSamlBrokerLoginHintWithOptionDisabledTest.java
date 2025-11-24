@@ -5,4 +5,9 @@ public class KcSamlBrokerLoginHintWithOptionDisabledTest extends AbstractSamlLog
     boolean isLoginHintOptionEnabled() {
         return false;
     }
+
+    @Override
+    boolean isLoginQueryHintOptionEnabled() {
+        return false;
+    }
 }
