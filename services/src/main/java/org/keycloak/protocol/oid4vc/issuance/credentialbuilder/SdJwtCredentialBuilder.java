@@ -26,8 +26,12 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.sdjwt.DisclosureSpec;
+import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class SdJwtCredentialBuilder implements CredentialBuilder {
 
@@ -43,10 +47,9 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
     }
 
     @Override
-    public SdJwtCredentialBody buildCredentialBody(
-            VerifiableCredential verifiableCredential,
-            CredentialBuildConfig credentialBuildConfig
-    ) throws CredentialBuilderException {
+    public SdJwtCredentialBody buildCredentialBody(VerifiableCredential verifiableCredential,
+                                                   CredentialBuildConfig credentialBuildConfig)
+        throws CredentialBuilderException {
         // Retrieve claims
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         Map<String, Object> claimSet = credentialSubject.getClaims();
@@ -84,11 +87,15 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                     .forEach(i -> disclosureSpecBuilder.withDecoyClaim(SdJwtUtils.randomSalt()));
         }
 
-        var sdJwtBuilder = SdJwt.builder()
-                .withDisclosureSpec(disclosureSpecBuilder.build())
-                .withHashAlgorithm(credentialBuildConfig.getHashAlgorithm())
-                .withJwsType(credentialBuildConfig.getTokenJwsType());
+        ObjectNode claimsNode = JsonSerialization.mapper.convertValue(claimSet, ObjectNode.class);
+        IssuerSignedJWT issuerSignedJWT = IssuerSignedJWT.builder()
+                                                         .withClaims(claimsNode,
+                                                                     disclosureSpecBuilder.build())
+                                                         .withHashAlg(credentialBuildConfig.getHashAlgorithm())
+                                                         .withJwsType(credentialBuildConfig.getTokenJwsType())
+                                                         .build();
+        SdJwt.Builder sdJwtBuilder = SdJwt.builder();
 
-        return new SdJwtCredentialBody(sdJwtBuilder, claimSet);
+        return new SdJwtCredentialBody(sdJwtBuilder, issuerSignedJWT);
     }
 }

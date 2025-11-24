@@ -17,9 +17,15 @@
 
 package org.keycloak.sdjwt;
 
+import java.util.ArrayList;
+import java.util.function.Function;
+
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_EXP;
@@ -28,28 +34,39 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_NBF;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class TimeClaimVerifierTest {
 
-    private static final long CURRENT_TIMESTAMP = 1609459200L; // Fixed timestamp: 2021-01-01 00:00:00 UTC
+    private static final int TIMESTAMP2021 = 1609459200; // Fixed timestamp: 2021-01-01 00:00:00 UTC
+    private int CURRENT_TIMESTAMP;
     private static final int DEFAULT_CLOCK_SKEW_SECONDS = 20;
 
-    private final TimeClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, false);
-    private final TimeClaimVerifier strictTimeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, true);
+    private final ClaimVerifier timeClaimVerifier = new FixedTimeClaimVerifier(DEFAULT_CLOCK_SKEW_SECONDS, false);
 
-    static class FixedTimeClaimVerifier extends TimeClaimVerifier {
+    static class FixedTimeClaimVerifier extends ClaimVerifier {
 
-        public FixedTimeClaimVerifier(int allowedClockSkewSeconds, boolean requireClaims) {
-            super(createOptsWithAllowedClockSkew(allowedClockSkewSeconds, requireClaims));
+        public FixedTimeClaimVerifier(int clockSkew, boolean requireClaims) {
+            super(new ArrayList<>(),
+                  createOptsWithClockSkew(clockSkew, requireClaims)
+                      .getContentVerifiers());
         }
+    }
 
-        @Override
-        public long currentTimestamp() {
-            return CURRENT_TIMESTAMP;
-        }
+    @Before
+    public void updateTimeOffset() {
+        int currentTime = Time.currentTime();
+        Time.setOffset(TIMESTAMP2021 - currentTime); // Move time to 2021-01-01 00:00:00 UTC
+        this.CURRENT_TIMESTAMP = Time.currentTime();
+    }
+
+    @After
+    public void revertTimeOffset() {
+        Time.setOffset(0);
     }
 
     @Test
@@ -58,25 +75,36 @@ public class TimeClaimVerifierTest {
         payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 100); // 100 seconds in the future
 
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyIssuedAtClaim(payload));
+                                                       () -> timeClaimVerifier.verifyBodyClaims(payload));
 
-        assertEquals("JWT was issued in the future", exception.getMessage());
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                   exception.getMessage().matches("Token was issued in the future: now: '\\d+', iat: '\\d+'"));
     }
 
     @Test
     public void testVerifyIatClaimValid() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 1); // Issued 1 second ago, in the past
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 5); // Issued 5 seconds ago, in the past
 
-        timeClaimVerifier.verifyIssuedAtClaim(payload);
+        timeClaimVerifier.verifyBodyClaims(payload);
     }
 
     @Test
     public void testVerifyIatClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP + 19); // Issued 19 seconds in the future, within the 20 second clock skew
+        payload.put(CLAIM_NAME_IAT,
+                    CURRENT_TIMESTAMP + 15); // Issued 15 seconds in the future, within the 20 second clock skew
 
-        timeClaimVerifier.verifyIssuedAtClaim(payload);
+        timeClaimVerifier.verifyBodyClaims(payload);
+
+        payload.put(CLAIM_NAME_IAT,
+                CURRENT_TIMESTAMP + 25); // Issued 25 seconds in the future, which is not within the 20 second clock skew
+
+        VerificationException exception = assertThrows(VerificationException.class,
+                () -> timeClaimVerifier.verifyBodyClaims(payload));
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token was issued in the future: now: '\\d+', iat: '\\d+'"));
     }
 
     @Test
@@ -85,9 +113,10 @@ public class TimeClaimVerifierTest {
         payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 100); // Expired 100 seconds ago
 
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyExpirationClaim(payload));
+                                                       () -> timeClaimVerifier.verifyBodyClaims(payload));
 
-        assertEquals("JWT has expired", exception.getMessage());
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                   exception.getMessage().matches("Token has expired by exp: now: '\\d+', exp: '\\d+'"));
     }
 
     @Test
@@ -95,16 +124,16 @@ public class TimeClaimVerifierTest {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
         payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP + 100); // Expires 100 seconds in the future
 
-        timeClaimVerifier.verifyExpirationClaim(payload);
+        timeClaimVerifier.verifyBodyClaims(payload);
     }
 
     @Test
     public void testVerifyExpClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 19); // 19 seconds ago, within the 20 second clock skew
+        payload.put(CLAIM_NAME_EXP, CURRENT_TIMESTAMP - 15); // 15 seconds ago, within the 20 second clock skew
 
         // No exception expected for JWT expiring within clock skew
-        timeClaimVerifier.verifyExpirationClaim(payload);
+        timeClaimVerifier.verifyBodyClaims(payload);
     }
 
     @Test
@@ -113,9 +142,10 @@ public class TimeClaimVerifierTest {
         payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 100); // Not valid for another 100 seconds
 
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyNotBeforeClaim(payload));
+                                                       () -> timeClaimVerifier.verifyBodyClaims(payload));
 
-        assertEquals("JWT is not yet valid", exception.getMessage());
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                   exception.getMessage().matches("Token is not yet valid: now: '\\d+', nbf: '\\d+'"));
     }
 
     @Test
@@ -123,58 +153,74 @@ public class TimeClaimVerifierTest {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
         payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP - 100); // Valid since 100 seconds ago
 
-        timeClaimVerifier.verifyNotBeforeClaim(payload);
+        timeClaimVerifier.verifyBodyClaims(payload);
     }
 
     // Test for verifyNotBeforeClaim (edge case: valid exactly at current time with clock skew)
     @Test
     public void testVerifyNotBeforeClaimEdge() throws VerificationException {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 19); // 19 seconds in the future, within the 20 second clock skew
+        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 15); // 15 seconds in the future, within the 20 second clock skew
 
         // No exception expected for JWT becoming valid within clock skew
-        timeClaimVerifier.verifyNotBeforeClaim(payload);
+        timeClaimVerifier.verifyBodyClaims(payload);
+
+        payload.put(CLAIM_NAME_NBF, CURRENT_TIMESTAMP + 25); // 25 seconds in the future, not anymore within the 20 second clock skew
+
+        VerificationException exception = assertThrows(VerificationException.class,
+                () -> timeClaimVerifier.verifyBodyClaims(payload));
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token is not yet valid: now: '\\d+', nbf: '\\d+'"));
     }
 
     @Test
     public void testVerifyAgeJwtTooOld() {
-        int maxAgeAllowed = 300; // 5 minutes
-
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 361); // 361 seconds old
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 365); // 365 seconds old
 
         VerificationException exception = assertThrows(VerificationException.class,
-                () -> timeClaimVerifier.verifyAge(payload, maxAgeAllowed));
+                                                       () -> timeClaimVerifier.verifyBodyClaims(payload));
 
-        assertEquals("JWT is too old", exception.getMessage());
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                   exception.getMessage().matches("Token has expired by iat: now: '\\d+', expired at:"
+                                                                    + " '\\d+', iat: '\\d+', maxLifetime: '300'"));
     }
 
     @Test
     public void testVerifyAgeValid() throws VerificationException {
-        int maxAgeAllowed = 300; // 5 minutes
-
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
         payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 100); // Only 100 seconds old
 
-        timeClaimVerifier.verifyAge(payload, maxAgeAllowed);
+        timeClaimVerifier.verifyBodyClaims(payload);
     }
 
     @Test
     public void testVerifyAgeValidEdge() throws VerificationException {
-        int maxAgeAllowed = 300; // 5 minutes
-
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
-        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 320); // 320 seconds old, within the 20 second clock skew
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 315); // 315 seconds old, within the 20 second clock skew
 
-        timeClaimVerifier.verifyAge(payload, maxAgeAllowed);
+        timeClaimVerifier.verifyBodyClaims(payload);
+
+        payload.put(CLAIM_NAME_IAT, CURRENT_TIMESTAMP - 325); // 325 seconds old. not anymore within valid clock skew
+
+        VerificationException exception = assertThrows(VerificationException.class,
+                () -> timeClaimVerifier.verifyBodyClaims(payload));
+
+        assertTrue(String.format("Expected message '%s' does not match regex", exception.getMessage()),
+                exception.getMessage().matches("Token has expired by iat: now: '\\d+', expired at:"
+                        + " '\\d+', iat: '\\d+', maxLifetime: '300'"));
     }
 
     @Test
-    public void instantiationShouldFailIfClockSkewNegative() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> new TimeClaimVerifier(createOptsWithAllowedClockSkew(-1, false)));
-
-        assertEquals("Allowed clock skew seconds cannot be negative", exception.getMessage());
+    public void testUseClockSkewZeroIfSetToNegative() {
+        ClaimVerifier claimVerifier = createOptsWithClockSkew(-1, false);
+        claimVerifier.getContentVerifiers()
+                     .stream()
+                     .filter(verifier -> verifier instanceof ClaimVerifier.TimeCheck)
+                     .forEach(verifier -> {
+                         assertEquals(0, ((ClaimVerifier.TimeCheck) verifier).getClockSkewSeconds());
+                     });
     }
 
     @Test
@@ -183,9 +229,7 @@ public class TimeClaimVerifierTest {
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
 
         // No exception expected as claims are not required
-        timeClaimVerifier.verifyIssuedAtClaim(payload);
-        timeClaimVerifier.verifyExpirationClaim(payload);
-        timeClaimVerifier.verifyNotBeforeClaim(payload);
+        timeClaimVerifier.verifyBodyClaims(payload);
     }
 
     @Test
@@ -193,25 +237,47 @@ public class TimeClaimVerifierTest {
         // No time claims added
         ObjectNode payload = SdJwtUtils.mapper.createObjectNode();
 
-        VerificationException exceptionIat = assertThrows(VerificationException.class,
-                () -> strictTimeClaimVerifier.verifyIssuedAtClaim(payload));
-        assertEquals("Missing 'iat' claim or null", exceptionIat.getMessage());
+        Function<ClaimVerifier, VerificationException> strictVerifier = verifier -> {
+            try{
+                verifier.verifyBodyClaims(payload);
+                fail("Verification should have failed");
+                return null;
+            } catch(VerificationException e){
+                return e;
+            }
+        };
 
-        VerificationException exceptionExp = assertThrows(VerificationException.class,
-                () -> strictTimeClaimVerifier.verifyExpirationClaim(payload));
-        assertEquals("Missing 'exp' claim or null", exceptionExp.getMessage());
+        VerificationException exceptionIat = strictVerifier.apply(ClaimVerifier.builder()
+                                                                               .withIatCheck(false)
+                                                                               .withNbfCheck(true)
+                                                                               .withExpCheck(true)
+                                                                               .build());
+        assertEquals("Missing required claim 'iat'", exceptionIat.getMessage());
 
-        VerificationException exceptionNbf = assertThrows(VerificationException.class,
-                () -> strictTimeClaimVerifier.verifyNotBeforeClaim(payload));
-        assertEquals("Missing 'nbf' claim or null", exceptionNbf.getMessage());
+        VerificationException exceptionExp = strictVerifier.apply(ClaimVerifier.builder()
+                                                                               .withExpCheck(false)
+                                                                               .withIatCheck(true)
+                                                                               .withNbfCheck(true)
+                                                                               .build());
+        assertEquals("Missing required claim 'exp'", exceptionExp.getMessage());
+
+        VerificationException exceptionNbf = strictVerifier.apply(ClaimVerifier.builder()
+                                                                               .withNbfCheck(false)
+                                                                               .withIatCheck(true)
+                                                                               .withExpCheck(true)
+                                                                               .build());
+        assertEquals("Missing required claim 'nbf'", exceptionNbf.getMessage());
     }
 
-    private static TimeClaimVerificationOpts createOptsWithAllowedClockSkew(int allowedClockSkewSeconds, boolean requireClaims) {
-        return TimeClaimVerificationOpts.builder()
-                .withAllowedClockSkew(allowedClockSkewSeconds)
-                .withRequireIssuedAtClaim(requireClaims)
-                .withRequireExpirationClaim(requireClaims)
-                .withRequireNotBeforeClaim(requireClaims)
-                .build();
+    private static ClaimVerifier createOptsWithClockSkew(int clockSkew, boolean requireClaims) {
+        final int defaultMaxLifeTime = 300;
+        final boolean isOptionalCheck = !requireClaims;
+
+        return ClaimVerifier.builder()
+                            .withClockSkew(clockSkew)
+                            .withIatCheck(defaultMaxLifeTime, isOptionalCheck)
+                            .withExpCheck(isOptionalCheck)
+                            .withNbfCheck(isOptionalCheck)
+                            .build();
     }
 }
