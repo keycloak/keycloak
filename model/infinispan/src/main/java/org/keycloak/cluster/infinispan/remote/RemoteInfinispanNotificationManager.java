@@ -127,8 +127,19 @@ public class RemoteInfinispanNotificationManager {
     @ClientCacheEntryModified
     public void onEntryUpdated(ClientCacheEntryCustomEvent<byte[]> event) {
         try {
-            Map.Entry<String, Object> entry = extractEntryFromEvent(event);
-            executor.execute(() -> eventReceived(entry.getKey(), entry.getValue()));
+            byte[] data = event.getEventData();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            int length = UnsignedNumeric.readUnsignedInt(buffer);
+
+            // unmarshall the key
+            String key = (String) marshaller.objectFromByteBuffer(data, buffer.position(), length);
+
+            buffer.position(buffer.position() + length);
+            length = UnsignedNumeric.readUnsignedInt(buffer);
+
+            // unmarshall the value
+            Object value = marshaller.objectFromByteBuffer(data, buffer.position(), length);
+            executor.execute(() -> eventReceived(key, value));
         } catch (IOException | ClassNotFoundException e) {
             logger.error("Unexpected error handling an update/create event from Infinispan cluster", e);
         }
@@ -137,34 +148,15 @@ public class RemoteInfinispanNotificationManager {
     @ClientCacheEntryRemoved
     public void onEntryRemoved(ClientCacheEntryCustomEvent<byte[]> event) {
         try {
-            String key = extractKeyFromEvent(event);
-            taskFinished(key);
+            byte[] data = event.getEventData();
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            int length = UnsignedNumeric.readUnsignedInt(buffer);
+
+            // unmarshall the key
+            taskFinished((String) marshaller.objectFromByteBuffer(data, buffer.position(), length));
         } catch (IOException | ClassNotFoundException e) {
             logger.error("Unexpected error handling a remove event from Infinispan cluster", e);
         }
-    }
-
-    private String extractKeyFromEvent(ClientCacheEntryCustomEvent<byte[]> event) throws IOException, ClassNotFoundException {
-        byte[] data = event.getEventData();
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        int length = UnsignedNumeric.readUnsignedInt(buffer);
-
-        // read the value
-        return (String) marshaller.objectFromByteBuffer(data, buffer.position(), length);
-    }
-
-    private Map.Entry<String, Object> extractEntryFromEvent(ClientCacheEntryCustomEvent<byte[]> event) throws IOException, ClassNotFoundException {
-        byte[] data = event.getEventData();
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        int length = UnsignedNumeric.readUnsignedInt(buffer);
-
-        String key = (String) marshaller.objectFromByteBuffer(data, buffer.position(), length);
-
-        buffer.position(buffer.position() + length);
-        length = UnsignedNumeric.readUnsignedInt(buffer);
-
-        Object value = marshaller.objectFromByteBuffer(data, buffer.position(), length);
-        return Map.entry(key, value);
     }
 
     private void eventReceived(String key, Object obj) {

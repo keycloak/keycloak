@@ -68,7 +68,6 @@ public class RemoteUserSessionExpirationListener extends BaseUserSessionExpirati
 
         // read the value
         length = UnsignedNumeric.readUnsignedInt(buffer);
-        Object value = marshaller.objectFromByteBuffer(data, buffer.position(), length);
-        return value instanceof RemoteUserSessionEntity ruse ? ruse : null;
+        return (RemoteUserSessionEntity) marshaller.objectFromByteBuffer(data, buffer.position(), length);
     }
 }
