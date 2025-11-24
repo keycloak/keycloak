@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
@@ -324,7 +323,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Creates a Credential Offer Uri that is not bound to the calling target user.
+     * Creates a Credential Offer Uri that is bound to the calling user.
      */
     public Response getCredentialOfferURI(String credConfigId) {
         UserSessionModel userSession = getAuthenticatedClientSession().getUserSession();
@@ -332,7 +331,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Creates a Credential Offer Uri that is bound to a specific target user.
+     * Creates a Credential Offer Uri that is bound to a specific user.
      */
     public Response getCredentialOfferURI(String credConfigId, boolean preAuthorized, String targetUser) {
         return getCredentialOfferURI(credConfigId, preAuthorized, null, targetUser, OfferUriType.URI, 0, 0);
@@ -390,27 +389,15 @@ public class OID4VCIssuerEndpoint {
 
         // Check required role to create a credential offer
         //
-        boolean hasCredentialOfferRole = userModel.getRoleMappingsStream().anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
+        boolean hasCredentialOfferRole = userModel.getRoleMappingsStream()
+                .anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
         if (!hasCredentialOfferRole) {
             var errorMessage = "Credential offer creation requires role: " + CREDENTIAL_OFFER_CREATE.getName();
             throw new CorsErrorResponseException(cors,
-                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.FORBIDDEN);
         }
 
         LOGGER.debugf("Get an offer for %s", credConfigId);
-
-        // Check whether the credential configuration exists in available client scopes
-        //
-        List<String> availableInClientScopes = session.clientScopes()
-                .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
-                .map(it -> it.getAttribute(CredentialScopeModel.CONFIGURATION_ID))
-                .toList();
-        if (!availableInClientScopes.contains(credConfigId)) {
-            var errorMessage = "Invalid credential configuration id: " + credConfigId;
-            LOGGER.debugf("%s not found in supported credential config ids: %s", credConfigId, availableInClientScopes);
-            throw new CorsErrorResponseException(cors,
-                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
-        }
 
         // Check whether given client/user ids actually exist
         //
@@ -437,6 +424,19 @@ public class OID4VCIssuerEndpoint {
             }
         }
 
+        // Check whether the credential configuration exists in available client scopes
+        //
+        List<String> availableInClientScopes = session.clientScopes()
+                .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
+                .map(it -> it.getAttribute(CredentialScopeModel.CONFIGURATION_ID))
+                .toList();
+        if (!availableInClientScopes.contains(credConfigId)) {
+            var errorMessage = "Invalid credential configuration id: " + credConfigId;
+            LOGGER.debugf("%s not found in supported credential config ids: %s", credConfigId, availableInClientScopes);
+            throw new CorsErrorResponseException(cors,
+                    INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+        }
+
         CredentialsOffer credOffer = new CredentialsOffer()
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
                 .setCredentialConfigurationIds(List.of(credConfigId));
@@ -445,7 +445,7 @@ public class OID4VCIssuerEndpoint {
         CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, appUserId, expiration);
 
         if (preAuthorized) {
-            String code = "urn:oid4vci:code:" + UUID.randomUUID();
+            String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
             credOffer.setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
                     new PreAuthorizedCode().setPreAuthorizedCode(code)));
         }
@@ -665,12 +665,13 @@ public class OID4VCIssuerEndpoint {
         // Both credential_configuration_id and credential_identifier are optional.
         // If the credential_configuration_id is present, credential_identifier can't be present.
         // But this implementation will tolerate the presence of both, waiting for clarity in specifications.
-        // This implementation will privilege the presence of the credential_configuration_id.
-        String requestedCredentialConfigurationId = credentialRequestVO.getCredentialConfigurationId();
-        String requestedCredentialIdentifier = credentialRequestVO.getCredentialIdentifier();
+        // This implementation will privilege the presence of credential_identifier.
+
+        String credentialIdentifier = credentialRequestVO.getCredentialIdentifier();
+        String credentialConfigurationId = credentialRequestVO.getCredentialConfigurationId();
 
         // Check if at least one of both is available.
-        if (requestedCredentialConfigurationId == null && requestedCredentialIdentifier == null) {
+        if (credentialIdentifier == null && credentialConfigurationId == null) {
             LOGGER.debugf("Missing both credential_configuration_id and credential_identifier. At least one must be specified.");
             throw new BadRequestException(getErrorResponse(ErrorType.MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID));
         }
@@ -680,15 +681,14 @@ public class OID4VCIssuerEndpoint {
         // When the CredentialRequest contains a credential identifier the caller must have gone through the
         // CredentialOffer process or otherwise have set up a valid CredentialOfferState
 
-        if (credentialRequestVO.getCredentialIdentifier() != null) {
-            String credId = credentialRequestVO.getCredentialIdentifier();
+        if (credentialIdentifier != null) {
 
             // Retrieve the associated credential offer state
             //
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-            CredentialOfferState offerState = offerStorage.findOfferStateByCredentialId(session, credId);
+            CredentialOfferState offerState = offerStorage.findOfferStateByCredentialId(session, credentialIdentifier);
             if (offerState == null) {
-                var errorMessage = "No credential offer state for credential id: " + credId;
+                var errorMessage = "No credential offer state for credential id: " + credentialIdentifier;
                 throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
             }
 
@@ -705,8 +705,8 @@ public class OID4VCIssuerEndpoint {
             //
             SupportedCredentialConfiguration credConfig = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session).get(credConfigId);
             if (credConfig == null) {
-                LOGGER.errorf("Mapped credential configuration not found: %s", credConfigId);
-                throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+                var errorMessage = "Mapped credential configuration not found: " + credConfigId;
+                throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
             }
 
             // Verify the user login session
@@ -714,34 +714,36 @@ public class OID4VCIssuerEndpoint {
             UserSessionModel userSession = authResult.session();
             UserModel userModel = userSession.getUser();
             if (!userModel.getUsername().equals(offerState.getUserId())) {
-                LOGGER.errorf("Unexpected login user: %s != %s", userModel.getUsername(), offerState.getUserId());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+                var errorMessage = "Unexpected login user: " + userModel.getUsername();
+                LOGGER.errorf(errorMessage + " != %s", offerState.getUserId());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
 
             // Verify the login client
             //
             ClientModel clientModel = session.getContext().getClient();
             if (offerState.getClientId() != null && !clientModel.getClientId().equals(offerState.getClientId())) {
-                LOGGER.errorf("Unexpected login client: %s != %s", clientModel.getClientId(), offerState.getClientId());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST));
+                var errorMessage = "Unexpected login client: " + clientModel.getClientId();
+                LOGGER.errorf(errorMessage + " != %s", offerState.getClientId());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
 
             // Find the configured scope in the login client
             //
             ClientScopeModel clientScope = clientModel.getClientScopes(false).get(credConfig.getScope());
             if (clientScope == null) {
-                LOGGER.errorf("Client scope not found: %s", credConfig.getScope());
-                throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+                var errorMessage = String.format("Client scope not found: %s", credConfig.getScope());
+                throw new BadRequestException(getErrorResponse(UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
             }
 
             requestedCredential = new CredentialScopeModel(clientScope);
-            LOGGER.debugf("Successfully mapped credential identifier %s to scope %s", credId, clientScope.getName());
+            LOGGER.debugf("Successfully mapped credential identifier %s to scope %s", credentialIdentifier, clientScope.getName());
 
-        } else if (credentialRequestVO.getCredentialConfigurationId() != null) {
+        } else if (credentialConfigurationId != null) {
             // Use credential_configuration_id for direct lookup
             requestedCredential = credentialRequestVO.findCredentialScope(session).orElseThrow(() -> {
-                LOGGER.errorf("Credential scope not found for configuration ID: %s", credentialRequestVO.getCredentialConfigurationId());
-                return new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION));
+                var errorMessage = "Credential scope not found for configuration id: " + credentialConfigurationId;
+                return new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
             });
         } else {
             // Neither provided - this should not happen due to earlier validation

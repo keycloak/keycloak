@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.Map;
@@ -12,7 +28,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
     private static final String ENTRY_KEY = "json";
 
     @Override
-    public synchronized void putOfferState(KeycloakSession session, CredentialOfferState entry) {
+    public void putOfferState(KeycloakSession session, CredentialOfferState entry) {
         String entryJson = JsonSerialization.valueAsString(entry);
         session.singleUseObjects().put(entry.getNonce(), entry.getExpiration(), Map.of(ENTRY_KEY, entryJson));
         entry.getPreAuthorizedCode().ifPresent(it -> {
@@ -26,7 +42,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public synchronized CredentialOfferState findOfferStateByNonce(KeycloakSession session, String nonce) {
+    public CredentialOfferState findOfferStateByNonce(KeycloakSession session, String nonce) {
         if (session.singleUseObjects().contains(nonce)) {
             String entryJson = session.singleUseObjects().get(nonce).get(ENTRY_KEY);
             return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
@@ -35,7 +51,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public synchronized CredentialOfferState findOfferStateByCode(KeycloakSession session, String code) {
+    public CredentialOfferState findOfferStateByCode(KeycloakSession session, String code) {
         if (session.singleUseObjects().contains(code)) {
             String entryJson = session.singleUseObjects().get(code).get(ENTRY_KEY);
             return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
@@ -52,7 +68,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
         return null;
     }
 
-    public synchronized void replaceOfferState(KeycloakSession session, CredentialOfferState entry) {
+    public void replaceOfferState(KeycloakSession session, CredentialOfferState entry) {
         String entryJson = JsonSerialization.valueAsString(entry);
         session.singleUseObjects().replace(entry.getNonce(), Map.of(ENTRY_KEY, entryJson));
         entry.getPreAuthorizedCode().ifPresent(it -> {
@@ -70,7 +86,7 @@ class InMemoryCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public synchronized void removeOfferState(KeycloakSession session, CredentialOfferState entry) {
+    public void removeOfferState(KeycloakSession session, CredentialOfferState entry) {
         session.singleUseObjects().remove(entry.getNonce());
         entry.getPreAuthorizedCode().ifPresent(it -> {
             session.singleUseObjects().remove(it);

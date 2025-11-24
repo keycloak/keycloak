@@ -87,7 +87,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         var appUserId = offerState.getUserId();
         var userModel = session.users().getUserByUsername(realm, appUserId);
-        if (userModel == null ) {
+        if (userModel == null) {
             var errorMessage = "No user model for: " + appUserId;
             event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
@@ -96,7 +96,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         var appClientId = offerState.getClientId();
         ClientModel clientModel = realm.getClientByClientId(appClientId);
-        if (clientModel == null ) {
+        if (clientModel == null) {
             var errorMessage = "No client model for: " + appClientId;
             event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
