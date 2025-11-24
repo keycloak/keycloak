@@ -19,29 +19,30 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.TokenVerifier;
-import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpStatus;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * SD-JWT variant: ensure realm-level rounding of issuanceDate propagates to iat when mapper sources from VC.
@@ -92,11 +93,20 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCSdJwtIssuingEndpoint
 
                 // Parse SD-JWT and check iat rounding (multiple of 86400)
                 SdJwtVP sdJwtVP = SdJwtVP.of(credentialResponse.getCredentials().get(0).getCredential().toString());
-                JsonWebToken jwt = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().getJws(), JsonWebToken.class).getToken();
-                Long iat = jwt.getIat();
-                assertNotNull(iat);
+                Map<String, JsonNode> disclosureMap = sdJwtVP.getDisclosures().values().stream()
+                        .map(disclosure -> {
+                            try {
+                                JsonNode jsonNode = JsonSerialization.mapper.readTree(Base64Url.decode(disclosure));
+                                return Map.entry(jsonNode.get(1).asText(), jsonNode); // Create a Map.Entry
+                            } catch (IOException e) {
+                                throw new RuntimeException(e); // Re-throw as unchecked exception
+                            }
+                        })
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                assertTrue("Test credential shall include an iat claim.", disclosureMap.containsKey("iat"));
+                long iat = disclosureMap.get("iat").get(2).asLong();
                 assertEquals(0, iat % 86400);
-            } catch (IOException | VerificationException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
