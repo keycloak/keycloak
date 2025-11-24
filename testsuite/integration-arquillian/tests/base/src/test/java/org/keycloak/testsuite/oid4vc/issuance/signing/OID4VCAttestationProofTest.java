@@ -1,8 +1,12 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.jboss.logging.Logger;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.List;
 
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
@@ -10,8 +14,6 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.TokenVerifier;
-import org.keycloak.common.VerificationException;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
@@ -29,10 +31,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.List;
-
-import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -356,4 +356,3 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         }
     }
 }
-
